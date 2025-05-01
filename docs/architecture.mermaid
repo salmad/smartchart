@@ -1,12 +1,20 @@
-```mermaid
 flowchart LR
   %% Frontend components
   subgraph Frontend
-    Chat[Gradio Chat UI]\n    Chart[Plotly Chart Pane]\n  end
+    direction LR
+    Chat[Gradio Chat UI]
+    Chart[Plotly Chart Pane]
+  end
 
   %% Backend components
   subgraph Backend
-    Server[Gradio Python Server]\n    State[Session State Store]\n    Prompt[Prompt Template Engine]\n    GPT[OpenAI GPT-4 API]\n    Renderer[Plotly Rendering Layer]\n  end
+    direction LR
+    Server[Gradio Python Server]
+    State[Session State Store]
+    Prompt[Prompt Template Engine]
+    GPT[OpenAI GPT-4 API]
+    Renderer[Plotly Rendering Layer]
+  end
 
   %% Interactions
   Chat -->|User message| Server
@@ -19,4 +27,3 @@ flowchart LR
   Renderer -->|Updated fig| Chart
   Server -->|Render UI| Chat
   State -->|Persistence| Server
-```

@@ -1,0 +1,3 @@
+"""
+SmartChart backend package.
+"""

@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+
+# Logs
+*.log
+
+# IDE directories
+.vscode/
+.idea/
+
+# Mac files
+.DS_Store
+
+# Data files
+*.csv
+*.json
+
+# Windsurf rules
+.windsurfrules

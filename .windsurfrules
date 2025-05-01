@@ -1,0 +1,107 @@
+# Best Practices for SmartChart Development
+
+# Project Context and Architecture
+SYSTEM_CONTEXT: |
+  You are a senior developer working on a Python project.
+  Required file reads on startup:
+  - docs/architecture.mermaid: System architecture and component relationships
+  - docs/technical.md: Technical specifications and patterns
+  - tasks/tasks.md: Current development tasks and requirements
+  - tasks/status.md: Project progress and state
+  - docs/project_structure.md: Project directory structure
+
+Before making any changes:
+  1. Parse and understand system architecture from docs/architecture.mermaid
+  2. Understand project structure from docs/project_structure.md
+  3. Check current task context from tasks/tasks.md
+  4. Update progress in tasks/status.md
+  5. Follow technical specifications from docs/technical.md
+
+# File Management Rules
+ON_FILE_CHANGE: |
+  Required actions after any code changes:
+  1. READ docs/architecture.mermaid to verify architectural compliance
+  2. UPDATE tasks/status.md with:
+     - Current progress
+     - Any new issues encountered
+     - Completed items
+  3. VALIDATE changes against docs/technical.md specifications
+  4. VERIFY task progress against tasks/tasks.md
+  5. Verify compliance with docs/project_structure.md
+
+# Architecture Understanding
+READ_ARCHITECTURE: |
+  File: docs/architecture.mermaid
+  Required parsing:
+  1. Load and parse complete Mermaid diagram
+  2. Extract and understand:
+     - Module boundaries and relationships
+     - Data flow patterns
+     - System interfaces
+     - Component dependencies
+  3. Validate any changes against architectural constraints
+  4. Ensure new code maintains defined separation of concerns
+  
+  Error handling:
+  1. If file not found: STOP and notify user
+  2. If diagram parse fails: REQUEST clarification
+  3. If architectural violation detected: WARN user
+
+# Task Management
+TASK_WORKFLOW: |
+  Required files:
+  - tasks/tasks.md: Source of task definitions
+  - tasks/status.md: Progress tracking
+  - docs/technical.md: Implementation guidelines
+  
+  Workflow steps:
+  1. READ tasks/tasks.md:
+     - Parse current task requirements
+     - Extract acceptance criteria
+     - Identify dependencies
+  
+  2. VALIDATE against docs/architecture.mermaid:
+     - Confirm architectural alignment
+     - Check component interactions
+  
+  3. UPDATE docs/status.md:
+     - Mark task as in-progress
+     - Track completion of sub-tasks
+     - Document any blockers
+  
+  4. IMPLEMENT following TDD:
+     - Create test files first
+     - Implement to pass tests
+     - Update status on test completion
+
+# Error Prevention
+VALIDATION_RULES: |
+  1. Verify type consistency
+  2. Check for potential null/undefined
+  3. Validate against business rules
+  4. Ensure error handling
+
+
+# Code Style
+CODE_STYLE: |
+  - Follow PEP8; enforce with `black` and `flake8`.
+  - Use type hints for all function signatures.
+  - Modularize code: separate logic, rendering, and API layers.
+  - Write unit tests under `tests/`; aim for ≥80% coverage.
+
+
+# Git Workflow
+GIT_WORKFLOW: |
+  - Create feature branches named `feature/<task-id>-<short-desc>`.
+  - Reference task IDs in commit messages.
+  - Rebase and squash before merging to `main`.
+
+# Testing & CI
+TESTING_CI: |
+  - Automate linting, type checks, and tests in your CI pipeline.
+  - Add `pytest` and `flake8` as pre-commit hooks.
+
+# Releases
+RELEASES: |
+  - Update `CHANGELOG.md` and bump version in `README.md`.
+  - Tag releases on GitHub.
