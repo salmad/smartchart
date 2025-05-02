@@ -1,31 +1,35 @@
 # SmartChart: Task Breakdown & Milestones
 
 ## Current Focus
-- Complete Basic Gradio UI implementation
-- Begin Chart Visualization components
+- Complete Streamlit UI implementation
+- Enhance Chart Visualization components
 
 ## Task Breakdown
 
 ### 1. Project Infrastructure [COMPLETED] (P0)
 - [x] Create Python virtual environment
-- [x] Define `requirements.txt` with Gradio, Plotly, and OpenAI
+- [x] Define `requirements.txt` with Streamlit, Plotly, and OpenAI
 - [x] Set up project structure with `/backend`, `/docs`, and `/tasks` directories
 - [x] Create documentation files (architecture, technical specs, status)
+- [x] Remove old Gradio implementation
 
-### 2. Basic Gradio UI [IN PROGRESS] (P0)
-- [ ] Create a two-column layout (chart + chat) (S)
-- [ ] Implement basic chat interface with history (M)
-- [ ] Add input box for chart commands (S)
-- [ ] Set up event handlers for user input (M)
+### 2. Streamlit UI [IN PROGRESS] (P0)
+- [x] Create two-column layout (chart + chat)
+- [x] Implement basic chat interface with history
+- [x] Add input box for chart commands
+- [x] Set up event handlers for user input
+- [x] Improve UI styling and responsiveness (M)
 
-### 3. Chart Visualization (P0)
-- [ ] Implement sample dataset loading (CSV or built-in) (M)
-- [ ] Create initial Plotly Express chart renderer (M)
-- [ ] Add chart state management in session (L)
-- [ ] Implement chart refresh mechanism (M)
+### 3. Chart Visualization [IN PROGRESS] (P0)
+- [x] Implement sample dataset loading (CSV or built-in)
+- [x] Create initial Plotly Express chart renderer
+- [x] Implement Pydantic-based chart configuration
+- [x] Add chart state management in session
+- [x] Implement chart refresh mechanism
+- [x] Implement dynamic axis selection (M)
 
-### 4. NLP Integration (P1)
-- [ ] Create `backend/prompts/` directory with templates (S)
+### 4. NLP Integration [IN PROGRESS] (P1)
+- [x] Create `backend/prompts/` directory with templates (S)
 - [ ] Implement OpenAI GPT-4o-mini API connection (M)
 - [ ] Design system prompt for chart modification (L)
 - [ ] Create function to parse user intent from messages (L)
@@ -61,7 +65,7 @@
 **Goal**: Create a minimal viable product with basic chart creation and simple NLP modifications
 
 **Key Features**:
-- Basic Gradio UI with chart and chat
+- Basic Streamlit UI with chart and chat
 - Sample dataset visualization
 - Simple chart modifications via text commands
 

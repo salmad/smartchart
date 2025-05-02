@@ -5,9 +5,9 @@
 ## Completed
 - [x] Project structure setup
 - [x] Initial documentation
-- [x] Basic app skeleton
+- [x] Basic app skeleton (Streamlit)
+- [x] Chart visualization module
 - [x] Basic Gradio UI (two-column layout, chat interface, event handlers)
-- [x] Chart visualization module (sample data, Plotly renderer)
 
 ## In Progress
 - [ ] Chart state management in session

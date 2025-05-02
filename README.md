@@ -20,7 +20,14 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+## Running the App
+
+### Streamlit Version (Recommended)
+```bash
+streamlit run backend/streamlit_app.py
+```
+
+### Gradio Version (Legacy)
 ```bash
 python backend/app.py
 ```
@@ -41,4 +48,3 @@ python backend/app.py
 ├── .gitignore
 ├── requirements.txt
 └── README.md
-```
