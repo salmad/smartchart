@@ -1,69 +1,92 @@
 # SmartChart
 
-Interactive chart creation and modification application with natural language processing. Reflex Python project where you chat with charts. "Plot sales by month" and you get a stunning buridan ui / recharts chart.
+Interactive chart creation and modification application with natural language processing.
 
-## Tech
-This is a python only project. Use python for backend and python reflex for frontend work. Refer to documentation so that you code better (reflex is quite new library and llms prone to mistakes)
+## Tech Stack
 
-Buridan ui for shadcn components. I think it has recharts access for stunning charts. Charts need to be great, hence rendered by best js libraries like recharts.
-
-## Features
-- Create interactive shadcn charts (from within reflex python framework)
-- Modify charts using natural language commands
-
+- **Framework**: React + TypeScript + Vite
+- **UI Components**: shadcn/ui with Tailwind CSS
+- **Charts**: Recharts
+- **NLP**: Google Gemini API (to be integrated)
 
 ## Setup
-1. virtual environment created in .venv folder:
+
+1. Install dependencies:
 ```bash
-python -m venv .venv # only first time
-.venv\Scripts\activate # to activate
+npm install
 ```
 
-2. Install dependencies:
+2. Create `.env` file from `.env.example`:
 ```bash
-pip install -r requirements.txt
+copy .env.example .env  # Windows
+cp .env.example .env    # Mac/Linux
+```
+
+3. Add your Gemini API key to `.env`:
+```
+VITE_GEMINI_API_KEY=your_api_key_here
 ```
 
 ## Running the App
 
-1. Activate virtual environment:
 ```bash
-.venv\Scripts\activate  # Windows
-source .venv/bin/activate  # Mac/Linux
+npm run dev
 ```
 
-2. Run the development server:
-```bash
-reflex run
-# or if reflex command not found:
-python -m reflex run
-```
-
-3. Open your browser at `http://localhost:3000`
-
+Open your browser at `http://localhost:5173`
 
 ## Project Structure
 
 ```
-smartchart/
-├── smartchart/              # Main application package
-│   ├── __init__.py
-│   ├── smartchart.py        # App entry point and routing
-│   ├── state.py             # State management (ChartState)
-│   └── components/          # Reusable UI components
-│       ├── __init__.py
-│       ├── chat.py          # Chat interface
-│       └── chart.py         # Chart rendering
-├── rxconfig.py              # Reflex configuration
-├── requirements.txt         # Python dependencies
-├── .env                     # Environment variables (API keys)
-├── .env.example             # Example env file
-└── knowledge.md             # Project documentation
+src/
+├── components/
+│   ├── ui/              # shadcn/ui components
+│   ├── ChartPanel.tsx   # Chart rendering
+│   └── ChatPanel.tsx    # Chat interface
+├── lib/
+│   └── utils.ts         # Utility functions
+├── App.tsx              # Main app component
+├── main.tsx             # Entry point
+└── index.css            # Global styles
 ```
 
-rules - separation of concerns, following best practices and documentation of Reflex for better coding. In general reflex app should follow best practices of react apps in terms of structure (thi is how it was created)
-UI components - please use shadcn 
+## Features
 
-# Design and styling
-Great and bold colors from Linear or Revolut - modern web apps, minimalist and design led. Canvas as well. In general inspire yourself from these companies. Build like atproduct manager (at product led company like linear) and engineer in one.
+- 📊 **Premium Interactive Charts** - Recharts with gradient fills and sophisticated styling
+- 💬 **AI-Ready Chat Interface** - Natural language commands with empty states and suggestions
+- 🎨 **Framer-Template Quality UI** - shadcn/ui components with Linear/Revolut/Canvas inspiration
+- ✨ **Glass Morphism Design** - Backdrop blur, gradient mesh backgrounds, colored shadows
+- 🚀 **Lightning Fast** - Vite for instant HMR and optimized builds
+- 📱 **Fully Responsive** - Beautiful on all screen sizes
+- ♿ **Accessible** - ARIA labels, keyboard navigation, semantic HTML
 
+## Design System
+
+**Premium quality required** - see [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) and [knowledge.md](./knowledge.md)
+
+- Always use shadcn/ui components (`npx shadcn@latest add <component>`)
+- Follow spacing rules: p-8 for cards, gap-8 for layouts
+- Glass morphism + gradient accents + colored shadows
+- Purple primary (#8B5CF6), gradient text, smooth transitions
+
+## Code Standards
+
+- TypeScript strict, no `any` types
+- shadcn/ui only - never build UI from scratch
+- Tailwind classes only - no inline styles  
+- ARIA labels, semantic HTML, keyboard nav
+- See DESIGN_SYSTEM.md for styling patterns
+
+## Future Enhancements
+
+- 🤖 AI integration with Gemini API for chart modifications
+- 📈 More chart types (line, area, pie, scatter)
+- 📊 Advanced customization options
+- 📁 Data import from CSV/Excel/APIs
+- 🖼️ Export charts as images/PDFs
+- 👤 User authentication and saved charts
+- 🤝 Real-time collaboration
+
+## Contributing
+
+Use [.github/PULL_REQUEST_TEMPLATE.md](./.github/PULL_REQUEST_TEMPLATE.md) checklist. Every component must look premium.

@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Premium background colors - inspired by Linear's depth */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    /* Card with subtle elevation */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    /* Bold primary - Linear purple with Revolut energy */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Subtle secondary - Canvas sophistication */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    
+    /* Accent with energy */
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Refined borders */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
+    
+    /* Premium chart colors - Linear/Revolut/Framer inspired */
+    --chart-1: 262 80% 60%;   /* Vibrant Purple - primary accent */
+    --chart-2: 199 89% 48%;   /* Ocean Blue - professional depth */
+    --chart-3: 142 71% 45%;   /* Emerald Green - growth indicator */
+    --chart-4: 280 65% 60%;   /* Rich Violet - premium secondary */
+    --chart-5: 24 95% 53%;    /* Warm Amber - energy & attention */
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Premium typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  /* Premium gradients */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--chart-1)) 0%, hsl(var(--chart-4)) 100%);
+  }
+  
+  .gradient-mesh {
+    background:
+      radial-gradient(at 27% 37%, hsla(262, 80%, 60%, 0.12) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsla(199, 89%, 48%, 0.12) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsla(142, 71%, 45%, 0.12) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, hsla(280, 65%, 60%, 0.12) 0px, transparent 50%),
+      radial-gradient(at 97% 96%, hsla(24, 95%, 53%, 0.12) 0px, transparent 50%),
+      radial-gradient(at 33% 50%, hsla(199, 89%, 48%, 0.08) 0px, transparent 50%),
+      radial-gradient(at 79% 53%, hsla(262, 80%, 60%, 0.08) 0px, transparent 50%);
+  }
+  
+  /* Glass morphism */
+  .glass {
+    @apply backdrop-blur-xl bg-white/80 border border-white/20;
+  }
+  
+  .glass-dark {
+    @apply backdrop-blur-xl bg-black/40 border border-white/10;
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+}
