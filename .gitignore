@@ -1,3 +1,7 @@
+.states
+.web
+*.db
+assets/external/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -5,7 +9,10 @@ __pycache__/
 
 # Virtual environment
 venv/
+.venv/
 .env
+.env.local
+!.env.example
 
 # Logs
 *.log
@@ -25,3 +32,8 @@ venv/
 
 # Windsurf rules
 .windsurfrules
+
+# Reflex
+.web/
+assets/
+rxconfig.json
