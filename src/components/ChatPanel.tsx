@@ -1,24 +1,32 @@
 import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
-import { Send, Sparkles, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { Badge } from './ui/badge'
+import { Send, Sparkles, AlertCircle, RefreshCw, ThumbsUp, ThumbsDown, Loader2, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { modifyChart } from '@/lib/gemini'
 import type { ChartConfiguration } from '@/types/chart'
+import { TypingIndicator } from './TypingIndicator'
+import { MarkdownMessage } from './MarkdownMessage'
+import { staggerContainer, staggerItem } from '@/utils/animations'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   isError?: boolean
+  feedback?: 'positive' | 'negative'
 }
 
 interface ChatPanelProps {
   currentConfig: ChartConfiguration
   onConfigChange: (config: ChartConfiguration) => void
+  onClose?: () => void
 }
 
-export function ChatPanel({ currentConfig, onConfigChange }: ChatPanelProps) {
+export function ChatPanel({ currentConfig, onConfigChange, onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -37,11 +45,18 @@ export function ChatPanel({ currentConfig, onConfigChange }: ChatPanelProps) {
 
     const userMessage: Message = { role: 'user', content: input }
     setMessages((prev) => [...prev, userMessage])
+    const messageContent = input
     setInput('')
     setIsLoading(true)
 
+    // Show toast for user action
+    toast.success('Message sent', {
+      description: 'AI is analyzing your request...',
+      duration: 2000
+    })
+
     try {
-      const result = await modifyChart(currentConfig, input)
+      const result = await modifyChart(currentConfig, messageContent)
 
       if (result.success && result.configuration) {
         // Apply the new configuration
@@ -52,25 +67,56 @@ export function ChatPanel({ currentConfig, onConfigChange }: ChatPanelProps) {
           ...prev,
           { role: 'assistant', content: result.message },
         ])
+
+        // Success toast
+        toast.success('Chart updated!', {
+          description: result.message,
+          duration: 3000
+        })
       } else {
         // Add error message
         setMessages((prev) => [
           ...prev,
           { role: 'assistant', content: result.message, isError: true },
         ])
+
+        // Error toast
+        toast.error('Could not update chart', {
+          description: result.message,
+          duration: 4000
+        })
       }
     } catch (error) {
+      const errorMessage = 'Something went wrong. Please try again.'
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Something went wrong. Please try again.',
+          content: errorMessage,
           isError: true,
         },
       ])
+
+      toast.error('Request failed', {
+        description: errorMessage,
+        duration: 4000
+      })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleFeedback = (index: number, feedbackType: 'positive' | 'negative') => {
+    setMessages((prev) =>
+      prev.map((msg, i) =>
+        i === index ? { ...msg, feedback: feedbackType } : msg
+      )
+    )
+
+    toast.success(feedbackType === 'positive' ? 'Thanks for the feedback!' : 'Feedback noted', {
+      description: 'We\'ll use this to improve our responses.',
+      duration: 2000
+    })
   }
 
   const retrySend = (messageContent: string) => {
@@ -85,17 +131,30 @@ export function ChatPanel({ currentConfig, onConfigChange }: ChatPanelProps) {
   }
 
   return (
-    <Card className="glass border-slate-200/60 shadow-2xl shadow-blue-500/10 group hover:shadow-blue-500/20 transition-smooth flex flex-col h-[680px] overflow-hidden">
+    <Card className="glass border-l-2 border-slate-200/60 shadow-2xl shadow-blue-500/10 transition-smooth flex flex-col h-full lg:h-[600px] overflow-hidden rounded-l-none lg:rounded-l-none rounded-l-2xl">
       {/* Gradient accent bar */}
       <div className="h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
-      
+
       <CardHeader className="space-y-3 pb-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-600" />
-            <span className="text-xs font-medium text-purple-600">AI ASSISTANT</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-medium text-purple-600">AI ASSISTANT</span>
+            </div>
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8 rounded-lg hover:bg-slate-100 transition-smooth"
+                aria-label="Close AI Assistant"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
             Chat Interface
           </CardTitle>
           <p className="text-sm text-slate-500 font-medium">Ask anything about your data</p>
@@ -106,78 +165,130 @@ export function ChatPanel({ currentConfig, onConfigChange }: ChatPanelProps) {
         <ScrollArea ref={scrollRef} className="flex-1">
           <div className="space-y-4 pr-4">
             {messages.length === 0 ? (
-              <div className="min-h-[400px] flex items-center justify-center">
-                <div className="text-center space-y-4 max-w-sm">
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-purple-600" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold text-slate-900">Start a conversation</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      Try asking: "Change to a line chart" or "Show only Product A"
+              <motion.div
+                className="flex items-center justify-center py-8"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
+                <div className="text-center space-y-3 max-w-[280px]">
+                  <motion.div
+                    className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center"
+                    variants={staggerItem}
+                  >
+                    <Sparkles className="w-6 h-6 text-purple-600" />
+                  </motion.div>
+                  <motion.div className="space-y-1.5" variants={staggerItem}>
+                    <h3 className="text-base font-semibold text-slate-900">Start chatting</h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Try "Change to a line chart" or "Show Product A only"
                     </p>
-                  </div>
+                  </motion.div>
 
                   {/* Suggested prompts */}
-                  <div className="flex flex-wrap gap-2 justify-center pt-4">
-                    {['Change to line chart', 'Add more data points', 'Change colors'].map((prompt) => (
+                  <motion.div
+                    className="flex flex-wrap gap-2 pt-3 justify-center"
+                    variants={staggerItem}
+                  >
+                    {[
+                      'Change to line chart',
+                      'Hide Product C',
+                      'Only Q1 and Q2'
+                    ].map((prompt) => (
                       <button
                         key={prompt}
                         onClick={() => setInput(prompt)}
-                        className="px-3 py-1.5 text-xs font-medium rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
+                        className="group px-3.5 py-2 rounded-lg bg-slate-50/80 hover:bg-purple-50 border border-slate-200/50 hover:border-purple-300/60 transition-all duration-200"
                       >
-                        {prompt}
+                        <span className="text-sm text-slate-600 group-hover:text-purple-700 transition-colors">
+                          {prompt}
+                        </span>
                       </button>
                     ))}
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             ) : (
               <div className="space-y-4 py-2">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/30'
-                          : message.isError
-                          ? 'bg-rose-50 text-rose-900 border border-rose-200'
-                          : 'bg-slate-100 text-slate-900 border border-slate-200'
-                      }`}
+                <AnimatePresence mode="popLayout">
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={index}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
                     >
-                      {message.isError && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <AlertCircle className="w-4 h-4 text-rose-600" />
-                          <span className="text-xs font-semibold text-rose-700">Error</span>
-                        </div>
-                      )}
-                      <p className="text-sm leading-relaxed font-medium">{message.content}</p>
-                      {message.isError && (
-                        <button
-                          onClick={() => retrySend(messages[index - 1]?.content || '')}
-                          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-rose-700 hover:text-rose-800 transition-colors"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Retry
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/30'
+                            : message.isError
+                            ? 'bg-rose-50 text-rose-900 border border-rose-200'
+                            : 'bg-white/90 backdrop-blur-sm text-slate-900 border border-slate-200/60 shadow-lg'
+                        }`}
+                      >
+                        {message.isError && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                            <span className="text-xs font-semibold text-rose-700">Error</span>
+                          </div>
+                        )}
 
-                {/* Loading indicator */}
-                {isLoading && (
-                  <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-slate-100 border border-slate-200">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
-                        <p className="text-sm font-medium text-slate-600">Analyzing your request...</p>
+                        {message.role === 'user' ? (
+                          <p className="text-sm leading-relaxed font-medium">{message.content}</p>
+                        ) : (
+                          <MarkdownMessage content={message.content} />
+                        )}
+
+                        {message.isError && (
+                          <button
+                            onClick={() => retrySend(messages[index - 1]?.content || '')}
+                            className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-rose-700 hover:text-rose-800 transition-colors"
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            Retry
+                          </button>
+                        )}
+
+                        {/* Feedback buttons for assistant messages */}
+                        {message.role === 'assistant' && !message.isError && (
+                          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-200/60">
+                            <span className="text-xs text-slate-500 mr-1">Helpful?</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-7 px-2 ${message.feedback === 'positive' ? 'bg-emerald-50 text-emerald-700' : ''}`}
+                              onClick={() => handleFeedback(index, 'positive')}
+                            >
+                              <ThumbsUp className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-7 px-2 ${message.feedback === 'negative' ? 'bg-rose-50 text-rose-700' : ''}`}
+                              onClick={() => handleFeedback(index, 'negative')}
+                            >
+                              <ThumbsDown className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Typing indicator */}
+                {isLoading && (
+                  <motion.div
+                    className="flex justify-start"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                  >
+                    <TypingIndicator />
+                  </motion.div>
                 )}
               </div>
             )}
@@ -208,21 +319,7 @@ export function ChatPanel({ currentConfig, onConfigChange }: ChatPanelProps) {
           </div>
         </form>
         
-        {/* Quick actions */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
-          <span>Quick actions:</span>
-          <div className="flex gap-1.5">
-            {[{ emoji: '📊', label: 'Chart types' }, { emoji: '📈', label: 'Analytics' }, { emoji: '🎨', label: 'Styling' }].map((action, i) => (
-              <button
-                key={i}
-                aria-label={action.label}
-                className="w-6 h-6 rounded-md hover:bg-slate-100 transition-colors flex items-center justify-center"
-              >
-                {action.emoji}
-              </button>
-            ))}
-          </div>
-        </div>
+        
       </CardContent>
     </Card>
   )
