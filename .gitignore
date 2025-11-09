@@ -63,3 +63,9 @@ dist-ssr
 .web/
 assets/
 rxconfig.json
+
+# Temporary documentation
+/docs/temp/
+*.TODO.md
+*-WIP.md
+*-NOTES.md

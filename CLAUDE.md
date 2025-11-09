@@ -162,12 +162,16 @@ Key requirements:
 - [ ] No inline styles, TypeScript strict
 - [ ] Looks like a $200 Framer template
 
-## Key Files to Reference
+## Documentation
 
-- **knowledge.md** - Detailed project knowledge, design principles, UI/UX standards
-- **DESIGN_SYSTEM.md** - Complete design specification with component patterns, colors, spacing
-- **README.md** - Quick start guide, tech stack, features
-- **.github/PULL_REQUEST_TEMPLATE.md** - Quality checklist for all changes
+**Permanent (committed):**
+- **docs/DESIGN_SYSTEM.md** - Component patterns, colors, spacing
+- **docs/README.md** - Setup and features
+- **docs/adr/ARCHITECTURE.md** - Architecture decision records
+- **.github/PULL_REQUEST_TEMPLATE.md** - Quality checklist
+
+**Temporary (gitignored):**
+Store in `docs/temp/`. Examples: `2025-11-09-STATUS.md`, `IMPLEMENTATION_PLAN.md`
 
 ## Future Roadmap
 
