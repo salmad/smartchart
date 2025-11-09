@@ -1,32 +1,24 @@
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Button } from './ui/button'
-import { ScrollArea } from './ui/scroll-area'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { BarChart3, LineChart as LineChartIcon, Settings, X, Palette } from 'lucide-react'
-import type { ChartConfiguration } from '@/types/chart'
-import { getAllPalettes, getPaletteColors } from '@/lib/palettes'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { ScrollArea } from '@/shared/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import { BarChart3, LineChart as LineChartIcon, Settings, Palette } from 'lucide-react'
+import { CloseButton } from '@/shared/components/CloseButton'
+import { getAllPalettes, getPaletteColors } from '@/shared/lib/palettes'
+import { useChartConfig } from '@/app/providers/ChartConfigProvider'
+import type { ColorPalette } from '@/shared/types/chart'
 
 interface SettingsPanelProps {
-  config: ChartConfiguration
-  onConfigChange: (config: ChartConfiguration) => void
   onClose: () => void
 }
 
-export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanelProps) {
+export function SettingsPanel({ onClose }: SettingsPanelProps) {
+  const { config, updateStyling, setChartType, toggleDataLabels } = useChartConfig()
   const { data, styling } = config
   const { seriesNames } = data
   const { chartType, seriesTypes, showDataLabels, selectedPalette } = styling
 
-  // Helper to update styling
-  const updateStyling = (updates: Partial<typeof styling>) => {
-    onConfigChange({
-      ...config,
-      styling: { ...styling, ...updates },
-    })
-  }
-
-  // Handle palette change
-  const handlePaletteChange = (paletteId: typeof selectedPalette) => {
+  const handlePaletteChange = (paletteId: ColorPalette) => {
     const newColors = getPaletteColors(paletteId)
     updateStyling({
       selectedPalette: paletteId,
@@ -34,13 +26,11 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
     })
   }
 
-  // Get all available palettes
   const palettes = getAllPalettes()
-  const currentPalette = palettes.find(p => p.id === selectedPalette)
+  const currentPalette = palettes.find((p) => p.id === selectedPalette)
 
   return (
     <Card className="glass border-slate-200/60 shadow-2xl shadow-purple-500/10 h-full flex flex-col overflow-hidden">
-      {/* Gradient accent bar */}
       <div className="h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-emerald-600" />
 
       <CardHeader className="space-y-3 pb-6 flex-shrink-0">
@@ -51,19 +41,9 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
               Settings
             </CardTitle>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="transition-smooth hover:bg-slate-100"
-            aria-label="Close settings"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          <CloseButton onClick={onClose} className="transition-smooth hover:bg-slate-100" />
         </div>
-        <p className="text-sm text-slate-500 font-medium">
-          Customize your chart appearance
-        </p>
+        <p className="text-sm text-slate-500 font-medium">Customize your chart appearance</p>
       </CardHeader>
 
       <CardContent className="flex-1 min-h-0 pb-8">
@@ -71,14 +51,12 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
           <div className="space-y-6">
             {/* Chart type selector */}
             <div className="space-y-3">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                Chart Type
-              </label>
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Chart Type</label>
               <div className="flex flex-col gap-2">
                 <Button
                   variant={chartType === 'bar' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => updateStyling({ chartType: 'bar' })}
+                  onClick={() => setChartType('bar')}
                   className="w-full justify-start"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
@@ -87,7 +65,7 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
                 <Button
                   variant={chartType === 'line' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => updateStyling({ chartType: 'line' })}
+                  onClick={() => setChartType('line')}
                   className="w-full justify-start"
                 >
                   <LineChartIcon className="w-4 h-4 mr-2" />
@@ -96,7 +74,7 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
                 <Button
                   variant={chartType === 'combined' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => updateStyling({ chartType: 'combined' })}
+                  onClick={() => setChartType('combined')}
                   className="w-full justify-start"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
@@ -108,9 +86,7 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
             {/* Series type selector (only for combined) */}
             {chartType === 'combined' && (
               <div className="space-y-3">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                  Series Types
-                </label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Series Types</label>
                 <div className="space-y-2">
                   {seriesNames.map((name) => (
                     <div key={name} className="space-y-1">
@@ -141,20 +117,13 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
 
             {/* Data labels toggle */}
             <div className="space-y-3">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                Data Labels
-              </label>
-              <Button
-                variant={showDataLabels ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => updateStyling({ showDataLabels: !showDataLabels })}
-                className="w-full"
-              >
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Data Labels</label>
+              <Button variant={showDataLabels ? 'default' : 'outline'} size="sm" onClick={toggleDataLabels} className="w-full">
                 {showDataLabels ? 'ON' : 'OFF'}
               </Button>
             </div>
 
-            {/* Color Palette Selector - Dropdown */}
+            {/* Color Palette Selector */}
             <div className="space-y-3">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                 <Palette className="w-3.5 h-3.5" />
@@ -202,9 +171,7 @@ export function SettingsPanel({ config, onConfigChange, onClose }: SettingsPanel
             </div>
 
             <div className="pt-4 border-t border-slate-200">
-              <p className="text-xs text-slate-500 italic">
-                💡 Click legend items in the chart to show/hide series
-              </p>
+              <p className="text-xs text-slate-500 italic">💡 Click legend items in the chart to show/hide series</p>
             </div>
           </div>
         </ScrollArea>
