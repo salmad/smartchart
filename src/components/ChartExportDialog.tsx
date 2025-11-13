@@ -29,9 +29,7 @@ interface ChartExportDialogProps {
 
 export function ChartExportDialog({
   open,
-  onOpenChange,
-  chartRef,
-  chartConfig
+  onOpenChange
 }: ChartExportDialogProps) {
   const [selectedFormat, setSelectedFormat] = useState<'png' | 'svg' | 'json'>('png')
   const [isExporting, setIsExporting] = useState(false)
