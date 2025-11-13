@@ -11,7 +11,7 @@ import { TypingIndicator } from '@/shared/components/TypingIndicator'
 import { MarkdownMessage } from '@/shared/components/MarkdownMessage'
 import { staggerContainer, staggerItem } from '@/shared/lib/animations'
 import { useChatMessages } from '../hooks/useChatMessages'
-import { geminiService } from '@/services/ai'
+import { aiService } from '@/services/ai'
 import { useChartConfig } from '@/app/providers/ChartConfigProvider'
 
 interface ChatPanelProps {
@@ -21,7 +21,7 @@ interface ChatPanelProps {
 export function ChatPanel({ onClose }: ChatPanelProps) {
   const { config, updateConfig } = useChartConfig()
   const { messages, isLoading, sendMessage, setFeedback } = useChatMessages({
-    aiService: geminiService,
+    aiService: aiService,
     currentConfig: config,
     onConfigChange: updateConfig,
   })
@@ -103,7 +103,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                   <motion.div className="space-y-1.5" variants={staggerItem}>
                     <h3 className="text-base font-semibold text-slate-900">Start chatting</h3>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      Try "Change to a line chart" or "Show Product A only"
+                      Try "Change to a line chart" or simply copy-paste your data in any format
                     </p>
                   </motion.div>
 

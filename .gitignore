@@ -69,3 +69,4 @@ rxconfig.json
 *.TODO.md
 *-WIP.md
 *-NOTES.md
+.vercel

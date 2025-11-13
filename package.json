@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npx vercel --prod",
+    "deploy:preview": "npx vercel"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-context-menu": "^2.2.16",

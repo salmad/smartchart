@@ -48,9 +48,9 @@ function AppContent() {
           </motion.h1>
 
           <motion.p className="text-lg text-slate-600 max-w-2xl mx-auto font-medium" variants={staggerItem}>
-            Transform data into stunning visualizations with natural language.
+            Tired of ugly excel charts? Transform data into stunning visuals.
             <br />
-            <span className="text-slate-500 text-base">Try chatting with the AI to modify your chart.</span>
+            <span className="text-slate-500 text-base">Just paste your data and chat to the chart.</span>
           </motion.p>
         </motion.div>
 
