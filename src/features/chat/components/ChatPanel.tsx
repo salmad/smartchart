@@ -64,7 +64,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   }
 
   return (
-    <Card className="glass border-l-2 border-slate-200/60 shadow-2xl shadow-blue-500/10 transition-smooth flex flex-col h-full lg:h-[600px] overflow-hidden rounded-l-none lg:rounded-l-none rounded-l-2xl">
+    <Card className="glass border-slate-200/60 shadow-2xl shadow-purple-500/10 h-full flex flex-col overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
 
       <CardHeader className="space-y-3 pb-6">
@@ -76,10 +76,10 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
             </div>
             {onClose && <CloseButton onClick={onClose} className="h-8 w-8 rounded-lg hover:bg-slate-100 transition-smooth" />}
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
+          {/* <CardTitle className="text-2xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
             Chat Interface
-          </CardTitle>
-          <p className="text-sm text-slate-500 font-medium">Ask anything about your data</p>
+          </CardTitle> */}
+          {/* <p className="text-sm text-slate-500 font-medium">Ask anything about your data</p> */}
         </div>
       </CardHeader>
 

@@ -2,20 +2,15 @@ import { motion } from 'framer-motion'
 import { Button } from '@/shared/components/ui/button'
 import { MessageSquare, Settings } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeInUp } from '@/shared/lib/animations'
-import { useKeyboardShortcut } from '@/shared/hooks/useKeyboardShortcuts'
 import { SidebarPanel } from '@/shared/components/SidebarPanel'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { ChartPanel } from '@/features/chart'
 import { ChatPanel } from '@/features/chat'
 import { SettingsPanel } from '@/features/settings'
-import { CommandPalette } from '@/shared/components/CommandPalette'
 import { useUIState } from '@/app/providers/UIStateProvider'
 
 function AppContent() {
   const { isChatOpen, isSettingsOpen, toggleChat, toggleSettings } = useUIState()
-
-  // Keyboard shortcut: Cmd+Shift+K or Ctrl+Shift+K to toggle chat
-  useKeyboardShortcut('k', toggleChat, { shiftKey: true })
 
   return (
     <div className="min-h-screen gradient-mesh relative overflow-hidden">
@@ -67,7 +62,7 @@ function AppContent() {
           </SidebarPanel>
 
           {/* Settings Toggle Button - Floating when settings is closed */}
-          {!isSettingsOpen && (
+          {/* {!isSettingsOpen && (
             <motion.div
               className="fixed left-4 bottom-6 lg:left-8 lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto z-40"
               initial={{ opacity: 0, x: -20 }}
@@ -84,7 +79,7 @@ function AppContent() {
                 <Settings className="w-6 h-6" />
               </Button>
             </motion.div>
-          )}
+          )} */}
 
           {/* Chart Panel - Takes remaining space */}
           <motion.div
@@ -143,8 +138,7 @@ function AppContent() {
         </motion.div>
       </div>
 
-      {/* Command Palette */}
-      <CommandPalette />
+      
     </div>
   )
 }
