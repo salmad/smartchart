@@ -122,9 +122,17 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
             cursor: 'pointer',
           }}
           iconType="circle"
-          formatter={(value) => (
-            <span style={{ opacity: hiddenSeries.includes(value) ? 0.3 : 1 }}>{value}</span>
-          )}
+          formatter={(value) => {
+            const isHidden = hiddenSeries.includes(value)
+            return (
+              <span style={{
+                opacity: isHidden ? 0.3 : 1,
+                color: isHidden ? '#94a3b8' : '#0f172a'
+              }}>
+                {value}
+              </span>
+            )
+          }}
         />
         {renderSeries()}
       </ChartComponent>
