@@ -35,8 +35,7 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
 
   const renderSeries = () =>
     seriesNames.map((name, idx) => {
-      if (hiddenSeries.includes(name)) return null
-
+      const isHidden = hiddenSeries.includes(name)
       const color = seriesColors[idx]
       const type = chartType === 'combined' ? seriesTypes[name] : chartType
       const fillColor = type === 'bar' ? `url(#${color.gradient})` : 'none'
@@ -45,12 +44,13 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
       const commonSeriesProps = {
         dataKey: name,
         strokeWidth: 2,
+        hide: isHidden,
       }
 
       if (type === 'bar') {
         return (
           <Bar key={name} {...commonSeriesProps} fill={fillColor} radius={[8, 8, 0, 0]}>
-            {showDataLabels && (
+            {showDataLabels && !isHidden && (
               <LabelList
                 position="top"
                 style={{ fontSize: '11px', fontWeight: 600, fill: '#64748b' }}
@@ -69,7 +69,7 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
             dot={{ fill: strokeColor, r: 4 }}
             activeDot={{ r: 6 }}
           >
-            {showDataLabels && (
+            {showDataLabels && !isHidden && (
               <LabelList
                 position="top"
                 style={{ fontSize: '11px', fontWeight: 600, fill: '#64748b' }}
