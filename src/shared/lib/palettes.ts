@@ -13,6 +13,26 @@ export interface PaletteMetadata {
  * Each palette is executive-ready with carefully selected color harmonies
  */
 export const COLOR_PALETTES: Record<ColorPalette, PaletteMetadata> = {
+   revolut: {
+    id: 'revolut',
+    name: 'High Energy',
+    description: 'High-energy, fintech-inspired, dynamic',
+    colors: [
+      { gradient: 'colorA', solid: 'hsl(210, 100%, 56%)' }, // Electric Blue
+      { gradient: 'colorB', solid: 'hsl(270, 100%, 65%)' }, // Neon Purple
+      { gradient: 'colorC', solid: 'hsl(330, 100%, 70%)' }, // Cyber Pink
+      { gradient: 'colorD', solid: 'hsl(160, 84%, 45%)' },  // Tech Green
+      { gradient: 'colorE', solid: 'hsl(25, 100%, 58%)' },  // Volt Orange
+    ],
+    previewColors: [
+      'hsl(210, 100%, 56%)',
+      'hsl(270, 100%, 65%)',
+      'hsl(330, 100%, 70%)',
+      'hsl(160, 84%, 45%)',
+      'hsl(25, 100%, 58%)',
+    ],
+  },
+  
   founder: {
     id: 'founder',
     name: 'Founder Mode',
@@ -73,25 +93,7 @@ export const COLOR_PALETTES: Record<ColorPalette, PaletteMetadata> = {
     ],
   },
 
-  revolut: {
-    id: 'revolut',
-    name: 'Revolut Energy',
-    description: 'High-energy, fintech-inspired, dynamic',
-    colors: [
-      { gradient: 'colorA', solid: 'hsl(210, 100%, 56%)' }, // Electric Blue
-      { gradient: 'colorB', solid: 'hsl(270, 100%, 65%)' }, // Neon Purple
-      { gradient: 'colorC', solid: 'hsl(330, 100%, 70%)' }, // Cyber Pink
-      { gradient: 'colorD', solid: 'hsl(160, 84%, 45%)' },  // Tech Green
-      { gradient: 'colorE', solid: 'hsl(25, 100%, 58%)' },  // Volt Orange
-    ],
-    previewColors: [
-      'hsl(210, 100%, 56%)',
-      'hsl(270, 100%, 65%)',
-      'hsl(330, 100%, 70%)',
-      'hsl(160, 84%, 45%)',
-      'hsl(25, 100%, 58%)',
-    ],
-  },
+ 
 
   linear: {
     id: 'linear',
