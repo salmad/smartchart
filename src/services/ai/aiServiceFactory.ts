@@ -12,10 +12,13 @@ class AIServiceWithFallback implements AIService {
 
   async modifyChart(
     currentConfig: ChartConfiguration,
-    userMessage: string
+    userMessage: string,
+    useWebSearch = false
   ): Promise<ChatResponse> {
+    console.log('AIServiceWithFallback.modifyChart called with useWebSearch:', useWebSearch)
+
     // Try primary service (Claude) first
-    const primaryResponse = await this.primaryService.modifyChart(currentConfig, userMessage)
+    const primaryResponse = await this.primaryService.modifyChart(currentConfig, userMessage, useWebSearch)
 
     // If Claude succeeds, return the response
     if (primaryResponse.success) {
@@ -30,7 +33,7 @@ class AIServiceWithFallback implements AIService {
     }
 
     // Try fallback service (Gemini)
-    const fallbackResponse = await this.fallbackService.modifyChart(currentConfig, userMessage)
+    const fallbackResponse = await this.fallbackService.modifyChart(currentConfig, userMessage, useWebSearch)
 
     // If fallback succeeds, return with a note about using fallback
     if (fallbackResponse.success) {

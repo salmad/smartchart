@@ -22,6 +22,8 @@ export function useChatMessages({
     async (content: string, useWebSearch = false) => {
       if (!content.trim() || isLoading) return
 
+      console.log('useChatMessages.sendMessage called with useWebSearch:', useWebSearch)
+
       const userMessage: Message = { role: 'user', content }
       setMessages((prev) => [...prev, userMessage])
       setIsLoading(true)
@@ -32,6 +34,7 @@ export function useChatMessages({
       })
 
       try {
+        console.log('useChatMessages: Calling aiService.modifyChart with useWebSearch:', useWebSearch)
         const result = await aiService.modifyChart(currentConfig, content, useWebSearch)
 
         if (result.success && result.configuration) {

@@ -16,6 +16,10 @@ class ClaudeService implements AIService {
     userMessage: string,
     useWebSearch = false
   ): Promise<ChatResponse> {
+    console.log('=== ClaudeService.modifyChart called ===')
+    console.log('useWebSearch parameter:', useWebSearch)
+    console.log('userMessage:', userMessage)
+
     if (!anthropic) {
       return {
         success: false,
@@ -116,13 +120,23 @@ ${
 
       // Add web search tool if enabled
       if (useWebSearch) {
+        console.log('Adding web_search tool to API request')
         messageParams.tools = [
           {
             type: 'web_search_20250305',
             name: 'web_search',
           } as any,
         ]
+        console.log('Tools added:', messageParams.tools)
+      } else {
+        console.log('Web search NOT enabled - no tools added')
       }
+
+      console.log('Calling Claude API with params:', {
+        model: messageParams.model,
+        hasTools: !!messageParams.tools,
+        toolsCount: messageParams.tools?.length || 0,
+      })
 
       const message = await anthropic.messages.create(messageParams)
 

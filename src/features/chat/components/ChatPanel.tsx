@@ -43,6 +43,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
 
     const messageContent = input
     const searchEnabled = useWebSearch
+    console.log('ChatPanel.handleSend - Web search enabled:', searchEnabled)
     setInput('')
     setUseWebSearch(false) // Reset toggle after sending (per-message behavior)
     await sendMessage(messageContent, searchEnabled)
