@@ -70,3 +70,10 @@ rxconfig.json
 *-WIP.md
 *-NOTES.md
 .vercel
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Test files
+test_slide_output.html
+test_slides.py
