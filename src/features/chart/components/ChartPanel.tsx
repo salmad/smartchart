@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Settings } from 'lucide-react'
 import { PanelCard } from '@/shared/components/PanelCard'
 import { ChartRenderer } from './ChartRenderer'
+import { Sources } from '@/shared/components/Sources'
 import { useChartConfig } from '@/app/providers/ChartConfigProvider'
 
 interface ChartPanelProps {
@@ -12,7 +13,7 @@ interface ChartPanelProps {
 }
 
 export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
-  const { config, setTitle, setSubtitle, toggleSeries } = useChartConfig()
+  const { config, sources, setTitle, setSubtitle, toggleSeries } = useChartConfig()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
 
   const { title, subtitle } = config.styling
@@ -98,6 +99,9 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
             <div className="rounded-xl bg-gradient-to-br from-slate-50/50 to-white p-6 border border-slate-100">
               <ChartRenderer config={config} onSeriesToggle={toggleSeries} />
             </div>
+
+            {/* Display sources below the chart */}
+            <Sources sources={sources} />
           </div>
         </CardContent>
       </PanelCard>

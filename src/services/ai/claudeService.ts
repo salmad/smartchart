@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ChartConfiguration } from '@/shared/types/chart'
-import type { AIService, ChatResponse } from './types'
+import type { AIService, ChatResponse, WebSource } from './types'
 
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
@@ -13,7 +13,8 @@ const anthropic = apiKey ? new Anthropic({ apiKey, dangerouslyAllowBrowser: true
 class ClaudeService implements AIService {
   async modifyChart(
     currentConfig: ChartConfiguration,
-    userMessage: string
+    userMessage: string,
+    useWebSearch = false
   ): Promise<ChatResponse> {
     if (!anthropic) {
       return {
@@ -23,7 +24,9 @@ class ClaudeService implements AIService {
     }
 
     try {
-      const prompt = `You are a chart configuration expert. The user wants to modify their chart.
+      const prompt = `You are a chart configuration expert. The user wants to modify their chart${
+        useWebSearch ? ' and has enabled web search to find data online' : ''
+      }.
 
 Current Chart Configuration:
 ${JSON.stringify(currentConfig, null, 2)}
@@ -31,11 +34,13 @@ ${JSON.stringify(currentConfig, null, 2)}
 User Request: "${userMessage}"
 
 Your task is to:
-1. Analyze the user's request
-2. Modify the chart configuration accordingly
-3. Return ONLY a valid JSON object with two keys:
+1. Analyze the user's request${useWebSearch ? '\n2. If needed, use web search to find relevant data' : ''}
+${useWebSearch ? '3' : '2'}. Modify the chart configuration accordingly
+${useWebSearch ? '4' : '3'}. Return ONLY a valid JSON object with ${useWebSearch ? 'three' : 'two'} keys:
    - "configuration": The updated ChartConfiguration object
-   - "message": A friendly message explaining what you changed (1-2 sentences)
+   - "message": A friendly message explaining what you changed and ${useWebSearch ? 'what data you found ' : ''}(2-3 sentences)${
+        useWebSearch ? '\n   - "sources": Array of web sources used (if any) with {title, url, description}' : ''
+      }
 
 Rules:
 - Keep data structure consistent (same xAxisKey format)
@@ -45,16 +50,22 @@ Rules:
 - Series types: 'bar' or 'line'
 - If user asks to change data, modify dataPoints array
 - If user asks about styling (colors, type, labels), modify styling object
-- Preserve seriesNames consistency with dataPoints keys
+- Preserve seriesNames consistency with dataPoints keys${
+        useWebSearch
+          ? '\n- When using web search, include the actual data you found in your message so the user knows what was used\n- Include all sources you used in the "sources" array'
+          : ''
+      }
 - Return valid JSON only, no markdown or code blocks
 
 Example response format:
 {
   "configuration": { ...updated config... },
-  "message": "I've changed your chart to a line chart and updated the colors to match your brand."
+  "message": "I've changed your chart to a line chart and updated the colors to match your brand."${
+    useWebSearch ? ',\n  "sources": [{title: "Example", url: "https://example.com", description: "Data source"}]' : ''
+  }
 }`
 
-      const message = await anthropic.messages.create({
+      const messageParams: Anthropic.MessageCreateParams = {
         model: 'claude-haiku-4-5',
         max_tokens: 4096,
         messages: [
@@ -63,8 +74,21 @@ Example response format:
             content: prompt,
           },
         ],
-      })
+      }
 
+      // Add web search tool if enabled
+      if (useWebSearch) {
+        messageParams.tools = [
+          {
+            type: 'web_search_20250305',
+            name: 'web_search',
+          } as any,
+        ]
+      }
+
+      const message = await anthropic.messages.create(messageParams)
+
+      // Extract text content from response (may come after tool use)
       const textContent = message.content.find((block) => block.type === 'text')
       if (!textContent || textContent.type !== 'text') {
         throw new Error('No text response from Claude')
@@ -90,11 +114,18 @@ Example response format:
           throw new Error('Configuration missing data or styling')
         }
 
-        return {
+        const response: ChatResponse = {
           success: true,
           configuration: parsed.configuration,
           message: parsed.message,
         }
+
+        // Include sources if they were provided
+        if (useWebSearch && parsed.sources && Array.isArray(parsed.sources)) {
+          response.sources = parsed.sources as WebSource[]
+        }
+
+        return response
       } catch (parseError) {
         console.error('Failed to parse AI response:', cleanedText, parseError)
         return {

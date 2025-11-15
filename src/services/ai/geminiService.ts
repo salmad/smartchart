@@ -13,7 +13,8 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null
 class GeminiService implements AIService {
   async modifyChart(
     currentConfig: ChartConfiguration,
-    userMessage: string
+    userMessage: string,
+    _useWebSearch = false
   ): Promise<ChatResponse> {
     if (!genAI) {
       return {
