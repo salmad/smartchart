@@ -290,6 +290,121 @@ function generateInsights(
 }
 
 /**
+ * Extract context and metadata from chart data
+ */
+function extractChartContext(
+  seriesNames: string[],
+  xAxisKey: string
+): {
+  metric: string
+  dimension: string
+  hasTimeData: boolean
+} {
+  // Determine if this is time-based data
+  const xAxisName = xAxisKey.toLowerCase()
+  const hasTimeData =
+    xAxisName.includes('quarter') ||
+    xAxisName.includes('month') ||
+    xAxisName.includes('year') ||
+    xAxisName.includes('date') ||
+    xAxisName.includes('period')
+
+  // Infer what we're measuring (metric)
+  const seriesText = seriesNames.join(' ').toLowerCase()
+  let metric = 'performance'
+
+  if (seriesText.includes('product')) {
+    metric = 'product performance'
+  } else if (seriesText.includes('region') || seriesText.includes('location')) {
+    metric = 'regional performance'
+  } else if (seriesText.includes('sales') || seriesText.includes('revenue')) {
+    metric = 'revenue'
+  } else if (seriesText.includes('customer')) {
+    metric = 'customer metrics'
+  } else if (seriesText.includes('market')) {
+    metric = 'market share'
+  }
+
+  // What dimension are we analyzing
+  let dimension = xAxisKey
+  if (hasTimeData) {
+    dimension = 'time period'
+  }
+
+  return { metric, dimension, hasTimeData }
+}
+
+/**
+ * Generate action-oriented title (the conclusion) based on data analysis
+ * This is the "so what" that the bullet points will support
+ */
+function generateActionTitle(
+  analysis: DataAnalysis,
+  context: ReturnType<typeof extractChartContext>
+): string {
+  const { series, overallTrend, dominantSeries, volatileSeries, topPerformer, underperformer } = analysis
+  const { metric, hasTimeData } = context
+
+  if (series.length === 0) {
+    return 'Further analysis required to determine strategic direction'
+  }
+
+  // Growth scenario - focus on scaling winner
+  if (overallTrend === 'growth' && dominantSeries && dominantSeries.growthRate && dominantSeries.growthRate > 15) {
+    return `Prioritize ${dominantSeries.name} to capitalize on ${Math.abs(dominantSeries.growthRate).toFixed(0)}% growth momentum`
+  }
+
+  // Strong performer - investment recommendation
+  if (topPerformer && topPerformer.trend === 'increasing' && series.length > 1) {
+    return `Scale ${topPerformer.name} operations to replicate success across portfolio`
+  }
+
+  // Volatility - stabilization needed
+  if (volatileSeries && series.length > 1) {
+    return `Address ${volatileSeries.name} volatility to improve ${metric} predictability`
+  }
+
+  // Performance gap - optimization opportunity
+  if (series.length > 1 && topPerformer && underperformer) {
+    const gap = topPerformer.average - underperformer.average
+    const gapPercent = ((gap / underperformer.average) * 100)
+    if (gapPercent > 50) {
+      return `Bridge ${gapPercent.toFixed(0)}% performance gap between ${topPerformer.name} and ${underperformer.name}`
+    }
+  }
+
+  // Decline scenario - intervention needed
+  if (overallTrend === 'decline') {
+    return `Implement turnaround strategy to reverse declining ${metric} trend`
+  }
+
+  // Mixed performance - focus recommendation
+  if (overallTrend === 'mixed' && dominantSeries) {
+    return `Consolidate focus on ${dominantSeries.name} while optimizing underperformers`
+  }
+
+  // Dominance scenario - maintain or diversify
+  if (dominantSeries && series.length > 1) {
+    const dominancePercent = (dominantSeries.total / series.reduce((sum, s) => sum + s.total, 0)) * 100
+    if (dominancePercent > 60) {
+      return `Diversify beyond ${dominantSeries.name} to reduce ${dominancePercent.toFixed(0)}% concentration risk`
+    } else {
+      return `Maintain ${dominantSeries.name} leadership while growing secondary categories`
+    }
+  }
+
+  // Stable performance - optimization or growth
+  if (overallTrend === 'stable' && topPerformer) {
+    return `Leverage stable ${metric} foundation to pursue strategic growth initiatives`
+  }
+
+  // Fallback - generic but still action-oriented
+  return hasTimeData
+    ? `Accelerate ${metric} growth through targeted resource allocation`
+    : `Optimize ${metric} across all categories for maximum efficiency`
+}
+
+/**
  * Format number with commas for readability
  */
 function formatNumber(num: number): string {
@@ -302,25 +417,31 @@ function formatNumber(num: number): string {
 export function generateSlideContent(config: ChartConfiguration): SlideContent {
   const { data, styling } = config
   const { dataPoints, xAxisKey, seriesNames } = data
-  const { title, subtitle } = styling
 
   // Filter out hidden series
   const visibleSeries = seriesNames.filter(
     name => !styling.hiddenSeries.includes(name)
   )
 
-  // Infer units
+  // Infer units and context
   const units = inferUnits(visibleSeries, dataPoints)
+  const context = extractChartContext(visibleSeries, xAxisKey)
 
-  // Generate chart title
-  const chartTitle = title || `${visibleSeries.join(', ')} by ${xAxisKey}`
+  // Perform analysis
+  const analysis = performDataAnalysis(dataPoints, visibleSeries, xAxisKey)
 
-  // Generate insights
+  // Generate action-oriented title (the conclusion)
+  const actionTitle = generateActionTitle(analysis, context)
+
+  // Generate chart title (descriptive, not action)
+  const chartTitle = styling.title || `${visibleSeries.join(', ')} by ${xAxisKey}`
+
+  // Generate insights (supporting evidence for the action title)
   const insights = generateInsights(dataPoints, visibleSeries, xAxisKey, units)
 
   return {
-    title: title || 'Performance Analysis',
-    subtitle: subtitle || undefined,
+    title: actionTitle,
+    subtitle: styling.subtitle || undefined,
     chartTitle,
     chartUnits: units,
     insights,
