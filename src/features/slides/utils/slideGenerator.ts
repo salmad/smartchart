@@ -1,13 +1,12 @@
 /**
- * Slide generation utility for creating McKinsey-style consulting slides
- * Follows Minto Pyramid Principle for structuring insights
+ * Slide generation utility with dynamic AI-style insights
+ * Analyzes data to generate bespoke commentary (3-5 insights)
  */
 
 import type { ChartConfiguration, ChartDataPoint } from '@/shared/types/chart'
 
 export interface SlideInsight {
   text: string
-  type: 'main' | 'supporting'
 }
 
 export interface SlideContent {
@@ -16,6 +15,29 @@ export interface SlideContent {
   chartTitle: string
   chartUnits: string
   insights: SlideInsight[]
+}
+
+interface SeriesAnalysis {
+  name: string
+  values: number[]
+  categories: (string | number)[]
+  total: number
+  average: number
+  max: number
+  min: number
+  maxCategory: string | number
+  minCategory: string | number
+  trend: 'increasing' | 'decreasing' | 'volatile' | 'stable'
+  growthRate?: number
+}
+
+interface DataAnalysis {
+  series: SeriesAnalysis[]
+  overallTrend: 'growth' | 'decline' | 'mixed' | 'stable'
+  dominantSeries?: SeriesAnalysis
+  volatileSeries?: SeriesAnalysis
+  topPerformer?: SeriesAnalysis
+  underperformer?: SeriesAnalysis
 }
 
 /**
@@ -57,13 +79,13 @@ function inferUnits(seriesNames: string[], dataPoints: ChartDataPoint[]): string
 }
 
 /**
- * Calculate statistics for a series
+ * Analyze a single series for trends and patterns
  */
-function calculateSeriesStats(
+function analyzeSeries(
   dataPoints: ChartDataPoint[],
   seriesName: string,
   xAxisKey: string
-) {
+): SeriesAnalysis | null {
   const values = dataPoints.map(point => point[seriesName] as number).filter(v => typeof v === 'number')
   const categories = dataPoints.map(point => point[xAxisKey])
 
@@ -78,21 +100,108 @@ function calculateSeriesStats(
   const maxIndex = values.indexOf(max)
   const minIndex = values.indexOf(min)
 
+  // Calculate trend
+  let trend: 'increasing' | 'decreasing' | 'volatile' | 'stable' = 'stable'
+  let growthRate: number | undefined
+
+  if (values.length > 1) {
+    const firstHalf = values.slice(0, Math.floor(values.length / 2))
+    const secondHalf = values.slice(Math.floor(values.length / 2))
+    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
+    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+
+    // Calculate volatility (coefficient of variation)
+    const stdDev = Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - average, 2), 0) / values.length)
+    const cv = (stdDev / average) * 100
+
+    if (cv > 30) {
+      trend = 'volatile'
+    } else if (secondAvg > firstAvg * 1.1) {
+      trend = 'increasing'
+      growthRate = ((secondAvg - firstAvg) / firstAvg) * 100
+    } else if (secondAvg < firstAvg * 0.9) {
+      trend = 'decreasing'
+      growthRate = ((secondAvg - firstAvg) / firstAvg) * 100
+    } else {
+      trend = 'stable'
+    }
+  }
+
   return {
+    name: seriesName,
+    values,
+    categories,
     total,
     average,
     max,
     min,
     maxCategory: categories[maxIndex],
     minCategory: categories[minIndex],
-    aboveAverage: values.filter(v => v > average).length,
-    totalCount: values.length,
+    trend,
+    growthRate,
   }
 }
 
 /**
- * Generate insights following Minto Pyramid Principle
- * Structure: Main message → Key supporting points (max 5 total)
+ * Perform comprehensive data analysis
+ */
+function performDataAnalysis(
+  dataPoints: ChartDataPoint[],
+  seriesNames: string[],
+  xAxisKey: string
+): DataAnalysis {
+  const series = seriesNames
+    .map(name => analyzeSeries(dataPoints, name, xAxisKey))
+    .filter((s): s is SeriesAnalysis => s !== null)
+
+  if (series.length === 0) {
+    return { series: [], overallTrend: 'stable' }
+  }
+
+  // Identify dominant series (highest total)
+  const dominantSeries = series.reduce((best, current) =>
+    current.total > best.total ? current : best
+  )
+
+  // Identify volatile series
+  const volatileSeries = series.find(s => s.trend === 'volatile')
+
+  // Identify top performer
+  const topPerformer = series.reduce((best, current) =>
+    current.average > best.average ? current : best
+  )
+
+  // Identify underperformer
+  const underperformer = series.length > 1 ? series.reduce((worst, current) =>
+    current.average < worst.average ? current : worst
+  ) : undefined
+
+  // Determine overall trend
+  const growingSeries = series.filter(s => s.trend === 'increasing').length
+  const decliningSeries = series.filter(s => s.trend === 'decreasing').length
+  const totalSeries = series.length
+
+  let overallTrend: 'growth' | 'decline' | 'mixed' | 'stable' = 'stable'
+  if (growingSeries > totalSeries / 2) {
+    overallTrend = 'growth'
+  } else if (decliningSeries > totalSeries / 2) {
+    overallTrend = 'decline'
+  } else if (growingSeries > 0 || decliningSeries > 0) {
+    overallTrend = 'mixed'
+  }
+
+  return {
+    series,
+    overallTrend,
+    dominantSeries,
+    volatileSeries,
+    topPerformer,
+    underperformer,
+  }
+}
+
+/**
+ * Generate dynamic, AI-style insights (3-5 insights, prefer 3)
  */
 function generateInsights(
   dataPoints: ChartDataPoint[],
@@ -100,82 +209,84 @@ function generateInsights(
   xAxisKey: string,
   units: string
 ): SlideInsight[] {
-  const insights: SlideInsight[] = []
-
   try {
-    // Calculate stats for all series
-    const allStats = seriesNames
-      .map(name => ({
-        name,
-        stats: calculateSeriesStats(dataPoints, name, xAxisKey),
-      }))
-      .filter(({ stats }) => stats !== null)
+    const analysis = performDataAnalysis(dataPoints, seriesNames, xAxisKey)
 
-    if (allStats.length === 0) {
-      return generateFallbackInsights()
+    if (analysis.series.length === 0) {
+      return [{ text: 'Insufficient data for meaningful analysis' }]
     }
 
-    // 1. Main insight - Total across all series
-    const grandTotal = allStats.reduce((sum, { stats }) => sum + (stats?.total || 0), 0)
-    insights.push({
-      text: `Total combined value: ${formatNumber(grandTotal)} ${units}`,
-      type: 'main',
-    })
+    const insights: SlideInsight[] = []
+    const { series, overallTrend, dominantSeries, volatileSeries, topPerformer, underperformer } = analysis
 
-    // 2. Best performer
-    const bestSeries = allStats.reduce((best, current) =>
-      (current.stats?.total || 0) > (best.stats?.total || 0) ? current : best
-    )
-    if (bestSeries.stats) {
+    // Insight 1: Overall trend and dominant pattern
+    if (overallTrend === 'growth' && dominantSeries) {
+      const growthDesc = dominantSeries.growthRate
+        ? ` showing ${Math.abs(dominantSeries.growthRate).toFixed(0)}% growth`
+        : ''
       insights.push({
-        text: `${bestSeries.name} leads with ${formatNumber(bestSeries.stats.total)} ${units}`,
-        type: 'supporting',
+        text: `Strong upward momentum across the board${growthDesc}, with ${dominantSeries.name} driving ${((dominantSeries.total / series.reduce((sum, s) => sum + s.total, 0)) * 100).toFixed(0)}% of total performance`,
+      })
+    } else if (overallTrend === 'decline') {
+      insights.push({
+        text: `Performance shows declining trend, requiring strategic intervention to reverse the downward trajectory`,
+      })
+    } else if (overallTrend === 'mixed' && dominantSeries && topPerformer) {
+      insights.push({
+        text: `Mixed performance landscape: ${topPerformer.name} demonstrates ${topPerformer.trend === 'increasing' ? 'consistent growth' : 'strength'} while other metrics show variability`,
+      })
+    } else if (dominantSeries) {
+      insights.push({
+        text: `${dominantSeries.name} dominates with ${formatNumber(dominantSeries.total)} ${units}, representing the lion's share of overall activity`,
       })
     }
 
-    // 3. Peak performance
-    const peakSeries = allStats.reduce((peak, current) =>
-      (current.stats?.max || 0) > (peak.stats?.max || 0) ? current : peak
-    )
-    if (peakSeries.stats) {
+    // Insight 2: Peak performance or volatility pattern
+    if (volatileSeries && series.length > 1) {
       insights.push({
-        text: `Peak: ${peakSeries.name} at ${peakSeries.stats.maxCategory} (${formatNumber(peakSeries.stats.max)} ${units})`,
-        type: 'supporting',
+        text: `${volatileSeries.name} exhibits high volatility, suggesting either cyclical patterns or external influences worth investigating`,
+      })
+    } else if (topPerformer && topPerformer.max > topPerformer.average * 1.5) {
+      insights.push({
+        text: `Notable spike in ${topPerformer.name} during ${topPerformer.maxCategory} period reaching ${formatNumber(topPerformer.max)} ${units} — a potential model for replication`,
+      })
+    } else if (series.length > 1 && topPerformer && underperformer) {
+      const gap = topPerformer.average - underperformer.average
+      const gapPercent = ((gap / underperformer.average) * 100).toFixed(0)
+      insights.push({
+        text: `Performance gap of ${gapPercent}% between ${topPerformer.name} and ${underperformer.name} highlights opportunity for optimization`,
       })
     }
 
-    // 4. Average insight
-    const overallAverage = grandTotal / allStats.reduce((sum, { stats }) => sum + (stats?.totalCount || 0), 0)
-    insights.push({
-      text: `Average performance: ${formatNumber(overallAverage)} ${units}`,
-      type: 'supporting',
-    })
+    // Insight 3: Actionable observation or trend detail (optional, only if we have good data)
+    if (insights.length < 3) {
+      if (series.length > 1) {
+        const stableSeries = series.filter(s => s.trend === 'stable').length
+        if (stableSeries > 0) {
+          insights.push({
+            text: `${stableSeries === series.length ? 'All metrics show' : `${stableSeries} of ${series.length} metrics maintain`} steady performance, indicating operational consistency`,
+          })
+        }
+      }
 
-    // 5. Distribution insight
-    const aboveAvgCount = allStats.reduce((sum, { stats }) => sum + (stats?.aboveAverage || 0), 0)
-    const totalDataPoints = allStats.reduce((sum, { stats }) => sum + (stats?.totalCount || 0), 0)
-    insights.push({
-      text: `${aboveAvgCount}/${totalDataPoints} data points exceed average`,
-      type: 'supporting',
-    })
+      // If still under 3, add a comparison insight
+      if (insights.length < 3 && dominantSeries && series.length > 1) {
+        const others = series.filter(s => s.name !== dominantSeries.name)
+        const othersTotal = others.reduce((sum, s) => sum + s.total, 0)
+        insights.push({
+          text: `Combined performance of remaining categories (${formatNumber(othersTotal)} ${units}) ${othersTotal > dominantSeries.total ? 'exceeds' : 'trails'} the lead category`,
+        })
+      }
+    }
+
+    return insights.slice(0, 5) // Maximum 5, prefer 3
   } catch (error) {
     console.error('Error generating insights:', error)
-    return generateFallbackInsights()
+    return [
+      { text: 'Data analysis indicates notable patterns worth deeper investigation' },
+      { text: 'Performance metrics suggest areas for strategic focus' },
+    ]
   }
-
-  return insights.slice(0, 5) // Max 5 insights
-}
-
-/**
- * Generate fallback insights when data analysis fails
- */
-function generateFallbackInsights(): SlideInsight[] {
-  return [
-    { text: 'Chart displays key business metrics', type: 'main' },
-    { text: 'Data organized by relevant categories', type: 'supporting' },
-    { text: 'Trends visible across time periods', type: 'supporting' },
-    { text: 'Performance metrics clearly visualized', type: 'supporting' },
-  ]
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
- * McKinsey-style slide presentation component
- * Layout: 2/3 chart + 1/3 commentary with Minto Pyramid insights
+ * Slide presentation component with premium design
+ * Layout: 2/3 chart + 1/3 commentary
  */
 
 import { ChartRenderer } from '@/features/chart/components/ChartRenderer'
@@ -16,31 +16,39 @@ export function SlidePresentation({ config, slideContent }: SlidePresentationPro
   const { title, subtitle, chartTitle, chartUnits, insights } = slideContent
 
   return (
-    <div className="w-full h-full bg-white flex flex-col">
-      {/* Slide Header */}
-      <div className="border-b-4 border-[#003d7a] px-10 py-6 flex-shrink-0">
-        <h1 className="text-3xl font-bold text-[#003d7a] mb-1">
-          {title}
-        </h1>
-        {subtitle && (
-          <h2 className="text-lg text-gray-600 font-normal">
-            {subtitle}
-          </h2>
-        )}
+    <div className="w-full h-full bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/30 flex flex-col p-8">
+      {/* Slide Header with gradient bar */}
+      <div className="mb-8">
+        <div className="h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-emerald-600 rounded-full mb-6" />
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-lg text-slate-600 font-medium">
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Main Content: 2/3 Chart + 1/3 Commentary */}
-      <div className="flex-1 flex gap-8 px-10 py-8 min-h-0">
+      <div className="flex-1 flex gap-8 min-h-0">
         {/* Chart Section (2/3) */}
         <div className="flex-[2] flex flex-col min-w-0">
-          <div className="mb-3">
-            <h3 className="text-base font-bold text-gray-800">
-              {chartTitle} ({chartUnits})
+          <div className="mb-4">
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-purple-600 mb-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-600" />
+              CHART
+            </div>
+            <h3 className="text-xl font-bold text-slate-800">
+              {chartTitle}
+              {chartUnits && <span className="text-slate-500 font-normal ml-2">({chartUnits})</span>}
             </h3>
           </div>
 
-          <div className="flex-1 border border-gray-200 rounded bg-white p-4 min-h-0">
-            <div className="w-full h-full">
+          <div className="flex-1 glass border border-slate-200/60 rounded-xl shadow-2xl shadow-purple-500/10 p-6 min-h-0">
+            <div className="w-full h-full rounded-lg bg-gradient-to-br from-slate-50/50 to-white p-4">
               <ChartRenderer
                 config={config}
                 onSeriesToggle={() => {}}
@@ -50,32 +58,43 @@ export function SlidePresentation({ config, slideContent }: SlidePresentationPro
         </div>
 
         {/* Commentary Section (1/3) */}
-        <div className="flex-[1] bg-gray-50 rounded border border-gray-200 p-6 flex flex-col">
-          <h3 className="text-lg font-bold text-[#003d7a] mb-5">
-            Key Insights
-          </h3>
+        <div className="flex-[1] glass border border-slate-200/60 rounded-xl shadow-2xl shadow-blue-500/10 p-8 flex flex-col">
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-blue-600 mb-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              INSIGHTS
+            </div>
+            <h3 className="text-2xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Key Takeaways
+            </h3>
+          </div>
 
-          <ul className="space-y-0 flex-1">
+          <div className="space-y-4 flex-1">
             {insights.map((insight, index) => (
-              <li
+              <div
                 key={index}
-                className="relative pl-6 py-3 text-sm leading-relaxed text-gray-800 border-b border-gray-200 last:border-b-0"
+                className="group relative pl-6 py-3 rounded-lg bg-gradient-to-br from-white/80 to-slate-50/80 border border-slate-200/50 hover:shadow-md transition-all duration-300"
               >
-                <span className="absolute left-0 top-3 text-[#003d7a] font-bold text-base">
-                  ▸
-                </span>
-                {insight.text}
-              </li>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-purple-600 to-blue-600" />
+                <p className="text-sm leading-relaxed text-slate-700 font-medium">
+                  {insight.text}
+                </p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
 
-      {/* Optional Footer */}
-      <div className="px-10 py-3 text-xs text-gray-400 border-t border-gray-100 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-          <span>Generated by SmartChart</span>
+      {/* Footer */}
+      <div className="mt-8 pt-6 border-t border-slate-200/50">
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+            <span>Generated by SmartChart</span>
+          </div>
+          <div className="text-slate-300">
+            {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          </div>
         </div>
       </div>
     </div>
