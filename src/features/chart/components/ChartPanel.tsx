@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
-import { Settings } from 'lucide-react'
+import { Settings, Presentation } from 'lucide-react'
 import { PanelCard } from '@/shared/components/PanelCard'
 import { ChartRenderer } from './ChartRenderer'
 import { useChartConfig } from '@/app/providers/ChartConfigProvider'
+import { SlideDialog, generateSlideContent } from '@/features/slides'
 
 interface ChartPanelProps {
   onOpenSettings?: () => void
@@ -14,8 +15,15 @@ interface ChartPanelProps {
 export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
   const { config, setTitle, setSubtitle, toggleSeries } = useChartConfig()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isSlideOpen, setIsSlideOpen] = useState(false)
 
   const { title, subtitle } = config.styling
+
+  const handleGenerateSlide = () => {
+    setIsSlideOpen(true)
+  }
+
+  const slideContent = generateSlideContent(config)
 
   return (
     <div className="w-full max-w-[900px] mx-auto">
@@ -61,6 +69,17 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateSlide}
+                className="gap-2 transition-smooth"
+                aria-label="Generate slide"
+              >
+                <Presentation className="w-4 h-4" />
+                <span className="hidden sm:inline">Generate Slide</span>
+              </Button>
+
               {onOpenSettings && (
                 <Button
                   variant="outline"
@@ -101,6 +120,14 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
           </div>
         </CardContent>
       </PanelCard>
+
+      {/* Slide Dialog */}
+      <SlideDialog
+        isOpen={isSlideOpen}
+        onClose={() => setIsSlideOpen(false)}
+        config={config}
+        slideContent={slideContent}
+      />
     </div>
   )
 }

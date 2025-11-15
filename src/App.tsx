@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/shared/components/ui/button'
-import { MessageSquare, Settings } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeInUp } from '@/shared/lib/animations'
 import { SidebarPanel } from '@/shared/components/SidebarPanel'
 import { AppProviders } from '@/app/providers/AppProviders'
