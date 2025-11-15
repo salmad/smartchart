@@ -60,10 +60,11 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
 
   // Update entire config and optionally sources
   const updateConfig = useCallback((newConfig: ChartConfiguration, newSources?: WebSource[]) => {
+    console.log('ChartConfigProvider.updateConfig called with sources:', newSources)
     setConfig(newConfig)
-    if (newSources) {
-      setSources(newSources)
-    }
+    // Always update sources - either to new sources or empty array
+    setSources(newSources || [])
+    console.log('Sources updated to:', newSources || [])
   }, [])
 
   // Update styling properties

@@ -18,6 +18,9 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
 
   const { title, subtitle } = config.styling
 
+  // Debug logging
+  console.log('ChartPanel sources:', sources)
+
   return (
     <div className="w-full max-w-[900px] mx-auto">
       <PanelCard

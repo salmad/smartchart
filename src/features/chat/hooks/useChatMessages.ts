@@ -35,6 +35,8 @@ export function useChatMessages({
         const result = await aiService.modifyChart(currentConfig, content, useWebSearch)
 
         if (result.success && result.configuration) {
+          console.log('useChatMessages: Received sources from AI:', result.sources)
+
           // Pass both configuration and sources to the config provider
           onConfigChange(result.configuration, result.sources)
 
@@ -46,6 +48,7 @@ export function useChatMessages({
           // Include sources if they were returned
           if (result.sources && result.sources.length > 0) {
             assistantMessage.sources = result.sources
+            console.log('useChatMessages: Added sources to assistant message:', assistantMessage.sources)
           }
 
           setMessages((prev) => [...prev, assistantMessage])

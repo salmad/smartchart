@@ -34,12 +34,21 @@ ${JSON.stringify(currentConfig, null, 2)}
 User Request: "${userMessage}"
 
 Your task is to:
-1. Analyze the user's request${useWebSearch ? '\n2. If needed, use web search to find relevant data' : ''}
-${useWebSearch ? '3' : '2'}. Modify the chart configuration accordingly
-${useWebSearch ? '4' : '3'}. Return ONLY a valid JSON object with ${useWebSearch ? 'three' : 'two'} keys:
-   - "configuration": The updated ChartConfiguration object
-   - "message": A friendly message explaining what you changed and ${useWebSearch ? 'what data you found ' : ''}(2-3 sentences)${
-        useWebSearch ? '\n   - "sources": Array of web sources used (if any) with {title, url, description}' : ''
+1. Analyze the user's request${
+        useWebSearch
+          ? '\n2. IMPORTANT: Use the web_search tool to find the requested data online\n3. Extract the specific data values from the search results\n4. Update the chart configuration with the found data'
+          : '\n2. Modify the chart configuration accordingly'
+      }
+${useWebSearch ? '5' : '3'}. Return ONLY a valid JSON object with ${useWebSearch ? 'THREE' : 'two'} keys:
+   - "configuration": The updated ChartConfiguration object with the ${useWebSearch ? 'data you found from web search' : 'modified data'}
+   - "message": A friendly message that ${
+     useWebSearch
+       ? 'MUST include:\n     a) What data you searched for\n     b) The actual data values you found (list them out)\n     c) Which sources you used\n     This should be 3-5 sentences explaining the data you found.'
+       : 'explains what you changed (2-3 sentences)'
+   }${
+        useWebSearch
+          ? '\n   - "sources": REQUIRED array of ALL web sources you used. Each source MUST have:\n     * "title": The page/article title\n     * "url": The full URL\n     * "description": A brief description of what data came from this source'
+          : ''
       }
 
 Rules:
@@ -52,17 +61,46 @@ Rules:
 - If user asks about styling (colors, type, labels), modify styling object
 - Preserve seriesNames consistency with dataPoints keys${
         useWebSearch
-          ? '\n- When using web search, include the actual data you found in your message so the user knows what was used\n- Include all sources you used in the "sources" array'
+          ? '\n- CRITICAL: You MUST use web_search to find data, not make it up\n- CRITICAL: Your message MUST describe the actual data values you found\n- CRITICAL: The "sources" array is REQUIRED and must not be empty\n- CRITICAL: Include at least 2-3 sources if available'
           : ''
       }
 - Return valid JSON only, no markdown or code blocks
 
-Example response format:
+${
+  useWebSearch
+    ? `Example response with web search:
+{
+  "configuration": {
+    "data": {
+      "dataPoints": [
+        { "year": "2020", "GDP": 21060 },
+        { "year": "2021", "GDP": 23315 },
+        { "year": "2022", "GDP": 25464 }
+      ],
+      "xAxisKey": "year",
+      "seriesNames": ["GDP"]
+    },
+    "styling": { ...existing styling... }
+  },
+  "message": "I searched for US GDP data from 2020-2022. The data shows: 2020: $21.06T, 2021: $23.32T, and 2022: $25.46T. This represents steady growth over the three-year period. Sources used: World Bank and IMF databases.",
+  "sources": [
+    {
+      "title": "World Bank GDP Data",
+      "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD",
+      "description": "Official World Bank GDP statistics for all countries"
+    },
+    {
+      "title": "IMF Economic Outlook",
+      "url": "https://www.imf.org/data",
+      "description": "International Monetary Fund economic data and projections"
+    }
+  ]
+}`
+    : `Example response format:
 {
   "configuration": { ...updated config... },
-  "message": "I've changed your chart to a line chart and updated the colors to match your brand."${
-    useWebSearch ? ',\n  "sources": [{title: "Example", url: "https://example.com", description: "Data source"}]' : ''
-  }
+  "message": "I've changed your chart to a line chart and updated the colors to match your brand."
+}`
 }`
 
       const messageParams: Anthropic.MessageCreateParams = {
@@ -88,6 +126,9 @@ Example response format:
 
       const message = await anthropic.messages.create(messageParams)
 
+      // Log the full response for debugging
+      console.log('Claude API Response:', JSON.stringify(message, null, 2))
+
       // Extract text content from response (may come after tool use)
       const textContent = message.content.find((block) => block.type === 'text')
       if (!textContent || textContent.type !== 'text') {
@@ -95,6 +136,7 @@ Example response format:
       }
 
       const text = textContent.text
+      console.log('Extracted text:', text)
 
       // Clean up response (remove markdown code blocks if present)
       const cleanedText = text
@@ -104,6 +146,7 @@ Example response format:
 
       try {
         const parsed = JSON.parse(cleanedText)
+        console.log('Parsed response:', parsed)
 
         if (!parsed.configuration || !parsed.message) {
           throw new Error('Invalid response format from AI')
@@ -121,8 +164,13 @@ Example response format:
         }
 
         // Include sources if they were provided
-        if (useWebSearch && parsed.sources && Array.isArray(parsed.sources)) {
-          response.sources = parsed.sources as WebSource[]
+        if (useWebSearch) {
+          if (parsed.sources && Array.isArray(parsed.sources) && parsed.sources.length > 0) {
+            response.sources = parsed.sources as WebSource[]
+            console.log('Sources found:', response.sources)
+          } else {
+            console.warn('Web search was enabled but no sources were returned in the response')
+          }
         }
 
         return response
