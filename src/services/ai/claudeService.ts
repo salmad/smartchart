@@ -61,10 +61,11 @@ Rules:
 - If user asks about styling (colors, type, labels), modify styling object
 - Preserve seriesNames consistency with dataPoints keys${
         useWebSearch
-          ? '\n- CRITICAL: You MUST use web_search to find data, not make it up\n- CRITICAL: Your message MUST describe the actual data values you found\n- CRITICAL: Do NOT include a "sources" array in your JSON - sources will be extracted automatically from search results'
+          ? '\n- CRITICAL: You MUST use web_search to find data, not make it up\n- CRITICAL: Your message MUST describe the actual data values you found\n- CRITICAL: Do NOT include a "sources" array in your JSON - sources will be extracted automatically from search results\n- CRITICAL: Your response must START with { and END with } - NO explanatory text before or after the JSON'
           : ''
       }
 - Return valid JSON only, no markdown or code blocks
+- Your response must START with the opening brace { of the JSON object
 
 ${
   useWebSearch
@@ -148,7 +149,7 @@ ${
         throw new Error('Last block is not text type')
       }
 
-      const text = lastTextBlock.text
+      let text = lastTextBlock.text
       console.log('Extracted text from last block:', text)
 
       // Extract sources from web_search_tool_result blocks
@@ -174,6 +175,14 @@ ${
           }
         }
         console.log('Extracted sources from tool results:', extractedSources)
+      }
+
+      // Extract JSON from text - Claude often adds explanation before the JSON
+      // Find the first { and extract from there to the end
+      const jsonStart = text.indexOf('{')
+      if (jsonStart !== -1) {
+        text = text.substring(jsonStart)
+        console.log('Extracted JSON starting from first {:', text.substring(0, 100) + '...')
       }
 
       // Clean up response (remove markdown code blocks if present)
