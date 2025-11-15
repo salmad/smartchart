@@ -43,17 +43,13 @@ Your task is to:
           ? '\n2. IMPORTANT: Use the web_search tool to find the requested data online\n3. Extract the specific data values from the search results\n4. Update the chart configuration with the found data'
           : '\n2. Modify the chart configuration accordingly'
       }
-${useWebSearch ? '5' : '3'}. Return ONLY a valid JSON object with ${useWebSearch ? 'THREE' : 'two'} keys:
+${useWebSearch ? '5' : '3'}. Return ONLY a valid JSON object with TWO keys:
    - "configuration": The updated ChartConfiguration object with the ${useWebSearch ? 'data you found from web search' : 'modified data'}
    - "message": A friendly message that ${
      useWebSearch
-       ? 'MUST include:\n     a) What data you searched for\n     b) The actual data values you found (list them out)\n     c) Which sources you used\n     This should be 3-5 sentences explaining the data you found.'
+       ? 'MUST include:\n     a) What data you searched for\n     b) The actual data values you found (list them out)\n     c) Brief mention of which sources you used\n     This should be 3-5 sentences explaining the data you found.'
        : 'explains what you changed (2-3 sentences)'
-   }${
-        useWebSearch
-          ? '\n   - "sources": REQUIRED array of ALL web sources you used. Each source MUST have:\n     * "title": The page/article title\n     * "url": The full URL\n     * "description": A brief description of what data came from this source'
-          : ''
-      }
+   }
 
 Rules:
 - Keep data structure consistent (same xAxisKey format)
@@ -65,7 +61,7 @@ Rules:
 - If user asks about styling (colors, type, labels), modify styling object
 - Preserve seriesNames consistency with dataPoints keys${
         useWebSearch
-          ? '\n- CRITICAL: You MUST use web_search to find data, not make it up\n- CRITICAL: Your message MUST describe the actual data values you found\n- CRITICAL: The "sources" array is REQUIRED and must not be empty\n- CRITICAL: Include at least 2-3 sources if available'
+          ? '\n- CRITICAL: You MUST use web_search to find data, not make it up\n- CRITICAL: Your message MUST describe the actual data values you found\n- CRITICAL: Do NOT include a "sources" array in your JSON - sources will be extracted automatically from search results'
           : ''
       }
 - Return valid JSON only, no markdown or code blocks
@@ -86,19 +82,7 @@ ${
     },
     "styling": { ...existing styling... }
   },
-  "message": "I searched for US GDP data from 2020-2022. The data shows: 2020: $21.06T, 2021: $23.32T, and 2022: $25.46T. This represents steady growth over the three-year period. Sources used: World Bank and IMF databases.",
-  "sources": [
-    {
-      "title": "World Bank GDP Data",
-      "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD",
-      "description": "Official World Bank GDP statistics for all countries"
-    },
-    {
-      "title": "IMF Economic Outlook",
-      "url": "https://www.imf.org/data",
-      "description": "International Monetary Fund economic data and projections"
-    }
-  ]
+  "message": "I searched for US GDP data from 2020-2022 using the World Bank and Macrotrends. The data shows: 2020: $21.06T, 2021: $23.32T, and 2022: $25.46T. This represents steady growth over the three-year period. The data is measured in billions of USD at current prices."
 }`
     : `Example response format:
 {
@@ -142,15 +126,55 @@ ${
 
       // Log the full response for debugging
       console.log('Claude API Response:', JSON.stringify(message, null, 2))
+      console.log('Number of content blocks:', message.content.length)
 
-      // Extract text content from response (may come after tool use)
-      const textContent = message.content.find((block) => block.type === 'text')
-      if (!textContent || textContent.type !== 'text') {
+      // When web search is used, Claude returns multiple content blocks:
+      // 1. Initial text explaining what it will do
+      // 2. server_tool_use block (the web search)
+      // 3. web_search_tool_result block (the results)
+      // 4. Final text block with the JSON response
+      // We need to find the LAST text block, which contains the actual JSON
+
+      const textBlocks = message.content.filter((block) => block.type === 'text')
+      console.log('Found', textBlocks.length, 'text blocks')
+
+      if (textBlocks.length === 0) {
         throw new Error('No text response from Claude')
       }
 
-      const text = textContent.text
-      console.log('Extracted text:', text)
+      // Get the LAST text block (which should contain the JSON after tool use)
+      const lastTextBlock = textBlocks[textBlocks.length - 1]
+      if (lastTextBlock.type !== 'text') {
+        throw new Error('Last block is not text type')
+      }
+
+      const text = lastTextBlock.text
+      console.log('Extracted text from last block:', text)
+
+      // Extract sources from web_search_tool_result blocks
+      const extractedSources: WebSource[] = []
+      if (useWebSearch) {
+        const toolResultBlocks = message.content.filter(
+          (block: any) => block.type === 'web_search_tool_result'
+        )
+        console.log('Found', toolResultBlocks.length, 'web_search_tool_result blocks')
+
+        for (const toolResult of toolResultBlocks) {
+          const content = (toolResult as any).content
+          if (Array.isArray(content)) {
+            for (const item of content) {
+              if (item.type === 'web_search_result') {
+                extractedSources.push({
+                  title: item.title || 'Unknown source',
+                  url: item.url || '',
+                  description: item.snippet || item.description || undefined,
+                })
+              }
+            }
+          }
+        }
+        console.log('Extracted sources from tool results:', extractedSources)
+      }
 
       // Clean up response (remove markdown code blocks if present)
       const cleanedText = text
@@ -177,13 +201,16 @@ ${
           message: parsed.message,
         }
 
-        // Include sources if they were provided
+        // Include sources - prefer extracted sources from tool results over sources in JSON
         if (useWebSearch) {
-          if (parsed.sources && Array.isArray(parsed.sources) && parsed.sources.length > 0) {
+          if (extractedSources.length > 0) {
+            response.sources = extractedSources
+            console.log('Using sources from tool results:', response.sources)
+          } else if (parsed.sources && Array.isArray(parsed.sources) && parsed.sources.length > 0) {
             response.sources = parsed.sources as WebSource[]
-            console.log('Sources found:', response.sources)
+            console.log('Using sources from JSON response:', response.sources)
           } else {
-            console.warn('Web search was enabled but no sources were returned in the response')
+            console.warn('Web search was enabled but no sources were found')
           }
         }
 
