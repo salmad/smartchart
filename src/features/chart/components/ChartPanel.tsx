@@ -24,7 +24,7 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
   return (
     <div className="w-full max-w-[900px] mx-auto">
       <PanelCard
-        className="overflow-hidden h-[600px]"
+        className={`overflow-hidden ${sources.length > 0 ? 'h-[750px]' : 'h-[600px]'}`}
         showGradientBar
       >
         <CardHeader className="space-y-3 pb-6 flex-shrink-0">
@@ -97,8 +97,8 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="pb-8 flex-1 min-h-0 flex flex-col">
-          <div className="relative">
+        <CardContent className="pb-8 flex-1 min-h-0 flex flex-col overflow-y-auto">
+          <div className="relative flex-shrink-0">
             <div className="rounded-xl bg-gradient-to-br from-slate-50/50 to-white p-6 border border-slate-100">
               <ChartRenderer config={config} onSeriesToggle={toggleSeries} />
             </div>
