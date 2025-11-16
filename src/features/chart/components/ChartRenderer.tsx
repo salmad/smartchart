@@ -47,8 +47,8 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
     <defs>
       {seriesColors.map((color) => (
         <linearGradient key={color.gradient} id={color.gradient} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="5%" stopColor={color.solid} stopOpacity={0.9} />
-          <stop offset="95%" stopColor={color.solid} stopOpacity={0.7} />
+          <stop key={`${color.gradient}-start`} offset="5%" stopColor={color.solid} stopOpacity={0.9} />
+          <stop key={`${color.gradient}-end`} offset="95%" stopColor={color.solid} stopOpacity={0.7} />
         </linearGradient>
       ))}
     </defs>
