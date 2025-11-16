@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Settings } from 'lucide-react'
 import { PanelCard } from '@/shared/components/PanelCard'
 import { ChartRenderer } from './ChartRenderer'
+import { Sources } from '@/shared/components/Sources'
 import { useChartConfig } from '@/app/providers/ChartConfigProvider'
 
 interface ChartPanelProps {
@@ -12,15 +13,18 @@ interface ChartPanelProps {
 }
 
 export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
-  const { config, setTitle, setSubtitle, toggleSeries } = useChartConfig()
+  const { config, sources, setTitle, setSubtitle, toggleSeries } = useChartConfig()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
 
   const { title, subtitle } = config.styling
 
+  // Debug logging
+  console.log('ChartPanel sources:', sources)
+
   return (
     <div className="w-full max-w-[900px] mx-auto">
       <PanelCard
-        className="overflow-hidden h-[600px]"
+        className={`overflow-hidden ${sources.length > 0 ? 'h-[750px]' : 'h-[600px]'}`}
         showGradientBar
       >
         <CardHeader className="space-y-3 pb-6 flex-shrink-0">
@@ -93,11 +97,14 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="pb-8 flex-1 min-h-0 flex flex-col">
-          <div className="relative">
+        <CardContent className="pb-8 flex-1 min-h-0 flex flex-col overflow-y-auto">
+          <div className="relative flex-shrink-0">
             <div className="rounded-xl bg-gradient-to-br from-slate-50/50 to-white p-6 border border-slate-100">
               <ChartRenderer config={config} onSeriesToggle={toggleSeries} />
             </div>
+
+            {/* Display sources below the chart */}
+            <Sources sources={sources} />
           </div>
         </CardContent>
       </PanelCard>

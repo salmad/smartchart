@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import type { Message } from '@/services/ai'
+import type { Message, WebSource } from '@/services/ai'
 import type { AIService } from '@/services/ai'
 import type { ChartConfiguration } from '@/shared/types/chart'
 
 interface UseChatMessagesOptions {
   aiService: AIService
   currentConfig: ChartConfiguration
-  onConfigChange: (config: ChartConfiguration) => void
+  onConfigChange: (config: ChartConfiguration, sources?: WebSource[]) => void
 }
 
 export function useChatMessages({
@@ -19,28 +19,42 @@ export function useChatMessages({
   const [isLoading, setIsLoading] = useState(false)
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, useWebSearch = false) => {
       if (!content.trim() || isLoading) return
+
+      console.log('useChatMessages.sendMessage called with useWebSearch:', useWebSearch)
 
       const userMessage: Message = { role: 'user', content }
       setMessages((prev) => [...prev, userMessage])
       setIsLoading(true)
 
       toast.success('Message sent', {
-        description: 'AI is analyzing your request...',
+        description: useWebSearch ? 'AI is searching the web and analyzing...' : 'AI is analyzing your request...',
         duration: 2000,
       })
 
       try {
-        const result = await aiService.modifyChart(currentConfig, content)
+        console.log('useChatMessages: Calling aiService.modifyChart with useWebSearch:', useWebSearch)
+        const result = await aiService.modifyChart(currentConfig, content, useWebSearch)
 
         if (result.success && result.configuration) {
-          onConfigChange(result.configuration)
+          console.log('useChatMessages: Received sources from AI:', result.sources)
 
-          setMessages((prev) => [
-            ...prev,
-            { role: 'assistant', content: result.message },
-          ])
+          // Pass both configuration and sources to the config provider
+          onConfigChange(result.configuration, result.sources)
+
+          const assistantMessage: Message = {
+            role: 'assistant',
+            content: result.message,
+          }
+
+          // Include sources if they were returned
+          if (result.sources && result.sources.length > 0) {
+            assistantMessage.sources = result.sources
+            console.log('useChatMessages: Added sources to assistant message:', assistantMessage.sources)
+          }
+
+          setMessages((prev) => [...prev, assistantMessage])
 
           toast.success('Chart updated!', {
             description: result.message,

@@ -4,33 +4,36 @@ import { claudeService } from './claudeService'
 import { geminiService } from './geminiService'
 
 /**
- * AI Service with automatic fallback from Claude to Gemini
+ * AI Service with automatic fallback from Gemini Flash to Claude Haiku
  */
 class AIServiceWithFallback implements AIService {
-  private primaryService: AIService = claudeService
-  private fallbackService: AIService = geminiService
+  private primaryService: AIService = geminiService
+  private fallbackService: AIService = claudeService
 
   async modifyChart(
     currentConfig: ChartConfiguration,
-    userMessage: string
+    userMessage: string,
+    useWebSearch = false
   ): Promise<ChatResponse> {
-    // Try primary service (Claude) first
-    const primaryResponse = await this.primaryService.modifyChart(currentConfig, userMessage)
+    console.log('AIServiceWithFallback.modifyChart called with useWebSearch:', useWebSearch)
 
-    // If Claude succeeds, return the response
+    // Try primary service (Gemini Flash) first
+    const primaryResponse = await this.primaryService.modifyChart(currentConfig, userMessage, useWebSearch)
+
+    // If Gemini succeeds, return the response
     if (primaryResponse.success) {
       return primaryResponse
     }
 
-    // If Claude fails due to configuration (no API key), don't try fallback
+    // If Gemini fails due to configuration (no API key), try fallback
     if (primaryResponse.message.includes('not configured')) {
-      console.log('Primary AI service (Claude) not configured, trying fallback (Gemini)...')
+      console.log('Primary AI service (Gemini Flash) not configured, trying fallback (Claude Haiku)...')
     } else {
-      console.log('Primary AI service (Claude) failed, trying fallback (Gemini)...')
+      console.log('Primary AI service (Gemini Flash) failed, trying fallback (Claude Haiku)...')
     }
 
-    // Try fallback service (Gemini)
-    const fallbackResponse = await this.fallbackService.modifyChart(currentConfig, userMessage)
+    // Try fallback service (Claude Haiku)
+    const fallbackResponse = await this.fallbackService.modifyChart(currentConfig, userMessage, useWebSearch)
 
     // If fallback succeeds, return with a note about using fallback
     if (fallbackResponse.success) {

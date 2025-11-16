@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react'
 import type { ChartConfiguration, ChartStyling, ChartData, ChartType, ColorPalette } from '@/shared/types/chart'
+import type { WebSource } from '@/services/ai'
 
 // Initial chart configuration
 const initialConfig: ChartConfiguration = {
@@ -37,7 +38,8 @@ const initialConfig: ChartConfiguration = {
 
 interface ChartConfigContextValue {
   config: ChartConfiguration
-  updateConfig: (config: ChartConfiguration) => void
+  sources: WebSource[]
+  updateConfig: (config: ChartConfiguration, sources?: WebSource[]) => void
   updateStyling: (updates: Partial<ChartStyling>) => void
   updateData: (updates: Partial<ChartData>) => void
   setChartType: (type: ChartType) => void
@@ -46,6 +48,7 @@ interface ChartConfigContextValue {
   setPalette: (palette: ColorPalette) => void
   setTitle: (title: string) => void
   setSubtitle: (subtitle: string) => void
+  setSources: (sources: WebSource[]) => void
   resetConfig: () => void
 }
 
@@ -53,10 +56,15 @@ const ChartConfigContext = createContext<ChartConfigContextValue | null>(null)
 
 export function ChartConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ChartConfiguration>(initialConfig)
+  const [sources, setSources] = useState<WebSource[]>([])
 
-  // Update entire config
-  const updateConfig = useCallback((newConfig: ChartConfiguration) => {
+  // Update entire config and optionally sources
+  const updateConfig = useCallback((newConfig: ChartConfiguration, newSources?: WebSource[]) => {
+    console.log('ChartConfigProvider.updateConfig called with sources:', newSources)
     setConfig(newConfig)
+    // Always update sources - either to new sources or empty array
+    setSources(newSources || [])
+    console.log('Sources updated to:', newSources || [])
   }, [])
 
   // Update styling properties
@@ -131,11 +139,13 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
   // Reset to initial config
   const resetConfig = useCallback(() => {
     setConfig(initialConfig)
+    setSources([])
   }, [])
 
   const value = useMemo(
     () => ({
       config,
+      sources,
       updateConfig,
       updateStyling,
       updateData,
@@ -145,10 +155,12 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setPalette,
       setTitle,
       setSubtitle,
+      setSources,
       resetConfig,
     }),
     [
       config,
+      sources,
       updateConfig,
       updateStyling,
       updateData,

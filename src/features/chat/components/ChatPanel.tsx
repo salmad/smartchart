@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { ScrollArea } from '@/shared/components/ui/scroll-area'
-import { Send, Sparkles, AlertCircle, RefreshCw, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react'
+import { Send, Sparkles, AlertCircle, RefreshCw, ThumbsUp, ThumbsDown, Loader2, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { CloseButton } from '@/shared/components/CloseButton'
 import { TypingIndicator } from '@/shared/components/TypingIndicator'
@@ -27,6 +27,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   })
 
   const [input, setInput] = useState('')
+  const [useWebSearch, setUseWebSearch] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
@@ -41,8 +42,11 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     if (!input.trim() || isLoading) return
 
     const messageContent = input
+    const searchEnabled = useWebSearch
+    console.log('ChatPanel.handleSend - Web search enabled:', searchEnabled)
     setInput('')
-    await sendMessage(messageContent)
+    setUseWebSearch(false) // Reset toggle after sending (per-message behavior)
+    await sendMessage(messageContent, searchEnabled)
   }
 
   const handleFeedback = (index: number, feedbackType: 'positive' | 'negative') => {
@@ -108,7 +112,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                   </motion.div>
 
                   <motion.div className="flex flex-wrap gap-2 pt-3 justify-center" variants={staggerItem}>
-                    {['Change to line chart', 'Hide Product C', 'Only Q1 and Q2'].map((prompt) => (
+                    {['Change to line chart', 'Hide Product C', 'Only Q1 and Q2', 'find GDP data for USA from 2020-2023'].map((prompt) => (
                       <button
                         key={prompt}
                         onClick={() => setInput(prompt)}
@@ -207,12 +211,34 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
           </div>
         </ScrollArea>
 
-        <form onSubmit={handleSend} className="flex gap-3 pt-2">
+        <form onSubmit={handleSend} className="space-y-2 pt-2">
+          {/* Web search toggle */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={useWebSearch ? 'default' : 'outline'}
+              onClick={() => setUseWebSearch(!useWebSearch)}
+              className={`h-7 px-3 text-xs transition-all ${
+                useWebSearch
+                  ? 'bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md shadow-purple-500/30'
+                  : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+              }`}
+            >
+              <Globe className="h-3 w-3 mr-1.5" />
+              Search the web
+            </Button>
+            {useWebSearch && (
+              <span className="text-xs text-slate-500">Web search enabled for this message</span>
+            )}
+          </div>
+
+          {/* Input and send button */}
           <div className="relative flex-1">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe what you want to see..."
+              placeholder={useWebSearch ? "Ask me to search for data..." : "Describe what you want to see..."}
               disabled={isLoading}
               className="h-12 pl-4 pr-12 rounded-xl border-slate-200 focus:border-purple-400 focus:ring-purple-400/20 transition-all text-sm font-medium placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
             />

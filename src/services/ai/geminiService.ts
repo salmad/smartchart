@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ChartConfiguration } from '@/shared/types/chart'
-import type { AIService, ChatResponse } from './types'
+import type { AIService, ChatResponse, WebSource } from './types'
+import { buildChartModificationPrompt } from './shared/promptBuilder'
+import { parseAIResponse } from './shared/responseParser'
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY
 
@@ -13,8 +15,14 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null
 class GeminiService implements AIService {
   async modifyChart(
     currentConfig: ChartConfiguration,
-    userMessage: string
+    userMessage: string,
+    useWebSearch = false
   ): Promise<ChatResponse> {
+    console.log('=== GeminiService.modifyChart called ===')
+    console.log('Model: gemini-2.5-flash')
+    console.log('useWebSearch parameter:', useWebSearch)
+    console.log('userMessage:', userMessage)
+
     if (!genAI) {
       return {
         success: false,
@@ -23,78 +31,63 @@ class GeminiService implements AIService {
     }
 
     try {
+      const prompt = buildChartModificationPrompt(currentConfig, userMessage, useWebSearch)
+
+      // Configure model
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
-      const prompt = `You are a chart configuration expert. The user wants to modify their chart.
+      console.log('Calling Gemini API with config:', {
+        model: 'gemini-2.5-flash',
+        hasTools: useWebSearch,
+      })
 
-Current Chart Configuration:
-${JSON.stringify(currentConfig, null, 2)}
-
-User Request: "${userMessage}"
-
-Your task is to:
-1. Analyze the user's request
-2. Modify the chart configuration accordingly
-3. Return ONLY a valid JSON object with two keys:
-   - "configuration": The updated ChartConfiguration object
-   - "message": A friendly message explaining what you changed (1-2 sentences)
-
-Rules:
-- Keep data structure consistent (same xAxisKey format)
-- Only modify what the user asked for
-- Maintain premium color palette: purple (#8B5CF6), emerald (#10B981), rose (#F43F5E), blue (#3B82F6), violet (#8B5CF6)
-- Chart types: 'bar', 'line', or 'combined'
-- Series types: 'bar' or 'line'
-- If user asks to change data, modify dataPoints array
-- If user asks about styling (colors, type, labels), modify styling object
-- Preserve seriesNames consistency with dataPoints keys
-- Return valid JSON only, no markdown or code blocks
-
-Example response format:
-{
-  "configuration": { ...updated config... },
-  "message": "I've changed your chart to a line chart and updated the colors to match your brand."
-}`
-
-      const result = await model.generateContent(prompt)
+      let result
+      if (useWebSearch) {
+        console.log('Configuring Gemini with google_search tool')
+        // Use google_search tool - cast to any to bypass TypeScript since SDK types may be outdated
+        result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }] as any,
+        })
+      } else {
+        result = await model.generateContent(prompt)
+      }
       const response = await result.response
-      const text = response.text()
 
-      // Clean up response (remove markdown code blocks if present)
-      const cleanedText = text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim()
+      console.log('Gemini API Response received')
 
-      try {
-        const parsed = JSON.parse(cleanedText)
+      // Extract grounding metadata for sources (if available)
+      const extractedSources: WebSource[] = []
+      if (useWebSearch && response.candidates && response.candidates[0]) {
+        const candidate = response.candidates[0]
+        const groundingMetadata = (candidate as any).groundingMetadata
 
-        if (!parsed.configuration || !parsed.message) {
-          throw new Error('Invalid response format from AI')
-        }
+        if (groundingMetadata && groundingMetadata.groundingChunks) {
+          console.log('Found grounding chunks:', groundingMetadata.groundingChunks.length)
 
-        // Validate the configuration has required structure
-        if (!parsed.configuration.data || !parsed.configuration.styling) {
-          throw new Error('Configuration missing data or styling')
-        }
-
-        return {
-          success: true,
-          configuration: parsed.configuration,
-          message: parsed.message,
-        }
-      } catch (parseError) {
-        console.error('Failed to parse AI response:', cleanedText, parseError)
-        return {
-          success: false,
-          message: 'I had trouble understanding how to modify your chart. Could you try rephrasing your request?',
+          for (const chunk of groundingMetadata.groundingChunks) {
+            if (chunk.web) {
+              extractedSources.push({
+                title: chunk.web.title || 'Web Source',
+                url: chunk.web.uri || '',
+                description: chunk.web.uri || undefined,
+              })
+            }
+          }
+          console.log('Extracted sources from grounding metadata:', extractedSources)
         }
       }
+
+      const text = response.text()
+      console.log('Extracted text from Gemini response')
+
+      // Use shared parser
+      return parseAIResponse(text, useWebSearch, extractedSources)
     } catch (error) {
       console.error('Gemini API error:', error)
       return {
         success: false,
-        message: 'Something went wrong while processing your request. Please try again.',
+        message: 'Gemini API request failed. Trying fallback provider...',
       }
     }
   }
