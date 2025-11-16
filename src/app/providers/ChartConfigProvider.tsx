@@ -12,6 +12,7 @@ const initialConfig: ChartConfiguration = {
     ],
     xAxisKey: 'quarter',
     seriesNames: ['Product A', 'Product B', 'Product C', 'Product D'],
+    description: 'Quarterly sales performance data for four product lines across fiscal year. Data sourced from internal sales reports. Objective: Identify which products to prioritize for Q1 next year.',
   },
   styling: {
     chartType: 'bar',
@@ -46,6 +47,7 @@ interface ChartConfigContextValue {
   setPalette: (palette: ColorPalette) => void
   setTitle: (title: string) => void
   setSubtitle: (subtitle: string) => void
+  setDataDescription: (description: string) => void
   resetConfig: () => void
 }
 
@@ -128,6 +130,11 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
     updateStyling({ subtitle })
   }, [updateStyling])
 
+  // Set data description
+  const setDataDescription = useCallback((description: string) => {
+    updateData({ description })
+  }, [updateData])
+
   // Reset to initial config
   const resetConfig = useCallback(() => {
     setConfig(initialConfig)
@@ -145,6 +152,7 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setPalette,
       setTitle,
       setSubtitle,
+      setDataDescription,
       resetConfig,
     }),
     [
@@ -158,6 +166,7 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setPalette,
       setTitle,
       setSubtitle,
+      setDataDescription,
       resetConfig,
     ]
   )

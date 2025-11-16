@@ -13,11 +13,12 @@ interface ChartPanelProps {
 }
 
 export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
-  const { config, setTitle, setSubtitle, toggleSeries } = useChartConfig()
+  const { config, setTitle, setSubtitle, setDataDescription, toggleSeries } = useChartConfig()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isSlideOpen, setIsSlideOpen] = useState(false)
 
   const { title, subtitle } = config.styling
+  const { description } = config.data
 
   const handleGenerateSlide = () => {
     setIsSlideOpen(true)
@@ -112,11 +113,31 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="pb-8 flex-1 min-h-0 flex flex-col">
-          <div className="relative">
-            <div className="rounded-xl bg-gradient-to-br from-slate-50/50 to-white p-6 border border-slate-100">
+        <CardContent className="pb-8 flex-1 min-h-0 flex flex-col gap-6">
+          <div className="relative flex-1 min-h-0">
+            <div className="rounded-xl bg-gradient-to-br from-slate-50/50 to-white p-6 border border-slate-100 h-full">
               <ChartRenderer config={config} onSeriesToggle={toggleSeries} />
             </div>
+          </div>
+
+          {/* Data Description */}
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="inline-flex items-center gap-2 text-xs font-medium text-blue-600">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                DATA CONTEXT
+              </div>
+            </div>
+            <textarea
+              value={description || ''}
+              onChange={(e) => setDataDescription(e.target.value)}
+              placeholder="Describe your data: What is it? Where does it come from? What do you want to understand from it?"
+              className="w-full px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-smooth resize-none"
+              rows={3}
+            />
+            <p className="text-xs text-slate-400 mt-2">
+              This helps Claude generate better insights and slide recommendations
+            </p>
           </div>
         </CardContent>
       </PanelCard>

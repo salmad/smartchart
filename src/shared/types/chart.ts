@@ -12,6 +12,7 @@ export interface ChartData {
   dataPoints: ChartDataPoint[]
   xAxisKey: string
   seriesNames: string[]
+  description?: string  // What the data is, its source, and user's goals
 }
 
 export interface SeriesColor {

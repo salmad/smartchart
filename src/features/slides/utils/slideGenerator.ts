@@ -294,11 +294,13 @@ function generateInsights(
  */
 function extractChartContext(
   seriesNames: string[],
-  xAxisKey: string
+  xAxisKey: string,
+  dataDescription?: string
 ): {
   metric: string
   dimension: string
   hasTimeData: boolean
+  userObjective?: string
 } {
   // Determine if this is time-based data
   const xAxisName = xAxisKey.toLowerCase()
@@ -331,7 +333,34 @@ function extractChartContext(
     dimension = 'time period'
   }
 
-  return { metric, dimension, hasTimeData }
+  // Extract user objective from description if provided
+  let userObjective: string | undefined
+  if (dataDescription) {
+    const lowerDesc = dataDescription.toLowerCase()
+    // Look for objective keywords
+    if (lowerDesc.includes('objective:') || lowerDesc.includes('goal:') || lowerDesc.includes('aim:')) {
+      const match = dataDescription.match(/(?:objective|goal|aim):\s*(.+?)(?:\.|$)/i)
+      if (match) {
+        userObjective = match[1].trim()
+      }
+    } else if (lowerDesc.includes('want to') || lowerDesc.includes('need to') || lowerDesc.includes('trying to')) {
+      const match = dataDescription.match(/(?:want to|need to|trying to)\s+(.+?)(?:\.|$)/i)
+      if (match) {
+        userObjective = match[1].trim()
+      }
+    }
+
+    // Also update metric inference from description
+    if (!metric || metric === 'performance') {
+      if (lowerDesc.includes('sales')) metric = 'revenue'
+      else if (lowerDesc.includes('revenue')) metric = 'revenue'
+      else if (lowerDesc.includes('product')) metric = 'product performance'
+      else if (lowerDesc.includes('customer')) metric = 'customer metrics'
+      else if (lowerDesc.includes('market')) metric = 'market share'
+    }
+  }
+
+  return { metric, dimension, hasTimeData, userObjective }
 }
 
 /**
@@ -343,7 +372,7 @@ function generateActionTitle(
   context: ReturnType<typeof extractChartContext>
 ): string {
   const { series, overallTrend, dominantSeries, volatileSeries, topPerformer, underperformer } = analysis
-  const { metric, hasTimeData } = context
+  const { metric, hasTimeData, userObjective } = context
 
   if (series.length === 0) {
     return 'Further analysis required to determine strategic direction'
@@ -351,7 +380,9 @@ function generateActionTitle(
 
   // Growth scenario - focus on scaling winner
   if (overallTrend === 'growth' && dominantSeries && dominantSeries.growthRate && dominantSeries.growthRate > 15) {
-    return `Prioritize ${dominantSeries.name} to capitalize on ${Math.abs(dominantSeries.growthRate).toFixed(0)}% growth momentum`
+    return userObjective
+      ? `Prioritize ${dominantSeries.name} to ${userObjective.toLowerCase()}`
+      : `Prioritize ${dominantSeries.name} to capitalize on ${Math.abs(dominantSeries.growthRate).toFixed(0)}% growth momentum`
   }
 
   // Strong performer - investment recommendation
@@ -416,7 +447,7 @@ function formatNumber(num: number): string {
  */
 export function generateSlideContent(config: ChartConfiguration): SlideContent {
   const { data, styling } = config
-  const { dataPoints, xAxisKey, seriesNames } = data
+  const { dataPoints, xAxisKey, seriesNames, description } = data
 
   // Filter out hidden series
   const visibleSeries = seriesNames.filter(
@@ -425,7 +456,7 @@ export function generateSlideContent(config: ChartConfiguration): SlideContent {
 
   // Infer units and context
   const units = inferUnits(visibleSeries, dataPoints)
-  const context = extractChartContext(visibleSeries, xAxisKey)
+  const context = extractChartContext(visibleSeries, xAxisKey, description)
 
   // Perform analysis
   const analysis = performDataAnalysis(dataPoints, visibleSeries, xAxisKey)
