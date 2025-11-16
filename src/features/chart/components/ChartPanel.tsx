@@ -16,15 +16,24 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
   const { config, setTitle, setSubtitle, setDataDescription, toggleSeries } = useChartConfig()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isSlideOpen, setIsSlideOpen] = useState(false)
+  const [slideContent, setSlideContent] = useState<Awaited<ReturnType<typeof generateSlideContent>> | null>(null)
+  const [isGeneratingSlide, setIsGeneratingSlide] = useState(false)
 
   const { title, subtitle } = config.styling
   const { description } = config.data
 
-  const handleGenerateSlide = () => {
-    setIsSlideOpen(true)
+  const handleGenerateSlide = async () => {
+    setIsGeneratingSlide(true)
+    try {
+      const content = await generateSlideContent(config)
+      setSlideContent(content)
+      setIsSlideOpen(true)
+    } catch (error) {
+      console.error('Error generating slide:', error)
+    } finally {
+      setIsGeneratingSlide(false)
+    }
   }
-
-  const slideContent = generateSlideContent(config)
 
   return (
     <div className="w-full max-w-[900px] mx-auto">
@@ -74,11 +83,14 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
                 variant="outline"
                 size="sm"
                 onClick={handleGenerateSlide}
+                disabled={isGeneratingSlide}
                 className="gap-2 transition-smooth"
                 aria-label="Generate slide"
               >
                 <Presentation className="w-4 h-4" />
-                <span className="hidden sm:inline">Generate Slide</span>
+                <span className="hidden sm:inline">
+                  {isGeneratingSlide ? 'Generating...' : 'Generate Slide'}
+                </span>
               </Button>
 
               {onOpenSettings && (
@@ -143,12 +155,14 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
       </PanelCard>
 
       {/* Slide Dialog */}
-      <SlideDialog
-        isOpen={isSlideOpen}
-        onClose={() => setIsSlideOpen(false)}
-        config={config}
-        slideContent={slideContent}
-      />
+      {slideContent && (
+        <SlideDialog
+          isOpen={isSlideOpen}
+          onClose={() => setIsSlideOpen(false)}
+          config={config}
+          slideContent={slideContent}
+        />
+      )}
     </div>
   )
 }
