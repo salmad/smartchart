@@ -68,6 +68,9 @@ The title should be:
 - Action-oriented (starts with a verb or recommendation)
 - The conclusion that the insights support
 - Answers "so what should we do?"
+- Concise not more than 20-25 words
+
+Also generate a brief subtitle (one sentence)
 
 Return JSON only:
 {
@@ -86,6 +89,6 @@ export function buildUnitsInferencePrompt(data: ChartData): string {
 Data:
 ${JSON.stringify(data, null, 2)}
 
-Return only one of: $, %, units, kg, °C, or another appropriate unit.
+Return only one of: $ (or any other country currency depending on context), %, units, kg, °C, or another appropriate unit.
 Return JSON only: { "units": "$" }`
 }

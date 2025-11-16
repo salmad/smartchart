@@ -49,7 +49,7 @@ export async function generateSlideContent(config: ChartConfiguration): Promise<
       }
     }
 
-    // If LLM fails, throw to trigger fallback logic
+    // If LLM fails, throw to trigger fallback logic. todo: remove, just return error message to user instead of bad quality output
     throw new Error('LLM generation failed')
   } catch (error) {
     console.error('Slide generation error, using fallback:', error)
