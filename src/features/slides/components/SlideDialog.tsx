@@ -3,12 +3,21 @@
  * Opens in a large modal to display the slide presentation
  */
 
+import { useRef, useState } from 'react'
 import { Dialog, DialogContent } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
-import { X, Download, Presentation } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu'
+import { X, Download, Presentation, FileImage, FileText, Loader2 } from 'lucide-react'
 import { SlidePresentation } from './SlidePresentation'
 import type { ChartConfiguration } from '@/shared/types/chart'
 import type { SlideContent } from '../utils/slideGenerator'
+import html2canvas from 'html2canvas'
+import { toast } from 'sonner'
 
 interface SlideDialogProps {
   isOpen: boolean
@@ -18,9 +27,50 @@ interface SlideDialogProps {
 }
 
 export function SlideDialog({ isOpen, onClose, config, slideContent }: SlideDialogProps) {
-  const handleDownload = () => {
-    // TODO: Implement slide download as PNG/PDF
-    console.log('Download slide functionality coming soon!')
+  const slideRef = useRef<HTMLDivElement>(null)
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleDownloadPNG = async () => {
+    if (!slideRef.current) return
+
+    try {
+      setIsExporting(true)
+      toast.info('Generating PNG...')
+
+      // Capture the slide
+      const canvas = await html2canvas(slideRef.current, {
+        scale: 2, // Higher quality
+        backgroundColor: null,
+        logging: false,
+        useCORS: true,
+      })
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `${slideContent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          toast.success('Slide downloaded as PNG!')
+        }
+        setIsExporting(false)
+      })
+    } catch (error) {
+      console.error('Error generating PNG:', error)
+      toast.error('Failed to generate PNG')
+      setIsExporting(false)
+    }
+  }
+
+  const handlePrintPDF = () => {
+    toast.info('Opening print dialog...')
+    // Use browser's print functionality
+    window.print()
   }
 
   return (
@@ -43,15 +93,34 @@ export function SlideDialog({ isOpen, onClose, config, slideContent }: SlideDial
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  {isExporting ? 'Exporting...' : 'Download'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDownloadPNG} disabled={isExporting}>
+                  <FileImage className="w-4 h-4 mr-2" />
+                  Download as PNG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePrintPDF} disabled={isExporting}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Print as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant="ghost"
               size="icon"
@@ -65,7 +134,11 @@ export function SlideDialog({ isOpen, onClose, config, slideContent }: SlideDial
 
         {/* Slide Content */}
         <div className="flex-1 overflow-auto bg-gray-100 p-8">
-          <div className="mx-auto bg-white shadow-2xl" style={{ aspectRatio: '16/9', maxHeight: 'calc(90vh - 120px)' }}>
+          <div
+            ref={slideRef}
+            className="mx-auto bg-white shadow-2xl"
+            style={{ aspectRatio: '16/9', maxHeight: 'calc(90vh - 120px)' }}
+          >
             <SlidePresentation config={config} slideContent={slideContent} />
           </div>
         </div>
