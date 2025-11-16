@@ -33,26 +33,25 @@ class GeminiService implements AIService {
     try {
       const prompt = buildChartModificationPrompt(currentConfig, userMessage, useWebSearch)
 
-      // Configure model with Google Search grounding if web search is enabled
-      const modelConfig: any = { model: 'gemini-2.5-flash' }
-
-      if (useWebSearch) {
-        console.log('Configuring Gemini with Google Search grounding')
-        modelConfig.tools = [
-          {
-            googleSearchRetrieval: {}
-          }
-        ]
-      }
-
-      const model = genAI.getGenerativeModel(modelConfig)
+      // Configure model
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
       console.log('Calling Gemini API with config:', {
-        model: modelConfig.model,
-        hasTools: !!modelConfig.tools,
+        model: 'gemini-2.5-flash',
+        hasTools: useWebSearch,
       })
 
-      const result = await model.generateContent(prompt)
+      let result
+      if (useWebSearch) {
+        console.log('Configuring Gemini with google_search tool')
+        // Use google_search tool - cast to any to bypass TypeScript since SDK types may be outdated
+        result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }] as any,
+        })
+      } else {
+        result = await model.generateContent(prompt)
+      }
       const response = await result.response
 
       console.log('Gemini API Response received')
