@@ -147,6 +147,12 @@ All charts must include:
 - **Accessibility** - ARIA labels on icon buttons, semantic HTML, focus states
 - **File naming** - PascalCase for components (e.g., `ChartPanel.tsx`)
 
+### LLM Integration Rules
+
+- **LLM order**: Gemini Flash (primary) → Claude Haiku (fallback)
+- **Shared logic**: Both LLMs must use identical prompts and parsing logic (see `src/services/ai/shared/`)
+- **Frontend agnostic**: Frontend code should never care which LLM is being used - they're interchangeable backends
+
 ## Pull Request Checklist
 
 See [.github/PULL_REQUEST_TEMPLATE.md](./.github/PULL_REQUEST_TEMPLATE.md) for full checklist.
