@@ -28,6 +28,10 @@ export interface ChartStyling {
   title: string
   subtitle: string
   selectedPalette: ColorPalette
+  xMin?: number
+  xMax?: number
+  yMin?: number
+  yMax?: number
 }
 
 export interface ChartConfiguration {

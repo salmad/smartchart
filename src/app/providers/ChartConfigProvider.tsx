@@ -49,6 +49,8 @@ interface ChartConfigContextValue {
   setTitle: (title: string) => void
   setSubtitle: (subtitle: string) => void
   setSources: (sources: WebSource[]) => void
+  setAxisRange: (axis: 'xMin' | 'xMax' | 'yMin' | 'yMax', value: number | undefined) => void
+  clearAxisRange: (axis?: 'x' | 'y') => void
   resetConfig: () => void
 }
 
@@ -136,6 +138,23 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
     updateStyling({ subtitle })
   }, [updateStyling])
 
+  // Set axis range value (min or max for x or y axis)
+  const setAxisRange = useCallback((axis: 'xMin' | 'xMax' | 'yMin' | 'yMax', value: number | undefined) => {
+    updateStyling({ [axis]: value })
+  }, [updateStyling])
+
+  // Clear axis range (revert to auto-scaling)
+  const clearAxisRange = useCallback((axis?: 'x' | 'y') => {
+    if (axis === 'x') {
+      updateStyling({ xMin: undefined, xMax: undefined })
+    } else if (axis === 'y') {
+      updateStyling({ yMin: undefined, yMax: undefined })
+    } else {
+      // Clear all axes
+      updateStyling({ xMin: undefined, xMax: undefined, yMin: undefined, yMax: undefined })
+    }
+  }, [updateStyling])
+
   // Reset to initial config
   const resetConfig = useCallback(() => {
     setConfig(initialConfig)
@@ -156,6 +175,8 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setTitle,
       setSubtitle,
       setSources,
+      setAxisRange,
+      clearAxisRange,
       resetConfig,
     }),
     [
@@ -170,6 +191,8 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setPalette,
       setTitle,
       setSubtitle,
+      setAxisRange,
+      clearAxisRange,
       resetConfig,
     ]
   )

@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
 import { ScrollArea } from '@/shared/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
-import { BarChart3, LineChart as LineChartIcon, Settings, Palette } from 'lucide-react'
+import { BarChart3, LineChart as LineChartIcon, Settings, Palette, Axis3D } from 'lucide-react'
 import { CloseButton } from '@/shared/components/CloseButton'
 import { getAllPalettes, getPaletteColors } from '@/shared/lib/palettes'
 import { useChartConfig } from '@/app/providers/ChartConfigProvider'
@@ -13,10 +14,10 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
-  const { config, updateStyling, setChartType, toggleDataLabels } = useChartConfig()
+  const { config, updateStyling, setChartType, toggleDataLabels, setAxisRange, clearAxisRange } = useChartConfig()
   const { data, styling } = config
   const { seriesNames } = data
-  const { chartType, seriesTypes, showDataLabels, selectedPalette } = styling
+  const { chartType, seriesTypes, showDataLabels, selectedPalette, yMin, yMax, xMin, xMax } = styling
 
   const handlePaletteChange = (paletteId: ColorPalette) => {
     const newColors = getPaletteColors(paletteId)
@@ -121,6 +122,106 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <Button variant={showDataLabels ? 'default' : 'outline'} size="sm" onClick={toggleDataLabels} className="w-full">
                 {showDataLabels ? 'ON' : 'OFF'}
               </Button>
+            </div>
+
+            {/* Axis Range Controls */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                  <Axis3D className="w-3.5 h-3.5" />
+                  Axis Range
+                </label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => clearAxisRange()}
+                  className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700"
+                >
+                  Reset All
+                </Button>
+              </div>
+
+              {/* Y-axis controls */}
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-slate-600">Y-Axis (Vertical)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-500">Min</label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={yMin ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : Number(e.target.value)
+                        setAxisRange('yMin', value)
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-500">Max</label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={yMax ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : Number(e.target.value)
+                        setAxisRange('yMax', value)
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => clearAxisRange('y')}
+                  className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
+                >
+                  Clear Y-Axis
+                </Button>
+              </div>
+
+              {/* X-axis controls */}
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-slate-600">X-Axis (Horizontal)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-500">Min</label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={xMin ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : Number(e.target.value)
+                        setAxisRange('xMin', value)
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-500">Max</label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={xMax ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : Number(e.target.value)
+                        setAxisRange('xMax', value)
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => clearAxisRange('x')}
+                  className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
+                >
+                  Clear X-Axis
+                </Button>
+              </div>
             </div>
 
             {/* Color Palette Selector */}

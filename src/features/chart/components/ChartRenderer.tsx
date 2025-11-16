@@ -9,13 +9,26 @@ interface ChartRendererProps {
 export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
   const { data, styling } = config
   const { dataPoints, xAxisKey, seriesNames } = data
-  const { chartType, seriesTypes, seriesColors, hiddenSeries, showDataLabels } = styling
+  const { chartType, seriesTypes, seriesColors, hiddenSeries, showDataLabels, xMin, xMax, yMin, yMax } = styling
 
   const handleLegendClick = (data: any) => {
     if (data && data.dataKey) {
       onSeriesToggle(data.dataKey)
     }
   }
+
+  // Create axis domains based on min/max values
+  const yDomain: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax'] = [
+    yMin !== undefined ? yMin : 'auto',
+    yMax !== undefined ? yMax : 'auto'
+  ]
+
+  // X-axis domain (only applied for numerical x-axis data)
+  const xDomain: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax'] | undefined =
+    (xMin !== undefined || xMax !== undefined) ? [
+      xMin !== undefined ? xMin : 'auto',
+      xMax !== undefined ? xMax : 'auto'
+    ] : undefined
 
   const commonProps = {
     data: dataPoints,
@@ -93,6 +106,7 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
           style={{ fontSize: '13px', fontWeight: 600 }}
           tickLine={false}
           axisLine={{ stroke: '#e2e8f0' }}
+          {...(xDomain && { domain: xDomain })}
         />
         <YAxis
           stroke="#64748b"
@@ -100,6 +114,7 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `$${value}`}
+          domain={yDomain}
         />
         <Tooltip
           contentStyle={{
