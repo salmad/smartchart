@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ChartConfiguration } from '@/shared/types/chart'
 import type { AIService, ChatResponse, WebSource } from './types'
+import { buildChartModificationPrompt } from './shared/promptBuilder'
+import { parseAIResponse } from './shared/responseParser'
 
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
@@ -17,6 +19,7 @@ class ClaudeService implements AIService {
     useWebSearch = false
   ): Promise<ChatResponse> {
     console.log('=== ClaudeService.modifyChart called ===')
+    console.log('Model: claude-haiku-4-5')
     console.log('useWebSearch parameter:', useWebSearch)
     console.log('userMessage:', userMessage)
 
@@ -28,85 +31,7 @@ class ClaudeService implements AIService {
     }
 
     try {
-      const prompt = `You are a chart configuration expert. The user wants to modify their chart${
-        useWebSearch ? ' and has enabled web search to find data online' : ''
-      }.
-
-Current Chart Configuration:
-${JSON.stringify(currentConfig, null, 2)}
-
-User Request: "${userMessage}"
-
-Your task is to:
-1. Analyze the user's request${
-        useWebSearch
-          ? '\n2. IMPORTANT: Use the web_search tool to find the requested data online\n3. Extract the specific data values from the search results\n4. Update the chart configuration with the found data'
-          : '\n2. Modify the chart configuration accordingly'
-      }
-${useWebSearch ? '5' : '3'}. Return ONLY a valid JSON object with ${useWebSearch ? 'THREE' : 'TWO'} keys:
-   - "configuration": The updated ChartConfiguration object with the ${useWebSearch ? 'data you found from web search' : 'modified data'}
-   - "message": A friendly message that ${
-     useWebSearch
-       ? 'MUST include:\n     a) What data you searched for\n     b) The actual data values you found (list them out)\n     c) Brief mention of which sources you used\n     This should be 3-5 sentences explaining the data you found.'
-       : 'explains what you changed (2-3 sentences)'
-   }${
-        useWebSearch
-          ? '\n   - "sources": REQUIRED array of ONLY the sources you actually used to extract data. Each source MUST have:\n     * "title": The page/article title\n     * "url": The full URL\n     * "description": A brief description of what specific data you got from this source (e.g., "GDP data for 2020-2023")'
-          : ''
-      }
-
-Rules:
-- Keep data structure consistent (same xAxisKey format)
-- Only modify what the user asked for
-- Maintain premium color palette: purple (#8B5CF6), emerald (#10B981), rose (#F43F5E), blue (#3B82F6), violet (#8B5CF6)
-- Chart types: 'bar', 'line', or 'combined'
-- Series types: 'bar' or 'line'
-- If user asks to change data, modify dataPoints array
-- If user asks about styling (colors, type, labels), modify styling object
-- Preserve seriesNames consistency with dataPoints keys${
-        useWebSearch
-          ? '\n- CRITICAL: You MUST use web_search to find data, not make it up\n- CRITICAL: Your message MUST describe the actual data values you found\n- CRITICAL: The "sources" array is REQUIRED and must include ONLY the sources you actually used for data extraction (typically 1-3 sources)\n- CRITICAL: Your response must START with { and END with } - NO explanatory text before or after the JSON'
-          : ''
-      }
-- Return valid JSON only, no markdown or code blocks
-- Your response must START with the opening brace { of the JSON object
-
-${
-  useWebSearch
-    ? `Example response with web search:
-{
-  "configuration": {
-    "data": {
-      "dataPoints": [
-        { "year": "2020", "GDP": 21060 },
-        { "year": "2021", "GDP": 23315 },
-        { "year": "2022", "GDP": 25464 }
-      ],
-      "xAxisKey": "year",
-      "seriesNames": ["GDP"]
-    },
-    "styling": { ...existing styling... }
-  },
-  "message": "I searched for US GDP data from 2020-2022 using the World Bank and Macrotrends. The data shows: 2020: $21.06T, 2021: $23.32T, and 2022: $25.46T. This represents steady growth over the three-year period. The data is measured in billions of USD at current prices.",
-  "sources": [
-    {
-      "title": "U.S. GDP | U.S. Bureau of Economic Analysis (BEA)",
-      "url": "https://www.bea.gov/data/gdp/gross-domestic-product",
-      "description": "Official GDP data for 2020-2022 from the U.S. Bureau of Economic Analysis"
-    },
-    {
-      "title": "United States GDP - Macrotrends",
-      "url": "https://www.macrotrends.net/countries/USA/united-states/gdp-gross-domestic-product",
-      "description": "Historical GDP data and growth rates for verification"
-    }
-  ]
-}`
-    : `Example response format:
-{
-  "configuration": { ...updated config... },
-  "message": "I've changed your chart to a line chart and updated the colors to match your brand."
-}`
-}`
+      const prompt = buildChartModificationPrompt(currentConfig, userMessage, useWebSearch)
 
       const messageParams: Anthropic.MessageCreateParams = {
         model: 'claude-haiku-4-5',
@@ -165,7 +90,7 @@ ${
         throw new Error('Last block is not text type')
       }
 
-      let text = lastTextBlock.text
+      const text = lastTextBlock.text
       console.log('Extracted text from last block:', text)
 
       // Extract sources from web_search_tool_result blocks
@@ -193,62 +118,8 @@ ${
         console.log('Extracted sources from tool results:', extractedSources)
       }
 
-      // Extract JSON from text - Claude often adds explanation before the JSON
-      // Find the first { and extract from there to the end
-      const jsonStart = text.indexOf('{')
-      if (jsonStart !== -1) {
-        text = text.substring(jsonStart)
-        console.log('Extracted JSON starting from first {:', text.substring(0, 100) + '...')
-      }
-
-      // Clean up response (remove markdown code blocks if present)
-      const cleanedText = text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim()
-
-      try {
-        const parsed = JSON.parse(cleanedText)
-        console.log('Parsed response:', parsed)
-
-        if (!parsed.configuration || !parsed.message) {
-          throw new Error('Invalid response format from AI')
-        }
-
-        // Validate the configuration has required structure
-        if (!parsed.configuration.data || !parsed.configuration.styling) {
-          throw new Error('Configuration missing data or styling')
-        }
-
-        const response: ChatResponse = {
-          success: true,
-          configuration: parsed.configuration,
-          message: parsed.message,
-        }
-
-        // Include sources - prefer sources from JSON response (Claude's selection) over auto-extracted sources
-        if (useWebSearch) {
-          if (parsed.sources && Array.isArray(parsed.sources) && parsed.sources.length > 0) {
-            response.sources = parsed.sources as WebSource[]
-            console.log('Using sources from JSON response (Claude selected):', response.sources)
-          } else if (extractedSources.length > 0) {
-            // Fallback to auto-extracted sources if Claude didn't provide any
-            console.warn('Claude did not provide sources in JSON, falling back to auto-extracted sources')
-            response.sources = extractedSources.slice(0, 3) // Limit to top 3
-            console.log('Using fallback sources from tool results:', response.sources)
-          } else {
-            console.warn('Web search was enabled but no sources were found')
-          }
-        }
-
-        return response
-      } catch (parseError) {
-        console.error('Failed to parse AI response:', cleanedText, parseError)
-        return {
-          success: false,
-          message: 'I had trouble understanding how to modify your chart. Could you try rephrasing your request?',
-        }
-      }
+      // Use shared parser
+      return parseAIResponse(text, useWebSearch, extractedSources)
     } catch (error) {
       console.error('Claude API error:', error)
       // Return error with enough detail to trigger fallback
