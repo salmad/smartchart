@@ -14,10 +14,10 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
-  const { config, updateStyling, setChartType, toggleDataLabels, setAxisRange, clearAxisRange } = useChartConfig()
+  const { config, updateStyling, setChartType, toggleDataLabels, setAxisRange, clearAxisRange, setSeriesYAxis } = useChartConfig()
   const { data, styling } = config
   const { seriesNames } = data
-  const { chartType, seriesTypes, showDataLabels, selectedPalette, yMin, yMax, xMin, xMax } = styling
+  const { chartType, seriesTypes, seriesYAxis, showDataLabels, selectedPalette, yMin, yMax, xMin, xMax, yMinRight, yMaxRight } = styling
 
   const handlePaletteChange = (paletteId: ColorPalette) => {
     const newColors = getPaletteColors(paletteId)
@@ -116,6 +116,42 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               </div>
             )}
 
+            {/* Y-Axis Assignment */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Y-Axis Assignment</label>
+                <span className="text-xs text-slate-500 italic">For different units</span>
+              </div>
+              <div className="space-y-2">
+                {seriesNames.map((name) => (
+                  <div key={name} className="space-y-1">
+                    <span className="text-slate-600 font-medium text-xs">{name}</span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={seriesYAxis[name] === 'left' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSeriesYAxis(name, 'left')}
+                        className="flex-1 text-xs"
+                      >
+                        Left ($)
+                      </Button>
+                      <Button
+                        variant={seriesYAxis[name] === 'right' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSeriesYAxis(name, 'right')}
+                        className="flex-1 text-xs"
+                      >
+                        Right (%)
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 italic pt-1">
+                💡 Use when series have different units (e.g., revenue vs growth rate)
+              </p>
+            </div>
+
             {/* Data labels toggle */}
             <div className="space-y-3">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Data Labels</label>
@@ -141,9 +177,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 </Button>
               </div>
 
-              {/* Y-axis controls */}
+              {/* Y-axis Left controls */}
               <div className="space-y-2">
-                <span className="text-xs font-medium text-slate-600">Y-Axis (Vertical)</span>
+                <span className="text-xs font-medium text-slate-600">Y-Axis Left ($)</span>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <label className="text-xs text-slate-500">Min</label>
@@ -178,7 +214,48 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   onClick={() => clearAxisRange('y')}
                   className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
                 >
-                  Clear Y-Axis
+                  Clear Left Y-Axis
+                </Button>
+              </div>
+
+              {/* Y-axis Right controls */}
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-slate-600">Y-Axis Right (%)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-500">Min</label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={yMinRight ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : Number(e.target.value)
+                        setAxisRange('yMinRight', value)
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-500">Max</label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={yMaxRight ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : Number(e.target.value)
+                        setAxisRange('yMaxRight', value)
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => clearAxisRange('yRight')}
+                  className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
+                >
+                  Clear Right Y-Axis
                 </Button>
               </div>
 

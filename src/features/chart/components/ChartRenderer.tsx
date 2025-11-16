@@ -9,7 +9,7 @@ interface ChartRendererProps {
 export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
   const { data, styling } = config
   const { dataPoints, xAxisKey, seriesNames } = data
-  const { chartType, seriesTypes, seriesColors, hiddenSeries, showDataLabels, xMin, xMax, yMin, yMax } = styling
+  const { chartType, seriesTypes, seriesYAxis, seriesColors, hiddenSeries, showDataLabels, xMin, xMax, yMin, yMax, yMinRight, yMaxRight } = styling
 
   const handleLegendClick = (data: any) => {
     if (data && data.dataKey) {
@@ -17,10 +17,18 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
     }
   }
 
+  // Check if any series use the right Y-axis
+  const hasRightYAxis = seriesNames.some(name => seriesYAxis[name] === 'right')
+
   // Create axis domains based on min/max values
-  const yDomain: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax'] = [
+  const yDomainLeft: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax'] = [
     yMin !== undefined ? yMin : 'auto',
     yMax !== undefined ? yMax : 'auto'
+  ]
+
+  const yDomainRight: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax'] = [
+    yMinRight !== undefined ? yMinRight : 'auto',
+    yMaxRight !== undefined ? yMaxRight : 'auto'
   ]
 
   // X-axis domain (only applied for numerical x-axis data)
@@ -32,7 +40,7 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
 
   const commonProps = {
     data: dataPoints,
-    margin: { top: 20, right: 30, left: 20, bottom: 5 },
+    margin: { top: 20, right: hasRightYAxis ? 50 : 30, left: 20, bottom: 5 },
   }
 
   const renderGradients = () => (
@@ -53,11 +61,13 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
       const type = chartType === 'combined' ? seriesTypes[name] : chartType
       const fillColor = type === 'bar' ? `url(#${color.gradient})` : 'none'
       const strokeColor = color.solid
+      const yAxisId = seriesYAxis[name] || 'left'
 
       const commonSeriesProps = {
         dataKey: name,
         strokeWidth: 2,
         hide: isHidden,
+        yAxisId,
       }
 
       if (type === 'bar') {
@@ -109,13 +119,26 @@ export function ChartRenderer({ config, onSeriesToggle }: ChartRendererProps) {
           {...(xDomain && { domain: xDomain })}
         />
         <YAxis
+          yAxisId="left"
           stroke="#64748b"
           style={{ fontSize: '12px', fontWeight: 500 }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `$${value}`}
-          domain={yDomain}
+          domain={yDomainLeft}
         />
+        {hasRightYAxis && (
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            stroke="#64748b"
+            style={{ fontSize: '12px', fontWeight: 500 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `${value}%`}
+            domain={yDomainRight}
+          />
+        )}
         <Tooltip
           contentStyle={{
             backgroundColor: 'rgba(255, 255, 255, 0.98)',

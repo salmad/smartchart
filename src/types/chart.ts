@@ -2,6 +2,7 @@
 
 export type ChartType = 'bar' | 'line' | 'combined'
 export type SeriesType = 'bar' | 'line'
+export type YAxisId = 'left' | 'right'
 export type ColorPalette = 'founder' | 'executive' | 'arctic' | 'revolut' | 'linear'
 
 export interface ChartDataPoint {
@@ -22,6 +23,7 @@ export interface SeriesColor {
 export interface ChartStyling {
   chartType: ChartType
   seriesTypes: Record<string, SeriesType>
+  seriesYAxis: Record<string, YAxisId>
   seriesColors: SeriesColor[]
   hiddenSeries: string[]
   showDataLabels: boolean
@@ -32,6 +34,8 @@ export interface ChartStyling {
   xMax?: number
   yMin?: number
   yMax?: number
+  yMinRight?: number
+  yMaxRight?: number
 }
 
 export interface ChartConfiguration {

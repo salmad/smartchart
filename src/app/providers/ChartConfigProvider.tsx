@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react'
-import type { ChartConfiguration, ChartStyling, ChartData, ChartType, ColorPalette } from '@/shared/types/chart'
+import type { ChartConfiguration, ChartStyling, ChartData, ChartType, ColorPalette, YAxisId } from '@/shared/types/chart'
 import type { WebSource } from '@/services/ai'
 
 // Initial chart configuration
@@ -21,6 +21,12 @@ const initialConfig: ChartConfiguration = {
       'Product B': 'bar',
       'Product C': 'bar',
       'Product D': 'bar',
+    },
+    seriesYAxis: {
+      'Product A': 'left',
+      'Product B': 'left',
+      'Product C': 'left',
+      'Product D': 'left',
     },
     seriesColors: [
       { gradient: 'colorA', solid: 'hsl(262, 80%, 60%)' },  // Vibrant Purple
@@ -49,8 +55,9 @@ interface ChartConfigContextValue {
   setTitle: (title: string) => void
   setSubtitle: (subtitle: string) => void
   setSources: (sources: WebSource[]) => void
-  setAxisRange: (axis: 'xMin' | 'xMax' | 'yMin' | 'yMax', value: number | undefined) => void
-  clearAxisRange: (axis?: 'x' | 'y') => void
+  setAxisRange: (axis: 'xMin' | 'xMax' | 'yMin' | 'yMax' | 'yMinRight' | 'yMaxRight', value: number | undefined) => void
+  clearAxisRange: (axis?: 'x' | 'y' | 'yRight') => void
+  setSeriesYAxis: (seriesName: string, yAxisId: YAxisId) => void
   resetConfig: () => void
 }
 
@@ -139,21 +146,37 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
   }, [updateStyling])
 
   // Set axis range value (min or max for x or y axis)
-  const setAxisRange = useCallback((axis: 'xMin' | 'xMax' | 'yMin' | 'yMax', value: number | undefined) => {
+  const setAxisRange = useCallback((axis: 'xMin' | 'xMax' | 'yMin' | 'yMax' | 'yMinRight' | 'yMaxRight', value: number | undefined) => {
     updateStyling({ [axis]: value })
   }, [updateStyling])
 
   // Clear axis range (revert to auto-scaling)
-  const clearAxisRange = useCallback((axis?: 'x' | 'y') => {
+  const clearAxisRange = useCallback((axis?: 'x' | 'y' | 'yRight') => {
     if (axis === 'x') {
       updateStyling({ xMin: undefined, xMax: undefined })
     } else if (axis === 'y') {
       updateStyling({ yMin: undefined, yMax: undefined })
+    } else if (axis === 'yRight') {
+      updateStyling({ yMinRight: undefined, yMaxRight: undefined })
     } else {
       // Clear all axes
-      updateStyling({ xMin: undefined, xMax: undefined, yMin: undefined, yMax: undefined })
+      updateStyling({ xMin: undefined, xMax: undefined, yMin: undefined, yMax: undefined, yMinRight: undefined, yMaxRight: undefined })
     }
   }, [updateStyling])
+
+  // Set Y-axis assignment for a series
+  const setSeriesYAxis = useCallback((seriesName: string, yAxisId: YAxisId) => {
+    setConfig(prev => ({
+      ...prev,
+      styling: {
+        ...prev.styling,
+        seriesYAxis: {
+          ...prev.styling.seriesYAxis,
+          [seriesName]: yAxisId
+        }
+      }
+    }))
+  }, [])
 
   // Reset to initial config
   const resetConfig = useCallback(() => {
@@ -177,6 +200,7 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setSources,
       setAxisRange,
       clearAxisRange,
+      setSeriesYAxis,
       resetConfig,
     }),
     [
@@ -193,6 +217,7 @@ export function ChartConfigProvider({ children }: { children: ReactNode }) {
       setSubtitle,
       setAxisRange,
       clearAxisRange,
+      setSeriesYAxis,
       resetConfig,
     ]
   )
