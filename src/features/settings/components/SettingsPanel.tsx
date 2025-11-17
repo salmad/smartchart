@@ -3,11 +3,13 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { ScrollArea } from '@/shared/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
-import { BarChart3, LineChart as LineChartIcon, Settings, Palette, Axis3D } from 'lucide-react'
+import { Separator } from '@/shared/components/ui/separator'
+import { BarChart3, LineChart as LineChartIcon, Settings, Palette, ChevronDown, ChevronRight } from 'lucide-react'
 import { CloseButton } from '@/shared/components/CloseButton'
 import { getAllPalettes, getPaletteColors } from '@/shared/lib/palettes'
 import { useChartConfig } from '@/app/providers/ChartConfigProvider'
-import type { ColorPalette } from '@/shared/types/chart'
+import type { ColorPalette, ChartType } from '@/shared/types/chart'
+import { useState } from 'react'
 
 interface SettingsPanelProps {
   onClose: () => void
@@ -18,6 +20,13 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { data, styling } = config
   const { seriesNames } = data
   const { chartType, seriesTypes, seriesYAxis, showDataLabels, selectedPalette, yMin, yMax, xMin, xMax, yMinRight, yMaxRight } = styling
+
+  // Collapsible sections state
+  const [showYAxisAssignment, setShowYAxisAssignment] = useState(false)
+  const [showAxisRanges, setShowAxisRanges] = useState(false)
+
+  // Check if any series use right Y-axis
+  const hasRightYAxis = seriesNames.some(name => seriesYAxis[name] === 'right')
 
   const handlePaletteChange = (paletteId: ColorPalette) => {
     const newColors = getPaletteColors(paletteId)
@@ -49,55 +58,51 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
       <CardContent className="flex-1 min-h-0 pb-8">
         <ScrollArea className="h-full pr-4">
-          <div className="space-y-6">
-            {/* Chart type selector */}
-            <div className="space-y-3">
+          <div className="space-y-5">
+            {/* Chart Type - Dropdown */}
+            <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Chart Type</label>
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant={chartType === 'bar' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setChartType('bar')}
-                  className="w-full justify-start"
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Bar Chart
-                </Button>
-                <Button
-                  variant={chartType === 'line' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setChartType('line')}
-                  className="w-full justify-start"
-                >
-                  <LineChartIcon className="w-4 h-4 mr-2" />
-                  Line Chart
-                </Button>
-                <Button
-                  variant={chartType === 'combined' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setChartType('combined')}
-                  className="w-full justify-start"
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Combined
-                </Button>
-              </div>
+              <Select value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bar">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Bar Chart</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="line">
+                    <div className="flex items-center gap-2">
+                      <LineChartIcon className="w-4 h-4" />
+                      <span>Line Chart</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="combined">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Combined</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Series type selector (only for combined) */}
+            {/* Series Type Selector - Compact (only for combined) */}
             {chartType === 'combined' && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Series Types</label>
                 <div className="space-y-2">
                   {seriesNames.map((name) => (
-                    <div key={name} className="space-y-1">
+                    <div key={name} className="flex items-center justify-between">
                       <span className="text-slate-600 font-medium text-xs">{name}</span>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Button
                           variant={seriesTypes[name] === 'bar' ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => updateStyling({ seriesTypes: { ...seriesTypes, [name]: 'bar' } })}
-                          className="flex-1 text-xs"
+                          className="h-7 px-3 text-xs"
                         >
                           Bar
                         </Button>
@@ -105,7 +110,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                           variant={seriesTypes[name] === 'line' ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => updateStyling({ seriesTypes: { ...seriesTypes, [name]: 'line' } })}
-                          className="flex-1 text-xs"
+                          className="h-7 px-3 text-xs"
                         >
                           Line
                         </Button>
@@ -116,193 +121,66 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               </div>
             )}
 
-            {/* Y-Axis Assignment */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Y-Axis Assignment</label>
-                <span className="text-xs text-slate-500 italic">For different units</span>
-              </div>
-              <div className="space-y-2">
-                {seriesNames.map((name) => (
-                  <div key={name} className="space-y-1">
-                    <span className="text-slate-600 font-medium text-xs">{name}</span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={seriesYAxis[name] === 'left' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSeriesYAxis(name, 'left')}
-                        className="flex-1 text-xs"
-                      >
-                        Left ($)
-                      </Button>
-                      <Button
-                        variant={seriesYAxis[name] === 'right' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSeriesYAxis(name, 'right')}
-                        className="flex-1 text-xs"
-                      >
-                        Right (%)
-                      </Button>
+            <Separator />
+
+            {/* Y-Axis Assignment - Collapsible */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowYAxisAssignment(!showYAxisAssignment)}
+                className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 uppercase tracking-wide hover:text-slate-900 transition-smooth"
+              >
+                <span>Y-Axis Assignment</span>
+                {showYAxisAssignment ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+              {showYAxisAssignment && (
+                <div className="space-y-2 pt-1">
+                  <p className="text-xs text-slate-500 italic">
+                    Use dual Y-axes when series have different units
+                  </p>
+                  {seriesNames.map((name) => (
+                    <div key={name} className="flex items-center justify-between">
+                      <span className="text-slate-600 font-medium text-xs">{name}</span>
+                      <div className="flex gap-1">
+                        <Button
+                          variant={seriesYAxis[name] === 'left' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setSeriesYAxis(name, 'left')}
+                          className="h-7 px-3 text-xs"
+                        >
+                          Left
+                        </Button>
+                        <Button
+                          variant={seriesYAxis[name] === 'right' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setSeriesYAxis(name, 'right')}
+                          className="h-7 px-3 text-xs"
+                        >
+                          Right
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-slate-500 italic pt-1">
-                💡 Use when series have different units (e.g., revenue vs growth rate)
-              </p>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Data labels toggle */}
-            <div className="space-y-3">
+            {/* Data Labels Toggle */}
+            <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Data Labels</label>
-              <Button variant={showDataLabels ? 'default' : 'outline'} size="sm" onClick={toggleDataLabels} className="w-full">
+              <Button
+                variant={showDataLabels ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleDataLabels}
+                className="h-7 px-4 text-xs"
+              >
                 {showDataLabels ? 'ON' : 'OFF'}
               </Button>
             </div>
 
-            {/* Axis Range Controls */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
-                  <Axis3D className="w-3.5 h-3.5" />
-                  Axis Range
-                </label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => clearAxisRange()}
-                  className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700"
-                >
-                  Reset All
-                </Button>
-              </div>
+            <Separator />
 
-              {/* Y-axis Left controls */}
-              <div className="space-y-2">
-                <span className="text-xs font-medium text-slate-600">Y-Axis Left ($)</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-500">Min</label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={yMin ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? undefined : Number(e.target.value)
-                        setAxisRange('yMin', value)
-                      }}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-500">Max</label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={yMax ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? undefined : Number(e.target.value)
-                        setAxisRange('yMax', value)
-                      }}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => clearAxisRange('y')}
-                  className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
-                >
-                  Clear Left Y-Axis
-                </Button>
-              </div>
-
-              {/* Y-axis Right controls */}
-              <div className="space-y-2">
-                <span className="text-xs font-medium text-slate-600">Y-Axis Right (%)</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-500">Min</label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={yMinRight ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? undefined : Number(e.target.value)
-                        setAxisRange('yMinRight', value)
-                      }}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-500">Max</label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={yMaxRight ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? undefined : Number(e.target.value)
-                        setAxisRange('yMaxRight', value)
-                      }}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => clearAxisRange('yRight')}
-                  className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
-                >
-                  Clear Right Y-Axis
-                </Button>
-              </div>
-
-              {/* X-axis controls */}
-              <div className="space-y-2">
-                <span className="text-xs font-medium text-slate-600">X-Axis (Horizontal)</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-500">Min</label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={xMin ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? undefined : Number(e.target.value)
-                        setAxisRange('xMin', value)
-                      }}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-500">Max</label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={xMax ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? undefined : Number(e.target.value)
-                        setAxisRange('xMax', value)
-                      }}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => clearAxisRange('x')}
-                  className="h-6 w-full text-xs text-slate-500 hover:text-slate-700"
-                >
-                  Clear X-Axis
-                </Button>
-              </div>
-            </div>
-
-            {/* Color Palette Selector */}
-            <div className="space-y-3">
+            {/* Color Palette */}
+            <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                 <Palette className="w-3.5 h-3.5" />
                 Color Palette
@@ -348,7 +226,129 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               </Select>
             </div>
 
-            <div className="pt-4 border-t border-slate-200">
+            <Separator />
+
+            {/* Axis Ranges - Collapsible Advanced Section */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowAxisRanges(!showAxisRanges)}
+                className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 uppercase tracking-wide hover:text-slate-900 transition-smooth"
+              >
+                <span>Axis Ranges (Advanced)</span>
+                {showAxisRanges ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+              {showAxisRanges && (
+                <div className="space-y-3 pt-1">
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => clearAxisRange()}
+                      className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Reset All
+                    </Button>
+                  </div>
+
+                  {/* Y-axis Left */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">Y-Axis Left</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => clearAxisRange('y')}
+                        className="h-5 px-2 text-xs text-slate-500"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={yMin ?? ''}
+                        onChange={(e) => setAxisRange('yMin', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="h-8 text-xs"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={yMax ?? ''}
+                        onChange={(e) => setAxisRange('yMax', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Y-axis Right - Only show when hasRightYAxis */}
+                  {hasRightYAxis && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-600">Y-Axis Right</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => clearAxisRange('yRight')}
+                          className="h-5 px-2 text-xs text-slate-500"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Min"
+                          value={yMinRight ?? ''}
+                          onChange={(e) => setAxisRange('yMinRight', e.target.value === '' ? undefined : Number(e.target.value))}
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Max"
+                          value={yMaxRight ?? ''}
+                          onChange={(e) => setAxisRange('yMaxRight', e.target.value === '' ? undefined : Number(e.target.value))}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* X-axis */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">X-Axis</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => clearAxisRange('x')}
+                        className="h-5 px-2 text-xs text-slate-500"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={xMin ?? ''}
+                        onChange={(e) => setAxisRange('xMin', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="h-8 text-xs"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={xMax ?? ''}
+                        onChange={(e) => setAxisRange('xMax', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-200">
               <p className="text-xs text-slate-500 italic">💡 Click legend items in the chart to show/hide series</p>
             </div>
           </div>
