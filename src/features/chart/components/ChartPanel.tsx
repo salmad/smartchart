@@ -76,7 +76,7 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
                   <Settings className="w-4 h-4" />
                 </Button>
               )}
-
+{/* 
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/60">
                 <svg
                   className="w-3.5 h-3.5 text-emerald-600"
@@ -92,7 +92,7 @@ export function ChartPanel({ onOpenSettings }: ChartPanelProps) {
                   />
                 </svg>
                 <span className="text-xs font-bold text-emerald-700">+24%</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </CardHeader>
