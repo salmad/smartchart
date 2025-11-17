@@ -1,9 +1,8 @@
-gradio>=4.0
-plotly>=5.0
-openai>=1.0.0
-pandas>=2.0.0
-numpy>=1.20.0
-python-dotenv>=1.0.0
-flake8>=6.0.0
-black>=23.0.0
-pytest>=7.0.0
+python-dotenv
+reflex
+pydantic
+pandas
+numpy
+
+
+reflex==0.8.18

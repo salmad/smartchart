@@ -1,3 +1,7 @@
+.states
+.web
+*.db
+assets/external/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -5,10 +9,42 @@ __pycache__/
 
 # Virtual environment
 venv/
+.venv/
 .env
+.env.local
+!.env.example
 
 # Logs
+logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+.gradio
 
 # IDE directories
 .vscode/
@@ -19,7 +55,18 @@ venv/
 
 # Data files
 *.csv
-*.json
 
 # Windsurf rules
 .windsurfrules
+
+# Reflex
+.web/
+assets/
+rxconfig.json
+
+# Temporary documentation
+/docs/temp/
+*.TODO.md
+*-WIP.md
+*-NOTES.md
+.vercel
