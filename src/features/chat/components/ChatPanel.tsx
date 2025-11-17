@@ -68,7 +68,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   }
 
   return (
-    <Card className="glass border-slate-200/60 shadow-2xl shadow-purple-500/10 h-full flex flex-col overflow-hidden">
+    <Card className="glass border-slate-200/60 shadow-2xl shadow-purple-500/10 h-[750px] flex flex-col overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
 
       <CardHeader className="space-y-3 pb-6">
