@@ -114,7 +114,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                   <motion.div className="flex flex-wrap gap-2 pt-3 justify-center" variants={staggerItem}>
                     {['Change to line chart', 'Hide Product C',
                      'find GDP data for USA from 2020-2023',
-                    'Apple stock price and quarterly revenue from 2022 to 2025'].map((prompt) => (
+                    'AAPL annual revenue and its %% change 2020-2025'].map((prompt) => (
                       <button
                         key={prompt}
                         onClick={() => setInput(prompt)}

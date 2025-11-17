@@ -35,7 +35,7 @@ ${useWebSearch ? '5' : '3'}. Return ONLY a valid JSON object with ${useWebSearch
 Rules:
 - Keep data structure consistent (same xAxisKey format)
 - Only modify what the user asked for
-- Maintain premium color palette: purple (#8B5CF6), emerald (#10B981), rose (#F43F5E), blue (#3B82F6), violet (#8B5CF6)
+- Maintain premium color palette: purple (#8B5CF6), emerald (#10B981), rose (#F43F5E), blue (#3B82F6), violet (#8B5CF6) and NEVER white or close to it!
 - Chart types: 'bar', 'line', or 'combined'
 - Series types: 'bar' or 'line'
 - If user asks to change data, modify dataPoints array
