@@ -3,12 +3,16 @@ import { createContext, useContext, useState, useMemo, useCallback, type ReactNo
 interface UIStateContextValue {
   isChatOpen: boolean
   isSettingsOpen: boolean
+  isMakeoverOpen: boolean
   toggleChat: () => void
   toggleSettings: () => void
+  toggleMakeover: () => void
   openChat: () => void
   closeChat: () => void
   openSettings: () => void
   closeSettings: () => void
+  openMakeover: () => void
+  closeMakeover: () => void
 }
 
 const UIStateContext = createContext<UIStateContextValue | null>(null)
@@ -16,6 +20,7 @@ const UIStateContext = createContext<UIStateContextValue | null>(null)
 export function UIStateProvider({ children }: { children: ReactNode }) {
   const [isChatOpen, setIsChatOpen] = useState(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isMakeoverOpen, setIsMakeoverOpen] = useState(false)
 
   const toggleChat = useCallback(() => {
     setIsChatOpen(prev => {
@@ -57,26 +62,46 @@ export function UIStateProvider({ children }: { children: ReactNode }) {
     setIsSettingsOpen(false)
   }, [])
 
+  const toggleMakeover = useCallback(() => {
+    setIsMakeoverOpen(prev => !prev)
+  }, [])
+
+  const openMakeover = useCallback(() => {
+    setIsMakeoverOpen(true)
+  }, [])
+
+  const closeMakeover = useCallback(() => {
+    setIsMakeoverOpen(false)
+  }, [])
+
   const value = useMemo(
     () => ({
       isChatOpen,
       isSettingsOpen,
+      isMakeoverOpen,
       toggleChat,
       toggleSettings,
+      toggleMakeover,
       openChat,
       closeChat,
       openSettings,
       closeSettings,
+      openMakeover,
+      closeMakeover,
     }),
     [
       isChatOpen,
       isSettingsOpen,
+      isMakeoverOpen,
       toggleChat,
       toggleSettings,
+      toggleMakeover,
       openChat,
       closeChat,
       openSettings,
       closeSettings,
+      openMakeover,
+      closeMakeover,
     ]
   )
 

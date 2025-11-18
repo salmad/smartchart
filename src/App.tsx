@@ -1,16 +1,22 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/shared/components/ui/button'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, Sparkles } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeInUp } from '@/shared/lib/animations'
 import { SidebarPanel } from '@/shared/components/SidebarPanel'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { ChartPanel } from '@/features/chart'
 import { ChatPanel } from '@/features/chat'
 import { SettingsPanel } from '@/features/settings'
+import { MakeoverPanel } from '@/features/makeover'
 import { useUIState } from '@/app/providers/UIStateProvider'
 
 function AppContent() {
-  const { isChatOpen, isSettingsOpen, toggleChat, toggleSettings } = useUIState()
+  const { isChatOpen, isSettingsOpen, isMakeoverOpen, toggleChat, toggleSettings, openMakeover, closeMakeover } = useUIState()
+
+  // Show makeover panel fullscreen when open
+  if (isMakeoverOpen) {
+    return <MakeoverPanel onClose={closeMakeover} />
+  }
 
   return (
     <div className="min-h-screen gradient-mesh relative overflow-hidden">
@@ -47,6 +53,17 @@ function AppContent() {
             <br />
             <span className="text-slate-500 text-base">Just paste your data and chat to the chart.</span>
           </motion.p>
+
+          <motion.div className="mt-6" variants={staggerItem}>
+            <Button
+              onClick={openMakeover}
+              size="lg"
+              className="bg-gradient-to-br from-purple-600 to-blue-600 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300"
+            >
+              <Sparkles className="w-5 h-5 mr-2" />
+              Try Chart Makeover (Beta)
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Main Content - Flex Layout with Settings Left, Chart Center, Chat Right */}
