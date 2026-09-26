@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Slide system — v4 · Ink (MVP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="slides-v4-schema.js"></script>
+<style>
+/* ═════════════ Palettes ═════════════
+   Semantic tokens only: focus = the point, neg = the problem, pos = money made.
+   A palette is a set of values for these tokens; templates never name a colour. */
+.theme-ink {
+  --bg: #0B0A09; --surface: #13110F; --line: #2A2621; --line-2: #3A352E;
+  --fg: #F3EEE4; --fg-2: #CFC8BB; --muted: #A39B8E; --neutral: #4A443B;
+  --focus: #E8B94A; --on-focus: #0B0A09; --neg: #FF5A45; --pos: #7BD88F;
+}
+.theme-paper {
+  --bg: #F6F3EC; --surface: #FFFFFF; --line: #E0D9CC; --line-2: #C4BBAA;
+  --fg: #16140F; --fg-2: #453F36; --muted: #776E61; --neutral: #CFC6B6;
+  --focus: #2447D1; --on-focus: #FFFFFF; --neg: #D2402C; --pos: #1C8248;
+}
+.slide { --display: "Archivo", sans-serif; --text: "Geist", system-ui, sans-serif; --mono: "Geist Mono", monospace; }
+.style-consulting { --t-size: 74px; --body: 30px; --pull: 40px; }
+.style-pitch      { --t-size: 150px; --body: 38px; --pull: 50px; }
+
+/* ═════════════ Slide frame ═════════════ */
+.slide {
+  position: absolute; inset: 0 auto auto 0; width: 1920px; height: 1080px;
+  transform-origin: 0 0; transform: scale(var(--s, .5));
+  background: var(--bg); color: var(--fg); font-family: var(--text); font-size: var(--body); line-height: 1.38;
+  -webkit-font-smoothing: antialiased; padding: 96px 128px 136px; display: flex; flex-direction: column; overflow: hidden;
+}
+/* Bottom rail: footnote + source on the left, footer + page number on the right. */
+.rail {
+  position: absolute; left: 128px; right: 128px; bottom: 48px; display: flex; align-items: flex-end; gap: 64px;
+  font: 400 17px/1.4 var(--mono); color: var(--muted);
+}
+.rail .fn { flex: 1; min-width: 0; }
+.rail .pg { margin-left: auto; white-space: nowrap; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
+.rail .pg b { margin-left: 28px; font-weight: 500; color: var(--fg); }
+.label { font: 500 20px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--focus); }
+.title { margin-top: 26px; font-size: var(--t-size); }
+.style-consulting .title {
+  font-family: var(--display); font-weight: 800; font-stretch: 78%; line-height: 1.02; letter-spacing: -.012em;
+  max-width: 1620px; text-wrap: balance;
+}
+.style-pitch .title {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%; text-transform: uppercase;
+  line-height: .86; letter-spacing: -.005em; word-spacing: .05em;
+}
+.shout { font-family: var(--display); font-weight: 900; font-stretch: 62%; text-transform: uppercase; line-height: .86; }
+.hl-focus { color: var(--focus); } .hl-neg { color: var(--neg); } .hl-pos { color: var(--pos); } .muted { color: var(--muted); }
+strong { font-weight: 700; }
+.prose p + p { margin-top: 24px; }
+.slide p, .slide h4, .slide li { text-wrap: pretty; }
+/* Takeaway: one line anchored to the bottom. Growing bodies (chart, cases) keep a fixed gap instead. */
+.spacer { flex: 1 0 40px; }
+.slide:has(.grow) .spacer { flex: 0 0 44px; }
+.grow { flex: 1; min-height: 0; }
+.takeaway {
+  border-left: 6px solid var(--focus); padding: 6px 0 6px 36px;
+  font-size: var(--pull); line-height: 1.18; font-weight: 600; letter-spacing: -.01em;
+}
+.takeaway strong { color: var(--focus); font-weight: 600; }
+.bullets { list-style: none; display: grid; gap: 14px; }
+.bullets li { padding-left: 40px; position: relative; }
+.bullets li::before { content: "—"; position: absolute; left: 0; color: var(--muted); }
+
+/* ═════════════ Cover: title + subtitle, nothing else ═════════════ */
+.t-cover { justify-content: center; padding-bottom: 200px; }
+.cover-mark { width: 132px; height: 10px; background: var(--focus); margin-bottom: 56px; }
+.t-cover .title { margin-top: 0; }
+.style-consulting.t-cover .title { font-size: 200px; line-height: .92; }
+.style-pitch.t-cover .title { font-size: 200px; line-height: .82; }
+.cover-sub { margin-top: 52px; font-size: 44px; line-height: 1.3; max-width: 1250px; color: var(--fg-2); }
+
+/* ═════════════ Section divider ═════════════ */
+.t-section { justify-content: flex-end; padding-bottom: 220px; }
+.sec-n { font-size: 240px; color: var(--focus); }
+.t-section .title { margin-top: 28px; }
+.style-consulting.t-section .title { font-size: 150px; line-height: .95; }
+.style-pitch.t-section .title { font-size: 230px; line-height: .8; }
+.sec-sub { margin-top: 48px; font-size: 40px; line-height: 1.3; max-width: 1300px; color: var(--fg-2); }
+
+/* ═════════════ Hero: argument left, one number right ═════════════ */
+.hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 96px; margin-top: 56px; align-items: start; }
+.hero-v { font-size: 250px; color: var(--focus); white-space: nowrap; }
+.hero-v.neg { color: var(--neg); } .hero-v.pos { color: var(--pos); }
+.style-pitch .hero-v { font-size: 330px; }
+.hero-c { margin-top: 22px; font-size: 32px; line-height: 1.35; color: var(--fg-2); max-width: 640px; }
+.style-pitch.t-hero .title { font-size: 170px; }
+/* Compact: a takeaway costs ~100px, so the biggest pitch type steps down one size to make room. */
+.style-pitch.t-hero:has(.takeaway) .title { font-size: 150px; }
+.style-pitch.t-hero:has(.takeaway) .hero-v { font-size: 290px; }
+
+/* ═════════════ Split: chart + numbered commentary ═════════════ */
+.style-pitch.t-split .title, .style-pitch.t-chart .title, .style-pitch.t-table .title { font-size: 128px; }
+.split { display: grid; grid-template-columns: 1.3fr .7fr; gap: 88px; margin-top: 56px; }
+.notes { display: flex; flex-direction: column; min-height: 0; }
+.note { display: grid; grid-template-columns: 76px 1fr; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.note:first-child { padding-top: 0; }
+.note:last-child { border-bottom: 0; padding-bottom: 0; }
+.note .n { font: 600 30px/1.2 var(--mono); color: var(--focus); }
+.note h4 { font-size: 32px; font-weight: 600; line-height: 1.2; }
+.note p { margin-top: 8px; font-size: 25px; line-height: 1.4; color: var(--fg-2); }
+.style-pitch .note h4 { font-size: 40px; }
+.style-pitch .notes { justify-content: center; }
+
+/* ═════════════ Columns (2–4) ═════════════ */
+.cols { display: grid; margin-top: 64px; }
+.n-2 { grid-template-columns: repeat(2, 1fr); } .n-3 { grid-template-columns: repeat(3, 1fr); } .n-4 { grid-template-columns: repeat(4, 1fr); }
+.col { padding: 0 56px; border-left: 1px solid var(--line); min-width: 0; }
+.col:first-child { padding-left: 0; border-left: 0; }
+.n-4 .col { padding: 0 44px; }
+.n-4 .col:first-child { padding-left: 0; }
+.col .ic { color: var(--focus); }
+.col .ic svg { width: 52px; height: 52px; stroke-width: 1.5; }
+.col h3 { margin-top: 24px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 50px; line-height: 1; }
+.col .bullets { margin-top: 20px; font-size: 28px; }
+.col .big { font-size: 170px; color: var(--focus); white-space: nowrap; }
+.style-pitch .col h3 { margin-top: 26px; font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 40px; line-height: 1.15; }
+.col p { margin-top: 14px; font-size: 32px; color: var(--fg-2); }
+
+/* ═════════════ Cases: two framed arguments ═════════════ */
+.cases { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 48px; }
+.case { border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 36px 48px; display: flex; flex-direction: column; min-height: 0; }
+.case.focus { border-color: color-mix(in srgb, var(--focus) 55%, transparent); }
+.case .who { font: 500 20px/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.case h3 { margin-top: 12px; font-size: 86px; }
+.case.neg h3 { color: var(--neg); }
+.case.focus h3 { color: var(--focus); }
+.case .bullets { margin-top: 22px; margin-bottom: 28px; gap: 10px; font-size: 29px; }
+.case .text { margin-top: 24px; margin-bottom: 28px; font-size: 38px; line-height: 1.3; }
+.facts { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.facts .k { font: 500 18px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.case.neg .facts .k { color: var(--neg); } .case.focus .facts .k { color: var(--focus); }
+.facts .v { margin-top: 12px; font-size: 28px; line-height: 1.25; font-weight: 600; }
+.style-pitch .case h3 { font-size: 150px; margin-top: auto; }
+.style-pitch.t-cases:has(.takeaway) .case h3 { font-size: 104px; }
+
+/* ═════════════ Table ═════════════ */
+.tbl { width: 100%; border-collapse: collapse; margin-top: 36px; }
+.tbl th { text-align: left; font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 28px 18px 0; border-bottom: 1px solid var(--line); }
+.tbl td { font-size: 28px; line-height: 1.2; padding: 10px 28px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl .num { text-align: right; font-family: var(--mono); font-size: 28px; white-space: nowrap; }
+.tbl th.num { font-size: 19px; }
+.tbl th:last-child, .tbl td:last-child { padding-right: 0; }
+.tbl .focus { color: var(--focus); }
+.tbl td small { display: block; margin-top: 2px; font: 400 17px/1.2 var(--mono); color: var(--muted); }
+.tbl tr.muted td { color: var(--muted); }
+.tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--pos); }
+.tbl tr.total td:first-child { color: var(--fg); }
+.style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
+.style-pitch .tbl td { font-size: 34px; padding-top: 16px; padding-bottom: 16px; }
+.style-pitch .tbl td.num { font-size: 32px; }
+
+/* ═════════════ Timeline ═════════════ */
+.timeline { margin-top: 52px; display: grid; grid-template-columns: 230px 1fr; column-gap: 40px; }
+.timeline .t { font: 600 32px/1.25 var(--mono); color: var(--focus); padding: 24px 0; border-bottom: 1px solid var(--line); }
+.timeline .d { padding: 24px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 260px 1fr; gap: 32px; align-items: baseline; }
+.timeline .h { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1; }
+.timeline .row-focus .h { color: var(--focus); }
+.timeline > :nth-last-child(-n+2) { border-bottom: 0; }
+.style-pitch .timeline .h { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 88px; line-height: .86; }
+.style-pitch .timeline .t { font-size: 36px; padding-top: 30px; }
+.style-pitch.t-timeline:has(.takeaway) .timeline { margin-top: 36px; }
+
+/* ═════════════ Stats (2–4) ═════════════ */
+.stats { display: grid; gap: 48px; margin-top: 72px; }
+.stat { min-width: 0; }
+.stat .v { font-size: 128px; white-space: nowrap; }
+.style-pitch .stat .v { font-size: 158px; }
+.stat.focus .v { color: var(--focus); }
+.stat .l { margin-top: 22px; font: 500 20px/1.3 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.stat.focus .l { color: var(--focus); }
+.stat p { margin-top: 14px; font-size: 26px; line-height: 1.38; color: var(--fg-2); }
+
+/* ═════════════ Charts (SVG for shapes, HTML for every label) ═════════════ */
+.chart { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.t-chart .chart { margin-top: 48px; }
+.legend { display: flex; gap: 36px; font: 500 17px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
+.legend span { display: inline-flex; align-items: center; gap: 12px; }
+.legend i { width: 16px; height: 16px; border-radius: 4px; background: var(--c); }
+.legend i.line { height: 4px; width: 26px; border-radius: 2px; }
+.plot { position: relative; flex: 1; min-height: 0; }
+.plot svg { position: absolute; inset: 0; overflow: visible; }
+.c-focus { --c: var(--focus); } .c-neutral { --c: var(--neutral); } .c-contrast { --c: var(--fg); }
+.lbl { position: absolute; white-space: nowrap; line-height: 1; }
+.a-bc { transform: translate(-50%, -100%); } .a-tc { transform: translate(-50%, 0); } .a-mc { transform: translate(-50%, -50%); }
+.a-tl { transform: translate(0, -100%); } .a-tc0 { transform: none; }
+.v-lbl { font: 500 19px/1 var(--mono); color: var(--muted); }
+.v-lbl.c-focus { color: var(--focus); } .v-lbl.c-contrast { color: var(--fg); }
+.cat { font: 500 20px/1 var(--mono); color: var(--muted); letter-spacing: .06em; }
+.tick { font: 500 17px/1 var(--mono); color: var(--muted); }
+.end { display: grid; gap: 8px; transform: translate(0, -50%); }
+.end b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 64px; line-height: .86; color: var(--c); }
+.end span { font: 500 17px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mk { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--focus); color: var(--on-focus); font: 700 18px/1 var(--mono); }
+.bar { fill: var(--c); }
+.base { stroke: var(--line-2); stroke-width: 2; }
+.grid { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 8; }
+.ln { fill: none; stroke: var(--c); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+.ln.c-contrast { stroke-width: 3; }
+.ln.dashed { stroke-dasharray: 3 12; stroke-width: 4; }
+.pt { fill: var(--bg); stroke: var(--c); stroke-width: 3; }
+.pt.solid { fill: var(--c); stroke: var(--bg); stroke-width: 5; }
+.leader { stroke: var(--focus); stroke-width: 2; }
+.area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
+.theme-paper .area-top { stop-opacity: .16; }
+
+/* ═════════════ Review page (not part of the product) ═════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #050404; color: #EDE8DE; font-family: "Geist", system-ui, sans-serif; }
+.top {
+  position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between;
+  padding: 18px 32px; backdrop-filter: blur(16px); background: rgba(5,4,4,.85); border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.top h1 { font-size: 17px; font-weight: 600; }
+.top p { font-size: 14px; opacity: .6; margin-top: 3px; }
+.controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; padding: 3px; border-radius: 11px; background: rgba(255,255,255,.08); }
+.seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 14px; font-weight: 500; opacity: .65; }
+.seg button[aria-pressed="true"] { background: #F3EEE4; color: #0B0A09; opacity: 1; }
+.seg button:focus-visible { outline: 2px solid #E8B94A; outline-offset: 2px; }
+.summary { font: 500 13px/1 "Geist Mono", monospace; opacity: .8; }
+main { max-width: 1480px; margin: 0 auto; padding: 32px 32px 120px; display: grid; gap: 56px; }
+figure { display: grid; gap: 14px; }
+figcaption { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+figcaption .id { font: 500 13px/1 "Geist Mono", monospace; opacity: .5; }
+figcaption b { font-size: 16px; font-weight: 600; }
+.badge { font: 500 12px/1 "Geist Mono", monospace; padding: 4px 8px; border-radius: 6px; background: rgba(123,216,143,.14); color: #7BD88F; }
+.badge.bad { background: rgba(255,90,69,.16); color: #FF7A68; }
+.badge.warn { background: rgba(232,185,74,.16); color: #E8B94A; }
+.frames { display: grid; gap: 20px; }
+.frames.two { grid-template-columns: 1fr 1fr; }
+.frame-wrap { display: grid; gap: 8px; }
+.frame-label { font: 500 12px/1 "Geist Mono", monospace; letter-spacing: .12em; text-transform: uppercase; opacity: .55; }
+.frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; outline: 1px solid rgba(255,255,255,.08); }
+details { font-size: 13px; }
+details summary { cursor: pointer; opacity: .6; font-weight: 500; }
+details pre { margin-top: 10px; padding: 16px 18px; border-radius: 12px; overflow: auto; max-height: 420px; font: 12.5px/1.55 "Geist Mono", monospace; background: rgba(255,255,255,.06); white-space: pre-wrap; }
+.issues { margin-top: 8px; display: grid; gap: 4px; font: 12.5px/1.5 "Geist Mono", monospace; color: #FF7A68; }
+.issues .w { color: #E8B94A; }
+body.full .top, body.full figcaption, body.full details, body.full .frame-label, body.full .issues, body.full .agent { display: none; }
+body.full main { max-width: none; padding: 0; gap: 0; }
+body.full .frame { border-radius: 0; outline: 0; }
+@media (max-width: 900px) { .frames.two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Slide system · v4 “Ink” · MVP</h1>
+    <p>Every slide renders from the JSON under it, is checked by <code>slides-v4-schema.js</code>, and is measured for overflow.</p>
+  </div>
+  <div class="controls">
+    <span class="summary" id="summary"></span>
+    <div class="seg" role="group" aria-label="Writing style" data-key="style">
+      <button data-v="both">Side by side</button><button data-v="consulting">Consulting</button><button data-v="pitch">Pitch</button>
+    </div>
+    <div class="seg" role="group" aria-label="Palette" data-key="theme">
+      <button data-v="ink">Ink</button><button data-v="paper">Paper</button>
+    </div>
+  </div>
+</header>
+<main id="list"></main>
+
+<script>
+/* ═════════════ Example deck ═════════════
+   What the agent writes, per style: { template, ...slots }. Shared keys (template, chart, table)
+   are written once here only because the review page shows both styles side by side. */
+const FOOTER = "FinBridge · Seed memorandum";
+
+const EXAMPLES = [
+  {
+    template: "cover", name: "Cover",
+    consulting: { title: "FinBridge", subtitle: "A revolving credit card and business account for UK small and medium-sized businesses." },
+    pitch: { title: "The card that [[runs the business.]]", subtitle: "Credit, cashflow and rewards for UK small businesses. In one app." },
+  },
+  {
+    template: "section", name: "Section divider",
+    consulting: { title: "The problem", subtitle: "SME founders fund the business on personal credit because no provider bundles credit with banking." },
+    pitch: { title: "The problem" },
+  },
+  {
+    template: "hero", name: "Hero · argument + one number",
+    consulting: {
+      title: "UK SMEs fund growth on [-personal-] cards because no provider bundles business credit with daily banking",
+      body: ["Founders put business spend on personal cards. They carry the **personal guarantee** and the limit risk, and the rewards leak out of the business.", "Banks won’t lend below £50k, neobanks only offer debit, and legacy card issuers were built for large corporates."],
+      number: { value: "£540k", caption: "typical annual card spend that earns the business nothing back" },
+      takeaway: "The gap is not credit or banking alone. It is **both, in one product.**",
+      source: "FinBridge SME interviews (n = 42); British Business Bank, Small Business Finance Markets 2026.",
+    },
+    pitch: {
+      title: "Your business runs on your [-personal-] Amex.",
+      body: ["Three logins. One personal guarantee. **Nothing back.**"],
+      number: { value: "£0", tone: "neg", caption: "back on £540k a year of business spend" },
+    },
+  },
+  {
+    template: "split", name: "Split · chart + numbered commentary",
+    chart: {
+      type: "bars", categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"], format: "£{v}m",
+      series: [
+        { name: "Interest income", color: "neutral", values: [0.4, 3.1, 14, 42, 85] },
+        { name: "Interchange", color: "focus", values: [0.3, 2.2, 11, 36, 80] },
+        { name: "Gross margin", color: "contrast", line: true, format: "{v}%", values: [12, 24, 31, 36, 38] },
+      ],
+    },
+    consulting: {
+      kicker: "Unit economics",
+      title: "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+      notes: [
+        { title: "Interest leads early", text: "Revolvers are **40–60%** of customers and carry margin while spend ramps.", point: { series: 0, index: 1 } },
+        { title: "Interchange compounds", text: "Spend per customer grows **3×** as the card replaces the personal Amex.", point: { series: 1, index: 3 } },
+        { title: "Margin settles at 38%", text: "Bad debt stabilises near **10%** of revolver balances from year 4.", point: { series: 2, index: 4 } },
+      ],
+      takeaway: "Spend, not lending, is what makes the book profitable.",
+      footnote: "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+      source: "FinBridge financial model, base case. Illustrative.",
+    },
+    pitch: {
+      kicker: "Unit economics",
+      title: "[[Interchange]] triples the margin.",
+      notes: [{ title: "Matches interest by year 4", point: { series: 1, index: 3 } }, { title: "Gross margin reaches [[38%]]", point: { series: 2, index: 4 } }],
+      takeaway: "Interest first. [[Spend pays forever.]]",
+    },
+  },
+  {
+    template: "columns", name: "Columns · 2–4",
+    consulting: {
+      kicker: "The solution",
+      title: "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+      columns: [
+        { icon: "zap", title: "Approved in five minutes", bullets: ["Limits up to **£250k**, spend the same day", "Underwritten on live Shopify and ad data, not filed accounts"] },
+        { icon: "wallet", title: "Cashflow in one place", bullets: ["Pay bills, get paid and control team spend", "Move between debit and credit funds per payment"] },
+        { icon: "refresh-cw", title: "Earn on every pound", bullets: ["**1% cashback** on all card spend", "Rewards attract transactors, lowering adverse selection"] },
+      ],
+      takeaway: "Three providers today. **FinBridge replaces all of them.**",
+    },
+    pitch: {
+      kicker: "The solution",
+      title: "Bank. Card. Lender. [[One app.]]",
+      columns: [
+        { value: "5 min", title: "to a credit line", text: "Up to £250k. Spend the same day." },
+        { value: "1 app", title: "for all cashflow", text: "Pay, get paid, control team spend." },
+        { value: "1%", title: "back on everything", text: "Rewards bring the right customers." },
+      ],
+      takeaway: "Today: three companies. [[We are one.]]",
+    },
+  },
+  {
+    template: "cases", name: "Cases · two framed arguments",
+    consulting: {
+      kicker: "The insight",
+      title: "Credit-only lenders attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
+      cases: [
+        { tone: "neg", label: "Credit-only lenders", title: "Adverse loop", bullets: ["Expensive acquisition of desperate borrowers", "Little data beyond filed accounts", "High risk drives high prices, then higher risk"],
+          facts: [{ label: "Outcome", text: "Rising losses, rising prices" }, { label: "Examples", text: "OnDeck, Kabbage, Silvr: none survived" }] },
+        { tone: "focus", label: "FinBridge", title: "Positive loop", bullets: ["Customers arrive for non-credit reasons", "Credit funds the cashflow of a working business", "More data, better pricing, better customers"],
+          facts: [{ label: "Outcome", text: "Falling losses, better pricing" }, { label: "Proof", text: "Capital on Tap, YouLend are profitable" }] },
+      ],
+      takeaway: "Why customers join decides how much credit loses.",
+    },
+    pitch: {
+      kicker: "The insight",
+      title: "Credit alone attracts the [-wrong borrowers.-]",
+      cases: [
+        { tone: "neg", label: "Credit only", title: "Adverse loop", text: "Desperate borrowers, thin data, rising prices." },
+        { tone: "focus", label: "FinBridge", title: "Positive loop", text: "Good businesses arrive first. Credit follows." },
+      ],
+    },
+  },
+  {
+    template: "table", name: "Table",
+    table: {
+      columns: [{ label: "£ per customer per month" }, { label: "Revolver", num: true, focus: true }, { label: "Transactor", num: true }, { label: "Super-transactor", num: true }],
+      rows: [
+        { cells: ["Share of customers", "40–60%", "40–60%", "~10%"], style: "muted" },
+        { cells: ["Interest revenue", { value: "267", note: "40% APR × £8.0k" }, "—", "—"] },
+        { cells: ["Cost of funding", { value: "(53)", note: "8% × £8.0k" }, { value: "(33)", note: "8% × £5.0k" }, { value: "(70)", note: "8% × £10.5k" }] },
+        { cells: ["Interchange revenue", { value: "90", note: "1.8% × £5.0k spend" }, { value: "120", note: "1.8% × £6.7k" }, { value: "480", note: "1.8% × £26.7k" }] },
+        { cells: ["Cost of rewards", "(50)", "(67)", "(267)"] },
+        { cells: ["Bad debt", { value: "(70)", note: "~10% of balance p.a." }, "(5)", "(10)"] },
+        { cells: ["Monthly gross margin", "£179", "£10", "£128"], style: "total" },
+      ],
+    },
+    consulting: {
+      kicker: "Business model",
+      title: "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+      takeaway: "A 50/50 revolver–transactor mix earns ~£95 a month each.",
+      footnote: "Balances and spend are monthly averages per active customer.",
+      source: "FinBridge model; funding cost assumes an 8% warehouse rate.",
+    },
+    pitch: { kicker: "Business model", title: "Every customer [+makes money.+]" },
+  },
+  {
+    template: "chart", name: "Chart · lines with direct labels",
+    chart: {
+      type: "lines", categories: ["Q1 ’27", "Q2", "Q3", "Q4", "Q1 ’28", "Q2", "Q3", "Q4"], format: "£{v}m",
+      series: [
+        { name: "Base case", color: "focus", area: true, values: [1, 4, 10, 22, 40, 62, 88, 120] },
+        { name: "Downside", color: "contrast", dashed: true, values: [0.8, 3, 7, 15, 27, 41, 56, 72] },
+      ],
+    },
+    consulting: {
+      kicker: "Growth",
+      title: "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+      takeaway: "Even the downside case fills a warehouse facility in 2028.",
+      footnote: "Downside assumes 40% lower acquisition and twice the bad debt.",
+      source: "FinBridge model.",
+    },
+    pitch: { kicker: "Growth", title: "A [[£120m]] book in two years." },
+  },
+  {
+    template: "timeline", name: "Timeline",
+    consulting: {
+      kicker: "Plan and ask",
+      title: "£5m funds [[18 months]] to a £10m book and a drawn warehouse facility",
+      steps: [
+        { when: "0–6 mo", title: "Build", text: "Card issuing, partners and underwriting engine live. **First 100 cards.**" },
+        { when: "6–18 mo", title: "Prove", text: "Book reaches **£10m**; gross-margin run-rate ~£1.5m; warehouse drawn.", focus: true },
+        { when: "Year 2", title: "Scale", text: "£120m book; direct-mail acquisition at 2,000+ customers a month." },
+        { when: "Year 3+", title: "Expand", text: "£250m+ book; gross margin covers opex and CAC; EU entry." },
+      ],
+      takeaway: "The ask: **£5m for 18 months** to reach a funded book.",
+    },
+    pitch: {
+      kicker: "The plan",
+      title: "[[£5m]] to a funded book.",
+      steps: [
+        { when: "0–6 mo", title: "Build", text: "First 100 cards." },
+        { when: "6–18 mo", title: "Prove", text: "£10m book.", focus: true },
+        { when: "Year 2", title: "Scale", text: "£120m book." },
+      ],
+      takeaway: "The ask: [[£5m for 18 months.]]",
+    },
+  },
+  {
+    template: "stats", name: "Stats · 2–4",
+    consulting: {
+      kicker: "Appendix · Market",
+      title: "Demand is documented: most UK SMEs need revolving credit and [[a fifth]] already use a card",
+      stats: [
+        { value: "5.7M", label: "UK SMEs", text: "Private-sector businesses; 34M more across the EU." },
+        { value: "19%", focus: true, label: "Use a credit card", text: "The most-used external finance product, ahead of overdrafts at 16%." },
+        { value: "30–40%", label: "Need revolving", text: "The most frequent financing need in ECB SAFE and our surveys." },
+        { value: "€400bn", label: "SME credit gap", text: "Estimated across the EU and UK." },
+      ],
+      takeaway: "The product sits where card use and revolving need overlap.",
+      source: "EC SME Annual Report 2025/26; UK DBT Business Population 2025; ECB SAFE; EIB Group.",
+    },
+    pitch: {
+      kicker: "Market",
+      title: "A market [[already on cards.]]",
+      stats: [
+        { value: "5.7M", label: "UK SMEs" },
+        { value: "19%", focus: true, label: "Use a credit card" },
+        { value: "30–40%", label: "Need revolving" },
+        { value: "€400bn", label: "Credit gap" },
+      ],
+      takeaway: "The product is [[the intersection.]]",
+    },
+  },
+];
+
+/* ═════════════ Stress deck (?stress=1): every slot filled to its limit, within the rules ═════════════
+   The guarantee: if a slide passes validate(), it fits. This deck is how we check that claim. */
+const WORDS = ["market", "credit", "the", "growth", "customers", "revenue", "and", "for", "business", "card", "a", "lending", "of", "spend"];
+const W = n => { let t = "", i = 0; while (t.length < n) t += (t ? " " : "") + WORDS[i++ % WORDS.length]; return t.slice(0, n).trim(); };
+const TIMES = n => Array.from({ length: n });
+const stressFor = st => {
+  const c = st === "consulting", lim = (max) => (typeof max === "object" ? max[st] : max);
+  const T = SlideSchema.TEMPLATES, m = (id, ...path) => { let d = T[id].fields; for (const k of path) d = d[k] || d.fields?.[k] || d.of?.fields?.[k] || d.of; return lim((d.of || d).max); };
+  const frame = id => ({ kicker: W(40), title: W(m(id, "title")), takeaway: W(m(id, "takeaway")), footnote: W(110), source: W(110) });
+  const bars = { type: "bars", categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"], format: "£{v}m", series: [
+    { name: "Interest income", color: "neutral", values: [1, 3, 14, 42, 85] }, { name: "Interchange", color: "focus", values: [1, 2, 11, 36, 80] },
+    { name: "Gross margin", color: "contrast", line: true, format: "{v}%", values: [12, 24, 31, 36, 38] }] };
+  return [
+    { template: "cover", name: "Stress · cover", title: W(m("cover", "title")), subtitle: W(m("cover", "subtitle")) },
+    { template: "section", name: "Stress · section", title: W(m("section", "title")), subtitle: W(m("section", "subtitle")) },
+    { template: "hero", name: "Stress · hero", ...frame("hero"), body: TIMES(c ? 2 : 1).map(() => W(m("hero", "body"))), number: { value: "€400bn", caption: W(m("hero", "number", "caption")) } },
+    { template: "split", name: "Stress · split", ...frame("split"), chart: bars, notes: TIMES(3).map((_, i) => ({ title: W(m("split", "notes", "title")), ...(c ? { text: W(i ? 75 : 50) } : {}), point: { series: 1, index: i + 2 } })) },
+    { template: "columns", name: "Stress · columns ×3", ...frame("columns"), columns: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { value: "£250k", title: W(22), text: W(44) }) },
+    { template: "columns", name: "Stress · columns ×4", ...frame("columns"), columns: TIMES(4).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(2).map(() => W(48)) } : { value: "£250k", title: W(22), text: W(30) }) },
+    { template: "cases", name: "Stress · cases", ...frame("cases"), cases: TIMES(2).map((_, i) => ({ tone: i ? "focus" : "neg", label: W(30), title: W(14), ...(c ? { bullets: TIMES(3).map(() => W(48)), facts: TIMES(2).map(() => ({ label: W(14), text: W(38) })) } : { text: W(50) }) })) },
+    { template: "table", name: "Stress · table", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), num: true, focus: i === 0 }))],
+      rows: c ? [...TIMES(5).map(() => ({ cells: [W(40), { value: "(1,234)", note: "8% × £10.5k" }, "12,345", "(34)", "—"] })), { cells: [W(30), "£179", "£10", "£128", "£95"], style: "total" }]
+              : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
+    { template: "chart", name: "Stress · chart", ...frame("chart"), chart: { type: "lines", categories: TIMES(12).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
+      series: [{ name: "Base case", color: "focus", area: true, values: TIMES(12).map((_, i) => (i + 1) ** 2) }, { name: "Downside", color: "contrast", dashed: true, values: TIMES(12).map((_, i) => (i + 1) ** 2 * .6) }, { name: "Market", color: "neutral", values: TIMES(12).map((_, i) => 20 + i * 5) }] } },
+    { template: "timeline", name: "Stress · timeline", ...frame("timeline"), steps: TIMES(c ? 5 : 3).map((_, i) => ({ when: "Q3 2027+", title: W(m("timeline", "steps", "title")), text: W(m("timeline", "steps", "text")), focus: i === 1 })) },
+    { template: "stats", name: "Stress · stats", ...frame("stats"), stats: TIMES(4).map((_, i) => ({ value: "€400bn", label: W(22), ...(c ? { text: W(i ? 75 : 50) } : {}), focus: i === 1 })) },
+  ];
+};
+
+/** The flat slide the agent writes for one style. */
+const specFor = (ex, style) => { const { consulting, pitch, name, ...shared } = ex; return { ...shared, ...(style === "pitch" ? pitch : consulting) }; };
+const STRESS = new URLSearchParams(location.search).has("stress");
+const SOURCE = () => STRESS ? stressFor("consulting").map((sc, i) => ({ template: sc.template, name: sc.name, consulting: strip(sc), pitch: strip(stressFor("pitch")[i]) })) : EXAMPLES;
+const strip = ({ name, ...rest }) => rest;
+const deckFor = (style, theme) => ({ style, theme, footer: FOOTER, slides: SOURCE().map(ex => specFor(ex, style)) });
+
+/* ═════════════ Renderer: deck JSON -> slides ═════════════ */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const md = s => esc(s)
+  .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+  .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
+  .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
+  .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>');
+const pad2 = n => String(n).padStart(2, "0");
+const list = (items, cls = "bullets") => `<ul class="${cls}">${items.map(b => `<li>${md(b)}</li>`).join("")}</ul>`;
+
+const T = {
+  hero: s => `
+    <div class="hero">
+      <div class="prose">${s.body.map(p => `<p>${md(p)}</p>`).join("")}</div>
+      <div><p class="shout hero-v ${s.number.tone || ""}">${esc(s.number.value)}</p><p class="hero-c">${md(s.number.caption)}</p></div>
+    </div>`,
+  split: s => `
+    <div class="split grow">
+      <div class="chart" data-chart></div>
+      <div class="notes">${s.notes.map((n, i) => `<div class="note"><span class="n">${pad2(i + 1)}</span>
+        <div><h4>${md(n.title)}</h4>${n.text ? `<p>${md(n.text)}</p>` : ""}</div></div>`).join("")}</div>
+    </div>`,
+  columns: s => `
+    <div class="cols n-${s.columns.length}">${s.columns.map(c => `<div class="col">
+      ${c.icon ? `<div class="ic"><i data-lucide="${esc(c.icon)}"></i></div>` : ""}
+      ${c.value ? `<div class="shout big">${esc(c.value)}</div>` : ""}
+      <h3>${md(c.title)}</h3>
+      ${c.bullets ? list(c.bullets) : ""}${c.text ? `<p>${md(c.text)}</p>` : ""}
+    </div>`).join("")}</div>`,
+  cases: s => `
+    <div class="cases grow">${s.cases.map(c => `<div class="case ${c.tone || "neutral"}">
+      <div class="who">${esc(c.label)}</div>
+      <h3 class="shout">${esc(c.title)}</h3>
+      ${c.bullets ? list(c.bullets) : ""}${c.text ? `<p class="text">${md(c.text)}</p>` : ""}
+      ${c.facts ? `<div class="facts">${c.facts.map(x => `<div><div class="k">${esc(x.label)}</div><div class="v">${md(x.text)}</div></div>`).join("")}</div>` : ""}
+    </div>`).join("")}</div>`,
+  table: s => {
+    const t = s.table, cls = c => [c.num ? "num" : "", c.focus ? "focus" : ""].join(" ");
+    const cell = (c, i) => { const v = typeof c === "object" ? c : { value: c };
+      return `<td class="${cls(t.columns[i])}">${esc(v.value)}${v.note ? `<small>${esc(v.note)}</small>` : ""}</td>`; };
+    return `<table class="tbl"><thead><tr>${t.columns.map(c => `<th class="${cls(c)}">${esc(c.label)}</th>`).join("")}</tr></thead>
+      <tbody>${t.rows.map(r => `<tr class="${r.style || ""}">${r.cells.map(cell).join("")}</tr>`).join("")}</tbody></table>`;
+  },
+  chart: s => `<div class="chart grow" data-chart></div>`,
+  timeline: s => `
+    <div class="timeline">${s.steps.map(r => `
+      <span class="t">${esc(r.when)}</span>
+      <div class="d ${r.focus ? "row-focus" : ""}"><span class="h">${esc(r.title)}</span><span>${md(r.text)}</span></div>`).join("")}</div>`,
+  stats: s => `
+    <div class="stats n-${s.stats.length}">${s.stats.map(x => `<div class="stat ${x.focus ? "focus" : ""}">
+      <div class="shout v">${esc(x.value)}</div><div class="l">${esc(x.label)}</div>${x.text ? `<p>${md(x.text)}</p>` : ""}</div>`).join("")}</div>`,
+};
+
+/** Deck context per slide: page number, section number, and the default kicker. */
+function contexts(deck) {
+  let section = 0, sectionTitle = "";
+  return deck.slides.map((s, i) => {
+    if (s.template === "section") { section += 1; sectionTitle = s.title; }
+    const kicker = sectionTitle ? (deck.style === "consulting" ? `${pad2(section)} · ${sectionTitle}` : sectionTitle) : "";
+    return { page: i + 1, section, kicker, footer: deck.footer };
+  });
+}
+
+function slideHTML(s, ctx, deck) {
+  let body;
+  if (s.template === "cover") {
+    body = `<div class="cover-mark"></div><h1 class="title">${md(s.title)}</h1><p class="cover-sub">${md(s.subtitle)}</p>`;
+  } else if (s.template === "section") {
+    body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title">${esc(s.title)}</h2>${s.subtitle ? `<p class="sec-sub">${md(s.subtitle)}</p>` : ""}`;
+  } else {
+    const kicker = s.kicker || ctx.kicker;
+    body = `${kicker ? `<div class="label">${esc(kicker)}</div>` : ""}<h2 class="title">${md(s.title)}</h2>${T[s.template](s)}`
+      + (s.takeaway ? `<div class="spacer"></div><p class="takeaway">${md(s.takeaway)}</p>` : "");
+  }
+  const notes = [s.footnote && `<p>${md(s.footnote)}</p>`, s.source && `<p>Source: ${md(s.source)}</p>`].filter(Boolean).join("");
+  const rail = s.template === "cover" ? "" : `<div class="rail"><div class="fn">${notes}</div><div class="pg">${esc(ctx.footer)}<b>${pad2(ctx.page)}</b></div></div>`;
+  return `<section class="slide t-${s.template} style-${deck.style} theme-${deck.theme}">${body}${rail}</section>`;
+}
+
+/* ═════════════ Charts ═════════════ */
+const niceStep = raw => { const p = 10 ** Math.floor(Math.log10(raw)), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; };
+const fmt = (tpl = "{v}", v) => tpl.replace("{v}", Number.isInteger(v) ? v : v.toFixed(1));
+const lbl = (cls, x, y, a, html) => `<span class="lbl a-${a} ${cls}" style="left:${x}px;top:${y}px">${html}</span>`;
+const topRounded = (x, y, w, h, r) => { r = Math.min(r, w / 2, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; };
+
+function drawChart(host, spec, markers = []) {
+  const legend = spec.type === "bars" ? `<div class="legend">${spec.series.map(s =>
+    `<span class="c-${s.color}"><i class="${s.line ? "line" : ""}"></i>${esc(s.name)}</span>`).join("")}</div>` : "";
+  host.innerHTML = `${legend}<div class="plot"></div>`;
+  const box = host.querySelector(".plot"), W = box.clientWidth, H = box.clientHeight;
+  (spec.type === "bars" ? bars : lines)(box, spec, W, H, markers);
+}
+
+// Grouped bars with an optional line on its own scale. No axes: values are written on the data.
+function bars(box, spec, W, H, markers) {
+  const B = spec.series.filter(s => !s.line), L = spec.series.filter(s => s.line);
+  const P = { t: 96, b: 44 }, ph = H - P.t - P.b, n = spec.categories.length, band = W / n;
+  const bMax = Math.max(...B.flatMap(s => s.values)), lMax = L.length ? Math.max(...L.flatMap(s => s.values)) : 1;
+  const yb = v => P.t + ph - (v / bMax) * ph * .86, yl = v => P.t + ph - (v / lMax) * ph;
+  const gw = band * .56, bw = gw / B.length, xc = i => band * i + band / 2;
+  let g = `<line class="base" x1="0" x2="${W}" y1="${P.t + ph}" y2="${P.t + ph}"/>`, t = "";
+  const pos = spec.series.map(() => []);
+  spec.categories.forEach((c, i) => t += lbl("cat", xc(i), P.t + ph + 16, "tc", esc(c)));
+  spec.series.forEach((s, si) => {
+    if (s.line) return;
+    const j = B.indexOf(s), f = s.format || spec.format;
+    s.values.forEach((v, i) => {
+      const x = xc(i) - gw / 2 + j * bw + 4, w = bw - 8, top = yb(v), h = P.t + ph - top;
+      if (h > .5) g += `<path class="bar c-${s.color}" d="${topRounded(x, top, w, h, 6)}"/>`;
+      if (s.color === "focus" || i === n - 1) t += lbl(`v-lbl c-${s.color}`, x + w / 2, top - 10, "bc", fmt(f, v));
+      pos[si][i] = [x + w / 2, top - 34];
+    });
+  });
+  spec.series.forEach((s, si) => {
+    if (!s.line) return;
+    const pts = s.values.map((v, i) => [xc(i), yl(v)]);
+    g += `<path class="ln c-${s.color}" d="${pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("")}"/>`;
+    pts.forEach(([x, y], i) => { g += `<circle class="pt c-${s.color}" cx="${x}" cy="${y}" r="7"/>`;
+      t += lbl(`v-lbl c-${s.color}`, x, y - 16, "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, y - 40]; });
+  });
+  markers.forEach(m => { const p = pos[m.series] && pos[m.series][m.index]; if (!p) return; const [x, y] = p;
+    g += `<line class="leader" x1="${x}" x2="${x}" y1="${y - 26}" y2="${y + 2}"/>`;
+    t += lbl("mk", x, y - 46, "mc", m.n); });
+  box.innerHTML = `<svg width="${W}" height="${H}">${g}</svg>${t}`;
+}
+
+// Lines with dashed gridlines and big direct end labels instead of a legend.
+function lines(box, spec, W, H) {
+  const P = { t: 20, r: 250, b: 48 }, pw = W - P.r, ph = H - P.t - P.b, n = spec.categories.length;
+  const max = Math.max(...spec.series.flatMap(s => s.values)), step = niceStep(max / 3), top = Math.ceil(max / step) * step;
+  const x = i => (i / (n - 1)) * pw, y = v => P.t + ph - (v / top) * ph;
+  let g = `<defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop class="area-top" offset="0"/><stop class="area-bot" offset="1"/></linearGradient></defs>`, t = "";
+  for (let v = step; v <= top; v += step) { g += `<line class="grid" x1="0" x2="${pw}" y1="${y(v)}" y2="${y(v)}"/>`; t += lbl("tick", 0, y(v) - 10, "tl", fmt(spec.format, v)); }
+  g += `<line class="base" x1="0" x2="${pw}" y1="${y(0)}" y2="${y(0)}"/>`;
+  spec.categories.forEach((c, i) => t += lbl("cat", x(i), y(0) + 16, i === 0 ? "tc0" : "tc", esc(c)));
+  spec.series.forEach(s => {
+    const pts = s.values.map((v, i) => [x(i), y(v)]), d = pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("");
+    if (s.area) g += `<path d="${d}L${pw},${y(0)}L0,${y(0)}Z" fill="url(#gA)"/>`;
+    g += `<path class="ln c-${s.color} ${s.dashed ? "dashed" : ""}" d="${d}"/>`;
+    const [lx, ly] = pts.at(-1);
+    g += `<circle class="pt solid c-${s.color}" cx="${lx}" cy="${ly}" r="10"/>`;
+    t += `<div class="lbl end c-${s.color}" style="left:${lx + 32}px;top:${ly}px"><b>${fmt(s.format || spec.format, s.values.at(-1))}</b><span>${esc(s.name)}</span></div>`;
+  });
+  box.innerHTML = `<svg width="${W}" height="${H}">${g}</svg>${t}`;
+}
+
+/* ═════════════ Fit: big values in a row shrink together (to 75% at most) so the widest fits ═════════════ */
+function fitValues(slide) {
+  for (const sel of [".stat .v", ".col .big", ".hero-v"]) {
+    const els = [...slide.querySelectorAll(sel)];
+    const k = Math.min(1, ...els.map(e => e.clientWidth / e.scrollWidth));
+    if (k < 1) els.forEach(e => { e.style.fontSize = `${parseFloat(getComputedStyle(e).fontSize) * Math.max(k, .75)}px`; });
+  }
+}
+
+/* ═════════════ Fit check: measures the rendered slide at 1920×1080 ═════════════ */
+function fitIssues(slide) {
+  const R = slide.getBoundingClientRect(), k = R.width / 1920, cs = getComputedStyle(slide);
+  const box = el => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
+  const name = el => el.className.baseVal !== undefined ? el.tagName : (el.className || el.tagName).split(" ")[0];
+  const bottom = 1080 - parseFloat(cs.paddingBottom), right = 1920 - parseFloat(cs.paddingRight), out = [];
+  for (const el of slide.children) {
+    if (el.classList.contains("rail")) continue;
+    const b = box(el);
+    if (b.b > bottom + 1) { out.push(`${name(el)} runs ${Math.round(b.b - bottom)}px into the bottom margin; shorten the body or drop the takeaway`); break; }
+    if (b.r > right + 1) out.push(`${name(el)} runs ${Math.round(b.r - right)}px into the right margin`);
+  }
+  slide.querySelectorAll(".notes, .case, .col, .stat, .hero > div, .sec-n, .hero-v, .big, .stat .v").forEach(el => {
+    if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflow !== "visible") out.push(`${name(el)} content is taller than its box`);
+    if (el.scrollWidth > el.clientWidth + 1) out.push(`${name(el)} “${el.textContent.trim().slice(0, 24)}” is wider than its column`);
+  });
+  slide.querySelectorAll(".notes, .case").forEach(el => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
+    if (last && box(last).b > box(el).b - pb + 1) out.push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`); });
+  const title = slide.querySelector("h2.title, h1.title");
+  if (title) { const lh = parseFloat(getComputedStyle(title).lineHeight), n = Math.round(title.clientHeight / lh), max = 2;
+    if (n > max) out.push(`title wraps to ${n} lines (max ${max}); shorten it`); }
+  const tk = slide.querySelector(".takeaway");
+  if (tk) { const lh = parseFloat(getComputedStyle(tk).lineHeight), n = Math.round((tk.clientHeight - 12) / lh); if (n > 1) out.push(`takeaway wraps to ${n} lines; it must fit on one`); }
+  const fn = slide.querySelector(".rail .fn"), pg = slide.querySelector(".rail .pg");
+  if (fn && pg && fn.textContent && box(fn).t < 1080 - 48 - 2 * 24 - 2) out.push("footnote + source take more than two lines");
+  return out;
+}
+
+/* ═════════════ Review page ═════════════ */
+const q = new URLSearchParams(location.search);
+const state = { style: q.get("style") || "both", theme: q.get("theme") || "ink" };
+const only = q.get("only");
+if (q.get("full")) document.body.classList.add("full");
+const listEl = document.getElementById("list");
+const ro = new ResizeObserver(es => es.forEach(e => e.target.firstElementChild?.style.setProperty("--s", e.contentRect.width / 1920)));
+
+function render() {
+  document.querySelectorAll(".seg").forEach(seg => seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state[seg.dataset.key])));
+  const styles = state.style === "both" ? ["consulting", "pitch"] : [state.style];
+  const decks = Object.fromEntries(styles.map(st => [st, deckFor(st, state.theme)]));
+  const ctx = Object.fromEntries(styles.map(st => [st, contexts(decks[st])]));
+  const deckCheck = Object.fromEntries(styles.map(st => [st, SlideSchema.validateDeck(decks[st])]));
+
+  listEl.innerHTML = `<details class="agent"><summary>What the agent sees first: list_templates()</summary><pre>${esc(SlideSchema.catalogue())}</pre></details>`
+    + SOURCE().map((ex, i) => only !== null && +only !== i ? "" : `
+    <figure data-i="${i}">
+      <figcaption><span class="id">${pad2(i + 1)} · ${ex.template}</span><b>${ex.name}</b><span class="badges"></span></figcaption>
+      <div class="frames ${styles.length > 1 ? "two" : ""}">${styles.map(st => `<div class="frame-wrap">
+        ${styles.length > 1 ? `<div class="frame-label">${st}</div>` : ""}<div class="frame" data-style="${st}"></div></div>`).join("")}</div>
+      <div class="issues"></div>
+      <details><summary>Agent output (JSON)</summary><pre>${esc(styles.map(st => (styles.length > 1 ? `// ${st}\n` : "") + JSON.stringify(decks[st].slides[i], null, 2)).join("\n\n"))}</pre></details>
+      <details class="agent"><summary>Template schema: get_template("${ex.template}")</summary><pre>${esc(JSON.stringify(SlideSchema.describe(ex.template, styles[0]), null, 2))}</pre></details>
+    </figure>`).join("");
+
+  listEl.querySelectorAll("figure").forEach(fig => {
+    const i = +fig.dataset.i;
+    fig.querySelectorAll(".frame").forEach(fr => {
+      const st = fr.dataset.style, spec = decks[st].slides[i];
+      fr.innerHTML = slideHTML(spec, ctx[st][i], decks[st]);
+      ro.observe(fr);
+      fr.firstElementChild.style.setProperty("--s", fr.clientWidth / 1920);
+      fitValues(fr.firstElementChild);
+      const host = fr.querySelector("[data-chart]");
+      if (host) drawChart(host, spec.chart, (spec.notes || []).map((n, k) => n.point && { n: k + 1, ...n.point }).filter(Boolean));
+    });
+  });
+  lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+
+  // Validate (schema) and measure (layout) every slide; show the result next to it.
+  let bad = 0, warn = 0;
+  listEl.querySelectorAll("figure").forEach(fig => {
+    const i = +fig.dataset.i, lines = [];
+    styles.forEach(st => {
+      const pre = styles.length > 1 ? `${st}: ` : "";
+      const own = p => p.startsWith(`slides[${i}].`);
+      deckCheck[st].errors.filter(own).forEach(e => lines.push({ cls: "", text: pre + e }));
+      deckCheck[st].warnings.filter(own).forEach(w => lines.push({ cls: "w", text: pre + w }));
+      fitIssues(fig.querySelector(`.frame[data-style="${st}"] .slide`)).forEach(e => lines.push({ cls: "", text: `${pre}layout: ${e}` }));
+    });
+    const errs = lines.filter(l => !l.cls).length, warns = lines.length - errs;
+    bad += errs; warn += warns;
+    fig.querySelector(".badges").innerHTML = errs ? `<span class="badge bad">${errs} issue${errs > 1 ? "s" : ""}</span>` : warns ? `<span class="badge warn">${warns} warning${warns > 1 ? "s" : ""}</span>` : `<span class="badge">valid · fits</span>`;
+    fig.querySelector(".issues").innerHTML = lines.map(l => `<div class="${l.cls}">${esc(l.text)}</div>`).join("");
+  });
+  document.getElementById("summary").textContent = bad ? `${bad} issues · ${warn} warnings` : warn ? `all fit · ${warn} warnings` : "all slides valid and fit";
+  window.__fit = { issues: bad, warnings: warn };
+}
+
+document.querySelectorAll(".seg").forEach(seg => seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { state[seg.dataset.key] = b.dataset.v; render(); })));
+// Load every face before measuring; otherwise charts and headlines lay out in the fallback font.
+Promise.all(["800 100px Archivo", "900 100px Archivo", "400 30px Geist", "600 30px Geist", "500 20px 'Geist Mono'"]
+  .map(f => document.fonts.load(f))).then(() => document.fonts.ready).then(render);
+</script>
+</body>
+</html>

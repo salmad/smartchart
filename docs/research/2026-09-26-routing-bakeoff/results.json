@@ -1,0 +1,6126 @@
+{
+ "items": [
+  {
+   "id": "c01",
+   "style": "consulting",
+   "prompt": "Start the deck: FinBridge board strategy review, Q3 2026. Subtitle along the lines of 'where we win in UK SME spend management'.",
+   "gold": "cover",
+   "acceptable": [],
+   "boundary": null,
+   "why": "First slide of the deck; guide rule 1."
+  },
+  {
+   "id": "c02",
+   "style": "consulting",
+   "prompt": "First slide for the NHS trust outpatient backlog diagnostic we present to the exec committee next week. It's a ~40-slide pack; open with the title and our one-line answer.",
+   "gold": "cover",
+   "acceptable": [],
+   "boundary": "cover-section",
+   "why": "It is the first slide, so rule 1 wins before the long-deck section rule."
+  },
+  {
+   "id": "c03",
+   "style": "consulting",
+   "prompt": "We're 12 slides into the retail network review and now moving to part 3, store format options. Need the slide that opens that part.",
+   "gold": "section",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Start of a new part in a 12+ slide deck; rule 2."
+  },
+  {
+   "id": "c04",
+   "style": "consulting",
+   "prompt": "Next up in the 25-slide logistics deck is the cost-to-serve deep dive. Mark the start of that chapter.",
+   "gold": "section",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Opens a new part of a long deck; rule 2."
+  },
+  {
+   "id": "c05",
+   "style": "consulting",
+   "prompt": "Slide 18 of ~30 in the HR transformation pack: this is where 'Part 4: Making it happen' begins.",
+   "gold": "section",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Part divider mid-way through a long deck; rule 2."
+  },
+  {
+   "id": "c06",
+   "style": "consulting",
+   "prompt": "Slide arguing that UK SMEs lose real money to manual expense reconciliation. Our survey says the average SME spends £11,400 a year in finance staff time on it.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A short argument proven by one number; rule 3."
+  },
+  {
+   "id": "c07",
+   "style": "consulting",
+   "prompt": "I need to convince the board the addressable market is big enough: UK SMEs with 10-249 employees put £84bn a year through business cards. That's the point of the slide.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "One market-size number proves the argument; rule 3."
+  },
+  {
+   "id": "c08",
+   "style": "consulting",
+   "prompt": "Churn slide for the SaaS review. The story: 62% of churned accounts never activated an integration. NPS is 41 and support tickets are up 12%, but the activation stat is the story.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "User singles out one decisive number; other stats are context, so rule 3 over cards."
+  },
+  {
+   "id": "c09",
+   "style": "consulting",
+   "prompt": "Make the case that the council's temp-agency spend is out of control: £23.6m last year against a £9m budget.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "The argument rests on one gap (a £14.6m overspend), so one decisive number; rule 3."
+  },
+  {
+   "id": "c10",
+   "style": "consulting",
+   "prompt": "Revenue trend for the FinBridge board. Monthly card spend processed (£m): Jan 18, Feb 19, Mar 22, Apr 21, May 26, Jun 31, Jul 30, Aug 36. Need to explain the June jump (Xero integration launch) and the July dip (seasonality).",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "A time series with specific points to pin and explain; rule 4."
+  },
+  {
+   "id": "c11",
+   "style": "consulting",
+   "prompt": "Show how our churn cohort curves differ: the 2024 cohorts retain much better after month 3, and I want to call out why (onboarding redesign, shift to annual plans).",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Series whose meaning depends on 2 explanatory observations the chart cannot show; rule 4."
+  },
+  {
+   "id": "c12",
+   "style": "consulting",
+   "prompt": "UK grocery market share 2019-2025, discounters vs the big four. Point out the year they cross over and the two drivers behind it.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Crossover calls for a chart, and the drivers are notes the chart does not show; rule 4."
+  },
+  {
+   "id": "c13",
+   "style": "consulting",
+   "prompt": "A&E performance across our 12 trusts, % seen within 4 hours. I want to flag the three outliers and what they have in common.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-vs-table",
+   "why": "Comparison of sizes over categories with outliers to pin and explain; rule 4 comes before the >6-row table rule."
+  },
+  {
+   "id": "c14",
+   "style": "consulting",
+   "prompt": "How gross margin went from 38% to 31%: interchange cut -3pts, fraud losses -2, FX mix -1.5, pricing +0.5, other -1. Explain each of the big drivers briefly.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A bridge over categories that needs observations per driver; rule 4."
+  },
+  {
+   "id": "c15",
+   "style": "consulting",
+   "prompt": "Client emissions by scope, 2020-2025. The board must see scope 3 is 80% and growing, and that scope 1-2 progress comes mostly from grid decarbonisation, not their own action.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "The second point (cause of scope 1-2 decline) is not visible in the chart, so notes add information; rule 4."
+  },
+  {
+   "id": "c16",
+   "style": "consulting",
+   "prompt": "Freight cost per pallet by lane over the last 8 quarters. The Midlands lanes diverged after the Coventry depot closure; annotate that quarter.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Time series with a pinned event point; rule 4."
+  },
+  {
+   "id": "c17",
+   "style": "consulting",
+   "prompt": "Attrition by tenure band: <1y 34%, 1-2y 22%, 2-5y 14%, 5y+ 7%. Want to call out that first-year attrition is concentrated in two regions and exit surveys blame onboarding.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Chart shows the gradient, but the region and exit-survey points are extra information; rule 4."
+  },
+  {
+   "id": "c18",
+   "style": "consulting",
+   "prompt": "Marketplace GMV vs take rate, 2021-2026. Take rate fell from 14% to 11% while GMV tripled; explain that this was a deliberate trade-off and what it bought us.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Two series whose relationship needs explaining; rule 4."
+  },
+  {
+   "id": "c19",
+   "style": "consulting",
+   "prompt": "SME card adoption by company size: adoption jumps at 20+ employees, and I want to note that the under-10 segment still uses personal cards.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Data over categories plus an observation the chart cannot show; rule 4."
+  },
+  {
+   "id": "c20",
+   "style": "consulting",
+   "prompt": "Results of the pricing test, conversion by tier: £29 7.1%, £39 6.8%, £49 4.2%, £59 3.9%. Highlight the cliff between 39 and 49 and what it means for how we package plans.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Size comparison with a pinned cliff and an implication to explain; rule 4."
+  },
+  {
+   "id": "c21",
+   "style": "consulting",
+   "prompt": "Show UK SME card spend: 2019 £61bn, 2020 £55bn, 2021 £66bn, 2022 £72bn, 2023 £78bn, 2024 £84bn. The message is it recovered and has grown ~8% a year since 2021.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "A trend a single title explains; rule 5, no notes needed."
+  },
+  {
+   "id": "c22",
+   "style": "consulting",
+   "prompt": "Slide with the NHS elective waiting list since 2015. It's the obvious hockey stick, no commentary needed.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Series the title alone explains; rule 5."
+  },
+  {
+   "id": "c23",
+   "style": "consulting",
+   "prompt": "Compare cost per delivery across our carriers: DPD £4.10, Evri £2.90, Royal Mail £3.40, UPS £5.20, in-house £3.80. The point is simply who's cheapest.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": "chart-vs-table",
+   "why": "Comparison of sizes that the title explains; tie-breaker favours chart; rule 5."
+  },
+  {
+   "id": "c24",
+   "style": "consulting",
+   "prompt": "Headcount by function over the last 4 years for the HR review. The message is just that G&A grew faster than every other function.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Series whose single message fits in the title; rule 5."
+  },
+  {
+   "id": "c25",
+   "style": "consulting",
+   "prompt": "Unit economics of our three plans side by side (price / gross margin / CAC / payback months): Starter £0 / 42% / £180 / 14; Growth £49 / 61% / £420 / 9; Scale £199 / 68% / £1,900 / 11. Point out Growth is the sweet spot and Scale payback is inflated by enterprise sales cost.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": "table-notes",
+   "why": "Exact mixed-unit figures that need interpretation; rule 6."
+  },
+  {
+   "id": "c26",
+   "style": "consulting",
+   "prompt": "FinBridge vs Pleo, Soldo and Spendesk on FX fee, monthly fee per user and credit line. Then what it means for our positioning.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": "table-notes",
+   "why": "Exact figures across 4 columns with a positioning interpretation; rule 6."
+  },
+  {
+   "id": "c27",
+   "style": "consulting",
+   "prompt": "Store P&L for the four pilot stores: sales, labour %, shrink %. I need to explain why Leeds underperforms despite the best top line.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures, 4 columns, needing interpretation; rule 6."
+  },
+  {
+   "id": "c28",
+   "style": "consulting",
+   "prompt": "Procurement bids: Vendor A £2.1m, 36-month term, 99.5% SLA; Vendor B £1.8m, 48 months, 99.0%; Vendor C £2.4m, 36 months, 99.9%. Board needs the exact numbers and our read on the trade-offs.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": "chart-vs-table",
+   "why": "Reader needs exact values plus interpretation; rule 6."
+  },
+  {
+   "id": "c29",
+   "style": "consulting",
+   "prompt": "Clinical trial site performance for 5 sites: enrolment vs target, screen-failure rate, dropout rate. Call out which sites we should close.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures, 4 columns, with a recommendation to explain; rule 6."
+  },
+  {
+   "id": "c30",
+   "style": "consulting",
+   "prompt": "Four market-entry countries (TAM / licence timeline / competitors): Germany €9bn/12mo/14, France €7bn/9mo/8, Netherlands €2bn/4mo/5, Spain €4bn/10mo/6. We recommend NL first; say why.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures across 4 columns needing interpretation; rule 6."
+  },
+  {
+   "id": "c31",
+   "style": "consulting",
+   "prompt": "This quarter's KPIs vs plan: ARR, NRR, gross margin, each with actual, plan and variance. Need to explain the NRR miss.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact values (4 columns) with a miss to interpret; rule 6."
+  },
+  {
+   "id": "c32",
+   "style": "consulting",
+   "prompt": "Abatement options with cost per tonne and potential: fleet EVs £45/t 1.2Mt, heat pumps £80/t 0.8Mt, solar PPA -£10/t 2.1Mt, offsets £15/t unlimited. I want to make the case that offsets are a trap.",
+   "gold": "split/table+notes",
+   "acceptable": [
+    "split/chart+notes"
+   ],
+   "boundary": "chart-vs-table",
+   "why": "Exact figures with interpretation (rule 6); a cost-curve chart with notes is a defensible alternative."
+  },
+  {
+   "id": "c33",
+   "style": "consulting",
+   "prompt": "Council budget by department, 2025 vs 2026 and % change, six departments. Add notes on which cuts hit statutory services.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures, 4 columns, that need interpretation; rule 6."
+  },
+  {
+   "id": "c34",
+   "style": "consulting",
+   "prompt": "Feature comparison vs 4 competitors across 8 features for the product review, ticks and crosses.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "5 columns and 8 rows; rule 7."
+  },
+  {
+   "id": "c35",
+   "style": "consulting",
+   "prompt": "Regional sales pack: 7 regions with revenue, growth, margin and revenue per head. The committee just wants to look the figures up.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "5 columns and more than 6 rows, no interpretation; rule 7."
+  },
+  {
+   "id": "c36",
+   "style": "consulting",
+   "prompt": "FinBridge card tiers Free, Plus, Pro, Enterprise with monthly fee, cards included, FX fee and cashback, so the pricing committee can compare.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures across rows, 5 columns; rule 7 comes before cards."
+  },
+  {
+   "id": "c37",
+   "style": "consulting",
+   "prompt": "Workstream status for the steering committee: 8 workstreams with owner, RAG, next milestone and date.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "More than 6 rows, 5 columns; rule 7."
+  },
+  {
+   "id": "c38",
+   "style": "consulting",
+   "prompt": "Benchmarks for the 10 GP practices in the network: patients per GP, DNA rate, average wait in days. They'll read the numbers themselves.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": "chart-vs-table",
+   "why": "More than 6 rows of exact values the reader looks up, no single visual message; rule 7."
+  },
+  {
+   "id": "c39",
+   "style": "consulting",
+   "prompt": "Three carriers: on-time %, damage rate, cost per parcel, claims paid. The audit committee just wants the numbers, no commentary.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": "table-notes",
+   "why": "Exact figures with 5 columns and no interpretation wanted; rule 7."
+  },
+  {
+   "id": "c40",
+   "style": "consulting",
+   "prompt": "Walk through the 18-month ERP rollout plan: design, build, pilot, rollout, hypercare.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A 5-step plan in time; rule 8."
+  },
+  {
+   "id": "c41",
+   "style": "consulting",
+   "prompt": "How a FinBridge expense flows from tap to ledger: card tap, receipt capture, auto-categorisation, approval, sync to Xero.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": "cards-vs-steps",
+   "why": "An ordered process, not parallel items; rule 8."
+  },
+  {
+   "id": "c42",
+   "style": "consulting",
+   "prompt": "The client's M&A history: bought Northway in 2016, Cardell in 2019, merged with Vesta in 2022, carved out the services arm in 2025.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A history of 4 dated steps; rule 8."
+  },
+  {
+   "id": "c43",
+   "style": "consulting",
+   "prompt": "Our recommended three-horizon roadmap for the retailer's digital transformation: fix the basics (0-6m), scale omnichannel (6-18m), new business models (18m+).",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": "cards-vs-steps",
+   "why": "Horizons are sequenced in time, so a roadmap; rule 8 before rule 9."
+  },
+  {
+   "id": "c44",
+   "style": "consulting",
+   "prompt": "The patient referral pathway today: GP referral, triage, diagnostics, consultant review, treatment. Want to show where the delays pile up.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A 5-step process; rule 8."
+  },
+  {
+   "id": "c45",
+   "style": "consulting",
+   "prompt": "Three strategic options for the board: build organically, acquire a payroll player, or partner with a bank. One line on each.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel options; rule 9."
+  },
+  {
+   "id": "c46",
+   "style": "consulting",
+   "prompt": "The four pillars of our people strategy: attract, develop, reward, retain.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": "cards-vs-steps",
+   "why": "Parallel pillars, not steps in time, despite the lifecycle ordering; rule 9."
+  },
+  {
+   "id": "c47",
+   "style": "consulting",
+   "prompt": "Headline results from the pilot: 23% fewer stockouts, £1.4m working capital released, 4.2pts margin uplift. Three wins, all of them matter.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "Several independent numbers of equal weight; rule 9 tie-breaker."
+  },
+  {
+   "id": "c48",
+   "style": "consulting",
+   "prompt": "Contrast how SMEs manage expenses today (shared card, spreadsheets, month-end chasing) with FinBridge (per-employee cards, real-time receipts, auto-reconciliation).",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A two-way contrast; rule 9."
+  },
+  {
+   "id": "c49",
+   "style": "consulting",
+   "prompt": "Key risks to the programme (data migration, change fatigue, vendor lock-in) and a mitigation for each.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Three parallel items; rule 9."
+  },
+  {
+   "id": "c50",
+   "style": "consulting",
+   "prompt": "The case for the transition plan rests on three numbers: £120m carbon tax exposure by 2030, 35% of revenue from high-carbon products, and a 2.1x valuation premium for leaders.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "Three independent numbers, none decisive alone; rule 9 tie-breaker."
+  },
+  {
+   "id": "p01",
+   "style": "pitch",
+   "prompt": "Start of our seed deck: FinBridge, the charge card that does SME bookkeeping for you.",
+   "gold": "cover",
+   "acceptable": [],
+   "boundary": null,
+   "why": "First slide of the deck; rule 1."
+  },
+  {
+   "id": "p02",
+   "style": "pitch",
+   "prompt": "Opening slide for the Series A deck. Company is Loopcart, returns logistics for DTC brands. Keep it minimal.",
+   "gold": "cover",
+   "acceptable": [],
+   "boundary": null,
+   "why": "First slide; rule 1."
+  },
+  {
+   "id": "p03",
+   "style": "pitch",
+   "prompt": "First slide for demo day, 12 slides total. We're Carely, AI scheduling for home-care agencies. Title plus our one-liner.",
+   "gold": "cover",
+   "acceptable": [],
+   "boundary": "cover-section",
+   "why": "First slide beats the long-deck section rule; rule 1."
+  },
+  {
+   "id": "p04",
+   "style": "pitch",
+   "prompt": "Our Series B deck is 22 slides; slide 14 kicks off the financials part. Give me the slide that opens it.",
+   "gold": "section",
+   "acceptable": [],
+   "boundary": "cover-section",
+   "why": "Start of a new part in a deck of 8+ slides, not the opening; rule 2."
+  },
+  {
+   "id": "p05",
+   "style": "pitch",
+   "prompt": "Problem slide: UK SMEs waste 9 hours a month chasing receipts. That's the whole point.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "One number proves the problem; rule 3."
+  },
+  {
+   "id": "p06",
+   "style": "pitch",
+   "prompt": "Market slide: £84bn of SME card spend in the UK. Investors should get it in one glance.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "One market-size number; rule 3."
+  },
+  {
+   "id": "p07",
+   "style": "pitch",
+   "prompt": "Traction: we hit £1.2m ARR, up from £300k a year ago. We also have 140 customers and 3 sales reps, but ARR is what matters.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "User names one decisive number; rule 3."
+  },
+  {
+   "id": "p08",
+   "style": "pitch",
+   "prompt": "Problem slide for our climate startup: commercial buildings waste 30% of the energy they pay for.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "One number proves the argument; rule 3."
+  },
+  {
+   "id": "p09",
+   "style": "pitch",
+   "prompt": "Why now: open banking API calls in the UK grew 10x in three years.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "One growth multiple proves timing; rule 3."
+  },
+  {
+   "id": "p10",
+   "style": "pitch",
+   "prompt": "Our NRR is 142%. I want a slide that makes investors stop scrolling.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": null,
+   "why": "One big number; rule 3."
+  },
+  {
+   "id": "p11",
+   "style": "pitch",
+   "prompt": "Hiring pain in logistics: warehouse roles take 47 days to fill on average, and each empty shift costs £380. Make the problem land.",
+   "gold": "split/text+number",
+   "acceptable": [
+    "row/cards"
+   ],
+   "boundary": "number-vs-cards",
+   "why": "47 days carries the problem (rule 3), but two numbers could fairly be cards."
+  },
+  {
+   "id": "p12",
+   "style": "pitch",
+   "prompt": "Size of the prize for our HR tech: 5.5m UK SMEs, 60% still run payroll on spreadsheets. If we take 1%, that's £400m ARR.",
+   "gold": "split/text+number",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "The inputs build to one decisive number (£400m); rule 3."
+  },
+  {
+   "id": "p13",
+   "style": "pitch",
+   "prompt": "MRR chart: Jan 42k, Feb 48k, Mar 55k, Apr 71k, May 78k, Jun 96k. The April jump is our Xero app launch and June is our first enterprise logo; investors will ask.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Two specific points need pinned explanations the chart can't show; rule 4 overrides the pitch preference."
+  },
+  {
+   "id": "p14",
+   "style": "pitch",
+   "prompt": "Weekly active clinics since launch. There are three spikes I need to explain: the NHS framework win, our webinar with the RCGP, and the BMJ feature.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Three pinned events to explain on a series; rule 4."
+  },
+  {
+   "id": "p15",
+   "style": "pitch",
+   "prompt": "CAC by channel over the last 4 quarters: paid social 40, 55, 72, 95; referral 20, 21, 19, 20; SEO 35, 28, 22, 18. Investors need to see why we're moving budget and what's behind each line.",
+   "gold": "split/chart+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Series with one explanation per line; rule 4."
+  },
+  {
+   "id": "p16",
+   "style": "pitch",
+   "prompt": "Revenue slide: 2022 £0.2m, 2023 £0.9m, 2024 £2.6m, 2025 £6.1m. Just show it going up.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "Trend the title explains; rule 5, and pitch prefers no notes."
+  },
+  {
+   "id": "p17",
+   "style": "pitch",
+   "prompt": "Retention curves for marketplace buyers by cohort. Cohorts after we launched same-day delivery retain 2x better; that's our best argument.",
+   "gold": "full/chart",
+   "acceptable": [
+    "split/chart+notes"
+   ],
+   "boundary": "chart-notes",
+   "why": "One message a title can carry, pitch prefers no notes (rule 5); notes version is defensible."
+  },
+  {
+   "id": "p18",
+   "style": "pitch",
+   "prompt": "Show GMV compounding since launch, 15% month on month for 14 months.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A trend the title explains; rule 5."
+  },
+  {
+   "id": "p19",
+   "style": "pitch",
+   "prompt": "Us vs competitors on FX fees: us 0%, Amex 2.99%, high-street banks 2.75%, Pleo 1.5%. Make it obvious we're cheapest.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": "chart-vs-table",
+   "why": "Comparison of sizes the title explains; tie-breaker favours chart."
+  },
+  {
+   "id": "p20",
+   "style": "pitch",
+   "prompt": "Customers over time, quarterly from 2023: 12, 25, 41, 70, 118, 190, 305.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Time series explained by its title; rule 5."
+  },
+  {
+   "id": "p21",
+   "style": "pitch",
+   "prompt": "10-year cumulative cost: our solar-as-a-service vs buying panels outright vs doing nothing. Point is we're cheaper from year 2.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": "chart-notes",
+   "why": "A crossover the title states; rule 5 with pitch no-notes preference."
+  },
+  {
+   "id": "p22",
+   "style": "pitch",
+   "prompt": "Slide showing our burn multiple improving every quarter this year: 3.1, 2.4, 1.8, 1.2.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Trend whose message fits the title; rule 5."
+  },
+  {
+   "id": "p23",
+   "style": "pitch",
+   "prompt": "UK home-care market 2020 to 2030 forecast. Big and growing, that's all.",
+   "gold": "full/chart",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A series the title alone explains; rule 5."
+  },
+  {
+   "id": "p24",
+   "style": "pitch",
+   "prompt": "Unit economics, SMB vs mid-market: ACV £6k vs £28k, gross margin 78% vs 81%, CAC £4.5k vs £14k, payback 11 vs 7 months. Investors need to see why we're doubling down on mid-market.",
+   "gold": "split/table+notes",
+   "acceptable": [
+    "full/table"
+   ],
+   "boundary": "table-notes",
+   "why": "Exact figures with an interpretation to make (rule 6); pitch no-notes table is also reasonable."
+  },
+  {
+   "id": "p25",
+   "style": "pitch",
+   "prompt": "Use of funds for the £4m raise: engineering £1.8m, sales £1.2m, marketing £0.6m, G&A £0.4m, with the hires and milestone each unlocks. Add a line on why engineering is the biggest bucket.",
+   "gold": "split/table+notes",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures across 4 columns plus a note the table doesn't show; rule 6."
+  },
+  {
+   "id": "p26",
+   "style": "pitch",
+   "prompt": "Competition slide: us vs Pleo, Soldo, Spendesk and Amex on credit line, automatic receipts, Xero sync and price per user.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact comparison, 5 rows by 5 columns; rule 7."
+  },
+  {
+   "id": "p27",
+   "style": "pitch",
+   "prompt": "Pricing: Starter free, Team £8/user, Business £15/user, Enterprise custom, with seats, integrations and support level for each.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures compared across rows with 5 columns; rule 7 precedes cards."
+  },
+  {
+   "id": "p28",
+   "style": "pitch",
+   "prompt": "Cap table summary for the data room: founders, ESOP, angels, seed fund, with shares held, % pre-money and % post-money.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures to compare, no interpretation; rule 7."
+  },
+  {
+   "id": "p29",
+   "style": "pitch",
+   "prompt": "KPI snapshot for the appendix, last 8 months: MRR, customers, churn %, CAC per month.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": "chart-vs-table",
+   "why": "More than 6 rows of exact mixed-unit values; tie-breaker favours table when exact values matter."
+  },
+  {
+   "id": "p30",
+   "style": "pitch",
+   "prompt": "Pilot results for 7 warehouses: pick rate before and after, error rate before and after.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "5 columns, more than 6 rows; rule 7."
+  },
+  {
+   "id": "p31",
+   "style": "pitch",
+   "prompt": "Hiring plan grid: 6 key hires with role, start quarter and salary band.",
+   "gold": "full/table",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Exact figures compared across rows; rule 7."
+  },
+  {
+   "id": "p32",
+   "style": "pitch",
+   "prompt": "Roadmap: Q1 expense cards, Q2 bill pay, Q3 credit line, Q4 EU expansion.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Roadmap in time; rule 8."
+  },
+  {
+   "id": "p33",
+   "style": "pitch",
+   "prompt": "How it works: sign up in 5 minutes, issue cards, snap receipts, books close themselves.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": "cards-vs-steps",
+   "why": "A user journey in order; rule 8 before rule 9."
+  },
+  {
+   "id": "p34",
+   "style": "pitch",
+   "prompt": "Our story so far: founded 2023 in Leeds, first pilot hospital 2024, NHS framework 2025, Series A 2026.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A dated history; rule 8."
+  },
+  {
+   "id": "p35",
+   "style": "pitch",
+   "prompt": "Go-to-market: land with accountants, expand into their SME clients, then upsell credit.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Sequenced plan; rule 8."
+  },
+  {
+   "id": "p36",
+   "style": "pitch",
+   "prompt": "What this raise unlocks over 18 months: £5m ARR, 3 enterprise logos, break-even.",
+   "gold": "full/steps",
+   "acceptable": [
+    "row/cards"
+   ],
+   "boundary": "cards-vs-steps",
+   "why": "Milestones over a time horizon (rule 8), though they read as independent numbers too."
+  },
+  {
+   "id": "p37",
+   "style": "pitch",
+   "prompt": "How returns work for a shopper: request a return, drop at a locker, we grade it, resell within 48h, refund instantly.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A 5-step process; rule 8."
+  },
+  {
+   "id": "p38",
+   "style": "pitch",
+   "prompt": "Path to profitability: raise now, break-even in month 20, profitable at £12m ARR.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Sequence of milestones in time; rule 8."
+  },
+  {
+   "id": "p39",
+   "style": "pitch",
+   "prompt": "Expansion plan for our carbon accounting platform: UK now, Nordics 2027, DACH 2028.",
+   "gold": "full/steps",
+   "acceptable": [],
+   "boundary": null,
+   "why": "A dated plan; rule 8."
+  },
+  {
+   "id": "p40",
+   "style": "pitch",
+   "prompt": "Traction slide: £2.4m ARR, 310 customers, 128% NRR, zero churned logos this year.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "Several independent numbers; rule 9 tie-breaker."
+  },
+  {
+   "id": "p41",
+   "style": "pitch",
+   "prompt": "Three products, one platform: cards, bill pay, credit.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel features; rule 9."
+  },
+  {
+   "id": "p42",
+   "style": "pitch",
+   "prompt": "Before vs after FinBridge: 3 days to close the month, now 3 hours.",
+   "gold": "row/cards",
+   "acceptable": [
+    "split/text+number"
+   ],
+   "boundary": "number-vs-cards",
+   "why": "A two-way before/after contrast (rule 9); one big number could also carry it."
+  },
+  {
+   "id": "p43",
+   "style": "pitch",
+   "prompt": "Why we win: proprietary data from 40k SMEs, embedded in Xero and QuickBooks, a bank-grade credit model.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel advantages; rule 9."
+  },
+  {
+   "id": "p44",
+   "style": "pitch",
+   "prompt": "Business model: we earn from interchange, SaaS subscriptions and FX.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel revenue streams; rule 9."
+  },
+  {
+   "id": "p45",
+   "style": "pitch",
+   "prompt": "Who we serve: independent pharmacies, dental groups, vet clinics.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel segments; rule 9."
+  },
+  {
+   "id": "p46",
+   "style": "pitch",
+   "prompt": "Old way vs our way for freight booking: phone and email with 2-day quotes, vs instant online quotes and live tracking.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Two-way contrast; rule 9."
+  },
+  {
+   "id": "p47",
+   "style": "pitch",
+   "prompt": "Impact slide for our climate fund: 1.2Mt CO2 avoided, 14,000 homes retrofitted, £38m in bill savings.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": "number-vs-cards",
+   "why": "Three independent numbers; rule 9."
+  },
+  {
+   "id": "p48",
+   "style": "pitch",
+   "prompt": "Our three ways to grow: new verticals, moving upmarket, international.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel options with no time order; rule 9."
+  },
+  {
+   "id": "p49",
+   "style": "pitch",
+   "prompt": "Team slide: CEO ex-Monzo, CTO ex-Stripe, CRO ex-Pleo.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Parallel people; rule 9."
+  },
+  {
+   "id": "p50",
+   "style": "pitch",
+   "prompt": "What customers get: per-employee cards, auto receipts, real-time budgets, one-click accounting sync.",
+   "gold": "row/cards",
+   "acceptable": [],
+   "boundary": null,
+   "why": "Four parallel features; rule 9."
+  }
+ ],
+ "results": {
+  "jev-bare": [
+   {
+    "id": "c01",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "cover": 1,
+     "full/table": 0,
+     "full/steps": 0,
+     "split/table+notes": 0
+    },
+    "ms": 925.998917,
+    "cost": 0.000028056
+   },
+   {
+    "id": "c02",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 1,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 737.763042,
+    "cost": 0.000028056
+   },
+   {
+    "id": "c03",
+    "pick": "section",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "section": 1,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 859.6801250000001,
+    "cost": 0.000027804
+   },
+   {
+    "id": "c04",
+    "pick": "section",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "row/cards": 0,
+     "split/table+notes": 0,
+     "section": 1,
+     "full/steps": 0,
+     "cover": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 742.381542,
+    "cost": 0.000027594
+   },
+   {
+    "id": "c05",
+    "pick": "section",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 1,
+     "cover": 0
+    },
+    "ms": 700.503,
+    "cost": 0.000027678
+   },
+   {
+    "id": "c06",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 1,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 0
+    },
+    "ms": 674.6059580000001,
+    "cost": 0.000028056
+   },
+   {
+    "id": "c07",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "row/cards": 0,
+     "full/chart": 0,
+     "full/steps": 0,
+     "split/text+number": 1,
+     "full/table": 0,
+     "cover": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0
+    },
+    "ms": 671.983792,
+    "cost": 0.000028434
+   },
+   {
+    "id": "c08",
+    "pick": "split/text+number",
+    "p": 0.65,
+    "confidence": 0.61,
+    "probs": {
+     "split/text+number": 0.65,
+     "row/cards": 0.04,
+     "cover": 0,
+     "split/table+notes": 0.02,
+     "full/chart": 0.01,
+     "full/table": 0,
+     "section": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0.28
+    },
+    "ms": 690.186708,
+    "cost": 0.00002856
+   },
+   {
+    "id": "c09",
+    "pick": "split/text+number",
+    "p": 0.91,
+    "confidence": 0.89,
+    "probs": {
+     "split/text+number": 0.91,
+     "split/chart+notes": 0.05,
+     "full/steps": 0,
+     "split/table+notes": 0.03,
+     "full/chart": 0,
+     "full/table": 0,
+     "section": 0,
+     "row/cards": 0.01,
+     "cover": 0
+    },
+    "ms": 529.044834,
+    "cost": 0.000027804
+   },
+   {
+    "id": "c10",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "section": 0,
+     "row/cards": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "split/chart+notes": 1,
+     "split/text+number": 0,
+     "full/table": 0
+    },
+    "ms": 485.6755830000001,
+    "cost": 0.000029778
+   },
+   {
+    "id": "c11",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "split/chart+notes": 1,
+     "cover": 0
+    },
+    "ms": 532.0664159999999,
+    "cost": 0.000028266
+   },
+   {
+    "id": "c12",
+    "pick": "split/chart+notes",
+    "p": 0.99,
+    "confidence": 0.98,
+    "probs": {
+     "full/chart": 0,
+     "cover": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0.99,
+     "split/table+notes": 0.01,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "section": 0
+    },
+    "ms": 475.28991700000006,
+    "cost": 0.000028056
+   },
+   {
+    "id": "c13",
+    "pick": "split/chart+notes",
+    "p": 0.48,
+    "confidence": 0.41,
+    "probs": {
+     "full/steps": 0,
+     "split/table+notes": 0.46,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "row/cards": 0.03,
+     "cover": 0,
+     "split/chart+notes": 0.48,
+     "full/table": 0.03,
+     "section": 0
+    },
+    "ms": 514.8342080000001,
+    "cost": 0.000027846
+   },
+   {
+    "id": "c14",
+    "pick": "split/chart+notes",
+    "p": 0.39,
+    "confidence": 0.31,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0.39,
+     "full/chart": 0,
+     "section": 0,
+     "row/cards": 0.24,
+     "full/steps": 0,
+     "split/text+number": 0.01,
+     "full/table": 0.02,
+     "split/table+notes": 0.34
+    },
+    "ms": 473.010041,
+    "cost": 0.000028644
+   },
+   {
+    "id": "c15",
+    "pick": "split/chart+notes",
+    "p": 0.88,
+    "confidence": 0.87,
+    "probs": {
+     "full/table": 0.01,
+     "split/chart+notes": 0.88,
+     "row/cards": 0.01,
+     "full/chart": 0,
+     "split/text+number": 0.02,
+     "section": 0,
+     "cover": 0,
+     "split/table+notes": 0.08,
+     "full/steps": 0
+    },
+    "ms": 522.532333,
+    "cost": 0.00002877
+   },
+   {
+    "id": "c16",
+    "pick": "split/chart+notes",
+    "p": 0.76,
+    "confidence": 0.73,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "full/table": 0.04,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0.2,
+     "full/steps": 0,
+     "split/chart+notes": 0.76,
+     "cover": 0
+    },
+    "ms": 487.36462500000005,
+    "cost": 0.000027804
+   },
+   {
+    "id": "c17",
+    "pick": "split/table+notes",
+    "p": 0.5,
+    "confidence": 0.42,
+    "probs": {
+     "section": 0,
+     "row/cards": 0.01,
+     "full/table": 0.01,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0.5,
+     "full/steps": 0,
+     "split/chart+notes": 0.48,
+     "cover": 0
+    },
+    "ms": 486.244416,
+    "cost": 0.000029148
+   },
+   {
+    "id": "c18",
+    "pick": "split/chart+notes",
+    "p": 0.95,
+    "confidence": 0.93,
+    "probs": {
+     "split/text+number": 0,
+     "split/table+notes": 0.02,
+     "row/cards": 0.03,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0.95,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 463.57841699999994,
+    "cost": 0.000028644
+   },
+   {
+    "id": "c19",
+    "pick": "split/chart+notes",
+    "p": 0.9,
+    "confidence": 0.87,
+    "probs": {
+     "section": 0,
+     "full/chart": 0,
+     "row/cards": 0.04,
+     "split/table+notes": 0.05,
+     "cover": 0,
+     "split/chart+notes": 0.9,
+     "full/steps": 0,
+     "split/text+number": 0,
+     "full/table": 0.01
+    },
+    "ms": 482.17879199999993,
+    "cost": 0.000027888
+   },
+   {
+    "id": "c20",
+    "pick": "split/table+notes",
+    "p": 0.62,
+    "confidence": 0.57,
+    "probs": {
+     "split/table+notes": 0.62,
+     "cover": 0,
+     "split/chart+notes": 0.36,
+     "section": 0,
+     "full/steps": 0,
+     "row/cards": 0.01,
+     "full/table": 0.01,
+     "full/chart": 0,
+     "split/text+number": 0
+    },
+    "ms": 472.0540840000001,
+    "cost": 0.000029148
+   },
+   {
+    "id": "c21",
+    "pick": "split/chart+notes",
+    "p": 0.83,
+    "confidence": 0.8,
+    "probs": {
+     "split/text+number": 0,
+     "row/cards": 0,
+     "cover": 0,
+     "split/table+notes": 0.09,
+     "full/chart": 0.06,
+     "section": 0,
+     "full/table": 0.01,
+     "full/steps": 0.01,
+     "split/chart+notes": 0.83
+    },
+    "ms": 500.60295900000006,
+    "cost": 0.000030114
+   },
+   {
+    "id": "c22",
+    "pick": "full/chart",
+    "p": 0.9,
+    "confidence": 0.89,
+    "probs": {
+     "full/table": 0,
+     "row/cards": 0,
+     "split/text+number": 0,
+     "cover": 0,
+     "split/chart+notes": 0.1,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "full/chart": 0.9,
+     "section": 0
+    },
+    "ms": 446.92387499999995,
+    "cost": 0.000027552
+   },
+   {
+    "id": "c23",
+    "pick": "full/table",
+    "p": 0.45,
+    "confidence": 0.37,
+    "probs": {
+     "section": 0,
+     "row/cards": 0.29,
+     "split/text+number": 0.06,
+     "full/table": 0.45,
+     "full/steps": 0,
+     "cover": 0,
+     "split/chart+notes": 0.02,
+     "split/table+notes": 0.15,
+     "full/chart": 0.03
+    },
+    "ms": 464.1723749999999,
+    "cost": 0.000028812
+   },
+   {
+    "id": "c24",
+    "pick": "split/chart+notes",
+    "p": 0.46,
+    "confidence": 0.39,
+    "probs": {
+     "full/table": 0.14,
+     "full/steps": 0,
+     "split/table+notes": 0.33,
+     "cover": 0,
+     "split/text+number": 0.01,
+     "full/chart": 0.05,
+     "section": 0,
+     "split/chart+notes": 0.46,
+     "row/cards": 0
+    },
+    "ms": 501.85304199999996,
+    "cost": 0.000027762
+   },
+   {
+    "id": "c25",
+    "pick": "split/table+notes",
+    "p": 0.91,
+    "confidence": 0.89,
+    "probs": {
+     "cover": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "section": 0,
+     "row/cards": 0.04,
+     "full/steps": 0,
+     "full/table": 0.05,
+     "split/text+number": 0,
+     "split/table+notes": 0.91
+    },
+    "ms": 513.5864580000002,
+    "cost": 0.000030576
+   },
+   {
+    "id": "c26",
+    "pick": "split/table+notes",
+    "p": 0.84,
+    "confidence": 0.81,
+    "probs": {
+     "row/cards": 0.05,
+     "full/chart": 0,
+     "full/steps": 0,
+     "split/text+number": 0,
+     "full/table": 0.11,
+     "cover": 0,
+     "split/table+notes": 0.84,
+     "split/chart+notes": 0,
+     "section": 0
+    },
+    "ms": 500.5110830000001,
+    "cost": 0.00002793
+   },
+   {
+    "id": "c27",
+    "pick": "split/table+notes",
+    "p": 0.9,
+    "confidence": 0.88,
+    "probs": {
+     "cover": 0,
+     "full/table": 0.05,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0.9,
+     "full/steps": 0,
+     "full/chart": 0,
+     "row/cards": 0.01,
+     "split/chart+notes": 0.04
+    },
+    "ms": 472.41512499999976,
+    "cost": 0.000027804
+   },
+   {
+    "id": "c28",
+    "pick": "split/table+notes",
+    "p": 0.98,
+    "confidence": 0.97,
+    "probs": {
+     "row/cards": 0.01,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "full/table": 0.01,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0.98
+    },
+    "ms": 487.16208299999994,
+    "cost": 0.000029778
+   },
+   {
+    "id": "c29",
+    "pick": "split/table+notes",
+    "p": 0.62,
+    "confidence": 0.57,
+    "probs": {
+     "split/text+number": 0,
+     "split/chart+notes": 0.04,
+     "full/steps": 0,
+     "section": 0,
+     "split/table+notes": 0.62,
+     "row/cards": 0.04,
+     "full/chart": 0,
+     "full/table": 0.3,
+     "cover": 0
+    },
+    "ms": 472.15045799999984,
+    "cost": 0.000027846
+   },
+   {
+    "id": "c30",
+    "pick": "split/table+notes",
+    "p": 0.87,
+    "confidence": 0.86,
+    "probs": {
+     "full/table": 0.04,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "row/cards": 0.08,
+     "split/table+notes": 0.87,
+     "section": 0,
+     "cover": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0.01
+    },
+    "ms": 522.7341670000003,
+    "cost": 0.00002919
+   },
+   {
+    "id": "c31",
+    "pick": "split/table+notes",
+    "p": 0.94,
+    "confidence": 0.93,
+    "probs": {
+     "section": 0,
+     "cover": 0,
+     "split/chart+notes": 0.01,
+     "full/table": 0.05,
+     "full/steps": 0,
+     "full/chart": 0,
+     "split/table+notes": 0.94,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 486.04554200000007,
+    "cost": 0.000027846
+   },
+   {
+    "id": "c32",
+    "pick": "split/table+notes",
+    "p": 0.73,
+    "confidence": 0.69,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0.04,
+     "cover": 0,
+     "section": 0,
+     "full/table": 0.13,
+     "split/text+number": 0.02,
+     "full/chart": 0,
+     "split/table+notes": 0.73,
+     "row/cards": 0.08
+    },
+    "ms": 547.0653330000002,
+    "cost": 0.000029442
+   },
+   {
+    "id": "c33",
+    "pick": "split/table+notes",
+    "p": 0.84,
+    "confidence": 0.81,
+    "probs": {
+     "split/table+notes": 0.84,
+     "cover": 0,
+     "split/chart+notes": 0.01,
+     "section": 0,
+     "full/steps": 0,
+     "row/cards": 0,
+     "full/table": 0.15,
+     "full/chart": 0,
+     "split/text+number": 0
+    },
+    "ms": 658.6644590000001,
+    "cost": 0.000027846
+   },
+   {
+    "id": "c34",
+    "pick": "full/table",
+    "p": 0.91,
+    "confidence": 0.9,
+    "probs": {
+     "full/table": 0.91,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "row/cards": 0.03,
+     "split/table+notes": 0.06,
+     "section": 0,
+     "cover": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 482.3709590000003,
+    "cost": 0.0000273
+   },
+   {
+    "id": "c35",
+    "pick": "full/table",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "row/cards": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/table": 1,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 510.5180419999997,
+    "cost": 0.000027678
+   },
+   {
+    "id": "c36",
+    "pick": "full/table",
+    "p": 0.51,
+    "confidence": 0.45,
+    "probs": {
+     "split/table+notes": 0.15,
+     "section": 0,
+     "full/table": 0.51,
+     "split/chart+notes": 0,
+     "split/text+number": 0,
+     "row/cards": 0.34,
+     "full/steps": 0,
+     "full/chart": 0,
+     "cover": 0
+    },
+    "ms": 603.250708,
+    "cost": 0.000027888
+   },
+   {
+    "id": "c37",
+    "pick": "full/table",
+    "p": 0.92,
+    "confidence": 0.91,
+    "probs": {
+     "cover": 0,
+     "full/table": 0.92,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0.08,
+     "full/steps": 0,
+     "full/chart": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 530.4546660000001,
+    "cost": 0.000027636
+   },
+   {
+    "id": "c38",
+    "pick": "full/table",
+    "p": 0.94,
+    "confidence": 0.93,
+    "probs": {
+     "section": 0,
+     "row/cards": 0.01,
+     "full/steps": 0,
+     "full/table": 0.94,
+     "split/text+number": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0.05,
+     "full/chart": 0
+    },
+    "ms": 601.9010000000003,
+    "cost": 0.000027888
+   },
+   {
+    "id": "c39",
+    "pick": "full/table",
+    "p": 0.97,
+    "confidence": 0.96,
+    "probs": {
+     "split/text+number": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "row/cards": 0.03,
+     "cover": 0,
+     "full/table": 0.97,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 471.3777500000001,
+    "cost": 0.000027636
+   },
+   {
+    "id": "c40",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/table+notes": 0,
+     "section": 0,
+     "split/text+number": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 1,
+     "full/chart": 0,
+     "cover": 0
+    },
+    "ms": 453.4249999999997,
+    "cost": 0.000027468
+   },
+   {
+    "id": "c41",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "cover": 0,
+     "full/steps": 1,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "section": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 497.60341700000026,
+    "cost": 0.000027846
+   },
+   {
+    "id": "c42",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/steps": 1,
+     "cover": 0
+    },
+    "ms": 531.1558749999999,
+    "cost": 0.000028602
+   },
+   {
+    "id": "c43",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/steps": 1,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "row/cards": 0,
+     "split/text+number": 0
+    },
+    "ms": 516.6962089999997,
+    "cost": 0.00002835
+   },
+   {
+    "id": "c44",
+    "pick": "full/steps",
+    "p": 0.93,
+    "confidence": 0.92,
+    "probs": {
+     "row/cards": 0,
+     "section": 0,
+     "split/table+notes": 0.02,
+     "cover": 0,
+     "full/steps": 0.93,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "full/table": 0.01,
+     "split/chart+notes": 0.03
+    },
+    "ms": 457.27787499999977,
+    "cost": 0.000027678
+   },
+   {
+    "id": "c45",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 1,
+     "cover": 0,
+     "full/steps": 0,
+     "split/text+number": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0
+    },
+    "ms": 515.8695000000002,
+    "cost": 0.00002772
+   },
+   {
+    "id": "c46",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/chart+notes": 0,
+     "split/text+number": 0,
+     "cover": 0,
+     "row/cards": 1,
+     "full/steps": 0,
+     "full/table": 0,
+     "section": 0,
+     "full/chart": 0,
+     "split/table+notes": 0
+    },
+    "ms": 484.2407500000004,
+    "cost": 0.000027174
+   },
+   {
+    "id": "c47",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "row/cards": 1,
+     "section": 0,
+     "full/steps": 0,
+     "full/table": 0
+    },
+    "ms": 487.0707500000003,
+    "cost": 0.000028266
+   },
+   {
+    "id": "c48",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 1,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 485.2502089999998,
+    "cost": 0.000028266
+   },
+   {
+    "id": "c49",
+    "pick": "row/cards",
+    "p": 0.86,
+    "confidence": 0.84,
+    "probs": {
+     "row/cards": 0.86,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0.07,
+     "full/table": 0.07,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 488.4948340000001,
+    "cost": 0.000027426
+   },
+   {
+    "id": "c50",
+    "pick": "row/cards",
+    "p": 0.99,
+    "confidence": 0.97,
+    "probs": {
+     "full/table": 0,
+     "full/steps": 0,
+     "split/table+notes": 0.01,
+     "cover": 0,
+     "row/cards": 0.99,
+     "full/chart": 0,
+     "section": 0,
+     "split/chart+notes": 0,
+     "split/text+number": 0
+    },
+    "ms": 494.2181249999999,
+    "cost": 0.000028602
+   },
+   {
+    "id": "p01",
+    "pick": "cover",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/text+number": 0.01,
+     "full/chart": 0,
+     "row/cards": 0,
+     "cover": 0.99,
+     "split/chart+notes": 0,
+     "section": 0,
+     "full/table": 0
+    },
+    "ms": 538.3502920000001,
+    "cost": 0.000027636
+   },
+   {
+    "id": "p02",
+    "pick": "cover",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "section": 0,
+     "full/table": 0,
+     "split/text+number": 0.01,
+     "full/chart": 0,
+     "row/cards": 0,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0.99
+    },
+    "ms": 465.54329199999984,
+    "cost": 0.00002772
+   },
+   {
+    "id": "p03",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 1,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 489.3975409999998,
+    "cost": 0.000027972
+   },
+   {
+    "id": "p04",
+    "pick": "section",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "split/text+number": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "section": 1,
+     "split/chart+notes": 0,
+     "full/steps": 0
+    },
+    "ms": 513.3524160000002,
+    "cost": 0.00002793
+   },
+   {
+    "id": "p05",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/table": 0,
+     "row/cards": 0,
+     "split/text+number": 1,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 483.6848749999999,
+    "cost": 0.000027552
+   },
+   {
+    "id": "p06",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "split/table+notes": 0,
+     "split/text+number": 1,
+     "section": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 0
+    },
+    "ms": 492.06995800000004,
+    "cost": 0.000027636
+   },
+   {
+    "id": "p07",
+    "pick": "split/text+number",
+    "p": 0.67,
+    "confidence": 0.62,
+    "probs": {
+     "full/steps": 0,
+     "split/table+notes": 0.01,
+     "split/text+number": 0.67,
+     "full/chart": 0.06,
+     "row/cards": 0.22,
+     "cover": 0,
+     "split/chart+notes": 0.04,
+     "section": 0,
+     "full/table": 0
+    },
+    "ms": 577.4668750000001,
+    "cost": 0.000028518
+   },
+   {
+    "id": "p08",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 1,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "cover": 0
+    },
+    "ms": 464.4937500000001,
+    "cost": 0.000027552
+   },
+   {
+    "id": "p09",
+    "pick": "split/text+number",
+    "p": 0.86,
+    "confidence": 0.84,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "full/chart": 0.1,
+     "split/text+number": 0.86,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0.04,
+     "cover": 0
+    },
+    "ms": 561.4493750000001,
+    "cost": 0.000027468
+   },
+   {
+    "id": "p10",
+    "pick": "split/text+number",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "split/table+notes": 0,
+     "section": 0,
+     "full/table": 0,
+     "split/chart+notes": 0,
+     "split/text+number": 0.99,
+     "row/cards": 0,
+     "full/steps": 0,
+     "full/chart": 0.01,
+     "cover": 0
+    },
+    "ms": 505.23229200000014,
+    "cost": 0.000027468
+   },
+   {
+    "id": "p11",
+    "pick": "split/text+number",
+    "p": 0.96,
+    "confidence": 0.95,
+    "probs": {
+     "row/cards": 0.04,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0.96
+    },
+    "ms": 476.21895900000027,
+    "cost": 0.000028014
+   },
+   {
+    "id": "p12",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "cover": 0,
+     "full/steps": 0,
+     "split/text+number": 1,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0
+    },
+    "ms": 492.65366700000004,
+    "cost": 0.000028602
+   },
+   {
+    "id": "p13",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "cover": 0,
+     "split/chart+notes": 1,
+     "split/table+notes": 0,
+     "full/chart": 0
+    },
+    "ms": 455.4362079999996,
+    "cost": 0.000029232
+   },
+   {
+    "id": "p14",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 1,
+     "full/chart": 0,
+     "row/cards": 0,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 507.47929099999965,
+    "cost": 0.000028098
+   },
+   {
+    "id": "p15",
+    "pick": "split/chart+notes",
+    "p": 0.62,
+    "confidence": 0.57,
+    "probs": {
+     "row/cards": 0.02,
+     "split/chart+notes": 0.62,
+     "full/chart": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0.36
+    },
+    "ms": 549.783042,
+    "cost": 0.000029946
+   },
+   {
+    "id": "p16",
+    "pick": "full/chart",
+    "p": 0.98,
+    "confidence": 0.97,
+    "probs": {
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0.98,
+     "row/cards": 0.01,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0.01,
+     "section": 0
+    },
+    "ms": 475.8793340000002,
+    "cost": 0.000028896
+   },
+   {
+    "id": "p17",
+    "pick": "full/chart",
+    "p": 0.44,
+    "confidence": 0.36,
+    "probs": {
+     "full/table": 0,
+     "split/text+number": 0.16,
+     "full/chart": 0.44,
+     "split/table+notes": 0,
+     "row/cards": 0.02,
+     "section": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/chart+notes": 0.38
+    },
+    "ms": 482.4259170000005,
+    "cost": 0.00002793
+   },
+   {
+    "id": "p18",
+    "pick": "full/chart",
+    "p": 0.95,
+    "confidence": 0.93,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "split/text+number": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/chart+notes": 0.05,
+     "split/table+notes": 0,
+     "full/chart": 0.95
+    },
+    "ms": 486.22120899999936,
+    "cost": 0.000027594
+   },
+   {
+    "id": "p19",
+    "pick": "row/cards",
+    "p": 0.96,
+    "confidence": 0.95,
+    "probs": {
+     "full/chart": 0.01,
+     "cover": 0,
+     "row/cards": 0.96,
+     "split/chart+notes": 0,
+     "split/table+notes": 0.01,
+     "full/steps": 0,
+     "full/table": 0.01,
+     "split/text+number": 0.01,
+     "section": 0
+    },
+    "ms": 490.2237500000001,
+    "cost": 0.000028476
+   },
+   {
+    "id": "p20",
+    "pick": "full/chart",
+    "p": 0.83,
+    "confidence": 0.8,
+    "probs": {
+     "cover": 0,
+     "full/chart": 0.83,
+     "split/chart+notes": 0.12,
+     "section": 0,
+     "row/cards": 0,
+     "full/steps": 0.01,
+     "full/table": 0.02,
+     "split/text+number": 0.01,
+     "split/table+notes": 0.01
+    },
+    "ms": 515.7300839999998,
+    "cost": 0.000028476
+   },
+   {
+    "id": "p21",
+    "pick": "full/chart",
+    "p": 0.51,
+    "confidence": 0.46,
+    "probs": {
+     "section": 0,
+     "row/cards": 0.11,
+     "full/table": 0.04,
+     "full/chart": 0.51,
+     "split/text+number": 0.09,
+     "split/table+notes": 0.04,
+     "full/steps": 0,
+     "split/chart+notes": 0.21,
+     "cover": 0
+    },
+    "ms": 472.83420899999965,
+    "cost": 0.00002793
+   },
+   {
+    "id": "p22",
+    "pick": "full/chart",
+    "p": 0.62,
+    "confidence": 0.58,
+    "probs": {
+     "split/text+number": 0,
+     "row/cards": 0.11,
+     "section": 0,
+     "split/table+notes": 0.02,
+     "full/chart": 0.62,
+     "cover": 0,
+     "full/table": 0.01,
+     "full/steps": 0.2,
+     "split/chart+notes": 0.04
+    },
+    "ms": 460.3412909999997,
+    "cost": 0.000027972
+   },
+   {
+    "id": "p23",
+    "pick": "full/chart",
+    "p": 0.55,
+    "confidence": 0.49,
+    "probs": {
+     "split/text+number": 0.4,
+     "split/chart+notes": 0.03,
+     "full/steps": 0,
+     "section": 0,
+     "split/table+notes": 0,
+     "row/cards": 0,
+     "full/chart": 0.55,
+     "full/table": 0.01,
+     "cover": 0
+    },
+    "ms": 477.4973339999997,
+    "cost": 0.00002772
+   },
+   {
+    "id": "p24",
+    "pick": "row/cards",
+    "p": 0.65,
+    "confidence": 0.61,
+    "probs": {
+     "full/steps": 0,
+     "row/cards": 0.65,
+     "split/text+number": 0.02,
+     "cover": 0,
+     "split/chart+notes": 0.01,
+     "full/chart": 0,
+     "split/table+notes": 0.28,
+     "full/table": 0.04,
+     "section": 0
+    },
+    "ms": 497.14087500000005,
+    "cost": 0.0000294
+   },
+   {
+    "id": "p25",
+    "pick": "split/table+notes",
+    "p": 0.38,
+    "confidence": 0.29,
+    "probs": {
+     "full/table": 0.04,
+     "split/text+number": 0.01,
+     "full/chart": 0.02,
+     "split/table+notes": 0.38,
+     "row/cards": 0.36,
+     "section": 0,
+     "full/steps": 0.01,
+     "cover": 0,
+     "split/chart+notes": 0.18
+    },
+    "ms": 496.8707919999997,
+    "cost": 0.000029148
+   },
+   {
+    "id": "p26",
+    "pick": "row/cards",
+    "p": 0.54,
+    "confidence": 0.48,
+    "probs": {
+     "split/text+number": 0,
+     "split/chart+notes": 0,
+     "full/steps": 0,
+     "row/cards": 0.54,
+     "split/table+notes": 0.04,
+     "full/chart": 0,
+     "section": 0,
+     "full/table": 0.42,
+     "cover": 0
+    },
+    "ms": 522.1950419999994,
+    "cost": 0.000028014
+   },
+   {
+    "id": "p27",
+    "pick": "row/cards",
+    "p": 0.59,
+    "confidence": 0.53,
+    "probs": {
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0.03,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "full/table": 0.38,
+     "row/cards": 0.59,
+     "full/steps": 0
+    },
+    "ms": 538.6686250000002,
+    "cost": 0.000027972
+   },
+   {
+    "id": "p28",
+    "pick": "full/table",
+    "p": 0.89,
+    "confidence": 0.87,
+    "probs": {
+     "section": 0,
+     "full/steps": 0,
+     "full/chart": 0.01,
+     "full/table": 0.89,
+     "split/table+notes": 0.08,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0.02
+    },
+    "ms": 462.5299159999995,
+    "cost": 0.00002793
+   },
+   {
+    "id": "p29",
+    "pick": "row/cards",
+    "p": 0.47,
+    "confidence": 0.4,
+    "probs": {
+     "row/cards": 0.47,
+     "full/steps": 0,
+     "split/table+notes": 0.09,
+     "split/chart+notes": 0.02,
+     "full/table": 0.38,
+     "cover": 0,
+     "full/chart": 0.04,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 487.1132089999992,
+    "cost": 0.000027594
+   },
+   {
+    "id": "p30",
+    "pick": "row/cards",
+    "p": 0.66,
+    "confidence": 0.61,
+    "probs": {
+     "row/cards": 0.66,
+     "full/chart": 0.03,
+     "full/steps": 0,
+     "split/text+number": 0,
+     "full/table": 0.23,
+     "cover": 0,
+     "split/table+notes": 0.06,
+     "split/chart+notes": 0.02,
+     "section": 0
+    },
+    "ms": 535.3280419999992,
+    "cost": 0.000027468
+   },
+   {
+    "id": "p31",
+    "pick": "full/table",
+    "p": 0.97,
+    "confidence": 0.96,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "full/table": 0.97,
+     "split/table+notes": 0.02,
+     "split/text+number": 0,
+     "row/cards": 0.01,
+     "cover": 0,
+     "section": 0,
+     "full/chart": 0
+    },
+    "ms": 480.3901249999999,
+    "cost": 0.000027384
+   },
+   {
+    "id": "p32",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "section": 0,
+     "full/steps": 1,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 489.4778329999999,
+    "cost": 0.000027678
+   },
+   {
+    "id": "p33",
+    "pick": "full/steps",
+    "p": 0.96,
+    "confidence": 0.95,
+    "probs": {
+     "row/cards": 0.04,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "full/steps": 0.96,
+     "cover": 0,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0
+    },
+    "ms": 440.1194999999998,
+    "cost": 0.000027552
+   },
+   {
+    "id": "p34",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "full/steps": 1,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0
+    },
+    "ms": 470.382791,
+    "cost": 0.000028308
+   },
+   {
+    "id": "p35",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "full/table": 0,
+     "full/steps": 1,
+     "split/table+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/chart+notes": 0,
+     "row/cards": 0
+    },
+    "ms": 470.69233299999996,
+    "cost": 0.000027552
+   },
+   {
+    "id": "p36",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "split/text+number": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "row/cards": 1,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 508.60533400000077,
+    "cost": 0.000027678
+   },
+   {
+    "id": "p37",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/steps": 1,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 455.62716699999964,
+    "cost": 0.000027972
+   },
+   {
+    "id": "p38",
+    "pick": "full/steps",
+    "p": 0.85,
+    "confidence": 0.82,
+    "probs": {
+     "split/chart+notes": 0.02,
+     "full/steps": 0.85,
+     "full/table": 0,
+     "section": 0,
+     "cover": 0,
+     "full/chart": 0.07,
+     "split/table+notes": 0.01,
+     "row/cards": 0.02,
+     "split/text+number": 0.03
+    },
+    "ms": 497.8528749999996,
+    "cost": 0.000027636
+   },
+   {
+    "id": "p39",
+    "pick": "full/steps",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "section": 0,
+     "full/steps": 0.99,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0.01
+    },
+    "ms": 519.1267089999992,
+    "cost": 0.000027804
+   },
+   {
+    "id": "p40",
+    "pick": "row/cards",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "split/chart+notes": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0.01,
+     "row/cards": 0.99,
+     "full/table": 0,
+     "section": 0,
+     "full/chart": 0,
+     "split/table+notes": 0
+    },
+    "ms": 692.5649579999999,
+    "cost": 0.000028098
+   },
+   {
+    "id": "p41",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 1,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 508.52287500000057,
+    "cost": 0.000027216
+   },
+   {
+    "id": "p42",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 1,
+     "full/steps": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0,
+     "cover": 0
+    },
+    "ms": 571.1696249999995,
+    "cost": 0.000027552
+   },
+   {
+    "id": "p43",
+    "pick": "row/cards",
+    "p": 0.61,
+    "confidence": 0.55,
+    "probs": {
+     "section": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0.39,
+     "row/cards": 0.61,
+     "split/table+notes": 0
+    },
+    "ms": 513.7477079999999,
+    "cost": 0.00002793
+   },
+   {
+    "id": "p44",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "section": 0,
+     "row/cards": 1,
+     "full/chart": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "split/text+number": 0
+    },
+    "ms": 517.4610840000005,
+    "cost": 0.000027258
+   },
+   {
+    "id": "p45",
+    "pick": "row/cards",
+    "p": 0.91,
+    "confidence": 0.89,
+    "probs": {
+     "row/cards": 0.91,
+     "cover": 0.01,
+     "full/steps": 0,
+     "split/text+number": 0.07,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0.01
+    },
+    "ms": 534.5567499999997,
+    "cost": 0.000027216
+   },
+   {
+    "id": "p46",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "section": 0,
+     "row/cards": 1,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0
+    },
+    "ms": 566.3137500000003,
+    "cost": 0.000027762
+   },
+   {
+    "id": "p47",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "section": 0,
+     "split/table+notes": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "row/cards": 1
+    },
+    "ms": 501.14720900000066,
+    "cost": 0.000028182
+   },
+   {
+    "id": "p48",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 0,
+     "row/cards": 1,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "section": 0,
+     "split/chart+notes": 0,
+     "full/steps": 0
+    },
+    "ms": 493.3704170000001,
+    "cost": 0.000027384
+   },
+   {
+    "id": "p49",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "full/chart": 0,
+     "cover": 0,
+     "row/cards": 1,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "section": 0
+    },
+    "ms": 534.1935830000002,
+    "cost": 0.000027426
+   },
+   {
+    "id": "p50",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 1,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 493.8481249999995,
+    "cost": 0.000027594
+   }
+  ],
+  "jev-guide": [
+   {
+    "id": "c01",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/chart": 0,
+     "cover": 1,
+     "row/cards": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "section": 0
+    },
+    "ms": 480.62933300000077,
+    "cost": 0.000039774
+   },
+   {
+    "id": "c02",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/chart+notes": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "section": 0,
+     "cover": 1,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "row/cards": 0,
+     "split/text+number": 0
+    },
+    "ms": 489.52225,
+    "cost": 0.000039774
+   },
+   {
+    "id": "c03",
+    "pick": "section",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "section": 0.99,
+     "full/steps": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0.01
+    },
+    "ms": 502.64750000000004,
+    "cost": 0.000039522
+   },
+   {
+    "id": "c04",
+    "pick": "section",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "section": 1
+    },
+    "ms": 487.7492080000002,
+    "cost": 0.000039312
+   },
+   {
+    "id": "c05",
+    "pick": "section",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 1,
+     "full/steps": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 557.1584590000002,
+    "cost": 0.000039396
+   },
+   {
+    "id": "c06",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 1,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 0
+    },
+    "ms": 497.5352090000006,
+    "cost": 0.000039774
+   },
+   {
+    "id": "c07",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 1,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "row/cards": 0,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 498.19737500000065,
+    "cost": 0.000040152
+   },
+   {
+    "id": "c08",
+    "pick": "split/text+number",
+    "p": 0.93,
+    "confidence": 0.91,
+    "probs": {
+     "row/cards": 0.04,
+     "split/chart+notes": 0.03,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0.93,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 472.4002499999997,
+    "cost": 0.000040278
+   },
+   {
+    "id": "c09",
+    "pick": "split/text+number",
+    "p": 0.89,
+    "confidence": 0.88,
+    "probs": {
+     "full/chart": 0.01,
+     "split/chart+notes": 0.02,
+     "cover": 0,
+     "split/table+notes": 0.06,
+     "full/steps": 0,
+     "section": 0,
+     "row/cards": 0.02,
+     "full/table": 0,
+     "split/text+number": 0.89
+    },
+    "ms": 551.3164579999993,
+    "cost": 0.000039522
+   },
+   {
+    "id": "c10",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/table+notes": 0,
+     "cover": 0,
+     "split/chart+notes": 1,
+     "section": 0,
+     "full/steps": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0
+    },
+    "ms": 543.6129580000006,
+    "cost": 0.000041496
+   },
+   {
+    "id": "c11",
+    "pick": "split/chart+notes",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "row/cards": 0,
+     "split/chart+notes": 0.99,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0.01,
+     "section": 0
+    },
+    "ms": 536.253541,
+    "cost": 0.000039984
+   },
+   {
+    "id": "c12",
+    "pick": "split/chart+notes",
+    "p": 0.99,
+    "confidence": 0.98,
+    "probs": {
+     "row/cards": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "full/chart": 0.01,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0.99,
+     "section": 0,
+     "cover": 0
+    },
+    "ms": 536.3086250000006,
+    "cost": 0.000039774
+   },
+   {
+    "id": "c13",
+    "pick": "split/chart+notes",
+    "p": 0.65,
+    "confidence": 0.6,
+    "probs": {
+     "row/cards": 0.02,
+     "split/chart+notes": 0.65,
+     "split/table+notes": 0.24,
+     "full/table": 0.08,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0.01,
+     "section": 0
+    },
+    "ms": 547.4763749999993,
+    "cost": 0.000039564
+   },
+   {
+    "id": "c14",
+    "pick": "split/table+notes",
+    "p": 0.45,
+    "confidence": 0.37,
+    "probs": {
+     "row/cards": 0.34,
+     "full/table": 0.04,
+     "split/table+notes": 0.45,
+     "cover": 0,
+     "full/steps": 0,
+     "full/chart": 0.01,
+     "split/text+number": 0.01,
+     "section": 0,
+     "split/chart+notes": 0.15
+    },
+    "ms": 525.0349580000002,
+    "cost": 0.000040362
+   },
+   {
+    "id": "c15",
+    "pick": "split/chart+notes",
+    "p": 0.97,
+    "confidence": 0.96,
+    "probs": {
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 0.01,
+     "split/table+notes": 0.01,
+     "split/chart+notes": 0.97,
+     "full/chart": 0.01,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 0
+    },
+    "ms": 522.4406669999998,
+    "cost": 0.000040488
+   },
+   {
+    "id": "c16",
+    "pick": "split/chart+notes",
+    "p": 0.9,
+    "confidence": 0.88,
+    "probs": {
+     "full/table": 0.04,
+     "split/chart+notes": 0.9,
+     "row/cards": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0.06,
+     "full/steps": 0
+    },
+    "ms": 463.97570799999994,
+    "cost": 0.000039522
+   },
+   {
+    "id": "c17",
+    "pick": "split/chart+notes",
+    "p": 0.48,
+    "confidence": 0.41,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0.48,
+     "full/table": 0.03,
+     "split/table+notes": 0.46,
+     "split/text+number": 0.01,
+     "row/cards": 0.01,
+     "section": 0,
+     "cover": 0,
+     "full/chart": 0.01
+    },
+    "ms": 560.2847079999992,
+    "cost": 0.000040866
+   },
+   {
+    "id": "c18",
+    "pick": "split/chart+notes",
+    "p": 0.96,
+    "confidence": 0.96,
+    "probs": {
+     "row/cards": 0.01,
+     "full/steps": 0,
+     "full/table": 0,
+     "full/chart": 0.02,
+     "split/text+number": 0,
+     "split/table+notes": 0.01,
+     "split/chart+notes": 0.96,
+     "section": 0,
+     "cover": 0
+    },
+    "ms": 461.502125,
+    "cost": 0.000040362
+   },
+   {
+    "id": "c19",
+    "pick": "split/chart+notes",
+    "p": 0.92,
+    "confidence": 0.92,
+    "probs": {
+     "section": 0,
+     "full/chart": 0.05,
+     "row/cards": 0.02,
+     "split/table+notes": 0.01,
+     "cover": 0,
+     "split/chart+notes": 0.92,
+     "full/steps": 0,
+     "split/text+number": 0,
+     "full/table": 0
+    },
+    "ms": 572.8453330000002,
+    "cost": 0.000039606
+   },
+   {
+    "id": "c20",
+    "pick": "split/table+notes",
+    "p": 0.72,
+    "confidence": 0.68,
+    "probs": {
+     "split/text+number": 0.01,
+     "row/cards": 0,
+     "full/table": 0.01,
+     "split/table+notes": 0.72,
+     "full/chart": 0.01,
+     "cover": 0,
+     "section": 0,
+     "split/chart+notes": 0.25,
+     "full/steps": 0
+    },
+    "ms": 529.1630409999989,
+    "cost": 0.000040866
+   },
+   {
+    "id": "c21",
+    "pick": "split/chart+notes",
+    "p": 0.82,
+    "confidence": 0.8,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0.82,
+     "cover": 0,
+     "split/table+notes": 0.01,
+     "split/text+number": 0,
+     "row/cards": 0,
+     "full/chart": 0.16,
+     "section": 0,
+     "full/table": 0.01
+    },
+    "ms": 499.7189159999989,
+    "cost": 0.000041832
+   },
+   {
+    "id": "c22",
+    "pick": "full/chart",
+    "p": 0.93,
+    "confidence": 0.92,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "split/text+number": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/chart+notes": 0.07,
+     "split/table+notes": 0,
+     "full/chart": 0.93
+    },
+    "ms": 476.3153749999992,
+    "cost": 0.00003927
+   },
+   {
+    "id": "c23",
+    "pick": "full/table",
+    "p": 0.67,
+    "confidence": 0.61,
+    "probs": {
+     "full/chart": 0.01,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/text+number": 0.21,
+     "full/steps": 0,
+     "row/cards": 0.07,
+     "section": 0,
+     "full/table": 0.67,
+     "split/table+notes": 0.04
+    },
+    "ms": 478.80833299999995,
+    "cost": 0.00004053
+   },
+   {
+    "id": "c24",
+    "pick": "split/chart+notes",
+    "p": 0.62,
+    "confidence": 0.56,
+    "probs": {
+     "cover": 0,
+     "full/table": 0.06,
+     "split/text+number": 0.01,
+     "section": 0,
+     "split/table+notes": 0.06,
+     "full/steps": 0,
+     "full/chart": 0.25,
+     "row/cards": 0,
+     "split/chart+notes": 0.62
+    },
+    "ms": 468.4460830000007,
+    "cost": 0.00003948
+   },
+   {
+    "id": "c25",
+    "pick": "split/table+notes",
+    "p": 0.83,
+    "confidence": 0.79,
+    "probs": {
+     "full/table": 0.15,
+     "full/steps": 0,
+     "split/table+notes": 0.83,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/chart+notes": 0,
+     "row/cards": 0.02
+    },
+    "ms": 608.1709579999988,
+    "cost": 0.000042294
+   },
+   {
+    "id": "c26",
+    "pick": "split/table+notes",
+    "p": 0.78,
+    "confidence": 0.75,
+    "probs": {
+     "section": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "full/table": 0.19,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0.03,
+     "split/table+notes": 0.78
+    },
+    "ms": 593.8162499999999,
+    "cost": 0.000039648
+   },
+   {
+    "id": "c27",
+    "pick": "split/table+notes",
+    "p": 0.88,
+    "confidence": 0.86,
+    "probs": {
+     "split/text+number": 0,
+     "split/table+notes": 0.88,
+     "full/chart": 0,
+     "split/chart+notes": 0.02,
+     "row/cards": 0.02,
+     "cover": 0,
+     "full/table": 0.08,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 539.2627499999999,
+    "cost": 0.000039522
+   },
+   {
+    "id": "c28",
+    "pick": "split/table+notes",
+    "p": 0.89,
+    "confidence": 0.87,
+    "probs": {
+     "split/chart+notes": 0,
+     "full/steps": 0,
+     "section": 0,
+     "full/table": 0.09,
+     "full/chart": 0,
+     "cover": 0,
+     "split/table+notes": 0.89,
+     "row/cards": 0.02,
+     "split/text+number": 0
+    },
+    "ms": 528.2271250000013,
+    "cost": 0.000041496
+   },
+   {
+    "id": "c29",
+    "pick": "full/table",
+    "p": 0.77,
+    "confidence": 0.73,
+    "probs": {
+     "full/steps": 0,
+     "row/cards": 0.04,
+     "split/chart+notes": 0.03,
+     "full/chart": 0,
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0.16,
+     "full/table": 0.77
+    },
+    "ms": 521.2905830000018,
+    "cost": 0.000039564
+   },
+   {
+    "id": "c30",
+    "pick": "split/table+notes",
+    "p": 0.87,
+    "confidence": 0.84,
+    "probs": {
+     "section": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "full/steps": 0,
+     "full/table": 0.1,
+     "full/chart": 0,
+     "split/table+notes": 0.87,
+     "split/text+number": 0,
+     "row/cards": 0.03
+    },
+    "ms": 519.3471250000002,
+    "cost": 0.000040908
+   },
+   {
+    "id": "c31",
+    "pick": "split/table+notes",
+    "p": 0.81,
+    "confidence": 0.78,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "full/table": 0.18,
+     "split/table+notes": 0.81,
+     "split/text+number": 0,
+     "section": 0,
+     "row/cards": 0.01,
+     "full/chart": 0,
+     "cover": 0
+    },
+    "ms": 458.96899999999914,
+    "cost": 0.000039564
+   },
+   {
+    "id": "c32",
+    "pick": "split/table+notes",
+    "p": 0.61,
+    "confidence": 0.55,
+    "probs": {
+     "split/chart+notes": 0.01,
+     "full/steps": 0,
+     "cover": 0,
+     "row/cards": 0.1,
+     "split/text+number": 0.02,
+     "full/table": 0.26,
+     "section": 0,
+     "split/table+notes": 0.61,
+     "full/chart": 0
+    },
+    "ms": 559.5012920000008,
+    "cost": 0.00004116
+   },
+   {
+    "id": "c33",
+    "pick": "split/table+notes",
+    "p": 0.61,
+    "confidence": 0.55,
+    "probs": {
+     "full/steps": 0,
+     "row/cards": 0,
+     "split/text+number": 0,
+     "cover": 0,
+     "split/chart+notes": 0.01,
+     "split/table+notes": 0.61,
+     "full/table": 0.38,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 515.0504170000004,
+    "cost": 0.000039564
+   },
+   {
+    "id": "c34",
+    "pick": "full/table",
+    "p": 0.8200000000000001,
+    "confidence": 0.78,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "section": 0,
+     "row/cards": 0.03,
+     "full/steps": 0,
+     "full/table": 0.8200000000000001,
+     "split/text+number": 0,
+     "split/table+notes": 0.15
+    },
+    "ms": 511.04491699999926,
+    "cost": 0.000039018
+   },
+   {
+    "id": "c35",
+    "pick": "full/table",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "full/table": 1,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "section": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 549.5962909999998,
+    "cost": 0.000039396
+   },
+   {
+    "id": "c36",
+    "pick": "full/table",
+    "p": 0.56,
+    "confidence": 0.51,
+    "probs": {
+     "full/steps": 0,
+     "split/table+notes": 0.28,
+     "section": 0,
+     "row/cards": 0.15,
+     "full/chart": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "split/text+number": 0,
+     "full/table": 0.56
+    },
+    "ms": 509.1954999999998,
+    "cost": 0.000039606
+   },
+   {
+    "id": "c37",
+    "pick": "full/table",
+    "p": 0.97,
+    "confidence": 0.96,
+    "probs": {
+     "split/table+notes": 0.02,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/steps": 0,
+     "section": 0,
+     "row/cards": 0.01,
+     "full/table": 0.97,
+     "full/chart": 0,
+     "split/text+number": 0
+    },
+    "ms": 556.4019169999992,
+    "cost": 0.000039354
+   },
+   {
+    "id": "c38",
+    "pick": "full/table",
+    "p": 0.94,
+    "confidence": 0.94,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "section": 0,
+     "row/cards": 0.01,
+     "full/steps": 0,
+     "split/text+number": 0,
+     "full/table": 0.94,
+     "split/table+notes": 0.05
+    },
+    "ms": 517.7407920000005,
+    "cost": 0.000039606
+   },
+   {
+    "id": "c39",
+    "pick": "full/table",
+    "p": 0.93,
+    "confidence": 0.92,
+    "probs": {
+     "full/steps": 0,
+     "row/cards": 0.05,
+     "split/text+number": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0.02,
+     "full/table": 0.93,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 494.05783300000076,
+    "cost": 0.000039354
+   },
+   {
+    "id": "c40",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "section": 0,
+     "cover": 0,
+     "full/steps": 1,
+     "split/chart+notes": 0
+    },
+    "ms": 464.7360829999998,
+    "cost": 0.000039186
+   },
+   {
+    "id": "c41",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/steps": 1,
+     "row/cards": 0,
+     "split/table+notes": 0,
+     "section": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/text+number": 0
+    },
+    "ms": 538.8697080000002,
+    "cost": 0.000039564
+   },
+   {
+    "id": "c42",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/chart+notes": 0,
+     "full/steps": 1,
+     "cover": 0,
+     "row/cards": 0,
+     "split/text+number": 0,
+     "full/table": 0,
+     "section": 0,
+     "full/chart": 0,
+     "split/table+notes": 0
+    },
+    "ms": 531.8083330000009,
+    "cost": 0.00004032
+   },
+   {
+    "id": "c43",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 1,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "section": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "row/cards": 0
+    },
+    "ms": 529.7591659999998,
+    "cost": 0.000040068
+   },
+   {
+    "id": "c44",
+    "pick": "full/steps",
+    "p": 0.95,
+    "confidence": 0.94,
+    "probs": {
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0.01,
+     "full/chart": 0,
+     "split/chart+notes": 0.04,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 0.95
+    },
+    "ms": 600.3081659999989,
+    "cost": 0.000039396
+   },
+   {
+    "id": "c45",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "row/cards": 1,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 491.91483400000106,
+    "cost": 0.000039438
+   },
+   {
+    "id": "c46",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/text+number": 0,
+     "row/cards": 1
+    },
+    "ms": 476.5371249999989,
+    "cost": 0.000038892
+   },
+   {
+    "id": "c47",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "row/cards": 1
+    },
+    "ms": 466.7513339999987,
+    "cost": 0.000039984
+   },
+   {
+    "id": "c48",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "split/text+number": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "row/cards": 1,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 503.6461249999993,
+    "cost": 0.000039984
+   },
+   {
+    "id": "c49",
+    "pick": "row/cards",
+    "p": 0.97,
+    "confidence": 0.96,
+    "probs": {
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "split/table+notes": 0.01,
+     "full/steps": 0,
+     "row/cards": 0.97,
+     "full/table": 0.02,
+     "split/text+number": 0,
+     "section": 0
+    },
+    "ms": 504.1139579999999,
+    "cost": 0.000039144
+   },
+   {
+    "id": "c50",
+    "pick": "row/cards",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "split/text+number": 0,
+     "split/table+notes": 0.01,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "row/cards": 0.99,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 525.5113329999986,
+    "cost": 0.00004032
+   },
+   {
+    "id": "p01",
+    "pick": "cover",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "row/cards": 0,
+     "full/chart": 0,
+     "cover": 0.99,
+     "section": 0,
+     "split/text+number": 0.01,
+     "split/table+notes": 0,
+     "full/table": 0
+    },
+    "ms": 473.64508299999943,
+    "cost": 0.000039354
+   },
+   {
+    "id": "p02",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "split/chart+notes": 0,
+     "full/steps": 0,
+     "cover": 1,
+     "split/text+number": 0,
+     "row/cards": 0,
+     "full/table": 0,
+     "section": 0,
+     "full/chart": 0,
+     "split/table+notes": 0
+    },
+    "ms": 476.2468749999989,
+    "cost": 0.000039438
+   },
+   {
+    "id": "p03",
+    "pick": "cover",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 1,
+     "section": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/steps": 0
+    },
+    "ms": 473.89404099999956,
+    "cost": 0.00003969
+   },
+   {
+    "id": "p04",
+    "pick": "section",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "split/text+number": 0,
+     "section": 1,
+     "split/table+notes": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "row/cards": 0
+    },
+    "ms": 484.94124999999985,
+    "cost": 0.000039648
+   },
+   {
+    "id": "p05",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "full/table": 0,
+     "split/text+number": 1,
+     "section": 0,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 557.8657910000002,
+    "cost": 0.00003927
+   },
+   {
+    "id": "p06",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "split/text+number": 1,
+     "full/chart": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "cover": 0
+    },
+    "ms": 464.3936250000006,
+    "cost": 0.000039354
+   },
+   {
+    "id": "p07",
+    "pick": "split/text+number",
+    "p": 0.75,
+    "confidence": 0.72,
+    "probs": {
+     "split/text+number": 0.75,
+     "split/table+notes": 0.01,
+     "split/chart+notes": 0.02,
+     "full/chart": 0.04,
+     "row/cards": 0.18,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 528.1048749999991,
+    "cost": 0.000040236
+   },
+   {
+    "id": "p08",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "cover": 0,
+     "split/text+number": 1,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 584.0449590000007,
+    "cost": 0.00003927
+   },
+   {
+    "id": "p09",
+    "pick": "split/text+number",
+    "p": 0.56,
+    "confidence": 0.5,
+    "probs": {
+     "row/cards": 0,
+     "cover": 0,
+     "full/steps": 0,
+     "split/text+number": 0.56,
+     "full/table": 0,
+     "full/chart": 0.37,
+     "split/table+notes": 0,
+     "split/chart+notes": 0.07,
+     "section": 0
+    },
+    "ms": 559.0815000000002,
+    "cost": 0.000039186
+   },
+   {
+    "id": "p10",
+    "pick": "split/text+number",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "full/chart": 0,
+     "full/steps": 0,
+     "split/text+number": 1,
+     "full/table": 0,
+     "cover": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0
+    },
+    "ms": 636.4503750000003,
+    "cost": 0.000039186
+   },
+   {
+    "id": "p11",
+    "pick": "split/text+number",
+    "p": 0.76,
+    "confidence": 0.73,
+    "probs": {
+     "full/table": 0,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "cover": 0,
+     "row/cards": 0.24,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0.76,
+     "split/chart+notes": 0
+    },
+    "ms": 549.0722499999993,
+    "cost": 0.000039732
+   },
+   {
+    "id": "p12",
+    "pick": "split/text+number",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "full/chart": 0,
+     "cover": 0,
+     "row/cards": 0.01,
+     "full/steps": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "split/text+number": 0.99,
+     "section": 0
+    },
+    "ms": 531.2376660000009,
+    "cost": 0.00004032
+   },
+   {
+    "id": "p13",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "section": 0,
+     "row/cards": 0,
+     "split/chart+notes": 1,
+     "cover": 0,
+     "split/text+number": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "split/table+notes": 0
+    },
+    "ms": 1026.1497920000002,
+    "cost": 0.00004095
+   },
+   {
+    "id": "p14",
+    "pick": "split/chart+notes",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 1,
+     "cover": 0,
+     "split/text+number": 0,
+     "row/cards": 0
+    },
+    "ms": 1016.6190409999999,
+    "cost": 0.000039816
+   },
+   {
+    "id": "p15",
+    "pick": "split/chart+notes",
+    "p": 0.63,
+    "confidence": 0.57,
+    "probs": {
+     "full/table": 0.04,
+     "full/steps": 0,
+     "split/table+notes": 0.33,
+     "cover": 0,
+     "row/cards": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/chart+notes": 0.63,
+     "split/text+number": 0
+    },
+    "ms": 510.10929100000067,
+    "cost": 0.000041664
+   },
+   {
+    "id": "p16",
+    "pick": "full/chart",
+    "p": 0.97,
+    "confidence": 0.97,
+    "probs": {
+     "full/table": 0,
+     "full/steps": 0.01,
+     "split/table+notes": 0.01,
+     "cover": 0,
+     "row/cards": 0,
+     "full/chart": 0.97,
+     "section": 0,
+     "split/chart+notes": 0.01,
+     "split/text+number": 0
+    },
+    "ms": 559.5734159999993,
+    "cost": 0.000040614
+   },
+   {
+    "id": "p17",
+    "pick": "split/chart+notes",
+    "p": 0.59,
+    "confidence": 0.53,
+    "probs": {
+     "full/steps": 0,
+     "row/cards": 0,
+     "split/chart+notes": 0.59,
+     "full/chart": 0.33,
+     "split/text+number": 0.08,
+     "section": 0,
+     "cover": 0,
+     "split/table+notes": 0,
+     "full/table": 0
+    },
+    "ms": 479.0709999999999,
+    "cost": 0.000039648
+   },
+   {
+    "id": "p18",
+    "pick": "full/chart",
+    "p": 0.75,
+    "confidence": 0.72,
+    "probs": {
+     "split/text+number": 0,
+     "split/chart+notes": 0.25,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "full/chart": 0.75,
+     "full/steps": 0,
+     "section": 0,
+     "row/cards": 0,
+     "cover": 0
+    },
+    "ms": 986.7499580000003,
+    "cost": 0.000039312
+   },
+   {
+    "id": "p19",
+    "pick": "row/cards",
+    "p": 0.7,
+    "confidence": 0.65,
+    "probs": {
+     "section": 0,
+     "row/cards": 0.7,
+     "full/table": 0.1,
+     "full/chart": 0.02,
+     "split/text+number": 0.05,
+     "split/table+notes": 0.13,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "cover": 0
+    },
+    "ms": 467.06033299999945,
+    "cost": 0.000040194
+   },
+   {
+    "id": "p20",
+    "pick": "full/chart",
+    "p": 0.62,
+    "confidence": 0.56,
+    "probs": {
+     "full/table": 0.04,
+     "split/chart+notes": 0.34,
+     "row/cards": 0,
+     "full/chart": 0.62,
+     "cover": 0,
+     "section": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "full/steps": 0
+    },
+    "ms": 540.9426660000008,
+    "cost": 0.000040194
+   },
+   {
+    "id": "p21",
+    "pick": "full/chart",
+    "p": 0.52,
+    "confidence": 0.45,
+    "probs": {
+     "split/text+number": 0.02,
+     "split/table+notes": 0.04,
+     "row/cards": 0.01,
+     "full/table": 0.01,
+     "cover": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0.4,
+     "full/chart": 0.52,
+     "section": 0
+    },
+    "ms": 556.6386249999996,
+    "cost": 0.000039648
+   },
+   {
+    "id": "p22",
+    "pick": "full/chart",
+    "p": 0.82,
+    "confidence": 0.8,
+    "probs": {
+     "split/text+number": 0,
+     "split/chart+notes": 0.11,
+     "full/steps": 0.03,
+     "split/table+notes": 0.03,
+     "full/chart": 0.82,
+     "full/table": 0,
+     "row/cards": 0.01,
+     "section": 0,
+     "cover": 0
+    },
+    "ms": 500.3832080000011,
+    "cost": 0.00003969
+   },
+   {
+    "id": "p23",
+    "pick": "full/chart",
+    "p": 0.61,
+    "confidence": 0.56,
+    "probs": {
+     "split/text+number": 0.31,
+     "full/chart": 0.61,
+     "split/table+notes": 0,
+     "split/chart+notes": 0.08,
+     "row/cards": 0,
+     "cover": 0,
+     "full/table": 0,
+     "full/steps": 0,
+     "section": 0
+    },
+    "ms": 449.19445799999994,
+    "cost": 0.000039438
+   },
+   {
+    "id": "p24",
+    "pick": "split/table+notes",
+    "p": 0.54,
+    "confidence": 0.49,
+    "probs": {
+     "split/text+number": 0.02,
+     "split/chart+notes": 0.01,
+     "full/steps": 0,
+     "split/table+notes": 0.54,
+     "full/chart": 0,
+     "full/table": 0.14,
+     "section": 0,
+     "row/cards": 0.28,
+     "cover": 0
+    },
+    "ms": 485.26579200000015,
+    "cost": 0.000041118
+   },
+   {
+    "id": "p25",
+    "pick": "split/table+notes",
+    "p": 0.44,
+    "confidence": 0.37,
+    "probs": {
+     "split/text+number": 0.01,
+     "split/chart+notes": 0.03,
+     "full/chart": 0.02,
+     "split/table+notes": 0.44,
+     "row/cards": 0.43,
+     "cover": 0,
+     "full/table": 0.05,
+     "full/steps": 0.02,
+     "section": 0
+    },
+    "ms": 510.60683300000164,
+    "cost": 0.000040866
+   },
+   {
+    "id": "p26",
+    "pick": "full/table",
+    "p": 0.63,
+    "confidence": 0.58,
+    "probs": {
+     "row/cards": 0.16,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "split/table+notes": 0.21,
+     "full/table": 0.63,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 529.4709590000002,
+    "cost": 0.000039732
+   },
+   {
+    "id": "p27",
+    "pick": "row/cards",
+    "p": 0.48,
+    "confidence": 0.41,
+    "probs": {
+     "full/table": 0.46,
+     "full/steps": 0,
+     "split/table+notes": 0.06,
+     "cover": 0,
+     "row/cards": 0.48,
+     "full/chart": 0,
+     "section": 0,
+     "split/chart+notes": 0,
+     "split/text+number": 0
+    },
+    "ms": 938.9250410000004,
+    "cost": 0.00003969
+   },
+   {
+    "id": "p28",
+    "pick": "full/table",
+    "p": 0.89,
+    "confidence": 0.87,
+    "probs": {
+     "row/cards": 0.02,
+     "full/steps": 0,
+     "split/table+notes": 0.08,
+     "split/chart+notes": 0,
+     "full/table": 0.89,
+     "cover": 0,
+     "full/chart": 0.01,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 479.1962919999987,
+    "cost": 0.000039648
+   },
+   {
+    "id": "p29",
+    "pick": "full/table",
+    "p": 0.45,
+    "confidence": 0.37,
+    "probs": {
+     "row/cards": 0.13,
+     "section": 0,
+     "split/table+notes": 0.13,
+     "cover": 0,
+     "full/steps": 0,
+     "full/chart": 0.19,
+     "split/text+number": 0,
+     "full/table": 0.45,
+     "split/chart+notes": 0.1
+    },
+    "ms": 470.53633399999853,
+    "cost": 0.000039312
+   },
+   {
+    "id": "p30",
+    "pick": "full/table",
+    "p": 0.58,
+    "confidence": 0.52,
+    "probs": {
+     "full/chart": 0.02,
+     "cover": 0,
+     "row/cards": 0.28,
+     "split/chart+notes": 0.01,
+     "split/table+notes": 0.1,
+     "full/steps": 0,
+     "full/table": 0.58,
+     "split/text+number": 0.01,
+     "section": 0
+    },
+    "ms": 452.37787500000013,
+    "cost": 0.000039186
+   },
+   {
+    "id": "p31",
+    "pick": "full/table",
+    "p": 0.96,
+    "confidence": 0.95,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "row/cards": 0.01,
+     "section": 0,
+     "full/steps": 0,
+     "full/table": 0.96,
+     "split/text+number": 0,
+     "split/table+notes": 0.03
+    },
+    "ms": 545.191166999999,
+    "cost": 0.000039102
+   },
+   {
+    "id": "p32",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 1,
+     "split/chart+notes": 0,
+     "split/text+number": 0,
+     "section": 0,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "row/cards": 0
+    },
+    "ms": 544.1231670000016,
+    "cost": 0.000039396
+   },
+   {
+    "id": "p33",
+    "pick": "full/steps",
+    "p": 0.97,
+    "confidence": 0.96,
+    "probs": {
+     "row/cards": 0.03,
+     "full/steps": 0.97,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 486.7310830000006,
+    "cost": 0.00003927
+   },
+   {
+    "id": "p34",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "row/cards": 0,
+     "cover": 0,
+     "full/steps": 1,
+     "split/text+number": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0
+    },
+    "ms": 492.257708000001,
+    "cost": 0.000040026
+   },
+   {
+    "id": "p35",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "row/cards": 0,
+     "full/steps": 1,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "full/table": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 464.1115829999999,
+    "cost": 0.00003927
+   },
+   {
+    "id": "p36",
+    "pick": "row/cards",
+    "p": 0.99,
+    "confidence": 0.98,
+    "probs": {
+     "split/table+notes": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/steps": 0.01,
+     "section": 0,
+     "row/cards": 0.99,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0
+    },
+    "ms": 535.0092910000003,
+    "cost": 0.000039396
+   },
+   {
+    "id": "p37",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 1,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "row/cards": 0,
+     "full/chart": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "section": 0,
+     "split/text+number": 0
+    },
+    "ms": 464.05154199999924,
+    "cost": 0.00003969
+   },
+   {
+    "id": "p38",
+    "pick": "full/steps",
+    "p": 0.9,
+    "confidence": 0.89,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0.02,
+     "full/chart": 0.02,
+     "row/cards": 0.02,
+     "section": 0,
+     "full/steps": 0.9,
+     "split/text+number": 0.04,
+     "full/table": 0,
+     "split/table+notes": 0
+    },
+    "ms": 617.3793330000008,
+    "cost": 0.000039354
+   },
+   {
+    "id": "p39",
+    "pick": "full/steps",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "row/cards": 0,
+     "full/steps": 1,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "split/chart+notes": 0,
+     "section": 0,
+     "cover": 0
+    },
+    "ms": 464.78862499999923,
+    "cost": 0.000039522
+   },
+   {
+    "id": "p40",
+    "pick": "row/cards",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "section": 0,
+     "row/cards": 0.99,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0.01,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "cover": 0
+    },
+    "ms": 501.5529999999999,
+    "cost": 0.000039816
+   },
+   {
+    "id": "p41",
+    "pick": "row/cards",
+    "p": 0.98,
+    "confidence": 0.97,
+    "probs": {
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "row/cards": 0.98,
+     "cover": 0.02,
+     "full/table": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "section": 0
+    },
+    "ms": 482.0337920000002,
+    "cost": 0.000038934
+   },
+   {
+    "id": "p42",
+    "pick": "row/cards",
+    "p": 0.99,
+    "confidence": 0.99,
+    "probs": {
+     "split/table+notes": 0,
+     "section": 0,
+     "full/table": 0,
+     "split/chart+notes": 0,
+     "row/cards": 0.99,
+     "split/text+number": 0.01,
+     "full/steps": 0,
+     "full/chart": 0,
+     "cover": 0
+    },
+    "ms": 478.260291999999,
+    "cost": 0.00003927
+   },
+   {
+    "id": "p43",
+    "pick": "row/cards",
+    "p": 0.79,
+    "confidence": 0.76,
+    "probs": {
+     "row/cards": 0.79,
+     "full/table": 0,
+     "split/table+notes": 0,
+     "cover": 0,
+     "full/steps": 0,
+     "full/chart": 0,
+     "split/text+number": 0.21,
+     "section": 0,
+     "split/chart+notes": 0
+    },
+    "ms": 501.58387500000026,
+    "cost": 0.000039648
+   },
+   {
+    "id": "p44",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "section": 0,
+     "split/table+notes": 0,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "row/cards": 1
+    },
+    "ms": 559.3825410000009,
+    "cost": 0.000038976
+   },
+   {
+    "id": "p45",
+    "pick": "row/cards",
+    "p": 0.97,
+    "confidence": 0.97,
+    "probs": {
+     "split/text+number": 0.01,
+     "split/table+notes": 0,
+     "row/cards": 0.97,
+     "cover": 0.01,
+     "full/table": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "section": 0.01
+    },
+    "ms": 550.8757920000007,
+    "cost": 0.000038934
+   },
+   {
+    "id": "p46",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "row/cards": 1,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0,
+     "full/steps": 0,
+     "split/chart+notes": 0,
+     "cover": 0
+    },
+    "ms": 493.1412909999999,
+    "cost": 0.00003948
+   },
+   {
+    "id": "p47",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "split/table+notes": 0,
+     "cover": 0,
+     "split/chart+notes": 0,
+     "section": 0,
+     "full/steps": 0,
+     "row/cards": 1,
+     "full/table": 0,
+     "full/chart": 0,
+     "split/text+number": 0
+    },
+    "ms": 576.3816659999993,
+    "cost": 0.0000399
+   },
+   {
+    "id": "p48",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "cover": 0,
+     "full/chart": 0,
+     "split/chart+notes": 0,
+     "row/cards": 1,
+     "section": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0
+    },
+    "ms": 492.27087500000016,
+    "cost": 0.000039102
+   },
+   {
+    "id": "p49",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 0.99,
+    "probs": {
+     "cover": 0,
+     "split/chart+notes": 0,
+     "full/chart": 0,
+     "row/cards": 1,
+     "section": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/text+number": 0,
+     "split/table+notes": 0
+    },
+    "ms": 491.4567499999994,
+    "cost": 0.000039144
+   },
+   {
+    "id": "p50",
+    "pick": "row/cards",
+    "p": 1,
+    "confidence": 1,
+    "probs": {
+     "section": 0,
+     "full/steps": 0,
+     "full/table": 0,
+     "split/chart+notes": 0,
+     "cover": 0,
+     "full/chart": 0,
+     "split/table+notes": 0,
+     "row/cards": 1,
+     "split/text+number": 0
+    },
+    "ms": 464.97845899999993,
+    "cost": 0.000039312
+   }
+  ],
+  "glm-flash": [
+   {
+    "id": "c01",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 2009.115625,
+    "tokens": 628
+   },
+   {
+    "id": "c02",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 1976.749708,
+    "tokens": 632
+   },
+   {
+    "id": "c03",
+    "pick": "section",
+    "raw": "section",
+    "ms": 1837.0388750000002,
+    "tokens": 626
+   },
+   {
+    "id": "c04",
+    "pick": "section",
+    "raw": "section",
+    "ms": 1979.307208,
+    "tokens": 621
+   },
+   {
+    "id": "c05",
+    "pick": "section",
+    "raw": "section",
+    "ms": 1862.014,
+    "tokens": 622
+   },
+   {
+    "id": "c06",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 2402.8909999999996,
+    "tokens": 642
+   },
+   {
+    "id": "c07",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 2791.63675,
+    "tokens": 641
+   },
+   {
+    "id": "c08",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 2362.7815,
+    "tokens": 653
+   },
+   {
+    "id": "c09",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1869.6150840000005,
+    "tokens": 629
+   },
+   {
+    "id": "c10",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1724.1569170000002,
+    "tokens": 666
+   },
+   {
+    "id": "c11",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1940.5596249999999,
+    "tokens": 646
+   },
+   {
+    "id": "c12",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1362.0081250000003,
+    "tokens": 631
+   },
+   {
+    "id": "c13",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1805.5628749999996,
+    "tokens": 648
+   },
+   {
+    "id": "c14",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 2339.3940839999996,
+    "tokens": 659
+   },
+   {
+    "id": "c15",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1810.3355000000001,
+    "tokens": 646
+   },
+   {
+    "id": "c16",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 2031.874417000001,
+    "tokens": 639
+   },
+   {
+    "id": "c17",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1665.8896659999991,
+    "tokens": 655
+   },
+   {
+    "id": "c18",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1805.3156250000002,
+    "tokens": 644
+   },
+   {
+    "id": "c19",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1946.6521669999984,
+    "tokens": 639
+   },
+   {
+    "id": "c20",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1876.4604170000002,
+    "tokens": 656
+   },
+   {
+    "id": "c21",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 1366.4494999999988,
+    "tokens": 663
+   },
+   {
+    "id": "c22",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 1369.4799170000006,
+    "tokens": 620
+   },
+   {
+    "id": "c23",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 3586.014542000001,
+    "tokens": 653
+   },
+   {
+    "id": "c24",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 2149.1191670000007,
+    "tokens": 637
+   },
+   {
+    "id": "c25",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2451.538833999999,
+    "tokens": 681
+   },
+   {
+    "id": "c26",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 2456.532707999999,
+    "tokens": 630
+   },
+   {
+    "id": "c27",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 2439.875,
+    "tokens": 636
+   },
+   {
+    "id": "c28",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 2866.666541999999,
+    "tokens": 688
+   },
+   {
+    "id": "c29",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 1638.2552500000002,
+    "tokens": 629
+   },
+   {
+    "id": "c30",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3376.9355419999993,
+    "tokens": 680
+   },
+   {
+    "id": "c31",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 2165.4771250000013,
+    "tokens": 656
+   },
+   {
+    "id": "c32",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 2847.794917000001,
+    "tokens": 712
+   },
+   {
+    "id": "c33",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 1994.8827500000007,
+    "tokens": 660
+   },
+   {
+    "id": "c34",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 2023.645833999999,
+    "tokens": 616
+   },
+   {
+    "id": "c35",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 2132.1772500000006,
+    "tokens": 634
+   },
+   {
+    "id": "c36",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 1771.7170000000006,
+    "tokens": 638
+   },
+   {
+    "id": "c37",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 2214.0655420000003,
+    "tokens": 649
+   },
+   {
+    "id": "c38",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 2380.128332999997,
+    "tokens": 640
+   },
+   {
+    "id": "c39",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 1656.5240419999973,
+    "tokens": 625
+   },
+   {
+    "id": "c40",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 1762.4612500000003,
+    "tokens": 619
+   },
+   {
+    "id": "c41",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 3334.3436250000013,
+    "tokens": 627
+   },
+   {
+    "id": "c42",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 3175.281665999999,
+    "tokens": 639
+   },
+   {
+    "id": "c43",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2973.397249999998,
+    "tokens": 639
+   },
+   {
+    "id": "c44",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2888.279042000002,
+    "tokens": 626
+   },
+   {
+    "id": "c45",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1124.0407080000004,
+    "tokens": 624
+   },
+   {
+    "id": "c46",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1724.1966250000005,
+    "tokens": 613
+   },
+   {
+    "id": "c47",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2355.4106250000004,
+    "tokens": 636
+   },
+   {
+    "id": "c48",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2252.015792000002,
+    "tokens": 632
+   },
+   {
+    "id": "c49",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2378.9875829999983,
+    "tokens": 626
+   },
+   {
+    "id": "c50",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1332.4663330000003,
+    "tokens": 642
+   },
+   {
+    "id": "p01",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 2083.310583999999,
+    "tokens": 620
+   },
+   {
+    "id": "p02",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 2453.965333999997,
+    "tokens": 624
+   },
+   {
+    "id": "p03",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 2077.6471249999995,
+    "tokens": 630
+   },
+   {
+    "id": "p04",
+    "pick": "section",
+    "raw": "section",
+    "ms": 1931.6636249999974,
+    "tokens": 627
+   },
+   {
+    "id": "p05",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1804.9792080000007,
+    "tokens": 632
+   },
+   {
+    "id": "p06",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1781.4544170000008,
+    "tokens": 634
+   },
+   {
+    "id": "p07",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 1893.9050419999985,
+    "tokens": 639
+   },
+   {
+    "id": "p08",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1872.289041,
+    "tokens": 623
+   },
+   {
+    "id": "p09",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1738.6027090000025,
+    "tokens": 621
+   },
+   {
+    "id": "p10",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1581.5559580000008,
+    "tokens": 620
+   },
+   {
+    "id": "p11",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1334.8959590000013,
+    "tokens": 632
+   },
+   {
+    "id": "p12",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 1332.2116669999996,
+    "tokens": 644
+   },
+   {
+    "id": "p13",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1743.8567499999954,
+    "tokens": 658
+   },
+   {
+    "id": "p14",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1719.533207999997,
+    "tokens": 648
+   },
+   {
+    "id": "p15",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1775.6130830000038,
+    "tokens": 680
+   },
+   {
+    "id": "p16",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 1772.4679170000018,
+    "tokens": 653
+   },
+   {
+    "id": "p17",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 2965.2781660000037,
+    "tokens": 673
+   },
+   {
+    "id": "p18",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 1789.0604999999996,
+    "tokens": 628
+   },
+   {
+    "id": "p19",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2214.145666000004,
+    "tokens": 659
+   },
+   {
+    "id": "p20",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 2996.7031669999997,
+    "tokens": 672
+   },
+   {
+    "id": "p21",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1814.4684590000033,
+    "tokens": 632
+   },
+   {
+    "id": "p22",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 1464.0616670000018,
+    "tokens": 634
+   },
+   {
+    "id": "p23",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 2356.7085829999996,
+    "tokens": 639
+   },
+   {
+    "id": "p24",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1470.544958999999,
+    "tokens": 672
+   },
+   {
+    "id": "p25",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2929.1100000000006,
+    "tokens": 689
+   },
+   {
+    "id": "p26",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 2297.4058749999967,
+    "tokens": 654
+   },
+   {
+    "id": "p27",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 1492.6234580000018,
+    "tokens": 630
+   },
+   {
+    "id": "p28",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 1436.0355419999978,
+    "tokens": 642
+   },
+   {
+    "id": "p29",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 1171.9743329999983,
+    "tokens": 626
+   },
+   {
+    "id": "p30",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1176.9040000000023,
+    "tokens": 620
+   },
+   {
+    "id": "p31",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 1681.2439999999988,
+    "tokens": 618
+   },
+   {
+    "id": "p32",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 1636.3535839999968,
+    "tokens": 625
+   },
+   {
+    "id": "p33",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 1681.5332500000004,
+    "tokens": 633
+   },
+   {
+    "id": "p34",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 1617.0969169999953,
+    "tokens": 633
+   },
+   {
+    "id": "p35",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2002.8890410000022,
+    "tokens": 622
+   },
+   {
+    "id": "p36",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1733.9521249999962,
+    "tokens": 630
+   },
+   {
+    "id": "p37",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2662.9854170000035,
+    "tokens": 632
+   },
+   {
+    "id": "p38",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 3992.2662500000006,
+    "tokens": 647
+   },
+   {
+    "id": "p39",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 4306.292332999998,
+    "tokens": 625
+   },
+   {
+    "id": "p40",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 4542.709041999995,
+    "tokens": 629
+   },
+   {
+    "id": "p41",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3338.043000000005,
+    "tokens": 614
+   },
+   {
+    "id": "p42",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1993.3285410000026,
+    "tokens": 627
+   },
+   {
+    "id": "p43",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1198.1557909999974,
+    "tokens": 628
+   },
+   {
+    "id": "p44",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1542.6929999999993,
+    "tokens": 615
+   },
+   {
+    "id": "p45",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1628.0349590000042,
+    "tokens": 614
+   },
+   {
+    "id": "p46",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1604.3477080000011,
+    "tokens": 627
+   },
+   {
+    "id": "p47",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1769.361417,
+    "tokens": 639
+   },
+   {
+    "id": "p48",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2764.549957999996,
+    "tokens": 617
+   },
+   {
+    "id": "p49",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1486.1348330000037,
+    "tokens": 622
+   },
+   {
+    "id": "p50",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 1478.8102919999947,
+    "tokens": 622
+   }
+  ],
+  "glm-flash-think": [
+   {
+    "id": "c01",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 1856.128625000012,
+    "tokens": 640
+   },
+   {
+    "id": "c02",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 2044.947834000006,
+    "tokens": 653
+   },
+   {
+    "id": "c03",
+    "pick": "section",
+    "raw": "section",
+    "ms": 2125.8721670000086,
+    "tokens": 661
+   },
+   {
+    "id": "c04",
+    "pick": "section",
+    "raw": "section",
+    "ms": 2295.479833999998,
+    "tokens": 655
+   },
+   {
+    "id": "c05",
+    "pick": "section",
+    "raw": "section",
+    "ms": 2178.377833000006,
+    "tokens": 660
+   },
+   {
+    "id": "c06",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 3358.693542000008,
+    "tokens": 705
+   },
+   {
+    "id": "c07",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 2253.0218749999913,
+    "tokens": 673
+   },
+   {
+    "id": "c08",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 3513.936458000011,
+    "tokens": 742
+   },
+   {
+    "id": "c09",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 4609.974208,
+    "tokens": 779
+   },
+   {
+    "id": "c10",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 3319.4802499999932,
+    "tokens": 737
+   },
+   {
+    "id": "c11",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 3536.3847499999974,
+    "tokens": 706
+   },
+   {
+    "id": "c12",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 3934.1423340000038,
+    "tokens": 781
+   },
+   {
+    "id": "c13",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 12699.593292000005,
+    "tokens": 1063
+   },
+   {
+    "id": "c14",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 5760.523666999987,
+    "tokens": 839
+   },
+   {
+    "id": "c15",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 7411.657834000012,
+    "tokens": 919
+   },
+   {
+    "id": "c16",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 7066.601666000002,
+    "tokens": 840
+   },
+   {
+    "id": "c17",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 5822.186249999999,
+    "tokens": 842
+   },
+   {
+    "id": "c18",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 4799.1756659999955,
+    "tokens": 751
+   },
+   {
+    "id": "c19",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 7129.990332999994,
+    "tokens": 855
+   },
+   {
+    "id": "c20",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 5524.976750000002,
+    "tokens": 825
+   },
+   {
+    "id": "c21",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 7264.757750000004,
+    "tokens": 908
+   },
+   {
+    "id": "c22",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 2220.3510839999944,
+    "tokens": 665
+   },
+   {
+    "id": "c23",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 4605.851375000013,
+    "tokens": 797
+   },
+   {
+    "id": "c24",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 10399.036125000013,
+    "tokens": 973
+   },
+   {
+    "id": "c25",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 22452.778583000007,
+    "tokens": 1542
+   },
+   {
+    "id": "c26",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 6619.3526249999995,
+    "tokens": 815
+   },
+   {
+    "id": "c27",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 4769.072832999998,
+    "tokens": 770
+   },
+   {
+    "id": "c28",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 4813.709541999997,
+    "tokens": 798
+   },
+   {
+    "id": "c29",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 6702.901666999998,
+    "tokens": 906
+   },
+   {
+    "id": "c30",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 8586.131875000006,
+    "tokens": 963
+   },
+   {
+    "id": "c31",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 6448.416041999997,
+    "tokens": 865
+   },
+   {
+    "id": "c32",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 27592.861875000017,
+    "tokens": 1516
+   },
+   {
+    "id": "c33",
+    "pick": "split/table+notes",
+    "raw": "split/table+notes",
+    "ms": 3118.915042000008,
+    "tokens": 730
+   },
+   {
+    "id": "c34",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 4506.332374999998,
+    "tokens": 747
+   },
+   {
+    "id": "c35",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 3845.6425420000014,
+    "tokens": 779
+   },
+   {
+    "id": "c36",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 4798.085250000004,
+    "tokens": 781
+   },
+   {
+    "id": "c37",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 3787.319583999997,
+    "tokens": 739
+   },
+   {
+    "id": "c38",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 3376.8534579999978,
+    "tokens": 746
+   },
+   {
+    "id": "c39",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 4142.901499999993,
+    "tokens": 723
+   },
+   {
+    "id": "c40",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 5278.412415999992,
+    "tokens": 775
+   },
+   {
+    "id": "c41",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2107.1274580000027,
+    "tokens": 681
+   },
+   {
+    "id": "c42",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2457.5110829999903,
+    "tokens": 712
+   },
+   {
+    "id": "c43",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 2675.980374999999,
+    "tokens": 711
+   },
+   {
+    "id": "c44",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 10769.62554199998,
+    "tokens": 1012
+   },
+   {
+    "id": "c45",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3771.043000000005,
+    "tokens": 680
+   },
+   {
+    "id": "c46",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 5040.011624999999,
+    "tokens": 651
+   },
+   {
+    "id": "c47",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2942.1966250000114,
+    "tokens": 711
+   },
+   {
+    "id": "c48",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 4215.122166999994,
+    "tokens": 791
+   },
+   {
+    "id": "c49",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 6152.4335830000055,
+    "tokens": 813
+   },
+   {
+    "id": "c50",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3312.8877909999865,
+    "tokens": 726
+   },
+   {
+    "id": "p01",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 2511.1212500000256,
+    "tokens": 659
+   },
+   {
+    "id": "p02",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 1965.8884580000013,
+    "tokens": 647
+   },
+   {
+    "id": "p03",
+    "pick": "cover",
+    "raw": "cover",
+    "ms": 1398.559750000015,
+    "tokens": 638
+   },
+   {
+    "id": "p04",
+    "pick": "section",
+    "raw": "section",
+    "ms": 2502.3325829999812,
+    "tokens": 683
+   },
+   {
+    "id": "p05",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 2248.157750000013,
+    "tokens": 669
+   },
+   {
+    "id": "p06",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 4882.922082999983,
+    "tokens": 766
+   },
+   {
+    "id": "p07",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 4912.861583999998,
+    "tokens": 787
+   },
+   {
+    "id": "p08",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 4584.4776249999995,
+    "tokens": 749
+   },
+   {
+    "id": "p09",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 7624.774165999988,
+    "tokens": 884
+   },
+   {
+    "id": "p10",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 2853.0846659999806,
+    "tokens": 669
+   },
+   {
+    "id": "p11",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 4694.944458000013,
+    "tokens": 759
+   },
+   {
+    "id": "p12",
+    "pick": "split/text+number",
+    "raw": "split/text+number",
+    "ms": 5164.2450410000165,
+    "tokens": 822
+   },
+   {
+    "id": "p13",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 4283.789625000005,
+    "tokens": 772
+   },
+   {
+    "id": "p14",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 3828.895124999981,
+    "tokens": 738
+   },
+   {
+    "id": "p15",
+    "pick": "split/chart+notes",
+    "raw": "split/chart+notes",
+    "ms": 10693.351958999992,
+    "tokens": 1025
+   },
+   {
+    "id": "p16",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 3547.1119999999937,
+    "tokens": 772
+   },
+   {
+    "id": "p17",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 6427.950624999998,
+    "tokens": 805
+   },
+   {
+    "id": "p18",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 3404.7535830000124,
+    "tokens": 701
+   },
+   {
+    "id": "p19",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 6205.325500000006,
+    "tokens": 843
+   },
+   {
+    "id": "p20",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 3411.2405000000144,
+    "tokens": 710
+   },
+   {
+    "id": "p21",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 5204.947291999997,
+    "tokens": 827
+   },
+   {
+    "id": "p22",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 7265.475999999995,
+    "tokens": 746
+   },
+   {
+    "id": "p23",
+    "pick": "full/chart",
+    "raw": "full/chart",
+    "ms": 12260.69312499999,
+    "tokens": 1065
+   },
+   {
+    "id": "p24",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 19427.658334000007,
+    "tokens": 1359
+   },
+   {
+    "id": "p25",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 7889.629875000013,
+    "tokens": 887
+   },
+   {
+    "id": "p26",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 6833.338583000004,
+    "tokens": 749
+   },
+   {
+    "id": "p27",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 12559.685417,
+    "tokens": 946
+   },
+   {
+    "id": "p28",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 13250.415582999995,
+    "tokens": 967
+   },
+   {
+    "id": "p29",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 11843.414334000001,
+    "tokens": 886
+   },
+   {
+    "id": "p30",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 14630.062375000009,
+    "tokens": 1008
+   },
+   {
+    "id": "p31",
+    "pick": "full/table",
+    "raw": "full/table",
+    "ms": 12431.098874999996,
+    "tokens": 857
+   },
+   {
+    "id": "p32",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 8336.537083999981,
+    "tokens": 699
+   },
+   {
+    "id": "p33",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 10275.828875000007,
+    "tokens": 719
+   },
+   {
+    "id": "p34",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 11057.32041700001,
+    "tokens": 760
+   },
+   {
+    "id": "p35",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 8087.709666999988,
+    "tokens": 677
+   },
+   {
+    "id": "p36",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 10948.882874999981,
+    "tokens": 825
+   },
+   {
+    "id": "p37",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 8007.23883300001,
+    "tokens": 723
+   },
+   {
+    "id": "p38",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 5002.519249999983,
+    "tokens": 760
+   },
+   {
+    "id": "p39",
+    "pick": "full/steps",
+    "raw": "full/steps",
+    "ms": 3193.782292000018,
+    "tokens": 713
+   },
+   {
+    "id": "p40",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3461.848958000017,
+    "tokens": 724
+   },
+   {
+    "id": "p41",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3000.3575830000045,
+    "tokens": 674
+   },
+   {
+    "id": "p42",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 4631.937458,
+    "tokens": 741
+   },
+   {
+    "id": "p43",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 4859.46087499999,
+    "tokens": 753
+   },
+   {
+    "id": "p44",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3420.082792000001,
+    "tokens": 702
+   },
+   {
+    "id": "p45",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3240.749625000026,
+    "tokens": 675
+   },
+   {
+    "id": "p46",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3786.983957999997,
+    "tokens": 760
+   },
+   {
+    "id": "p47",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2446.956999999995,
+    "tokens": 698
+   },
+   {
+    "id": "p48",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3085.477916999982,
+    "tokens": 657
+   },
+   {
+    "id": "p49",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 3701.242749999976,
+    "tokens": 720
+   },
+   {
+    "id": "p50",
+    "pick": "row/cards",
+    "raw": "row/cards",
+    "ms": 2465.684083,
+    "tokens": 687
+   }
+  ]
+ }
+}

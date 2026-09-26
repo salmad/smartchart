@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Slide system — proposal v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+/* Slide specs: everything the agent writes. `[[text]]` colour-links words to the focus series.
+   Shared fields live at the top level; `consulting` / `pitch` hold the copy for each writing style. */
+const DECK = { name: "FinBridge", doc: "Seed memorandum" };
+
+const SLIDES = [
+  {
+    template: "cover", name: "Cover",
+    consulting: { title: "FinBridge", subtitle: "A revolving credit card and business account for UK SMEs with £0.5–10m turnover", meta: "Seed memorandum · September 2026" },
+    pitch: { title: "FinBridge", subtitle: "The credit card that [[runs a small business]].", meta: "Seed · 2026" },
+  },
+  {
+    template: "statement", name: "Statement", section: "The problem",
+    consulting: { title: "UK small businesses fund growth on [[personal]] credit cards because no provider bundles business credit with daily banking", subtitle: "Founders carry the personal guarantee and the limit risk, and £540k of annual spend earns nothing back for the business." },
+    pitch: { title: "Small businesses run on their founder’s [[personal]] Amex.", subtitle: "Three logins. One personal guarantee. Nothing back." },
+  },
+  {
+    template: "split", name: "Split · chart + commentary", section: "Unit economics",
+    chart: {
+      categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"],
+      axes: { left: "£{v}m", right: "{v}%" },
+      series: [
+        { name: "Interest income", kind: "bar", color: "neutral", values: [0.4, 3.1, 14, 42, 85] },
+        { name: "Interchange", kind: "bar", color: "focus", values: [0.3, 2.2, 11, 36, 80] },
+        { name: "Gross margin (right)", kind: "line", color: "ink", axis: "right", values: [12, 24, 31, 36, 38] },
+      ],
+    },
+    consulting: {
+      title: "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+      markers: [{ n: 1, series: 0, index: 1 }, { n: 2, series: 1, index: 3 }, { n: 3, series: 2, index: 4 }],
+      comments: [
+        { title: "Interest leads early", text: "Revolvers are **40–60%** of customers and carry margin while spend ramps." },
+        { title: "Interchange compounds", text: "Spend per customer grows **3×** as the card replaces the founder’s personal Amex." },
+        { title: "Margin settles at 38%", text: "Bad debt stabilises near **10%** of revolver balances from year 4." },
+      ],
+      takeaway: "Two revenue engines make the book profitable without relying on APR alone.",
+      source: "FinBridge financial model, base case. Illustrative.",
+    },
+    pitch: {
+      title: "[[Interchange]] turns a lender into a 38% margin business.",
+      markers: [{ n: 1, series: 1, index: 3 }, { n: 2, series: 2, index: 4 }],
+      comments: [{ title: "Matches interest by year 4" }, { title: "Margin triples to 38%" }],
+    },
+  },
+  {
+    template: "columns", name: "Columns · 3 with icons", section: "The solution",
+    consulting: {
+      title: "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+      columns: [
+        { icon: "zap", title: "Approved in five minutes", bullets: ["Limits up to **£250k**, spend the same day", "Underwritten on live Shopify and ad-account data, not filed accounts"] },
+        { icon: "wallet", title: "Cashflow in one place", bullets: ["Pay bills, get paid and control team spend", "Move between debit and credit funds per payment"] },
+        { icon: "refresh-cw", title: "Earn on every pound", bullets: ["**1% cashback** on all card spend", "Rewards attract transactors, lowering adverse selection"] },
+      ],
+      takeaway: "Today this takes a bank, a card platform and a lender. FinBridge is all three.",
+    },
+    pitch: {
+      title: "Bank, card and lender. [[One app.]]",
+      columns: [
+        { icon: "zap", title: "Credit in 5 minutes", text: "Up to £250k." },
+        { icon: "wallet", title: "Cashflow in one place", text: "Pay, get paid, control spend." },
+        { icon: "refresh-cw", title: "1% back on everything", text: "Rewards bring the right customers." },
+      ],
+    },
+  },
+  {
+    template: "columns", name: "Columns · 2 compare", section: "The insight",
+    consulting: {
+      title: "Credit-only lenders attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
+      columns: [
+        { icon: "x", tone: "neg", label: "Credit-only lenders", title: "Adverse-selection loop", bullets: ["Expensive acquisition of desperate borrowers", "Little data beyond filed accounts", "High risk drives high prices, which drives higher risk"], note: "OnDeck, Kabbage, Silvr: hundreds of millions raised, no survivors" },
+        { icon: "check", tone: "focus", label: "FinBridge", title: "Account + rewards + credit", bullets: ["Customers arrive for non-credit reasons", "Credit funds the cashflow of a working business", "More data, better pricing, better customers"], note: "Capital on Tap and YouLend are profitable with the same pairing" },
+      ],
+    },
+    pitch: {
+      title: "Credit alone attracts the wrong borrowers. [[Bundling]] fixes it.",
+      columns: [
+        { icon: "x", tone: "neg", title: "Credit only", text: "Desperate borrowers, thin data, rising prices." },
+        { icon: "check", tone: "focus", title: "Account + rewards + credit", text: "Good businesses arrive first. Credit follows." },
+      ],
+    },
+  },
+  {
+    template: "table", name: "Table", section: "Business model",
+    table: {
+      columns: [{ label: "£ per customer per month" }, { label: "Revolver", num: true, focus: true }, { label: "Transactor", num: true }, { label: "Super-transactor", num: true }],
+      rows: [
+        { cells: ["Share of customers", "40–60%", "40–60%", "~10%"], style: "muted" },
+        { cells: ["Interest revenue", { v: "267", sub: "40% APR × £8.0k" }, "—", "—"] },
+        { cells: ["Cost of funding", { v: "(53)", sub: "8% × £8.0k" }, { v: "(33)", sub: "8% × £5.0k" }, { v: "(70)", sub: "8% × £10.5k" }] },
+        { cells: ["Interchange revenue", { v: "90", sub: "1.8% × £5.0k spend" }, { v: "120", sub: "1.8% × £6.7k" }, { v: "480", sub: "1.8% × £26.7k" }] },
+        { cells: ["Cost of rewards", "(50)", "(67)", "(267)"] },
+        { cells: ["Bad debt", { v: "(70)", sub: "~10% of balance p.a." }, "(5)", "(10)"] },
+        { cells: ["Monthly gross margin", "179", "10", "128"], style: "total" },
+      ],
+    },
+    consulting: {
+      title: "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+      source: "FinBridge model; funding cost assumes an 8% warehouse rate.",
+    },
+    pitch: { title: "Every segment makes money. [[Revolvers]] make the most." },
+  },
+  {
+    template: "chart", name: "Chart", section: "Growth",
+    chart: {
+      categories: ["Q1 ’27", "Q2", "Q3", "Q4", "Q1 ’28", "Q2", "Q3", "Q4"],
+      axes: { left: "£{v}m" }, endLabels: true,
+      series: [
+        { name: "Base case", kind: "line", color: "focus", area: true, values: [1, 4, 10, 22, 40, 62, 88, 120] },
+        { name: "Downside", kind: "line", color: "ink", dashed: true, values: [0.8, 3, 7, 15, 27, 41, 56, 72] },
+      ],
+    },
+    consulting: {
+      title: "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+      source: "FinBridge model. Downside assumes 40% lower acquisition and 2× bad debt.",
+    },
+    pitch: { title: "A [[£120m]] book in two years." },
+  },
+  {
+    template: "stats", name: "Stats · 4", section: "Market",
+    consulting: {
+      title: "Demand is documented: most UK SMEs need revolving credit and [[a fifth]] already use a card",
+      stats: [
+        { value: "5.7M", label: "UK SMEs", text: "Private-sector businesses; 34M more across the EU." },
+        { value: "19%", focus: true, label: "Use a credit card", text: "The most-used external finance product, ahead of overdrafts at 16%." },
+        { value: "30–40%", label: "Need revolving credit", text: "The most frequent financing need in ECB SAFE and our own surveys." },
+        { value: "€400bn", label: "SME credit gap", text: "Estimated across the EU and UK." },
+      ],
+      source: "EC SME Annual Report 2025/26; UK DBT Business Population 2025; ECB SAFE; EIB Group.",
+    },
+    pitch: {
+      title: "A market [[already on cards]].",
+      stats: [
+        { value: "5.7M", label: "UK SMEs" },
+        { value: "19%", focus: true, label: "Use a credit card" },
+        { value: "30–40%", label: "Need revolving credit" },
+        { value: "€400bn", label: "Credit gap" },
+      ],
+    },
+  },
+];
+
+</script>
+<style>
+/* ═════════════ Themes ═════════════ */
+.theme-porcelain {
+  --bg: #F2F3F5; --panel: #FFFFFF; --rule: #DDE0E6; --grid: #E3E6EB;
+  --ink: #0E1116; --ink-2: #464D5A; --muted: #8A909C;
+  --focus: #3B4BFF; --focus-soft: #B3BAFF; --focus-wash: #E6E8FF; --on-focus: #FFFFFF;
+  --neutral: #C4C9D2; --neg: #E5484D; --neg-wash: #FDECEC;
+}
+.theme-midnight {
+  --bg: #0B1020; --panel: #141A2D; --rule: #252D44; --grid: #1C2338;
+  --ink: #EEF1F8; --ink-2: #B3BBCC; --muted: #6F7890;
+  --focus: #8D9BFF; --focus-soft: #414C94; --focus-wash: rgba(141,155,255,.13); --on-focus: #0B1020;
+  --neutral: #39435E; --neg: #FF7A7A; --neg-wash: rgba(255,122,122,.10);
+}
+
+/* ═════════════ Writing styles ═════════════ */
+.style-consulting {
+  --h: 54px; --h-lh: 1.12; --h-wdth: 100%; --h-track: -.02em; --h-max: 1480px;
+  --body: 23px; --col-title: 30px; --stat: 104px; --statement: 88px; --gap: 56px;
+}
+.style-pitch {
+  --h: 124px; --h-lh: .96; --h-wdth: 80%; --h-track: -.028em; --h-max: 1560px;
+  --body: 32px; --col-title: 42px; --stat: 168px; --statement: 172px; --gap: 80px;
+}
+
+/* ═════════════ Slide frame (shared by every template) ═════════════ */
+.slide {
+  position: absolute; inset: 0 auto auto 0; width: 1920px; height: 1080px;
+  transform-origin: 0 0; transform: scale(var(--s, .5));
+  background: var(--bg); color: var(--ink);
+  font-family: "Instrument Sans", system-ui, sans-serif; font-size: var(--body); line-height: 1.45;
+  font-feature-settings: "tnum"; -webkit-font-smoothing: antialiased;
+  padding: 112px 144px 88px; display: flex; flex-direction: column; overflow: hidden;
+}
+.chrome {
+  position: absolute; top: 52px; left: 144px; right: 144px; display: flex; justify-content: space-between;
+  font-size: 18px; font-weight: 500; color: var(--muted);
+}
+.chrome b { color: var(--ink-2); font-weight: 600; }
+.style-pitch .chrome .deck { visibility: hidden; }
+
+.kicker { font-size: 22px; font-weight: 600; color: var(--focus); margin-bottom: 20px; }
+.headline {
+  font-size: var(--h); line-height: var(--h-lh); font-weight: 600; font-stretch: var(--h-wdth);
+  letter-spacing: var(--h-track); max-width: var(--h-max); text-wrap: balance;
+}
+mark.hl { background: none; color: var(--focus); }
+strong { font-weight: 600; color: var(--ink); }
+.body { flex: 1; min-height: 0; margin-top: var(--gap); display: grid; align-content: start; }
+.panel { background: var(--panel); border-radius: 28px; }
+
+.foot { flex: none; margin-top: 36px; display: grid; gap: 18px; }
+.takeaway {
+  display: flex; align-items: center; gap: 18px; padding: 22px 28px; border-radius: 20px;
+  background: var(--focus-wash); font-size: 26px; font-weight: 500; line-height: 1.3;
+}
+.takeaway svg { flex: none; width: 28px; height: 28px; color: var(--focus); stroke-width: 2.2; }
+.source { font-size: 16px; color: var(--muted); }
+.style-pitch .takeaway { display: none; }
+
+/* Pitch: one idea per slide, floated to the optical centre */
+.style-pitch.slide:not(.t-cover) { justify-content: center; }
+.style-pitch .body { flex: none; }
+.style-pitch.t-split .body, .style-pitch.t-chart .body { height: 560px; }
+
+/* ═════════════ Cover ═════════════ */
+.t-cover { justify-content: flex-end; padding-bottom: 150px; }
+.brand { position: absolute; top: 52px; left: 144px; display: flex; align-items: center; gap: 14px; font-size: 20px; font-weight: 600; }
+.brand i { width: 28px; height: 28px; border-radius: 8px; background: var(--focus); }
+.cover-title { font-size: 260px; line-height: .86; font-weight: 650; font-stretch: 78%; letter-spacing: -.035em; }
+.cover-sub { margin-top: 40px; font-size: 46px; line-height: 1.2; color: var(--ink-2); max-width: 1320px; letter-spacing: -.012em; }
+.style-consulting .cover-title { font-size: 200px; font-stretch: 88%; }
+.style-consulting .cover-sub { font-size: 38px; }
+.cover-meta { position: absolute; bottom: 64px; left: 144px; right: 144px; font-size: 18px; font-weight: 500; color: var(--muted); }
+
+/* ═════════════ Statement ═════════════ */
+.t-statement { justify-content: center; }
+.t-statement .headline { font-size: var(--statement); line-height: 1.02; }
+.style-consulting.t-statement .headline { font-stretch: 92%; letter-spacing: -.025em; max-width: 1600px; }
+.style-pitch.t-statement .headline { font-stretch: 78%; }
+.t-statement .body { flex: none; margin-top: 48px; }
+.subtitle { font-size: 34px; line-height: 1.4; color: var(--ink-2); max-width: 1240px; }
+
+/* ═════════════ Split: ⅔ evidence + ⅓ commentary ═════════════ */
+.t-split .body { grid-template-columns: 1fr 520px; gap: 64px; align-content: stretch; }
+.main { min-height: 0; display: flex; flex-direction: column; }
+.comments { padding: 44px 40px; display: flex; flex-direction: column; gap: 34px; }
+.style-pitch .comments { background: none; padding: 0; justify-content: center; gap: 44px; }
+.comment { display: grid; grid-template-columns: 36px 1fr; gap: 18px; }
+.marker {
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ink); color: var(--bg); font-size: 17px; font-weight: 700;
+}
+.comment h4 { font-size: 27px; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; padding-top: 3px; }
+.comment p { font-size: 21px; line-height: 1.45; color: var(--ink-2); margin-top: 8px; }
+.style-pitch .comment h4 { font-size: 38px; font-stretch: 88%; line-height: 1.1; padding-top: 0; }
+
+/* ═════════════ Columns ═════════════ */
+.cols { display: grid; gap: 24px; }
+.n-2 { grid-template-columns: repeat(2, 1fr); }
+.n-3 { grid-template-columns: repeat(3, 1fr); }
+.col { padding: 44px; display: flex; flex-direction: column; min-width: 0; }
+.style-pitch .col { padding: 48px 48px 52px; }
+.icon {
+  width: 72px; height: 72px; border-radius: 22px; display: grid; place-items: center;
+  background: var(--focus-wash); color: var(--focus);
+}
+.icon svg { width: 34px; height: 34px; stroke-width: 1.75; }
+.col.neg .icon { background: var(--neg-wash); color: var(--neg); }
+.col.focus { box-shadow: inset 0 0 0 2px var(--focus); }
+.col .label { margin-top: 36px; font-size: 18px; font-weight: 600; color: var(--muted); }
+.col h3 { margin-top: 10px; font-size: var(--col-title); font-weight: 600; line-height: 1.15; letter-spacing: -.018em; }
+.col .icon + h3 { margin-top: 40px; }
+.style-pitch .col h3 { font-stretch: 88%; }
+.col p, .col li { color: var(--ink-2); }
+.col p { margin-top: 14px; }
+.col ul { list-style: none; margin-top: 20px; display: grid; gap: 12px; }
+.col li { padding-left: 26px; position: relative; }
+.col li::before { content: ""; position: absolute; left: 3px; top: .6em; width: 7px; height: 7px; border-radius: 50%; background: var(--neutral); }
+.col.focus li::before { background: var(--focus); }
+.col .note { margin-top: auto; padding-top: 28px; font-size: 18px; color: var(--muted); }
+
+/* ═════════════ Stats ═════════════ */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 56px; }
+.stat .v {
+  font-size: var(--stat); line-height: .9; font-weight: 600; font-stretch: 78%; letter-spacing: -.03em;
+  white-space: nowrap; color: var(--ink);
+}
+.stat.focus .v { color: var(--focus); }
+.stat .l { margin-top: 20px; font-size: 24px; font-weight: 600; }
+.style-pitch .stat .l { font-size: 30px; color: var(--ink-2); font-weight: 500; }
+.stat p { margin-top: 10px; font-size: 21px; color: var(--ink-2); max-width: 340px; }
+.style-consulting .stat { padding-top: 28px; border-top: 2px solid var(--ink); }
+.style-consulting .stat.focus { border-color: var(--focus); }
+
+/* ═════════════ Table ═════════════ */
+.tbl-wrap { padding: 12px 40px 28px; }
+.tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+.tbl th { text-align: left; font-size: 18px; font-weight: 600; color: var(--muted); padding: 24px 24px 16px; border-bottom: 1px solid var(--rule); }
+.tbl td { padding: 14px 24px; border-bottom: 1px solid var(--rule); color: var(--ink-2); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { padding-left: 0; }
+.tbl td:first-child { color: var(--ink); font-weight: 500; }
+.tbl .num { text-align: right; white-space: nowrap; }
+.tbl td small { display: block; margin-top: 2px; font-size: 16px; color: var(--muted); }
+.tbl tr.muted td { color: var(--muted); font-style: italic; }
+.tbl .focus { background: var(--focus-wash); }
+.tbl th.focus { color: var(--focus); border-radius: 16px 16px 0 0; }
+.tbl tr.total td { border-bottom: 0; border-top: 2px solid var(--ink); font-weight: 700; color: var(--ink); padding-top: 18px; padding-bottom: 18px; }
+.tbl tr.total td.focus { color: var(--focus); border-radius: 0 0 16px 16px; }
+.style-pitch .tbl td small { display: none; }
+.style-pitch .tbl td { font-size: 28px; padding-top: 12px; padding-bottom: 12px; }
+.style-pitch.t-table .headline { font-size: 104px; }
+
+/* ═════════════ Chart ═════════════ */
+.t-chart .body { display: flex; }
+.t-chart .main { flex: 1; }
+.chart { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.legend { display: flex; gap: 32px; margin-bottom: 20px; font-size: 20px; font-weight: 500; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 10px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; background: var(--c); }
+.sw.line { width: 24px; height: 4px; border-radius: 2px; }
+.plot { flex: 1; min-height: 0; }
+.c-focus { --c: var(--focus); } .c-neutral { --c: var(--neutral); } .c-ink { --c: var(--ink); } .c-soft { --c: var(--focus-soft); }
+.plot { position: relative; }
+.plot svg { position: absolute; inset: 0; }
+.lbl { position: absolute; white-space: nowrap; line-height: 1; }
+.a-tl { transform: translate(0, -100%); } .a-tr { transform: translate(-100%, -100%); }
+.a-tc { transform: translate(-50%, 0); } .a-ml { transform: translate(0, -50%); } .a-mc { transform: translate(-50%, -50%); }
+.grid { stroke: var(--grid); stroke-width: 1.5; }
+.zero { stroke: var(--ink); stroke-width: 2; }
+.tick { color: var(--muted); font-size: 18px; font-weight: 500; }
+.cat { color: var(--ink-2); font-size: 20px; font-weight: 500; }
+.bar { fill: var(--c); }
+.line { fill: none; stroke: var(--c); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.line.c-ink { stroke-width: 3; }
+.line.dashed { stroke-dasharray: 2 11; stroke-width: 5; }
+.area { fill: var(--c); opacity: .09; }
+.dot { fill: var(--c); stroke: var(--bg); stroke-width: 5; }
+.endlabel { color: var(--c); font-size: 24px; font-weight: 600; }
+.endlabel span { margin-left: 12px; color: var(--muted); font-weight: 500; font-size: 20px; }
+.mk { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-size: 17px; font-weight: 700; }
+.leader { stroke: var(--ink); stroke-width: 1.5; }
+
+/* ═════════════ Review page (not part of the product) ═════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #E4E5E8; color: #0E1116; font-family: "Instrument Sans", system-ui, sans-serif; }
+body.page-dark { background: #060913; color: #E9ECF4; }
+.top {
+  position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between;
+  padding: 18px 32px; backdrop-filter: blur(16px); background: rgba(228,229,232,.85); border-bottom: 1px solid rgba(0,0,0,.07);
+}
+.page-dark .top { background: rgba(6,9,19,.85); border-color: rgba(255,255,255,.07); }
+.top h1 { font-size: 18px; font-weight: 600; }
+.top p { font-size: 14px; opacity: .6; margin-top: 2px; }
+.controls { display: flex; gap: 12px; flex-wrap: wrap; }
+.seg { display: inline-flex; padding: 3px; border-radius: 11px; background: rgba(0,0,0,.07); }
+.page-dark .seg { background: rgba(255,255,255,.08); }
+.seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 14px; font-weight: 500; opacity: .65; }
+.seg button[aria-pressed="true"] { background: #fff; color: #0E1116; opacity: 1; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.seg button:focus-visible { outline: 2px solid #3B4BFF; outline-offset: 2px; }
+main { max-width: 1480px; margin: 0 auto; padding: 32px 32px 120px; display: grid; gap: 56px; }
+figure { display: grid; gap: 14px; }
+figcaption { display: flex; gap: 12px; align-items: baseline; }
+figcaption .id { font-size: 13px; opacity: .5; font-feature-settings: "tnum"; }
+figcaption b { font-size: 16px; font-weight: 600; }
+.frames { display: grid; gap: 20px; }
+.frames.two { grid-template-columns: 1fr 1fr; }
+.frame-wrap { display: grid; gap: 8px; }
+.frame-label { font-size: 13px; font-weight: 600; opacity: .55; }
+.frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 40px -16px rgba(0,0,0,.25); }
+details { font-size: 13px; }
+details summary { cursor: pointer; opacity: .6; font-weight: 500; }
+details pre { margin-top: 10px; padding: 16px 18px; border-radius: 12px; overflow: auto; max-height: 360px; font: 12.5px/1.55 ui-monospace, monospace; background: rgba(0,0,0,.06); }
+.page-dark details pre { background: rgba(255,255,255,.06); }
+@media (max-width: 900px) { .frames.two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Slide system · proposal v3 · “Colour-linked”</h1>
+    <p>One component set, two writing styles, two themes. Highlighted words in each headline share the colour of the evidence that proves them.</p>
+  </div>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Writing style">
+      <button data-k="style" data-v="both">Side by side</button>
+      <button data-k="style" data-v="consulting">Consulting</button>
+      <button data-k="style" data-v="pitch">Pitch</button>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button data-k="theme" data-v="porcelain">Porcelain</button>
+      <button data-k="theme" data-v="midnight">Midnight</button>
+    </div>
+  </div>
+</header>
+<main id="list"></main>
+
+<script>
+/* ═════════════ Renderer: one frame, a few body layouts, a few slot kinds ═════════════ */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\[\[(.+?)\]\]/g, '<mark class="hl">$1</mark>');
+const pad2 = n => String(n).padStart(2, "0");
+
+function specFor(slide, style) {
+  const { consulting, pitch, name, ...shared } = slide;
+  return { ...shared, ...(style === "pitch" ? pitch : consulting) };
+}
+
+const colHTML = c => `<div class="col panel ${c.tone || ""}">
+  ${c.icon ? `<div class="icon"><i data-lucide="${c.icon}"></i></div>` : ""}
+  ${c.label ? `<div class="label">${esc(c.label)}</div>` : ""}
+  <h3>${md(c.title)}</h3>
+  ${c.text ? `<p>${md(c.text)}</p>` : ""}
+  ${c.bullets ? `<ul>${c.bullets.map(b => `<li>${md(b)}</li>`).join("")}</ul>` : ""}
+  ${c.note ? `<div class="note">${md(c.note)}</div>` : ""}
+</div>`;
+
+const statHTML = s => `<div class="stat ${s.focus ? "focus" : ""}">
+  <div class="v">${esc(s.value)}</div><div class="l">${esc(s.label)}</div>${s.text ? `<p>${md(s.text)}</p>` : ""}
+</div>`;
+
+function tableHTML(t) {
+  const cls = col => [col.num ? "num" : "", col.focus ? "focus" : ""].join(" ");
+  const cell = (c, i) => { const v = typeof c === "object" ? c : { v: c };
+    return `<td class="${cls(t.columns[i])}">${esc(v.v)}${v.sub ? `<small>${esc(v.sub)}</small>` : ""}</td>`; };
+  return `<div class="tbl-wrap panel"><table class="tbl">
+    <thead><tr>${t.columns.map(c => `<th class="${cls(c)}">${esc(c.label)}</th>`).join("")}</tr></thead>
+    <tbody>${t.rows.map(r => `<tr class="${r.style || ""}">${r.cells.map(cell).join("")}</tr>`).join("")}</tbody>
+  </table></div>`;
+}
+
+function bodyHTML(s) {
+  switch (s.template) {
+    case "statement": return s.subtitle ? `<p class="subtitle">${md(s.subtitle)}</p>` : "";
+    case "split": return `<div class="main"><div class="chart" data-chart></div></div>
+      <aside class="comments panel">${s.comments.map((c, i) => `
+        <div class="comment"><span class="marker">${i + 1}</span>
+        <div><h4>${md(c.title)}</h4>${c.text ? `<p>${md(c.text)}</p>` : ""}</div></div>`).join("")}</aside>`;
+    case "columns": return `<div class="cols n-${s.columns.length}">${s.columns.map(colHTML).join("")}</div>`;
+    case "stats": return `<div class="stats">${s.stats.map(statHTML).join("")}</div>`;
+    case "table": return tableHTML(s.table);
+    case "chart": return `<div class="main"><div class="chart" data-chart></div></div>`;
+  }
+  return "";
+}
+
+function slideHTML(s, i, total) {
+  if (s.template === "cover") return `<section class="slide t-cover">
+    <div class="brand"><i></i>${esc(DECK.name)}</div>
+    <h1 class="cover-title">${esc(s.title)}</h1>
+    <p class="cover-sub">${md(s.subtitle)}</p>
+    <footer class="cover-meta">${esc(s.meta)}</footer>
+  </section>`;
+  const foot = (s.takeaway ? `<p class="takeaway"><i data-lucide="arrow-right"></i><span>${md(s.takeaway)}</span></p>` : "")
+    + (s.source ? `<p class="source">Source: ${md(s.source)}</p>` : "");
+  return `<section class="slide t-${s.template}">
+    <header class="chrome"><span class="deck">${esc(DECK.name)} · ${esc(DECK.doc)}</span><span><b>${pad2(i + 1)}</b> / ${pad2(total)}</span></header>
+    ${s.section ? `<div class="kicker">${esc(s.section)}</div>` : ""}
+    <h2 class="headline">${md(s.title)}</h2>
+    <div class="body">${bodyHTML(s)}</div>
+    ${foot ? `<div class="foot">${foot}</div>` : ""}
+  </section>`;
+}
+
+/* ═════════════ Chart: bar / line / combo, dual axis, anchored markers, direct labels ═════════════ */
+function niceStep(raw) {
+  const p = 10 ** Math.floor(Math.log10(raw)), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+}
+const fmt = (tpl, v) => tpl.replace("{v}", Number.isInteger(v) ? v : v.toFixed(1));
+const topRounded = (x, y, w, h, r) => { r = Math.min(r, w / 2, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; };
+
+function drawChart(host, spec) {
+  const legendSeries = spec.endLabels ? [] : spec.series;
+  host.innerHTML = (legendSeries.length ? `<div class="legend">${legendSeries.map(s =>
+    `<span class="c-${s.color}"><i class="sw ${s.kind}"></i>${esc(s.name)}</span>`).join("")}</div>` : "") + `<div class="plot"></div>`;
+  const box = host.querySelector(".plot"), W = box.clientWidth, H = box.clientHeight;
+  const L = spec.series.filter(s => s.axis !== "right"), R = spec.series.filter(s => s.axis === "right");
+  const lMax = Math.max(...L.flatMap(s => s.values)), lStep = niceStep(lMax / 4), count = Math.ceil(lMax / lStep);
+  const sc = { left: { max: lStep * count, step: lStep } };
+  if (R.length) { const rs = niceStep(Math.max(...R.flatMap(s => s.values)) / count); sc.right = { max: rs * count, step: rs }; }
+  const markers = spec.markers || [];
+  const P = { t: markers.length ? 72 : 36, r: spec.endLabels ? 230 : 0, b: 52, l: 0 };
+  const pw = W - P.l - P.r, ph = H - P.t - P.b, n = spec.categories.length, band = pw / n;
+  const y = (v, a = "left") => P.t + ph - (v / sc[a].max) * ph;
+  const xc = i => P.l + band * i + band / 2;
+  const bars = spec.series.filter(s => s.kind === "bar");
+  const gw = band * (bars.length > 1 ? 0.5 : 0.4), bw = gw / Math.max(bars.length, 1);
+  const pos = [];
+  let g = "", t = "";
+  // Chart text is HTML, not SVG <text>: Chrome misplaces SVG text inside CSS-scaled slides.
+  const lbl = (cls, x, y, a, html) => `<span class="lbl a-${a} ${cls}" style="left:${x}px;top:${y}px">${html}</span>`;
+
+  // Gridlines with labels sitting on top of each line (data-journalism style, no axis gutter)
+  for (let k = 0; k <= count; k++) {
+    const yy = y(sc.left.step * k);
+    g += `<line class="${k ? "grid" : "zero"}" x1="0" x2="${W - P.r}" y1="${yy}" y2="${yy}"/>`;
+    if (k) {
+      t += lbl("tick", 0, yy - 8, "tl", fmt(spec.axes.left, sc.left.step * k));
+      if (sc.right) t += lbl("tick", W - P.r, yy - 8, "tr", fmt(spec.axes.right, sc.right.step * k));
+    }
+  }
+  spec.categories.forEach((c, i) => t += lbl("cat", xc(i), P.t + ph + 14, "tc", esc(c)));
+
+  spec.series.forEach((s, si) => {
+    if (s.kind !== "bar") return;
+    const a = s.axis === "right" ? "right" : "left", j = bars.indexOf(s);
+    pos[si] = s.values.map((v, i) => {
+      const x = xc(i) - gw / 2 + j * bw + 3, w = bw - 6, top = y(v, a), h = y(0, a) - top;
+      if (h > 0.5) g += `<path class="bar c-${s.color}" d="${topRounded(x, top, w, h, 8)}"/>`;
+      return [x + w / 2, top];
+    });
+  });
+  spec.series.forEach((s, si) => {
+    if (s.kind !== "line") return;
+    const a = s.axis === "right" ? "right" : "left";
+    const pts = s.values.map((v, i) => [xc(i), y(v, a)]);
+    pos[si] = pts;
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("");
+    if (s.area) g += `<path class="area c-${s.color}" d="${d}L${pts.at(-1)[0]},${y(0)}L${pts[0][0]},${y(0)}Z"/>`;
+    g += `<path class="line c-${s.color} ${s.dashed ? "dashed" : ""}" d="${d}"/>`;
+    const [lx, ly] = pts.at(-1);
+    g += `<circle class="dot c-${s.color}" cx="${lx}" cy="${ly}" r="9"/>`;
+    if (spec.endLabels) t += lbl(`endlabel c-${s.color}`, lx + 24, ly, "ml", `${fmt(spec.axes.left, s.values.at(-1))}<span>${esc(s.name)}</span>`);
+  });
+  markers.forEach(m => {
+    const [px, py] = pos[m.series][m.index], cy = py - 42;
+    g += `<line class="leader" x1="${px}" x2="${px}" y1="${cy + 18}" y2="${py - 8}"/>`;
+    t += lbl("mk", px, cy, "mc", m.n);
+  });
+  box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" overflow="visible">${g}</svg>${t}`;
+}
+
+/* ═════════════ Review page ═════════════ */
+const q = new URLSearchParams(location.search);
+const state = { style: q.get("style") || "both", theme: q.get("theme") || "porcelain" };
+const list = document.getElementById("list");
+
+function render() {
+  document.body.className = state.theme === "midnight" ? "page-dark" : "";
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", state[b.dataset.k] === b.dataset.v));
+  const styles = state.style === "both" ? ["consulting", "pitch"] : [state.style];
+  const only = q.get("only");
+  list.innerHTML = SLIDES.map((sl, i) => only !== null && +only !== i ? "" : `
+    <figure data-i="${i}">
+      <figcaption><span class="id">${pad2(i + 1)} · ${sl.template}</span><b>${sl.name}</b></figcaption>
+      <div class="frames ${styles.length > 1 ? "two" : ""}">${styles.map(st => `
+        <div class="frame-wrap">${styles.length > 1 ? `<div class="frame-label">${st === "pitch" ? "Pitch" : "Consulting"}</div>` : ""}
+          <div class="frame" data-style="${st}"></div></div>`).join("")}</div>
+      <details><summary>Agent output (JSON)</summary>
+        <pre>${esc(JSON.stringify(styles.length > 1 ? sl : specFor(sl, styles[0]), null, 2))}</pre></details>
+    </figure>`).join("");
+
+  list.querySelectorAll("figure").forEach(fig => {
+    const i = +fig.dataset.i;
+    fig.querySelectorAll(".frame").forEach(fr => {
+      const spec = specFor(SLIDES[i], fr.dataset.style);
+      fr.innerHTML = slideHTML(spec, i, SLIDES.length);
+      fr.firstElementChild.classList.add(`theme-${state.theme}`, `style-${fr.dataset.style}`);
+      const host = fr.querySelector("[data-chart]");
+      if (host) drawChart(host, { ...spec.chart, markers: spec.markers });
+      ro.observe(fr);
+    });
+  });
+  lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
+}
+
+const ro = new ResizeObserver(entries => entries.forEach(e =>
+  e.target.firstElementChild?.style.setProperty("--s", e.contentRect.width / 1920)));
+
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  state[b.dataset.k] = b.dataset.v;
+  render();
+}));
+
+document.fonts.ready.then(render);
+</script>
+</body>
+</html>

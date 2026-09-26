@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>FinBridge — Seed Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=block" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0b0a09;
+    --surface: #13110f;
+    --line: #2a2621;
+    --bone: #f3eee4;
+    --muted: #a39b8e;
+    --gold: #e8b94a;
+    --red: #ff5a45;
+    --money: #7bd88f;
+  }
+  @page { size: 1920px 1080px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--ink); }
+  body {
+    font-family: "Geist", system-ui, sans-serif;
+    color: var(--bone);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+    overflow: hidden;
+    background: var(--ink);
+    padding: 150px 128px 110px;
+    display: flex;
+    flex-direction: column;
+    break-after: page;
+  }
+  .slide:last-child { break-after: auto; }
+  .slide:has(.foot) { padding-bottom: 150px; }
+
+  .chrome {
+    position: absolute;
+    inset: 56px 128px auto;
+    display: flex;
+    justify-content: space-between;
+    font: 500 17px/1 "Geist Mono", monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .foot {
+    position: absolute;
+    inset: auto 128px 52px;
+    font: 400 17px/1.4 "Geist Mono", monospace;
+    color: var(--muted);
+  }
+
+  .shout {
+    font-family: "Archivo", sans-serif;
+    font-weight: 900;
+    font-stretch: 62%;
+    font-variation-settings: "wdth" 62;
+    text-transform: uppercase;
+    line-height: 0.9;
+    letter-spacing: -0.005em;
+    word-spacing: 0.06em;
+  }
+  .label {
+    font: 500 20px/1 "Geist Mono", monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .gold { color: var(--gold); }
+  .red { color: var(--red); }
+  .money { color: var(--money); }
+  .muted { color: var(--muted); }
+  .mono { font-family: "Geist Mono", monospace; }
+
+  .title { font-size: 120px; margin-top: 24px; }
+  .body { font-size: 34px; line-height: 1.38; max-width: 1180px; }
+  .body p + p { margin-top: 22px; }
+  .body strong { font-weight: 700; }
+  .spacer { flex: 1; }
+
+  .pull {
+    border-left: 6px solid var(--gold);
+    padding: 6px 0 6px 36px;
+    font-size: 40px;
+    line-height: 1.2;
+    font-weight: 600;
+    max-width: 1560px;
+  }
+  .pill { background: var(--gold); color: var(--ink); border-radius: 8px; padding: 0 14px; white-space: nowrap; }
+
+  /* Cards */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; margin-top: 56px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 56px; }
+  .card { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 40px 44px; display: flex; flex-direction: column; }
+  .card .k { font: 500 19px/1 "Geist Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .card h3 { font-size: 60px; margin-top: 16px; }
+  .card p, .card li { font-size: 28px; line-height: 1.35; }
+  .card p { margin-top: 18px; }
+  .card ul { list-style: none; margin-top: 18px; display: grid; gap: 10px; }
+  .card li::before { content: "— "; color: var(--muted); }
+  .card.hot { border: 2px solid var(--gold); }
+  .card .media { height: 110px; display: flex; align-items: center; gap: 28px; margin-top: 26px; }
+  .card .media img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .card .media img.logo { height: 56px; border-radius: 10px; }
+
+  /* Big stats */
+  .stat { font-size: 150px; color: var(--gold); }
+  .stat-cap { font-size: 30px; font-weight: 600; margin-top: 16px; }
+  .stat-sub { font-size: 24px; line-height: 1.4; color: var(--muted); margin-top: 12px; }
+
+  /* Receipt */
+  .receipt { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 28px 44px; }
+  .receipt .row { display: flex; justify-content: space-between; gap: 32px; font: 500 28px/1.2 "Geist Mono", monospace; padding: 18px 0; border-bottom: 1px dashed var(--line); }
+  .receipt .row:last-child { border-bottom: 0; }
+  .receipt .row.tot { font-weight: 700; color: var(--gold); border-top: 1px solid var(--muted); border-bottom: 0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font: 500 18px/1 "Geist Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 0 24px 18px 0; border-bottom: 1px solid var(--line); }
+  td { font-size: 27px; line-height: 1.2; padding: 14px 24px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tight td { padding-top: 10px; padding-bottom: 10px; }
+  .pnl td { font-size: 24px; padding-top: 9px; padding-bottom: 9px; }
+  .pnl td.note { font-size: 18px; }
+  td.num, th.num { font-family: "Geist Mono", monospace; text-align: right; white-space: nowrap; }
+  td small { display: block; font: 400 17px/1.3 "Geist Mono", monospace; color: var(--muted); margin-top: 4px; }
+  td.note { font: 400 20px/1.35 "Geist Mono", monospace; color: var(--muted); }
+  tr.sub td { font-weight: 700; color: var(--gold); }
+  tr.hero { background: var(--gold); }
+  tr.hero td { color: var(--ink); font-weight: 700; border-bottom: 0; }
+  tr.hero td small, tr.hero td.note { color: rgba(11,10,9,0.65); }
+  tr.hero td:first-child { padding-left: 20px; }
+  tr.hero td:last-child { padding-right: 20px; }
+
+  /* Competition map */
+  .map-head { display: grid; grid-template-columns: 170px 1fr 1fr 1fr; margin-top: 40px; font: 500 20px/1 "Geist Mono", monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .map-wrap { display: grid; grid-template-columns: 170px 1fr; margin-top: 16px; }
+  .map-y { display: flex; flex-direction: column; justify-content: space-between; font: 500 18px/1.3 "Geist Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 20px 8px 0; text-align: right; }
+  .map { position: relative; height: 490px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .map .div { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--line); }
+  .map .co { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 22px; }
+  .map .co img { height: 34px; border-radius: 7px; }
+  .map .blob { position: absolute; border: 1px dashed #4a443c; border-radius: 50%; display: grid; place-items: center; font: 500 18px/1 "Geist Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .map .start { border: 1px solid rgba(232,185,74,0.5); border-radius: 999px; padding: 8px 16px; color: rgba(232,185,74,0.75); }
+  .map .us { border: 3px dashed var(--gold); border-radius: 999px; padding: 10px 20px; color: var(--gold); font-weight: 700; }
+
+  /* Edge matrix */
+  .matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .matrix .cell { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 26px 30px; font-size: 24px; line-height: 1.35; min-height: 210px; }
+  .matrix .cell b { display: block; font: 500 19px/1 "Geist Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .matrix .cell.us { border: 3px dashed var(--gold); }
+  .matrix .cell.us b { color: var(--gold); }
+  .axis { font: 500 17px/1 "Geist Mono", monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  .points { display: grid; gap: 0; }
+  .points .pt { padding: 26px 0; border-bottom: 1px solid var(--line); }
+  .points .pt:first-child { padding-top: 0; }
+  .points .pt:last-child { border-bottom: 0; }
+  .points .pt h4 { font-size: 54px; }
+  .points .pt p { font-size: 26px; color: var(--muted); margin-top: 10px; }
+
+  /* Roadmap */
+  .road { display: grid; gap: 0; }
+  .road .st { display: grid; grid-template-columns: 64px 1fr; gap: 26px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+  .road .dot { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center; font: 600 22px/1 "Geist Mono", monospace; color: var(--muted); }
+  .road .st.on .dot { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+  .road .when { font: 500 18px/1 "Geist Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .road .st.on .when { color: var(--gold); }
+  .road .what { font-size: 30px; font-weight: 600; margin-top: 10px; }
+
+  .checks td { text-align: center; font-family: "Geist Mono", monospace; font-size: 30px; }
+  .checks td:first-child, .checks td:last-child { text-align: left; font-family: "Geist", sans-serif; font-size: 27px; }
+  .checks td:last-child { color: var(--gold); font-weight: 600; }
+  .checks th { text-align: center; }
+  .checks th:first-child, .checks th:last-child { text-align: left; }
+  .y { color: var(--money); } .n { color: var(--red); } .p { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- 01 COVER -->
+<section class="slide" style="padding-top:190px">
+  <div class="label">Seed round · UK · 2026</div>
+  <h1 class="shout" style="font-size:230px;margin-top:36px;line-height:0.84">Small business<br /><span class="gold">credit cards.</span></h1>
+  <p class="body" style="font-size:42px;margin-top:52px;max-width:1300px">The credit card that runs a small business: <strong>spend, pay bills, fund with credit, get cashback.</strong></p>
+  <div class="spacer"></div>
+  <p style="font-size:30px;line-height:1.4">FinBridge · <span class="muted">Built by the SME credit team from Revolut and Capital on Tap</span></p>
+</section>
+
+<!-- 02 PROBLEM -->
+<section class="slide">
+  <div class="label">The problem</div>
+  <h2 class="shout title">EU &amp; UK SMEs are <span class="red">underserved.</span></h2>
+  <div class="grid3">
+    <div class="card">
+      <span class="k">01 · Banks</span>
+      <h3 class="shout">Won't lend</h3>
+      <div class="media"><img src="../public/assets/risk_appetite.png" alt="Reuters: euro zone banks tightening SME credit" /></div>
+      <ul><li>Low risk appetite, weeks of paperwork</li><li>Not worth it for a £20k limit</li></ul>
+    </div>
+    <div class="card">
+      <span class="k">02 · Neobanks</span>
+      <h3 class="shout">Debit focus</h3>
+      <div class="media"><img class="logo" src="../public/assets/logos/qonto.png" alt="Qonto" /><img class="logo" src="../public/assets/logos/pleo.png" alt="Pleo" /><img class="logo" src="../public/assets/logos/ramp.png" alt="Ramp" /></div>
+      <ul><li>"Business account" = debit card + invoices</li><li>No true revolving credit</li></ul>
+    </div>
+    <div class="card">
+      <span class="k">03 · Legacy issuers</span>
+      <h3 class="shout">Dated</h3>
+      <div class="media"><img src="../public/assets/amex.png" alt="American Express Trustpilot reviews" /></div>
+      <ul><li>Dated UX</li><li>Built for large companies, not SMEs</li></ul>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <p class="pull"><span class="gold">~€400bn</span> SME credit gap in the EU &amp; UK.</p>
+  <div class="foot">Sources: EIB Group (EU SME credit gap, €323–481bn); Reuters / ECB Bank Lending Survey, Feb 2026</div>
+</section>
+
+<!-- 03 CUSTOMER -->
+<section class="slide">
+  <div class="label">The customer · Maria, Marigold Skincare Ltd, Manchester · makes face oil</div>
+  <h2 class="shout title">She pays the factory<br />before <span class="gold">her customer pays her.</span></h2>
+  <p class="mono muted" style="font-size:24px;margin-top:32px;letter-spacing:0.04em">Meridian Chemists orders £160k <span class="gold">→</span> factory wants £40k up front <span class="gold">→</span> Meridian pays 30 days after delivery</p>
+  <div class="grid2" style="margin-top:28px">
+    <div class="card">
+      <span class="k red">Today · her bank</span>
+      <div class="receipt" style="background:var(--ink);margin-top:22px">
+        <div class="row"><span>Factory deposit</span><span>£40,000</span></div>
+        <div class="row"><span>In her account</span><span>£25,000</span></div>
+        <div class="row"><span>No overdraft, no line</span><span class="red">(£15,000)</span></div>
+      </div>
+      <p><strong class="red">She turns the order down.</strong> <span class="muted">£80k of margin, gone.</span></p>
+    </div>
+    <div class="card hot">
+      <span class="k gold">With FinBridge · £75k limit in 3 minutes</span>
+      <div class="receipt" style="background:var(--ink);margin-top:22px">
+        <div class="row"><span>From her balance</span><span>£25,000</span></div>
+        <div class="row"><span>From FinBridge credit</span><span class="gold">£15,000</span></div>
+        <div class="row"><span>Cost to carry</span><span>~£15 / day</span></div>
+      </div>
+      <p><strong class="money">She ships the order.</strong> <span class="muted">Meridian pays, the line clears.</span></p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <p class="pull">£15 a day <span class="gold">to unlock £80,000 of margin.</span></p>
+</section>
+
+<!-- 04 INSIGHT -->
+<section class="slide">
+  <div class="label">The insight</div>
+  <h2 class="shout title">Standalone credit attracts<br />the <span class="red">wrong borrowers.</span></h2>
+  <div class="grid2" style="flex:1">
+    <div class="card">
+      <span class="k red">✕ Credit-only offering</span>
+      <ul><li>Hard acquisition, desperate borrowers</li><li>Poor data visibility</li><li>Adverse selection loop: high risk ↔ high prices</li></ul>
+      <div class="spacer"></div>
+      <img src="../public/assets/ondeck-forbes-crop.png" style="width:100%;border-radius:6px;margin-top:24px" alt="OnDeck, Forbes" />
+      <img src="../public/assets/october-lender-crop.png" style="width:78%;border-radius:6px;margin-top:14px" alt="October, French SME lender, 2025" />
+      <p class="mono muted" style="font-size:19px">+ Kabbage, Silvr and more: hundreds of millions in VC, zero survivors</p>
+    </div>
+    <div class="card hot">
+      <span class="k money">✓ Account + rewards + credit</span>
+      <ul><li>Customers come for non-credit reasons</li><li>Credit funds the cashflow of a working business</li><li>Positive loop: more data, better product</li></ul>
+      <div class="spacer"></div>
+      <div class="receipt" style="background:var(--ink)">
+        <div class="row"><span>Capital on Tap</span><span class="money">profitable</span></div>
+        <div class="row"><span>YouLend</span><span class="money">profitable</span></div>
+      </div>
+      <p class="mono muted" style="font-size:19px">Credit paired with rewards or embedded distribution</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 COMPETITION -->
+<section class="slide">
+  <div class="label">The competition</div>
+  <h2 class="shout title" style="font-size:100px">Start where the economics <span class="gold">work.</span></h2>
+  <div class="map-head"><span></span><span>Debit</span><span>Deferred debit &amp; charge</span><span>Revolving credit</span></div>
+  <div class="map-wrap">
+    <div class="map-y"><span>SME account features ↑</span><span>None</span></div>
+    <div class="map">
+      <div class="div" style="left:33.33%"></div><div class="div" style="left:66.66%"></div>
+      <div class="blob" style="left:2%;top:64%;width:30%;height:32%">Traditional banks</div>
+      <div class="co" style="top:18%;left:18%"><img src="../public/assets/logos/revolut.png" />Revolut</div>
+      <div class="co" style="top:32%;left:27%"><img src="../public/assets/logos/tide.png" />Tide</div>
+      <div class="co" style="top:31%;left:12%"><img src="../public/assets/logos/monzo.png" />Monzo</div>
+      <div class="co" style="top:56%;left:27%"><img src="../public/assets/logos/pleo.png" />Pleo</div>
+      <div class="co" style="top:46%;left:10%"><img src="../public/assets/logos/apron.png" />Apron</div>
+      <div class="co" style="top:20%;left:44%"><img src="../public/assets/logos/qonto.png" />Qonto</div>
+      <div class="co" style="top:38%;left:56%"><img src="../public/assets/logos/ramp.png" />Ramp (corp)</div>
+      <div class="co" style="top:58%;left:17%"><img src="../public/assets/logos/payhawk.png" />Payhawk</div>
+      <div class="co" style="top:62%;left:42%"><img src="../public/assets/logos/pliant.png" />Pliant</div>
+      <div class="co" style="top:82%;left:58%"><img src="../public/assets/logos/amex.png" />Amex</div>
+      <div class="co" style="top:72%;left:76%"><img src="../public/assets/logos/cot.png" />Capital on Tap</div>
+      <div class="co" style="top:91%;left:73%"><img src="../public/assets/logos/iwoca.png" />iwoca</div>
+      <div class="co" style="top:84%;left:91%"><img src="../public/assets/logos/funding-circle.png" />Funding Circle</div>
+      <div class="co start" style="top:58%;left:88%">Start here</div>
+      <svg style="position:absolute;left:88%;top:22%;transform:translateX(-50%)" width="24" height="170" viewBox="0 0 24 170" fill="none"><line x1="12" y1="168" x2="12" y2="18" stroke="#e8b94a" stroke-opacity="0.7" stroke-width="2" stroke-dasharray="6 6"/><polygon points="12,2 4,20 20,20" fill="#e8b94a"/></svg>
+      <div class="co us" style="top:15%;left:88%">FinBridge</div>
+    </div>
+  </div>
+  <p class="body" style="margin-top:34px;max-width:1660px;font-size:28px"><strong class="gold">Why now:</strong> debit players plan to add credit, but lack credit-first culture and expertise. We have several years of head start.</p>
+  <div class="foot">Source: public product pages</div>
+</section>
+
+<!-- 06 SOLUTION -->
+<section class="slide">
+  <div class="label">The solution · Credit card embedded in a business account</div>
+  <h2 class="shout title">A bank, a card platform<br />and a lender. <span class="gold">In one.</span></h2>
+  <div class="grid3">
+    <div class="card"><span class="k gold">01</span><h3 class="shout">Get it in 5 minutes</h3><p>Limits up to <strong>£250k</strong>, spend the same day. The limit stays there without reapplying.</p></div>
+    <div class="card"><span class="k gold">02</span><h3 class="shout">Manage cashflow</h3><p>Pay bills, get paid, control team spend. Pay with debit or credit funds.</p></div>
+    <div class="card"><span class="k gold">03</span><h3 class="shout">Earn rewards</h3><p><strong>1% cashback</strong> on spend.</p></div>
+  </div>
+</section>
+
+<!-- 07 TEAM -->
+<section class="slide">
+  <div class="label">The team</div>
+  <h2 class="shout title">Capital on Tap and<br /><span class="gold">Revolut alumni.</span></h2>
+  <div class="grid3">
+    <div class="card"><span class="k">Ex-Capital on Tap</span><h3 class="shout">[Name]</h3><p>Built the data infrastructure and credit risk engine for Capital on Tap: 200k+ SMEs, £20B+ volume, Europe's largest non-bank SME card ABS.</p></div>
+    <div class="card"><span class="k">Ex-Revolut</span><h3 class="shout">[Name]</h3><p>Head of SME Lending at Revolut. Credit models behind $1.5bn of SME loans in the EEA. 10 credit launches across EU, APAC and UK.</p></div>
+    <div class="card"><span class="k">Ex-Revolut · Ex-Wio Bank</span><h3 class="shout">[Name]</h3><p>Head of Product for Credit at Revolut, Head of Product at Wio. Built Wio's business card: 1/3 of UAE volume.</p></div>
+  </div>
+  <div class="spacer"></div>
+  <p class="pull">SME credit is very hard. <span class="gold">We know how to succeed.</span></p>
+</section>
+
+<!-- 08 EDGE -->
+<section class="slide">
+  <div class="label">Our edge</div>
+  <h2 class="shout title">Credit-first, <span class="gold">built to scale.</span></h2>
+  <div class="grid2" style="grid-template-columns:1.1fr 0.9fr;gap:80px">
+    <div>
+      <p class="axis">SME credit expertise ↑</p>
+      <div class="matrix" style="margin-top:14px">
+        <div class="cell"><b>SME lenders</b>Capital on Tap · iwoca: credit muscle, but slow-moving and local by design</div>
+        <div class="cell us"><b>FinBridge</b>Credit-first DNA + AI-native speed, built to scale globally</div>
+        <div class="cell"><b>Banks</b>Neither: risk appetite, committees, no SME focus</div>
+        <div class="cell"><b>Fintech platforms</b>Revolut · Tide · Qonto: ship fast, but credit is a cautious add-on</div>
+      </div>
+      <p class="axis" style="text-align:right;margin-top:14px">Product, execution &amp; scaling →</p>
+    </div>
+    <div class="points">
+      <div class="pt"><h4 class="shout">Credit-first DNA</h4><p>The core muscle, not an add-on.</p></div>
+      <div class="pt"><h4 class="shout">AI shortens the build</h4><p>Years compressed into months.</p></div>
+      <div class="pt"><h4 class="shout gold">Scar tissue, not theory</h4><p>We've run these playbooks before.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 BUSINESS MODEL -->
+<section class="slide">
+  <div class="label">Business model · £ per customer per month</div>
+  <h2 class="shout title" style="font-size:100px">Revolvers and super-transactors <span class="gold">pay.</span></h2>
+  <table class="tight" style="margin-top:40px">
+    <thead><tr><th style="width:28%"></th><th class="num">Revolver</th><th class="num">Transactor</th><th class="num">Super-transactor</th></tr></thead>
+    <tbody>
+      <tr><td class="muted">Share of customers</td><td class="num muted">40–60%</td><td class="num muted">40–60%</td><td class="num muted">~10%</td></tr>
+      <tr><td>Interest revenue</td><td class="num">£267<small>40% APR × £8.0k balance</small></td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Cost of funding</td><td class="num">(£53)<small>~8% × £8.0k</small></td><td class="num">(£33)<small>~8% × £5.0k</small></td><td class="num">(£70)<small>~8% × £10.5k</small></td></tr>
+      <tr><td>Interchange revenue</td><td class="num">£90<small>1.8% × £5.0k spend</small></td><td class="num">£120<small>1.8% × £6.7k spend</small></td><td class="num">£480<small>1.8% × £26.7k spend</small></td></tr>
+      <tr><td>Cost of rewards</td><td class="num">(£50)<small>1% of spend</small></td><td class="num">(£67)<small>1% of spend</small></td><td class="num">(£267)<small>1% of spend</small></td></tr>
+      <tr><td>Bad debt</td><td class="num">(£70)<small>~10% of balance p.a.</small></td><td class="num">(£5)<small>~1% p.a.</small></td><td class="num">(£10)<small>~1% p.a.</small></td></tr>
+      <tr><td>Other costs</td><td class="num">(£5)</td><td class="num">(£5)</td><td class="num">(£5)</td></tr>
+      <tr class="hero"><td>Monthly gross margin</td><td class="num">£179</td><td class="num">£10</td><td class="num">£128</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 10 GTM -->
+<section class="slide">
+  <div class="label">Go-to-market</div>
+  <h2 class="shout title">A narrow UK wedge.<br /><span class="gold">Economics work day one.</span></h2>
+  <div class="grid3">
+    <div class="card"><span class="k gold">01</span><h3 class="shout">Limited companies</h3><p>Outside the Consumer Credit Act. No FCA credit permission, no regulatory capital.</p></div>
+    <div class="card"><span class="k gold">02</span><h3 class="shout">Tickets under £200k</h3><p>Too small for banks, too small for corporate lenders, and far less price-sensitive.</p></div>
+    <div class="card"><span class="k gold">03</span><h3 class="shout">Direct mail</h3><p>The channel this team has already run at scale. Acquisition without a sales floor.</p></div>
+  </div>
+  <div class="spacer"></div>
+  <p class="pull">~£500 CAC vs ~£123 blended monthly margin: <span class="gold">payback inside 6 months.</span></p>
+</section>
+
+<!-- 11 PRIZE & ASK -->
+<section class="slide">
+  <div class="label">The prize · Mature market model, UK steady state</div>
+  <h2 class="shout title" style="font-size:100px">Path to <span class="gold">£200m profit</span> in the UK alone.</h2>
+  <div class="grid2" style="grid-template-columns:0.8fr 1.2fr;gap:64px;margin-top:40px">
+    <div style="display:flex;flex-direction:column">
+      <div class="road">
+        <div class="st"><span class="dot">1</span><div><p class="when">Months 0–6 · Build</p><p class="what">Book &lt;£1m · first 100 cards</p></div></div>
+        <div class="st"><span class="dot">2</span><div><p class="when">Months 6–18 · Prove</p><p class="what">Book ~£10m · GM ~£1.5m</p></div></div>
+        <div class="st"><span class="dot">3</span><div><p class="when">Year 2 · Scale</p><p class="what">Book £120m · GM £12m</p></div></div>
+        <div class="st on"><span class="dot">4</span><div><p class="when">Year 3+ · Expand</p><p class="what">Book £250m+ · GM covers opex and CAC</p></div></div>
+      </div>
+      <div class="spacer"></div>
+      <p class="shout" style="font-size:88px">The ask: <span class="gold">~£5m</span></p>
+    </div>
+    <table class="tight pnl">
+      <tbody>
+        <tr><td>Interest income</td><td class="num">~£385m</td><td class="note">40% APR on revolver balances</td></tr>
+        <tr><td>Cost of funding</td><td class="num">(~£115m)</td><td class="note">~8% on ~£1.5bn book</td></tr>
+        <tr class="sub"><td>Net interest margin</td><td class="num">~£270m</td><td></td></tr>
+        <tr><td>Gross interchange</td><td class="num">~£330m</td><td class="note">1.8% × ~£18bn spend</td></tr>
+        <tr><td>Cost of rewards</td><td class="num">(~£185m)</td><td class="note">1% cashback</td></tr>
+        <tr class="sub"><td>Net interchange</td><td class="num">~£145m</td><td></td></tr>
+        <tr><td>Bad debt</td><td class="num">(~£105m)</td><td class="note">~10% of revolver balances</td></tr>
+        <tr><td>Servicing / other</td><td class="num">(~£12m)</td><td class="note">£5 / customer / month</td></tr>
+        <tr class="sub"><td>Gross margin</td><td class="num">~£295m</td><td class="note">~£123 / customer / month</td></tr>
+        <tr><td>Acquisition</td><td class="num">(~£30m)</td><td class="note">60k new × £500 CAC</td></tr>
+        <tr><td>Overheads &amp; central</td><td class="num">(~£50m)</td><td></td></tr>
+        <tr class="hero"><td>EBIT</td><td class="num">~£215m</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 12 USE OF FUNDS -->
+<section class="slide">
+  <div class="label">Use of funds · £5m</div>
+  <h2 class="shout title">18 months to a <span class="gold">funded book.</span></h2>
+  <table style="margin-top:48px">
+    <thead><tr><th style="width:24%">Line</th><th class="num" style="width:10%">£</th><th class="num" style="width:8%">%</th><th style="padding-left:40px">What it buys</th></tr></thead>
+    <tbody>
+      <tr class="sub"><td>Risk capital</td><td class="num">£1.5m</td><td class="num">30%</td><td class="note" style="padding-left:40px">Funds first originations, then first-loss under the warehouse</td></tr>
+      <tr><td>Team</td><td class="num">£1.4m</td><td class="num">28%</td><td class="note" style="padding-left:40px">3 → 10 FTE: credit risk, engineering, MLRO</td></tr>
+      <tr><td>Cards &amp; payments rails</td><td class="num">£0.9m</td><td class="num">18%</td><td class="note" style="padding-left:40px">BIN sponsor + EMI partner, issuer processor, bureau &amp; KYB, collateral</td></tr>
+      <tr><td>Legal &amp; compliance</td><td class="num">£0.6m</td><td class="num">12%</td><td class="note" style="padding-left:40px">Limited companies only. AML / KYB, credit agreements, SPV &amp; facility docs</td></tr>
+      <tr><td>Go-to-market</td><td class="num">£0.6m</td><td class="num">12%</td><td class="note" style="padding-left:40px">~1,000 SMEs at a blended CAC under £600</td></tr>
+      <tr class="hero"><td>Total</td><td class="num">£5.0m</td><td class="num">100%</td><td class="note" style="padding-left:40px"></td></tr>
+    </tbody>
+  </table>
+  <div class="spacer"></div>
+  <p class="pull">Gets us to: <span class="gold">warehouse drawn · £10m book · ~£1.5m GM run-rate.</span></p>
+</section>
+
+<!-- 13 APPENDIX: MARKET -->
+<section class="slide">
+  <div class="label">Appendix · Market</div>
+  <h2 class="shout title">Demand is documented,<br /><span class="gold">not assumed.</span></h2>
+  <div class="grid3" style="margin-top:64px">
+    <div><p class="shout stat">~39M</p><p class="stat-cap">SMEs in EU &amp; UK</p><p class="stat-sub">34M EU + 5.7M UK private-sector SMEs</p></div>
+    <div><p class="shout stat">30–40%</p><p class="stat-cap">Need revolving products</p><p class="stat-sub">Most frequent financing need in our SME surveys and ECB SAFE</p></div>
+    <div><p class="shout stat">19%</p><p class="stat-cap">Already use a credit card</p><p class="stat-sub">The most used external finance product for UK SMEs, ahead of overdrafts (16%) and leasing (13%)</p></div>
+  </div>
+  <div class="spacer"></div>
+  <p class="pull">They already spend on cards and already need revolving. <span class="gold">The product is the intersection.</span></p>
+  <div class="foot">Sources: EC Annual Report on European SMEs 2025/26; UK DBT Business Population Estimates 2025; FinBridge SME surveys; ECB SAFE; British Business Bank, Small Business Finance Markets 2026</div>
+</section>
+
+<!-- 14 APPENDIX: BORROWER ECONOMICS -->
+<section class="slide">
+  <div class="label">Appendix · Borrower economics</div>
+  <h2 class="shout title">Why 40% APR is<br /><span class="gold">cheap money</span> for her.</h2>
+  <div class="grid2" style="margin-top:48px;gap:80px">
+    <div class="body" style="font-size:31px">
+      <p class="mono muted" style="font-size:20px;letter-spacing:0.12em;text-transform:uppercase">Maria · founder, Skincare LTD · Manchester</p>
+      <p>First hot Saturday in June, she's sold out of ice, cold drinks and sunscreen by lunchtime. The queue spends the weekend at the Co-op down the road.</p>
+      <p>She knows in May exactly what to order. <strong>She just doesn't have the £20k.</strong></p>
+    </div>
+    <div class="receipt">
+      <div class="row"><span>Extra stock</span><span>£20,000</span></div>
+      <div class="row"><span>Sold by August, 100% markup</span><span>£40,000</span></div>
+      <div class="row"><span>Interest, 40% APR</span><span class="red">(£1,000)</span></div>
+      <div class="row tot"><span>Profit otherwise lost</span><span>£19,000</span></div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <p class="pull">£19,000 of profit for £1,000 of interest. <span class="gold">Rate isn't the constraint. Access is.</span></p>
+  <div class="foot">Illustrative economics for a seasonal retailer; markup and sell-through assumptions from FinBridge SME interviews</div>
+</section>
+
+<!-- 15 APPENDIX: CAPABILITIES -->
+<section class="slide">
+  <div class="label">Appendix · Product differentiation</div>
+  <h2 class="shout title">Neobanks don't know credit.<br /><span class="gold">Lenders don't know cards.</span></h2>
+  <table class="checks" style="margin-top:52px">
+    <thead><tr><th style="width:24%">Capability</th><th>Trad. banks</th><th>Neobanks &amp; spend</th><th>Pure lenders</th><th style="width:30%">FinBridge</th></tr></thead>
+    <tbody>
+      <tr><td>Strong UX</td><td class="p">—</td><td class="y">✓</td><td class="y">✓</td><td>✓ Modern UX</td></tr>
+      <tr><td>Credit &amp; risk focus</td><td class="p">—</td><td class="n">✗</td><td class="y">✓</td><td>✓ Credit risk experts</td></tr>
+      <tr><td>Payments platform</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td>✓ Bill pay &amp; expenses</td></tr>
+      <tr><td>Lower adverse selection</td><td class="p">—</td><td class="p">n/a</td><td class="n">✗</td><td>✓ Rewards attract good credits</td></tr>
+      <tr><td>Global reach</td><td class="n">✗</td><td class="p">—</td><td class="n">✗</td><td class="muted">— Local first, then expand</td></tr>
+    </tbody>
+  </table>
+  <div class="foot">✓ Strong · — Partial · ✗ Weak &nbsp;·&nbsp; Source: public product pages (Revolut, Tide, Ramp, Pleo, Capital on Tap, iwoca)</div>
+</section>
+
+<script>
+  const slides = document.querySelectorAll(".slide");
+  const total = String(slides.length).padStart(2, "0");
+  slides.forEach((s, i) => {
+    const c = document.createElement("div");
+    c.className = "chrome";
+    c.innerHTML = `<span>FinBridge · Seed deck</span><span>Confidential</span><span>${String(i + 1).padStart(2, "0")} / ${total}</span>`;
+    s.prepend(c);
+  });
+</script>
+</body>
+</html>

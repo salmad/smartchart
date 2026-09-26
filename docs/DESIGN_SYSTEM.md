@@ -1,6 +1,6 @@
 # SmartChart Design System
 
-> **Mission:** Maintain Framer-template quality across all features. Every component should feel like it was designed by a world-class product team.
+> **Mission:** The Apple of charts and presentations, with Linear/Revolut-level polish across all features. Every component should feel like it was designed by a world-class product team.
 
 ## Color System
 

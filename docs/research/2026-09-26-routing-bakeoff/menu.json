@@ -1,0 +1,26 @@
+{
+  "menu": {
+    "cover": "Opening slide of a deck: title and one-sentence subtitle only.",
+    "section": "Divider that starts a new part of a long deck (8+ slides): part number and name.",
+    "split/text+number": "Short argument on the left, ONE big number on the right that proves it (a market size, a cost, a gap).",
+    "split/chart+notes": "Chart on the left two-thirds, 2-4 numbered observations on the right, each can pin a data point. For a chart that needs explaining.",
+    "full/chart": "One full-width chart. For a chart the title alone explains.",
+    "split/table+notes": "Table (up to 4 columns) on the left two-thirds, 2-4 observations on the right. For exact figures that need interpretation.",
+    "full/table": "One full-width table (up to 5 columns, up to 8 rows). For exact figures to compare across rows.",
+    "full/steps": "2-5 steps in time: a plan, roadmap, process or history.",
+    "row/cards": "2-4 parallel cards side by side, each led by an icon or a big value: options, pillars, features, several independent numbers, or a two-way contrast (them vs us, before vs after)."
+  },
+  "guide": [
+    "Answer in order and stop at the first match:",
+    "1. The first slide of a deck -> cover.",
+    "2. The start of a new part in a deck of 8+ slides -> section.",
+    "3. ONE number that proves the argument -> split/text+number.",
+    "4. Data over categories or time (a series) that needs 2-4 observations or pinned points to be understood -> split/chart+notes.",
+    "5. Data over categories or time that the title alone explains -> full/chart.",
+    "6. Exact figures to compare, up to 4 columns, that need interpretation -> split/table+notes.",
+    "7. Exact figures to compare, or 5 columns, or more than 6 rows -> full/table.",
+    "8. A sequence in time: plan, roadmap, process, history (2-5 steps) -> full/steps.",
+    "9. 2-4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast -> row/cards.",
+    "Tie-breakers: Chart when the point is a trend, a comparison of sizes or a crossover; table when the reader needs exact values. Add notes only if each note says something the chart or table does not show; in pitch prefer the variant without notes. Several independent numbers -> row/cards; one decisive number -> split/text+number. When in doubt, pick the entry with fewer words."
+  ]
+}
