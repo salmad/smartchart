@@ -20,7 +20,8 @@ export function fitIssues(slide, style) {
   slide.querySelectorAll(".notes, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
     if (last && box(last).b > box(el).b - pb + 1) out.push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`); });
   const title = slide.querySelector("h2.title, h1.title");
-  const maxTitle = style === "pitch" && !slide.matches(".t-cover, .t-section") ? 1 : 2;
+  // Section titles hold one line so the section number sits still across dividers.
+  const maxTitle = slide.matches(".t-section") || (style === "pitch" && !slide.matches(".t-cover")) ? 1 : 2;
   if (title && lines(title) > maxTitle) out.push(`title wraps to ${lines(title)} lines (max ${maxTitle}); shorten it`);
   const sub = slide.querySelector(".subtitle");
   if (sub && lines(sub) > 2) out.push(`subtitle wraps to ${lines(sub)} lines (max 2); shorten it`);
@@ -47,12 +48,11 @@ export function layoutLints(slide, style) {
     if (share < .195 || share > .405) out.push(`table: the label column is ${Math.round(share * 100)}% of the table; it must be 20–40% (L1)`);
   }
 
-  const framed = !slide.matches(".t-cover, .t-section");
-  const head = framed && (slide.querySelector(":scope > .subtitle") || slide.querySelector(":scope > h2.title"));
-  const body = head?.nextElementSibling;
+  // L3: the body starts on one line per style: top padding + the head's reserved height + the gap.
+  const head = slide.querySelector(":scope > .head"), body = head?.nextElementSibling;
   if (body && !body.matches(".spacer, .rail")) {
-    const gap = box(body).t - box(head).b, want = style === "pitch" ? 72 : 56;
-    if (Math.abs(gap - want) > 2) out.push(`body: starts ${Math.round(gap)}px below the ${head.matches(".subtitle") ? "subtitle" : "title"}; it must be ${want}px (L3)`);
+    const cs = getComputedStyle(slide), line = parseFloat(cs.paddingTop) + parseFloat(getComputedStyle(head).minHeight) + parseFloat(cs.getPropertyValue("--body-gap"));
+    if (Math.abs(box(body).t - line) > 2) out.push(`body: starts at ${Math.round(box(body).t)}px; it must start at ${Math.round(line)}px (L3). Shorten the title or subtitle.`);
   }
 
   const main = slide.querySelector(".t-table.v-full > .tbl, :scope > .cards:not(.framed), :scope > .steps")

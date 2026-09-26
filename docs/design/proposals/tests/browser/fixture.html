@@ -10,7 +10,9 @@ window.lint = async (slide, style) => {
   await fonts;
   const deck = { style, theme: "ink", footer: "Fixture", slides: [slide] };
   const el = mountSlide(document.getElementById("frame"), slide, { page: 1, section: 0, kicker: "", footer: "Fixture" }, deck);
-  return { fit: fitIssues(el, style), ...layoutLints(el, style) };
+  const body = el.querySelector(":scope > .head + *"), k = el.getBoundingClientRect().width / 1920;
+  const bodyTop = body && Math.round((body.getBoundingClientRect().top - el.getBoundingClientRect().top) / k);
+  return { fit: fitIssues(el, style), ...layoutLints(el, style), bodyTop };
 };
 window.ready = true;
 </script>

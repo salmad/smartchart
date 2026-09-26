@@ -24,5 +24,16 @@ const pitch = await lint({ template: "steps", title: "The plan", subtitle: "Five
   { when: "0–6 mo", title: "Build", text: "First 100 cards." }, { when: "6–18 mo", title: "Prove", text: "£10m book." }, { when: "Year 2", title: "Scale", text: "£120m book." }] }, "pitch");
 assert.ok(!pitch.issues.some((m) => m.endsWith("(L3)")), JSON.stringify(pitch));
 
+// L3: the body starts on the same line whatever the title, kicker or subtitle length.
+const plan = [{ when: "0–6 mo", title: "Build", text: "First 100 cards." }, { when: "6–18 mo", title: "Prove", text: "£10m book." }];
+const tops = async (style, heads) => {
+  const ys = await Promise.all(heads.map(async (h) => (await lint({ template: "steps", ...h, steps: plan }, style)).bodyTop));
+  assert.ok(ys.every(Number.isFinite), JSON.stringify(ys));
+  return new Set(ys);
+};
+assert.equal((await tops("consulting", [{ title }, { title: "Revolvers carry the margin" }, { title: "Revolvers carry the margin", kicker: "02 · Economics" }])).size, 1);
+assert.equal((await tops("pitch", [{ title: "The plan", subtitle: "Five million to a funded book." },
+  { title: "The plan", subtitle: "Five million pounds gets us to a funded book with three hundred customers." }])).size, 1);
+
 console.log("lints ok");
 await browser.close();

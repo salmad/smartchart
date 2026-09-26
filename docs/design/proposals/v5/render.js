@@ -79,12 +79,15 @@ export function slideHTML(s, ctx, deck) {
   if (s.template === "cover") {
     body = `<div class="cover-mark"></div><h1 class="title">${md(s.title)}</h1><p class="cover-sub">${md(s.subtitle)}</p>`;
   } else if (s.template === "section") {
-    body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title">${esc(s.title)}</h2>${s.subtitle ? `<p class="sec-sub">${md(s.subtitle)}</p>` : ""}`;
+    // The subtitle box is always there: it holds its 2 lines, so the number and title sit still across dividers.
+    body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title">${esc(s.title)}</h2><p class="sec-sub">${s.subtitle ? md(s.subtitle) : ""}</p>`;
   } else {
-    const kicker = deck.style === "consulting" ? s.kicker || ctx.kicker : "";
-    body = (kicker ? `<div class="label">${esc(kicker)}</div>` : "")
-      + `<h2 class="title">${md(s.title)}</h2>`
-      + (deck.style === "pitch" && s.subtitle ? `<p class="subtitle">${md(s.subtitle)}</p>` : "")
+    // The head holds its longest form (L3), so the body starts on one line per style. The consulting
+    // kicker line is kept even when empty, so the title does not move up on slides without one.
+    const head = deck.style === "consulting"
+      ? `<div class="label">${esc(s.kicker || ctx.kicker)}</div><h2 class="title">${md(s.title)}</h2>`
+      : `<h2 class="title">${md(s.title)}</h2>${s.subtitle ? `<p class="subtitle">${md(s.subtitle)}</p>` : ""}`;
+    body = `<header class="head">${head}</header>`
       + BODY[s.template](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway">${md(s.takeaway)}</p>` : "");
   }

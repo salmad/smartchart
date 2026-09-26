@@ -28,7 +28,7 @@ A user types a prompt and gets a slide (later: a deck) that is beautiful by cons
 | D13 | **Model routing.** GLM 5.3 Flash through its subscription endpoint is the main model (free; first priority). OpenRouter is used **only** for Jev (later also cheap image models), never for other text models. Jev makes every closed-set decision that needs no writing (menu entry, edit intent, card lead, bar or line per series, stacking, focus element, icons; see 9.1) and runs the cheap judgment checks. GLM writes text and data. |
 | D14 | **Design checks** run after every save: deterministic rule checks (free) plus Jev judgment checks (cheap). For now they are **shown to the user only**, as a checks list on the slide. A later "Get advice" action sends them to the agent to revise. They never block saving; fit does. |
 | D15 | **Presentation mode** like Slidev: keyboard navigation, full screen, overview grid, deep links per slide. |
-| D16 | **Routing picks the key component only; optional components are never a routing decision.** The router chooses what the slide is built around (chart, table, number, steps, cards, cover, section). Everything optional is decided while filling, inside the chosen template: notes, takeaway, footnote, source, kicker, pitch subtitle, card facts, card lead (icon or value). Where an optional component changes the layout (notes on a chart or table), code picks the layout variant deterministically. A new optional component never adds a menu entry. (Evidence: M0 bake-off, 13.) |
+| D16 | **Routing picks the key component only; optional components are never a routing decision.** The router chooses what the slide is built around (chart, table, number, steps, cards, cover, section). Everything optional is decided while filling, inside the chosen template: notes, takeaway, footnote, source, kicker, card facts, card lead (icon or value). Where an optional component changes the layout (notes on a chart or table), code picks the layout variant deterministically. A new optional component never adds a menu entry. (Evidence: M0 bake-off, 13.) |
 
 ## 3. Composition model
 
@@ -40,12 +40,14 @@ Every content slide shares one frame. Cover and section are frame variants with 
 |---|---|---|
 | `kicker` | optional small label; defaults to the current section name | **not used** (the title already names the topic) |
 | `title` | required; markup; the **action title**: a full sentence stating the so-what; ≤ 2 lines | required; the **topic**: "Business model", "Unit economics", "The problem"; **exactly 1 line** |
-| `subtitle` | not used | optional; markup; the claim in a few more words, smaller type; ≤ 2 lines |
+| `subtitle` | not used | **required**; markup; the claim in a few more words, smaller type; ≤ 2 lines |
 | `takeaway` | optional; markup; exactly 1 line | optional; markup; exactly 1 line |
 | `footnote` | optional; ≤ 2 lines together with `source` | optional, rare |
 | `source` | optional; renderer adds "Source:" | optional, rare |
 
 Derived, never written by the agent: page number, section number, note numbers, default kicker, footer (deck setting).
+
+**Fixed head.** The frame's head (kicker, title, subtitle) reserves the height of its longest form: consulting keeps the kicker line (even when empty) and 2 title lines; pitch keeps 1 title line and 2 subtitle lines. A shorter title or subtitle leaves room below it; it never moves the body (L3). Section dividers follow the same idea: the section title is exactly 1 line and the subtitle keeps 2 lines, so the section number and title sit in the same place on every divider.
 
 > Design change from v4: pitch content slides move from a 2-line claim title to a 1-line topic title plus a 1–2 line subtitle. The v4 prototype and its stress deck are updated to match before the quality matrix baseline is approved. Section dividers stay available in both styles but are rarely useful in pitch.
 
@@ -123,7 +125,7 @@ Spacing, sizing and alignment follow consulting formatting practice and are **ne
 |---|---|
 | L1 | **Table columns.** The first (label) column is sized to its longest label, within 20–40% of the table width; every other column has exactly the same width (fixed table layout). |
 | L2 | **Alignment is derived from content, not written.** Label and text columns align left; numeric columns align right with tabular figures, so the digits line up; a header aligns like its column; short symbol columns (✓, –, ratings, 3 characters or fewer) are centred. Cells are top-aligned, so wrapped text reads from the top and single-line values share a baseline. The `num` flag is removed from the schema. |
-| L3 | **One body offset.** The gap between the frame's last line (title, or subtitle when present) and the body is one token per style for every template (consulting 56 px, pitch 72 px). |
+| L3 | **One body line.** The body starts at the same y on every content slide of a style, whatever the title, kicker or subtitle length: top padding + the head's reserved height (3.1) + one gap token (consulting 56 px, pitch 72 px), which is y ≈ 349 in consulting and y ≈ 442 in pitch. A fixed gap under a variable head is not enough: it moves the body by a line whenever the title or subtitle wraps. |
 | L4 | **Grid, not centring.** Body blocks start at the left edge of the 12-column grid and at the body offset (L3), so content starts at the same place on every slide. Only `cover`, `section` and the big number of `number` are centred. |
 | L5 | **Small content grows first, then is flagged.** When the body fills under 60% of its area, code first grows it within limits: table rows gain padding up to a maximum, cards stretch to the body height, charts always fill their area. A narrow table (2 columns, or short cells) is capped at 2/3 of the content width, not stretched across the slide. If the body is still under 60% of its area, the write returns a fit issue: `body: 45% empty below the table; add notes or a takeaway, or use a number or cards slide`. |
 | L6 | **Parallel items share a size.** Cards in a row have equal width and equal height; steps have equal row height; notes share one width. |
@@ -147,7 +149,7 @@ A pure function `fit(slide, style) → { ok, issues[], computed }`:
 - **Shaping:** each run is shaped with HarfBuzz (WASM, `harfbuzzjs`) at the slot's exact axis values, features and letter/word spacing. HarfBuzz is the shaper Chrome uses, so widths match to sub-pixel precision. This replaces hand-built width and kerning tables, which would be wrong for a variable font.
 - **Line breaking:** greedy, at UAX #14 break opportunities (`linebreak` package): spaces, after hyphens and dashes, after `/`; never inside a no-break space. A single word wider than the slot is a hard error (long URLs, very long numbers).
 - `text-wrap: balance` is allowed on titles (it never increases line count in Chrome). `text-wrap: pretty` is allowed in body text only where the calibration test shows it does not change line count; otherwise it is off.
-- **Heights:** sums per area (lines × line height + fixed paddings and gaps) and compares with the area budget. The budget depends on frame state: title on 1 or 2 lines, kicker present or not, and takeaway present or not. The footnote/source rail lives inside the bottom padding and does **not** reduce the body budget; it has its own 2-line limit. Growing blocks (charts) must keep their minimum height.
+- **Heights:** sums per area (lines × line height + fixed paddings and gaps) and compares with the area budget. The head has a fixed height (3.1), so the budget depends only on the takeaway being present or not; title and subtitle are checked only against their line limits. The footnote/source rail lives inside the bottom padding and does **not** reduce the body budget; it has its own 2-line limit. Growing blocks (charts) must keep their minimum height.
 - **Auto-sizes:** e.g. a row of big values shrinks together, to 75% at most. These are computed here and returned in `computed`; the renderer receives them as props and never measures.
 - **Tolerance:** an absolute tolerance (about 1 px, set by calibration) absorbs Chrome's 1/64 px layout rounding. Not a percentage.
 - **Messages** are written for the model, with the fix: `title: 3 lines, max 2 (about 14 characters too long)`, `side: 38px over budget; drop one note's text or the takeaway`.
@@ -175,7 +177,7 @@ Chart text uses the same calculator. The collision rules are design decisions se
 
 Layouts and blocks must look right across every configuration they allow, not only fit.
 
-- **Axes:** menu entry and layout variant (`chart` and `table` with and without notes; `cards` expanded into its card variants × 2–4 cards) × frame options (kicker / takeaway / footnote+source on or off = 8) × title on 1 or 2 lines × content amount (min / typical / max) × style (2). Generated from the registry and a seeded content generator per block. Palette is not an axis: it changes no geometry. It is covered by the visual baseline only.
+- **Axes:** menu entry and layout variant (`chart` and `table` with and without notes; `cards` expanded into its card variants × 2–4 cards) × frame options (kicker / takeaway / footnote+source on or off = 8) × content amount (min / typical / max) × style (2). Generated from the registry and a seeded content generator per block. Palette is not an axis: it changes no geometry. It is covered by the visual baseline only.
 - **Automatic geometry lints on every render:** no overlap or area escape; alignment to the 12-col grid; gaps within min/max (no large empty holes on sparse slides); centred content within 1 px; no single-word last line in multi-line body text. Also L1–L6 (3.6): equal data column widths within 1 px, body offset within 2 px of its token, the body fill ratio. These are checked by rendering, not by the calculator.
 - **Visual baseline:** about 100 representative renders (every entry at min and max, both styles, both palettes) on a contact-sheet page. The product owner approves them once; later changes show as screenshot diffs to approve.
 - **Rule:** a layout, block or menu entry ships only when its whole matrix passes.

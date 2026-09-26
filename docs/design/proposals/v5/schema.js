@@ -26,7 +26,7 @@ export const STYLES = {
     summary: "YC / VC-like. A one-line topic title, the claim as a short subtitle, big numbers, very little text.",
     rules: [
       "The title is the topic in 1–3 words: 'Unit economics', 'The problem', 'Market'. Never a sentence.",
-      "The subtitle is the claim: one short sentence, ending with a full stop.",
+      "Every content slide has a subtitle: the claim in one short sentence, ending with a full stop.",
       "One idea per slide. Prefer a single big number over a paragraph. Cut every word that does not change the meaning.",
       "Leave optional detail empty unless it is essential. `footnote` and `source` are rare.",
     ],
@@ -69,7 +69,7 @@ const FRAME = {
   kicker: f("text", "Small label above the title. Optional: defaults to the current section name.", { max: 40, styles: CONSULTING }),
   title: f("markup", "", { required: true, max: { consulting: 105, pitch: 20 },
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
-  subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Optional; at most 2 lines.", { max: 90, styles: PITCH }),
+  subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; at most 2 lines.", { required: true, max: 90, styles: PITCH }),
   takeaway: f("markup", "Optional one-line conclusion at the bottom. Must fit on ONE line.", { max: { consulting: 75, pitch: 42 } }),
   footnote: f("markup", "Optional footnote: definitions, caveats, assumptions.", { max: 110 }),
   source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
@@ -232,7 +232,7 @@ export const MENU = {
     use: "The start of a new part in a deck of 8+ slides.",
     frame: false,
     fields: {
-      title: f("text", "Section name, 1–3 words: 'The problem', 'Business model'.", { required: true, max: { consulting: 28, pitch: 20 } }),
+      title: f("text", "Section name, 1–3 words: 'The problem', 'Business model'. Exactly 1 line.", { required: true, max: { consulting: 24, pitch: 14 } }),
       subtitle: f("markup", "Optional: the one-sentence answer this section will prove.", { max: { consulting: 110, pitch: 60 } }),
     },
     variant: () => "section",
