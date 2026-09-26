@@ -1,7 +1,8 @@
 /* Journey prototype: chat → slide appears → edit by prompt → checks list → full screen.
    Live mode runs the MVP agent (agent.js); ?engine=pipeline runs the earlier fixed pipeline.
    Without the model proxy, recorded pipeline runs are replayed. */
-import { contexts, esc, fitIssues, mountSlide } from "../v5/render.js";
+import { contexts, esc, mountSlide } from "../v5/render.js";
+import { fitIssues, layoutLints } from "../v5/lints.js";
 import { createSlide, editSlide } from "./pipeline.js";
 import { runTurn } from "./agent.js";
 import { judgmentChecks, ruleChecks } from "./checks.js";
@@ -36,7 +37,9 @@ function measure(slide, d = deck(), i = state.current) {
   const el = mountSlide(frame, slide, contexts(dd)[i] || { page: i + 1, section: 0, kicker: "", footer: d.footer }, dd);
   const t = el.querySelector(".title");
   measure.lines = t ? Math.round(t.clientHeight / parseFloat(getComputedStyle(t).lineHeight)) : 1;
-  return fitIssues(el, d.style);
+  const lint = layoutLints(el, d.style);
+  measure.warnings = lint.warnings;
+  return [...fitIssues(el, d.style), ...lint.issues];
 }
 
 /* Measure for the agent: `slides` is the agent's deck (a reserved slide has no JSON yet). */
@@ -44,7 +47,7 @@ function measureIn(slides, slide, index) {
   const list = slides.map((s, i) => (i === index ? slide : s.slide));
   const d = { ...deck(), slides: list.filter(Boolean) }, at = list.slice(0, index).filter(Boolean).length;
   const issues = measure(slide, d, at);
-  measureIn.lines = measure.lines;
+  measureIn.lines = measure.lines; measureIn.warnings = measure.warnings;
   return issues;
 }
 

@@ -76,7 +76,8 @@ body.full .frame { border-radius: 0; outline: 0; }
 
 <script type="module">
 import { MENU, catalogue, describe, validateDeck } from "./schema.js";
-import { contexts, esc, fitIssues, mountSlide } from "./render.js";
+import { contexts, esc, mountSlide } from "./render.js";
+import { fitIssues, layoutLints } from "./lints.js";
 import { EXAMPLES, FOOTER, stressFor } from "./examples.js";
 
 const q = new URLSearchParams(location.search);
@@ -121,6 +122,9 @@ function render() {
       checks[st].errors.filter(own).forEach((e) => lines.push({ cls: "", text: pre + e }));
       checks[st].warnings.filter(own).forEach((w) => lines.push({ cls: "w", text: pre + w }));
       fitIssues(fig.querySelector(`.frame[data-style="${st}"] .slide`), st).forEach((e) => lines.push({ cls: "", text: `${pre}layout: ${e}` }));
+      const lint = layoutLints(fig.querySelector(`.frame[data-style="${st}"] .slide`), st);
+      lint.issues.forEach((e) => lines.push({ cls: "", text: `${pre}layout: ${e}` }));
+      lint.warnings.forEach((w) => lines.push({ cls: "w", text: `${pre}layout: ${w}` }));
     });
     const errs = lines.filter((l) => !l.cls).length, warns = lines.length - errs;
     bad += errs; warn += warns;
