@@ -7,7 +7,8 @@ A throwaway page to validate the customer journey before M1: chat → slide appe
 | Mode | Where | What it does |
 |---|---|---|
 | **Live** | local: `node docs/design/proposals/journey/server.mjs`, then open http://localhost:8787/journey/ | Calls GLM 5.3 Flash and Jev through the local proxy, which reads the keys from the repo `.env` (`GLM_API_KEY`, `OPENROUTER_API_KEY`). |
-| **Replay** | the deployed site: `/proto/journey/` | No proxy is available, so the page replays recorded runs of the real pipeline (`replays.json`). Click a request in the chat to see the deck at that point. |
+| **Live (deployed)** | `/proto/journey/` on Vercel | Same pipeline through the Vercel functions `api/glm.ts`, `api/jev.ts` and `api/health.ts`, which read `GLM_API_KEY` and `OPENROUTER_API_KEY` from the project env. |
+| **Replay** | any host without the keys | `/api/health` reports not live, so the page replays recorded runs of the real pipeline (`replays.json`). Click a request in the chat to see the deck at that point. |
 
 The v5 gallery is deployed next to it at `/proto/v5/review.html`. The Vite build copies both folders into `dist/proto/` (see `vite.config.ts`).
 
@@ -28,7 +29,7 @@ Presentation: **Present** or `F`. Arrows, Space, PgUp/PgDn, Home/End, a number t
 
 ## Files
 
-- `server.mjs`: static server plus `/api/glm` and `/api/jev` proxies with a model allowlist and a call cap. Not deployed.
+- `server.mjs`: local static server plus `/api/glm` and `/api/jev` proxies with a model allowlist and a call cap. Not deployed; the repo-root `api/` functions are its deployed twin (spend limits are set on the provider accounts).
 - `llm.js`: model client. `prompts.js`: prompt layers. `pipeline.js`: create and edit. `checks.js`: design checks.
 - `app.js`: UI. `present.js`: presentation mode. `journey.css`: page chrome (slides use `../v5/slides.css`).
 - `replays.json`: two recorded runs (consulting and pitch, 4 turns each), recorded 2026-09-26.

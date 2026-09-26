@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 // Publishes the static design prototypes with the app build: /proto/v5/review.html and /proto/journey/.
-// Without the local model proxy, the journey page replays recorded runs.
+// The journey page calls the api/ functions; without the model keys it replays recorded runs.
 function prototypes(): Plugin {
   const from = path.resolve(__dirname, 'docs/design/proposals')
   return {

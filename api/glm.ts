@@ -1,0 +1,30 @@
+// GLM proxy for the journey prototype (/proto/journey/). Same contract as the local server.mjs:
+// only the two GLM 5.3 models are allowed, and the key never reaches the browser.
+const GLM_URL = 'https://api.z.ai/api/coding/paas/v4/chat/completions'
+const GLM_MODELS = new Set(['glm-5.3-flash', 'glm-5.3'])
+
+interface GlmRequest {
+  model?: string
+  messages?: unknown
+  thinking?: boolean
+  temperature?: number
+  max_tokens?: number
+  response_format?: unknown
+}
+
+export async function POST(request: Request): Promise<Response> {
+  const p = (await request.json().catch(() => ({}))) as GlmRequest
+  if (!p.model || !GLM_MODELS.has(p.model)) return Response.json({ error: `model ${p.model} is not allowed` }, { status: 400 })
+  const { model, messages, thinking = false, temperature = 0.3, max_tokens = 4000, response_format } = p
+  const t0 = performance.now()
+  const r = await fetch(GLM_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.GLM_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model, messages, temperature, max_tokens, thinking: { type: thinking ? 'enabled' : 'disabled' },
+      ...(response_format ? { response_format } : {}),
+    }),
+  })
+  const ms = Math.round(performance.now() - t0)
+  return new Response(await r.text(), { status: r.status, headers: { 'Content-Type': 'application/json', 'X-Upstream-Ms': String(ms) } })
+}
