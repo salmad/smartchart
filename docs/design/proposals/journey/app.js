@@ -6,6 +6,7 @@ import { upgrade } from "../v5/schema.js";
 import { runTurn } from "./agent.js";
 import { judgmentChecks, ruleChecks } from "./checks.js";
 import { startPresentation } from "./present.js";
+import { deckList, deckName, loadStore, newDeckId, saveStore } from "./decks.js";
 
 const $ = (id) => document.getElementById(id);
 const state = { style: "consulting", theme: "ink", items: [], current: 0, turns: [], history: [], working: new Set(), busy: false, live: false, replay: null };
@@ -68,6 +69,8 @@ function render() {
   $("input").disabled = state.busy || !state.live || !!state.replay;
   $("send").disabled = state.busy || !state.live || !!state.replay;
   canvas.classList.toggle("busy", state.busy);
+  renderDecks();
+  persist();
 }
 
 function fitCanvas() { const s = $("canvas").querySelector(".slide"); if (s) s.style.setProperty("--s", $("canvas").clientWidth / 1920); }
@@ -193,6 +196,67 @@ function showReplay(run) {
   loadSnapshot(last?.items || [], last?.current || 0);
 }
 
+/* ─────────── Decks (live mode, saved in this browser) ─────────── */
+const store = loadStore();
+let deckId = null, saveTimer = 0, storageWarned = false;
+
+function persist() {
+  if (state.replay || !deckId || state.busy) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (!state.items.length && !state.history.length) return; // an empty deck is not kept
+    store.decks[deckId] = { id: deckId, style: state.style, theme: state.theme, current: state.current,
+      items: state.items.map(({ checksPending, ...it }) => it), history: state.history, working: [...state.working],
+      thread: $("thread").innerHTML, updated: Date.now() };
+    store.active = deckId;
+    if (!saveStore(store) && !storageWarned) {
+      storageWarned = true;
+      addMessage("bot error", "<p>This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need.</p>");
+    }
+    renderDecks();
+  }, 250);
+}
+
+function renderDecks() {
+  const sel = $("decks");
+  sel.hidden = !!state.replay || !state.live;
+  sel.disabled = state.busy;
+  $("delete").hidden = sel.hidden;
+  $("delete").disabled = state.busy;
+  if (sel.hidden) return;
+  const list = deckList(store);
+  if (deckId && !store.decks[deckId]) list.unshift({ id: deckId, items: state.items }); // new, not saved yet
+  sel.innerHTML = list.map((d) => { const n = (d.id === deckId ? state.items : d.items || []).length;
+    return `<option value="${d.id}"${d.id === deckId ? " selected" : ""}>${esc(deckName(d.id === deckId ? { items: state.items } : d))} · ${n} slide${n === 1 ? "" : "s"}</option>`; }).join("");
+}
+
+const welcome = () => addMessage("bot", `<p>Describe a slide. The agent picks a template with Jev, writes the slide with GLM 5.3 Flash and fixes anything that does not fit. Then ask for changes, add slides, or press <b>Present</b>.</p>`);
+
+function openDeck(id) {
+  const d = store.decks[id];
+  deckId = id; store.active = id;
+  Object.assign(state, { style: d.style, theme: d.theme, history: d.history || [], working: new Set(d.working || []), turns: [] });
+  $("thread").innerHTML = d.thread || "";
+  if (!d.thread) welcome();
+  $("thread").scrollTop = 1e9;
+  loadSnapshot(d.items || [], d.current || 0); // re-runs rule checks with the current code
+}
+
+function newDeck() {
+  deckId = newDeckId();
+  Object.assign(state, { items: [], current: 0, turns: [], history: [], working: new Set() });
+  $("thread").innerHTML = ""; welcome();
+  render();
+}
+
+function deleteDeck() {
+  if (state.busy || !confirm(`Delete “${deckName({ items: state.items })}”? This cannot be undone.`)) return;
+  delete store.decks[deckId];
+  deckId = null; saveStore(store);
+  const next = deckList(store)[0];
+  next ? openDeck(next.id) : newDeck();
+}
+
 async function boot() {
   await document.fonts.ready;
   try { const h = await (await fetch("/api/health")).json(); state.live = !!h.live; } catch { state.live = false; }
@@ -206,18 +270,21 @@ async function boot() {
       sel.onchange = () => showReplay(runs[+sel.value]);
       showReplay(runs[0]);
     } catch { addMessage("bot error", "<p>No live models and no recorded runs found. Start the local server: <code>node docs/design/proposals/journey/server.mjs</code></p>"); }
+    render();
   } else {
-    addMessage("bot", `<p>Describe a slide. The agent picks a template with Jev, writes the slide with GLM 5.3 Flash and fixes anything that does not fit. Then ask for changes, add slides, or press <b>Present</b>.</p>`);
+    const last = store.decks[store.active] || deckList(store)[0];
+    last ? openDeck(last.id) : newDeck();
   }
-  render();
 }
 
 /* ─────────── Controls ─────────── */
 document.querySelectorAll("#style button").forEach((b) => (b.onclick = () => { state.style = b.dataset.v; render(); }));
 document.querySelectorAll("#theme button").forEach((b) => (b.onclick = () => { state.theme = b.dataset.v; render(); }));
-$("reset").onclick = () => { if (state.replay) { state.replay = null; state.items = []; $("thread").innerHTML = ""; $("replay").hidden = true; boot(); return; } state.items = []; state.turns = []; state.history = []; state.working = new Set(); state.current = 0; $("thread").innerHTML = ""; boot(); };
+$("reset").onclick = () => { if (!state.busy) newDeck(); };
+$("decks").onchange = (e) => { if (!state.busy && store.decks[e.target.value]) openDeck(e.target.value); };
+$("delete").onclick = deleteDeck;
 // Clear chat: the agent forgets the conversation; the deck stays.
-$("clear").onclick = () => { if (state.busy) return; state.history = []; state.working = new Set(); $("thread").innerHTML = ""; addMessage("bot", "<p class=\"sub\">Chat cleared. The deck is kept; the agent starts a new conversation.</p>"); };
+$("clear").onclick = () => { if (state.busy) return; state.history = []; state.working = new Set(); $("thread").innerHTML = ""; addMessage("bot", "<p class=\"sub\">Chat cleared. The deck is kept; the agent starts a new conversation.</p>"); persist(); };
 $("composer").onsubmit = (e) => { e.preventDefault(); send($("input").value); };
 $("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("input").value); } };
 const present = () => state.items.length && startPresentation(deck(), state.current, (i) => { state.current = i; render(); });

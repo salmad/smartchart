@@ -6,7 +6,7 @@ A throwaway page to validate the customer journey before M1: chat → slide appe
 
 | Mode | Where | What it does |
 |---|---|---|
-| **Live** | local: `node docs/design/proposals/journey/server.mjs`, then http://localhost:8787/journey/ · deployed: `/proto/journey/` | The hybrid agent below. Conversation history and the working set are kept until **Clear chat**; the deck stays. |
+| **Live** | local: `node docs/design/proposals/journey/server.mjs`, then http://localhost:8787/journey/ · deployed: `/proto/journey/` | The hybrid agent below. Several decks, saved in this browser (localStorage): pick one in the bar, **New deck** starts another, **Delete** removes the open one. Each deck keeps its slides, style, palette, the agent's conversation and the chat thread, so a reload continues where it stopped. **Clear chat** resets the conversation; the deck stays. |
 | **Replay** | any host without the keys | `/api/health` reports not live, so the page replays recorded runs (`replays.json`). Older recordings are upgraded to the current chart and table shape on load. |
 
 Keys: `GLM_API_KEY` and `OPENROUTER_API_KEY`, from the repo `.env` locally and from the Vercel project env when deployed (`api/glm.ts`, `api/jev.ts`, `api/health.ts`).
@@ -34,6 +34,7 @@ Presentation: **Present** or `F`. Arrows, Space, PgUp/PgDn, Home/End, a number t
 - `pre.js`: the PRE step. `patch.js`: path patches. `autofix.js`: code fixes. `resolve.js`: `auto` choices. `checks.js`: rule checks R1–R14 and judgment checks J1–J8.
 - `server.mjs`: local static server plus `/api/glm` and `/api/jev` proxies with a model allowlist and a call cap. Not deployed; the repo-root `api/` functions are its deployed twin (spend limits are set on the provider accounts).
 - `llm.js`: model client. `prompts.js`: style block, worked examples, picking guide.
+- `decks.js`: the deck store in localStorage (one key, newest first; empty decks are not kept).
 - `app.js`: UI; `window.__journey` exposes `send`, `setStyle`, `load` and `turns` for test harnesses. `present.js`: presentation mode. `journey.css`: page chrome (slides use `../v5/slides.css`).
 - `replays.json`: two recorded runs of the earlier pipeline (consulting and pitch, 4 turns each), recorded 2026-09-26.
 
