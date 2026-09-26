@@ -25,7 +25,37 @@ function parallelTexts(s) {
 
 const hasFigures = (s) => ["chart", "table", "number"].includes(s.template) || (s.template === "cards" && (s.cards || []).some((c) => c.value));
 
-/** Rule checks R1–R8. `lines` is the measured title line count. */
+const YEAR = (n, raw) => Number.isInteger(n) && n >= 1900 && n <= 2100 && !/[,.]/.test(raw);
+/** Figures in a text: "£9,400k" → 9400, "4.5×" → 4.5; four-digit years are left out. */
+export const numbersIn = (text) => [...String(text).matchAll(/\d[\d,]*(?:\.\d+)?/g)].map((m) => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
+const close = (a, b) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
+
+function bodyText(s) {
+  const { title, subtitle, takeaway, kicker, footnote, source, ...body } = s;
+  // Indented: compact JSON would read [1,4,10] as one number.
+  return JSON.stringify(body, (k, v) => (typeof v === "string" ? plain(v) : v), 1);
+}
+/** A headline figure is on the slide, or is a difference, ratio or % change of two body figures. */
+function derivable(h, nums) {
+  if (nums.some((b) => close(b, h))) return true;
+  for (const a of nums) for (const b of nums) {
+    if (a === b || !b) continue;
+    if (close(a - b, h) || close(a / b, h) || close((a / b - 1) * 100, h)) return true;
+  }
+  return false;
+}
+/** The unit of a value: currency before, %/k/m/bn after; "/yr" qualifiers and ranges ignored. */
+const unitOf = (v) => String(v).replace(/\/\w+$/, "").replace(/[\d,.\s()+−–~-]/g, "").toLowerCase();
+const decimals = (v) => (String(v).match(/\.(\d+)/) || ["", ""])[1].length;
+const tooPrecise = (v) => numbersIn(v).some((n) => Math.abs(n) >= 10000 && String(Math.round(Math.abs(n))).replace(/0+$/, "").length > 3);
+function timeKey(label) {
+  const t = String(label).trim(), m = t.match(/^(?:FY\s?)?((?:19|20)\d{2})$/) || t.match(/^(?:Year|Y)\s?(\d+)$/i);
+  if (m) return Number(m[1]);
+  const mo = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(t.slice(0, 3).toLowerCase());
+  return mo >= 0 && t.length <= 9 ? mo : null;
+}
+
+/** Rule checks R1–R14. `lines` is the measured title line count. */
 export function ruleChecks(s, style, lines) {
   if (MENU[s.template].frame === false) return [];
   const out = [], add = (id, ok, msg) => out.push({ id, ok, msg });
@@ -50,6 +80,38 @@ export function ruleChecks(s, style, lines) {
   const lens = parallelTexts(s).map((x) => x.length).filter(Boolean);
   if (lens.length >= 2) { const r = Math.max(...lens) / Math.min(...lens); add("R7", r <= 2.5, r <= 2.5 ? "Parallel items are balanced" : `Parallel items are unbalanced (${r.toFixed(1)}× longest vs shortest)`); }
   if (style === "consulting" && hasFigures(s)) add("R8", !!s.source, s.source ? "Figures have a source" : "Figures have no source");
+  if (s.template === "chart" && Array.isArray(s.chart?.series)) {
+    const c = s.chart, fmt = (x) => x.format || c.format || "{v}", byFmt = {};
+    c.series.forEach((x) => { if (!x.dashed) (byFmt[fmt(x)] ||= new Set()).add(x.mark); });
+    const mixed = Object.entries(byFmt).find(([, marks]) => marks.size > 1), units = new Set(c.series.map(fmt)).size;
+    const bars = c.series.filter((x) => x.mark === "bar"), badStack = c.stacked === true && (bars.length < 2 || new Set(bars.map(fmt)).size > 1);
+    add("R9", !mixed && units <= 2 && !badStack, mixed ? `Series in ${mixed[0]} mix bars and lines; comparable series share one mark` : units > 2 ? `${units} units on one chart; at most 2` : badStack ? "Stacked bars need 2 or more bar series in one unit" : "Chart follows the chart guide");
+  }
+  if (style === "consulting") {
+    const n = s.template === "cards" && !s.framed ? (s.cards || []).length : (s.notes || []).length || null;
+    if (n) add("R10", n <= 3, n <= 3 ? `${n} parallel items` : `${n} parallel items; 3 reads best: merge or cut to 3`);
+  }
+  const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" "));
+  if (heads.length) {
+    const nums = numbersIn(bodyText(s)), missing = heads.filter((h) => !derivable(h, nums));
+    add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide` : "Headline figures are on the slide");
+  }
+  if (style === "consulting" && hasFigures(s)) add("R12", numbersIn(plain(s.title)).length > 0, numbersIn(plain(s.title)).length ? "The title quantifies the so-what" : "The title has no figure; quantify the so-what");
+  const groups = [];
+  if (s.template === "table") (s.table?.columns || []).slice(1).forEach((_, j) => groups.push((s.table.rows || []).filter((r) => !r.style).map((r) => { const c = r.cells?.[j + 1]; return String(c && typeof c === "object" ? c.value : c ?? ""); }).filter((v) => /\d/.test(v))));
+  // Value cards are independent numbers: only false precision applies to them.
+  const values = s.template === "cards" ? (s.cards || []).map((c) => c.value).filter(Boolean) : [];
+  if (groups.length || values.length) {
+    const bad = groups.find((g) => g.length > 1 && (new Set(g.map(unitOf)).size > 1 || new Set(g.map(decimals)).size > 1));
+    const precise = [...groups.flat(), ...values].find(tooPrecise);
+    add("R13", !bad && !precise, bad ? `Mixed units or decimals: ${bad.join(", ")}` : precise ? `False precision: ${precise}; round to 3 significant digits` : "Consistent units and precision");
+  }
+  if (s.template === "chart" && s.chart?.categories) {
+    const keys = s.chart.categories.map(timeKey), series = s.chart.series || [];
+    if (keys.every((k) => k !== null)) add("R14", keys.every((k, i) => !i || k > keys[i - 1]), keys.every((k, i) => !i || k > keys[i - 1]) ? "Time runs oldest to newest" : "Time must run oldest to newest, left to right");
+    else if (series.length === 1 && series[0].mark === "bar") { const v = series[0].values; const sorted = v.every((x, i) => !i || x <= v[i - 1]);
+      add("R14", sorted, sorted ? "Bars sorted largest first" : "Bars are not sorted by value; largest first unless the order means something"); }
+  }
   // Fix the R5 message when it fails.
   out.forEach((c) => { if (c.id === "R5" && !c.ok && c.msg.startsWith("Chart")) c.msg = "Chart values have no unit in `format`"; });
   return out;
@@ -57,7 +119,7 @@ export function ruleChecks(s, style, lines) {
 
 const slideText = (s) => JSON.stringify(s, (k, v) => (typeof v === "string" ? plain(v) : v));
 
-/** Judgment checks J1–J7: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
+/** Judgment checks J1–J8: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 export async function judgmentChecks(s, style) {
   if (MENU[s.template].frame === false) return { checks: [], ms: 0 };
   const qs = {}, add = (id, styles, instructions, options, pass, label) => { if (styles.includes(style)) qs[id] = { instructions, options, pass, label }; };
@@ -69,6 +131,7 @@ export async function judgmentChecks(s, style) {
   if (s.takeaway) add("J5", ["consulting", "pitch"], "Does the takeaway add an implication, or restate the slide?", { adds: "Adds an implication.", restates: "Repeats what the slide already says." }, "adds", { adds: "Takeaway adds an implication", restates: "Takeaway restates the slide" });
   add("J6", ["pitch"], "Does the slide carry one idea, or several?", { one: "One idea.", several: "Several ideas competing." }, "one", { one: "One idea per slide", several: "Several ideas on one slide" });
   add("J7", ["consulting", "pitch"], `The slide uses the "${s.template}" template. Is that the right kind of slide for this content?`, { right: "The template suits the content.", ...Object.fromEntries(Object.keys(MENU).filter((k) => k !== s.template && !["cover", "section"].includes(k)).map((k) => [`better_${k}`, `A ${k} slide would show this better.`])) }, "right", {});
+  if (parallel) add("J8", ["consulting"], "Are the parallel items (card titles, step names or note titles) written in the same grammatical form?", { parallel: "All in one form: all noun phrases, all verbs, or all outcomes.", mixed: "The forms are mixed." }, "parallel", { parallel: "Parallel items share one form", mixed: "Parallel items mix forms" });
   const r = await jev(`Deck style: ${style}.\nSlide JSON: ${slideText(s)}`, Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, { instructions: q.instructions, options: q.options }])));
   const checks = Object.entries(qs).map(([id, q]) => {
     const a = r[id]; if (!a) return null;
