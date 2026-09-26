@@ -129,7 +129,7 @@ function bars(box, spec, W, H, markers) {
     const pts = s.values.map((v, i) => [xc(i), yl(v)]);
     g += `<path class="ln c-${s.color}" d="${pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("")}"/>`;
     pts.forEach(([x, y], i) => { g += `<circle class="pt c-${s.color}" cx="${x}" cy="${y}" r="7"/>`;
-      t += lbl(`v-lbl c-${s.color}`, x, y - 16, "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, y - 40]; });
+      t += lbl(`v-lbl on-line c-${s.color}`, x, y - 16, "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, y - 40]; });
   });
   markers.forEach((m) => { const p = pos[m.series]?.[m.index]; if (!p) return; const [x, y] = p;
     g += `<line class="leader" data-n="${m.n}" x1="${x}" x2="${x}" y1="${y - 26}" y2="${y + 2}"/>`;
@@ -202,7 +202,9 @@ function declutter(box) {
   };
   const cx = (r) => (r.l + r.r) / 2;
   [...box.querySelectorAll(".v-lbl")].sort((a, b) => b.classList.contains("c-focus") - a.classList.contains("c-focus")).forEach((el) => {
-    const r = rect(el), obstacles = [...placed, ...bars.filter((b) => !(b.l <= cx(r) && cx(r) <= b.r))];
+    // A bar label may touch its own bar; a line label clears every bar.
+    const r = rect(el), mine = (b) => !el.classList.contains("on-line") && b.l <= cx(r) && cx(r) <= b.r;
+    const obstacles = [...placed, ...bars.filter((b) => !mine(b))];
     // A neutral bar's value is context: drop it rather than float it away from its bar.
     if (el.classList.contains("c-neutral") && obstacles.some((o) => hits(r, o, 4))) el.remove();
     else settle(el, 4, obstacles);

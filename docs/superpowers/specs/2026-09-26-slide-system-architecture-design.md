@@ -435,7 +435,8 @@ Everything needed to continue is in the repo:
 |---|---|
 | Product intent and decisions | `docs/product/PRODUCT_INPUT.md` |
 | This spec (architecture, agent pipeline, fit engine, checks, milestones) | `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md` |
-| Approved visual design (prototype renderer, stress mode, two palettes) | `docs/design/proposals/slides-v4.html` (serve the folder: `python3 -m http.server 8765`) |
+| Approved visual design (prototype renderer, stress mode, two palettes) | `docs/design/proposals/v5/review.html` (v4 reference: `slides-v4.html`; serve the folder: `python3 -m http.server 8765`) |
+| Journey prototype (chat → slide → edit → checks → present, real models) | `docs/design/proposals/journey/` (`node docs/design/proposals/journey/server.mjs`) |
 | Prototype schema and agent prompt (to be ported to zod; menu to be updated to the 7 entries) | `docs/design/proposals/slides-v4-schema.js`, `slides-v4-agent-prompt.md` |
 | Routing bake-off: prompts, menu, scripts, results, report | `docs/research/2026-09-26-routing-bakeoff/` |
 | Reference decks | `example_template/` |
@@ -445,6 +446,7 @@ Everything needed to continue is in the repo:
 - Jev: `POST https://openrouter.ai/api/alpha/decisions`, model `~typesafe/jev-latest`, body `{ model, state, questions: { <id>: { type: "choice", instructions, criteria: { <key>: <description> } } } }`; answer `{ choice, probabilities, confidence }`. Option keys must be plain identifiers.
 
 **Open items before or during planning:**
-1. Update the v4 prototype to the pitch frame change (1-line topic title + subtitle, no kicker) and to the 7-entry menu (notes as a field of chart and table); keep `?stress=1` at 0 issues.
+1. ~~Update the v4 prototype to the pitch frame change and to the 7-entry menu.~~ **Done (2026-09-26):** `docs/design/proposals/v5/` (schema, renderer, examples, gallery). Pitch titles keep the v4 size (150px, max 20 characters); `?stress=1` has 0 issues in both palettes. Deployed at `/proto/v5/review.html`.
+   **Journey prototype built (2026-09-26):** `docs/design/proposals/journey/` runs the section 9 pipeline against GLM 5.3 Flash and Jev (live through a local proxy; the deployed `/proto/journey/` replays recorded runs). See its README for results and what they changed.
 2. Re-run the routing bake-off on the 7-entry menu to confirm the 0.7 threshold.
 3. Write the implementation plan for M0 (fit spike) and M1 (one `chart` slide end to end), starting with the evaluation harness (9.6).

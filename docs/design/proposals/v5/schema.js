@@ -347,6 +347,8 @@ function checkChart(c, path, out) {
     if (c.series.filter((s) => s?.line).length > 1) out.errors.push(`${path}.series: at most one series can have "line": true.`);
     if (c.series.filter((s) => !s?.line).length > 3) out.errors.push(`${path}.series: at most 3 bar series.`);
   }
+  if (c.type === "lines" && c.series.some((s) => s?.format && s.format !== (c.format || "{v}")))
+    out.errors.push(`${path}.series: lines charts share one axis, so every series must use the chart format. Plot only series in the same unit, or use a bars chart with one \`line\` series on its own scale.`);
   if (c.format && !String(c.format).includes("{v}")) out.errors.push(`${path}.format: must contain {v}, e.g. "£{v}m".`);
   const focus = c.series.filter((s) => s?.color === "focus").length;
   if (focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
@@ -440,6 +442,8 @@ function checkRules(s, style, out) {
       break;
     }
   }
+  const spans = (String(s.title || "").match(/\[\[.+?\]\]/g) || []).length;
+  if (spans > 1) out.warnings.push(`title: ${spans} focus spans; highlight at most one phrase with [[…]].`);
   if (MENU[s.template].frame !== false && s.title) {
     const words = plain(s.title).trim().split(/\s+/).length;
     if (style === "consulting" && words < 5) out.warnings.push("title: consulting titles are full-sentence action titles (usually 8–16 words). This reads like a topic.");
