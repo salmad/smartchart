@@ -5,7 +5,7 @@ import { EXAMPLES } from "../v5/examples.js";
 const specFor = (ex, style) => { const { consulting, pitch, name, ...shared } = ex; return { ...shared, ...(style === "pitch" ? pitch : consulting) }; };
 
 /** The worked example for a template and style; for cards, the one with the same lead. */
-function exampleFor(id, style, lead) {
+export function exampleFor(id, style, lead) {
   const pool = EXAMPLES.filter((e) => e.template === id).map((e) => specFor(e, style));
   const match = pool.find((s) => MENU[id].variant(s) === lead) || pool[0];
   return match ? JSON.stringify(match, null, 1) : "(none)";
@@ -24,7 +24,7 @@ const SYSTEM = [
   "- Reply with the JSON object only.",
 ].join("\n");
 
-const styleBlock = (style) => `Deck style: ${style}. ${STYLES[style].summary}\n${STYLES[style].rules.map((r) => `- ${r}`).join("\n")}`;
+export const styleBlock = (style) => `Deck style: ${style}. ${STYLES[style].summary}\n${STYLES[style].rules.map((r) => `- ${r}`).join("\n")}`;
 
 export const STYLE_STATE = {
   consulting: "consulting (McKinsey-style: dense evidence, full-sentence action titles)",
