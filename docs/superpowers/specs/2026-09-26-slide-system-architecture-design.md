@@ -450,3 +450,7 @@ Everything needed to continue is in the repo:
    **Journey prototype built (2026-09-26):** `docs/design/proposals/journey/` runs the section 9 pipeline against GLM 5.3 Flash and Jev (live through a local proxy; the deployed `/proto/journey/` replays recorded runs). See its README for results and what they changed.
 2. Re-run the routing bake-off on the 7-entry menu to confirm the 0.7 threshold.
 3. Write the implementation plan for M0 (fit spike) and M1 (one `chart` slide end to end), starting with the evaluation harness (9.6).
+
+**Future features (recorded, not scheduled):**
+- **Number and story consistency checks.** Decompose the deck into a **claims registry**: every figure and claim on every slide (e.g. `ARR £9.8m, 2025`, `churn 3%`), each traced back to the slide, component and field it came from. New and edited slides are checked against the registry, so contradictions (two ARR figures, a plan that misses its own target) are easy to find and point at. Also covers the deck-level rule that the titles, read in order, tell the whole story, which no check covers today (checks see one slide at a time).
+- **Two variants when routing is unsure.** When Jev's top template probability is below the threshold (9.2), build the slide in both of its top two templates and let the user pick, in place of the GLM tie-break. Costs one extra fill; turns a hidden guess into a visible choice.

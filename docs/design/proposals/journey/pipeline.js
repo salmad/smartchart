@@ -131,7 +131,7 @@ const INTENTS = {
 /** Edit the slide at `index`, or add a new one when the request asks for it. */
 export async function editSlide({ request, style, deck, index, measure, log }) {
   const slide = deck.slides[index];
-  const r = await jev(`Current slide ${index + 1} (${slide.template}): ${plainTitle(slide.title)}\nUser request: ${request}`,
+  const r = await jev(`Deck style: ${STYLE_STATE[style]}.\n${deckState(deck)}\nCurrent slide: ${index + 1} (${slide.template}): ${plainTitle(slide.title)}\nUser request: ${request}`,
     { intent: { instructions: "What kind of change does the user want?", options: INTENTS } });
   const intent = r.intent.choice;
   log({ step: "Intent", model: "Jev", ms: r._ms, detail: `${intent.replace("_", " ")} · p ${r.intent.p.toFixed(2)}` });
