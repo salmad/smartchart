@@ -73,3 +73,6 @@ rxconfig.json
 .vite
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+docs/design/proposals/tests/browser/shots/
+docs/design/proposals/tests/browser/node_modules/
