@@ -115,6 +115,19 @@ Registry entry (internal): `chart: { variants: [ { when: "no notes", layout: "fu
 
 Lego inside, templates outside: blocks and layouts are reused across entries in code, while the agent chooses among a small closed set of finished templates.
 
+### 3.6 Layout rules (code-owned)
+
+Spacing, sizing and alignment follow consulting formatting practice and are **never in the slide JSON**: the agent cannot set a width, an alignment or a gap, and a patch to such a path is a shape error. Found in the v5 prototype: table columns sized by their content (auto layout), right-alignment only when the agent remembered `num`, a body gap of 36, 56 or 72 px depending on the template, and holes under short tables.
+
+| # | Rule |
+|---|---|
+| L1 | **Table columns.** The first (label) column is sized to its longest label, within 20–40% of the table width; every other column has exactly the same width (fixed table layout). |
+| L2 | **Alignment is derived from content, not written.** Label and text columns align left; numeric columns align right with tabular figures, so the digits line up; a header aligns like its column; short symbol columns (✓, –, ratings, 3 characters or fewer) are centred. Cells are top-aligned, so wrapped text reads from the top and single-line values share a baseline. The `num` flag is removed from the schema. |
+| L3 | **One body offset.** The gap between the frame's last line (title, or subtitle when present) and the body is one token per style for every template (consulting 56 px, pitch 72 px). |
+| L4 | **Grid, not centring.** Body blocks start at the left edge of the 12-column grid and at the body offset (L3), so content starts at the same place on every slide. Only `cover`, `section` and the big number of `number` are centred. |
+| L5 | **Small content grows first, then is flagged.** When the body fills under 60% of its area, code first grows it within limits: table rows gain padding up to a maximum, cards stretch to the body height, charts always fill their area. A narrow table (2 columns, or short cells) is capped at 2/3 of the content width, not stretched across the slide. If the body is still under 60% of its area, the write returns a fit issue: `body: 45% empty below the table; add notes or a takeaway, or use a number or cards slide`. |
+| L6 | **Parallel items share a size.** Cards in a row have equal width and equal height; steps have equal row height; notes share one width. |
+
 ## 4. Fit engine (deterministic)
 
 ### 4.1 Inputs
@@ -163,7 +176,7 @@ Chart text uses the same calculator. The collision rules are design decisions se
 Layouts and blocks must look right across every configuration they allow, not only fit.
 
 - **Axes:** menu entry and layout variant (`chart` and `table` with and without notes; `cards` expanded into its card variants × 2–4 cards) × frame options (kicker / takeaway / footnote+source on or off = 8) × title on 1 or 2 lines × content amount (min / typical / max) × style (2). Generated from the registry and a seeded content generator per block. Palette is not an axis: it changes no geometry. It is covered by the visual baseline only.
-- **Automatic geometry lints on every render:** no overlap or area escape; alignment to the 12-col grid; gaps within min/max (no large empty holes on sparse slides); centred content within 1 px; no single-word last line in multi-line body text. These are checked by rendering, not by the calculator.
+- **Automatic geometry lints on every render:** no overlap or area escape; alignment to the 12-col grid; gaps within min/max (no large empty holes on sparse slides); centred content within 1 px; no single-word last line in multi-line body text. Also L1–L6 (3.6): equal data column widths within 1 px, body offset within 2 px of its token, the body fill ratio. These are checked by rendering, not by the calculator.
 - **Visual baseline:** about 100 representative renders (every entry at min and max, both styles, both palettes) on a contact-sheet page. The product owner approves them once; later changes show as screenshot diffs to approve.
 - **Rule:** a layout, block or menu entry ships only when its whole matrix passes.
 
@@ -186,6 +199,11 @@ Two kinds, both cheap:
 | R7 | Parallel items are balanced: longest ÷ shortest text in a row of cards, notes or steps ≤ 2.5 | both |
 | R8 | A slide with figures has a `source` | consulting |
 | R9 | Chart guide: series with the same format share one mark unless one is dashed (a reference); at most two formats; `stacked` only with 2+ bar series of one format | both |
+| R10 | Rule of three: 3 parallel items (cards, notes, bullets in a card) is the default; 2 is fine for a contrast; 4 warns ("merge or cut to 3"). Steps are a sequence and are exempt | consulting |
+| R11 | Every figure in the title, subtitle or takeaway appears in the body, or is derived from two body values within rounding (a difference, ratio or growth rate) | both |
+| R12 | A consulting slide with figures has a figure in its title (the so-what is quantified) | consulting |
+| R13 | Consistent precision: within a series, a table column or a row of value cards, one unit and one number of decimals; no false precision (at most 3 significant digits on a slide, e.g. £9.8m, not £9,837,221) | both |
+| R14 | Order: time runs oldest to newest, left to right and top to bottom; bars and table rows that are not time are sorted by value, largest first, with a total row last (a warning: the user may have given the order on purpose) | both |
 
 **Judgment checks** (Jev, one typed decision each, ~100 ms; a check fails only when Jev's probability for a failing value is ≥ 0.7, to keep noise down):
 
@@ -198,6 +216,7 @@ Two kinds, both cheap:
 | J5 | Does the takeaway add an implication, or restate the slide? | `adds` · `restates` | both |
 | J6 | Does the slide carry one idea, or several? | `one` · `several` | pitch |
 | J7 | Is the chosen menu entry right for this content? | `right` · `better:<menu id>` | both |
+| J8 | Are the parallel items written in the same form (all noun phrases, all verbs, all outcomes)? | `parallel` · `mixed` | consulting |
 
 **Deck checks** (M3): D1 the titles read in order tell one argument (`flows` · `gaps`); D2 the first content slide states the answer (Pyramid Principle, consulting).
 
@@ -260,7 +279,7 @@ User message
   → loop: call a tool → read its result → repeat
       a write that carries `reply` and comes back clean (applied, no issues) ends the turn with that reply
   → reply to the user
-  → POST (Jev, one call, after the reply): judgment checks J1–J7 on each slide written this turn
+  → POST (Jev, one call, after the reply): judgment checks J1–J8 on each slide written this turn
 ```
 
 Target model calls: clean new slide = 1 Jev + 1 GLM; clean small edit = 1 Jev + 1 GLM; a write with issues adds 1 GLM per fix round.
@@ -352,9 +371,9 @@ Tie-breakers, stated to the agent and to Jev:
 - **One problem format everywhere:** field path · what was measured · the limit · a concrete fix. `cards[2].text: 3 lines, max 2, about 22 characters too long.`
 - **Shape errors** (unknown or missing field, wrong type, a bad path, 4 values for 5 categories) cannot render: the write is **not applied** (a patch is all or nothing); the agent gets the errors.
 - **Fit issues** (measured at 1920×1080) **are applied**, so the user sees the change, and returned as `issues`.
-- **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R9. Issues on paths the patch did not touch are marked `elsewhere: true`, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
-- **Rule checks R1–R9** come back as `warnings`: the agent sees them, it is not required to act.
-- **Judgment checks J1–J7** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
+- **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R14. Issues on paths the patch did not touch are marked `elsewhere: true`, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
+- **Rule checks R1–R14** come back as `warnings`: the agent sees them, it is not required to act.
+- **Judgment checks J1–J8** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
 - **Code fixes trivia and reports it** (never meaning).
 - **Code fixes dependent fields instead of reporting them.** When a rule spanning several fields has one right answer, code applies it in autofix and lists it in `autofixes`: a series switched to `line` loses note points and `stacked` if fewer than 2 bars remain; `area`/`dashed` are dropped from bar series; a removed category drops the note points that referred to it; a second focus the user did not name is set back to neutral. Only rules with a choice left in them come back as issues. This is the main lever for first-write validity: what the model cannot get wrong it is not asked to get right.
 - Measurement is deterministic (fixed 1920×1080 canvas, fixed fonts): the prototype uses the browser as its ruler; the product uses the fit engine (4).
@@ -427,6 +446,7 @@ Considered and rejected: all 7 template cards in the system prompt with no class
 | Latency p50, small edit | ≤ 6 s |
 | Template agrees with gold | ≥ 90% |
 | Short reply, no JSON | ≥ 95% |
+| Layout lints L1–L6 on every final slide | 100% |
 
 Reported: PRE intent accuracy and how often it acted, model calls per turn, turns ended by a write's `reply`.
 
@@ -495,7 +515,7 @@ Types come from `z.infer` only. Geometry constants feed both the calculator and 
 - **Main model:** GLM 5.3 Flash (subscription, free), the default unless it fails the bar. GLM 5.3 (larger, same subscription) is the escalation model.
 - **Jev:** each closed-set field (9.1) and each judgment check is measured for agreement with labelled examples before it is switched on.
 - **Test set:** 50 seeded prompts × 2 styles.
-- **Pass bar:** first fill passes validation and fit ≥ 80%; p95 fix rounds ≤ 2; zero invented fields; rule checks R1–R9 pass ≥ 90%.
+- **Pass bar:** first fill passes validation and fit ≥ 80%; p95 fix rounds ≤ 2; zero invented fields; rule checks R1–R14 pass ≥ 90%.
 - **Also scored:** judgment checks J1–J5 as quality metrics; latency per slide.
 
 **M0 routing bake-off: results (2026-09-26)** (full report: `docs/temp/routing-test/report.md`)
