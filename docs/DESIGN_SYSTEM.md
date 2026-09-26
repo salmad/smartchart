@@ -1,5 +1,7 @@
 # SmartChart Design System
 
+> **Legacy (pre-rewrite).** This describes the old chart app's UI: purple palette, Recharts, responsive type. It does **not** apply to slides or charts. For slides and charts, the design source is `docs/design/proposals/slides-v4.html` and `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md`. Use this file only when touching the legacy app, and do not carry its patterns into new code.
+
 > **Mission:** The Apple of charts and presentations, with Linear/Revolut-level polish across all features. Every component should feel like it was designed by a world-class product team.
 
 ## Color System

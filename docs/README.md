@@ -1,5 +1,7 @@
 # SmartChart
 
+> **Legacy (pre-rewrite).** Setup and stack notes for the old chart app. For the slide-system rewrite, start at section 14 of `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md`.
+
 Interactive chart creation and modification application with natural language processing.
 
 ## Tech Stack

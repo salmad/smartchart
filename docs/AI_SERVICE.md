@@ -1,5 +1,7 @@
 # AI Service
 
+> **Legacy (pre-rewrite).** This describes the old chart app's AI layer (Gemini, then Claude; keys exposed to the browser). The new layer is **GLM 5.3 Flash + Jev behind a Vercel proxy**; see sections 7, 9 and 14 of `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md`. Do not extend this design.
+
 `src/services/ai/aiServiceFactory.ts` tries Gemini (`gemini-2.5-flash`) first and falls back to Claude (`claude-haiku-4-5`) on failure. Callers import from `@/services/ai` and never know which provider answered.
 
 - `shared/promptBuilder.ts` builds one prompt for both providers.

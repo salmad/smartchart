@@ -1,5 +1,7 @@
 # Architecture Guidelines
 
+> **Partly legacy.** The general principles (separation of concerns, small units) still hold. The stack specifics (Recharts, the Gemini/Claude services, the folder layout) are superseded for the rewrite by `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md`.
+
 This document defines the architectural principles and patterns for SmartChart. These guidelines ensure maintainability, scalability, and code quality as the application grows into a multi-page React application.
 
 ## Core Principles
