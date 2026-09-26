@@ -44,9 +44,10 @@ kbd { font: 500 11px/1 "Geist Mono", monospace; opacity: .6; margin-left: 6px; }
 .msg.bot p.sub { color: var(--ink-2); font-size: 13px; }
 .msg.error p { color: var(--bad); }
 .trace { list-style: none; display: grid; gap: 2px; border-left: 1px solid var(--line-2); padding-left: 12px; }
-.trace li { display: grid; grid-template-columns: 58px 1fr auto; gap: 8px; font-size: 12.5px; color: var(--ink-2); align-items: baseline; }
+.trace li { display: grid; grid-template-columns: 96px 1fr auto; gap: 8px; font-size: 12.5px; color: var(--ink-2); align-items: baseline; }
 .trace li b { font: 500 11px/1.6 "Geist Mono", monospace; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
 .trace li em { font-style: normal; color: var(--ink-3); font: 11px/1.6 "Geist Mono", monospace; white-space: nowrap; }
+.trace li span { overflow-wrap: anywhere; }
 .trace li span i { font-style: normal; color: var(--ink-3); }
 .trace li.pending b::after { content: "…"; }
 .trace li.pending { color: var(--ink-3); }
@@ -63,6 +64,7 @@ kbd { font: 500 11px/1 "Geist Mono", monospace; opacity: .6; margin-left: 6px; }
 .composer textarea:disabled { opacity: .5; }
 .composer-row { display: flex; align-items: center; gap: 8px; }
 .composer-row .hint { margin-right: auto; }
+.composer-row button { white-space: nowrap; flex: none; }
 .hint { font-size: 12px; color: var(--ink-3); }
 
 /* Stage */
