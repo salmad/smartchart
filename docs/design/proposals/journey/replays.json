@@ -3,7 +3,7 @@
  "models": "GLM 5.3 Flash (z.ai) + Jev (OpenRouter)",
  "runs": [
   {
-   "name": "Consulting · SaaS growth (4 turns)",
+   "name": "Consulting · SaaS growth",
    "style": "consulting",
    "theme": "ink",
    "turns": [
@@ -743,7 +743,7 @@
    ]
   },
   {
-   "name": "Pitch · café ordering (4 turns)",
+   "name": "Pitch · café ordering",
    "style": "pitch",
    "theme": "ink",
    "turns": [

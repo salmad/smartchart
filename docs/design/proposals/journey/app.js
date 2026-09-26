@@ -46,6 +46,7 @@ function render() {
   document.querySelectorAll("#style button").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.v === state.style); b.disabled = state.items.length > 0 || !!state.replay; });
   document.querySelectorAll("#theme button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === state.theme));
   $("present").disabled = !state.items.length;
+  document.body.classList.toggle("is-replay", !!state.replay);
   $("empty").hidden = state.items.length > 0;
   const canvas = $("canvas");
   canvas.querySelector(".slide")?.remove();
@@ -177,7 +178,7 @@ function showReplay(run) {
 async function boot() {
   await document.fonts.ready;
   try { const h = await (await fetch("/api/health")).json(); state.live = !!h.live; } catch { state.live = false; }
-  $("mode").textContent = state.live ? "Live · GLM + Jev" : "Replay";
+  $("mode").textContent = state.live ? "Live · GLM + Jev" : "Recorded run";
   $("mode").classList.toggle("live", state.live);
   if (!state.live) {
     try {
@@ -199,10 +200,12 @@ document.querySelectorAll("#theme button").forEach((b) => (b.onclick = () => { s
 $("reset").onclick = () => { if (state.replay) { state.replay = null; state.items = []; $("thread").innerHTML = ""; $("replay").hidden = true; boot(); return; } state.items = []; state.turns = []; state.current = 0; $("thread").innerHTML = ""; boot(); };
 $("composer").onsubmit = (e) => { e.preventDefault(); send($("input").value); };
 $("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("input").value); } };
-$("present").onclick = () => startPresentation(deck(), state.current, (i) => { state.current = i; render(); });
+const present = () => state.items.length && startPresentation(deck(), state.current, (i) => { state.current = i; render(); });
+$("present").onclick = present;
+$("canvas").onclick = present;
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "TEXTAREA" || !$("presentation").hidden) return;
-  if (e.key === "f" && state.items.length) startPresentation(deck(), state.current, (i) => { state.current = i; render(); });
+  if (e.key === "f") present();
   if (e.key === "ArrowRight" && state.current < state.items.length - 1) { state.current++; render(); }
   if (e.key === "ArrowLeft" && state.current > 0) { state.current--; render(); }
 });

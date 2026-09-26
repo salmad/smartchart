@@ -12,7 +12,7 @@
 <style>
 /* Review page chrome (not part of the product). */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { background: #050404; color: #EDE8DE; font-family: "Geist", system-ui, sans-serif; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: #050404; color: #EDE8DE; font-family: "Geist", system-ui, sans-serif; }
 .top { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between;
   padding: 18px 32px; backdrop-filter: blur(16px); background: rgba(5,4,4,.85); border-bottom: 1px solid rgba(255,255,255,.07); }
 .top h1 { font-size: 17px; font-weight: 600; }
@@ -42,6 +42,15 @@ details summary { cursor: pointer; opacity: .6; font-weight: 500; }
 details pre { margin-top: 10px; padding: 16px 18px; border-radius: 12px; overflow: auto; max-height: 420px; font: 12.5px/1.55 "Geist Mono", monospace; background: rgba(255,255,255,.06); white-space: pre-wrap; }
 .issues { margin-top: 8px; display: grid; gap: 4px; font: 12.5px/1.5 "Geist Mono", monospace; color: #FF7A68; }
 .issues .w { color: #E8B94A; }
+/* Phones: one slide per row, no sticky header, no developer panels. */
+@media (max-width: 700px) {
+  .top { position: static; padding: 16px; gap: 12px; }
+  main { padding: 20px 16px 64px; gap: 40px; }
+  .frames.two { grid-template-columns: 1fr; gap: 16px; }
+  .frame { border-radius: 8px; }
+  main > details, figure details { display: none; }
+  figcaption .id { display: none; }
+}
 body.full .top, body.full figcaption, body.full details, body.full .frame-label, body.full .issues { display: none; }
 body.full main { max-width: none; padding: 0; gap: 0; }
 body.full .frame { border-radius: 0; outline: 0; }

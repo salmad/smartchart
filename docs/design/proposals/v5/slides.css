@@ -24,6 +24,7 @@
   background: var(--bg); color: var(--fg); font-family: var(--text); font-size: var(--body); line-height: 1.38;
   -webkit-font-smoothing: antialiased; padding: 96px 128px 136px; display: flex; flex-direction: column; overflow: hidden;
   font-kerning: normal; font-variant-ligatures: none; font-synthesis: none;
+  -webkit-text-size-adjust: none; text-size-adjust: none; /* iOS must not inflate text in the 1920px canvas */
 }
 .rail {
   position: absolute; left: 128px; right: 128px; bottom: 48px; display: flex; align-items: flex-end; gap: 64px;
