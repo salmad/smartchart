@@ -5,7 +5,7 @@
 import { MENU, describe, validate } from "../v5/schema.js";
 import { agentStep, jev } from "./llm.js";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
-import { autofix } from "./pipeline.js";
+import { autofix } from "./autofix.js";
 import { ruleChecks } from "./checks.js";
 import { TOOLS, agentSystem, stateBlock } from "./agent-prompt.js";
 

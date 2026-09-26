@@ -3,6 +3,7 @@
    slide at 1920×1080 and returns layout issues; `log(step)` reports progress to the UI. */
 import { ICONS, MENU, fieldsFor, validate } from "../v5/schema.js";
 import { BIG, FLASH, glm, jev } from "./llm.js";
+import { autofix } from "./autofix.js";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, deckState, editPrompt, fillPrompt, pickPrompt, repairPrompt } from "./prompts.js";
 
 const ROUTE_THRESHOLD = 0.7;
@@ -52,22 +53,6 @@ async function decideAfter(slide, style, log) {
   const picks = slide.cards.map((c, i) => { const a = r[`icon${i}`]; if (a && a.p >= 0.35) c.icon = a.choice; return c.icon; });
   log({ step: "Decide", model: "Jev", ms: r._ms, detail: `icons: ${picks.join(", ")}` });
   return slide;
-}
-
-/* Code fixes trivia and reports it; it never shortens text (spec 9.4). */
-export function autofix(slide, style) {
-  const fixes = [];
-  const walk = (v) => {
-    if (typeof v === "string") return v.trim().replace(/\s+/g, " ").replace(/(\d)\s?percent\b/gi, "$1%").replace(/(^|[\s(])"(\S)/g, "$1“$2").replace(/(\S)"/g, "$1”").replace(/(\w)'(\w)/g, "$1’$2");
-    if (Array.isArray(v)) return v.map(walk);
-    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null && x !== undefined && x !== "").map(([k, x]) => [k, walk(x)]));
-    return v;
-  };
-  const out = walk(slide);
-  if (typeof out.source === "string" && /^source:\s*/i.test(out.source)) { out.source = out.source.replace(/^source:\s*/i, ""); fixes.push("removed 'Source:' prefix"); }
-  if (style === "consulting" && MENU[out.template]?.frame !== false && /[^.]\.$/.test(out.title || "")) { out.title = out.title.slice(0, -1); fixes.push("removed title full stop"); }
-  if (style === "pitch") { delete out.kicker; }
-  return { slide: out, fixes };
 }
 
 /* 6. GATE: validation errors plus measured layout issues. */
