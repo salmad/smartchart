@@ -38,3 +38,5 @@ Presentation: **Present** or `F`. Arrows, Space, PgUp/PgDn, Home/End, a number t
 - `replays.json`: two recorded runs of the earlier pipeline (consulting and pitch, 4 turns each), recorded 2026-09-26.
 
 Tests: `npm run test:proto` (unit tests in `../tests/`), and the browser checks in `../tests/browser/` (`node review.mjs`, `node lints.mjs`, with the server running).
+
+Results of the 9.7 test for the hybrid agent (2026-09-27): `docs/research/2026-09-27-hybrid-agent/`.

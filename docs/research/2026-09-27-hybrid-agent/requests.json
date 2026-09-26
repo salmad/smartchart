@@ -1,0 +1,362 @@
+{
+ "single": [
+  {
+   "id": "c10",
+   "style": "consulting",
+   "prompt": "Revenue trend for the FinBridge board. Monthly card spend processed (£m): Jan 18, Feb 19, Mar 22, Apr 21, May 26, Jun 31, Jul 30, Aug 36. Need to explain the June jump (Xero integration launch) and the July dip (seasonality).",
+   "gold": "chart",
+   "acceptable": [],
+   "choices": {
+    "marks": "line"
+   }
+  },
+  {
+   "id": "c11",
+   "style": "consulting",
+   "prompt": "Show how our churn cohort curves differ: the 2024 cohorts retain much better after month 3, and I want to call out why (onboarding redesign, shift to annual plans).",
+   "gold": "chart",
+   "acceptable": [],
+   "choices": {
+    "marks": "line"
+   }
+  },
+  {
+   "id": "c12",
+   "style": "consulting",
+   "prompt": "UK grocery market share 2019-2025, discounters vs the big four. Point out the year they cross over and the two drivers behind it.",
+   "gold": "chart",
+   "acceptable": [],
+   "choices": {
+    "marks": "line"
+   }
+  },
+  {
+   "id": "c25",
+   "style": "consulting",
+   "prompt": "Unit economics of our three plans side by side (price / gross margin / CAC / payback months): Starter £0 / 42% / £180 / 14; Growth £49 / 61% / £420 / 9; Scale £199 / 68% / £1,900 / 11. Point out Growth is the sweet spot and Scale payback is inflated by enterprise sales cost.",
+   "gold": "table",
+   "acceptable": []
+  },
+  {
+   "id": "c26",
+   "style": "consulting",
+   "prompt": "FinBridge vs Pleo, Soldo and Spendesk on FX fee, monthly fee per user and credit line. Then what it means for our positioning.",
+   "gold": "table",
+   "acceptable": []
+  },
+  {
+   "id": "c27",
+   "style": "consulting",
+   "prompt": "Store P&L for the four pilot stores: sales, labour %, shrink %. I need to explain why Leeds underperforms despite the best top line.",
+   "gold": "table",
+   "acceptable": []
+  },
+  {
+   "id": "c06",
+   "style": "consulting",
+   "prompt": "Slide arguing that UK SMEs lose real money to manual expense reconciliation. Our survey says the average SME spends £11,400 a year in finance staff time on it.",
+   "gold": "number",
+   "acceptable": []
+  },
+  {
+   "id": "c07",
+   "style": "consulting",
+   "prompt": "I need to convince the board the addressable market is big enough: UK SMEs with 10-249 employees put £84bn a year through business cards. That's the point of the slide.",
+   "gold": "number",
+   "acceptable": []
+  },
+  {
+   "id": "c08",
+   "style": "consulting",
+   "prompt": "Churn slide for the SaaS review. The story: 62% of churned accounts never activated an integration. NPS is 41 and support tickets are up 12%, but the activation stat is the story.",
+   "gold": "number",
+   "acceptable": []
+  },
+  {
+   "id": "c40",
+   "style": "consulting",
+   "prompt": "Walk through the 18-month ERP rollout plan: design, build, pilot, rollout, hypercare.",
+   "gold": "steps",
+   "acceptable": []
+  },
+  {
+   "id": "c41",
+   "style": "consulting",
+   "prompt": "How a FinBridge expense flows from tap to ledger: card tap, receipt capture, auto-categorisation, approval, sync to Xero.",
+   "gold": "steps",
+   "acceptable": []
+  },
+  {
+   "id": "c42",
+   "style": "consulting",
+   "prompt": "The client's M&A history: bought Northway in 2016, Cardell in 2019, merged with Vesta in 2022, carved out the services arm in 2025.",
+   "gold": "steps",
+   "acceptable": []
+  },
+  {
+   "id": "c45",
+   "style": "consulting",
+   "prompt": "Three strategic options for the board: build organically, acquire a payroll player, or partner with a bank. One line on each.",
+   "gold": "cards",
+   "acceptable": []
+  },
+  {
+   "id": "c46",
+   "style": "consulting",
+   "prompt": "The four pillars of our people strategy: attract, develop, reward, retain.",
+   "gold": "cards",
+   "acceptable": []
+  },
+  {
+   "id": "c47",
+   "style": "consulting",
+   "prompt": "Headline results from the pilot: 23% fewer stockouts, £1.4m working capital released, 4.2pts margin uplift. Three wins, all of them matter.",
+   "gold": "cards",
+   "acceptable": []
+  },
+  {
+   "id": "p13",
+   "style": "pitch",
+   "prompt": "MRR chart: Jan 42k, Feb 48k, Mar 55k, Apr 71k, May 78k, Jun 96k. The April jump is our Xero app launch and June is our first enterprise logo; investors will ask.",
+   "gold": "chart",
+   "acceptable": [],
+   "choices": {
+    "marks": "bar"
+   }
+  },
+  {
+   "id": "p14",
+   "style": "pitch",
+   "prompt": "Weekly active clinics since launch. There are three spikes I need to explain: the NHS framework win, our webinar with the RCGP, and the BMJ feature.",
+   "gold": "chart",
+   "acceptable": [],
+   "choices": {
+    "marks": "line"
+   }
+  },
+  {
+   "id": "p15",
+   "style": "pitch",
+   "prompt": "CAC by channel over the last 4 quarters: paid social 40, 55, 72, 95; referral 20, 21, 19, 20; SEO 35, 28, 22, 18. Investors need to see why we're moving budget and what's behind each line.",
+   "gold": "chart",
+   "acceptable": [],
+   "choices": {
+    "marks": "line"
+   }
+  },
+  {
+   "id": "p24",
+   "style": "pitch",
+   "prompt": "Unit economics, SMB vs mid-market: ACV £6k vs £28k, gross margin 78% vs 81%, CAC £4.5k vs £14k, payback 11 vs 7 months. Investors need to see why we're doubling down on mid-market.",
+   "gold": "table",
+   "acceptable": [
+    "table"
+   ]
+  },
+  {
+   "id": "p25",
+   "style": "pitch",
+   "prompt": "Use of funds for the £4m raise: engineering £1.8m, sales £1.2m, marketing £0.6m, G&A £0.4m, with the hires and milestone each unlocks. Add a line on why engineering is the biggest bucket.",
+   "gold": "table",
+   "acceptable": []
+  },
+  {
+   "id": "p26",
+   "style": "pitch",
+   "prompt": "Competition slide: us vs Pleo, Soldo, Spendesk and Amex on credit line, automatic receipts, Xero sync and price per user.",
+   "gold": "table",
+   "acceptable": []
+  },
+  {
+   "id": "p05",
+   "style": "pitch",
+   "prompt": "Problem slide: UK SMEs waste 9 hours a month chasing receipts. That's the whole point.",
+   "gold": "number",
+   "acceptable": []
+  },
+  {
+   "id": "p06",
+   "style": "pitch",
+   "prompt": "Market slide: £84bn of SME card spend in the UK. Investors should get it in one glance.",
+   "gold": "number",
+   "acceptable": []
+  },
+  {
+   "id": "p07",
+   "style": "pitch",
+   "prompt": "Traction: we hit £1.2m ARR, up from £300k a year ago. We also have 140 customers and 3 sales reps, but ARR is what matters.",
+   "gold": "number",
+   "acceptable": []
+  },
+  {
+   "id": "p32",
+   "style": "pitch",
+   "prompt": "Roadmap: Q1 expense cards, Q2 bill pay, Q3 credit line, Q4 EU expansion.",
+   "gold": "steps",
+   "acceptable": []
+  },
+  {
+   "id": "p33",
+   "style": "pitch",
+   "prompt": "How it works: sign up in 5 minutes, issue cards, snap receipts, books close themselves.",
+   "gold": "steps",
+   "acceptable": []
+  },
+  {
+   "id": "p34",
+   "style": "pitch",
+   "prompt": "Our story so far: founded 2023 in Leeds, first pilot hospital 2024, NHS framework 2025, Series A 2026.",
+   "gold": "steps",
+   "acceptable": []
+  },
+  {
+   "id": "p40",
+   "style": "pitch",
+   "prompt": "Traction slide: £2.4m ARR, 310 customers, 128% NRR, zero churned logos this year.",
+   "gold": "cards",
+   "acceptable": []
+  },
+  {
+   "id": "p41",
+   "style": "pitch",
+   "prompt": "Three products, one platform: cards, bill pay, credit.",
+   "gold": "cards",
+   "acceptable": []
+  },
+  {
+   "id": "p42",
+   "style": "pitch",
+   "prompt": "Before vs after FinBridge: 3 days to close the month, now 3 hours.",
+   "gold": "cards",
+   "acceptable": [
+    "number"
+   ]
+  }
+ ],
+ "warmup": {
+  "consulting": [
+   {
+    "id": "c13",
+    "style": "consulting",
+    "prompt": "A&E performance across our 12 trusts, % seen within 4 hours. I want to flag the three outliers and what they have in common.",
+    "gold": "chart"
+   },
+   {
+    "id": "c14",
+    "style": "consulting",
+    "prompt": "How gross margin went from 38% to 31%: interchange cut -3pts, fraud losses -2, FX mix -1.5, pricing +0.5, other -1. Explain each of the big drivers briefly.",
+    "gold": "chart"
+   },
+   {
+    "id": "c15",
+    "style": "consulting",
+    "prompt": "Client emissions by scope, 2020-2025. The board must see scope 3 is 80% and growing, and that scope 1-2 progress comes mostly from grid decarbonisation, not their own action.",
+    "gold": "chart"
+   },
+   {
+    "id": "c16",
+    "style": "consulting",
+    "prompt": "Freight cost per pallet by lane over the last 8 quarters. The Midlands lanes diverged after the Coventry depot closure; annotate that quarter.",
+    "gold": "chart"
+   },
+   {
+    "id": "c17",
+    "style": "consulting",
+    "prompt": "Attrition by tenure band: <1y 34%, 1-2y 22%, 2-5y 14%, 5y+ 7%. Want to call out that first-year attrition is concentrated in two regions and exit surveys blame onboarding.",
+    "gold": "chart"
+   },
+   {
+    "id": "c18",
+    "style": "consulting",
+    "prompt": "Marketplace GMV vs take rate, 2021-2026. Take rate fell from 14% to 11% while GMV tripled; explain that this was a deliberate trade-off and what it bought us.",
+    "gold": "chart"
+   },
+   {
+    "id": "c19",
+    "style": "consulting",
+    "prompt": "SME card adoption by company size: adoption jumps at 20+ employees, and I want to note that the under-10 segment still uses personal cards.",
+    "gold": "chart"
+   },
+   {
+    "id": "c20",
+    "style": "consulting",
+    "prompt": "Results of the pricing test, conversion by tier: £29 7.1%, £39 6.8%, £49 4.2%, £59 3.9%. Highlight the cliff between 39 and 49 and what it means for how we package plans.",
+    "gold": "chart"
+   },
+   {
+    "id": "c21",
+    "style": "consulting",
+    "prompt": "Show UK SME card spend: 2019 £61bn, 2020 £55bn, 2021 £66bn, 2022 £72bn, 2023 £78bn, 2024 £84bn. The message is it recovered and has grown ~8% a year since 2021.",
+    "gold": "chart"
+   },
+   {
+    "id": "c22",
+    "style": "consulting",
+    "prompt": "Slide with the NHS elective waiting list since 2015. It's the obvious hockey stick, no commentary needed.",
+    "gold": "chart"
+   }
+  ],
+  "pitch": [
+   {
+    "id": "p16",
+    "style": "pitch",
+    "prompt": "Revenue slide: 2022 £0.2m, 2023 £0.9m, 2024 £2.6m, 2025 £6.1m. Just show it going up.",
+    "gold": "chart"
+   },
+   {
+    "id": "p17",
+    "style": "pitch",
+    "prompt": "Retention curves for marketplace buyers by cohort. Cohorts after we launched same-day delivery retain 2x better; that's our best argument.",
+    "gold": "chart"
+   },
+   {
+    "id": "p18",
+    "style": "pitch",
+    "prompt": "Show GMV compounding since launch, 15% month on month for 14 months.",
+    "gold": "chart"
+   },
+   {
+    "id": "p19",
+    "style": "pitch",
+    "prompt": "Us vs competitors on FX fees: us 0%, Amex 2.99%, high-street banks 2.75%, Pleo 1.5%. Make it obvious we're cheapest.",
+    "gold": "chart"
+   },
+   {
+    "id": "p20",
+    "style": "pitch",
+    "prompt": "Customers over time, quarterly from 2023: 12, 25, 41, 70, 118, 190, 305.",
+    "gold": "chart"
+   },
+   {
+    "id": "p21",
+    "style": "pitch",
+    "prompt": "10-year cumulative cost: our solar-as-a-service vs buying panels outright vs doing nothing. Point is we're cheaper from year 2.",
+    "gold": "chart"
+   },
+   {
+    "id": "p22",
+    "style": "pitch",
+    "prompt": "Slide showing our burn multiple improving every quarter this year: 3.1, 2.4, 1.8, 1.2.",
+    "gold": "chart"
+   },
+   {
+    "id": "p23",
+    "style": "pitch",
+    "prompt": "UK home-care market 2020 to 2030 forecast. Big and growing, that's all.",
+    "gold": "chart"
+   },
+   {
+    "id": "p27",
+    "style": "pitch",
+    "prompt": "Pricing: Starter free, Team £8/user, Business £15/user, Enterprise custom, with seats, integrations and support level for each.",
+    "gold": "table"
+   },
+   {
+    "id": "p28",
+    "style": "pitch",
+    "prompt": "Cap table summary for the data room: founders, ESOP, angels, seed fund, with shares held, % pre-money and % post-money.",
+    "gold": "table"
+   }
+  ]
+ }
+}
