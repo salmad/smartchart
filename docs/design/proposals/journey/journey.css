@@ -103,6 +103,31 @@ kbd { font: 500 11px/1 "Geist Mono", monospace; opacity: .6; margin-left: 6px; }
 .present-frame { position: relative; overflow: hidden; }
 .present-count { position: fixed; right: 20px; bottom: 16px; font: 500 12px/1 "Geist Mono", monospace; color: rgba(255,255,255,.35); }
 
+/* Accent picker */
+.accent { position: relative; }
+.accent-btn { height: 100%; min-height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 11px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); font-size: 13px; cursor: pointer; transition: color .15s, border-color .15s; }
+.accent-btn:hover, .accent-btn[aria-expanded="true"] { color: var(--ink); border-color: var(--line-2); }
+.accent-btn i, .hex i { width: 12px; height: 12px; border-radius: 50%; background: var(--sw); box-shadow: 0 0 0 1px rgba(255,255,255,.14); flex: none; }
+.accent-panel { position: absolute; top: calc(100% + 8px); left: 50%; translate: -50% 0; z-index: 30; width: 256px; padding: 14px; display: grid; gap: 12px;
+  border-radius: 14px; background: var(--raise); border: 1px solid var(--line-2); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 24px 48px -16px rgba(0,0,0,.7); animation: pop .14s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(-4px); } }
+.accent-head { display: flex; justify-content: space-between; align-items: center; height: 16px; font: 500 11px/1 "Geist Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.accent-head button { border: 0; background: none; padding: 0; font: 500 12px/1 "Geist", sans-serif; letter-spacing: 0; text-transform: none; color: var(--ink-2); cursor: pointer; }
+.accent-head button:hover { color: var(--ink); }
+.swatches { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.sw { aspect-ratio: 1; border: 0; border-radius: 50%; background: var(--sw); cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); transition: transform .12s, box-shadow .12s; }
+.sw:hover { transform: scale(1.1); }
+.sw:focus-visible, .sw.custom:focus-within { outline: 0; box-shadow: 0 0 0 2px var(--raise), 0 0 0 3px var(--ink-3); }
+.sw[aria-pressed="true"], .sw.custom.on { box-shadow: 0 0 0 2px var(--raise), 0 0 0 4px var(--ink); }
+.sw.custom { position: relative; background: conic-gradient(from 200deg, #E8B94A, #14B8A6, #0EA5E9, #2447D1, #7C5CFF, #D946EF, #E8B94A); }
+.sw.custom.on { background: radial-gradient(circle, var(--sw) 0 42%, transparent 44%), conic-gradient(from 200deg, #E8B94A, #14B8A6, #0EA5E9, #2447D1, #7C5CFF, #D946EF, #E8B94A); }
+.sw.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.hex { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); transition: border-color .15s; }
+.hex:focus-within { border-color: var(--line-2); }
+.hex input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: 500 12.5px/1 "Geist Mono", monospace; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+.accent-note { font-size: 12px; line-height: 1.45; color: var(--ink-3); }
+.accent-note.warn { color: var(--warn); }
+
 /* Recorded runs: controls that need the live models are hidden. */
 .is-replay #style, .is-replay #reset, .is-replay .composer { display: none; }
 .canvas:has(.slide) { cursor: zoom-in; }
@@ -113,6 +138,7 @@ kbd { font: 500 11px/1 "Geist Mono", monospace; opacity: .6; margin-left: 6px; }
   .bar { height: auto; flex-wrap: wrap; gap: 10px 12px; padding: 12px 16px; }
   .brand { flex: 1; }
   .bar-mid { order: 3; margin: 0; width: 100%; }
+  .accent-panel { left: auto; right: 0; translate: none; }
   .bar-end { display: contents; }
   .mode { order: 1; }
   .pick { order: 4; flex: 1; min-width: 0; }

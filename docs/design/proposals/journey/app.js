@@ -7,9 +7,10 @@ import { runTurn } from "./agent.js";
 import { judgmentChecks, ruleChecks } from "./checks.js";
 import { startPresentation } from "./present.js";
 import { deckList, deckName, loadStore, newDeckId, saveStore } from "./decks.js";
+import { accentPicker } from "./accent-picker.js";
 
 const $ = (id) => document.getElementById(id);
-const state = { style: "consulting", theme: "ink", items: [], current: 0, turns: [], history: [], working: new Set(), busy: false, live: false, replay: null };
+const state = { style: "consulting", theme: "ink", accent: null, items: [], current: 0, turns: [], history: [], working: new Set(), busy: false, live: false, replay: null };
 window.__journey = state; // read by the recording script
 
 const SUGGEST = {
@@ -26,7 +27,7 @@ const SUGGEST = {
   edit: ["Make the title punchier", "Show this as a table instead", "Add a slide with our 3-step plan to get there"],
 };
 
-const deck = () => ({ style: state.style, theme: state.theme, footer: footer(), slides: state.items.map((i) => i.slide) });
+const deck = () => ({ style: state.style, theme: state.theme, accent: state.accent, footer: footer(), slides: state.items.map((i) => i.slide) });
 const footer = () => { const c = state.items.find((i) => i.slide.template === "cover"); return c ? c.slide.title.replace(/\[\[|\]\]/g, "") : "SmartChart · Draft"; };
 
 /* Measure a slide at 1920×1080 in the hidden frame: layout issues and title line count. */
@@ -59,6 +60,7 @@ function mountInto(frame, i) {
 function render() {
   document.querySelectorAll("#style button").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.v === state.style); b.disabled = state.items.length > 0 || !!state.replay; });
   document.querySelectorAll("#theme button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === state.theme));
+  syncAccent();
   $("present").disabled = !state.items.length;
   document.body.classList.toggle("is-replay", !!state.replay);
   $("empty").hidden = state.items.length > 0;
@@ -205,7 +207,7 @@ function persist() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     if (!state.items.length && !state.history.length) return; // an empty deck is not kept
-    store.decks[deckId] = { id: deckId, style: state.style, theme: state.theme, current: state.current,
+    store.decks[deckId] = { id: deckId, style: state.style, theme: state.theme, accent: state.accent, current: state.current,
       items: state.items.map(({ checksPending, ...it }) => it), history: state.history, working: [...state.working],
       thread: $("thread").innerHTML, updated: Date.now() };
     store.active = deckId;
@@ -235,7 +237,7 @@ const welcome = () => addMessage("bot", `<p>Describe a slide. The agent picks a 
 function openDeck(id) {
   const d = store.decks[id];
   deckId = id; store.active = id;
-  Object.assign(state, { style: d.style, theme: d.theme, history: d.history || [], working: new Set(d.working || []), turns: [] });
+  Object.assign(state, { style: d.style, theme: d.theme, accent: d.accent || null, history: d.history || [], working: new Set(d.working || []), turns: [] });
   $("thread").innerHTML = d.thread || "";
   if (!d.thread) welcome();
   $("thread").scrollTop = 1e9;
@@ -280,6 +282,8 @@ async function boot() {
 /* ─────────── Controls ─────────── */
 document.querySelectorAll("#style button").forEach((b) => (b.onclick = () => { state.style = b.dataset.v; render(); }));
 document.querySelectorAll("#theme button").forEach((b) => (b.onclick = () => { state.theme = b.dataset.v; render(); }));
+const syncAccent = accentPicker({ button: $("accent-btn"), panel: $("accent-panel"),
+  get: () => ({ accent: state.accent, theme: state.theme }), set: (hex) => { state.accent = hex; render(); } });
 $("reset").onclick = () => { if (!state.busy) newDeck(); };
 $("decks").onchange = (e) => { if (!state.busy && store.decks[e.target.value]) openDeck(e.target.value); };
 $("delete").onclick = deleteDeck;

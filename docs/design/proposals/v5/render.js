@@ -1,6 +1,7 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the review page and the journey prototype. */
 import { MENU } from "./schema.js";
 import { drawChart } from "./chart.js";
+import { applyAccent } from "./accent.js";
 export { drawChart };
 
 export const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -101,6 +102,7 @@ export function mountSlide(frame, s, ctx, deck) {
   frame.innerHTML = slideHTML(s, ctx, deck);
   const slide = frame.firstElementChild;
   slide.style.setProperty("--s", frame.clientWidth / 1920);
+  applyAccent(slide, deck.accent);
   fitValues(slide);
   sizeTable(slide); growTable(slide);
   const host = slide.querySelector("[data-chart]");
