@@ -25,7 +25,7 @@ A user types a prompt and gets a slide (later: a deck) that is beautiful by cons
 | D10 | One chart engine (custom SVG shapes + HTML labels) serves slides and the standalone chart block. Recharts is retired (it renders SVG `<text>`, which Chrome misplaces in scaled frames). |
 | D11 | **Chromium only for the MVP** (Chrome, Edge, Arc). Safari/Firefox shape and break text differently; they come later with their own calibration. |
 | D12 | **Fixed format, not responsive.** A slide is always laid out at 1920×1080, and a standalone chart on its own fixed canvas (the same geometry as the `chart` entry without notes). On screen the whole canvas is scaled uniformly (`transform: scale`), like PowerPoint or Keynote: fit-to-panel, zoom, thumbnails. Layout never reflows with the viewport: no breakpoints, container queries or viewport units inside a slide. This is what makes fit computable: there is exactly one geometry to calculate against. Only the app around the slide (chat, panels) is responsive. |
-| D13 | **Model routing.** GLM 5.3 Flash through its subscription endpoint is the main model (free; first priority). OpenRouter is used **only** for Jev (later also cheap image models), never for other text models. Jev makes every closed-set decision that needs no writing (menu entry, edit intent, chart type, card lead, icons, tones; see 9.1) and runs the cheap judgment checks. GLM writes text and data. |
+| D13 | **Model routing.** GLM 5.3 Flash through its subscription endpoint is the main model (free; first priority). OpenRouter is used **only** for Jev (later also cheap image models), never for other text models. Jev makes every closed-set decision that needs no writing (menu entry, edit intent, card lead, bar or line per series, stacking, focus element, icons; see 9.1) and runs the cheap judgment checks. GLM writes text and data. |
 | D14 | **Design checks** run after every save: deterministic rule checks (free) plus Jev judgment checks (cheap). For now they are **shown to the user only**, as a checks list on the slide. A later "Get advice" action sends them to the agent to revise. They never block saving; fit does. |
 | D15 | **Presentation mode** like Slidev: keyboard navigation, full screen, overview grid, deep links per slide. |
 | D16 | **Routing picks the key component only; optional components are never a routing decision.** The router chooses what the slide is built around (chart, table, number, steps, cards, cover, section). Everything optional is decided while filling, inside the chosen template: notes, takeaway, footnote, source, kicker, pitch subtitle, card facts, card lead (icon or value). Where an optional component changes the layout (notes on a chart or table), code picks the layout variant deterministically. A new optional component never adds a menu entry. (Evidence: M0 bake-off, 13.) |
@@ -102,9 +102,9 @@ Layouts and areas are **internal**. The agent writes the menu id plus fields **n
   "template": "chart",
   "kicker": "Unit economics",
   "title": "[[Interchange]] catches up with interest by year 4",
-  "chart": { "type": "bars", "format": "£{v}m",
+  "chart": { "format": "£{v}m",
              "categories": ["Y1", "Y2", "Y3", "Y4"],
-             "series": [{ "name": "Interchange", "color": "focus", "values": [0.3, 2.2, 11, 36] }] },
+             "series": [{ "name": "Interchange", "mark": "bar", "color": "focus", "values": [0.3, 2.2, 11, 36] }] },
   "notes": [ { "title": "Interchange compounds", "text": "Spend grows **3×**.", "point": { "series": 0, "index": 3 } } ],
   "takeaway": "Spend, not lending, makes the book profitable.",
   "source": "FinBridge model, base case."
@@ -146,7 +146,9 @@ It runs in milliseconds, in the browser, in Node and in tests.
 Chart text uses the same calculator. The collision rules are design decisions settled in M1, before the chart block ships:
 - category labels: a maximum count and length per area, and what happens when labels don't fit (fewer labels, or an error);
 - value labels: hidden when the bar is narrower than its label;
-- end labels on line charts: stacked when two series end at similar values.
+- end labels on line charts: stacked when two series end at similar values;
+- stacked bars: segment labels hidden when a segment is shorter than its label, total shown above the stack;
+- mixed bars and lines: the line scale and its labels must not collide with bar value labels.
 
 ### 4.3 Three lines of defence
 
@@ -246,11 +248,12 @@ The slide canvas is fixed (D12), so presenting is the same components scaled to 
 
 ```
 User message
-  → PRE (code + Jev, one call): intent · template · chart type · card lead
+  → PRE (code + Jev, one call): intent · template · card lead · position of a new slide
       intent sure (p ≥ 0.7) → code makes the first tool call itself:
-        new_slide        → create_slide (template and choices already decided)
+        new_slide        → create_slide (template, card lead and position already decided)
         edit_selected    → the selected slide joins the working set
         change_template  → create_slide with replace = selected slide
+        ask              → nothing; the agent asks one question
       otherwise → nothing; the agent starts from the request
   → agent (GLM 5.3 Flash) with: system · tools · history · working-slides block (last)
   → loop: call a tool → read its result → repeat
@@ -269,19 +272,42 @@ Calls made by code in PRE go into the history as ordinary assistant tool calls a
 |---|---|---|
 | intent of the message | Jev, in PRE | options below; acted on only at p ≥ 0.7 |
 | template of a new slide or a template change | Jev, in PRE (or inside `create_slide` when the agent calls it) | picking guide (9.2); skipped when the user named the kind of slide |
-| chart type, card lead | Jev, in PRE, together with the template | sent to the agent as `decided` in the `create_slide` result; the agent writes them as given |
-| icons | Jev, in the write path | the agent writes `"icon": "auto"`; code resolves every `auto` in one Jev call per write and stores the result |
-| any choice the user names ("make it lines", "use a rocket icon") | agent | writes the concrete value; code never overrides a concrete value |
-| tone, focus element | agent | part of the message the title makes |
+| card lead (icon, value, framed) | Jev, in PRE, together with the template | sent to the agent as `decided` in the `create_slide` result; the agent writes it as given |
+| where a new slide goes | Jev, in PRE | options: the deck's slide ids and `end`; sent as `after` |
+| **per series: bar or line** (`chart.series[i].mark`) | Jev, in the write path | each series decides separately: a chart can mix bars and lines. The agent writes `"mark": "auto"`; Jev answers one question per series ("a size compared across categories → bar; a trend, rate or ratio over time → line") |
+| **stacked bars** (`chart.stacked`) | Jev, in the write path | `"stacked": "auto"`: stacked when the bar series are parts of one whole (revenue by segment), side by side when they are compared (us vs a competitor) |
+| icons | Jev, in the write path | `"icon": "auto"` |
+| **focus element** (which series, card, step or column stands out) | Jev, in the write path | `"focus": "auto"` on the slide; Jev answers "which item is the title's claim about?" with the actual items as options; code sets `color`/`tone`/`focus` on the one picked and neutral on the rest |
+| any choice the user names ("make revenue bars and margin a line", "stack them", "use a rocket icon", "highlight 2025") | agent | writes the concrete value; code never overrides a concrete value, and a later `auto` elsewhere does not touch it |
+| tone `neg`, table row `muted` | agent | rare, and they depend on the message |
+| table row `total` | code | a row labelled Total, or whose values are the column sums, gets `style: "total"` |
+| all text, numbers, data, the highlighted words in the title | agent | against the template card |
 | all text, numbers, data | agent | against the template card |
 | trivia (quotes, `Source:` prefix, `percent`, full stop on a consulting title) | code | autofix; reported, never changes meaning |
 | whether a write is applied | code | shape errors: not applied; fit and quality issues: applied and reported |
 
-PRE intents: `new_slide` (one new slide) · `edit_selected` (change the selected slide) · `change_template` (show the selected slide as another kind) · `several_slides` · `other` (a question, chat, a deck operation). Only the first three trigger a code call; `edit_selected` and `change_template` need a selected slide.
+PRE intents: `new_slide` (one new slide) · `edit_selected` (change the selected slide) · `change_template` (show the selected slide as another kind) · `several_slides` · `ask` (too unclear to act on: the agent asks one question) · `other` (a question, chat, a deck operation). Only the first three trigger a code call; `edit_selected` and `change_template` need a selected slide.
+
+**Rule of thumb.** Code when the answer follows from structure or data; Jev when it is a closed set that depends on meaning; the agent when the user named the value or the value is open text. A value the user named always beats `auto`.
+
+**Jev guardrails.** At most one Jev call per write: every `auto` on the slide is one question in the same call (~0.1–0.3 s). Below p 0.6 the style default is used (consulting: bars side by side, icon lead; pitch: value lead). What Jev picked and its probability come back in `resolved`, so the agent can overrule a pick with a concrete value.
+
+**Chart schema change (required before the build).** `chart.type` and the one-series `line` flag are replaced by a mark per series and a stacking flag:
+
+```json
+"chart": { "stacked": false, "categories": ["2022", "2023", "2024"], "format": "£{v}m",
+  "series": [ { "name": "Revenue", "mark": "bar",  "values": [2.1, 4.8, 9.8] },
+              { "name": "Margin",  "mark": "line", "values": [12, 19, 27], "format": "{v}%" } ] }
+```
+
+- `mark`: `bar` · `line` · `auto`. All bars = a bar chart; all lines = a line chart (end labels, `area`, `dashed`); mixed = bars on the main scale and lines on their own scale when their format differs.
+- `stacked`: `true` · `false` · `auto`; applies to the bar series only, needs 2+ bar series with one format.
+- Series `color` is set by the focus decision; `area` and `dashed` stay line-only.
+- The v5 renderer, the fit limits and the quality matrix (5) gain the mixed and stacked cases.
 
 ### 9.2 Picking a menu entry
 
-1. **Classification.** Jev scores the 7 ids with the picking guide in its instructions; the top one is used. In PRE this is one question in the same call as intent, chart type and card lead (the choices are used only if the template needs them). The probabilities are returned to the agent; when they are close, the agent may call `create_slide` again with the other template. Later: two variants for the user to pick (14).
+1. **Classification.** Jev scores the 7 ids with the picking guide in its instructions; the top one is used. In PRE this is one question in the same call as intent, card lead and position (card lead is used only for `cards`). The probabilities are returned to the agent; when they are close, the agent may call `create_slide` again with the other template. Later: two variants for the user to pick (14).
 2. **Picking guide** (in the agent's system prompt and in Jev's instructions). Answer in order and stop at the first match:
 
 | # | If the content is… | Use |
@@ -304,7 +330,7 @@ Tie-breakers, stated to the agent and to Jev:
 
 | Layer | Contents | Changes |
 |---|---|---|
-| System | role; hard rules; markup; style rules; the 7 templates, one line each; tool rules (patch existing slides, full JSON only for a reserved slide, `auto` for icons, `reply` on the write) | never within a deck |
+| System | role; hard rules; markup; style rules; the 7 templates, one line each; tool rules (patch existing slides, full JSON only for a reserved slide, `auto` for series marks, stacking, focus and icons unless the user named the value; `reply` on the write) | never within a deck |
 | Tools | the 4 tool definitions (9.5) | never |
 | History | user messages (each prefixed with the deck state: style, theme, `1. s_a1 [number] The problem` per slide, selection), agent messages, tool calls and results. Template cards arrive here through `create_slide` / `read_slide`. **Write results carry no slide JSON**, only what changed and the issues. | grows; Clear chat empties it |
 | **Working slides** | the current JSON of every slide in the working set, each with its template, open issues, warnings and last judgment checks | rebuilt by code before **every** model step and sent as the last message; never stored in history |
@@ -320,18 +346,19 @@ Tie-breakers, stated to the agent and to Jev:
 - **Rule checks R1–R8** come back as `warnings`: the agent sees them, it is not required to act.
 - **Judgment checks J1–J7** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
 - **Code fixes trivia and reports it** (never meaning).
+- **Code fixes dependent fields instead of reporting them.** When a rule spanning several fields has one right answer, code applies it in autofix and lists it in `autofixes`: a series switched to `line` loses note points and `stacked` if fewer than 2 bars remain; `area`/`dashed` are dropped from bar series; a removed category drops the note points that referred to it; a second focus the user did not name is set back to neutral. Only rules with a choice left in them come back as issues. This is the main lever for first-write validity: what the model cannot get wrong it is not asked to get right.
 - Measurement is deterministic (fixed 1920×1080 canvas, fixed fonts): the prototype uses the browser as its ruler; the product uses the fit engine (4).
 
 ### 9.5 Tools
 
 | Tool | Input | Inside | Output |
 |---|---|---|---|
-| `create_slide` | `about` (the content, the user's words kept) · `after`: slide id or `"end"` · `template?` (only when the user named the kind) · `replace?`: slide id, for a template change | Jev classification (skipped when PRE already decided or `template` is given); reserves the slide id (or keeps it, for `replace`) | `slideId` · `template` · `probabilities` · `decided` (`{ "chart.type": "bars" }`, `{ "cards.lead": "value" }`) · `card` · `example` |
+| `create_slide` | `about` (the content, the user's words kept) · `after`: slide id or `"end"` · `template?` (only when the user named the kind) · `replace?`: slide id, for a template change | Jev classification (skipped when PRE already decided or `template` is given); reserves the slide id (or keeps it, for `replace`) | `slideId` · `template` · `probabilities` · `decided` (`{ "cards.lead": "value" }`) · `card` · `example` |
 | `edit_slide` | `slideId` · `slide`: the full slide JSON · `reply?` | **only for a slide `create_slide` reserved this turn** (new, or `replace`); anything else is refused with a pointer to `patch_slide`. Write path (9.4). | `applied` · `issues[]` · `warnings[]` · `autofixes[]` · `resolved` (the `auto` values Jev picked) |
 | `patch_slide` | `slideId` · `set`: `{ path: value }` · `reply?` | apply every path to the stored slide (all or nothing), then the write path (9.4) on the whole slide | `applied` · `changed[]` (paths) · `issues[]` (with `elsewhere`) · `warnings[]` · `autofixes[]` · `resolved` |
 | `read_slide` | `slideId` | adds the slide to the working set | `template` · `card` |
 
-**Paths** follow the slide JSON: `title`, `takeaway`, `chart.type`, `chart.categories`, `chart.series[1].values`, `chart.series[1].values[3]`, `cards[2]`, `cards[2].title`, `notes[0].point.index`.
+**Paths** follow the slide JSON: `title`, `takeaway`, `chart.stacked`, `chart.series[0].mark`, `chart.categories`, `chart.series[1].values`, `chart.series[1].values[3]`, `cards[2]`, `cards[2].title`, `notes[0].point.index`.
 - A value replaces what is at the path (a whole object or list when the path names one).
 - `null` removes a field, or removes an item from a list (later items shift down; several removals in one patch apply from the highest index down).
 - An index equal to the list's length appends an item.
@@ -339,6 +366,11 @@ Tie-breakers, stated to the agent and to Jev:
 - Reordering items or restructuring the whole slide is a patch of the whole list (`"cards": [...]`), not a full rewrite.
 
 **`reply`:** a write may carry the reply to the user. If the write is applied with no `issues` (warnings allowed), the turn ends there with that reply and no further model call. Otherwise the reply is dropped and the loop continues.
+
+**Schema enforcement.** The GLM endpoint does not enforce schemas: `response_format: json_schema` and `strict` tools are accepted and ignored, and `tool_choice: "required"` is not enforced (probe, 2026-09-27). GLM does follow tool schemas well in practice. So:
+- **One schema source**: the zod registry generates the template cards, the validator, the error messages and the JSON Schema of every tool parameter (enums, required, `additionalProperties: false`), so they cannot disagree.
+- The tool list stays fixed for the whole conversation (a per-template tool would break the prompt cache); the template's exact schema reaches the agent through its card.
+- Enforcement is the write path: validate → precise error (path, value, limit, valid values, fix) → the agent retries. Fewer fields to write (patches, `auto`, code-owned dependent fields) is what raises first-write validity.
 
 - A slide reserved by `create_slide` appears on the canvas with its first applied `edit_slide`; a reservation never written in the turn is dropped.
 - **Ids:** slides get stable ids (`s_` + 4 characters) that survive template changes. The user's component selection is passed as a path (`cards[2]`), which the agent can use directly in `patch_slide`.
@@ -358,7 +390,6 @@ Built at the start of M1, before the UI, and run on every change to a prompt, te
 
 | Dropped | What it did | Add back if |
 |---|---|---|
-| Convert step | adjusted dependent fields on a choice change (bars → lines drops `line` flags) | choice changes often fail first time (the `elsewhere` issues may cover it) |
 | Component metadata | per-component area (full, 2/3, 1/3), limits, usage ("93 of 72"), allowed options | the agent keeps overfilling small areas |
 | GLM 5.3 retry ladder | retried a malformed step on the larger model | Flash tool calls often fail twice |
 | Parallel slide creation (`create_slides` from an outline) | several slides at once | multi-slide requests are too slow |
@@ -367,13 +398,14 @@ Built at the start of M1, before the UI, and run on every change to a prompt, te
 | History trimming | smaller context | cost or latency require it |
 | `delete_slide`, `move_slide`, `set_deck`, undo snapshots | deck operations | users ask for them |
 
-**Brought back from the pipeline** (were dropped for the MVP): Jev before the agent (intent, template, choices), Jev for icons, Jev judgment checks per turn, component path addressing (`patch_slide`).
+**Brought back from the pipeline** (were dropped for the MVP): Jev before the agent (intent, template, card lead, position), Jev for closed sets in the write path (series marks, stacking, focus, icons), the convert step (now code fixing dependent fields, 9.4), Jev judgment checks per turn, component path addressing (`patch_slide`).
 
 Considered and rejected: all 7 template cards in the system prompt with no classification step; whole-slide rewrites for edits (slower, and they let unrelated parts drift).
 
 **Test for the hybrid** (against the recorded MVP and pipeline runs in `docs/research/2026-09-26-agent-single-slide/`):
 - The same 30 single-slide requests and the two long sessions (10 warm-up turns, then 5 measured).
-- **15 surgical edits** on existing slides (one word, one value, one series, a card added or removed, a choice named by the user, an edit whose knock-on effect needs a second patch).
+- **15 surgical edits** on existing slides (one word, one value, one series, a card added or removed, a choice named by the user such as one series switched to a line or bars stacked, an edit whose knock-on effect needs a second patch).
+- **Jev choices** against labelled answers: series mark, stacking and focus on the chart requests; accuracy ≥ 90%.
 
 | Measure | Pass |
 |---|---|
