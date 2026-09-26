@@ -1,12 +1,15 @@
 /* Journey prototype: chat → slide appears → edit by prompt → checks list → full screen.
-   Live mode calls the real models through server.mjs; without it, recorded runs are replayed. */
+   Live mode runs the MVP agent (agent.js); ?engine=pipeline runs the earlier fixed pipeline.
+   Without the model proxy, recorded pipeline runs are replayed. */
 import { contexts, esc, fitIssues, mountSlide } from "../v5/render.js";
 import { createSlide, editSlide } from "./pipeline.js";
+import { runTurn } from "./agent.js";
 import { judgmentChecks, ruleChecks } from "./checks.js";
 import { startPresentation } from "./present.js";
 
 const $ = (id) => document.getElementById(id);
-const state = { style: "consulting", theme: "ink", items: [], current: 0, turns: [], busy: false, live: false, replay: null };
+const ENGINE = new URLSearchParams(location.search).get("engine") === "pipeline" ? "pipeline" : "agent";
+const state = { style: "consulting", theme: "ink", items: [], current: 0, turns: [], history: [], busy: false, live: false, replay: null, engine: ENGINE };
 window.__journey = state; // read by the recording script
 
 const SUGGEST = {
@@ -34,6 +37,15 @@ function measure(slide, d = deck(), i = state.current) {
   const t = el.querySelector(".title");
   measure.lines = t ? Math.round(t.clientHeight / parseFloat(getComputedStyle(t).lineHeight)) : 1;
   return fitIssues(el, d.style);
+}
+
+/* Measure for the agent: `slides` is the agent's deck (a reserved slide has no JSON yet). */
+function measureIn(slides, slide, index) {
+  const list = slides.map((s, i) => (i === index ? slide : s.slide));
+  const d = { ...deck(), slides: list.filter(Boolean) }, at = list.slice(0, index).filter(Boolean).length;
+  const issues = measure(slide, d, at);
+  measureIn.lines = measure.lines;
+  return issues;
 }
 
 /* ─────────── Rendering ─────────── */
@@ -99,6 +111,7 @@ function addMessage(kind, html) {
   return el;
 }
 const traceHTML = (trace, pending) => `<ul class="trace">${trace.map((t) => `<li><b>${esc(t.step)}</b><span>${esc(t.detail)} <i>· ${esc(t.model)}</i></span><em>${t.ms ? `${(t.ms / 1000).toFixed(1)}s` : ""}</em></li>`).join("")}${pending ? `<li class="pending"><b>${esc(pending)}</b><span></span><em></em></li>` : ""}</ul>`;
+const paragraphs = (t) => String(t || "").split(/\n{2,}/).map((p) => `<p>${esc(p.trim())}</p>`).join("");
 const NEXT = { Route: "Decide", Intent: "Fill", Decide: "Fill", Fill: "Gate", Gate: "Repair", Edit: "Gate", Repair: "Repair" };
 
 function replyText(r, before) {
@@ -112,6 +125,7 @@ function replyText(r, before) {
 async function send(text) {
   text = text.trim();
   if (!text || state.busy) return;
+  if (state.engine === "agent") return sendAgent(text);
   $("input").value = "";
   state.busy = true; render();
   addMessage("user", `<p>${esc(text)}</p>`);
@@ -139,6 +153,39 @@ async function send(text) {
     bot.className = "msg bot error";
     bot.innerHTML = `<p>Something went wrong: ${esc(e.message || e)}</p>${traceHTML(trace)}`;
     state.busy = false; render();
+  }
+}
+
+/* MVP agent turn: the agent works on its own copy of the deck; every applied write shows at once. */
+async function sendAgent(text) {
+  $("input").value = "";
+  state.busy = true; render();
+  addMessage("user", `<p>${esc(text)}</p>`);
+  const bot = addMessage("bot", `<p class="sub"><i class="spinner"></i>Working…</p>`);
+  const trace = [], t0 = performance.now();
+  const log = (step) => { trace.push(step); bot.innerHTML = traceHTML(trace, "Working"); $("thread").scrollTop = 1e9; };
+  const adeck = { style: state.style, theme: state.theme, slides: state.items.map((it) => ({ id: it.id, slide: it.slide, issues: it.errors || [], warnings: it.warnings || [] })) };
+  const cur = state.items[state.current];
+  const sync = (d, focusId) => {
+    state.items = d.slides.filter((s) => s.slide).map((s) => ({ id: s.id, slide: s.slide, status: s.issues.length ? "draft" : "ok", errors: s.issues, warnings: s.warnings, checks: [], checksPending: false }));
+    const i = state.items.findIndex((it) => it.id === focusId);
+    if (i >= 0) state.current = i;
+    render();
+  };
+  const measureAgent = (slide, index) => { const r = measureIn(adeck.slides, slide, index); measureAgent.lines = measureIn.lines; return r; };
+  try {
+    const r = await runTurn({ text, deck: adeck, history: state.history, selection: cur ? { slideId: cur.id } : null, measure: measureAgent, log, onChange: sync });
+    sync(adeck, state.items[state.current]?.id);
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    bot.innerHTML = `${paragraphs(r.reply)}<p class="sub">${r.modelCalls} model call${r.modelCalls === 1 ? "" : "s"} · ${r.toolCalls} tool call${r.toolCalls === 1 ? "" : "s"} · ${secs}s</p>${traceHTML(trace)}`;
+    state.items.forEach((it, i) => { measure(it.slide, deck(), i); it.checks = ruleChecks(it.slide, state.style, measure.lines); });
+    state.busy = false; render();
+    state.turns.push({ request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: Math.round(performance.now() - t0), items: structuredClone(state.items), current: state.current });
+  } catch (e) {
+    bot.className = "msg bot error";
+    bot.innerHTML = `<p>Something went wrong: ${esc(e.message || e)}</p>${traceHTML(trace)}`;
+    state.busy = false; render();
+    state.turns.push({ request: text, error: String(e.message || e), trace, ms: Math.round(performance.now() - t0), items: structuredClone(state.items) });
   }
 }
 
@@ -178,7 +225,7 @@ function showReplay(run) {
 async function boot() {
   await document.fonts.ready;
   try { const h = await (await fetch("/api/health")).json(); state.live = !!h.live; } catch { state.live = false; }
-  $("mode").textContent = state.live ? "Live · GLM + Jev" : "Recorded run";
+  $("mode").textContent = state.live ? (state.engine === "agent" ? "Live · agent" : "Live · pipeline") : "Recorded run";
   $("mode").classList.toggle("live", state.live);
   if (!state.live) {
     try {
@@ -189,7 +236,9 @@ async function boot() {
       showReplay(runs[0]);
     } catch { addMessage("bot error", "<p>No live models and no recorded runs found. Start the local server: <code>node docs/design/proposals/journey/server.mjs</code></p>"); }
   } else {
-    addMessage("bot", `<p>Describe a slide. I route it with Jev, write it with GLM 5.3 Flash, check it fits, and repair it if needed. Then ask for changes, add slides, or press <b>Present</b>.</p>`);
+    addMessage("bot", state.engine === "agent"
+      ? `<p>Describe a slide. The agent picks a template with Jev, writes the slide with GLM 5.3 Flash and fixes anything that does not fit. Then ask for changes, add slides, or press <b>Present</b>.</p>`
+      : `<p>Describe a slide. I route it with Jev, write it with GLM 5.3 Flash, check it fits, and repair it if needed. Then ask for changes, add slides, or press <b>Present</b>.</p>`);
   }
   render();
 }
@@ -197,7 +246,9 @@ async function boot() {
 /* ─────────── Controls ─────────── */
 document.querySelectorAll("#style button").forEach((b) => (b.onclick = () => { state.style = b.dataset.v; render(); }));
 document.querySelectorAll("#theme button").forEach((b) => (b.onclick = () => { state.theme = b.dataset.v; render(); }));
-$("reset").onclick = () => { if (state.replay) { state.replay = null; state.items = []; $("thread").innerHTML = ""; $("replay").hidden = true; boot(); return; } state.items = []; state.turns = []; state.current = 0; $("thread").innerHTML = ""; boot(); };
+$("reset").onclick = () => { if (state.replay) { state.replay = null; state.items = []; $("thread").innerHTML = ""; $("replay").hidden = true; boot(); return; } state.items = []; state.turns = []; state.history = []; state.current = 0; $("thread").innerHTML = ""; boot(); };
+// Clear chat: the agent forgets the conversation; the deck stays.
+$("clear").onclick = () => { if (state.busy) return; state.history = []; $("thread").innerHTML = ""; addMessage("bot", "<p class=\"sub\">Chat cleared. The deck is kept; the agent starts a new conversation.</p>"); };
 $("composer").onsubmit = (e) => { e.preventDefault(); send($("input").value); };
 $("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("input").value); } };
 const present = () => state.items.length && startPresentation(deck(), state.current, (i) => { state.current = i; render(); });
@@ -211,4 +262,5 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.__journey.send = send;
+window.__journey.setStyle = (v) => { state.style = v; render(); };
 boot();

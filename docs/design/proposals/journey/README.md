@@ -2,17 +2,19 @@
 
 A throwaway page to validate the customer journey before M1: chat → slide appears → edit by prompt → checks list → full screen. It runs the agent pipeline from the spec (section 9) against the real models and renders with the v5 slide system (`../v5/`).
 
-## Two modes
+## Modes
 
 | Mode | Where | What it does |
 |---|---|---|
-| **Live** | local: `node docs/design/proposals/journey/server.mjs`, then open http://localhost:8787/journey/ | Calls GLM 5.3 Flash and Jev through the local proxy, which reads the keys from the repo `.env` (`GLM_API_KEY`, `OPENROUTER_API_KEY`). |
-| **Live (deployed)** | `/proto/journey/` on Vercel | Same pipeline through the Vercel functions `api/glm.ts`, `api/jev.ts` and `api/health.ts`, which read `GLM_API_KEY` and `OPENROUTER_API_KEY` from the project env. |
-| **Replay** | any host without the keys | `/api/health` reports not live, so the page replays recorded runs of the real pipeline (`replays.json`). Click a request in the chat to see the deck at that point. |
+| **Live: agent** (default) | local: `node docs/design/proposals/journey/server.mjs`, then http://localhost:8787/journey/ · deployed: `/proto/journey/` | The MVP agent (spec 9.0–9.5): GLM 5.3 Flash in a tool loop with `create_slide` (Jev classifies, returns the template card), `edit_slide` (whole slide; autofix → validate → measure; shape errors not applied, fit issues applied and returned) and `read_slide`. Conversation history is kept until **Clear chat**; the deck stays. |
+| **Live: pipeline** | the same URLs with `?engine=pipeline` | The earlier fixed pipeline below, kept for comparison. |
+| **Replay** | any host without the keys | `/api/health` reports not live, so the page replays recorded pipeline runs (`replays.json`). |
 
-The v5 gallery is deployed next to it at `/proto/v5/review.html`. The Vite build copies both folders into `dist/proto/` (see `vite.config.ts`).
+Keys: `GLM_API_KEY` and `OPENROUTER_API_KEY`, from the repo `.env` locally and from the Vercel project env when deployed (`api/glm.ts`, `api/jev.ts`, `api/health.ts`).
 
-## Pipeline (spec 9.0)
+Single-slide test of the agent against the pipeline: `docs/research/2026-09-26-agent-single-slide/`.
+
+## Pipeline (earlier design, `?engine=pipeline`)
 
 | Step | Who | Notes |
 |---|---|---|
@@ -29,6 +31,7 @@ Presentation: **Present** or `F`. Arrows, Space, PgUp/PgDn, Home/End, a number t
 
 ## Files
 
+- `agent.js`: the MVP agent loop and its three tools. `agent-prompt.js`: its system prompt, tool definitions and state block.
 - `server.mjs`: local static server plus `/api/glm` and `/api/jev` proxies with a model allowlist and a call cap. Not deployed; the repo-root `api/` functions are its deployed twin (spend limits are set on the provider accounts).
 - `llm.js`: model client. `prompts.js`: prompt layers. `pipeline.js`: create and edit. `checks.js`: design checks.
 - `app.js`: UI. `present.js`: presentation mode. `journey.css`: page chrome (slides use `../v5/slides.css`).

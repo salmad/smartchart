@@ -1,4 +1,4 @@
-/* Model client: the two calls the pipeline makes, both through the local proxy (server.mjs). */
+/* Model client: GLM (chat and agent steps) and Jev, through the proxy (server.mjs locally, api/ on Vercel). */
 
 export const FLASH = "glm-5.3-flash", BIG = "glm-5.3";
 
@@ -15,6 +15,14 @@ async function post(path, payload) {
       await new Promise((ok) => setTimeout(ok, 1200 * (attempt + 1)));
     }
   }
+}
+
+/** One agent step: GLM 5.3 Flash with tools. Returns the assistant message (content and/or tool_calls). */
+export async function agentStep({ messages, tools, toolChoice = "auto", model = FLASH }) {
+  const { j, ms } = await post("/api/glm", { model, messages, tools, tool_choice: toolChoice, temperature: 0.3, max_tokens: 8000 });
+  const m = j.choices?.[0]?.message || {};
+  const message = { role: "assistant", content: m.content || "", ...(m.tool_calls?.length ? { tool_calls: m.tool_calls } : {}) };
+  return { message, ms, tokens: j.usage?.total_tokens ?? 0 };
 }
 
 /** GLM chat call. With `json`, the reply is parsed into an object (code fences tolerated). */

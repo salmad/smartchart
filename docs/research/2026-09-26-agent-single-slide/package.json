@@ -1,0 +1,6 @@
+{
+  "name": "agent-single-slide-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": { "playwright": "1.58.2" }
+}

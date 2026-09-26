@@ -458,7 +458,7 @@ Everything needed to continue is in the repo:
 1. ~~Update the v4 prototype to the pitch frame change and to the 7-entry menu.~~ **Done (2026-09-26):** `docs/design/proposals/v5/` (schema, renderer, examples, gallery). Pitch titles keep the v4 size (150px, max 20 characters); `?stress=1` has 0 issues in both palettes. Deployed at `/proto/v5/review.html`.
    **Journey prototype built (2026-09-26):** `docs/design/proposals/journey/` runs the earlier fixed pipeline (route → decide → fill → gate → repair, before the 9.0 revision) against GLM 5.3 Flash and Jev (live through a local proxy; the deployed `/proto/journey/` replays recorded runs). See its README for results and what they changed.
 2. Re-run the routing bake-off on the 7-entry menu to confirm the 0.7 threshold.
-3. Build the MVP agent loop (9.0–9.5) in the journey prototype and run the single-slide test (9.7).
+3. ~~Build the MVP agent loop (9.0–9.5) in the journey prototype and run the single-slide test (9.7).~~ **Done (2026-09-26):** `docs/design/proposals/journey/agent.js` (default engine; the pipeline stays at `?engine=pipeline`); results in `docs/research/2026-09-26-agent-single-slide/`. Agent vs pipeline: every request number kept 100% vs 93%; first write shape-valid 93%; all slides end fitting; template agrees with the pipeline 28/30; p50 17.4 s vs 11.8 s. Open: latency (model time is ~95% of a turn), schema knowledge in the cards (note points on lines charts, table column labels, bullets vs text), unmarked illustrative figures (two prompt rules added, not yet re-tested).
 4. Write the implementation plan for M0 (fit spike) and M1 (one `chart` slide end to end), starting with the evaluation harness (9.6).
 
 **Future features (recorded, not scheduled):**

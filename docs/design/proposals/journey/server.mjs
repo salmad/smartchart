@@ -55,10 +55,10 @@ async function api(req, res, kind) {
   let out;
   if (kind === "glm") {
     if (!GLM_MODELS.has(p.model)) return send(res, 400, { error: `model ${p.model} is not allowed` });
-    const { model, messages, thinking = false, temperature = 0.3, max_tokens = 4000, response_format } = p;
+    const { model, messages, thinking = false, temperature = 0.3, max_tokens = 4000, response_format, tools, tool_choice } = p;
     out = await forward(GLM_URL, process.env.GLM_API_KEY, {
       model, messages, temperature, max_tokens, thinking: { type: thinking ? "enabled" : "disabled" },
-      ...(response_format ? { response_format } : {}),
+      ...(response_format ? { response_format } : {}), ...(tools ? { tools, tool_choice } : {}),
     });
   } else {
     out = await forward(JEV_URL, process.env.OPENROUTER_API_KEY, { model: JEV_MODEL, state: p.state, questions: p.questions });
