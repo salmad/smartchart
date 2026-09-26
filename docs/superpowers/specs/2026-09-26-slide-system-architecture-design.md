@@ -185,6 +185,7 @@ Two kinds, both cheap:
 | R6 | Takeaway does not restate the title (word overlap < 60%) | both |
 | R7 | Parallel items are balanced: longest ÷ shortest text in a row of cards, notes or steps ≤ 2.5 | both |
 | R8 | A slide with figures has a `source` | consulting |
+| R9 | Chart guide: series with the same format share one mark unless one is dashed (a reference); at most two formats; `stacked` only with 2+ bar series of one format | both |
 
 **Judgment checks** (Jev, one typed decision each, ~100 ms; a check fails only when Jev's probability for a failing value is ≥ 0.7, to keep noise down):
 
@@ -305,6 +306,15 @@ PRE intents: `new_slide` (one new slide) · `edit_selected` (change the selected
 - Series `color` is set by the focus decision; `area` and `dashed` stay line-only.
 - The v5 renderer, the fit limits and the quality matrix (5) gain the mixed and stacked cases.
 
+**Chart guide** (one text in the registry: part of the `chart` template card, so the agent has it when it writes or edits a chart, and the instructions of Jev's mark and stacking questions):
+1. **Comparable series share one mark.** Series that measure the same thing in the same unit (our revenue vs a competitor's, revenue by segment, three scenarios) are all bars or all lines.
+2. **Bars for sizes, lines for trends.** Bars compare sizes across categories or a few periods (up to about 6); lines show a trend over many periods (7 or more), forecasts and scenarios.
+3. **A different unit can be a line over bars.** A series in another unit (a margin % or a growth rate over £m revenue) is drawn as a line on its own scale over the bars. At most two units per chart; a third unit needs another slide.
+4. **A reference series can differ.** A target, benchmark or average in the same unit may be a dashed line over bars: it is a reference, not a comparable.
+5. **Stack only parts of a whole.** Stack bar series when they add up to a total that matters (revenue by segment); keep them side by side when the point is comparing them (us vs them). Never stack rates or percentages that do not sum to a whole; lines never stack.
+6. **Pitch: fewer series.** One series, two at most.
+7. **Edits keep the rules.** When the user switches one series of a comparable group ("make revenue a line"), switch the whole group and say so in the reply, unless the user said only that series. When a new series in another unit is added to a bar chart, make it a line.
+
 ### 9.2 Picking a menu entry
 
 1. **Classification.** Jev scores the 7 ids with the picking guide in its instructions; the top one is used. In PRE this is one question in the same call as intent, card lead and position (card lead is used only for `cards`). The probabilities are returned to the agent; when they are close, the agent may call `create_slide` again with the other template. Later: two variants for the user to pick (14).
@@ -342,8 +352,8 @@ Tie-breakers, stated to the agent and to Jev:
 - **One problem format everywhere:** field path · what was measured · the limit · a concrete fix. `cards[2].text: 3 lines, max 2, about 22 characters too long.`
 - **Shape errors** (unknown or missing field, wrong type, a bad path, 4 values for 5 categories) cannot render: the write is **not applied** (a patch is all or nothing); the agent gets the errors.
 - **Fit issues** (measured at 1920×1080) **are applied**, so the user sees the change, and returned as `issues`.
-- **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R8. Issues on paths the patch did not touch are marked `elsewhere: true`, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
-- **Rule checks R1–R8** come back as `warnings`: the agent sees them, it is not required to act.
+- **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R9. Issues on paths the patch did not touch are marked `elsewhere: true`, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
+- **Rule checks R1–R9** come back as `warnings`: the agent sees them, it is not required to act.
 - **Judgment checks J1–J7** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
 - **Code fixes trivia and reports it** (never meaning).
 - **Code fixes dependent fields instead of reporting them.** When a rule spanning several fields has one right answer, code applies it in autofix and lists it in `autofixes`: a series switched to `line` loses note points and `stacked` if fewer than 2 bars remain; `area`/`dashed` are dropped from bar series; a removed category drops the note points that referred to it; a second focus the user did not name is set back to neutral. Only rules with a choice left in them come back as issues. This is the main lever for first-write validity: what the model cannot get wrong it is not asked to get right.
@@ -485,7 +495,7 @@ Types come from `z.infer` only. Geometry constants feed both the calculator and 
 - **Main model:** GLM 5.3 Flash (subscription, free), the default unless it fails the bar. GLM 5.3 (larger, same subscription) is the escalation model.
 - **Jev:** each closed-set field (9.1) and each judgment check is measured for agreement with labelled examples before it is switched on.
 - **Test set:** 50 seeded prompts × 2 styles.
-- **Pass bar:** first fill passes validation and fit ≥ 80%; p95 fix rounds ≤ 2; zero invented fields; rule checks R1–R8 pass ≥ 90%.
+- **Pass bar:** first fill passes validation and fit ≥ 80%; p95 fix rounds ≤ 2; zero invented fields; rule checks R1–R9 pass ≥ 90%.
 - **Also scored:** judgment checks J1–J5 as quality metrics; latency per slide.
 
 **M0 routing bake-off: results (2026-09-26)** (full report: `docs/temp/routing-test/report.md`)
