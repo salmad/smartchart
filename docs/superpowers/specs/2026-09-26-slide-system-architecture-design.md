@@ -215,7 +215,7 @@ Chat UI → Agent loop ── model call ─────────────
 
 - One model interface: OpenAI-compatible chat with tool calls, behind the proxy. Replaces the current Gemini/Claude factory and the exposed `VITE_*` keys.
 - **The proxy enforces routing** with an allowlist: GLM goes to the GLM subscription endpoint; OpenRouter accepts only Jev model ids (later: named image models). Any other model id is rejected.
-- **Jev** does two jobs: picks the menu entry from the prompt (see 9.1) and answers the judgment checks (6).
+- **Jev** makes every closed-set decision: the intent, template and choices before the agent runs, icons in the write path (9.1), and the judgment checks after the turn (6).
 - Because fit needs no DOM, the loop can move server-side later without changing the fit engine.
 - Stored slides carry a `fitVersion`. When geometry or fonts change, slides saved under an older version are re-checked on load, and any that fail are flagged.
 - Fonts use `font-display: block` so thumbnails never render with fallback metrics.
@@ -240,36 +240,48 @@ The slide canvas is fixed (D12), so presenting is the same components scaled to 
 
 ## 9. Agent architecture
 
-**Revised 2026-09-26: MVP.** One agent model talks to the user and works on the deck through three tools, over as many steps as a task needs. A new slide always starts from a template chosen by a **separate classification step** (Jev); that step puts the template's card in the agent's context, and from then on the slide is written and progressively edited as full JSON through one write tool. Code measures every write and reports problems back. Several earlier pieces are **dropped for the MVP** and listed in 9.7 to add back if they prove essential. Design page: https://claude.ai/artifact/5yap5PKhXADV2T2xQYpgRA
+**Revised 2026-09-26: hybrid agent.** The MVP agent (one GLM loop, whole-slide writes) kept every figure and held a conversation, but was slow (p50 17.4 s vs the fixed pipeline's 11.8 s) and rewrote the whole slide for every change. The hybrid optimises for **speed and reliable changes**. It keeps the agent loop, history and replies from the MVP, and brings back from the fixed pipeline the cheap steps that worked: a Jev step before the agent, Jev for every closed-set choice, and Jev judgment checks after the turn. Existing slides change only through **path patches**: code applies them exactly where the agent points and keeps everything else byte for byte. MVP results: `docs/research/2026-09-26-agent-single-slide/`. Design page: https://claude.ai/artifact/5yap5PKhXADV2T2xQYpgRA
 
-### 9.0 The agent loop
+### 9.0 The turn
 
 ```
 User message
-  → agent (GLM 5.3 Flash) with: system · tools · state block · history
-  → loop: think → call a tool → read its result (added to history) → repeat
-  → short reply to the user
+  → PRE (code + Jev, one call): intent · template · chart type · card lead
+      intent sure (p ≥ 0.7) → code makes the first tool call itself:
+        new_slide        → create_slide (template and choices already decided)
+        edit_selected    → the selected slide joins the working set
+        change_template  → create_slide with replace = selected slide
+      otherwise → nothing; the agent starts from the request
+  → agent (GLM 5.3 Flash) with: system · tools · history · working-slides block (last)
+  → loop: call a tool → read its result → repeat
+      a write that carries `reply` and comes back clean (applied, no issues) ends the turn with that reply
+  → reply to the user
+  → POST (Jev, one call, after the reply): judgment checks J1–J7 on each slide written this turn
 ```
 
-- **What the agent always knows:** the style; the deck as ordered titles with slide ids and template ids; the selected slide (and component, as a hint); the conversation history (user messages, agent messages, tool calls and results), which the user can clear with a button. The deck is kept; only the history is cleared.
-- **New slide:** `create_slide` (classification → template card in context) → `edit_slide` with the full slide → `edit_slide` again for any reported issue → reply. Target: 3 model calls.
-- **Any edit** (text, data, a choice such as chart type or a line series, tone, icon): `read_slide` if the slide's latest JSON and card are not already in the conversation → `edit_slide` with the full slide → reply. Target: 1–2 model calls.
-- **Template change:** `create_slide` with `replace` (classification again, or the template the user named) → new card in context → `edit_slide` keeping the message and figures.
-- **Several slides:** one `create_slide` + `edit_slide` per slide, one after another.
+Target model calls: clean new slide = 1 Jev + 1 GLM; clean small edit = 1 Jev + 1 GLM; a write with issues adds 1 GLM per fix round.
+
+Calls made by code in PRE go into the history as ordinary assistant tool calls and tool results, so the agent reads them exactly as if it had made them. The agent can overrule PRE: call `create_slide` again with another template, or work on a different slide.
 
 ### 9.1 Who decides what
 
 | Decision | Decided by | How |
 |---|---|---|
-| template of a new slide or a template change | Jev, inside `create_slide` (the classification step) | picking guide (9.2); skipped when the user named the kind of slide |
-| chart type, card lead, icons, tone, focus element | agent | closed sets listed in the template card |
-| all text, numbers, data | agent | written against the template card |
+| intent of the message | Jev, in PRE | options below; acted on only at p ≥ 0.7 |
+| template of a new slide or a template change | Jev, in PRE (or inside `create_slide` when the agent calls it) | picking guide (9.2); skipped when the user named the kind of slide |
+| chart type, card lead | Jev, in PRE, together with the template | sent to the agent as `decided` in the `create_slide` result; the agent writes them as given |
+| icons | Jev, in the write path | the agent writes `"icon": "auto"`; code resolves every `auto` in one Jev call per write and stores the result |
+| any choice the user names ("make it lines", "use a rocket icon") | agent | writes the concrete value; code never overrides a concrete value |
+| tone, focus element | agent | part of the message the title makes |
+| all text, numbers, data | agent | against the template card |
 | trivia (quotes, `Source:` prefix, `percent`, full stop on a consulting title) | code | autofix; reported, never changes meaning |
 | whether a write is applied | code | shape errors: not applied; fit and quality issues: applied and reported |
 
+PRE intents: `new_slide` (one new slide) · `edit_selected` (change the selected slide) · `change_template` (show the selected slide as another kind) · `several_slides` · `other` (a question, chat, a deck operation). Only the first three trigger a code call; `edit_selected` and `change_template` need a selected slide.
+
 ### 9.2 Picking a menu entry
 
-1. **Classification (inside `create_slide`).** Jev scores the 7 ids for the content, with the picking guide in its instructions, and the top one is used; in the bake-off a top probability ≥ 0.7 covered about 80% of requests. The probabilities are returned to the agent; when they are close, the agent may call `create_slide` again with the other template. Later: two variants for the user to pick (14). The threshold is re-measured on the 7-entry menu with the evaluation set (9.6).
+1. **Classification.** Jev scores the 7 ids with the picking guide in its instructions; the top one is used. In PRE this is one question in the same call as intent, chart type and card lead (the choices are used only if the template needs them). The probabilities are returned to the agent; when they are close, the agent may call `create_slide` again with the other template. Later: two variants for the user to pick (14).
 2. **Picking guide** (in the agent's system prompt and in Jev's instructions). Answer in order and stop at the first match:
 
 | # | If the content is… | Use |
@@ -285,72 +297,96 @@ User message
 Tie-breakers, stated to the agent and to Jev:
 - **Chart or table?** Chart when the point is a trend, a comparison of sizes or a crossover; table when the reader needs the exact values.
 - **Notes** are not a routing decision; the agent adds them when writing (template card rule: only if each note adds something; in pitch, prefer none).
-- **Cards: icon or value lead?** Value when every card has a number worth showing; otherwise icon. Consulting defaults to icons, pitch to values.
-- **Contrast** (them vs us, before vs after): `cards` with 2 framed cards, one tone `neg` and one `focus`.
+- **Cards: icon or value lead?** Value when every card has a number worth showing; otherwise icon. Consulting defaults to icons, pitch to values. Framed for a two-way contrast (them vs us, before vs after): 2 cards, one tone `neg` and one `focus`.
 - When in doubt, pick the entry with **fewer words**.
 
 ### 9.3 Agent context
 
 | Layer | Contents | Changes |
 |---|---|---|
-| System | role (talk to the user; work on the deck through tools; write slide JSON from template cards; never design); fixed rules and markup syntax; style rules for the chosen style; the 7 templates, one line each; tool rules | never within a deck (style is locked after the first slide) |
-| Tools | the 3 tool definitions (9.5) | never |
-| State block | style · theme · `1. s_a1 [number] The problem` per slide · selected slide id (and component) | every user turn; a trailing message, so the prefix stays cacheable |
-| History | all user messages, agent messages, tool calls and tool results, in order; template cards arrive here as `create_slide` / `read_slide` results | grows; the Clear button empties it |
+| System | role; hard rules; markup; style rules; the 7 templates, one line each; tool rules (patch existing slides, full JSON only for a reserved slide, `auto` for icons, `reply` on the write) | never within a deck |
+| Tools | the 4 tool definitions (9.5) | never |
+| History | user messages (each prefixed with the deck state: style, theme, `1. s_a1 [number] The problem` per slide, selection), agent messages, tool calls and results. Template cards arrive here through `create_slide` / `read_slide`. **Write results carry no slide JSON**, only what changed and the issues. | grows; Clear chat empties it |
+| **Working slides** | the current JSON of every slide in the working set, each with its template, open issues, warnings and last judgment checks | rebuilt by code before **every** model step and sent as the last message; never stored in history |
 
-Nothing is trimmed for now (GLM 5.3 Flash has a 1M context). Full template cards are **not** in the system prompt: a card enters the context only through the classification step (`create_slide`) or `read_slide`.
+**Working set:** slides created, read or patched in this conversation, plus the selected slide. Clear chat empties it (the deck stays). Because the block is rebuilt in place and always last, the agent always sees exactly one, current copy of each slide it works on; there are no stale versions in history to confuse it in long sessions, and the history prefix stays cacheable.
 
 ### 9.4 Problems and fixes
 
 - **One problem format everywhere:** field path · what was measured · the limit · a concrete fix. `cards[2].text: 3 lines, max 2, about 22 characters too long.`
-- **Shape errors** (unknown or missing field, wrong type, 4 values for 5 categories) cannot render: the write is **not applied**; the agent gets the errors.
-- **Fit issues** (measured at 1920×1080: too long, a title on 3 lines) **are applied**, so the user sees the change, and returned as `issues`; the agent fixes them with another `edit_slide`.
-- **Rule checks R1–R8** (code, cheap) run on every write and come back as `warnings`: the agent sees them, it is not required to act.
+- **Shape errors** (unknown or missing field, wrong type, a bad path, 4 values for 5 categories) cannot render: the write is **not applied** (a patch is all or nothing); the agent gets the errors.
+- **Fit issues** (measured at 1920×1080) **are applied**, so the user sees the change, and returned as `issues`.
+- **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R8. Issues on paths the patch did not touch are marked `elsewhere: true`, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
+- **Rule checks R1–R8** come back as `warnings`: the agent sees them, it is not required to act.
+- **Judgment checks J1–J7** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
 - **Code fixes trivia and reports it** (never meaning).
-- Measurement is deterministic (fixed 1920×1080 canvas, fixed fonts): the prototype uses the browser as its ruler; the product uses the fit engine (4), which runs anywhere.
+- Measurement is deterministic (fixed 1920×1080 canvas, fixed fonts): the prototype uses the browser as its ruler; the product uses the fit engine (4).
 
-### 9.5 Tools (MVP)
+### 9.5 Tools
 
 | Tool | Input | Inside | Output |
 |---|---|---|---|
-| `create_slide` | `about` (the content, the user's words kept) · `after`: slide id or `"end"` · `template?` (only when the user named the kind) · `replace?`: slide id, for a template change | classification: Jev picks the template with the picking guide (skipped when `template` is given); reserves the slide id (or keeps it, for `replace`) | `slideId` · `template` · `probabilities` · `card` (fields, types, limits, allowed choices) · `example` (one good slide in the deck's style) |
-| `edit_slide` | `slideId` · `slide`: the full slide JSON for its current template | write path: autofix → validate → measure at 1920×1080 → apply unless there is a shape error → rule checks | `applied` · `changed[]` (paths that differ from before) · `slide` · `issues[]` · `warnings[]` · `autofixes[]` |
-| `read_slide` | `slideId` | code: slide from the deck, its card, its last measurement | `slide` · `template` · `card` · `issues[]` · `warnings[]` |
+| `create_slide` | `about` (the content, the user's words kept) · `after`: slide id or `"end"` · `template?` (only when the user named the kind) · `replace?`: slide id, for a template change | Jev classification (skipped when PRE already decided or `template` is given); reserves the slide id (or keeps it, for `replace`) | `slideId` · `template` · `probabilities` · `decided` (`{ "chart.type": "bars" }`, `{ "cards.lead": "value" }`) · `card` · `example` |
+| `edit_slide` | `slideId` · `slide`: the full slide JSON · `reply?` | **only for a slide `create_slide` reserved this turn** (new, or `replace`); anything else is refused with a pointer to `patch_slide`. Write path (9.4). | `applied` · `issues[]` · `warnings[]` · `autofixes[]` · `resolved` (the `auto` values Jev picked) |
+| `patch_slide` | `slideId` · `set`: `{ path: value }` · `reply?` | apply every path to the stored slide (all or nothing), then the write path (9.4) on the whole slide | `applied` · `changed[]` (paths) · `issues[]` (with `elsewhere`) · `warnings[]` · `autofixes[]` · `resolved` |
+| `read_slide` | `slideId` | adds the slide to the working set | `template` · `card` |
 
-- A slide reserved by `create_slide` appears on the canvas with its first applied `edit_slide`.
-- `changed[]` makes drift visible when the agent rewrites a whole slide to change one part.
-- **Ids:** slides get stable ids (`s_` + 4 characters) that survive template changes. The user's component selection is passed as a hint (a path such as `cards[2]`); the agent still writes the whole slide.
+**Paths** follow the slide JSON: `title`, `takeaway`, `chart.type`, `chart.categories`, `chart.series[1].values`, `chart.series[1].values[3]`, `cards[2]`, `cards[2].title`, `notes[0].point.index`.
+- A value replaces what is at the path (a whole object or list when the path names one).
+- `null` removes a field, or removes an item from a list (later items shift down; several removals in one patch apply from the highest index down).
+- An index equal to the list's length appends an item.
+- A path must exist in the template card; an unknown path or an index past the end is a shape error naming the valid paths or range.
+- Reordering items or restructuring the whole slide is a patch of the whole list (`"cards": [...]`), not a full rewrite.
+
+**`reply`:** a write may carry the reply to the user. If the write is applied with no `issues` (warnings allowed), the turn ends there with that reply and no further model call. Otherwise the reply is dropped and the loop continues.
+
+- A slide reserved by `create_slide` appears on the canvas with its first applied `edit_slide`; a reservation never written in the turn is dropped.
+- **Ids:** slides get stable ids (`s_` + 4 characters) that survive template changes. The user's component selection is passed as a path (`cards[2]`), which the agent can use directly in `patch_slide`.
 - **Guards:** unknown slide id → an error listing the valid ones; objects sent as JSON strings are parsed; at most 10 tool calls per user turn, then the agent replies with what is left; the turn must end with a reply.
 - The agent never sets style, page or section numbers, footer text on slides, or layout geometry.
 
 ### 9.6 Evaluation harness (built first)
 
 Built at the start of M1, before the UI, and run on every change to a prompt, template, limit or model:
-- ~50 prompts per style through the whole pipeline (the routing bake-off set plus fill cases).
-- Tracks: routing accuracy · valid on first fill · valid after repair · repair rounds (p95) · rule checks passed · Jev judgment scores · latency · cost.
+- ~50 prompts per style through the whole agent (the routing bake-off set plus fill and edit cases).
+- Tracks: routing accuracy · valid on first write · fix rounds (p95) · drift on patches · rule checks passed · Jev judgment scores · latency · cost.
 - A change that lowers any of these beyond a set tolerance fails CI.
 
-### 9.7 Dropped for the MVP, and the first test
+### 9.7 Dropped, and the test for the hybrid
 
-**Dropped for the MVP.** Each was designed, then taken out to keep the agent simple until a test shows it is needed. Add back from this list, with the evidence that called for it:
+**Still dropped.** Add back from this list, with the evidence that called for it:
 
 | Dropped | What it did | Add back if |
 |---|---|---|
-| `suggest` for choices (Jev) | ranked chart type, card lead, icons for the agent | the agent's choices are often wrong or inconsistent |
-| `edit_component` and path addressing | edited one component (`cards[2]`, `chart.type`) and returned only it | full-slide rewrites drift, or are too slow for small edits |
-| Convert step | adjusted dependent fields on a choice change (bars → lines drops `line` flags) | choice changes often fail first time |
+| Convert step | adjusted dependent fields on a choice change (bars → lines drops `line` flags) | choice changes often fail first time (the `elsewhere` issues may cover it) |
 | Component metadata | per-component area (full, 2/3, 1/3), limits, usage ("93 of 72"), allowed options | the agent keeps overfilling small areas |
-| Jev judgment checks J1–J7 per turn | a second model call after each turn | quality problems are not caught by rules R1–R8 |
 | GLM 5.3 retry ladder | retried a malformed step on the larger model | Flash tool calls often fail twice |
 | Parallel slide creation (`create_slides` from an outline) | several slides at once | multi-slide requests are too slow |
 | Two variants when classification is unsure (14) | both top templates for the user to pick | routing below 0.7 is common and often wrong |
-| Fresh-context writer (the prototype's filler) | one card, one example, short prompt | writing quality drops in long conversations |
-| History trimming, lower call cap | smaller context, fewer steps | cost or latency require it |
+| Fresh-context writer (the pipeline's filler) | one card, one example, short prompt | first writes degrade in long conversations even with the working-slides block |
+| History trimming | smaller context | cost or latency require it |
 | `delete_slide`, `move_slide`, `set_deck`, undo snapshots | deck operations | users ask for them |
 
-Considered and rejected: all 7 template cards in the system prompt with no classification step (saves one call per new slide, but lets the agent write templates it has not been given; the classification stays a separate step).
+**Brought back from the pipeline** (were dropped for the MVP): Jev before the agent (intent, template, choices), Jev for icons, Jev judgment checks per turn, component path addressing (`patch_slide`).
 
-**First test (single slide):** 30 requests, each tagged with one style (15 consulting, 15 pitch) and run in that style only, from an empty deck, once through the journey prototype's pipeline and once through the agent, with fit measured by the prototype's renderer at 1920×1080; 10 of them again after 10 earlier turns. Pass: every number in the request on the slide in ≥ 95%; same template as the pipeline in ≥ 90% (differences reviewed); shape-valid first `edit_slide` in ≥ 90%; no shape errors or fit issues at the end in ≥ 95%; a short reply with no JSON that names any issue left. Reported: model calls and tool calls per turn, p50 and p95 latency against the pipeline (smoke run before the MVP cut: 17–44 s per turn).
+Considered and rejected: all 7 template cards in the system prompt with no classification step; whole-slide rewrites for edits (slower, and they let unrelated parts drift).
+
+**Test for the hybrid** (against the recorded MVP and pipeline runs in `docs/research/2026-09-26-agent-single-slide/`):
+- The same 30 single-slide requests and the two long sessions (10 warm-up turns, then 5 measured).
+- **15 surgical edits** on existing slides (one word, one value, one series, a card added or removed, a choice named by the user, an edit whose knock-on effect needs a second patch).
+
+| Measure | Pass |
+|---|---|
+| Every request number on the slide | ≥ 95% |
+| First write shape-valid, long session | ≥ 90% (MVP 70%) |
+| Ends with no fit issues | ≥ 95% |
+| Paths changed outside the ask (drift), edits | 0 |
+| Latency p50, new slide | ≤ 13 s (MVP 17.4 s, pipeline 11.8 s) |
+| Latency p50, small edit | ≤ 6 s |
+| Template agrees with gold | ≥ 90% |
+| Short reply, no JSON | ≥ 95% |
+
+Reported: PRE intent accuracy and how often it acted, model calls per turn, turns ended by a write's `reply`.
 
 ## 10. Code structure
 
@@ -417,7 +453,7 @@ Types come from `z.infer` only. Geometry constants feed both the calculator and 
 - **Main model:** GLM 5.3 Flash (subscription, free), the default unless it fails the bar. GLM 5.3 (larger, same subscription) is the escalation model.
 - **Jev:** each closed-set field (9.1) and each judgment check is measured for agreement with labelled examples before it is switched on.
 - **Test set:** 50 seeded prompts × 2 styles.
-- **Pass bar:** first fill passes validation and fit ≥ 80%; p95 repair rounds ≤ 2; zero invented fields; rule checks R1–R8 pass ≥ 90%.
+- **Pass bar:** first fill passes validation and fit ≥ 80%; p95 fix rounds ≤ 2; zero invented fields; rule checks R1–R8 pass ≥ 90%.
 - **Also scored:** judgment checks J1–J5 as quality metrics; latency per slide.
 
 **M0 routing bake-off: results (2026-09-26)** (full report: `docs/temp/routing-test/report.md`)
@@ -459,6 +495,7 @@ Everything needed to continue is in the repo:
    **Journey prototype built (2026-09-26):** `docs/design/proposals/journey/` runs the earlier fixed pipeline (route → decide → fill → gate → repair, before the 9.0 revision) against GLM 5.3 Flash and Jev (live through a local proxy; the deployed `/proto/journey/` replays recorded runs). See its README for results and what they changed.
 2. Re-run the routing bake-off on the 7-entry menu to confirm the 0.7 threshold.
 3. ~~Build the MVP agent loop (9.0–9.5) in the journey prototype and run the single-slide test (9.7).~~ **Done (2026-09-26):** `docs/design/proposals/journey/agent.js` (default engine; the pipeline stays at `?engine=pipeline`); results in `docs/research/2026-09-26-agent-single-slide/`. Agent vs pipeline: every request number kept 100% vs 93%; first write shape-valid 93%; all slides end fitting; template agrees with the pipeline 28/30; p50 17.4 s vs 11.8 s. Open: latency (model time is ~95% of a turn), schema knowledge in the cards (note points on lines charts, table column labels, bullets vs text), unmarked illustrative figures (two prompt rules added, not yet re-tested).
+   **Hybrid designed (2026-09-26):** 9.0–9.7 rewritten for speed and reliable changes: Jev PRE step, Jev for closed-set choices, `patch_slide` with path addressing (existing slides are never rewritten whole), the working-slides block, `reply` on writes, judgment checks after the turn. Next: build it in the journey prototype and run the 9.7 test.
 4. Write the implementation plan for M0 (fit spike) and M1 (one `chart` slide end to end), starting with the evaluation harness (9.6).
 
 **Future features (recorded, not scheduled):**
