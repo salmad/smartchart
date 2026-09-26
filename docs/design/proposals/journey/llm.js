@@ -1,6 +1,6 @@
-/* Model client: GLM (chat and agent steps) and Jev, through the proxy (server.mjs locally, api/ on Vercel). */
+/* Model client: GLM agent steps and Jev, through the proxy (server.mjs locally, api/ on Vercel). */
 
-export const FLASH = "glm-5.3-flash", BIG = "glm-5.3";
+export const FLASH = "glm-5.3-flash";
 
 async function post(path, payload) {
   for (let attempt = 0; ; attempt++) {
@@ -23,27 +23,6 @@ export async function agentStep({ messages, tools, toolChoice = "auto", model = 
   const m = j.choices?.[0]?.message || {};
   const message = { role: "assistant", content: m.content || "", ...(m.tool_calls?.length ? { tool_calls: m.tool_calls } : {}) };
   return { message, ms, tokens: j.usage?.total_tokens ?? 0 };
-}
-
-/** GLM chat call. With `json`, the reply is parsed into an object (code fences tolerated). */
-export async function glm({ system, user, model = FLASH, thinking = false, json = true, temperature = 0.3 }) {
-  const { j, ms } = await post("/api/glm", {
-    model, thinking, temperature, max_tokens: thinking ? 8000 : 4000,
-    messages: [{ role: "system", content: system }, { role: "user", content: user }],
-    ...(json ? { response_format: { type: "json_object" } } : {}),
-  });
-  const text = j.choices?.[0]?.message?.content ?? "";
-  const tokens = j.usage?.total_tokens ?? 0;
-  return { value: json ? parseJSON(text) : text.trim(), ms, tokens, model };
-}
-
-export function parseJSON(text) {
-  const t = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
-  try { return JSON.parse(t); } catch {
-    const a = t.indexOf("{"), b = t.lastIndexOf("}");
-    if (a >= 0 && b > a) return JSON.parse(t.slice(a, b + 1));
-    throw new Error(`the model did not return JSON: ${t.slice(0, 120)}`);
-  }
 }
 
 /* Jev option keys must be plain identifiers; map anything else and back. */

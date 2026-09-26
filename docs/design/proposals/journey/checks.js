@@ -85,7 +85,9 @@ export function ruleChecks(s, style, lines) {
     c.series.forEach((x) => { if (!x.dashed) (byFmt[fmt(x)] ||= new Set()).add(x.mark); });
     const mixed = Object.entries(byFmt).find(([, marks]) => marks.size > 1), units = new Set(c.series.map(fmt)).size;
     const bars = c.series.filter((x) => x.mark === "bar"), badStack = c.stacked === true && (bars.length < 2 || new Set(bars.map(fmt)).size > 1);
-    add("R9", !mixed && units <= 2 && !badStack, mixed ? `Series in ${mixed[0]} mix bars and lines; comparable series share one mark` : units > 2 ? `${units} units on one chart; at most 2` : badStack ? "Stacked bars need 2 or more bar series in one unit" : "Chart follows the chart guide");
+    // Bars share one scale, so bars in a second unit would be drawn against the first unit's values.
+    const barUnits = new Set(bars.map(fmt)).size;
+    add("R9", !mixed && units <= 2 && !badStack && barUnits <= 1, mixed ? `Series in ${mixed[0]} mix bars and lines; comparable series share one mark` : units > 2 ? `${units} units on one chart; at most 2` : badStack ? "Stacked bars need 2 or more bar series in one unit" : barUnits > 1 ? "Bars in 2 units share one scale; draw the second unit as a line" : "Chart follows the chart guide");
   }
   if (style === "consulting") {
     const n = s.template === "cards" && !s.framed ? (s.cards || []).length : (s.notes || []).length || null;
@@ -97,13 +99,16 @@ export function ruleChecks(s, style, lines) {
     add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide` : "Headline figures are on the slide");
   }
   if (style === "consulting" && hasFigures(s)) add("R12", numbersIn(plain(s.title)).length > 0, numbersIn(plain(s.title)).length ? "The title quantifies the so-what" : "The title has no figure; quantify the so-what");
-  const groups = [];
-  if (s.template === "table") (s.table?.columns || []).slice(1).forEach((_, j) => groups.push((s.table.rows || []).filter((r) => !r.style).map((r) => { const c = r.cells?.[j + 1]; return String(c && typeof c === "object" ? c.value : c ?? ""); }).filter((v) => /\d/.test(v))));
+  // Tables: one unit and precision per column, or per row when rows are the metrics (columns are periods).
+  const body = s.template === "table" ? (s.table?.rows || []).filter((r) => !r.style).map((r) => (r.cells || []).slice(1).map((c) => String(c && typeof c === "object" ? c.value : c ?? ""))) : [];
+  const figs = (g) => g.filter((v) => /\d/.test(v)), mixedGroup = (g) => g.length > 1 && (new Set(g.map(unitOf)).size > 1 || new Set(g.map(decimals)).size > 1);
+  const cols = body.length ? body[0].map((_, j) => figs(body.map((r) => r[j] ?? ""))) : [];
   // Value cards are independent numbers: only false precision applies to them.
   const values = s.template === "cards" ? (s.cards || []).map((c) => c.value).filter(Boolean) : [];
-  if (groups.length || values.length) {
-    const bad = groups.find((g) => g.length > 1 && (new Set(g.map(unitOf)).size > 1 || new Set(g.map(decimals)).size > 1));
-    const precise = [...groups.flat(), ...values].find(tooPrecise);
+  if (body.length || values.length) {
+    const rows = body.map(figs), byRow = rows.some((g) => g.length > 1) && !rows.some(mixedGroup);
+    const bad = byRow ? null : cols.find(mixedGroup);
+    const precise = [...body.flat(), ...values].find(tooPrecise);
     add("R13", !bad && !precise, bad ? `Mixed units or decimals: ${bad.join(", ")}` : precise ? `False precision: ${precise}; round to 3 significant digits` : "Consistent units and precision");
   }
   if (s.template === "chart" && s.chart?.categories) {

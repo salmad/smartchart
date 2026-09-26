@@ -12,6 +12,7 @@ test("R9: comparable series mixing marks, three units, bad stacking", () => {
   assert.equal(get(chart([REV, { ...REV, name: "Cost", color: "neutral", mark: "line" }]), "R9").ok, false);
   assert.equal(get(chart([REV, { ...REV, name: "Target", color: "neutral", mark: "line", dashed: true }]), "R9").ok, true);
   assert.equal(get(chart([REV, { name: "M", mark: "line", format: "{v}%", color: "contrast", values: [1, 2, 3, 4] }]), "R9").ok, true);
+  assert.equal(get(chart([REV, { name: "M", mark: "bar", format: "{v}%", color: "contrast", values: [1, 2, 3, 4] }]), "R9").ok, false, "bars in two units");
 });
 
 test("R10: four cards warn in consulting; framed and pitch exempt", () => {
@@ -38,6 +39,9 @@ test("R13: one unit and precision per column; no false precision", () => {
   assert.equal(get(t(["42%", "61.5%"]), "R13").ok, false);
   assert.equal(get(t(["42%", "£61"]), "R13").ok, false);
   assert.equal(get(t(["9,837,221", "61"]), "R13").ok, false);
+  const byRow = { template: "table", title: "Revenue grew 4× as churn fell to 3%", source: "x", table: { columns: [{ label: "Metric" }, { label: "2022" }, { label: "2025" }],
+    rows: [{ cells: ["Revenue", "£2.1m", "£9.4m"] }, { cells: ["Churn", "8%", "3%"] }] } };
+  assert.equal(get(byRow, "R13").ok, true, "rows are the metrics: units hold per row");
 });
 
 test("R14: time runs oldest first; single-series bars sorted by value", () => {

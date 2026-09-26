@@ -88,3 +88,12 @@ test("PRE unsure: the agent starts with no tool results", async () => {
   const r = await runTurn({ ...ctx, text: "hmm", selection: null, models: { agentStep, jev: fakeJev({ intent: ["new_slide", 0.5] }) } });
   assert.equal(r.reply, "Which figures should I use?");
 });
+
+test("edit_slide without an id writes the one reserved slide", async () => {
+  const ctx = setup();
+  const { slideId, ...noId } = { slideId: null, slide: CHART, reply: "Done." };
+  const agentStep = fakeAgent([toolCall("edit_slide", noId)]);
+  const r = await runTurn({ ...ctx, text: "x", selection: null, models: { agentStep, jev: fakeJev({ intent: ["new_slide", 0.9], template: ["chart", 0.9] }) } });
+  assert.equal(r.reply, "Done.");
+  assert.equal(ctx.deck.slides.length, 1);
+});

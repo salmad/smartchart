@@ -1,16 +1,14 @@
 /* Journey prototype: chat → slide appears → edit by prompt → checks list → full screen.
-   Live mode runs the MVP agent (agent.js); ?engine=pipeline runs the earlier fixed pipeline.
-   Without the model proxy, recorded pipeline runs are replayed. */
+   Live mode runs the hybrid agent (agent.js). Without the model proxy, recorded runs are replayed. */
 import { contexts, esc, mountSlide } from "../v5/render.js";
 import { fitIssues, layoutLints } from "../v5/lints.js";
-import { createSlide, editSlide } from "./pipeline.js";
+import { upgrade } from "../v5/schema.js";
 import { runTurn } from "./agent.js";
 import { judgmentChecks, ruleChecks } from "./checks.js";
 import { startPresentation } from "./present.js";
 
 const $ = (id) => document.getElementById(id);
-const ENGINE = new URLSearchParams(location.search).get("engine") === "pipeline" ? "pipeline" : "agent";
-const state = { style: "consulting", theme: "ink", items: [], current: 0, turns: [], history: [], busy: false, live: false, replay: null, engine: ENGINE };
+const state = { style: "consulting", theme: "ink", items: [], current: 0, turns: [], history: [], working: new Set(), busy: false, live: false, replay: null };
 window.__journey = state; // read by the recording script
 
 const SUGGEST = {
@@ -115,99 +113,67 @@ function addMessage(kind, html) {
 }
 const traceHTML = (trace, pending) => `<ul class="trace">${trace.map((t) => `<li><b>${esc(t.step)}</b><span>${esc(t.detail)} <i>· ${esc(t.model)}</i></span><em>${t.ms ? `${(t.ms / 1000).toFixed(1)}s` : ""}</em></li>`).join("")}${pending ? `<li class="pending"><b>${esc(pending)}</b><span></span><em></em></li>` : ""}</ul>`;
 const paragraphs = (t) => String(t || "").split(/\n{2,}/).map((p) => `<p>${esc(p.trim())}</p>`).join("");
-const NEXT = { Route: "Decide", Intent: "Fill", Decide: "Fill", Fill: "Gate", Gate: "Repair", Edit: "Gate", Repair: "Repair" };
-
-function replyText(r, before) {
-  const n = r.index + 1;
-  const what = r.added ? `Added slide ${n}: a ${r.slide.template} slide.` : before ? (before.template !== r.slide.template ? `Rebuilt slide ${n} as a ${r.slide.template} slide.` : `Updated slide ${n}.`) : `Here is slide ${n}: a ${r.slide.template} slide.`;
-  const sub = r.status === "draft" ? `Saved as a draft: ${r.errors.length} issue${r.errors.length > 1 ? "s" : ""} could not be fixed automatically.` : "It passes validation and fits the slide.";
-  return { what, sub };
-}
 
 /* ─────────── Send ─────────── */
 async function send(text) {
   text = text.trim();
   if (!text || state.busy) return;
-  if (state.engine === "agent") return sendAgent(text);
-  $("input").value = "";
-  state.busy = true; render();
-  addMessage("user", `<p>${esc(text)}</p>`);
-  const bot = addMessage("bot", `<p class="sub"><i class="spinner"></i>Working…</p>`);
-  const trace = [], t0 = performance.now();
-  const log = (step) => { trace.push(step); bot.innerHTML = traceHTML(trace, NEXT[step.step]); $("thread").scrollTop = 1e9; };
-  const creating = !state.items.length;
-  const index = creating ? 0 : state.current, before = state.items[index]?.slide;
-  try {
-    const d = deck();
-    const r = creating
-      ? await createSlide({ request: text, style: state.style, deck: d, index: 0, measure: (s) => measure(s, d, 0), log })
-      : await editSlide({ request: text, style: state.style, deck: d, index, measure: (s) => measure(s, d, index), log });
-    // A new slide goes after the current one; everything else replaces it.
-    const at = r.added ? index + 1 : index;
-    const item = { slide: r.slide, status: r.status, errors: r.errors, warnings: r.warnings, checks: [], checksPending: true };
-    if (r.added) state.items.splice(at, 0, item); else state.items[at] = item;
-    state.current = at;
-    const msg = replyText({ ...r, index: at }, r.added ? null : before);
-    bot.innerHTML = `<p>${esc(msg.what)}</p><p class="sub">${esc(msg.sub)} ${((performance.now() - t0) / 1000).toFixed(1)}s total.</p>${traceHTML(trace)}`;
-    state.busy = false; render();
-    await runChecks(item, at);
-    state.turns.push({ request: text, trace, reply: msg, items: structuredClone(state.items), current: state.current });
-  } catch (e) {
-    bot.className = "msg bot error";
-    bot.innerHTML = `<p>Something went wrong: ${esc(e.message || e)}</p>${traceHTML(trace)}`;
-    state.busy = false; render();
-  }
+  return sendAgent(text);
 }
 
-/* MVP agent turn: the agent works on its own copy of the deck; every applied write shows at once. */
+/* Agent turn: the agent works on its own copy of the deck; every applied write shows at once.
+   Judgment checks run after the reply, on the slides written this turn (spec 9.4). */
 async function sendAgent(text) {
   $("input").value = "";
   state.busy = true; render();
   addMessage("user", `<p>${esc(text)}</p>`);
   const bot = addMessage("bot", `<p class="sub"><i class="spinner"></i>Working…</p>`);
-  const trace = [], t0 = performance.now();
+  const trace = [], t0 = performance.now(), before = structuredClone(state.items);
   const log = (step) => { trace.push(step); bot.innerHTML = traceHTML(trace, "Working"); $("thread").scrollTop = 1e9; };
-  const adeck = { style: state.style, theme: state.theme, slides: state.items.map((it) => ({ id: it.id, slide: it.slide, issues: it.errors || [], warnings: it.warnings || [] })) };
+  const adeck = { style: state.style, theme: state.theme, slides: state.items.map((it) => ({ id: it.id, slide: it.slide, issues: it.errors || [], warnings: it.warnings || [], checks: it.checks || [] })) };
   const cur = state.items[state.current];
   const sync = (d, focusId) => {
-    state.items = d.slides.filter((s) => s.slide).map((s) => ({ id: s.id, slide: s.slide, status: s.issues.length ? "draft" : "ok", errors: s.issues, warnings: s.warnings, checks: [], checksPending: false }));
+    state.items = d.slides.filter((s) => s.slide).map((s) => ({ id: s.id, slide: s.slide, status: s.issues.length ? "draft" : "ok", errors: s.issues, warnings: s.warnings, checks: s.checks || [], checksPending: false }));
     const i = state.items.findIndex((it) => it.id === focusId);
     if (i >= 0) state.current = i;
     render();
   };
-  const measureAgent = (slide, index) => { const r = measureIn(adeck.slides, slide, index); measureAgent.lines = measureIn.lines; return r; };
+  const measureAgent = (slide, index) => { const r = measureIn(adeck.slides, slide, index); measureAgent.lines = measureIn.lines; measureAgent.warnings = measureIn.warnings; return r; };
   try {
-    const r = await runTurn({ text, deck: adeck, history: state.history, selection: cur ? { slideId: cur.id } : null, measure: measureAgent, log, onChange: sync });
-    sync(adeck, state.items[state.current]?.id);
+    const r = await runTurn({ text, deck: adeck, history: state.history, working: state.working, selection: cur ? { slideId: cur.id } : null, measure: measureAgent, log, onChange: sync });
+    sync(adeck, r.written.at(-1) || state.items[state.current]?.id);
     const secs = ((performance.now() - t0) / 1000).toFixed(1);
     bot.innerHTML = `${paragraphs(r.reply)}<p class="sub">${r.modelCalls} model call${r.modelCalls === 1 ? "" : "s"} · ${r.toolCalls} tool call${r.toolCalls === 1 ? "" : "s"} · ${secs}s</p>${traceHTML(trace)}`;
-    state.items.forEach((it, i) => { measure(it.slide, deck(), i); it.checks = ruleChecks(it.slide, state.style, measure.lines); });
+    state.items.forEach((it, i) => { measure(it.slide, deck(), i); it.checks = [...ruleChecks(it.slide, state.style, measure.lines), ...(it.checks || []).filter((c) => c.id.startsWith("J"))]; });
     state.busy = false; render();
-    state.turns.push({ request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: Math.round(performance.now() - t0), items: structuredClone(state.items), current: state.current });
+    const turn = { request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: Math.round(performance.now() - t0), pre: { intent: r.pre.intent, p: r.pre.p }, written: r.written, before, current: state.current };
+    await Promise.all(r.written.map((id) => runChecks(state.items.find((it) => it.id === id))));
+    turn.items = structuredClone(state.items);
+    state.turns.push(turn);
   } catch (e) {
     bot.className = "msg bot error";
     bot.innerHTML = `<p>Something went wrong: ${esc(e.message || e)}</p>${traceHTML(trace)}`;
     state.busy = false; render();
-    state.turns.push({ request: text, error: String(e.message || e), trace, ms: Math.round(performance.now() - t0), items: structuredClone(state.items) });
+    state.turns.push({ request: text, error: String(e.message || e), trace, ms: Math.round(performance.now() - t0), before, items: structuredClone(state.items) });
   }
 }
 
-async function runChecks(item, i) {
+async function runChecks(item) {
+  if (!item) return;
+  const i = state.items.indexOf(item);
   measure(item.slide, deck(), i);
   const rules = ruleChecks(item.slide, state.style, measure.lines);
-  item.checks = rules; render();
-  try {
-    const j = await judgmentChecks(item.slide, state.style);
-    item.checks = [...rules, ...j.checks];
-  } catch (e) { item.checks = [...rules, { id: "J", ok: false, msg: `judgment checks failed: ${e.message}` }]; }
+  item.checks = rules; item.checksPending = true; render();
+  try { item.checks = [...rules, ...(await judgmentChecks(item.slide, state.style)).checks]; }
+  catch (e) { item.checks = [...rules, { id: "J", ok: false, msg: `judgment checks failed: ${e.message}` }]; }
   item.checksPending = false;
-  if (state.items[i] === item) render();
+  render();
 }
 
 /* ─────────── Replay (no proxy: e.g. the Vercel deploy) ─────────── */
 /* Rule checks are recomputed with the current code; Jev's judgments are kept as recorded. */
 function loadSnapshot(items, current) {
-  state.items = structuredClone(items); state.current = current;
+  state.items = structuredClone(items).map((it) => ({ ...it, slide: upgrade(it.slide) })); state.current = current;
   const d = deck();
   state.items.forEach((it, i) => { measure(it.slide, d, i); it.checks = [...ruleChecks(it.slide, state.style, measure.lines), ...(it.checks || []).filter((c) => c.id.startsWith("J"))]; it.checksPending = false; });
   render();
@@ -218,7 +184,9 @@ function showReplay(run) {
   $("thread").innerHTML = ""; $("thread").classList.add("replaying");
   run.turns.forEach((t, k) => {
     addMessage("user", `<p>${esc(t.request)}</p>`).onclick = () => loadSnapshot(t.items, t.current);
-    addMessage("bot", `<p>${esc(t.reply.what)}</p><p class="sub">${esc(t.reply.sub)}</p>${traceHTML(t.trace)}`);
+    // Pipeline recordings store { what, sub }; agent turns store the reply text.
+    const reply = typeof t.reply === "string" ? paragraphs(t.reply) : `<p>${esc(t.reply?.what || "")}</p><p class="sub">${esc(t.reply?.sub || "")}</p>`;
+    addMessage("bot", `${reply}${traceHTML(t.trace)}`);
   });
   const last = run.turns.at(-1);
   addMessage("bot", `<p class="sub">Recorded run with the real models (GLM 5.3 Flash + Jev), replayed without calling them. Click a request to see the deck at that point. Run the local server for live mode.</p>`);
@@ -228,7 +196,7 @@ function showReplay(run) {
 async function boot() {
   await document.fonts.ready;
   try { const h = await (await fetch("/api/health")).json(); state.live = !!h.live; } catch { state.live = false; }
-  $("mode").textContent = state.live ? (state.engine === "agent" ? "Live · agent" : "Live · pipeline") : "Recorded run";
+  $("mode").textContent = state.live ? "Live · agent" : "Recorded run";
   $("mode").classList.toggle("live", state.live);
   if (!state.live) {
     try {
@@ -239,9 +207,7 @@ async function boot() {
       showReplay(runs[0]);
     } catch { addMessage("bot error", "<p>No live models and no recorded runs found. Start the local server: <code>node docs/design/proposals/journey/server.mjs</code></p>"); }
   } else {
-    addMessage("bot", state.engine === "agent"
-      ? `<p>Describe a slide. The agent picks a template with Jev, writes the slide with GLM 5.3 Flash and fixes anything that does not fit. Then ask for changes, add slides, or press <b>Present</b>.</p>`
-      : `<p>Describe a slide. I route it with Jev, write it with GLM 5.3 Flash, check it fits, and repair it if needed. Then ask for changes, add slides, or press <b>Present</b>.</p>`);
+    addMessage("bot", `<p>Describe a slide. The agent picks a template with Jev, writes the slide with GLM 5.3 Flash and fixes anything that does not fit. Then ask for changes, add slides, or press <b>Present</b>.</p>`);
   }
   render();
 }
@@ -249,9 +215,9 @@ async function boot() {
 /* ─────────── Controls ─────────── */
 document.querySelectorAll("#style button").forEach((b) => (b.onclick = () => { state.style = b.dataset.v; render(); }));
 document.querySelectorAll("#theme button").forEach((b) => (b.onclick = () => { state.theme = b.dataset.v; render(); }));
-$("reset").onclick = () => { if (state.replay) { state.replay = null; state.items = []; $("thread").innerHTML = ""; $("replay").hidden = true; boot(); return; } state.items = []; state.turns = []; state.history = []; state.current = 0; $("thread").innerHTML = ""; boot(); };
+$("reset").onclick = () => { if (state.replay) { state.replay = null; state.items = []; $("thread").innerHTML = ""; $("replay").hidden = true; boot(); return; } state.items = []; state.turns = []; state.history = []; state.working = new Set(); state.current = 0; $("thread").innerHTML = ""; boot(); };
 // Clear chat: the agent forgets the conversation; the deck stays.
-$("clear").onclick = () => { if (state.busy) return; state.history = []; $("thread").innerHTML = ""; addMessage("bot", "<p class=\"sub\">Chat cleared. The deck is kept; the agent starts a new conversation.</p>"); };
+$("clear").onclick = () => { if (state.busy) return; state.history = []; state.working = new Set(); $("thread").innerHTML = ""; addMessage("bot", "<p class=\"sub\">Chat cleared. The deck is kept; the agent starts a new conversation.</p>"); };
 $("composer").onsubmit = (e) => { e.preventDefault(); send($("input").value); };
 $("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("input").value); } };
 const present = () => state.items.length && startPresentation(deck(), state.current, (i) => { state.current = i; render(); });
@@ -266,4 +232,9 @@ document.addEventListener("keydown", (e) => {
 
 window.__journey.send = send;
 window.__journey.setStyle = (v) => { state.style = v; render(); };
+window.__journey.load = (slides, style) => {
+  state.style = style; state.history = []; state.working = new Set(); state.turns = [];
+  state.items = slides.map((s, i) => ({ id: `s_t${i}`, slide: upgrade(s), status: "ok", errors: [], warnings: [], checks: [], checksPending: false }));
+  state.current = 0; render();
+};
 boot();

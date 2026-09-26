@@ -78,6 +78,8 @@ export async function runTurn({ text, deck, history, working, selection, measure
     },
 
     async edit_slide({ slideId, slide }) {
+      // Models sometimes drop the id right after create_slide; with one slide reserved it is unambiguous.
+      if (!slideId && reserved.size === 1) slideId = [...reserved.keys()][0];
       const item = find(slideId);
       if (!item) return unknown(slideId);
       if (!reserved.has(slideId)) return { applied: false, error: `${slideId} already exists: change it with patch_slide, setting only the paths that change. edit_slide writes a whole slide only right after create_slide.` };
