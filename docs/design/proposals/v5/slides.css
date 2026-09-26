@@ -56,10 +56,11 @@
 .style-pitch:not(.t-cover, .t-section) .title { white-space: nowrap; }
 .subtitle { margin-top: 30px; max-width: 1480px; font-size: 48px; line-height: 1.2; font-weight: 500; letter-spacing: -.012em; color: var(--fg); text-wrap: balance; }
 .shout { font-family: var(--display); font-weight: 900; font-stretch: 62%; text-transform: uppercase; line-height: .86; }
+.nw { white-space: nowrap; }
 .hl-focus { color: var(--focus); } .hl-neg { color: var(--neg); } .hl-pos { color: var(--pos); }
 .slide strong { font-weight: 700; }
 .prose p + p { margin-top: 24px; }
-.slide p, .slide h4, .slide li { text-wrap: pretty; }
+:where(.slide) :is(p, h4, li) { text-wrap: pretty; } /* no specificity: a block's own text-wrap (the subtitle's balance) wins */
 .spacer { flex: 1 0 40px; }
 .slide:has(.grow) .spacer { flex: 0 0 44px; }
 .grow { flex: 1; min-height: 0; }

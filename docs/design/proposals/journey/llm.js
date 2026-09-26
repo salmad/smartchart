@@ -22,7 +22,7 @@ export async function agentStep({ messages, tools, toolChoice = "auto", model = 
   const { j, ms } = await post("/api/glm", { model, messages, tools, tool_choice: toolChoice, temperature: 0.3, max_tokens: 8000 });
   const m = j.choices?.[0]?.message || {};
   const message = { role: "assistant", content: m.content || "", ...(m.tool_calls?.length ? { tool_calls: m.tool_calls } : {}) };
-  return { message, ms, tokens: j.usage?.total_tokens ?? 0 };
+  return { message, ms, tokens: j.usage?.total_tokens ?? 0, tokensIn: j.usage?.prompt_tokens ?? 0, tokensOut: j.usage?.completion_tokens ?? 0 };
 }
 
 /* Jev option keys must be plain identifiers; map anything else and back. */

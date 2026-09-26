@@ -65,3 +65,20 @@ test("idempotent", () => {
   assert.deepEqual(twice.slide, once);
   assert.deepEqual(twice.fixes, []);
 });
+
+test("focus written inside the chart moves to the slide", () => {
+  const { slide, fixes } = autofix({ template: "chart", title: "T", focus: undefined, chart: { focus: "auto", categories: ["a"], series: [{ name: "x", mark: "bar", values: [1] }] } }, "consulting");
+  assert.equal(slide.focus, "auto");
+  assert.ok(!("focus" in slide.chart));
+  assert.ok(fixes.some((f) => f.startsWith("focus: moved")));
+});
+
+test("cards with no lead get auto icons", () => {
+  const { slide } = autofix({ template: "cards", title: "T", cards: [{ title: "A", text: "a" }, { title: "B", text: "b" }] }, "consulting");
+  assert.deepEqual(slide.cards.map((c) => c.icon), ["auto", "auto"]);
+});
+
+test("cards: unknown icon goes to auto, stray label goes, pitch bullets become text", () => {
+  const { slide } = autofix({ template: "cards", title: "T", cards: [{ icon: "seedling", label: "x", title: "A", bullets: ["One", "Two"] }] }, "pitch");
+  assert.deepEqual(slide.cards[0], { icon: "auto", title: "A", text: "One. Two" });
+});

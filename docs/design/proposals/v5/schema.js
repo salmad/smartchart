@@ -89,7 +89,7 @@ export const CHART_GUIDE = [
 ];
 
 /* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
-const FOCUS = f("enum", "Write \"auto\" to let code pick and highlight the one item the title is about (a series, column, step or card). Leave it out when the user named the focus, and set it on that item yourself.", { values: ["auto"] });
+const FOCUS = f("enum", "A top-level slide field, next to `title` (never inside `chart`). Write \"auto\" to let code pick and highlight the one item the title is about (a series, column, step or card). Leave it out when the user named the focus, and set it on that item yourself.", { values: ["auto"] });
 
 const CHART = f("object", "A chart of bar and line series. Values are written on the data; there is no y-axis to configure.", {
   required: true,
@@ -141,7 +141,7 @@ export const MENU = {
     fields: {
       table: f("object", "The table.", { required: true, fields: {
         columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
-          label: f("text", "Header text.", { required: true, max: 26 }),
+          label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
           focus: f("boolean", "Highlight this column. At most one.", { default: false }),
         } }) }),
         rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
@@ -405,6 +405,7 @@ function checkRules(s, style, out) {
         if (Array.isArray(r?.cells) && r.cells.length !== n) out.errors.push(`table.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
       });
       if (count(t.columns, "focus") > 1) out.errors.push("table.columns: at most one focus column.");
+      (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       const noted = (r) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
       const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0), budget = style === "pitch" ? 7 : 10.5;

@@ -1,6 +1,6 @@
 {
  "recorded": "2026-09-26",
- "models": "GLM 5.3 Flash (z.ai) + Jev (OpenRouter)",
+ "models": "GLM 5.3 Flash + Jev (hybrid agent)",
  "runs": [
   {
    "name": "Consulting · SaaS growth",
@@ -8,55 +8,82 @@
    "theme": "ink",
    "turns": [
     {
-     "request": "Our SaaS revenue grew from £2.1m in 2022 to £9.4m in 2025 while monthly churn fell from 8% to 3%",
+     "request": "Our SaaS revenue grew from £2.1m in 2022 to £4.8m in 2023, £7.2m in 2024 and £9.4m in 2025, while monthly churn fell from 8% to 3%",
      "trace": [
       {
-       "step": "Route",
+       "step": "Pre",
        "model": "Jev",
-       "ms": 751,
-       "detail": "chart · p 0.90"
+       "ms": 385,
+       "detail": "new_slide · p 0.97"
       },
       {
-       "step": "Decide",
-       "model": "Jev",
-       "ms": 375,
-       "detail": "type: lines (0.73)"
-      },
-      {
-       "step": "Fill",
-       "model": "GLM Flash",
-       "ms": 6256,
-       "detail": "2742 tokens · “Revenue grew 4.5× to £9.4m as monthly churn fell from 8% to ”"
-      },
-      {
-       "step": "Gate",
+       "step": "create_slide",
        "model": "code",
-       "ms": 0,
-       "detail": "1 issue",
-       "errors": [
-        "chart.series: lines charts share one axis, so every series must use the chart format. Plot only series in the same unit, or use a bars chart with one `line` series on its own scale."
-       ]
+       "ms": 2,
+       "detail": "s_7wuj · chart"
       },
       {
-       "step": "Repair",
+       "step": "Agent",
        "model": "GLM Flash",
-       "ms": 4109,
-       "detail": "changed chart → valid and fits",
-       "errors": []
+       "ms": 5703,
+       "tokensIn": 4214,
+       "tokensOut": 307,
+       "detail": "edit_slide · 4.2k in, 307 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 5,
+       "detail": "not applied · 1 shape error: notes: needs at least 2 items (got 1)."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 6930,
+       "tokensIn": 4553,
+       "tokensOut": 401,
+       "detail": "edit_slide · 4.6k in, 401 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 372,
+       "detail": "chart.series[0].mark = bar · chart.series[1].mark = line · focus = item0"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 400,
+       "detail": "not applied · 1 shape error: slide could not be rendered: Cannot read properties of null (reading 'toFixed')"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 7717,
+       "tokensIn": 4977,
+       "tokensOut": 444,
+       "detail": "edit_slide · 5.0k in, 444 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 397,
+       "detail": "chart.series[0].mark = bar · focus = item0"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 428,
+       "detail": "applied · fits"
       }
      ],
-     "reply": {
-      "what": "Here is slide 1: a chart slide.",
-      "sub": "It passes validation and fits the slide."
-     },
+     "reply": "Added the chart slide: revenue bars (£2.1m → £9.4m, 2022–25) with the churn trend (8% → 3%) in the title and a note, since you only gave churn for the end years — happy to plot it as a line if you have the 2023–24 values.",
      "items": [
       {
+       "id": "s_7wuj",
        "slide": {
         "template": "chart",
-        "kicker": "Growth & retention",
-        "title": "Revenue grew [[4.5×]] to £9.4m as monthly churn fell from 8% to 3%",
         "chart": {
-         "type": "bars",
          "categories": [
           "2022",
           "2023",
@@ -66,36 +93,45 @@
          "format": "£{v}m",
          "series": [
           {
-           "name": "ARR (£m)",
            "color": "focus",
+           "mark": "bar",
+           "name": "SaaS revenue",
            "values": [
             2.1,
-            4,
-            6.6,
+            4.8,
+            7.2,
             9.4
-           ]
-          },
-          {
-           "name": "Monthly churn (%)",
-           "color": "contrast",
-           "line": true,
-           "format": "{v}%",
-           "values": [
-            8,
-            5.5,
-            4,
-            3
            ]
           }
          ]
         },
-        "takeaway": "Retention gains, not just acquisition, are compounding revenue growth.",
-        "footnote": "ARR at year end; churn is average monthly logo churn per year. Figures illustrative.",
-        "source": "Company management accounts, 2022–2025. Illustrative."
+        "kicker": "Growth",
+        "notes": [
+         {
+          "point": {
+           "index": 3,
+           "series": 0
+          },
+          "text": "From £2.1m in 2022 to **£9.4m** in 2025 — more than 4× in three years.",
+          "title": "Revenue grew 4.5×"
+         },
+         {
+          "point": {
+           "index": 0,
+           "series": 0
+          },
+          "text": "Monthly churn fell from **8%** in 2022 to **3%** in 2025 as the base scaled.",
+          "title": "Churn fell 8% → 3%"
+         }
+        ],
+        "takeaway": "Growth is compounding while retention strengthens.",
+        "title": "Revenue more than quadrupled to [[£9.4m]] in 2025 while churn fell from 8% to 3%"
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "R8: Figures have no source"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -123,39 +159,81 @@
          "msg": "Takeaway adds to the title"
         },
         {
-         "id": "R8",
+         "id": "R7",
          "ok": true,
-         "msg": "Figures have a source"
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R9",
+         "ok": true,
+         "msg": "Chart follows the chart guide"
+        },
+        {
+         "id": "R10",
+         "ok": true,
+         "msg": "2 parallel items"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R14",
+         "ok": true,
+         "msg": "Time runs oldest to newest"
         },
         {
          "id": "J1",
          "ok": true,
          "msg": "Title states a so-what",
-         "p": 0.76
+         "p": 1
         },
         {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.98
+         "p": 0.45
+        },
+        {
+         "id": "J3",
+         "ok": true,
+         "msg": "Parallel items are MECE",
+         "p": 0.57
         },
         {
          "id": "J4",
          "ok": true,
          "msg": "Highlight matches the claim",
+         "p": 0.85
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.63
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
          "p": 0.95
         },
         {
-         "id": "J5",
+         "id": "J8",
          "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.99
-        },
-        {
-         "id": "J7",
-         "ok": true,
-         "msg": "Template suits the content",
-         "p": 0.99
+         "msg": "Parallel items share one form",
+         "p": 0.72
         }
        ],
        "checksPending": false
@@ -164,40 +242,42 @@
      "current": 0
     },
     {
-     "request": "Make the title punchier and add a source line: company financials, FY2025",
+     "request": "Make the title shorter",
      "trace": [
       {
-       "step": "Intent",
+       "step": "Pre",
        "model": "Jev",
-       "ms": 370,
-       "detail": "text · p 1.00"
+       "ms": 350,
+       "detail": "edit_selected · p 1.00"
       },
       {
-       "step": "Edit",
-       "model": "GLM Flash",
-       "ms": 3722,
-       "detail": "changed title, source"
-      },
-      {
-       "step": "Gate",
+       "step": "read_slide",
        "model": "code",
        "ms": 0,
-       "detail": "valid and fits",
-       "errors": []
+       "detail": "s_7wuj · chart"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 1837,
+       "tokensIn": 4480,
+       "tokensOut": 48,
+       "detail": "patch_slide · 4.5k in, 48 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 10,
+       "detail": "applied · title · fits"
       }
      ],
-     "reply": {
-      "what": "Updated slide 1.",
-      "sub": "It passes validation and fits the slide."
-     },
+     "reply": "Updated the title.",
      "items": [
       {
+       "id": "s_7wuj",
        "slide": {
         "template": "chart",
-        "kicker": "Growth & retention",
-        "title": "Churn cut from 8% to 3% drove [[4.5×]] revenue growth to £9.4m",
         "chart": {
-         "type": "bars",
          "categories": [
           "2022",
           "2023",
@@ -207,36 +287,45 @@
          "format": "£{v}m",
          "series": [
           {
-           "name": "ARR (£m)",
            "color": "focus",
+           "mark": "bar",
+           "name": "SaaS revenue",
            "values": [
             2.1,
-            4,
-            6.6,
+            4.8,
+            7.2,
             9.4
-           ]
-          },
-          {
-           "name": "Monthly churn (%)",
-           "color": "contrast",
-           "line": true,
-           "format": "{v}%",
-           "values": [
-            8,
-            5.5,
-            4,
-            3
            ]
           }
          ]
         },
-        "takeaway": "Retention gains, not just acquisition, are compounding revenue growth.",
-        "footnote": "ARR at year end; churn is average monthly logo churn per year. Figures illustrative.",
-        "source": "Company financials, FY2025"
+        "kicker": "Growth",
+        "notes": [
+         {
+          "point": {
+           "index": 3,
+           "series": 0
+          },
+          "text": "From £2.1m in 2022 to **£9.4m** in 2025 — more than 4× in three years.",
+          "title": "Revenue grew 4.5×"
+         },
+         {
+          "point": {
+           "index": 0,
+           "series": 0
+          },
+          "text": "Monthly churn fell from **8%** in 2022 to **3%** in 2025 as the base scaled.",
+          "title": "Churn fell 8% → 3%"
+         }
+        ],
+        "takeaway": "Growth is compounding while retention strengthens.",
+        "title": "Revenue more than quadrupled to [[£9.4m]] as churn fell to 3%"
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "R8: Figures have no source"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -264,9 +353,39 @@
          "msg": "Takeaway adds to the title"
         },
         {
-         "id": "R8",
+         "id": "R7",
          "ok": true,
-         "msg": "Figures have a source"
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R9",
+         "ok": true,
+         "msg": "Chart follows the chart guide"
+        },
+        {
+         "id": "R10",
+         "ok": true,
+         "msg": "2 parallel items"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R14",
+         "ok": true,
+         "msg": "Time runs oldest to newest"
         },
         {
          "id": "J1",
@@ -278,25 +397,37 @@
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.65
+         "p": 0.5
+        },
+        {
+         "id": "J3",
+         "ok": true,
+         "msg": "Parallel items are MECE",
+         "p": 0.52
         },
         {
          "id": "J4",
          "ok": true,
          "msg": "Highlight matches the claim",
-         "p": 0.92
+         "p": 0.91
         },
         {
          "id": "J5",
          "ok": true,
          "msg": "Takeaway adds an implication",
-         "p": 0.94
+         "p": 0.61
         },
         {
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 1
+         "p": 0.98
+        },
+        {
+         "id": "J8",
+         "ok": true,
+         "msg": "Parallel items share one form",
+         "p": 0.75
         }
        ],
        "checksPending": false
@@ -305,378 +436,715 @@
      "current": 0
     },
     {
-     "request": "Show this as a table instead",
+     "request": "Add a table comparing our three plans: Starter £29 with 3 seats and email support, Growth £99 with 10 seats and chat support, Enterprise custom with unlimited seats and a 99.9% SLA",
      "trace": [
       {
-       "step": "Intent",
+       "step": "Pre",
        "model": "Jev",
        "ms": 347,
-       "detail": "template · p 1.00"
+       "detail": "new_slide · p 0.78"
       },
       {
-       "step": "Route",
-       "model": "Jev",
-       "ms": 444,
-       "detail": "table · p 0.97"
-      },
-      {
-       "step": "Fill",
-       "model": "GLM Flash",
-       "ms": 8220,
-       "detail": "2720 tokens · “Churn cut from 8% to 3% drove 4.5× revenue growth to £9.4m”"
-      },
-      {
-       "step": "Gate",
+       "step": "create_slide",
        "model": "code",
-       "ms": 0,
-       "detail": "valid and fits",
-       "errors": []
+       "ms": 1,
+       "detail": "s_9eo4 · table"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4371,
+       "tokensIn": 4332,
+       "tokensOut": 190,
+       "detail": "edit_slide · 4.3k in, 190 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "not applied · 3 shape errors: table.rows[0].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[1].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[2].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 3474,
+       "tokensIn": 4622,
+       "tokensOut": 190,
+       "detail": "edit_slide · 4.6k in, 190 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "not applied · 3 shape errors: table.rows[0].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[1].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[2].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5896,
+       "tokensIn": 4912,
+       "tokensOut": 280,
+       "detail": "edit_slide · 4.9k in, 280 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 19,
+       "detail": "applied · fits"
       }
      ],
-     "reply": {
-      "what": "Rebuilt slide 1 as a table slide.",
-      "sub": "It passes validation and fits the slide."
-     },
+     "reply": "Added the plan comparison table with Starter, Growth and Enterprise rows.",
      "items": [
       {
+       "id": "s_7wuj",
        "slide": {
-        "template": "table",
-        "kicker": "Growth & retention",
-        "title": "Churn cut from 8% to 3% drove [[4.5×]] revenue growth to £9.4m",
-        "takeaway": "Retention gains, not just acquisition, are compounding revenue growth.",
-        "footnote": "ARR at year end; churn is average monthly logo churn per year. Figures illustrative.",
-        "source": "Company financials, FY2025",
-        "table": {
-         "columns": [
-          {
-           "label": "Year"
-          },
-          {
-           "label": "ARR (£m)",
-           "num": true,
-           "focus": true
-          },
-          {
-           "label": "Monthly churn",
-           "num": true
-          },
-          {
-           "label": "ARR growth",
-           "num": true
-          }
+        "template": "chart",
+        "chart": {
+         "categories": [
+          "2022",
+          "2023",
+          "2024",
+          "2025"
          ],
-         "rows": [
+         "format": "£{v}m",
+         "series": [
           {
-           "cells": [
-            "2022",
-            "2.1",
-            "8.0%",
-            "—"
+           "color": "focus",
+           "mark": "bar",
+           "name": "SaaS revenue",
+           "values": [
+            2.1,
+            4.8,
+            7.2,
+            9.4
            ]
-          },
-          {
-           "cells": [
-            "2023",
-            "4.0",
-            "5.5%",
-            "+1.9×"
-           ]
-          },
-          {
-           "cells": [
-            "2024",
-            "6.6",
-            "4.0%",
-            "+1.7×"
-           ]
-          },
-          {
-           "cells": [
-            "2025",
-            {
-             "value": "9.4",
-             "note": "4.5× vs 2022"
-            },
-            "3.0%",
-            "+1.4×"
-           ],
-           "style": "total"
           }
          ]
-        }
-       },
-       "status": "ok",
-       "errors": [],
-       "warnings": [],
-       "checks": [
-        {
-         "id": "R1",
-         "ok": true,
-         "msg": "Title fits on 2 lines"
         },
-        {
-         "id": "R2",
-         "ok": true,
-         "msg": "Title is a full sentence"
-        },
-        {
-         "id": "R4",
-         "ok": true,
-         "msg": "One focus element, highlighted in the title"
-        },
-        {
-         "id": "R6",
-         "ok": true,
-         "msg": "Takeaway adds to the title"
-        },
-        {
-         "id": "R8",
-         "ok": true,
-         "msg": "Figures have a source"
-        },
-        {
-         "id": "J1",
-         "ok": true,
-         "msg": "Title states a so-what",
-         "p": 1
-        },
-        {
-         "id": "J2",
-         "ok": true,
-         "msg": "Body supports the claim",
-         "p": 0.82
-        },
-        {
-         "id": "J4",
-         "ok": true,
-         "msg": "Highlight matches the claim",
-         "p": 0.81
-        },
-        {
-         "id": "J5",
-         "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.93
-        },
-        {
-         "id": "J7",
-         "ok": true,
-         "msg": "Template suits the content",
-         "p": 0.6
-        }
-       ],
-       "checksPending": false
-      }
-     ],
-     "current": 0
-    },
-    {
-     "request": "Add a slide with our 3-step plan to reach £25m ARR by 2028",
-     "trace": [
-      {
-       "step": "Intent",
-       "model": "Jev",
-       "ms": 483,
-       "detail": "new slide · p 1.00"
-      },
-      {
-       "step": "Route",
-       "model": "Jev",
-       "ms": 357,
-       "detail": "steps · p 1.00"
-      },
-      {
-       "step": "Fill",
-       "model": "GLM Flash",
-       "ms": 7956,
-       "detail": "1732 tokens · “Three phases take us from £9.4m to £25m ARR by 2028”"
-      },
-      {
-       "step": "Gate",
-       "model": "code",
-       "ms": 0,
-       "detail": "1 issue",
-       "errors": [
-        "steps[1].text: 71 characters, limit 70 (1 too many). Shorten this field only."
-       ]
-      },
-      {
-       "step": "Repair",
-       "model": "GLM Flash",
-       "ms": 11498,
-       "detail": "changed steps → valid and fits",
-       "errors": []
-      }
-     ],
-     "reply": {
-      "what": "Added slide 2: a steps slide.",
-      "sub": "It passes validation and fits the slide."
-     },
-     "items": [
-      {
-       "slide": {
-        "template": "table",
-        "kicker": "Growth & retention",
-        "title": "Churn cut from 8% to 3% drove [[4.5×]] revenue growth to £9.4m",
-        "takeaway": "Retention gains, not just acquisition, are compounding revenue growth.",
-        "footnote": "ARR at year end; churn is average monthly logo churn per year. Figures illustrative.",
-        "source": "Company financials, FY2025",
-        "table": {
-         "columns": [
-          {
-           "label": "Year"
-          },
-          {
-           "label": "ARR (£m)",
-           "num": true,
-           "focus": true
-          },
-          {
-           "label": "Monthly churn",
-           "num": true
-          },
-          {
-           "label": "ARR growth",
-           "num": true
-          }
-         ],
-         "rows": [
-          {
-           "cells": [
-            "2022",
-            "2.1",
-            "8.0%",
-            "—"
-           ]
-          },
-          {
-           "cells": [
-            "2023",
-            "4.0",
-            "5.5%",
-            "+1.9×"
-           ]
-          },
-          {
-           "cells": [
-            "2024",
-            "6.6",
-            "4.0%",
-            "+1.7×"
-           ]
-          },
-          {
-           "cells": [
-            "2025",
-            {
-             "value": "9.4",
-             "note": "4.5× vs 2022"
-            },
-            "3.0%",
-            "+1.4×"
-           ],
-           "style": "total"
-          }
-         ]
-        }
-       },
-       "status": "ok",
-       "errors": [],
-       "warnings": [],
-       "checks": [
-        {
-         "id": "R1",
-         "ok": true,
-         "msg": "Title fits on 2 lines"
-        },
-        {
-         "id": "R2",
-         "ok": true,
-         "msg": "Title is a full sentence"
-        },
-        {
-         "id": "R4",
-         "ok": true,
-         "msg": "One focus element, highlighted in the title"
-        },
-        {
-         "id": "R6",
-         "ok": true,
-         "msg": "Takeaway adds to the title"
-        },
-        {
-         "id": "R8",
-         "ok": true,
-         "msg": "Figures have a source"
-        },
-        {
-         "id": "J1",
-         "ok": true,
-         "msg": "Title states a so-what",
-         "p": 1
-        },
-        {
-         "id": "J2",
-         "ok": true,
-         "msg": "Body supports the claim",
-         "p": 0.82
-        },
-        {
-         "id": "J4",
-         "ok": true,
-         "msg": "Highlight matches the claim",
-         "p": 0.81
-        },
-        {
-         "id": "J5",
-         "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.93
-        },
-        {
-         "id": "J7",
-         "ok": true,
-         "msg": "Template suits the content",
-         "p": 0.6
-        }
-       ],
-       "checksPending": false
-      },
-      {
-       "slide": {
-        "template": "steps",
-        "kicker": "Growth plan",
-        "title": "Three phases take us from **£9.4m** to [[£25m ARR]] by 2028",
-        "steps": [
+        "kicker": "Growth",
+        "notes": [
          {
-          "when": "2026",
-          "title": "Expand",
-          "text": "Land 40+ enterprise accounts; ARR grows **£9.4m → £14m**."
+          "point": {
+           "index": 3,
+           "series": 0
+          },
+          "text": "From £2.1m in 2022 to **£9.4m** in 2025 — more than 4× in three years.",
+          "title": "Revenue grew 4.5×"
          },
          {
-          "when": "2027",
-          "title": "Deepen",
-          "text": "Upsell lifts NRR to **125%**; ARR reaches £19.5m.",
-          "focus": true
-         },
-         {
-          "when": "2028",
-          "title": "Scale",
-          "text": "New vertical and EMEA entry add **£5.5m**; ARR closes at £25m."
+          "point": {
+           "index": 0,
+           "series": 0
+          },
+          "text": "Monthly churn fell from **8%** in 2022 to **3%** in 2025 as the base scaled.",
+          "title": "Churn fell 8% → 3%"
          }
         ],
-        "takeaway": "Churn gains compound: NRR of 125% carries **~60% of the £15.6m** increment.",
-        "footnote": "Illustrative plan figures, assuming churn stays at 3% and pricing unchanged.",
-        "source": "Company plan 2026–28"
+        "takeaway": "Growth is compounding while retention strengthens.",
+        "title": "Revenue more than quadrupled to [[£9.4m]] as churn fell to 3%"
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "R8: Figures have no source"
+       ],
        "checks": [
         {
          "id": "R1",
          "ok": true,
-         "msg": "Title fits on 1 line"
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R5",
+         "ok": true,
+         "msg": "Chart values carry a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R7",
+         "ok": true,
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R9",
+         "ok": true,
+         "msg": "Chart follows the chart guide"
+        },
+        {
+         "id": "R10",
+         "ok": true,
+         "msg": "2 parallel items"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R14",
+         "ok": true,
+         "msg": "Time runs oldest to newest"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 1
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.5
+        },
+        {
+         "id": "J3",
+         "ok": true,
+         "msg": "Parallel items are MECE",
+         "p": 0.52
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.91
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.61
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.98
+        },
+        {
+         "id": "J8",
+         "ok": true,
+         "msg": "Parallel items share one form",
+         "p": 0.75
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_9eo4",
+       "slide": {
+        "template": "table",
+        "kicker": "Pricing",
+        "table": {
+         "columns": [
+          {
+           "label": "Plan"
+          },
+          {
+           "label": "Monthly price"
+          },
+          {
+           "focus": true,
+           "label": "Seats"
+          },
+          {
+           "label": "Support"
+          },
+          {
+           "label": "SLA"
+          }
+         ],
+         "rows": [
+          {
+           "cells": [
+            "Starter",
+            "£29",
+            "3",
+            "Email",
+            "—"
+           ]
+          },
+          {
+           "cells": [
+            "Growth",
+            "£99",
+            "10",
+            "Chat",
+            "—"
+           ]
+          },
+          {
+           "cells": [
+            "Enterprise",
+            "Custom",
+            "Unlimited",
+            "—",
+            "99.9%"
+           ]
+          }
+         ]
+        },
+        "title": "Three plans scale from Starter at £29 to [[Enterprise]] with unlimited seats and a 99.9% SLA"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "body: 52% empty below the table; add content or a takeaway, or use another template (L5)",
+        "R8: Figures have no source"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R13",
+         "ok": true,
+         "msg": "Consistent units and precision"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 0.81
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.91
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.47
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.91
+        }
+       ],
+       "checksPending": false
+      }
+     ],
+     "current": 1
+    },
+    {
+     "request": "Add a slide with the plan for the next 18 months: pilot with 5 hospitals, certify, then roll out nationally",
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 348,
+       "detail": "new_slide · p 1.00"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_mzde · steps"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5709,
+       "tokensIn": 4429,
+       "tokensOut": 226,
+       "detail": "edit_slide · 4.4k in, 226 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 433,
+       "detail": "focus = item2"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 6610,
+       "detail": "takeaway ≤ 75 · steps[0].text ≤ 70 · steps[1].text ≤ 70"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 7087,
+       "detail": "applied · fits"
+      }
+     ],
+     "reply": "Added an 18-month roadmap slide: pilot, certify and national rollout phases. Timing within phases is illustrative — tell me real dates and I'll drop them in.",
+     "items": [
+      {
+       "id": "s_7wuj",
+       "slide": {
+        "template": "chart",
+        "chart": {
+         "categories": [
+          "2022",
+          "2023",
+          "2024",
+          "2025"
+         ],
+         "format": "£{v}m",
+         "series": [
+          {
+           "color": "focus",
+           "mark": "bar",
+           "name": "SaaS revenue",
+           "values": [
+            2.1,
+            4.8,
+            7.2,
+            9.4
+           ]
+          }
+         ]
+        },
+        "kicker": "Growth",
+        "notes": [
+         {
+          "point": {
+           "index": 3,
+           "series": 0
+          },
+          "text": "From £2.1m in 2022 to **£9.4m** in 2025 — more than 4× in three years.",
+          "title": "Revenue grew 4.5×"
+         },
+         {
+          "point": {
+           "index": 0,
+           "series": 0
+          },
+          "text": "Monthly churn fell from **8%** in 2022 to **3%** in 2025 as the base scaled.",
+          "title": "Churn fell 8% → 3%"
+         }
+        ],
+        "takeaway": "Growth is compounding while retention strengthens.",
+        "title": "Revenue more than quadrupled to [[£9.4m]] as churn fell to 3%"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "R8: Figures have no source"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R5",
+         "ok": true,
+         "msg": "Chart values carry a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R7",
+         "ok": true,
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R9",
+         "ok": true,
+         "msg": "Chart follows the chart guide"
+        },
+        {
+         "id": "R10",
+         "ok": true,
+         "msg": "2 parallel items"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R14",
+         "ok": true,
+         "msg": "Time runs oldest to newest"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 1
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.5
+        },
+        {
+         "id": "J3",
+         "ok": true,
+         "msg": "Parallel items are MECE",
+         "p": 0.52
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.91
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.61
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.98
+        },
+        {
+         "id": "J8",
+         "ok": true,
+         "msg": "Parallel items share one form",
+         "p": 0.75
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_9eo4",
+       "slide": {
+        "template": "table",
+        "kicker": "Pricing",
+        "table": {
+         "columns": [
+          {
+           "label": "Plan"
+          },
+          {
+           "label": "Monthly price"
+          },
+          {
+           "focus": true,
+           "label": "Seats"
+          },
+          {
+           "label": "Support"
+          },
+          {
+           "label": "SLA"
+          }
+         ],
+         "rows": [
+          {
+           "cells": [
+            "Starter",
+            "£29",
+            "3",
+            "Email",
+            "—"
+           ]
+          },
+          {
+           "cells": [
+            "Growth",
+            "£99",
+            "10",
+            "Chat",
+            "—"
+           ]
+          },
+          {
+           "cells": [
+            "Enterprise",
+            "Custom",
+            "Unlimited",
+            "—",
+            "99.9%"
+           ]
+          }
+         ]
+        },
+        "title": "Three plans scale from Starter at £29 to [[Enterprise]] with unlimited seats and a 99.9% SLA"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "body: 52% empty below the table; add content or a takeaway, or use another template (L5)",
+        "R8: Figures have no source"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R13",
+         "ok": true,
+         "msg": "Consistent units and precision"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 0.81
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.91
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.47
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.91
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_mzde",
+       "slide": {
+        "template": "steps",
+        "steps": [
+         {
+          "text": "Run live with **5 hospitals**; capture outcomes and learnings.",
+          "title": "Pilot",
+          "when": "0–6 mo"
+         },
+         {
+          "text": "Security and clinical **certification** needed for health-system sales.",
+          "title": "Certify",
+          "when": "6–12 mo"
+         },
+         {
+          "text": "Launch a **national rollout** to hospital groups beyond the pilot cohort.",
+          "title": "Roll out",
+          "when": "12–18 mo",
+          "focus": true
+         }
+        ],
+        "takeaway": "Five hospitals prove it, certification unlocks it, rollout scales it.",
+        "title": "The next 18 months take us from a 5-hospital pilot to a [[national rollout]]"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "body: 42% empty below the steps; add content or a takeaway, or use another template (L5)"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
         },
         {
          "id": "R2",
@@ -699,40 +1167,491 @@
          "msg": "Parallel items are balanced"
         },
         {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
          "id": "J1",
          "ok": true,
          "msg": "Title states a so-what",
-         "p": 0.99
+         "p": 0.92
         },
         {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.81
+         "p": 0.96
         },
         {
          "id": "J3",
          "ok": true,
          "msg": "Parallel items are MECE",
-         "p": 0.75
+         "p": 0.78
         },
         {
          "id": "J4",
          "ok": true,
          "msg": "Highlight matches the claim",
-         "p": 0.59
+         "p": 0.99
         },
         {
          "id": "J5",
-         "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.98
+         "ok": false,
+         "msg": "Takeaway restates the slide",
+         "p": 0.87
         },
         {
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 0.9400000000000001
+         "p": 0.99
+        },
+        {
+         "id": "J8",
+         "ok": true,
+         "msg": "Parallel items share one form",
+         "p": 0.47
+        }
+       ],
+       "checksPending": false
+      }
+     ],
+     "current": 2
+    },
+    {
+     "request": "Highlight the Growth plan",
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 387,
+       "detail": "edit_selected · p 0.81"
+      },
+      {
+       "step": "read_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_mzde · steps"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4421,
+       "tokensIn": 4682,
+       "tokensOut": 111,
+       "detail": "read_slide · 4.7k in, 111 out"
+      },
+      {
+       "step": "read_slide",
+       "model": "tool",
+       "ms": 0,
+       "detail": "s_9eo4 · table"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 8486,
+       "tokensIn": 5666,
+       "tokensOut": 287,
+       "detail": "patch_slide · 5.7k in, 287 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 12,
+       "detail": "applied · table.columns[1].focus, table.columns[2].focus, title · fits"
+      }
+     ],
+     "reply": "Updated the table, title.",
+     "items": [
+      {
+       "id": "s_7wuj",
+       "slide": {
+        "template": "chart",
+        "chart": {
+         "categories": [
+          "2022",
+          "2023",
+          "2024",
+          "2025"
+         ],
+         "format": "£{v}m",
+         "series": [
+          {
+           "color": "focus",
+           "mark": "bar",
+           "name": "SaaS revenue",
+           "values": [
+            2.1,
+            4.8,
+            7.2,
+            9.4
+           ]
+          }
+         ]
+        },
+        "kicker": "Growth",
+        "notes": [
+         {
+          "point": {
+           "index": 3,
+           "series": 0
+          },
+          "text": "From £2.1m in 2022 to **£9.4m** in 2025 — more than 4× in three years.",
+          "title": "Revenue grew 4.5×"
+         },
+         {
+          "point": {
+           "index": 0,
+           "series": 0
+          },
+          "text": "Monthly churn fell from **8%** in 2022 to **3%** in 2025 as the base scaled.",
+          "title": "Churn fell 8% → 3%"
+         }
+        ],
+        "takeaway": "Growth is compounding while retention strengthens.",
+        "title": "Revenue more than quadrupled to [[£9.4m]] as churn fell to 3%"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "R8: Figures have no source"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R5",
+         "ok": true,
+         "msg": "Chart values carry a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R7",
+         "ok": true,
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R9",
+         "ok": true,
+         "msg": "Chart follows the chart guide"
+        },
+        {
+         "id": "R10",
+         "ok": true,
+         "msg": "2 parallel items"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R14",
+         "ok": true,
+         "msg": "Time runs oldest to newest"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 1
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.5
+        },
+        {
+         "id": "J3",
+         "ok": true,
+         "msg": "Parallel items are MECE",
+         "p": 0.52
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.91
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.61
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.98
+        },
+        {
+         "id": "J8",
+         "ok": true,
+         "msg": "Parallel items share one form",
+         "p": 0.75
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_9eo4",
+       "slide": {
+        "template": "table",
+        "kicker": "Pricing",
+        "table": {
+         "columns": [
+          {
+           "label": "Plan"
+          },
+          {
+           "label": "Monthly price",
+           "focus": true
+          },
+          {
+           "focus": false,
+           "label": "Seats"
+          },
+          {
+           "label": "Support"
+          },
+          {
+           "label": "SLA"
+          }
+         ],
+         "rows": [
+          {
+           "cells": [
+            "Starter",
+            "£29",
+            "3",
+            "Email",
+            "—"
+           ]
+          },
+          {
+           "cells": [
+            "Growth",
+            "£99",
+            "10",
+            "Chat",
+            "—"
+           ]
+          },
+          {
+           "cells": [
+            "Enterprise",
+            "Custom",
+            "Unlimited",
+            "—",
+            "99.9%"
+           ]
+          }
+         ]
+        },
+        "title": "The [[Growth]] plan at £99 is the core offer, scaling up to Enterprise with a 99.9% SLA"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "body: 52% empty below the table; add content or a takeaway, or use another template (L5)",
+        "R8: Figures have no source"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R8",
+         "ok": false,
+         "msg": "Figures have no source"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R12",
+         "ok": true,
+         "msg": "The title quantifies the so-what"
+        },
+        {
+         "id": "R13",
+         "ok": true,
+         "msg": "Consistent units and precision"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 0.98
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.56
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.61
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.92
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_mzde",
+       "slide": {
+        "template": "steps",
+        "steps": [
+         {
+          "text": "Run live with **5 hospitals**; capture outcomes and learnings.",
+          "title": "Pilot",
+          "when": "0–6 mo"
+         },
+         {
+          "text": "Security and clinical **certification** needed for health-system sales.",
+          "title": "Certify",
+          "when": "6–12 mo"
+         },
+         {
+          "text": "Launch a **national rollout** to hospital groups beyond the pilot cohort.",
+          "title": "Roll out",
+          "when": "12–18 mo",
+          "focus": true
+         }
+        ],
+        "takeaway": "Five hospitals prove it, certification unlocks it, rollout scales it.",
+        "title": "The next 18 months take us from a 5-hospital pilot to a [[national rollout]]"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "body: 42% empty below the steps; add content or a takeaway, or use another template (L5)"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 2 lines"
+        },
+        {
+         "id": "R2",
+         "ok": true,
+         "msg": "Title is a full sentence"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R7",
+         "ok": true,
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "J1",
+         "ok": true,
+         "msg": "Title states a so-what",
+         "p": 0.92
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.96
+        },
+        {
+         "id": "J3",
+         "ok": true,
+         "msg": "Parallel items are MECE",
+         "p": 0.78
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.99
+        },
+        {
+         "id": "J5",
+         "ok": false,
+         "msg": "Takeaway restates the slide",
+         "p": 0.87
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.99
+        },
+        {
+         "id": "J8",
+         "ok": true,
+         "msg": "Parallel items share one form",
+         "p": 0.47
         }
        ],
        "checksPending": false
@@ -751,47 +1670,61 @@
      "request": "The problem: independent cafés lose 11 hours a week to supplier ordering",
      "trace": [
       {
-       "step": "Route",
+       "step": "Pre",
        "model": "Jev",
-       "ms": 665,
-       "detail": "number · p 0.97"
+       "ms": 351,
+       "detail": "new_slide · p 1.00"
       },
       {
-       "step": "Fill",
-       "model": "GLM Flash",
-       "ms": 3577,
-       "detail": "1299 tokens · “The problem”"
-      },
-      {
-       "step": "Gate",
+       "step": "create_slide",
        "model": "code",
-       "ms": 0,
-       "detail": "valid and fits",
-       "errors": []
+       "ms": 1,
+       "detail": "s_fnqc · number"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4159,
+       "tokensIn": 2925,
+       "tokensOut": 144,
+       "detail": "edit_slide · 2.9k in, 144 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 4243,
+       "detail": "body[0] ≤ 70"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 4273,
+       "detail": "applied · fits"
       }
      ],
-     "reply": {
-      "what": "Here is slide 1: a number slide.",
-      "sub": "It passes validation and fits the slide."
-     },
+     "reply": "Added a big-number problem slide: 11 hours a week lost to supplier ordering, with the argument beside it.",
      "items": [
       {
+       "id": "s_fnqc",
        "slide": {
         "template": "number",
         "title": "The problem",
-        "subtitle": "Independent cafés lose [[11 hours a week]] ordering supplies.",
-        "body": [
-         "Phones, texts and spreadsheets. **Every week.**"
-        ],
+        "subtitle": "Independent cafés lose [[11 hours a week]] to supplier ordering.",
         "number": {
-         "value": "11 h",
-         "tone": "neg",
-         "caption": "a week lost to supplier ordering"
-        }
+         "value": "11 hrs",
+         "caption": "lost every week to supplier ordering",
+         "tone": "neg"
+        },
+        "body": [
+         "Hours chasing orders, invoices, deliveries — not running the café."
+        ],
+        "takeaway": "That’s nearly 600 hours a year per café."
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "R11: Headline figure 600 is not on the slide"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -805,14 +1738,30 @@
         },
         {
          "id": "R5",
+         "ok": true,
+         "msg": "The big number carries a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R11",
          "ok": false,
-         "msg": "The big number has no unit"
+         "msg": "Headline figure 600 is not on the slide"
         },
         {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.13
+         "p": 0.44
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.54
         },
         {
          "id": "J6",
@@ -824,7 +1773,7 @@
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 0.99
+         "p": 1
         }
        ],
        "checksPending": false
@@ -833,62 +1782,72 @@
      "current": 0
     },
     {
-     "request": "Add a slide on our traction: 40 paying cafés, £38k MRR, growing 22% a month",
+     "request": "Our traction: 40 paying cafés, £38k MRR, growing 22% a month",
      "trace": [
       {
-       "step": "Intent",
+       "step": "Pre",
        "model": "Jev",
-       "ms": 382,
-       "detail": "new slide · p 1.00"
+       "ms": 364,
+       "detail": "edit_selected · p 0.79"
       },
       {
-       "step": "Route",
-       "model": "Jev",
-       "ms": 374,
-       "detail": "cards · p 0.92"
-      },
-      {
-       "step": "Decide",
-       "model": "Jev",
-       "ms": 366,
-       "detail": "lead: value (0.93)"
-      },
-      {
-       "step": "Fill",
-       "model": "GLM Flash",
-       "ms": 5260,
-       "detail": "2095 tokens · “Traction”"
-      },
-      {
-       "step": "Gate",
+       "step": "read_slide",
        "model": "code",
        "ms": 0,
-       "detail": "valid and fits",
-       "errors": []
+       "detail": "s_fnqc · number"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 1838,
+       "tokensIn": 3118,
+       "tokensOut": 53,
+       "detail": "create_slide · 3.1k in, 53 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "s_8lqt · cards"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4034,
+       "tokensIn": 4271,
+       "tokensOut": 126,
+       "detail": "edit_slide · 4.3k in, 126 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 13,
+       "detail": "applied · fits"
       }
      ],
-     "reply": {
-      "what": "Added slide 2: a cards slide.",
-      "sub": "It passes validation and fits the slide."
-     },
+     "reply": "Added the traction slide with the three figures as big value cards.",
      "items": [
       {
+       "id": "s_fnqc",
        "slide": {
         "template": "number",
         "title": "The problem",
-        "subtitle": "Independent cafés lose [[11 hours a week]] ordering supplies.",
-        "body": [
-         "Phones, texts and spreadsheets. **Every week.**"
-        ],
+        "subtitle": "Independent cafés lose [[11 hours a week]] to supplier ordering.",
         "number": {
-         "value": "11 h",
-         "tone": "neg",
-         "caption": "a week lost to supplier ordering"
-        }
+         "value": "11 hrs",
+         "caption": "lost every week to supplier ordering",
+         "tone": "neg"
+        },
+        "body": [
+         "Hours chasing orders, invoices, deliveries — not running the café."
+        ],
+        "takeaway": "That’s nearly 600 hours a year per café."
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "R11: Headline figure 600 is not on the slide"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -902,14 +1861,30 @@
         },
         {
          "id": "R5",
+         "ok": true,
+         "msg": "The big number carries a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R11",
          "ok": false,
-         "msg": "The big number has no unit"
+         "msg": "Headline figure 600 is not on the slide"
         },
         {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.13
+         "p": 0.44
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.54
         },
         {
          "id": "J6",
@@ -921,39 +1896,41 @@
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 0.99
+         "p": 1
         }
        ],
        "checksPending": false
       },
       {
+       "id": "s_8lqt",
        "slide": {
         "template": "cards",
         "title": "Traction",
-        "subtitle": "Cafés pay, stay, and [[compound every month]].",
+        "subtitle": "[[22%]] monthly growth across paying cafés.",
         "cards": [
          {
           "value": "40",
           "title": "paying cafés",
-          "text": "Live and paying today."
+          "text": "Live and ordering every week."
          },
          {
           "value": "£38k",
-          "tone": "focus",
-          "title": "monthly revenue",
-          "text": "Recurring, from real shops."
+          "title": "MRR",
+          "text": "Recurring subscription revenue.",
+          "tone": "focus"
          },
          {
-          "value": "+22%",
-          "title": "growth per month",
-          "text": "MRR growth, month on month."
+          "value": "22%",
+          "title": "month-on-month",
+          "text": "Compounding growth."
          }
-        ],
-        "takeaway": "Small base, [[steep curve]]."
+        ]
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "body: 49% empty below the cards; add content or a takeaway, or use another template (L5)"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -971,44 +1948,43 @@
          "msg": "One focus element, highlighted in the title"
         },
         {
-         "id": "R6",
-         "ok": true,
-         "msg": "Takeaway adds to the title"
-        },
-        {
          "id": "R7",
          "ok": true,
          "msg": "Parallel items are balanced"
         },
         {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R13",
+         "ok": true,
+         "msg": "Consistent units and precision"
+        },
+        {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.79
+         "p": 0.78
         },
         {
          "id": "J4",
          "ok": true,
          "msg": "Highlight matches the claim",
+         "p": 0.62
+        },
+        {
+         "id": "J6",
+         "ok": true,
+         "msg": "One idea per slide",
+         "p": 0.61
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
          "p": 0.85
-        },
-        {
-         "id": "J5",
-         "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.56
-        },
-        {
-         "id": "J6",
-         "ok": true,
-         "msg": "One idea per slide",
-         "p": 0.82
-        },
-        {
-         "id": "J7",
-         "ok": true,
-         "msg": "Template suits the content",
-         "p": 0.83
         }
        ],
        "checksPending": false
@@ -1017,50 +1993,78 @@
      "current": 1
     },
     {
-     "request": "Make the subtitle more confident",
+     "request": "Why we win: suppliers compete for orders instead of cafés chasing suppliers",
      "trace": [
       {
-       "step": "Intent",
+       "step": "Pre",
        "model": "Jev",
-       "ms": 352,
-       "detail": "text · p 1.00"
+       "ms": 344,
+       "detail": "edit_selected · p 0.72"
       },
       {
-       "step": "Edit",
-       "model": "GLM Flash",
-       "ms": 4122,
-       "detail": "changed subtitle"
-      },
-      {
-       "step": "Gate",
+       "step": "read_slide",
        "model": "code",
        "ms": 0,
-       "detail": "valid and fits",
-       "errors": []
+       "detail": "s_8lqt · cards"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 2501,
+       "tokensIn": 3938,
+       "tokensOut": 76,
+       "detail": "create_slide · 3.9k in, 76 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 0,
+       "detail": "s_l1zj · cards"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5064,
+       "tokensIn": 5098,
+       "tokensOut": 159,
+       "detail": "edit_slide · 5.1k in, 159 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 2057,
+       "detail": "cards[1].title ≤ 14"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 2078,
+       "detail": "applied · fits"
       }
      ],
-     "reply": {
-      "what": "Updated slide 2.",
-      "sub": "It passes validation and fits the slide."
-     },
+     "reply": "Added the \"Why we win\" slide as a framed today-vs-us contrast: cafés chasing suppliers on the left, suppliers competing for the order on the right.",
      "items": [
       {
+       "id": "s_fnqc",
        "slide": {
         "template": "number",
         "title": "The problem",
-        "subtitle": "Independent cafés lose [[11 hours a week]] ordering supplies.",
-        "body": [
-         "Phones, texts and spreadsheets. **Every week.**"
-        ],
+        "subtitle": "Independent cafés lose [[11 hours a week]] to supplier ordering.",
         "number": {
-         "value": "11 h",
-         "tone": "neg",
-         "caption": "a week lost to supplier ordering"
-        }
+         "value": "11 hrs",
+         "caption": "lost every week to supplier ordering",
+         "tone": "neg"
+        },
+        "body": [
+         "Hours chasing orders, invoices, deliveries — not running the café."
+        ],
+        "takeaway": "That’s nearly 600 hours a year per café."
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "R11: Headline figure 600 is not on the slide"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -1074,14 +2078,30 @@
         },
         {
          "id": "R5",
+         "ok": true,
+         "msg": "The big number carries a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R11",
          "ok": false,
-         "msg": "The big number has no unit"
+         "msg": "Headline figure 600 is not on the slide"
         },
         {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.13
+         "p": 0.44
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.54
         },
         {
          "id": "J6",
@@ -1093,39 +2113,41 @@
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 0.99
+         "p": 1
         }
        ],
        "checksPending": false
       },
       {
+       "id": "s_8lqt",
        "slide": {
         "template": "cards",
         "title": "Traction",
-        "subtitle": "Cafés love it: they pay, stay, and [[compound every month]].",
+        "subtitle": "[[22%]] monthly growth across paying cafés.",
         "cards": [
          {
           "value": "40",
           "title": "paying cafés",
-          "text": "Live and paying today."
+          "text": "Live and ordering every week."
          },
          {
           "value": "£38k",
-          "tone": "focus",
-          "title": "monthly revenue",
-          "text": "Recurring, from real shops."
+          "title": "MRR",
+          "text": "Recurring subscription revenue.",
+          "tone": "focus"
          },
          {
-          "value": "+22%",
-          "title": "growth per month",
-          "text": "MRR growth, month on month."
+          "value": "22%",
+          "title": "month-on-month",
+          "text": "Compounding growth."
          }
-        ],
-        "takeaway": "Small base, [[steep curve]]."
+        ]
        },
        "status": "ok",
        "errors": [],
-       "warnings": [],
+       "warnings": [
+        "body: 49% empty below the cards; add content or a takeaway, or use another template (L5)"
+       ],
        "checks": [
         {
          "id": "R1",
@@ -1143,262 +2165,66 @@
          "msg": "One focus element, highlighted in the title"
         },
         {
-         "id": "R6",
-         "ok": true,
-         "msg": "Takeaway adds to the title"
-        },
-        {
          "id": "R7",
          "ok": true,
          "msg": "Parallel items are balanced"
         },
         {
+         "id": "R11",
+         "ok": true,
+         "msg": "Headline figures are on the slide"
+        },
+        {
+         "id": "R13",
+         "ok": true,
+         "msg": "Consistent units and precision"
+        },
+        {
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.82
+         "p": 0.78
         },
         {
          "id": "J4",
          "ok": true,
          "msg": "Highlight matches the claim",
-         "p": 0.88
-        },
-        {
-         "id": "J5",
-         "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.59
+         "p": 0.62
         },
         {
          "id": "J6",
          "ok": true,
          "msg": "One idea per slide",
-         "p": 0.74
+         "p": 0.61
         },
         {
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 0.88
-        }
-       ],
-       "checksPending": false
-      }
-     ],
-     "current": 1
-    },
-    {
-     "request": "Add a slide contrasting how cafés order today vs with us",
-     "trace": [
-      {
-       "step": "Intent",
-       "model": "Jev",
-       "ms": 369,
-       "detail": "new slide · p 1.00"
-      },
-      {
-       "step": "Route",
-       "model": "Jev",
-       "ms": 431,
-       "detail": "cards · p 1.00"
-      },
-      {
-       "step": "Decide",
-       "model": "Jev",
-       "ms": 370,
-       "detail": "lead: framed (0.96)"
-      },
-      {
-       "step": "Fill",
-       "model": "GLM Flash",
-       "ms": 4747,
-       "detail": "2025 tokens · “Ordering”"
-      },
-      {
-       "step": "Gate",
-       "model": "code",
-       "ms": 0,
-       "detail": "4 issues",
-       "errors": [
-        "cards[0].text: 53 characters, limit 50 (3 too many). Shorten this field only.",
-        "cards[1].text: 51 characters, limit 50 (1 too many). Shorten this field only.",
-        "cards[0].text: 53 characters; framed cards allow 50. Shorten it.",
-        "cards[1].text: 51 characters; framed cards allow 50. Shorten it."
-       ]
-      },
-      {
-       "step": "Repair",
-       "model": "GLM Flash",
-       "ms": 2896,
-       "detail": "changed cards → valid and fits",
-       "errors": []
-      }
-     ],
-     "reply": {
-      "what": "Added slide 3: a cards slide.",
-      "sub": "It passes validation and fits the slide."
-     },
-     "items": [
-      {
-       "slide": {
-        "template": "number",
-        "title": "The problem",
-        "subtitle": "Independent cafés lose [[11 hours a week]] ordering supplies.",
-        "body": [
-         "Phones, texts and spreadsheets. **Every week.**"
-        ],
-        "number": {
-         "value": "11 h",
-         "tone": "neg",
-         "caption": "a week lost to supplier ordering"
-        }
-       },
-       "status": "ok",
-       "errors": [],
-       "warnings": [],
-       "checks": [
-        {
-         "id": "R1",
-         "ok": true,
-         "msg": "Title fits on 1 line"
-        },
-        {
-         "id": "R3",
-         "ok": true,
-         "msg": "Topic title with the claim in the subtitle"
-        },
-        {
-         "id": "R5",
-         "ok": false,
-         "msg": "The big number has no unit"
-        },
-        {
-         "id": "J2",
-         "ok": true,
-         "msg": "Body supports the claim",
-         "p": 0.13
-        },
-        {
-         "id": "J6",
-         "ok": true,
-         "msg": "One idea per slide",
-         "p": 0.99
-        },
-        {
-         "id": "J7",
-         "ok": true,
-         "msg": "Template suits the content",
-         "p": 0.99
+         "p": 0.85
         }
        ],
        "checksPending": false
       },
       {
+       "id": "s_l1zj",
        "slide": {
         "template": "cards",
-        "title": "Traction",
-        "subtitle": "Cafés love it: they pay, stay, and [[compound every month]].",
-        "cards": [
-         {
-          "value": "40",
-          "title": "paying cafés",
-          "text": "Live and paying today."
-         },
-         {
-          "value": "£38k",
-          "tone": "focus",
-          "title": "monthly revenue",
-          "text": "Recurring, from real shops."
-         },
-         {
-          "value": "+22%",
-          "title": "growth per month",
-          "text": "MRR growth, month on month."
-         }
-        ],
-        "takeaway": "Small base, [[steep curve]]."
-       },
-       "status": "ok",
-       "errors": [],
-       "warnings": [],
-       "checks": [
-        {
-         "id": "R1",
-         "ok": true,
-         "msg": "Title fits on 1 line"
-        },
-        {
-         "id": "R3",
-         "ok": true,
-         "msg": "Topic title with the claim in the subtitle"
-        },
-        {
-         "id": "R4",
-         "ok": true,
-         "msg": "One focus element, highlighted in the title"
-        },
-        {
-         "id": "R6",
-         "ok": true,
-         "msg": "Takeaway adds to the title"
-        },
-        {
-         "id": "R7",
-         "ok": true,
-         "msg": "Parallel items are balanced"
-        },
-        {
-         "id": "J2",
-         "ok": true,
-         "msg": "Body supports the claim",
-         "p": 0.82
-        },
-        {
-         "id": "J4",
-         "ok": true,
-         "msg": "Highlight matches the claim",
-         "p": 0.88
-        },
-        {
-         "id": "J5",
-         "ok": true,
-         "msg": "Takeaway adds an implication",
-         "p": 0.59
-        },
-        {
-         "id": "J6",
-         "ok": true,
-         "msg": "One idea per slide",
-         "p": 0.74
-        },
-        {
-         "id": "J7",
-         "ok": true,
-         "msg": "Template suits the content",
-         "p": 0.88
-        }
-       ],
-       "checksPending": false
-      },
-      {
-       "slide": {
-        "template": "cards",
-        "title": "Ordering",
-        "subtitle": "Today’s café supply run is [-slow, manual and overpriced-].",
+        "title": "Why we win",
+        "subtitle": "[[Suppliers compete for the order]] — not cafés chasing suppliers.",
         "framed": true,
         "cards": [
          {
-          "tone": "neg",
           "label": "Today",
-          "title": "Phone & pray",
-          "text": "Calls, voicemails, 3-day lead times, odd prices."
+          "title": "Cafés chase",
+          "text": "Hours phoning and comparing suppliers by hand.",
+          "tone": "neg"
          },
          {
-          "tone": "focus",
           "label": "With us",
-          "title": "One tap",
-          "text": "Next-morning delivery at fixed, clear prices."
+          "title": "Suppliers race",
+          "text": "One order posted. Suppliers bid it down.",
+          "tone": "focus"
          }
         ]
        },
@@ -1418,8 +2244,8 @@
         },
         {
          "id": "R4",
-         "ok": false,
-         "msg": "Focus element is not highlighted in the title with [[…]]"
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
         },
         {
          "id": "R7",
@@ -1430,31 +2256,326 @@
          "id": "J2",
          "ok": true,
          "msg": "Body supports the claim",
-         "p": 0.9
+         "p": 0.86
         },
         {
          "id": "J4",
          "ok": true,
          "msg": "Highlight matches the claim",
-         "p": 0.96
+         "p": 0.98
         },
         {
          "id": "J6",
          "ok": true,
          "msg": "One idea per slide",
-         "p": 0.96
+         "p": 0.94
         },
         {
          "id": "J7",
          "ok": true,
          "msg": "Template suits the content",
-         "p": 0.92
+         "p": 0.88
         }
        ],
        "checksPending": false
       }
      ],
      "current": 2
+    },
+    {
+     "request": "Make the traction slide show MRR by month: £4k in March, £9k in April, £17k in May, £26k in June, £38k in July",
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 377,
+       "detail": "edit_selected · p 0.58 · agent decides"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 2386,
+       "tokensIn": 3200,
+       "tokensOut": 86,
+       "detail": "create_slide · 3.2k in, 86 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "s_8lqt · chart"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 10592,
+       "tokensIn": 4713,
+       "tokensOut": 147,
+       "detail": "edit_slide · 4.7k in, 147 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 396,
+       "detail": "chart.series[0].mark = bar · focus = item0"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 418,
+       "detail": "applied · fits"
+      }
+     ],
+     "reply": "Retemplated traction into a bar chart of MRR by month, March–July, with the growth claim as subtitle.",
+     "items": [
+      {
+       "id": "s_fnqc",
+       "slide": {
+        "template": "number",
+        "title": "The problem",
+        "subtitle": "Independent cafés lose [[11 hours a week]] to supplier ordering.",
+        "number": {
+         "value": "11 hrs",
+         "caption": "lost every week to supplier ordering",
+         "tone": "neg"
+        },
+        "body": [
+         "Hours chasing orders, invoices, deliveries — not running the café."
+        ],
+        "takeaway": "That’s nearly 600 hours a year per café."
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "R11: Headline figure 600 is not on the slide"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 1 line"
+        },
+        {
+         "id": "R3",
+         "ok": true,
+         "msg": "Topic title with the claim in the subtitle"
+        },
+        {
+         "id": "R5",
+         "ok": true,
+         "msg": "The big number carries a unit"
+        },
+        {
+         "id": "R6",
+         "ok": true,
+         "msg": "Takeaway adds to the title"
+        },
+        {
+         "id": "R11",
+         "ok": false,
+         "msg": "Headline figure 600 is not on the slide"
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.44
+        },
+        {
+         "id": "J5",
+         "ok": true,
+         "msg": "Takeaway adds an implication",
+         "p": 0.54
+        },
+        {
+         "id": "J6",
+         "ok": true,
+         "msg": "One idea per slide",
+         "p": 0.99
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 1
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_8lqt",
+       "slide": {
+        "template": "chart",
+        "chart": {
+         "categories": [
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul"
+         ],
+         "format": "£{v}k",
+         "series": [
+          {
+           "mark": "bar",
+           "name": "MRR",
+           "values": [
+            4,
+            9,
+            17,
+            26,
+            38
+           ],
+           "color": "focus"
+          }
+         ]
+        },
+        "subtitle": "MRR is up nearly 10x in five months.",
+        "title": "Traction"
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [
+        "R4: Focus element is not highlighted in the title with [[…]]",
+        "R11: Headline figure 10 is not on the slide"
+       ],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 1 line"
+        },
+        {
+         "id": "R3",
+         "ok": true,
+         "msg": "Topic title with the claim in the subtitle"
+        },
+        {
+         "id": "R4",
+         "msg": "Focus element is not highlighted in the title with [[…]]"
+        },
+        {
+         "id": "R5",
+         "ok": true,
+         "msg": "Chart values carry a unit"
+        },
+        {
+         "id": "R9",
+         "ok": true,
+         "msg": "Chart follows the chart guide"
+        },
+        {
+         "id": "R11",
+         "ok": false,
+         "msg": "Headline figure 10 is not on the slide"
+        },
+        {
+         "id": "R14",
+         "ok": true,
+         "msg": "Time runs oldest to newest"
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.7
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.99
+        },
+        {
+         "id": "J6",
+         "ok": true,
+         "msg": "One idea per slide",
+         "p": 1
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.99
+        }
+       ],
+       "checksPending": false
+      },
+      {
+       "id": "s_l1zj",
+       "slide": {
+        "template": "cards",
+        "title": "Why we win",
+        "subtitle": "[[Suppliers compete for the order]] — not cafés chasing suppliers.",
+        "framed": true,
+        "cards": [
+         {
+          "label": "Today",
+          "title": "Cafés chase",
+          "text": "Hours phoning and comparing suppliers by hand.",
+          "tone": "neg"
+         },
+         {
+          "label": "With us",
+          "title": "Suppliers race",
+          "text": "One order posted. Suppliers bid it down.",
+          "tone": "focus"
+         }
+        ]
+       },
+       "status": "ok",
+       "errors": [],
+       "warnings": [],
+       "checks": [
+        {
+         "id": "R1",
+         "ok": true,
+         "msg": "Title fits on 1 line"
+        },
+        {
+         "id": "R3",
+         "ok": true,
+         "msg": "Topic title with the claim in the subtitle"
+        },
+        {
+         "id": "R4",
+         "ok": true,
+         "msg": "One focus element, highlighted in the title"
+        },
+        {
+         "id": "R7",
+         "ok": true,
+         "msg": "Parallel items are balanced"
+        },
+        {
+         "id": "J2",
+         "ok": true,
+         "msg": "Body supports the claim",
+         "p": 0.86
+        },
+        {
+         "id": "J4",
+         "ok": true,
+         "msg": "Highlight matches the claim",
+         "p": 0.98
+        },
+        {
+         "id": "J6",
+         "ok": true,
+         "msg": "One idea per slide",
+         "p": 0.94
+        },
+        {
+         "id": "J7",
+         "ok": true,
+         "msg": "Template suits the content",
+         "p": 0.88
+        }
+       ],
+       "checksPending": false
+      }
+     ],
+     "current": 1
     }
    ]
   }

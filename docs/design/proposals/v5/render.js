@@ -11,6 +11,9 @@ export const md = (s) => esc(s)
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
   .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>');
 const pad2 = (n) => String(n).padStart(2, "0");
+/** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
+const display = (s) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
+  : part.replace(/[\p{L}\p{N}£$€%]+(?:[-‑][\p{L}\p{N}%]+)+/gu, (w) => `<span class="nw">${w}</span>`))).join("");
 const list = (items) => `<ul class="bullets">${items.map((b) => `<li>${md(b)}</li>`).join("")}</ul>`;
 
 const notesHTML = (notes) => `<div class="notes">${notes.map((n, i) => `<div class="note"><span class="n">${pad2(i + 1)}</span>
@@ -78,7 +81,7 @@ export function slideHTML(s, ctx, deck) {
   const entry = MENU[s.template], variant = entry.variant(s);
   let body;
   if (s.template === "cover") {
-    body = `<div class="cover-mark"></div><h1 class="title">${md(s.title)}</h1><p class="cover-sub">${md(s.subtitle)}</p>`;
+    body = `<div class="cover-mark"></div><h1 class="title">${display(s.title)}</h1><p class="cover-sub">${md(s.subtitle)}</p>`;
   } else if (s.template === "section") {
     // The subtitle box is always there: it holds its 2 lines, so the number and title sit still across dividers.
     body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title">${esc(s.title)}</h2><p class="sec-sub">${s.subtitle ? md(s.subtitle) : ""}</p>`;
@@ -86,8 +89,8 @@ export function slideHTML(s, ctx, deck) {
     // The head holds its longest form (L3), so the body starts on one line per style. The consulting
     // kicker line is kept even when empty, so the title does not move up on slides without one.
     const head = deck.style === "consulting"
-      ? `<div class="label">${esc(s.kicker || ctx.kicker)}</div><h2 class="title">${md(s.title)}</h2>`
-      : `<h2 class="title">${md(s.title)}</h2>${s.subtitle ? `<p class="subtitle">${md(s.subtitle)}</p>` : ""}`;
+      ? `<div class="label">${esc(s.kicker || ctx.kicker)}</div><h2 class="title">${display(s.title)}</h2>`
+      : `<h2 class="title">${display(s.title)}</h2>${s.subtitle ? `<p class="subtitle">${display(s.subtitle)}</p>` : ""}`;
     body = `<header class="head">${head}</header>`
       + BODY[s.template](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway">${md(s.takeaway)}</p>` : "");

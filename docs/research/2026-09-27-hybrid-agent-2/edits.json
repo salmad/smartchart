@@ -1,0 +1,17 @@
+[
+  { "id": "e01", "style": "consulting", "start": "Chart · with notes (split)", "prompt": "Make the title say interchange overtakes interest income in year 4", "allow": ["title"], "expect": [] },
+  { "id": "e02", "style": "consulting", "start": "Chart · with notes (split)", "prompt": "Interchange in year 5 is 82, not 80", "allow": ["chart.series[1].values", "title", "takeaway", "notes"], "expect": [{ "path": "chart.series[1].values[4]", "equals": 82 }] },
+  { "id": "e03", "style": "consulting", "start": "Chart · with notes (split)", "prompt": "Stack interest income and interchange", "allow": ["chart.stacked", "notes"], "expect": [{ "path": "chart.stacked", "equals": true }] },
+  { "id": "e04", "style": "consulting", "start": "Chart · with notes (split)", "prompt": "Add cost of funds in £m: 0.2, 1.5, 7, 20, 41", "allow": ["chart.series", "notes", "title", "takeaway"], "expect": [{ "path": "chart.series[3].mark", "equals": "bar" }] },
+  { "id": "e05", "style": "consulting", "start": "Chart · full width", "prompt": "Add the upside case: 1.2, 5, 13, 29, 52, 80, 112, 150", "allow": ["chart.series", "title", "takeaway", "footnote"], "expect": [{ "path": "chart.series[2].mark", "equals": "line" }] },
+  { "id": "e06", "style": "consulting", "start": "Chart · full width", "prompt": "Remove the downside case", "allow": ["chart.series", "title", "takeaway", "footnote"], "expect": [{ "path": "chart.series.length", "equals": 1 }] },
+  { "id": "e07", "style": "consulting", "start": "Table · full width", "prompt": "Bad debt for revolvers is (65), not (70)", "allow": ["table.rows[5]", "table.rows[6]", "title", "takeaway"], "expect": [{ "path": "table.rows[5].cells[1].value", "equals": "(65)" }] },
+  { "id": "e08", "style": "consulting", "start": "Table · full width", "prompt": "Drop the share of customers row", "allow": ["table.rows"], "expect": [{ "path": "table.rows.length", "equals": 6 }] },
+  { "id": "e09", "style": "consulting", "start": "Table · with notes (split)", "prompt": "Rename the Fee column to Annual fee", "allow": ["table.columns[2].label"], "expect": [{ "path": "table.columns[2].label", "equals": "Annual fee" }] },
+  { "id": "e10", "style": "consulting", "start": "Table · with notes (split)", "prompt": "Cut the notes to the two strongest", "allow": ["notes"], "expect": [{ "path": "notes.length", "equals": 2 }] },
+  { "id": "e11", "style": "consulting", "start": "Cards · icon lead", "prompt": "Make the second card the focus", "allow": ["cards", "title"], "expect": [{ "path": "cards[1].tone", "equals": "focus" }] },
+  { "id": "e12", "style": "pitch", "start": "Cards · value lead", "prompt": "Change the first value to 25%", "allow": ["cards[0]", "subtitle"], "expect": [{ "path": "cards[0].value", "equals": "25%" }] },
+  { "id": "e13", "style": "consulting", "start": "Steps", "prompt": "Add a final step: Year 5, Exit, IPO or a strategic sale", "allow": ["steps", "takeaway"], "expect": [{ "path": "steps.length", "equals": 5 }] },
+  { "id": "e14", "style": "consulting", "start": "Number", "prompt": "Show the big number in red, it's the problem", "allow": ["number.tone"], "expect": [{ "path": "number.tone", "equals": "neg" }] },
+  { "id": "e15", "style": "consulting", "start": "Chart · full width", "prompt": "Make the title shorter", "allow": ["title"], "expect": [] }
+]

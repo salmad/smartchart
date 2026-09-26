@@ -1,0 +1,6743 @@
+{
+ "agent": {
+  "c10": {
+   "ms": 21321,
+   "totalMs": 21835,
+   "reply": "Fixed: since the chart shows all eight months, the side notes aren't allowed — I moved the June (Xero launch) and July (seasonality) explanations into the footnote and title instead, so nothing is lost.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.94
+   },
+   "written": [
+    "s_n6wp"
+   ],
+   "modelCalls": 4,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 685,
+     "detail": "new_slide · p 0.94"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_n6wp · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 8912,
+     "detail": "edit_slide · 4.2k in, 319 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 520,
+     "detail": "chart.series[0].mark = line · focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2282,
+     "detail": "takeaway ≤ 75"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2846,
+     "detail": "applied · 1 issue: chart.categories: 8 categories; with notes at most 6. Drop notes or group categories."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 6986,
+     "detail": "patch_slide · 4.9k in, 245 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 1839,
+     "detail": "footnote ≤ 110"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 1871,
+     "detail": "applied · footnote, notes, title · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "kicker": "FinBridge board",
+    "title": "[[Xero integration lifted spend 19% in June]] (to £31m); the July dip is seasonal and August hits £36m",
+    "chart": {
+     "categories": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Card spend processed",
+       "mark": "line",
+       "values": [
+        18,
+        19,
+        22,
+        21,
+        26,
+        31,
+        30,
+        36
+       ],
+       "color": "focus"
+      }
+     ]
+    },
+    "takeaway": "Structural growth: post-launch run-rate well above the pre-June trend.",
+    "footnote": "June reflects Xero integration launch; July dip (£31m→£30m) is seasonal, not lost volume. Monthly card spend.",
+    "source": "FinBridge internal reporting"
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": []
+  },
+  "c12": {
+   "ms": 27892,
+   "totalMs": 28412,
+   "reply": "Built the chart slide: discounters vs the big four, 2019–2025, with the 2023 crossover highlighted and the two drivers called out in the takeaway. Figures are illustrative placeholders since none were given — send real market-share data and I'll drop it in.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.6900000000000001
+   },
+   "written": [
+    "s_9hu1"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 717,
+     "detail": "new_slide · p 0.69"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_9hu1 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 13653,
+     "detail": "edit_slide · 4.2k in, 584 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 906,
+     "detail": "chart.series[0].mark = line · chart.series[1].mark = line · chart.stacked = side_by_side · focus = item1"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 12555,
+     "detail": "takeaway ≤ 75"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 13504,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "kicker": "UK grocery",
+    "title": "[[Discounters overtake the big four in 2023]], ending two decades of big-four dominance",
+    "takeaway": "Drivers: wider price gap after 2022 inflation and big-four rationalisation.",
+    "footnote": "Discounters = Aldi + Lidl; big four = Tesco, Sainsbury’s, Asda, Morrisons. Illustrative figures.",
+    "chart": {
+     "categories": [
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025"
+     ],
+     "format": "{v}%",
+     "stacked": false,
+     "series": [
+      {
+       "name": "Big four",
+       "mark": "line",
+       "color": "neutral",
+       "values": [
+        67.5,
+        66.8,
+        65.9,
+        64.6,
+        62.8,
+        61.9,
+        61.2
+       ]
+      },
+      {
+       "name": "Discounters",
+       "mark": "line",
+       "color": "focus",
+       "area": true,
+       "values": [
+        13.6,
+        14.8,
+        16.2,
+        18.4,
+        21.5,
+        23.6,
+        25.4
+       ]
+      }
+     ]
+    }
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R8: Figures have no source",
+    "R11: Headline figure 2023 is not on the slide"
+   ],
+   "checksFailed": [
+    "R8: Figures have no source",
+    "R11: Headline figure 2023 is not on the slide"
+   ]
+  },
+  "c11": {
+   "ms": 31960,
+   "totalMs": 32358,
+   "reply": "Added a chart slide. The figures are illustrative and marked in the footnote.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.87
+   },
+   "written": [
+    "s_irvf"
+   ],
+   "modelCalls": 10,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 683,
+     "detail": "new_slide · p 0.87"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_irvf · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 11986,
+     "detail": "edit_slide · 4.2k in, 456 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 451,
+     "detail": "chart.series[0].mark = bar · chart.series[1].mark = bar · focus = item1"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 5211,
+     "detail": "takeaway ≤ 39 (kept) · notes[2].text ≤ 68 · notes[0].text ≤ 59 (kept) · notes[1].text ≤ 62 (kept)"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 9484,
+     "detail": "takeaway ≤ 39 (kept) · notes[0].text ≤ 66 · notes[1].text ≤ 70 · notes[2].text ≤ 52 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 15207,
+     "detail": "applied · 3 issues: takeaway: 88 characters, limit 75 (13 too many). Shorten this field only. | notes content runs 3px past its box | takeaway wraps to 2 lines; it must fit on one"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4045,
+     "detail": "patch_slide · 5.0k in, 102 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 15,
+     "detail": "applied · notes[1].text, takeaway · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "kicker": "Retention",
+    "title": "[[2024 cohorts retain far better after month 3]], driven by onboarding and annual plans",
+    "chart": {
+     "categories": [
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M5",
+      "M6"
+     ],
+     "format": "{v}%",
+     "series": [
+      {
+       "name": "2023 cohorts",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        100,
+        82,
+        68,
+        62,
+        58,
+        55
+       ]
+      },
+      {
+       "name": "2024 cohorts",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        100,
+        88,
+        80,
+        76,
+        74,
+        72
+       ]
+      }
+     ]
+    },
+    "notes": [
+     {
+      "title": "Divergence at month 3",
+      "text": "By month 3, 2024 retention is **17pp** higher; gap widens by month 6."
+     },
+     {
+      "title": "Onboarding redesign",
+      "text": "Guided setup (Q1 2024) lifted activation."
+     },
+     {
+      "title": "Shift to annual plans",
+      "text": "Annual plan ~**~40%** of 2024 cohorts; upfront locks months 4–6."
+     }
+    ],
+    "takeaway": "The gains are structural: the gap holds through month 6.",
+    "footnote": "Monthly cohort retention, % of customers active. Illustrative figures — replace with cohort data.",
+    "source": "Internal cohort analysis"
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": []
+  },
+  "c25": {
+   "ms": 32813,
+   "totalMs": 33235,
+   "reply": "Added a table slide.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_6rt8"
+   ],
+   "modelCalls": 8,
+   "toolCalls": 6,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 695,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_6rt8 · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 8105,
+     "detail": "edit_slide · 3.7k in, 306 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 3,
+     "detail": "not applied · 3 shape errors: table.rows[0].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[1].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[2].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3510,
+     "detail": "patch_slide · 4.1k in, 104 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 0,
+     "detail": "s_6rt8 has no content yet: write it whole with edit_slide first."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4993,
+     "detail": "edit_slide · 4.2k in, 314 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 339,
+     "detail": "focus = item3"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2329,
+     "detail": "takeaway ≤ 40 (kept) · table.rows[2].cells[4].note ≤ 32"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 3171,
+     "detail": "takeaway ≤ 40 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 5885,
+     "detail": "applied · 3 issues: takeaway: 91 characters, limit 75 (16 too many). Shorten this field only. | table.columns: 5 columns; with notes at most 4. Drop a column or the notes. | takeaway wraps to 2 lines; it must fit on one"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3199,
+     "detail": "patch_slide · 5.0k in, 72 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 11,
+     "detail": "applied · table.columns[0], takeaway, title · 1 issue: table.columns: 5 columns; with notes at most 4. Drop a column or the notes."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 6377,
+     "detail": "patch_slide · 5.1k in, 250 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 6,
+     "detail": "applied · table.columns, table.rows[0].cells, table.rows[1].cells, table.rows[2].cells · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "notes": [
+     {
+      "text": "Best margin-to-payback balance at a self-serve CAC.",
+      "title": "Growth is the sweet spot"
+     },
+     {
+      "text": "High-touch enterprise sales costs inflate CAC, not weak margin.",
+      "title": "Scale payback is inflated"
+     }
+    ],
+    "table": {
+     "columns": [
+      {
+       "label": "Plan"
+      },
+      {
+       "label": "Gross margin"
+      },
+      {
+       "label": "CAC"
+      },
+      {
+       "label": "Payback",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Starter — £0/mo",
+        "42%",
+        "£180",
+        "14 months"
+       ]
+      },
+      {
+       "cells": [
+        "Growth — £49/mo",
+        "61%",
+        "£420",
+        "9 months"
+       ]
+      },
+      {
+       "cells": [
+        "Scale — £199/mo",
+        "68%",
+        "£1,900",
+        {
+         "note": "Inflated by enterprise sales",
+         "value": "11 months"
+        }
+       ]
+      }
+     ]
+    },
+    "title": "Growth’s [[9-month]] payback makes it the sweet spot; Scale’s 11 months is inflated by enterprise sales cost"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R8: Figures have no source"
+   ],
+   "checksFailed": [
+    "R8: Figures have no source",
+    "J8: Parallel items mix forms"
+   ]
+  },
+  "c07": {
+   "ms": 8784,
+   "totalMs": 9182,
+   "reply": "Slide ready: a big-number slide leading with the £84bn annual card spend by UK SMEs (10–249 employees), framed as proof the addressable market is large enough.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_bjb7"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 376,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_bjb7 · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 6261,
+     "detail": "edit_slide · 3.1k in, 241 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2095,
+     "detail": "title ≤ 56"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2128,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "body": [
+     "UK SMEs with **10–249 employees** already put business card spend at scale through existing channels — the payment behaviour is established, not something we need to create.",
+     "Capturing even a low single-digit share of this flow would support a meaningful revenue base, making the segment large enough to justify investment."
+    ],
+    "footnote": "SME defined as businesses with 10–249 employees.",
+    "kicker": "Addressable market",
+    "number": {
+     "caption": "annual business card spend by UK SMEs with 10–249 employees",
+     "tone": "focus",
+     "value": "£84bn"
+    },
+    "takeaway": "The spend is already there — the question is **who captures it.**",
+    "title": "UK SMEs already put [[£84bn a year]] on business cards"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R8: Figures have no source"
+   ],
+   "checksFailed": [
+    "R8: Figures have no source"
+   ]
+  },
+  "c08": {
+   "ms": 9864,
+   "totalMs": 10235,
+   "reply": "Built the churn slide: 62% never activated an integration as the big number, with NPS 41 and +12% tickets framed as context below. Add a source when you have one and I'll slot it in.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_d7ww"
+   ],
+   "modelCalls": 3,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 390,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_d7ww · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 5768,
+     "detail": "edit_slide · 3.1k in, 242 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 3656,
+     "detail": "takeaway ≤ 75 · title ≤ 51 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 3688,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "kicker": "SaaS review — churn",
+    "title": "Churn is an [[activation]] problem: 62% of churned accounts never activated an integration",
+    "body": [
+     "Most accounts that left had **never activated a single integration** — they never moved past core usage, so switching cost stayed near zero and the product was easy to leave.",
+     "Satisfaction signals look healthy by comparison: **NPS of 41** and support tickets **up 12%** — neither flags the churn risk that non-activation does."
+    ],
+    "number": {
+     "value": "62%",
+     "caption": "of churned accounts never activated an integration",
+     "tone": "neg"
+    },
+    "takeaway": "Churn driver is onboarding, not service: fix activation, not support."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R8: Figures have no source"
+   ],
+   "checksFailed": [
+    "R8: Figures have no source"
+   ]
+  },
+  "c06": {
+   "ms": 24499,
+   "totalMs": 24836,
+   "reply": "Added a big-number slide.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_84yz"
+   ],
+   "modelCalls": 6,
+   "toolCalls": 4,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 365,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_84yz · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4668,
+     "detail": "edit_slide · 3.1k in, 177 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2,
+     "detail": "not applied · 1 shape error: body: required. Paragraphs of argument."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 7133,
+     "detail": "edit_slide · 3.3k in, 269 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 10491,
+     "detail": "takeaway ≤ 75 · body[1] ≤ 170 · title ≤ 56 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 10522,
+     "detail": "applied · 1 issue: number.value: 7 characters, limit 6 (1 too many). Shorten this field only."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 1778,
+     "detail": "patch_slide · 3.8k in, 32 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 6,
+     "detail": "applied · number.value · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "body": [
+     "The cost is recurring and hidden: reconciliation is spread across many small tasks, so it never appears as a line item, yet it consumes [-real finance capacity-] every year.",
+     "Beyond staff time, manual matching delays month-end close, drives duplicate or missed claims, and hides errors until audit — so £11,400 is a **floor, not the ceiling**."
+    ],
+    "footnote": "Direct staff-time cost only; excludes error, fraud and delayed-close costs.",
+    "number": {
+     "caption": "average annual finance-staff time UK SMEs spend reconciling expenses manually",
+     "tone": "neg",
+     "value": "£11.4k"
+    },
+    "takeaway": "Every hour on receipts is [[an hour not spent on analysis and control]].",
+    "title": "Manual expense reconciliation quietly costs UK SMEs [[£11,400 a year]] in finance staff time alone"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R8: Figures have no source"
+   ],
+   "checksFailed": [
+    "R8: Figures have no source"
+   ]
+  },
+  "c27": {
+   "ms": 29229,
+   "totalMs": 29585,
+   "reply": "Fixed the column mismatch — the table now has a store-label column plus sales, labour %, shrink % and sales per FTE. Figures are illustrative; swap in your actual P&L numbers whenever you have them.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.56
+   },
+   "written": [
+    "s_vrek"
+   ],
+   "modelCalls": 3,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 422,
+     "detail": "new_slide · p 0.56"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_vrek · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 10590,
+     "detail": "edit_slide · 3.6k in, 421 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2,
+     "detail": "not applied · 5 shape errors: table.rows[0].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[1].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[2].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[3].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell. | table.rows[4].cells: 5 cells, but there are 4 columns. Use \"—\" for an empty cell."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 10972,
+     "detail": "edit_slide · 4.2k in, 517 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 353,
+     "detail": "focus = item1"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 6834,
+     "detail": "takeaway ≤ 44"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 7224,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "footnote": "Illustrative figures — pilot-store P&L, latest full trading quarter. Labour % and shrink % as share of sales.",
+    "kicker": "Pilot P&L",
+    "source": "Store P&L reporting, pilot programme",
+    "table": {
+     "columns": [
+      {},
+      {
+       "label": "Sales (£m, qtr)"
+      },
+      {
+       "label": "Labour % of sales",
+       "focus": true
+      },
+      {
+       "label": "Shrink % of sales"
+      },
+      {
+       "label": "Sales £m per FTE"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Leeds",
+        {
+         "value": "4.8",
+         "note": "highest of pilot"
+        },
+        "(18.9%)",
+        "(3.1%)",
+        "0.19"
+       ]
+      },
+      {
+       "cells": [
+        "Manchester",
+        "3.9",
+        "(14.2%)",
+        "(1.4%)",
+        "0.21"
+       ]
+      },
+      {
+       "cells": [
+        "Bristol",
+        "3.1",
+        "(14.8%)",
+        "(1.6%)",
+        "0.20"
+       ]
+      },
+      {
+       "cells": [
+        "Glasgow",
+        "2.7",
+        "(15.5%)",
+        "(1.9%)",
+        "0.18"
+       ]
+      },
+      {
+       "cells": [
+        "Pilot average",
+        "3.6",
+        "(15.9%)",
+        "(2.0%)",
+        "0.20"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "takeaway": "[[Weakest margin]]: labour +4.7pts vs pilot",
+    "title": "Leeds tops the pilot on sales, but [-labour and shrink gaps-] erase the top-line advantage"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R12: The title has no figure; quantify the so-what"
+   ]
+  },
+  "c26": {
+   "ms": 39090,
+   "totalMs": 39475,
+   "reply": "Both slides are done: the comparison table with FinBridge highlighted across FX fee, per-user fee and credit line, and a positioning slide arguing to lead on FX + credit rather than fee. All figures are illustrative — send the real pricing and I'll swap them in.",
+   "error": null,
+   "pre": {
+    "intent": "several_slides",
+    "p": 0.84
+   },
+   "written": [
+    "s_vs7r",
+    "s_wbh4"
+   ],
+   "modelCalls": 6,
+   "toolCalls": 6,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 401,
+     "detail": "several_slides · p 0.84"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 7491,
+     "detail": "create_slide, create_slide · 2.4k in, 251 out"
+    },
+    {
+     "step": "create_slide",
+     "model": "tool",
+     "ms": 1,
+     "detail": "s_vs7r · table"
+    },
+    {
+     "step": "create_slide",
+     "model": "tool",
+     "ms": 0,
+     "detail": "s_wbh4 · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 8912,
+     "detail": "edit_slide · 5.0k in, 415 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 393,
+     "detail": "focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2205,
+     "detail": "takeaway ≤ 75"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2636,
+     "detail": "applied · 1 issue: table.columns: 5 columns; with notes at most 4. Drop a column or the notes."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 11099,
+     "detail": "patch_slide, edit_slide · 5.8k in, 422 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 15,
+     "detail": "applied · notes, title · fits"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 381,
+     "detail": "focus = item0"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 404,
+     "detail": "applied · 1 issue: cards[0].bullets: with 4 cards, at most 2 bullets each."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3790,
+     "detail": "patch_slide · 6.5k in, 206 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 9,
+     "detail": "applied · cards · fits"
+    },
+    {
+     "step": "Reply",
+     "model": "GLM Flash",
+     "ms": 2644,
+     "detail": "after 6 tool calls · 6.7k in, 69 out"
+    }
+   ],
+   "slides": 2,
+   "slide": {
+    "template": "cards",
+    "cards": [
+     {
+      "bullets": [
+       "**2pp cheaper** than Spendesk on FX",
+       "Credit line **2x** Pleo, 3x Spendesk"
+      ],
+      "icon": "globe",
+      "title": "Lead on FX + credit",
+      "tone": "focus"
+     },
+     {
+      "bullets": [
+       "Fee £5–£6 — cheaper than us",
+       "Limited FX and credit features"
+      ],
+      "icon": "coins",
+      "title": "Soldo, Pleo",
+      "tone": "neutral"
+     },
+     {
+      "bullets": [
+       "Broad spend stack",
+       "Highest fee, smallest credit line"
+      ],
+      "icon": "credit-card",
+      "title": "Spendesk",
+      "tone": "neg"
+     },
+     {
+      "bullets": [
+       "Own the FX + credit pairing",
+       "Bundle pricing to close the £2 fee gap"
+      ],
+      "icon": "target",
+      "title": "Positioning play",
+      "tone": "neutral"
+     }
+    ],
+    "footnote": "Illustrative figures based on the comparison slide — replace with confirmed pricing.",
+    "kicker": "Positioning",
+    "takeaway": "Compete where rivals are weakest: cross-border spend and credit capacity.",
+    "title": "FinBridge should [[own the FX + credit pairing]], not fight on the per-user fee"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R10: 4 parallel items; 3 reads best: merge or cut to 3"
+   ],
+   "checksFailed": [
+    "R10: 4 parallel items; 3 reads best: merge or cut to 3",
+    "J5: Takeaway restates the slide",
+    "J8: Parallel items mix forms"
+   ]
+  },
+  "c42": {
+   "ms": 5424,
+   "totalMs": 5798,
+   "reply": "Added a steps slide covering the four milestones: Northway (2016), Cardell (2019), the Vesta merger (2022) and the services carve-out (2025).",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.98
+   },
+   "written": [
+    "s_v5pk"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 346,
+     "detail": "new_slide · p 0.98"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_v5pk · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 5056,
+     "detail": "edit_slide · 3.2k in, 223 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 10,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "kicker": "M&A history",
+    "title": "A decade of dealmaking: three acquisitions and one merger reshaped the platform",
+    "steps": [
+     {
+      "when": "2016",
+      "title": "Buy",
+      "text": "Acquired **Northway**, the first platform bolt-on."
+     },
+     {
+      "when": "2019",
+      "title": "Add",
+      "text": "Acquired **Cardell**, extending the core business."
+     },
+     {
+      "when": "2022",
+      "title": "Merge",
+      "text": "Merged with **Vesta** to consolidate the market."
+     },
+     {
+      "when": "2025",
+      "title": "Focus",
+      "text": "Carved out the **services arm**, sharpening the core."
+     }
+    ]
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: 0 focus elements; exactly one should stand out"
+   ],
+   "checksFailed": [
+    "R4: 0 focus elements; exactly one should stand out"
+   ]
+  },
+  "c46": {
+   "ms": 11873,
+   "totalMs": 12333,
+   "reply": "Added a four-card slide for the people strategy pillars — attract, develop, reward, retain. Say the word if you'd like specific initiatives or metrics under each pillar.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.99
+   },
+   "written": [
+    "s_dlh7"
+   ],
+   "modelCalls": 3,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 376,
+     "detail": "new_slide · p 0.99"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_dlh7 · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 8366,
+     "detail": "edit_slide · 3.7k in, 242 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 406,
+     "detail": "focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2659,
+     "detail": "cards[0].bullets[0] ≤ 48 · cards[1].bullets[0] ≤ 48"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 3111,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "cards": [
+     {
+      "bullets": [
+       "Employer brand and sourcing for right candidates",
+       "Fast, candidate-friendly hiring process"
+      ],
+      "icon": "target",
+      "title": "Attract",
+      "tone": "focus"
+     },
+     {
+      "bullets": [
+       "Structured onboarding, clear development paths",
+       "Training and mentoring at every level"
+      ],
+      "icon": "trending-up",
+      "title": "Develop",
+      "tone": "neutral"
+     },
+     {
+      "bullets": [
+       "Competitive, transparent pay and benefits",
+       "Reward linked to performance"
+      ],
+      "icon": "wallet",
+      "title": "Reward",
+      "tone": "neutral"
+     },
+     {
+      "bullets": [
+       "Career growth and engagement at the core",
+       "Stay conversations before exit interviews"
+      ],
+      "icon": "heart",
+      "title": "Retain",
+      "tone": "neutral"
+     }
+    ],
+    "kicker": "People strategy",
+    "title": "Our people strategy rests on [[four pillars: attract, develop, reward and retain]]"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R10: 4 parallel items; 3 reads best: merge or cut to 3"
+   ],
+   "checksFailed": [
+    "R10: 4 parallel items; 3 reads best: merge or cut to 3",
+    "J1: Title reads like a topic label"
+   ]
+  },
+  "c45": {
+   "ms": 18220,
+   "totalMs": 18637,
+   "reply": "Done — the slide now shows the three board options with one line each, plus a takeaway. Everything is neutral; say the word if one option should be highlighted.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_nlk9"
+   ],
+   "modelCalls": 6,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 430,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_nlk9 · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 5463,
+     "detail": "edit_slide · 3.8k in, 206 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2884,
+     "detail": "cards[0].text ≤ 50 · cards[1].text ≤ 50 (kept) · cards[2].text ≤ 50"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 4656,
+     "detail": "cards[1].text ≤ 50 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 7577,
+     "detail": "applied · 1 issue: cards[1].text: 63 characters; icon cards allow 50. Shorten it."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3158,
+     "detail": "patch_slide · 4.2k in, 94 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 13,
+     "detail": "applied · cards[1].text, takeaway · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "kicker": "Strategic options",
+    "title": "Three routes to market are open to the board: build, acquire or partner",
+    "cards": [
+     {
+      "icon": "rocket",
+      "title": "Build organically",
+      "text": "Grow in-house: slowest, but full control"
+     },
+     {
+      "icon": "briefcase",
+      "title": "Acquire a payroll player",
+      "text": "Buy an incumbent for customers, data and reach."
+     },
+     {
+      "icon": "handshake",
+      "title": "Partner with a bank",
+      "text": "Use a bank’s licence and reach: margin for speed."
+     }
+    ],
+    "takeaway": "Each route trades [[speed]] against control and margin."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "body: 44% empty below the cards; add content or a takeaway, or use another template (L5)",
+    "R4: 0 focus elements; exactly one should stand out"
+   ],
+   "checksFailed": [
+    "R4: 0 focus elements; exactly one should stand out",
+    "J1: Title reads like a topic label",
+    "J5: Takeaway restates the slide"
+   ]
+  },
+  "c40": {
+   "ms": 26628,
+   "totalMs": 26954,
+   "reply": "Added a steps slide walking the 18-month ERP rollout through design, build, pilot, rollout and hypercare, with indicative timings. Tell me the real dates or scope details and I'll slot them in.",
+   "error": null,
+   "pre": {
+    "intent": "several_slides",
+    "p": 0.94
+   },
+   "written": [
+    "s_6a6d"
+   ],
+   "modelCalls": 9,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 328,
+     "detail": "several_slides · p 0.94"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 1621,
+     "detail": "create_slide · 2.4k in, 42 out"
+    },
+    {
+     "step": "create_slide",
+     "model": "tool",
+     "ms": 1,
+     "detail": "s_6a6d · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 8165,
+     "detail": "edit_slide · 3.2k in, 305 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 5335,
+     "detail": "takeaway ≤ 42 (kept) · steps[1].text ≤ 70 · steps[2].text ≤ 70 · steps[3].text ≤ 70 (kept) · steps[4].text ≤ 70"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 11115,
+     "detail": "takeaway ≤ 42 · steps[3].text ≤ 70"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 16492,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "steps": [
+     {
+      "text": "Map processes, align data model and confirm scope with **process owners**.",
+      "title": "Design",
+      "when": "0–3 mo"
+     },
+     {
+      "text": "Configure modules, integrate finance & supply chain, run **SIT and UAT**.",
+      "title": "Build",
+      "when": "3–9 mo"
+     },
+     {
+      "text": "Two sites live on full order-to-cash flow; fixes and **training packs**.",
+      "title": "Pilot",
+      "when": "9–12 mo"
+     },
+     {
+      "text": "Wave migration of remaining sites; **legacy systems frozen** after each",
+      "title": "Rollout",
+      "when": "12–16 mo"
+     },
+     {
+      "text": "On-site support, **24h** triage, KPI monitoring pre-BAU handover.",
+      "title": "Hypercare",
+      "when": "16–18 mo"
+     }
+    ],
+    "takeaway": "Each gate closes on agreed exit criteria",
+    "title": "ERP rollout runs [[five gated phases over 18 months]], from design to hypercare"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: 0 focus elements; exactly one should stand out"
+   ],
+   "checksFailed": [
+    "R4: 0 focus elements; exactly one should stand out"
+   ]
+  },
+  "c41": {
+   "ms": 29109,
+   "totalMs": 29454,
+   "reply": "Added a steps slide.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.78
+   },
+   "written": [
+    "s_fxqn"
+   ],
+   "modelCalls": 7,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 354,
+     "detail": "new_slide · p 0.78"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_fxqn · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 6846,
+     "detail": "edit_slide · 3.2k in, 318 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 10763,
+     "detail": "steps[0].text ≤ 70 · steps[1].text ≤ 70 · steps[3].text ≤ 70 (kept)"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 1696,
+     "detail": "steps[3].text ≤ 70 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 12493,
+     "detail": "applied · 1 issue: steps[3].text: 75 characters, limit 70 (5 too many). Shorten this field only."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 1685,
+     "detail": "patch_slide · 3.8k in, 55 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 7690,
+     "detail": "steps[3].text ≤ 70"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 7713,
+     "detail": "applied · steps[3].focus, steps[3].text · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "kicker": "How it works",
+    "steps": [
+     {
+      "text": "Employee taps FinBridge card; transaction captured in real time.",
+      "title": "Tap",
+      "when": "Step 1"
+     },
+     {
+      "text": "Receipt captured on the spot via mobile photo — no shoebox later.",
+      "title": "Capture",
+      "when": "Step 2"
+     },
+     {
+      "text": "Auto-categorisation assigns the merchant, category and tax treatment.",
+      "title": "Categorise",
+      "when": "Step 3"
+     },
+     {
+      "text": "Policy checks route expenses to the right approver for quick sign-off.",
+      "title": "Approve",
+      "when": "Step 4",
+      "focus": true
+     },
+     {
+      "text": "Approved expense syncs straight to **Xero** — the ledger stays reconciled.",
+      "title": "Sync",
+      "when": "Step 5"
+     }
+    ],
+    "takeaway": "One continuous flow: **no manual re-keying** between tap and ledger.",
+    "title": "A FinBridge expense flows from card tap to the Xero ledger in [[five automated steps]]"
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [
+    "J1: Title reads like a topic label"
+   ]
+  },
+  "p13": {
+   "ms": 7123,
+   "totalMs": 7483,
+   "reply": "Built the MRR chart with notes flagging the April Xero launch and June enterprise logo for investors.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.98
+   },
+   "written": [
+    "s_65ia"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 383,
+     "detail": "new_slide · p 0.98"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_65ia · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4535,
+     "detail": "edit_slide · 4.0k in, 225 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 392,
+     "detail": "chart.series[0].mark = bar · focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 1748,
+     "detail": "subtitle ≤ 90"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2189,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun"
+     ],
+     "format": "£{v}k",
+     "series": [
+      {
+       "mark": "bar",
+       "name": "MRR",
+       "values": [
+        42,
+        48,
+        55,
+        71,
+        78,
+        96
+       ],
+       "color": "focus"
+      }
+     ]
+    },
+    "notes": [
+     {
+      "point": {
+       "index": 3,
+       "series": 0
+      },
+      "title": "Xero app launch"
+     },
+     {
+      "point": {
+       "index": 5,
+       "series": 0
+      },
+      "title": "First enterprise logo"
+     }
+    ],
+    "subtitle": "MRR more than doubled in six months via April Xero launch and our first enterprise logo.",
+    "title": "MRR",
+    "takeaway": "[[2.3× in six months.]]"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "J5: Takeaway restates the slide"
+   ]
+  },
+  "p14": {
+   "ms": 10259,
+   "totalMs": 10626,
+   "reply": "Created a \"Weekly active clinics\" line chart with three numbered callouts pinned to the NHS framework, RCGP webinar and BMJ feature spikes. No figures were given, so the values are illustrative placeholders (marked in the footnote) — send the real numbers and I'll swap them in.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.61
+   },
+   "written": [
+    "s_3ki1"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 356,
+     "detail": "new_slide · p 0.61"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_3ki1 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 6576,
+     "detail": "edit_slide · 4.0k in, 338 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 366,
+     "detail": "chart.series[0].mark = bar · focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2911,
+     "detail": "title ≤ 20"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 3309,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "title": "Active clinics/wk",
+    "subtitle": "Growth compounds, with three clear step-ups from key wins.",
+    "chart": {
+     "categories": [
+      "Wk 1",
+      "Wk 5",
+      "Wk 9",
+      "Wk 13",
+      "Wk 17",
+      "Wk 21"
+     ],
+     "format": "{v}",
+     "series": [
+      {
+       "name": "Weekly active clinics",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        8,
+        14,
+        32,
+        41,
+        63,
+        78
+       ]
+      }
+     ]
+    },
+    "notes": [
+     {
+      "title": "[[NHS framework win]]",
+      "point": {
+       "series": 0,
+       "index": 2
+      }
+     },
+     {
+      "title": "RCGP webinar",
+      "point": {
+       "series": 0,
+       "index": 3
+      }
+     },
+     {
+      "title": "BMJ feature",
+      "point": {
+       "series": 0,
+       "index": 4
+      }
+     }
+    ],
+    "footnote": "Illustrative figures — replace with actual weekly clinic counts."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R5: Chart values have no unit in `format`",
+    "R14: Bars are not sorted by value; largest first unless the order means something"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R5: Chart values have no unit in `format`",
+    "R14: Bars are not sorted by value; largest first unless the order means something"
+   ]
+  },
+  "p24": {
+   "ms": 8189,
+   "totalMs": 8594,
+   "reply": "Built a \"Unit economics\" comparison table: SMB vs mid-market across ACV, gross margin, CAC and payback, with the mid-market column highlighted and a takeaway that lands the doubling-down argument.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.8200000000000001
+   },
+   "written": [
+    "s_57x7"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 339,
+     "detail": "new_slide · p 0.82"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_57x7 · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 7400,
+     "detail": "edit_slide · 3.6k in, 230 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 410,
+     "detail": "focus = item1"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 435,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "title": "Unit economics",
+    "subtitle": "[[Mid-market pays back faster and bigger.]] We’re doubling down.",
+    "table": {
+     "columns": [
+      {
+       "label": "£"
+      },
+      {
+       "label": "SMB"
+      },
+      {
+       "label": "Mid-market",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "ACV",
+        "£6k",
+        "£28k"
+       ]
+      },
+      {
+       "cells": [
+        "Gross margin",
+        "78%",
+        "81%"
+       ]
+      },
+      {
+       "cells": [
+        "CAC",
+        "£4.5k",
+        "£14k"
+       ]
+      },
+      {
+       "cells": [
+        "Payback",
+        "11 months",
+        "7 months"
+       ]
+      }
+     ]
+    },
+    "takeaway": "4.7× ACV, payback 4 months shorter"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R13: Mixed units or decimals: £6k, 78%, £4.5k, 11 months"
+   ],
+   "checksFailed": [
+    "R13: Mixed units or decimals: £6k, 78%, £4.5k, 11 months",
+    "J5: Takeaway restates the slide"
+   ]
+  },
+  "c47": {
+   "ms": 22164,
+   "totalMs": 22547,
+   "reply": "Fixed: shortened the +4.2pts value and the title to two lines with the figures in it, and kept a single highlighted phrase. Note there's no source line since none was provided — happy to add one if you have it.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_bprs"
+   ],
+   "modelCalls": 3,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 393,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_bprs · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 11101,
+     "detail": "edit_slide · 3.8k in, 192 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 392,
+     "detail": "focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 2543,
+     "detail": "title ≤ 55 (kept)"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2961,
+     "detail": "applied · 3 issues: cards[2].value: 7 characters, limit 6 (1 too many). Shorten this field only. | title wraps to 3 lines (max 2); shorten it | body: starts at 424px; it must start at 349px (L3). Shorten the title or subtitle."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 7681,
+     "detail": "patch_slide · 4.5k in, 184 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 9,
+     "detail": "applied · cards[2].value, title · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "kicker": "Pilot results",
+    "title": "The pilot delivered [[three wins]]: 23% fewer stockouts, £1.4m released, 4.2pts margin uplift",
+    "cards": [
+     {
+      "value": "-23%",
+      "title": "Fewer stockouts",
+      "text": "Service levels improved across pilot sites.",
+      "tone": "focus"
+     },
+     {
+      "value": "£1.4m",
+      "title": "Working capital released",
+      "text": "Cash freed from inventory during the pilot.",
+      "tone": "neutral"
+     },
+     {
+      "value": "4.2pts",
+      "title": "Margin uplift",
+      "text": "Pricing and mix gains on pilot range.",
+      "tone": "neutral"
+     }
+    ],
+    "takeaway": "All three wins matter: service, cash and profitability moved together."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "body: 56% empty below the cards; add content or a takeaway, or use another template (L5)",
+    "R8: Figures have no source"
+   ],
+   "checksFailed": [
+    "R8: Figures have no source"
+   ]
+  },
+  "p26": {
+   "ms": 8265,
+   "totalMs": 8268,
+   "reply": "Happy to build that as a comparison table — one question first: do you have the actual figures (credit line, price per user, and whether each of Pleo, Soldo, Spendesk and Amex has automatic receipts and Xero sync)? I'd rather use your numbers than invent competitor specs.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [],
+   "modelCalls": 1,
+   "toolCalls": 1,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 406,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_570z · table"
+    },
+    {
+     "step": "Reply",
+     "model": "GLM Flash",
+     "ms": 7852,
+     "detail": "after 1 tool call · 3.5k in, 209 out"
+    }
+   ],
+   "slides": 0,
+   "slide": null,
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": []
+  },
+  "p15": {
+   "ms": 18743,
+   "totalMs": 19168,
+   "reply": "Built a CAC by channel slide: lines over the last 4 quarters, with paid social's climb to 95 as the focus and notes on referral and SEO.",
+   "error": null,
+   "pre": {
+    "intent": "several_slides",
+    "p": 0.84
+   },
+   "written": [
+    "s_m0j6"
+   ],
+   "modelCalls": 5,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 370,
+     "detail": "several_slides · p 0.84"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3272,
+     "detail": "create_slide · 2.4k in, 85 out"
+    },
+    {
+     "step": "Classify",
+     "model": "Jev",
+     "ms": 387,
+     "detail": "chart · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "tool",
+     "ms": 390,
+     "detail": "s_m0j6 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 7243,
+     "detail": "edit_slide · 4.1k in, 318 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 355,
+     "detail": "chart.series[0].mark = bar · chart.series[1].mark = bar · chart.series[2].mark = bar · chart.stacked = side_by_side · focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 7041,
+     "detail": "takeaway ≤ 42 · notes[0].title ≤ 28 · notes[2].title ≤ 28"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 7447,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "title": "CAC by channel",
+    "subtitle": "Paid social CAC is climbing fast while SEO gets cheaper — we’re moving budget accordingly.",
+    "chart": {
+     "categories": [
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "${v}",
+     "stacked": false,
+     "series": [
+      {
+       "name": "Paid social",
+       "mark": "bar",
+       "values": [
+        40,
+        55,
+        72,
+        95
+       ],
+       "color": "focus"
+      },
+      {
+       "name": "Referral",
+       "mark": "bar",
+       "values": [
+        20,
+        21,
+        19,
+        20
+       ],
+       "color": "neutral"
+      },
+      {
+       "name": "SEO",
+       "mark": "bar",
+       "values": [
+        35,
+        28,
+        22,
+        18
+       ],
+       "color": "neutral"
+      }
+     ]
+    },
+    "notes": [
+     {
+      "title": "Paid social [[+138%]] in 4 qtrs",
+      "point": {
+       "series": 0,
+       "index": 3
+      }
+     },
+     {
+      "title": "Referral flat at ~[[20]]"
+     },
+     {
+      "title": "SEO at [[18]], cheapest channel",
+      "point": {
+       "series": 2,
+       "index": 3
+      }
+     }
+    ],
+    "takeaway": "Paid social budget → [[SEO and referral]]"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "J5: Takeaway restates the slide"
+   ]
+  },
+  "p05": {
+   "ms": 8436,
+   "totalMs": 8876,
+   "reply": "Added a big-number slide.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_vnkv"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 341,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_vnkv · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4081,
+     "detail": "edit_slide · 2.9k in, 127 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 10,
+     "detail": "applied · 1 issue: hero runs 62px into the bottom margin; shorten the body or drop the takeaway"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2432,
+     "detail": "patch_slide · 3.2k in, 26 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 8,
+     "detail": "applied · body · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "number": {
+     "caption": "a month chasing receipts, per UK SME",
+     "tone": "neg",
+     "value": "9 hrs"
+    },
+    "subtitle": "UK SMEs waste them chasing receipts.",
+    "takeaway": "That’s the whole point.",
+    "title": "The problem"
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [
+    "J5: Takeaway restates the slide"
+   ]
+  },
+  "p25": {
+   "ms": 18157,
+   "totalMs": 18538,
+   "reply": "Built the use-of-funds table: four buckets with hires and milestones, £4.0m total, engineering highlighted with a takeaway line on why it's the biggest. I used plausible illustrative hires/milestones (flagged in the footnote) — tell me the real ones and I'll swap them in.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.93
+   },
+   "written": [
+    "s_kiss"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 339,
+     "detail": "new_slide · p 0.93"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_kiss · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 14132,
+     "detail": "edit_slide · 3.6k in, 547 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 336,
+     "detail": "focus = item0"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 3299,
+     "detail": "takeaway ≤ 42"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 3666,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "title": "Use of funds",
+    "subtitle": "£4m buys 24 months of runway and ships the platform. Engineering leads the spend.",
+    "takeaway": "Biggest bucket: [[product depth is the moat.]]",
+    "footnote": "Hires and milestones are illustrative.",
+    "table": {
+     "columns": [
+      {},
+      {
+       "label": "£m",
+       "focus": true
+      },
+      {
+       "label": "Hires"
+      },
+      {
+       "label": "Milestone unlocked"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        {
+         "value": "Engineering",
+         "note": "Biggest bucket"
+        },
+        {
+         "value": "1.8",
+         "note": "45% of raise"
+        },
+        {
+         "value": "6 engineers + 1 EM",
+         "note": "Product & platform"
+        },
+        {
+         "value": "v2 platform shipped, SOC 2"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "Sales",
+         "note": "Go-to-market"
+        },
+        {
+         "value": "1.2",
+         "note": "30%"
+        },
+        {
+         "value": "2 AEs + 1 SDR",
+         "note": "Pipeline engine"
+        },
+        {
+         "value": "£1.5m ARR"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "Marketing"
+        },
+        {
+         "value": "0.6",
+         "note": "15%"
+        },
+        {
+         "value": "1 demand lead",
+         "note": "Inbound + brand"
+        },
+        {
+         "value": "2× qualified pipeline"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "G&A"
+        },
+        {
+         "value": "0.4",
+         "note": "10%"
+        },
+        {
+         "value": "Finance & ops",
+         "note": "Controls"
+        },
+        {
+         "value": "Audit-ready reporting"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Total",
+        "4.0",
+        "",
+        ""
+       ],
+       "style": "total"
+      }
+     ]
+    }
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R13: Mixed units or decimals: 6 engineers + 1 EM, 2 AEs + 1 SDR, 1 demand lead"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R13: Mixed units or decimals: 6 engineers + 1 EM, 2 AEs + 1 SDR, 1 demand lead"
+   ]
+  },
+  "p06": {
+   "ms": 4210,
+   "totalMs": 4544,
+   "reply": "Market slide added: £84bn as the big number, with a one-line claim and a short supporting argument.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_dpor"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 350,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_dpor · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3839,
+     "detail": "edit_slide · 2.9k in, 132 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 13,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "title": "The market",
+    "subtitle": "UK SME card spend is a massive, underserved pool.",
+    "number": {
+     "value": "£84bn",
+     "caption": "of SME card spend in the UK every year",
+     "tone": "focus"
+    },
+    "body": [
+     "SMEs pay with cards every day — and [[get nothing back]] on that spend."
+    ]
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [
+    "J2: Body supports the claim only partly"
+   ]
+  },
+  "p07": {
+   "ms": 6205,
+   "totalMs": 6562,
+   "reply": "Done — a Traction slide leading with £1.2m ARR (4× growth from £300k a year ago), with your 140 customers and 3 reps as supporting detail.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_wrrq"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 322,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_wrrq · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4302,
+     "detail": "edit_slide · 3.0k in, 170 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 14,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "title": "Traction",
+    "subtitle": "[[£1.2m ARR]], up 4× from £300k a year ago.",
+    "body": [
+     "140 customers. 3 sales reps. But ARR is what matters."
+    ],
+    "number": {
+     "value": "£1.2m",
+     "tone": "focus",
+     "caption": "ARR, up from £300k a year ago"
+    },
+    "takeaway": "4× ARR growth in 12 months."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R11: Headline figure 4, 4, 12 is not on the slide"
+   ],
+   "checksFailed": [
+    "R11: Headline figure 4, 4, 12 is not on the slide",
+    "J5: Takeaway restates the slide"
+   ]
+  },
+  "p32": {
+   "ms": 6126,
+   "totalMs": 6477,
+   "reply": "Added the roadmap as a four-step timeline: expense cards, bill pay, credit line and EU expansion. Want a focus step or a takeaway line?",
+   "error": null,
+   "pre": {
+    "intent": "several_slides",
+    "p": 0.54
+   },
+   "written": [
+    "s_cbbb"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 442,
+     "detail": "several_slides · p 0.54 · agent decides"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 1616,
+     "detail": "create_slide · 2.4k in, 45 out"
+    },
+    {
+     "step": "create_slide",
+     "model": "tool",
+     "ms": 1,
+     "detail": "s_cbbb · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4033,
+     "detail": "edit_slide · 3.0k in, 167 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 20,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "subtitle": "One product per quarter, ending in the EU.",
+    "steps": [
+     {
+      "text": "Expense cards.",
+      "title": "Cards",
+      "when": "Q1"
+     },
+     {
+      "text": "Bill pay.",
+      "title": "Bills",
+      "when": "Q2"
+     },
+     {
+      "text": "Credit line.",
+      "title": "Credit",
+      "when": "Q3"
+     },
+     {
+      "text": "EU expansion.",
+      "title": "Expand",
+      "when": "Q4"
+     }
+    ],
+    "title": "Roadmap"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: 0 focus elements; exactly one should stand out"
+   ],
+   "checksFailed": [
+    "R4: 0 focus elements; exactly one should stand out"
+   ]
+  },
+  "p40": {
+   "ms": 4397,
+   "totalMs": 4754,
+   "reply": "Built the traction slide as four big-number cards: £2.4m ARR, 310 customers, 128% NRR, and zero churned logos.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_64hx"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 324,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_64hx · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4040,
+     "detail": "edit_slide · 3.6k in, 184 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 19,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "title": "Traction",
+    "subtitle": "[[Four numbers]] that show the business is compounding.",
+    "cards": [
+     {
+      "value": "£2.4m",
+      "title": "ARR",
+      "text": "Annual recurring revenue, growing.",
+      "tone": "focus"
+     },
+     {
+      "value": "310",
+      "title": "customers",
+      "text": "Paying teams across the platform."
+     },
+     {
+      "value": "128%",
+      "title": "NRR",
+      "text": "Existing accounts expand every year."
+     },
+     {
+      "value": "0",
+      "title": "churned logos",
+      "text": "Not a single logo lost this year."
+     }
+    ],
+    "takeaway": "We grow even if [[zero new customers]] sign."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": []
+  },
+  "p34": {
+   "ms": 6814,
+   "totalMs": 7219,
+   "reply": "Built a \"Our story\" timeline slide with the four milestones from founding in 2023 to the Series A in 2026.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.62
+   },
+   "written": [
+    "s_hnsz"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 365,
+     "detail": "new_slide · p 0.62"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_hnsz · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 6419,
+     "detail": "edit_slide · 3.1k in, 266 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 18,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "steps": [
+     {
+      "text": "Founded in Leeds.",
+      "title": "Found",
+      "when": "2023"
+     },
+     {
+      "text": "First pilot hospital.",
+      "title": "Prove",
+      "when": "2024"
+     },
+     {
+      "text": "NHS framework.",
+      "title": "Win",
+      "when": "2025",
+      "focus": true
+     },
+     {
+      "text": "Series A.",
+      "title": "Raise",
+      "when": "2026"
+     }
+    ],
+    "subtitle": "From a Leeds founding to an NHS framework in three years.",
+    "title": "Our story"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ]
+  },
+  "p41": {
+   "ms": 4949,
+   "totalMs": 5387,
+   "reply": "Created \"One platform\" — three icon cards for cards, bill pay and credit. No figures were given, so I kept it product-led; add numbers if you'd like value leads instead of icons.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.8
+   },
+   "written": [
+    "s_g5kg"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 379,
+     "detail": "new_slide · p 0.80"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_g5kg · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4533,
+     "detail": "edit_slide · 3.5k in, 175 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 22,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "cards": [
+     {
+      "icon": "credit-card",
+      "text": "Spend and control company and team cards.",
+      "title": "Cards"
+     },
+     {
+      "icon": "receipt",
+      "text": "Pay any vendor or bill, right from the platform.",
+      "title": "Bill pay"
+     },
+     {
+      "icon": "landmark",
+      "text": "Credit built on the account’s real cashflow.",
+      "title": "Credit"
+     }
+    ],
+    "subtitle": "Cards, bill pay and credit on [[one platform]].",
+    "title": "One platform"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "body: 53% empty below the cards; add content or a takeaway, or use another template (L5)",
+    "R4: 0 focus elements; exactly one should stand out"
+   ],
+   "checksFailed": [
+    "R4: 0 focus elements; exactly one should stand out",
+    "J6: Several ideas on one slide"
+   ]
+  },
+  "p33": {
+   "ms": 11372,
+   "totalMs": 11758,
+   "reply": "Built the \"How it works\" slide as a 3-step flow: sign up, issue cards, then snap receipts with books closing themselves.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 0.71
+   },
+   "written": [
+    "s_abkj"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 338,
+     "detail": "new_slide · p 0.71"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_abkj · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 5692,
+     "detail": "edit_slide · 3.1k in, 229 out"
+    },
+    {
+     "step": "Resolve",
+     "model": "Jev",
+     "ms": 364,
+     "detail": "focus = item2"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 4935,
+     "detail": "steps[2].text ≤ 24"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 5332,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "steps": [
+     {
+      "text": "Sign up in 5 minutes.",
+      "title": "Sign up",
+      "when": "Minute 0"
+     },
+     {
+      "text": "Issue cards instantly.",
+      "title": "Issue",
+      "when": "Day 1"
+     },
+     {
+      "focus": true,
+      "text": "[[Books close]] on snap",
+      "title": "Snap",
+      "when": "Always"
+     }
+    ],
+    "subtitle": "Five minutes to sign up, then the books close themselves.",
+    "takeaway": "No bookkeepers. No month-end.",
+    "title": "How it works"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ]
+  },
+  "p42": {
+   "ms": 8260,
+   "totalMs": 8676,
+   "reply": "Added the before/after slide: framed contrast card with FinBridge as the win — 3 days to close the month, now 3 hours.",
+   "error": null,
+   "pre": {
+    "intent": "new_slide",
+    "p": 1
+   },
+   "written": [
+    "s_ykli"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 3,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 340,
+     "detail": "new_slide · p 1.00"
+    },
+    {
+     "step": "create_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_ykli · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4458,
+     "detail": "edit_slide · 3.5k in, 159 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 2,
+     "detail": "not applied · 1 shape error: tone: not a field of \"cards\" in pitch. Allowed: title, subtitle, takeaway, footnote, source, framed, cards, focus."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3429,
+     "detail": "edit_slide · 3.7k in, 153 out"
+    },
+    {
+     "step": "edit_slide",
+     "model": "tool",
+     "ms": 16,
+     "detail": "applied · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "cards": [
+     {
+      "label": "Before FinBridge",
+      "text": "Manual close takes three full days each month.",
+      "title": "3 days",
+      "tone": "neg"
+     },
+     {
+      "label": "After FinBridge",
+      "text": "Month-end close done in three hours.",
+      "title": "3 hours",
+      "tone": "focus"
+     }
+    ],
+    "framed": true,
+    "subtitle": "Close the month 24× faster.",
+    "title": "Before vs after"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R11: Headline figure 24 is not on the slide"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "R11: Headline figure 24 is not on the slide"
+   ]
+  }
+ },
+ "long": {
+  "pitch": {
+   "done": true,
+   "measured": {
+    "p13": {
+     "ms": 13931,
+     "totalMs": 14385,
+     "reply": "MRR slide is in: six months of bars from £42k to £96k, with pinned notes on the April Xero launch and the June enterprise logo, so the answer is on the slide before investors ask.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.36
+     },
+     "written": [
+      "s_h22v"
+     ],
+     "modelCalls": 4,
+     "toolCalls": 2,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 342,
+       "detail": "new_slide · p 0.36 · agent decides"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 2807,
+       "detail": "create_slide · 7.4k in, 78 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 0,
+       "detail": "s_h22v · chart"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4555,
+       "detail": "edit_slide · 9.0k in, 196 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 556,
+       "detail": "chart.series[0].mark = bar"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 3216,
+       "detail": "takeaway ≤ 42"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 3824,
+       "detail": "applied · fits"
+      },
+      {
+       "step": "Reply",
+       "model": "GLM Flash",
+       "ms": 2355,
+       "detail": "after 2 tool calls · 9.4k in, 58 out"
+      }
+     ],
+     "slides": 11,
+     "slide": {
+      "template": "chart",
+      "title": "MRR",
+      "subtitle": "[[+2.3x in six months+]], driven by launch moments.",
+      "takeaway": "[[Xero app]], first [[enterprise logo]] next.",
+      "chart": {
+       "categories": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+       ],
+       "format": "£{v}k",
+       "series": [
+        {
+         "name": "MRR",
+         "mark": "bar",
+         "color": "focus",
+         "values": [
+          42,
+          48,
+          55,
+          71,
+          78,
+          96
+         ]
+        }
+       ]
+      },
+      "notes": [
+       {
+        "title": "Xero app launch",
+        "point": {
+         "series": 0,
+         "index": 3
+        }
+       },
+       {
+        "title": "First enterprise logo",
+        "point": {
+         "series": 0,
+         "index": 5
+        }
+       }
+      ]
+     },
+     "fitIssues": [],
+     "warnings": [],
+     "checksFailed": []
+    },
+    "p24": {
+     "ms": 14074,
+     "totalMs": 14468,
+     "reply": "Unit economics slide added: SMB vs mid-market as framed contrast cards — mid-market highlighted with 4.7x ACV and 7-month payback.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.49
+     },
+     "written": [
+      "s_tyff"
+     ],
+     "modelCalls": 3,
+     "toolCalls": 3,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 374,
+       "detail": "new_slide · p 0.49 · agent decides"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 3629,
+       "detail": "create_slide · 7.8k in, 125 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 0,
+       "detail": "s_tyff · cards"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5477,
+       "detail": "edit_slide · 9.0k in, 237 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "not applied · 2 shape errors: cards[0].bullets: not a field here in pitch. Allowed: icon, value, label, title, text, tone. | cards[1].bullets: not a field here in pitch. Allowed: icon, value, label, title, text, tone."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4528,
+       "detail": "edit_slide · 9.2k in, 233 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 26,
+       "detail": "applied · fits"
+      }
+     ],
+     "slides": 12,
+     "slide": {
+      "template": "cards",
+      "cards": [
+       {
+        "label": "SMB",
+        "text": "ACV **£6k**, CAC **£4.5k**, margin **78%**. [-11-month payback.-]",
+        "title": "Thin, slow",
+        "tone": "neg"
+       },
+       {
+        "label": "Mid-market",
+        "text": "ACV **£28k**, CAC **£14k**, margin **81%**. [+7-month payback.+]",
+        "title": "Bigger, faster",
+        "tone": "focus"
+       }
+      ],
+      "focus": "auto",
+      "framed": true,
+      "subtitle": "Mid-market pays 4.7x more and pays back in 7 months, not 11.",
+      "takeaway": "[[Doubling down on mid-market.]]",
+      "title": "Unit economics"
+     },
+     "fitIssues": [],
+     "warnings": [
+      "R4: Focus element is not highlighted in the title with [[…]]"
+     ],
+     "checksFailed": [
+      "R4: Focus element is not highlighted in the title with [[…]]"
+     ]
+    },
+    "p05": {
+     "ms": 8197,
+     "totalMs": 8645,
+     "reply": "Problem slide added: the 9 hours a month wasted chasing receipts, as one big negative number with the argument beside it.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.77
+     },
+     "written": [
+      "s_np0x"
+     ],
+     "modelCalls": 2,
+     "toolCalls": 2,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 393,
+       "detail": "new_slide · p 0.77"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_np0x · number"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4204,
+       "detail": "edit_slide · 8.9k in, 147 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 3517,
+       "detail": "body[0] ≤ 70"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 3566,
+       "detail": "applied · fits"
+      }
+     ],
+     "slides": 13,
+     "slide": {
+      "template": "number",
+      "body": [
+       "Nine hours an SME owner loses monthly. **Manual, error-prone, unpaid.**"
+      ],
+      "number": {
+       "caption": "a month per UK SME, chasing receipts",
+       "tone": "neg",
+       "value": "9 hrs"
+      },
+      "subtitle": "UK SMEs waste [[9 hours a month]] chasing receipts.",
+      "title": "The problem"
+     },
+     "fitIssues": [],
+     "warnings": [],
+     "checksFailed": []
+    },
+    "p32": {
+     "ms": 6780,
+     "totalMs": 7235,
+     "reply": "Roadmap slide added: four quarters from expense cards to EU expansion.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.76
+     },
+     "written": [
+      "s_tez9"
+     ],
+     "modelCalls": 2,
+     "toolCalls": 2,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 350,
+       "detail": "new_slide · p 0.76"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_tez9 · steps"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4262,
+       "detail": "edit_slide · 9.3k in, 171 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 2068,
+       "detail": "steps[2].text ≤ 24"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 2128,
+       "detail": "applied · fits"
+      }
+     ],
+     "slides": 14,
+     "slide": {
+      "template": "steps",
+      "steps": [
+       {
+        "text": "Expense cards launch.",
+        "title": "Cards",
+        "when": "Q1"
+       },
+       {
+        "text": "Bill pay goes live.",
+        "title": "Bills",
+        "when": "Q2"
+       },
+       {
+        "text": "Customer credit line.",
+        "title": "Credit",
+        "when": "Q3"
+       },
+       {
+        "text": "First EU markets.",
+        "title": "Expand",
+        "when": "Q4"
+       }
+      ],
+      "subtitle": "Four launches this year, from cards to the EU.",
+      "title": "Roadmap"
+     },
+     "fitIssues": [],
+     "warnings": [
+      "R4: 0 focus elements; exactly one should stand out"
+     ],
+     "checksFailed": [
+      "R4: 0 focus elements; exactly one should stand out"
+     ]
+    },
+    "p40": {
+     "ms": 7300,
+     "totalMs": 7708,
+     "reply": "Traction slide added: four value cards — £2.4m ARR, 310 customers, 128% NRR (highlighted) and zero churned logos.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.75
+     },
+     "written": [
+      "s_oupx"
+     ],
+     "modelCalls": 1,
+     "toolCalls": 2,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 366,
+       "detail": "new_slide · p 0.75"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_oupx · cards"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5260,
+       "detail": "edit_slide · 10.1k in, 185 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 33,
+       "detail": "applied · fits"
+      }
+     ],
+     "slides": 15,
+     "slide": {
+      "template": "cards",
+      "cards": [
+       {
+        "value": "£2.4m",
+        "title": "ARR",
+        "text": "Up from £0.9m a year ago."
+       },
+       {
+        "value": "310",
+        "title": "customers",
+        "text": "Across SMB and mid-market."
+       },
+       {
+        "value": "128%",
+        "tone": "focus",
+        "title": "NRR",
+        "text": "Existing accounts grow every year."
+       },
+       {
+        "value": "0",
+        "title": "churned logos",
+        "text": "Not one customer lost this year."
+       }
+      ],
+      "subtitle": "Growing fast, and keeping everyone we win.",
+      "title": "Traction"
+     },
+     "fitIssues": [],
+     "warnings": [
+      "body: 41% empty below the cards; add content or a takeaway, or use another template (L5)",
+      "R4: Focus element is not highlighted in the title with [[…]]"
+     ],
+     "checksFailed": [
+      "R4: Focus element is not highlighted in the title with [[…]]"
+     ]
+    }
+   }
+  },
+  "consulting": {
+   "done": true,
+   "measured": {
+    "c10": {
+     "ms": 24555,
+     "totalMs": 24965,
+     "reply": "Fixed the flagged takeaway on the market-size slide: it now states the implication (support for spend-based forecasts) instead of restating the chart. Both slides are otherwise clean; add a source line whenever you have one.",
+     "error": null,
+     "pre": {
+      "intent": "edit_selected",
+      "p": 0.52
+     },
+     "written": [
+      "s_4esi",
+      "s_g1is"
+     ],
+     "modelCalls": 6,
+     "toolCalls": 5,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 390,
+       "detail": "edit_selected · p 0.52 · agent decides"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5239,
+       "detail": "create_slide · 6.0k in, 90 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "s_4esi · chart"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5938,
+       "detail": "edit_slide · 7.8k in, 253 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 489,
+       "detail": "chart.series[0].mark = line"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 509,
+       "detail": "applied · 1 issue: chart.categories: 8 categories; with notes at most 6. Drop notes or group categories."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 3717,
+       "detail": "patch_slide · 8.4k in, 117 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 2254,
+       "detail": "footnote ≤ 110 (kept)"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 2279,
+       "detail": "applied · notes, title, footnote · 1 issue: footnote: 138 characters, limit 110 (28 too many). Shorten this field only."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 1756,
+       "detail": "patch_slide · 8.6k in, 50 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 15,
+       "detail": "applied · footnote · fits"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4651,
+       "detail": "patch_slide · 8.6k in, 127 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 18,
+       "detail": "applied · takeaway · fits"
+      }
+     ],
+     "slides": 6,
+     "slide": {
+      "template": "chart",
+      "kicker": "Market size",
+      "title": "UK SME card spend recovered from the 2020 dip and has grown [[~8% a year since 2021]]",
+      "chart": {
+       "categories": [
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+       ],
+       "format": "£{v}bn",
+       "series": [
+        {
+         "name": "UK SME card spend",
+         "mark": "bar",
+         "color": "focus",
+         "values": [
+          61,
+          55,
+          66,
+          72,
+          78,
+          84
+         ]
+        }
+       ]
+      },
+      "takeaway": "Sustained market growth supports our spend-based revenue forecasts.",
+      "footnote": "Spend in 2020 dipped to £55bn before recovering to pre-pandemic levels in 2021."
+     },
+     "fitIssues": [],
+     "warnings": [
+      "R8: Figures have no source",
+      "R11: Headline figure 8 is not on the slide"
+     ],
+     "checksFailed": [
+      "R8: Figures have no source",
+      "R11: Headline figure 8 is not on the slide"
+     ]
+    },
+    "c25": {
+     "ms": 5311,
+     "totalMs": 5709,
+     "reply": "Added a table slide.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.94
+     },
+     "written": [
+      "s_2kz8"
+     ],
+     "modelCalls": 1,
+     "toolCalls": 2,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 396,
+       "detail": "new_slide · p 0.94"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 1,
+       "detail": "s_2kz8 · table"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4394,
+       "detail": "edit_slide · 8.3k in, 157 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 465,
+       "detail": "focus = item3"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 494,
+       "detail": "applied · fits"
+      }
+     ],
+     "slides": 7,
+     "slide": {
+      "template": "table",
+      "kicker": "Unit economics",
+      "title": "[[Growth]] is the sweet spot; Scale’s 11-month payback is inflated by enterprise sales cost",
+      "table": {
+       "columns": [
+        {
+         "label": "Plan"
+        },
+        {
+         "label": "Price"
+        },
+        {
+         "label": "Gross margin"
+        },
+        {
+         "label": "CAC"
+        },
+        {
+         "label": "Payback (months)",
+         "focus": true
+        }
+       ],
+       "rows": [
+        {
+         "cells": [
+          "Starter",
+          "£0",
+          "42%",
+          "£180",
+          "14"
+         ]
+        },
+        {
+         "cells": [
+          "Growth",
+          "£49",
+          "61%",
+          "£420",
+          "9"
+         ]
+        },
+        {
+         "cells": [
+          "Scale",
+          "£199",
+          "68%",
+          {
+           "value": "£1,900",
+           "note": "enterprise sales motion"
+          },
+          "11"
+         ]
+        }
+       ]
+      }
+     },
+     "fitIssues": [],
+     "warnings": [
+      "body: 47% empty below the table; add content or a takeaway, or use another template (L5)",
+      "R8: Figures have no source"
+     ],
+     "checksFailed": [
+      "R8: Figures have no source"
+     ]
+    },
+    "c06": {
+     "ms": 9661,
+     "totalMs": 10056,
+     "reply": "Built the manual-expense cost slide as a big-number slide: £11,400 a year in finance staff time, with the argument that it's a recurring drag on already stretched SME finance teams. Source line is set to our survey — tell me the exact survey name/n and I'll refine it.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.76
+     },
+     "written": [
+      "s_671o"
+     ],
+     "modelCalls": 2,
+     "toolCalls": 2,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 436,
+       "detail": "new_slide · p 0.76"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_671o · number"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 7235,
+       "detail": "edit_slide · 8.2k in, 231 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 1940,
+       "detail": "body[0] ≤ 170"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 1969,
+       "detail": "applied · fits"
+      }
+     ],
+     "slides": 8,
+     "slide": {
+      "template": "number",
+      "title": "Manual expense reconciliation is a [[silent profit leak]] for UK SMEs — not an admin annoyance",
+      "body": [
+       "Finance staff spend hours each month matching receipts, chasing statements and re-keying data into accounting systems — fully loaded cost with **no offsetting revenue**.",
+       "The burden scales with transaction volume, so it grows fastest in exactly the firms we want to move onto automated card and expense tooling."
+      ],
+      "number": {
+       "value": "£11.4k",
+       "caption": "average annual finance-staff cost of manual expense reconciliation per SME",
+       "tone": "neg"
+      },
+      "takeaway": "Automation removes a recurring cost, not just a convenience pain.",
+      "source": "FinBridge SME survey"
+     },
+     "fitIssues": [],
+     "warnings": [
+      "R12: The title has no figure; quantify the so-what"
+     ],
+     "checksFailed": [
+      "R12: The title has no figure; quantify the so-what"
+     ]
+    },
+    "c40": {
+     "ms": 37097,
+     "totalMs": 37509,
+     "reply": "Both slides are clean now. One caveat on the ERP slide: you gave the five phase names but no dates, so the month spans (design 0–3 mo, build 3–9 mo, etc.) are my even-handed assumption — give me the real timings and I'll patch them in. The £11.4k number slide is done, source set to the FinBridge survey.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.41
+     },
+     "written": [
+      "s_yvg3",
+      "s_671o"
+     ],
+     "modelCalls": 10,
+     "toolCalls": 9,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 440,
+       "detail": "new_slide · p 0.41 · agent decides"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 1635,
+       "detail": "create_slide · 8.0k in, 44 out"
+      },
+      {
+       "step": "create_slide",
+       "model": "tool",
+       "ms": 0,
+       "detail": "s_yvg3 · steps"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 5605,
+       "detail": "edit_slide · 8.8k in, 244 out"
+      },
+      {
+       "step": "Resolve",
+       "model": "Jev",
+       "ms": 360,
+       "detail": "focus = item0"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 5098,
+       "detail": "steps[0].text ≤ 70 · steps[1].text ≤ 70"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 5493,
+       "detail": "applied · fits"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4882,
+       "detail": "patch_slide, patch_slide · 9.2k in, 167 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 19,
+       "detail": "applied · steps[0].focus, takeaway · fits"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 9,
+       "detail": "applied · title · fits"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4503,
+       "detail": "patch_slide, patch_slide · 9.5k in, 173 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 19,
+       "detail": "applied · steps[3].focus · fits"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 9,
+       "detail": "applied · number · 1 issue: number.value: 7 characters, limit 6 (1 too many). Shorten this field only."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 2469,
+       "detail": "patch_slide · 9.6k in, 54 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 10,
+       "detail": "applied · number.value, number.caption · fits"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 3791,
+       "detail": "patch_slide · 9.7k in, 111 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 18,
+       "detail": "applied · number.value, number.caption · fits"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 2845,
+       "detail": "patch_slide · 9.8k in, 105 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 17,
+       "detail": "applied · title · fits"
+      },
+      {
+       "step": "Reply",
+       "model": "GLM Flash",
+       "ms": 5257,
+       "detail": "after 9 tool calls · 9.9k in, 159 out"
+      }
+     ],
+     "slides": 9,
+     "slide": {
+      "template": "number",
+      "title": "Manual expense reconciliation costs SMEs [[£11.4k a year]] — a silent profit leak, not an admin annoyance",
+      "body": [
+       "Finance staff spend hours each month matching receipts, chasing statements and re-keying data into accounting systems — fully loaded cost with **no offsetting revenue**.",
+       "The burden scales with transaction volume, so it grows fastest in exactly the firms we want to move onto automated card and expense tooling."
+      ],
+      "number": {
+       "value": "£11.4k",
+       "caption": "average annual finance-staff cost per SME of manual expense reconciliation",
+       "tone": "neg"
+      },
+      "takeaway": "Automation removes a recurring cost, not just a convenience pain.",
+      "source": "FinBridge SME survey"
+     },
+     "fitIssues": [],
+     "warnings": [],
+     "checksFailed": []
+    },
+    "c45": {
+     "ms": 32063,
+     "totalMs": 32467,
+     "reply": "Added a cards slide.",
+     "error": null,
+     "pre": {
+      "intent": "new_slide",
+      "p": 0.85
+     },
+     "written": [
+      "s_fufu"
+     ],
+     "modelCalls": 9,
+     "toolCalls": 4,
+     "trace": [
+      {
+       "step": "Pre",
+       "model": "Jev",
+       "ms": 401,
+       "detail": "new_slide · p 0.85"
+      },
+      {
+       "step": "create_slide",
+       "model": "code",
+       "ms": 0,
+       "detail": "s_fufu · cards"
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 4808,
+       "detail": "edit_slide · 10.6k in, 179 out"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 1,
+       "detail": "not applied · 1 shape error: cards[0].icon: \"hammer\" is not allowed. Use one of: zap, wallet, credit-card, banknote, piggy-bank, landmark, receipt, coins, building-2, store, shopping-cart, truck, package, factory, users, user, handshake, briefcase, target, rocket, lightbulb, sparkles, trending-up, trending-down, chart-line, chart-column, chart-pie, gauge, shield-check, lock, scale, file-text, clock, calendar, refresh-cw, globe, map-pin, layers, puzzle, settings, cpu, database, cloud, smartphone, message-circle, search, circle-check, triangle-alert, leaf, heart, auto."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 7830,
+       "detail": "edit_slide · 10.9k in, 280 out"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 8666,
+       "detail": "takeaway ≤ 75 (kept) · cards[0].text ≤ 50 · cards[1].text ≤ 50 (kept) · cards[2].text ≤ 50"
+      },
+      {
+       "step": "Shorten",
+       "model": "GLM Flash",
+       "ms": 8434,
+       "detail": "takeaway ≤ 75 (kept) · cards[1].text ≤ 50"
+      },
+      {
+       "step": "edit_slide",
+       "model": "tool",
+       "ms": 17185,
+       "detail": "applied · 1 issue: takeaway: 89 characters, limit 75 (14 too many). Shorten this field only."
+      },
+      {
+       "step": "Agent",
+       "model": "GLM Flash",
+       "ms": 1760,
+       "detail": "patch_slide · 11.5k in, 40 out"
+      },
+      {
+       "step": "patch_slide",
+       "model": "tool",
+       "ms": 26,
+       "detail": "applied · takeaway · fits"
+      }
+     ],
+     "slides": 10,
+     "slide": {
+      "template": "cards",
+      "cards": [
+       {
+        "icon": "settings",
+        "text": "Full control, but 3+ years delay and hiring risk.",
+        "title": "Build organically",
+        "tone": "neutral"
+       },
+       {
+        "icon": "handshake",
+        "text": "Capability & clients; risks: integration, price",
+        "title": "Acquire a payroll player",
+        "tone": "neutral"
+       },
+       {
+        "icon": "landmark",
+        "text": "Fast entry, trusted brand; shared margin, reliance",
+        "title": "Partner with a bank",
+        "tone": "neutral"
+       }
+      ],
+      "kicker": "Strategic options",
+      "takeaway": "Build for control, buy for speed, partner for capital light.",
+      "title": "Three routes to payroll: build, buy or partner — each trades speed against control"
+     },
+     "fitIssues": [],
+     "warnings": [
+      "body: 44% empty below the cards; add content or a takeaway, or use another template (L5)",
+      "R4: 0 focus elements; exactly one should stand out"
+     ],
+     "checksFailed": [
+      "R4: 0 focus elements; exactly one should stand out",
+      "J5: Takeaway restates the slide"
+     ]
+    }
+   }
+  }
+ },
+ "edits": {
+  "e02": {
+   "ms": 2165,
+   "totalMs": 2613,
+   "reply": "Updated the chart.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 409,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 1717,
+     "detail": "patch_slide · 4.1k in, 34 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 19,
+     "detail": "applied · chart.series[1].values[4] · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        82
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   }
+  },
+  "e01": {
+   "ms": 2906,
+   "totalMs": 3388,
+   "reply": "Updated the title.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 460,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2409,
+     "detail": "patch_slide · 4.1k in, 49 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 19,
+     "detail": "applied · title · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] overtakes interest income in year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   }
+  },
+  "e03": {
+   "ms": 3526,
+   "totalMs": 3967,
+   "reply": "Updated the chart.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 0.97
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 414,
+     "detail": "edit_selected · p 0.97"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3089,
+     "detail": "patch_slide · 4.1k in, 64 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 10,
+     "detail": "applied · chart.stacked · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ],
+     "stacked": true
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   }
+  },
+  "e06": {
+   "ms": 4192,
+   "totalMs": 4591,
+   "reply": "Removed the downside series; the title, takeaway and footnote now cover only the base case.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 354,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3810,
+     "detail": "patch_slide · 4.0k in, 200 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 14,
+     "detail": "applied · chart, footnote, takeaway, title · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "area": true,
+       "color": "focus",
+       "mark": "line",
+       "name": "Base case",
+       "values": [
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      }
+     ]
+    },
+    "kicker": "Growth",
+    "title": "The [[base case]] reaches a £120m book by Q4 2028",
+    "takeaway": "The book grows to £120m by Q4 2028 on current assumptions.",
+    "source": "FinBridge model."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [
+    "J5: Takeaway restates the slide"
+   ],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Base case",
+       "mark": "line",
+       "color": "focus",
+       "area": true,
+       "values": [
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      },
+      {
+       "name": "Downside",
+       "mark": "line",
+       "color": "contrast",
+       "dashed": true,
+       "values": [
+        0.8,
+        3,
+        7,
+        15,
+        27,
+        41,
+        56,
+        72
+       ]
+      }
+     ]
+    },
+    "kicker": "Growth",
+    "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
+    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
+    "source": "FinBridge model."
+   }
+  },
+  "e04": {
+   "ms": 8184,
+   "totalMs": 8674,
+   "reply": "Updated the chart, footnote.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 2,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 544,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 5933,
+     "detail": "patch_slide · 4.1k in, 224 out"
+    },
+    {
+     "step": "Shorten",
+     "model": "GLM Flash",
+     "ms": 1663,
+     "detail": "footnote ≤ 110"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 1693,
+     "detail": "applied · chart.series[2], chart.series[3], footnote · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "color": "neutral",
+       "mark": "bar",
+       "name": "Cost of funds",
+       "values": [
+        0.2,
+        1.5,
+        7,
+        20,
+        41
+       ]
+      },
+      {
+       "color": "contrast",
+       "format": "{v}%",
+       "mark": "line",
+       "name": "Gross margin",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards, bad debt, as % of revenue. Cost of funds in £m.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4",
+      "Year 5"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Interest income",
+       "mark": "bar",
+       "color": "neutral",
+       "values": [
+        0.4,
+        3.1,
+        14,
+        42,
+        85
+       ]
+      },
+      {
+       "name": "Interchange",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        0.3,
+        2.2,
+        11,
+        36,
+        80
+       ]
+      },
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "contrast",
+       "format": "{v}%",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "kicker": "Unit economics",
+    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notes": [
+     {
+      "title": "Interest leads early",
+      "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+      "point": {
+       "series": 0,
+       "index": 1
+      }
+     },
+     {
+      "title": "Interchange compounds",
+      "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+      "point": {
+       "series": 1,
+       "index": 3
+      }
+     },
+     {
+      "title": "Margin settles at 38%",
+      "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+      "point": {
+       "series": 2,
+       "index": 4
+      }
+     }
+    ],
+    "takeaway": "Spend, not lending, is what makes the book profitable.",
+    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+    "source": "FinBridge financial model, base case. Illustrative."
+   }
+  },
+  "e05": {
+   "ms": 5372,
+   "totalMs": 5733,
+   "reply": "Added the upside case as a solid line reaching £150m by Q4 2028; the title and downside/base series are unchanged.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 0.99
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 344,
+     "detail": "edit_selected · p 0.99"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4998,
+     "detail": "patch_slide · 4.0k in, 185 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 17,
+     "detail": "applied · chart.series[2] · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Base case",
+       "mark": "line",
+       "color": "focus",
+       "area": true,
+       "values": [
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      },
+      {
+       "name": "Downside",
+       "mark": "line",
+       "color": "contrast",
+       "dashed": true,
+       "values": [
+        0.8,
+        3,
+        7,
+        15,
+        27,
+        41,
+        56,
+        72
+       ]
+      },
+      {
+       "name": "Upside",
+       "mark": "line",
+       "values": [
+        1.2,
+        5,
+        13,
+        29,
+        52,
+        80,
+        112,
+        150
+       ],
+       "color": "neutral"
+      }
+     ]
+    },
+    "kicker": "Growth",
+    "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
+    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
+    "source": "FinBridge model."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Base case",
+       "mark": "line",
+       "color": "focus",
+       "area": true,
+       "values": [
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      },
+      {
+       "name": "Downside",
+       "mark": "line",
+       "color": "contrast",
+       "dashed": true,
+       "values": [
+        0.8,
+        3,
+        7,
+        15,
+        27,
+        41,
+        56,
+        72
+       ]
+      }
+     ]
+    },
+    "kicker": "Growth",
+    "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
+    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
+    "source": "FinBridge model."
+   }
+  },
+  "e07": {
+   "ms": 5870,
+   "totalMs": 6320,
+   "reply": "Updated the table.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 343,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 5487,
+     "detail": "patch_slide · 3.6k in, 151 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 20,
+     "detail": "applied · table.rows[5].cells[1], table.rows[6].cells[1] · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "£ per customer per month"
+      },
+      {
+       "label": "Revolver",
+       "focus": true
+      },
+      {
+       "label": "Transactor"
+      },
+      {
+       "label": "Super-transactor"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Share of customers",
+        "40–60%",
+        "40–60%",
+        "~10%"
+       ],
+       "style": "muted"
+      },
+      {
+       "cells": [
+        "Interest revenue",
+        {
+         "value": "267",
+         "note": "40% APR × £8.0k"
+        },
+        "—",
+        "—"
+       ]
+      },
+      {
+       "cells": [
+        "Cost of funding",
+        {
+         "value": "(53)",
+         "note": "8% × £8.0k"
+        },
+        {
+         "value": "(33)",
+         "note": "8% × £5.0k"
+        },
+        {
+         "value": "(70)",
+         "note": "8% × £10.5k"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Interchange revenue",
+        {
+         "value": "90",
+         "note": "1.8% × £5.0k spend"
+        },
+        {
+         "value": "120",
+         "note": "1.8% × £6.7k"
+        },
+        {
+         "value": "480",
+         "note": "1.8% × £26.7k"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Cost of rewards",
+        "(50)",
+        "(67)",
+        "(267)"
+       ]
+      },
+      {
+       "cells": [
+        "Bad debt",
+        {
+         "note": "~10% of balance p.a.",
+         "value": "(65)"
+        },
+        "(5)",
+        "(10)"
+       ]
+      },
+      {
+       "cells": [
+        "Monthly gross margin",
+        "£184",
+        "£10",
+        "£128"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Business model",
+    "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+    "takeaway": "A 50/50 revolver–transactor mix earns ~£95 a month each.",
+    "footnote": "Balances and spend are monthly averages per active customer.",
+    "source": "FinBridge model; funding cost assumes an 8% warehouse rate."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "checksFailed": [
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "start": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "£ per customer per month"
+      },
+      {
+       "label": "Revolver",
+       "focus": true
+      },
+      {
+       "label": "Transactor"
+      },
+      {
+       "label": "Super-transactor"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Share of customers",
+        "40–60%",
+        "40–60%",
+        "~10%"
+       ],
+       "style": "muted"
+      },
+      {
+       "cells": [
+        "Interest revenue",
+        {
+         "value": "267",
+         "note": "40% APR × £8.0k"
+        },
+        "—",
+        "—"
+       ]
+      },
+      {
+       "cells": [
+        "Cost of funding",
+        {
+         "value": "(53)",
+         "note": "8% × £8.0k"
+        },
+        {
+         "value": "(33)",
+         "note": "8% × £5.0k"
+        },
+        {
+         "value": "(70)",
+         "note": "8% × £10.5k"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Interchange revenue",
+        {
+         "value": "90",
+         "note": "1.8% × £5.0k spend"
+        },
+        {
+         "value": "120",
+         "note": "1.8% × £6.7k"
+        },
+        {
+         "value": "480",
+         "note": "1.8% × £26.7k"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Cost of rewards",
+        "(50)",
+        "(67)",
+        "(267)"
+       ]
+      },
+      {
+       "cells": [
+        "Bad debt",
+        {
+         "value": "(70)",
+         "note": "~10% of balance p.a."
+        },
+        "(5)",
+        "(10)"
+       ]
+      },
+      {
+       "cells": [
+        "Monthly gross margin",
+        "£179",
+        "£10",
+        "£128"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Business model",
+    "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+    "takeaway": "A 50/50 revolver–transactor mix earns ~£95 a month each.",
+    "footnote": "Balances and spend are monthly averages per active customer.",
+    "source": "FinBridge model; funding cost assumes an 8% warehouse rate."
+   }
+  },
+  "e10": {
+   "ms": 3258,
+   "totalMs": 3633,
+   "reply": "Updated the note 2.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 0.99
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 392,
+     "detail": "edit_selected · p 0.99"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_t0 · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2829,
+     "detail": "patch_slide · 3.4k in, 57 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 17,
+     "detail": "applied · notes[1] · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "Provider"
+      },
+      {
+       "label": "Credit limit"
+      },
+      {
+       "label": "Fee"
+      },
+      {
+       "label": "Cashback",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "High-street bank",
+        "£25k",
+        "£120/yr",
+        "0%"
+       ]
+      },
+      {
+       "cells": [
+        "Neobank (debit)",
+        "—",
+        "£0",
+        "0.5%"
+       ]
+      },
+      {
+       "cells": [
+        "Corporate Amex",
+        "£50k",
+        "£550/yr",
+        "1%"
+       ]
+      },
+      {
+       "cells": [
+        "FinBridge",
+        "£250k",
+        "£0",
+        "1%"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Competition",
+    "title": "FinBridge offers [[five times the limit]] of the nearest SME card at no annual fee",
+    "notes": [
+     {
+      "title": "Banks cap at £25k",
+      "text": "Underwriting on filed accounts limits young firms."
+     },
+     {
+      "title": "Amex charges for rewards",
+      "text": "**£550 a year** before the first pound of cashback."
+     }
+    ],
+    "source": "Provider websites, September 2026."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R12: The title has no figure; quantify the so-what",
+    "R13: Mixed units or decimals: 0%, 0.5%, 1%"
+   ],
+   "checksFailed": [
+    "R12: The title has no figure; quantify the so-what",
+    "R13: Mixed units or decimals: 0%, 0.5%, 1%",
+    "J4: Highlight does not match the claim"
+   ],
+   "start": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "Provider"
+      },
+      {
+       "label": "Credit limit"
+      },
+      {
+       "label": "Fee"
+      },
+      {
+       "label": "Cashback",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "High-street bank",
+        "£25k",
+        "£120/yr",
+        "0%"
+       ]
+      },
+      {
+       "cells": [
+        "Neobank (debit)",
+        "—",
+        "£0",
+        "0.5%"
+       ]
+      },
+      {
+       "cells": [
+        "Corporate Amex",
+        "£50k",
+        "£550/yr",
+        "1%"
+       ]
+      },
+      {
+       "cells": [
+        "FinBridge",
+        "£250k",
+        "£0",
+        "1%"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Competition",
+    "title": "FinBridge offers [[five times the limit]] of the nearest SME card at no annual fee",
+    "notes": [
+     {
+      "title": "Banks cap at £25k",
+      "text": "Underwriting on filed accounts limits young firms."
+     },
+     {
+      "title": "Neobanks stop at debit",
+      "text": "No credit line, so spend leaves for personal cards."
+     },
+     {
+      "title": "Amex charges for rewards",
+      "text": "**£550 a year** before the first pound of cashback."
+     }
+    ],
+    "source": "Provider websites, September 2026."
+   }
+  },
+  "e08": {
+   "ms": 5057,
+   "totalMs": 5455,
+   "reply": "Updated the table.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 390,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_t0 · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4649,
+     "detail": "patch_slide · 3.6k in, 281 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 8,
+     "detail": "applied · table.rows · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "£ per customer per month"
+      },
+      {
+       "label": "Revolver",
+       "focus": true
+      },
+      {
+       "label": "Transactor"
+      },
+      {
+       "label": "Super-transactor"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Interest revenue",
+        {
+         "note": "40% APR × £8.0k",
+         "value": "267"
+        },
+        "—",
+        "—"
+       ]
+      },
+      {
+       "cells": [
+        "Cost of funding",
+        {
+         "note": "8% × £8.0k",
+         "value": "(53)"
+        },
+        {
+         "note": "8% × £5.0k",
+         "value": "(33)"
+        },
+        {
+         "note": "8% × £10.5k",
+         "value": "(70)"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Interchange revenue",
+        {
+         "note": "1.8% × £5.0k spend",
+         "value": "90"
+        },
+        {
+         "note": "1.8% × £6.7k",
+         "value": "120"
+        },
+        {
+         "note": "1.8% × £26.7k",
+         "value": "480"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Cost of rewards",
+        "(50)",
+        "(67)",
+        "(267)"
+       ]
+      },
+      {
+       "cells": [
+        "Bad debt",
+        {
+         "note": "~10% of balance p.a.",
+         "value": "(70)"
+        },
+        "(5)",
+        "(10)"
+       ]
+      },
+      {
+       "cells": [
+        "Monthly gross margin",
+        "£179",
+        "£10",
+        "£128"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Business model",
+    "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+    "takeaway": "A 50/50 revolver–transactor mix earns ~£95 a month each.",
+    "footnote": "Balances and spend are monthly averages per active customer.",
+    "source": "FinBridge model; funding cost assumes an 8% warehouse rate."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "checksFailed": [
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "start": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "£ per customer per month"
+      },
+      {
+       "label": "Revolver",
+       "focus": true
+      },
+      {
+       "label": "Transactor"
+      },
+      {
+       "label": "Super-transactor"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Share of customers",
+        "40–60%",
+        "40–60%",
+        "~10%"
+       ],
+       "style": "muted"
+      },
+      {
+       "cells": [
+        "Interest revenue",
+        {
+         "value": "267",
+         "note": "40% APR × £8.0k"
+        },
+        "—",
+        "—"
+       ]
+      },
+      {
+       "cells": [
+        "Cost of funding",
+        {
+         "value": "(53)",
+         "note": "8% × £8.0k"
+        },
+        {
+         "value": "(33)",
+         "note": "8% × £5.0k"
+        },
+        {
+         "value": "(70)",
+         "note": "8% × £10.5k"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Interchange revenue",
+        {
+         "value": "90",
+         "note": "1.8% × £5.0k spend"
+        },
+        {
+         "value": "120",
+         "note": "1.8% × £6.7k"
+        },
+        {
+         "value": "480",
+         "note": "1.8% × £26.7k"
+        }
+       ]
+      },
+      {
+       "cells": [
+        "Cost of rewards",
+        "(50)",
+        "(67)",
+        "(267)"
+       ]
+      },
+      {
+       "cells": [
+        "Bad debt",
+        {
+         "value": "(70)",
+         "note": "~10% of balance p.a."
+        },
+        "(5)",
+        "(10)"
+       ]
+      },
+      {
+       "cells": [
+        "Monthly gross margin",
+        "£179",
+        "£10",
+        "£128"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Business model",
+    "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+    "takeaway": "A 50/50 revolver–transactor mix earns ~£95 a month each.",
+    "footnote": "Balances and spend are monthly averages per active customer.",
+    "source": "FinBridge model; funding cost assumes an 8% warehouse rate."
+   }
+  },
+  "e11": {
+   "ms": 2686,
+   "totalMs": 3390,
+   "reply": "Updated the card 2.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 348,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2307,
+     "detail": "patch_slide · 3.7k in, 30 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 16,
+     "detail": "applied · cards[1].tone · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "kicker": "The solution",
+    "title": "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+    "cards": [
+     {
+      "icon": "zap",
+      "title": "Approved in five minutes",
+      "bullets": [
+       "Limits up to **£250k**, spend the same day",
+       "Underwritten on live Shopify and ad data, not filed accounts"
+      ]
+     },
+     {
+      "icon": "wallet",
+      "title": "Cashflow in one place",
+      "bullets": [
+       "Pay bills, get paid and control team spend",
+       "Move between debit and credit funds per payment"
+      ],
+      "tone": "focus"
+     },
+     {
+      "icon": "refresh-cw",
+      "title": "Earn on every pound",
+      "bullets": [
+       "**1% cashback** on all card spend",
+       "Rewards attract transactors, lowering adverse selection"
+      ]
+     }
+    ],
+    "takeaway": "Three providers today. **FinBridge replaces all of them.**"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R4: Focus element is not highlighted in the title with [[…]]"
+   ],
+   "checksFailed": [
+    "R4: Focus element is not highlighted in the title with [[…]]",
+    "J5: Takeaway restates the slide"
+   ],
+   "start": {
+    "template": "cards",
+    "kicker": "The solution",
+    "title": "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+    "cards": [
+     {
+      "icon": "zap",
+      "title": "Approved in five minutes",
+      "bullets": [
+       "Limits up to **£250k**, spend the same day",
+       "Underwritten on live Shopify and ad data, not filed accounts"
+      ]
+     },
+     {
+      "icon": "wallet",
+      "title": "Cashflow in one place",
+      "bullets": [
+       "Pay bills, get paid and control team spend",
+       "Move between debit and credit funds per payment"
+      ]
+     },
+     {
+      "icon": "refresh-cw",
+      "title": "Earn on every pound",
+      "bullets": [
+       "**1% cashback** on all card spend",
+       "Rewards attract transactors, lowering adverse selection"
+      ]
+     }
+    ],
+    "takeaway": "Three providers today. **FinBridge replaces all of them.**"
+   }
+  },
+  "e12": {
+   "ms": 2527,
+   "totalMs": 2971,
+   "reply": "Updated the card 1.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 443,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2054,
+     "detail": "patch_slide · 3.5k in, 31 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 13,
+     "detail": "applied · cards[0].value · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "title": "Market",
+    "subtitle": "A market [[already on cards.]]",
+    "cards": [
+     {
+      "value": "25%",
+      "title": "UK SMEs"
+     },
+     {
+      "value": "19%",
+      "tone": "focus",
+      "title": "Use a credit card"
+     },
+     {
+      "value": "30–40%",
+      "title": "Need revolving"
+     },
+     {
+      "value": "€400bn",
+      "title": "Credit gap"
+     }
+    ],
+    "takeaway": "The product is [[the intersection.]]"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "body: 54% empty below the cards; add content or a takeaway, or use another template (L5)"
+   ],
+   "checksFailed": [],
+   "start": {
+    "template": "cards",
+    "title": "Market",
+    "subtitle": "A market [[already on cards.]]",
+    "cards": [
+     {
+      "value": "5.7M",
+      "title": "UK SMEs"
+     },
+     {
+      "value": "19%",
+      "tone": "focus",
+      "title": "Use a credit card"
+     },
+     {
+      "value": "30–40%",
+      "title": "Need revolving"
+     },
+     {
+      "value": "€400bn",
+      "title": "Credit gap"
+     }
+    ],
+    "takeaway": "The product is [[the intersection.]]"
+   }
+  },
+  "e13": {
+   "ms": 2902,
+   "totalMs": 3269,
+   "reply": "Updated the step 5.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 0.99
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 396,
+     "detail": "edit_selected · p 0.99"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · steps"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2476,
+     "detail": "patch_slide · 3.2k in, 50 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 14,
+     "detail": "applied · steps[4] · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "steps",
+    "kicker": "Plan and ask",
+    "title": "£5m funds [[18 months]] to a £10m book and a drawn warehouse facility",
+    "steps": [
+     {
+      "when": "0–6 mo",
+      "title": "Build",
+      "text": "Card issuing, partners and underwriting engine live. **First 100 cards.**"
+     },
+     {
+      "when": "6–18 mo",
+      "title": "Prove",
+      "text": "Book reaches **£10m**; gross-margin run-rate ~£1.5m; warehouse drawn.",
+      "focus": true
+     },
+     {
+      "when": "Year 2",
+      "title": "Scale",
+      "text": "£120m book; direct-mail acquisition at 2,000+ customers a month."
+     },
+     {
+      "when": "Year 3+",
+      "title": "Expand",
+      "text": "£250m+ book; gross margin covers opex and CAC; EU entry."
+     },
+     {
+      "text": "IPO or a strategic sale.",
+      "title": "Exit",
+      "when": "Year 5"
+     }
+    ],
+    "takeaway": "The ask: **£5m for 18 months** to reach a funded book."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R7: Parallel items are unbalanced (2.9× longest vs shortest)"
+   ],
+   "checksFailed": [
+    "R7: Parallel items are unbalanced (2.9× longest vs shortest)",
+    "J5: Takeaway restates the slide"
+   ],
+   "start": {
+    "template": "steps",
+    "kicker": "Plan and ask",
+    "title": "£5m funds [[18 months]] to a £10m book and a drawn warehouse facility",
+    "steps": [
+     {
+      "when": "0–6 mo",
+      "title": "Build",
+      "text": "Card issuing, partners and underwriting engine live. **First 100 cards.**"
+     },
+     {
+      "when": "6–18 mo",
+      "title": "Prove",
+      "text": "Book reaches **£10m**; gross-margin run-rate ~£1.5m; warehouse drawn.",
+      "focus": true
+     },
+     {
+      "when": "Year 2",
+      "title": "Scale",
+      "text": "£120m book; direct-mail acquisition at 2,000+ customers a month."
+     },
+     {
+      "when": "Year 3+",
+      "title": "Expand",
+      "text": "£250m+ book; gross margin covers opex and CAC; EU entry."
+     }
+    ],
+    "takeaway": "The ask: **£5m for 18 months** to reach a funded book."
+   }
+  },
+  "e14": {
+   "ms": 2885,
+   "totalMs": 3310,
+   "reply": "Done — the big number (£540k) now renders in red/negative tone to signal the problem.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 426,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 0,
+     "detail": "s_t0 · number"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2431,
+     "detail": "patch_slide · 3.0k in, 62 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 12,
+     "detail": "applied · number.tone · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "number",
+    "title": "UK SMEs fund growth on [-personal-] cards because no provider bundles business credit with daily banking",
+    "body": [
+     "Founders put business spend on personal cards. They carry the **personal guarantee** and the limit risk, and the rewards leak out of the business.",
+     "Banks won’t lend below £50k, neobanks only offer debit, and legacy card issuers were built for large corporates."
+    ],
+    "number": {
+     "value": "£540k",
+     "caption": "typical annual card spend that earns the business nothing back",
+     "tone": "neg"
+    },
+    "takeaway": "The gap is not credit or banking alone. It is **both, in one product.**",
+    "source": "FinBridge SME interviews (n = 42); British Business Bank, Small Business Finance Markets 2026."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "checksFailed": [
+    "R12: The title has no figure; quantify the so-what"
+   ],
+   "start": {
+    "template": "number",
+    "title": "UK SMEs fund growth on [-personal-] cards because no provider bundles business credit with daily banking",
+    "body": [
+     "Founders put business spend on personal cards. They carry the **personal guarantee** and the limit risk, and the rewards leak out of the business.",
+     "Banks won’t lend below £50k, neobanks only offer debit, and legacy card issuers were built for large corporates."
+    ],
+    "number": {
+     "value": "£540k",
+     "caption": "typical annual card spend that earns the business nothing back"
+    },
+    "takeaway": "The gap is not credit or banking alone. It is **both, in one product.**",
+    "source": "FinBridge SME interviews (n = 42); British Business Bank, Small Business Finance Markets 2026."
+   }
+  },
+  "e09": {
+   "ms": 9580,
+   "totalMs": 9959,
+   "reply": "Renamed the Fee column to \"Annual fee\".",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 3,
+   "toolCalls": 4,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 446,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · table"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2673,
+     "detail": "patch_slide · 3.4k in, 75 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 3,
+     "detail": "not applied · 1 shape error: table.rows: required. Rows, top to bottom."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2226,
+     "detail": "patch_slide · 3.5k in, 75 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 0,
+     "detail": "not applied · 1 shape error: table.rows: required. Rows, top to bottom."
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 4194,
+     "detail": "patch_slide · 3.7k in, 113 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 15,
+     "detail": "applied · table.columns[2].label · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "Provider"
+      },
+      {
+       "label": "Credit limit"
+      },
+      {
+       "label": "Annual fee"
+      },
+      {
+       "label": "Cashback",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "High-street bank",
+        "£25k",
+        "£120/yr",
+        "0%"
+       ]
+      },
+      {
+       "cells": [
+        "Neobank (debit)",
+        "—",
+        "£0",
+        "0.5%"
+       ]
+      },
+      {
+       "cells": [
+        "Corporate Amex",
+        "£50k",
+        "£550/yr",
+        "1%"
+       ]
+      },
+      {
+       "cells": [
+        "FinBridge",
+        "£250k",
+        "£0",
+        "1%"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Competition",
+    "title": "FinBridge offers [[five times the limit]] of the nearest SME card at no annual fee",
+    "notes": [
+     {
+      "title": "Banks cap at £25k",
+      "text": "Underwriting on filed accounts limits young firms."
+     },
+     {
+      "title": "Neobanks stop at debit",
+      "text": "No credit line, so spend leaves for personal cards."
+     },
+     {
+      "title": "Amex charges for rewards",
+      "text": "**£550 a year** before the first pound of cashback."
+     }
+    ],
+    "source": "Provider websites, September 2026."
+   },
+   "fitIssues": [],
+   "warnings": [
+    "R12: The title has no figure; quantify the so-what",
+    "R13: Mixed units or decimals: 0%, 0.5%, 1%"
+   ],
+   "checksFailed": [
+    "R12: The title has no figure; quantify the so-what",
+    "R13: Mixed units or decimals: 0%, 0.5%, 1%",
+    "J4: Highlight does not match the claim"
+   ],
+   "start": {
+    "template": "table",
+    "table": {
+     "columns": [
+      {
+       "label": "Provider"
+      },
+      {
+       "label": "Credit limit"
+      },
+      {
+       "label": "Fee"
+      },
+      {
+       "label": "Cashback",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "High-street bank",
+        "£25k",
+        "£120/yr",
+        "0%"
+       ]
+      },
+      {
+       "cells": [
+        "Neobank (debit)",
+        "—",
+        "£0",
+        "0.5%"
+       ]
+      },
+      {
+       "cells": [
+        "Corporate Amex",
+        "£50k",
+        "£550/yr",
+        "1%"
+       ]
+      },
+      {
+       "cells": [
+        "FinBridge",
+        "£250k",
+        "£0",
+        "1%"
+       ],
+       "style": "total"
+      }
+     ]
+    },
+    "kicker": "Competition",
+    "title": "FinBridge offers [[five times the limit]] of the nearest SME card at no annual fee",
+    "notes": [
+     {
+      "title": "Banks cap at £25k",
+      "text": "Underwriting on filed accounts limits young firms."
+     },
+     {
+      "title": "Neobanks stop at debit",
+      "text": "No credit line, so spend leaves for personal cards."
+     },
+     {
+      "title": "Amex charges for rewards",
+      "text": "**£550 a year** before the first pound of cashback."
+     }
+    ],
+    "source": "Provider websites, September 2026."
+   }
+  },
+  "e15": {
+   "ms": 3200,
+   "totalMs": 3555,
+   "reply": "Shortened the title to \"Base case reaches £120m by Q4 2028; downside clears £70m\" while keeping both figures.",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 472,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 1,
+     "detail": "s_t0 · chart"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 2696,
+     "detail": "patch_slide · 4.0k in, 87 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 16,
+     "detail": "applied · title · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Base case",
+       "mark": "line",
+       "color": "focus",
+       "area": true,
+       "values": [
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      },
+      {
+       "name": "Downside",
+       "mark": "line",
+       "color": "contrast",
+       "dashed": true,
+       "values": [
+        0.8,
+        3,
+        7,
+        15,
+        27,
+        41,
+        56,
+        72
+       ]
+      }
+     ]
+    },
+    "kicker": "Growth",
+    "title": "Base case reaches [[£120m]] by Q4 2028; downside clears £70m",
+    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
+    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
+    "source": "FinBridge model."
+   },
+   "fitIssues": [],
+   "warnings": [],
+   "checksFailed": [],
+   "start": {
+    "template": "chart",
+    "chart": {
+     "categories": [
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Base case",
+       "mark": "line",
+       "color": "focus",
+       "area": true,
+       "values": [
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      },
+      {
+       "name": "Downside",
+       "mark": "line",
+       "color": "contrast",
+       "dashed": true,
+       "values": [
+        0.8,
+        3,
+        7,
+        15,
+        27,
+        41,
+        56,
+        72
+       ]
+      }
+     ]
+    },
+    "kicker": "Growth",
+    "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
+    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
+    "source": "FinBridge model."
+   }
+  }
+ }
+}

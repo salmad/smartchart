@@ -37,8 +37,11 @@ export async function preStep({ text, deck, selection, jev }) {
     lead: r.lead.p >= P_LEAD ? r.lead.choice : null, after: r.after?.choice || "end", ms: r._ms };
 }
 
+/** Sure enough for code to act: p ≥ P_ACT, or a new slide into an empty deck (nothing else can be meant). */
+export const isSure = (pre, deck) => pre.p >= P_ACT || (pre.intent === "new_slide" && !deck.slides.some((s) => s.slide));
+
 export function firstCall(pre, selection, text, deck) {
-  if (pre.p < P_ACT) return null;
+  if (!isSure(pre, deck)) return null;
   const current = deck.slides.find((s) => s.id === selection?.slideId)?.slide;
   if (pre.intent === "new_slide") return { name: "create_slide", args: { about: text, after: pre.after, template: pre.template } };
   if (pre.intent === "edit_selected" && current) return { name: "read_slide", args: { slideId: selection.slideId } };

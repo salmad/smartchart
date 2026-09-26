@@ -55,10 +55,11 @@ function collect(s) {
   return qs;
 }
 
-export async function resolveAuto(slide, style, jev) {
+export async function resolveAuto(slide, style, jev, request = "") {
   const out = structuredClone(slide), qs = collect(out);
   if (!qs.length) return { slide: out, resolved: {}, ms: 0 };
-  const r = await jev(`Deck style: ${style}.\nSlide: ${slideText(out)}`, Object.fromEntries(qs.map((q) => [q.id, { instructions: q.instructions, options: q.options }])));
+  // The user's words ("curves", "since launch", "each line") often settle a choice the slide alone does not.
+  const r = await jev(`Deck style: ${style}.${request ? `\nThe user's request: ${request}` : ""}\nSlide: ${slideText(out)}`, Object.fromEntries(qs.map((q) => [q.id, { instructions: q.instructions, options: q.options }])));
   const picks = Object.fromEntries(qs.map((q) => { const a = r[q.id]; return [q.id, a && a.p >= q.min ? { value: a.choice, p: a.p } : { value: q.fallback, p: a?.p ?? 0 }]; }));
   // Comparable series (same unit) that were all auto get one mark: the most confident pick.
   if (out.template === "chart") {

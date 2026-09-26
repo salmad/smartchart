@@ -271,7 +271,7 @@ The slide canvas is fixed (D12), so presenting is the same components scaled to 
 ```
 User message
   → PRE (code + Jev, one call): intent · template · card lead · position of a new slide
-      intent sure (p ≥ 0.7) → code makes the first tool call itself:
+      intent sure (p ≥ 0.7, or new_slide into an empty deck) → code makes the first tool call itself:
         new_slide        → create_slide (template, card lead and position already decided)
         edit_selected    → the selected slide joins the working set
         change_template  → create_slide with replace = selected slide
@@ -279,12 +279,16 @@ User message
       otherwise → nothing; the agent starts from the request
   → agent (GLM 5.3 Flash) with: system · tools · history · working-slides block (last)
   → loop: call a tool → read its result → repeat
-      a write that carries `reply` and comes back clean (applied, no issues) ends the turn with that reply
+      text over its limit → shortened inside the write by small GLM calls (9.4), not by another agent step
+      a write that comes back clean (applied, no issues) ends the turn:
+        with its `reply`, or, when PRE was sure and the step only wrote, with a short reply written by code
   → reply to the user
   → POST (Jev, one call, after the reply): judgment checks J1–J8 on each slide written this turn
 ```
 
-Target model calls: clean new slide = 1 Jev + 1 GLM; clean small edit = 1 Jev + 1 GLM; a write with issues adds 1 GLM per fix round.
+Target model calls: clean new slide = 1 Jev + 1 GLM; clean small edit = 1 Jev + 1 GLM; an over-long field adds one small GLM call (2 in parallel, hedged); other issues add 1 GLM per fix round.
+
+**Revised 2026-09-27 (speed):** the reply call, over-long text and a growing context were most of the time in a turn (`docs/research/2026-09-27-hybrid-agent-2/`). Code now ends a sure turn on a clean write with a factual reply ("Added a chart slide. Showing Revenue as bars; ask if you want it the other way."); text over its limit is shortened by a small, context-free GLM call per field, kept only if it fits and every figure it drops still appears elsewhere on the slide; and the history and working set are kept small (9.3).
 
 Calls made by code in PRE go into the history as ordinary assistant tool calls and tool results, so the agent reads them exactly as if it had made them. The agent can overrule PRE: call `create_slide` again with another template, or work on a different slide.
 
@@ -366,17 +370,19 @@ Tie-breakers, stated to the agent and to Jev:
 | History | user messages (each prefixed with the deck state: style, theme, `1. s_a1 [number] The problem` per slide, selection), agent messages, tool calls and results. Template cards arrive here through `create_slide` / `read_slide`. **Write results carry no slide JSON**, only what changed and the issues. | grows; Clear chat empties it |
 | **Working slides** | the current JSON of every slide in the working set, each with its template, open issues, warnings and last judgment checks | rebuilt by code before **every** model step and sent as the last message; never stored in history |
 
-**Working set:** slides created, read or patched in this conversation, plus the selected slide. Clear chat empties it (the deck stays). Because the block is rebuilt in place and always last, the agent always sees exactly one, current copy of each slide it works on; there are no stale versions in history to confuse it in long sessions, and the history prefix stays cacheable.
+**Working set:** starts each turn with the selected slide only; slides created, read or patched in the turn join it. When the turn creates a slide, slides not read or written in this turn leave it, so an earlier slide's data and open checks cannot leak into the new one. Clear chat empties it (the deck stays). **History:** after each turn, template cards and examples are removed from `create_slide` results and whole-slide JSON from `edit_slide` calls; the working-slides block has the current JSON. Because the block is rebuilt in place and always last, the agent always sees exactly one, current copy of each slide it works on; there are no stale versions in history to confuse it in long sessions, and the history prefix stays cacheable.
 
 ### 9.4 Problems and fixes
 
 - **One problem format everywhere:** field path · what was measured · the limit · a concrete fix. `cards[2].text: 3 lines, max 2, about 22 characters too long.`
 - **Shape errors** (unknown or missing field, wrong type, a bad path, 4 values for 5 categories) cannot render: the write is **not applied** (a patch is all or nothing); the agent gets the errors.
 - **Fit issues** (measured at 1920×1080) **are applied**, so the user sees the change, and returned as `issues`.
+- **Over-long text is shortened in the write path.** Issues that name a text field over its limit (a character limit, a total over notes or bullets, a title, subtitle or takeaway on too many lines) go to one small GLM call per field with no deck context, two in parallel with the first valid answer kept. A rewrite is kept only if it fits and every figure it drops still appears elsewhere on the slide; otherwise the issue goes to the agent as before. At most 2 rounds.
+- **Chart choices stay with code.** On a new slide, series marks and stacking the user did not name are set to `auto` whatever the agent wrote; Jev resolves them with the user's request in its state. A series a patch adds takes the mark of an existing series in the same unit.
 - **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R14. Issues on paths the patch did not touch come back in a separate `elsewhere` list, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
 - **Rule checks R1–R14** come back as `warnings`: the agent sees them, it is not required to act.
 - **Judgment checks J1–J8** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
-- **Code fixes trivia and reports it** (never meaning).
+- **Code fixes trivia and reports it** (never meaning). Also misplaced fields with one right place: `focus` written inside `chart` or `table` moves to the slide; a card row with no lead gets `icon: "auto"`. The first table column's header is optional.
 - **Code fixes dependent fields instead of reporting them.** When a rule spanning several fields has one right answer, code applies it in autofix and lists it in `autofixes`: a chart whose series are all lines loses its note points; `stacked` goes off when fewer than 2 bar series remain; `area`/`dashed` are dropped from bar series; a removed category drops the note points that referred to it; a second focus the user did not name is set back to neutral. Only rules with a choice left in them come back as issues. This is the main lever for first-write validity: what the model cannot get wrong it is not asked to get right.
 - Measurement is deterministic (fixed 1920×1080 canvas, fixed fonts): the prototype uses the browser as its ruler; the product uses the fit engine (4).
 
@@ -396,7 +402,7 @@ Tie-breakers, stated to the agent and to Jev:
 - A path must exist in the template card; an unknown path or an index past the end is a shape error naming the valid paths or range.
 - Reordering items or restructuring the whole slide is a patch of the whole list (`"cards": [...]`), not a full rewrite.
 
-**`reply`:** a write may carry the reply to the user. If the write is applied with no `issues` (warnings allowed), the turn ends there with that reply and no further model call. Otherwise the reply is dropped and the loop continues.
+**`reply`:** a write may carry the reply to the user. If the write is applied with no `issues` (warnings allowed), the turn ends there with that reply and no further model call. Otherwise the reply is dropped and the loop continues. When PRE was sure (new slide, edit of the selected slide, template change) and a model step only wrote and came back clean, code ends the turn even without `reply`, with a short factual reply of its own.
 
 **Schema enforcement.** The GLM endpoint does not enforce schemas: `response_format: json_schema` and `strict` tools are accepted and ignored, and `tool_choice: "required"` is not enforced (probe, 2026-09-27). GLM does follow tool schemas well in practice. So:
 - **One schema source**: the zod registry generates the template cards, the validator, the error messages and the JSON Schema of every tool parameter (enums, required, `additionalProperties: false`), so they cannot disagree.
@@ -561,6 +567,7 @@ Everything needed to continue is in the repo:
 3. ~~Build the MVP agent loop (9.0–9.5) in the journey prototype and run the single-slide test (9.7).~~ **Done (2026-09-26):** `docs/design/proposals/journey/agent.js` (default engine; the pipeline stays at `?engine=pipeline`); results in `docs/research/2026-09-26-agent-single-slide/`. Agent vs pipeline: every request number kept 100% vs 93%; first write shape-valid 93%; all slides end fitting; template agrees with the pipeline 28/30; p50 17.4 s vs 11.8 s. Open: latency (model time is ~95% of a turn), schema knowledge in the cards (note points on lines charts, table column labels, bullets vs text), unmarked illustrative figures (two prompt rules added, not yet re-tested).
    **Hybrid designed (2026-09-26):** 9.0–9.7 rewritten for speed and reliable changes: Jev PRE step, Jev for closed-set choices, `patch_slide` with path addressing (existing slides are never rewritten whole), the working-slides block, `reply` on writes, judgment checks after the turn. Next: build it in the journey prototype and run the 9.7 test.
    **Hybrid built (2026-09-27):** `docs/design/proposals/journey/` now runs only the hybrid (the pipeline is removed); results in `docs/research/2026-09-27-hybrid-agent/`. Passes: request numbers kept 97%, first write shape-valid in long sessions 100%, every slide ends fitting, template agrees with gold 97%, layout lints clean 100%, Jev chart choices 6/6; all 15 edits used `patch_slide` only. Fails: latency p50 22.9 s for a new slide (bar 13 s) and 10.1 s for an edit (bar 6 s), with GLM at 97% of a turn: fit rounds after the first write, and a separate reply call in half the turns; drift on 1 of 15 edits (a wrong card index). Open: reliable `reply` on writes, first-write shape errors in single requests (76%; `focus` written inside `chart`), and content from earlier turns bleeding into a new slide in a long session (1 of 10).
+   **Speed and quality rounds (2026-09-27):** `docs/research/2026-09-27-hybrid-agent-2/`. Both latency bars now pass: new slide p50 12.5 s (was 22.9 s), edit p50 3.1 s (was 10.1 s). The slide is first on screen at p50 8.0 s, and 96% of turns end without a reply call. Request numbers are kept 98%, edits show no drift (15 of 15 reach their values), and slides always end fitting. The changes are code replies on clean writes, in-write shortening, a smaller working set and history, and more autofixes (9.0, 9.3, 9.4). Open: first-write shape in long sessions 80% (n = 10, content mistakes); p95 about 43 s; tables cannot focus a row.
 4. Write the implementation plan for M0 (fit spike) and M1 (one `chart` slide end to end), starting with the evaluation harness (9.6).
    **Fit spike done (2026-09-27): go on D4, with conditions.** Results in `docs/research/2026-09-27-fit-spike/README.md`. The Node predictor matched Chrome's line count on 100% of 6,000 boundary-weighted strings (both title styles, pitch subtitle, note and card text) at DPR 1, DPR 2 and under `scale(.5)`, and never predicted fewer lines than Chrome. D4 as first written (HarfBuzz's own advances + plain UAX #14) matched only 97.2–100% and let up to 22 in 1,000 overflows through, so D4 is revised. The conditions: fractional HVAR advances (harfbuzzjs rounds them, up to 1.6px error on a long title); Blink's break rules (no break after `/`; `-` before a digit only after a letter or digit); a line ending after a hyphen or dash must fit with and without the kerning pair across the break; a 0.1px guard band instead of the "about 1 px" tolerance in 4.2; self-host the exact TTFs; re-run the harness on Windows and Linux Chrome before M1 ships (only macOS Chrome 145 was tested). Two statements in 4.2 are wrong and need fixing in the plan: CSS `text-wrap: balance` **can** change the line count in Chrome (3 in 1,000 titles, both directions), so the calculator computes the balanced width and the renderer wraps normally at that width (1,000/1,000 counts); `text-wrap: pretty` kept the count in 3,000/3,000 and stays allowed in body text.
 

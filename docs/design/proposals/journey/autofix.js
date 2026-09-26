@@ -1,6 +1,6 @@
 /* Code fixes what has one right answer and reports it (spec 9.4); it never shortens text or changes meaning.
    Idempotent: the write path runs it before and after `auto` choices are resolved. */
-import { MENU } from "../v5/schema.js";
+import { ICONS, MENU } from "../v5/schema.js";
 
 const cellText = (c) => String(c && typeof c === "object" ? c.value : c ?? "").trim();
 /** "£1,000" → 1000, "(200)" → -200, "12%" → 12; null when the cell is not a number. */
@@ -21,6 +21,24 @@ export function autofix(slide, style) {
   if (typeof out.source === "string" && /^source:\s*/i.test(out.source)) { out.source = out.source.replace(/^source:\s*/i, ""); fixes.push("removed 'Source:' prefix"); }
   if (style === "consulting" && MENU[out.template]?.frame !== false && /[^.]\.$/.test(out.title || "")) { out.title = out.title.slice(0, -1); fixes.push("removed title full stop"); }
   if (style === "pitch") delete out.kicker;
+  // `focus` is a slide field; models often put it inside the chart or table.
+  for (const k of ["chart", "table"]) if (out[k] && typeof out[k] === "object" && !Array.isArray(out[k]) && "focus" in out[k] && typeof out[k].focus !== "boolean") {
+    if (out.focus === undefined) out.focus = out[k].focus;
+    delete out[k].focus; fixes.push(`focus: moved from ${k} to the slide`);
+  }
+  if (out.template === "cards" && Array.isArray(out.cards)) out.cards.forEach((c, i) => {
+    if (!c || typeof c !== "object") return;
+    if (c.icon && c.icon !== "auto" && !ICONS.includes(c.icon)) { fixes.push(`cards[${i}].icon: auto ("${c.icon}" is not in the icon set)`); c.icon = "auto"; }
+    if (!out.framed && c.label !== undefined) { delete c.label; fixes.push(`cards[${i}].label: removed (only framed cards have a label)`); }
+    if (style === "pitch" && Array.isArray(c.bullets)) {
+      if (!c.text) c.text = c.bullets.join(". ").replace(/\.\./g, ".");
+      delete c.bullets; fixes.push(`cards[${i}].bullets: joined into text (pitch cards have text)`);
+    }
+  });
+  // A card row with no lead gets icons, picked by code (the same as icon "auto").
+  if (out.template === "cards" && !out.framed && Array.isArray(out.cards) && out.cards.every((c) => c && !c.icon && !c.value)) {
+    out.cards.forEach((c) => { c.icon = "auto"; }); fixes.push("cards[].icon: auto (no lead given)");
+  }
   if (out.template === "chart" && out.chart && Array.isArray(out.chart.series)) fixChart(out, fixes);
   if (out.template === "table" && out.table) fixTable(out.table, fixes);
   return { slide: out, fixes };
