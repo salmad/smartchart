@@ -5,11 +5,11 @@ import { fieldsFor } from "./schema.js";
 export const FOOTER = "FinBridge · Seed memorandum";
 
 const UNIT_BARS = {
-  type: "bars", categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"], format: "£{v}m",
+  categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"], format: "£{v}m",
   series: [
-    { name: "Interest income", color: "neutral", values: [0.4, 3.1, 14, 42, 85] },
-    { name: "Interchange", color: "focus", values: [0.3, 2.2, 11, 36, 80] },
-    { name: "Gross margin", color: "contrast", line: true, format: "{v}%", values: [12, 24, 31, 36, 38] },
+    { name: "Interest income", mark: "bar", color: "neutral", values: [0.4, 3.1, 14, 42, 85] },
+    { name: "Interchange", mark: "bar", color: "focus", values: [0.3, 2.2, 11, 36, 80] },
+    { name: "Gross margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 24, 31, 36, 38] },
   ],
 };
 
@@ -112,7 +112,7 @@ export const EXAMPLES = [
   {
     template: "table", name: "Table · full width",
     table: {
-      columns: [{ label: "£ per customer per month" }, { label: "Revolver", num: true, focus: true }, { label: "Transactor", num: true }, { label: "Super-transactor", num: true }],
+      columns: [{ label: "£ per customer per month" }, { label: "Revolver", focus: true }, { label: "Transactor" }, { label: "Super-transactor" }],
       rows: [
         { cells: ["Share of customers", "40–60%", "40–60%", "~10%"], style: "muted" },
         { cells: ["Interest revenue", { value: "267", note: "40% APR × £8.0k" }, "—", "—"] },
@@ -135,7 +135,7 @@ export const EXAMPLES = [
   {
     template: "table", name: "Table · with notes (split)",
     table: {
-      columns: [{ label: "Provider" }, { label: "Credit limit", num: true }, { label: "Fee", num: true }, { label: "Cashback", num: true, focus: true }],
+      columns: [{ label: "Provider" }, { label: "Credit limit" }, { label: "Fee" }, { label: "Cashback", focus: true }],
       rows: [
         { cells: ["High-street bank", "£25k", "£120/yr", "0%"] },
         { cells: ["Neobank (debit)", "—", "£0", "0.5%"] },
@@ -162,10 +162,10 @@ export const EXAMPLES = [
   {
     template: "chart", name: "Chart · full width",
     chart: {
-      type: "lines", categories: ["Q1 ’27", "Q2", "Q3", "Q4", "Q1 ’28", "Q2", "Q3", "Q4"], format: "£{v}m",
+      categories: ["Q1 ’27", "Q2", "Q3", "Q4", "Q1 ’28", "Q2", "Q3", "Q4"], format: "£{v}m",
       series: [
-        { name: "Base case", color: "focus", area: true, values: [1, 4, 10, 22, 40, 62, 88, 120] },
-        { name: "Downside", color: "contrast", dashed: true, values: [0.8, 3, 7, 15, 27, 41, 56, 72] },
+        { name: "Base case", mark: "line", color: "focus", area: true, values: [1, 4, 10, 22, 40, 62, 88, 120] },
+        { name: "Downside", mark: "line", color: "contrast", dashed: true, values: [0.8, 3, 7, 15, 27, 41, 56, 72] },
       ],
     },
     consulting: {
@@ -249,9 +249,9 @@ export function stressFor(st) {
     ...(c ? { kicker: W(40) } : { subtitle: W(max(id, st, "subtitle")) }),
     title: W(max(id, st, "title")), takeaway: W(max(id, st, "takeaway")), footnote: W(110), source: W(110),
   });
-  const bars = { type: "bars", categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6"], format: "£{v}m", series: [
-    { name: "Interest income", color: "neutral", values: [1, 3, 14, 42, 85, 99] }, { name: "Interchange", color: "focus", values: [1, 2, 11, 36, 80, 95] },
-    { name: "Gross margin", color: "contrast", line: true, format: "{v}%", values: [12, 24, 31, 36, 38, 40] }] };
+  const bars = { categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6"], format: "£{v}m", series: [
+    { name: "Interest income", mark: "bar", color: "neutral", values: [1, 3, 14, 42, 85, 99] }, { name: "Interchange", mark: "bar", color: "focus", values: [1, 2, 11, 36, 80, 95] },
+    { name: "Gross margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 24, 31, 36, 38, 40] }] };
   const notes = (n, withPoint) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(i ? 75 : 50) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
   const rows = (n, noted) => TIMES(n).map(() => ({ cells: [W(noted ? 40 : 24), noted ? { value: "(1,234)", note: "8% × £10.5k" } : "(1,234)", "12,345", "(34)"] }));
   return [
@@ -259,12 +259,15 @@ export function stressFor(st) {
     { template: "section", name: "Stress · section", title: W(max("section", st, "title")), subtitle: W(max("section", st, "subtitle")) },
     { template: "number", name: "Stress · number", ...frame("number"), body: TIMES(c ? 2 : 1).map(() => W(max("number", st, "body"))), number: { value: "€400bn", caption: W(max("number", st, "number", "caption")) } },
     { template: "chart", name: "Stress · chart + notes", ...frame("chart"), chart: bars, notes: notes(3, true) },
-    { template: "chart", name: "Stress · chart full", ...frame("chart"), chart: { type: "lines", categories: TIMES(12).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
-      series: [{ name: "Base case", color: "focus", area: true, values: TIMES(12).map((_, i) => (i + 1) ** 2) }, { name: "Downside", color: "contrast", dashed: true, values: TIMES(12).map((_, i) => (i + 1) ** 2 * .6) }, { name: "Market", color: "neutral", values: TIMES(12).map((_, i) => 20 + i * 5) }] } },
-    { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), num: true, focus: i === 0 }))],
+    { template: "chart", name: "Stress · chart full", ...frame("chart"), chart: { categories: TIMES(12).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
+      series: [{ name: "Base case", mark: "line", color: "focus", area: true, values: TIMES(12).map((_, i) => (i + 1) ** 2) }, { name: "Downside", mark: "line", color: "contrast", dashed: true, values: TIMES(12).map((_, i) => (i + 1) ** 2 * .6) }, { name: "Market", mark: "line", color: "neutral", values: TIMES(12).map((_, i) => 20 + i * 5) }] } },
+    { template: "chart", name: "Stress · chart stacked", ...frame("chart"), chart: { stacked: true, categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
+      series: [{ name: W(24), mark: "bar", color: "focus", values: [4, 9, 15, 24, 33, 41] }, { name: W(24), mark: "bar", color: "neutral", values: [2, 5, 9, 14, 20, 26] },
+        { name: W(24), mark: "bar", color: "contrast", values: [1, 2, 4, 7, 11, 15] }, { name: "Margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 18, 24, 29, 33, 36] }] } },
+    { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...TIMES(5).map(() => ({ cells: [W(40), { value: "(1,234)", note: "8% × £10.5k" }, "12,345", "(34)", "—"] })), { cells: [W(30), "£179", "£10", "£128", "£95"], style: "total" }]
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
-    { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), num: true, focus: i === 0 }))],
+    { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
     { template: "steps", name: "Stress · steps", ...frame("steps"), steps: TIMES(c ? 5 : 3).map((_, i) => ({ when: "Q3 2027+", title: W(max("steps", st, "steps", "title")), text: W(max("steps", st, "steps", "text")), focus: i === 1 })) },
     { template: "cards", name: "Stress · cards icon ×3", ...frame("cards"), cards: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { icon: "zap", title: W(22), text: W(50) }) },

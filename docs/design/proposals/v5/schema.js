@@ -77,22 +77,36 @@ const FRAME = {
 
 const TONE = f("enum", "Colour of the value.", { values: ["focus", "neg", "pos"], default: "focus" });
 
-const CHART = f("object", "A bar or line chart. Values are written on the data; there is no y-axis to configure.", {
+/* The chart guide (spec 9.1): in the chart card for the agent, and in Jev's mark and stacking questions. */
+export const CHART_GUIDE = [
+  "Comparable series share one mark: series that measure the same thing in the same unit (our revenue vs a competitor's, revenue by segment, scenarios) are all bars or all lines.",
+  "Bars for sizes, lines for trends: bars compare sizes across categories or a few periods (up to about 6); lines show a trend over many periods (7 or more), forecasts and scenarios.",
+  "A different unit can be a line over bars: a series in another unit (a margin % or a growth rate over £m revenue) is a line on its own scale over the bars. At most two units per chart; a third needs another slide.",
+  "A reference series can differ: a target, benchmark or average in the same unit may be a dashed line over bars.",
+  "Stack only parts of a whole: stack bar series that add up to a total that matters (revenue by segment); keep them side by side when the point is comparing them (us vs them). Never stack rates or percentages that do not sum to a whole; lines never stack.",
+  "Pitch: one series, two at most.",
+  "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
+];
+
+/* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
+const FOCUS = f("enum", "Write \"auto\" to let code pick and highlight the one item the title is about (a series, column, step or card). Leave it out when the user named the focus, and set it on that item yourself.", { values: ["auto"] });
+
+const CHART = f("object", "A chart of bar and line series. Values are written on the data; there is no y-axis to configure.", {
   required: true,
   fields: {
-    type: f("enum", "`bars`: grouped bars comparing categories, optionally with ONE line series on its own scale (e.g. a margin %). `lines`: trends over time with big labels at the end of each line.", { required: true, values: ["bars", "lines"] }),
+    stacked: f("enum", "Bar series stacked into one column per category (true) or side by side (false). \"auto\": code decides by the chart guide.", { values: [true, false, "auto"], default: false }),
     categories: f("list", "X-axis labels, in order. Short: 'Year 1', 'Q2', 'Q1 ’27'.", { required: true, items: { min: 2, max: 12 }, of: f("text", "Category label.", { max: 10 }) }),
     format: f("text", "Value format; `{v}` is replaced by the number. E.g. '£{v}m', '{v}%'.", { default: "{v}" }),
-    series: f("list", "Data series. Exactly one series is `focus`: the one the title is about.", {
+    series: f("list", "Data series. One series is the focus: the one the title is about.", {
       required: true, items: { min: 1, max: 4 },
       of: f("object", "One series.", { fields: {
         name: f("text", "Series name, shown in the legend or end label.", { required: true, max: 24 }),
         values: f("list", "One number per category, same order. Plain numbers, no units.", { required: true, of: f("number", "Value.") }),
-        color: f("enum", "`focus`: the series the slide is about. `neutral`: context. `contrast`: a secondary series that must still read clearly.", { required: true, values: ["focus", "neutral", "contrast"] }),
-        line: f("boolean", "bars only: draw this series as a line on its own scale. At most one.", { default: false }),
+        mark: f("enum", "`bar` or `line` for this series. \"auto\": code decides by the chart guide. Write bar or line only when the user named it.", { required: true, values: ["bar", "line", "auto"] }),
+        color: f("enum", "`focus`: the series the slide is about. `neutral`: context. `contrast`: a secondary series that must still read clearly. Leave it out when the slide has focus \"auto\".", { values: ["focus", "neutral", "contrast"] }),
         format: f("text", "Overrides the chart format for this series (a % line over £ bars)."),
-        area: f("boolean", "lines only: shade the area under this line. Focus series only.", { default: false }),
-        dashed: f("boolean", "lines only: dashed, for forecasts or scenarios.", { default: false }),
+        area: f("boolean", "Line series in a chart of only lines: shade the area under it. Focus series only.", { default: false }),
+        dashed: f("boolean", "Line series only: dashed, for a forecast, a scenario or a reference (target, average).", { default: false }),
       } }),
     }),
   },
@@ -104,7 +118,7 @@ const notes = (withPoint) => f("list", "Optional numbered observations beside th
   of: f("object", "One observation.", { fields: {
     title: f("markup", "The observation as a short headline.", { required: true, max: 28 }),
     text: f("markup", "Optional supporting sentence.", { max: 80, styles: CONSULTING }),
-    ...(withPoint ? { point: f("object", "Optional: pin this note's number onto a data point (bars charts only).", { fields: {
+    ...(withPoint ? { point: f("object", "Optional: pin this note's number onto a data point (charts with bars only).", { fields: {
       series: f("number", "0-based index into chart.series.", { required: true }),
       index: f("number", "0-based index into chart.categories.", { required: true }),
     } }) } : {}),
@@ -117,9 +131,9 @@ export const MENU = {
   chart: {
     summary: "A bar or line chart with a title; optional numbered notes beside it.",
     use: "Data over categories or time: a trend, a comparison of sizes, a crossover.",
-    fields: { chart: CHART, notes: notes(true) },
+    fields: { chart: CHART, focus: FOCUS, notes: notes(true) },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories.", "`notes[].point` only works with `bars` charts.", "At most 3 notes when any note has text, and at most 3 in pitch."],
+    rules: ["With notes: at most 6 categories.", "`notes[].point` only works on a chart with bars.", "At most 3 notes when any note has text, and at most 3 in pitch.", ...CHART_GUIDE],
   },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
@@ -128,7 +142,6 @@ export const MENU = {
       table: f("object", "The table.", { required: true, fields: {
         columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
           label: f("text", "Header text.", { required: true, max: 26 }),
-          num: f("boolean", "Right-align as numbers.", { default: false }),
           focus: f("boolean", "Highlight this column. At most one.", { default: false }),
         } }) }),
         rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
@@ -136,6 +149,7 @@ export const MENU = {
           style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
         } }) }),
       } }),
+      focus: FOCUS,
       notes: notes(false),
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
@@ -168,6 +182,7 @@ export const MENU = {
         text: f("markup", "What happens in this phase, in one line.", { required: true, max: { consulting: 70, pitch: 24 } }),
         focus: f("boolean", "Highlight the step the slide is about. At most one.", { default: false }),
       } }) }),
+      focus: FOCUS,
     },
     variant: () => "full",
     rules: ["Pitch: at most 3 steps with a takeaway."],
@@ -178,7 +193,7 @@ export const MENU = {
     fields: {
       framed: f("boolean", "Two framed cards side by side, for a contrast: the losing case left (tone `neg`), the winning case right (tone `focus`).", { default: false }),
       cards: f("list", "The cards, left to right.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One card.", { fields: {
-        icon: f("enum", "Icon lead: an icon from the curated set. Not with `value` or `framed`.", { values: ICONS }),
+        icon: f("enum", "Icon lead: an icon from the curated set, or \"auto\" to let code pick one from the card's text. Not with `value` or `framed`.", { values: [...ICONS, "auto"] }),
         value: f("text", "Value lead: a big number with its unit, e.g. '5 min', '19%'. Not with `icon` or `framed`.", { max: 6 }),
         label: f("text", "Framed only: who or what this case is, e.g. 'Credit-only lenders'.", { max: 30 }),
         title: f("markup", "Card title. Framed: a big 2-word headline, plain text.", { required: true, max: { consulting: 24, pitch: 22 } }),
@@ -190,6 +205,7 @@ export const MENU = {
           text: f("markup", "The fact.", { required: true, max: 38 }),
         } }) }),
       } }) }),
+      focus: FOCUS,
     },
     variant: (s) => (s.framed ? "framed" : s.cards?.some((c) => c?.value) ? "value" : "icon"),
     rules: [
@@ -335,23 +351,27 @@ function check(def, value, path, style, out) {
   }
 }
 
-function checkChart(c, path, out) {
+const fmtOf = (c, s) => s?.format || c.format || "{v}";
+
+function checkChart(c, path, out, focusAuto) {
   if (!c || !Array.isArray(c.series) || !Array.isArray(c.categories)) return;
+  const bars = c.series.filter((s) => s?.mark === "bar");
   c.series.forEach((s, i) => {
     if (Array.isArray(s?.values) && s.values.length !== c.categories.length)
       out.errors.push(`${path}.series[${i}].values: ${s.values.length} values, but there are ${c.categories.length} categories. Give exactly one value per category.`);
-    if (c.type === "lines" && s?.line) out.errors.push(`${path}.series[${i}].line: only for bars charts.`);
-    if (c.type === "bars" && (s?.area || s?.dashed)) out.errors.push(`${path}.series[${i}]: \`area\` and \`dashed\` are only for lines charts.`);
+    if (s?.mark === "bar" && (s.area || s.dashed)) out.errors.push(`${path}.series[${i}]: \`area\` and \`dashed\` are only for line series.`);
+    if (s?.area && bars.length) out.errors.push(`${path}.series[${i}].area: only when every series is a line.`);
   });
-  if (c.type === "bars") {
-    if (c.series.filter((s) => s?.line).length > 1) out.errors.push(`${path}.series: at most one series can have "line": true.`);
-    if (c.series.filter((s) => !s?.line).length > 3) out.errors.push(`${path}.series: at most 3 bar series.`);
-  }
-  if (c.type === "lines" && c.series.some((s) => s?.format && s.format !== (c.format || "{v}")))
-    out.errors.push(`${path}.series: lines charts share one axis, so every series must use the chart format. Plot only series in the same unit, or use a bars chart with one \`line\` series on its own scale.`);
+  if (bars.length > 3) out.errors.push(`${path}.series: at most 3 bar series (got ${bars.length}). Cut or merge.`);
+  const formats = new Set(c.series.map((s) => fmtOf(c, s)));
+  if (formats.size > 2) out.errors.push(`${path}.series: ${formats.size} units (${[...formats].join(", ")}); a chart shows at most 2. Move the third to another slide.`);
+  if (c.series.length && c.series.every((s) => s?.mark === "line") && formats.size > 1)
+    out.errors.push(`${path}.series: a chart of only lines shares one scale, so every series uses one format. Make one unit bars, or plot it on another slide.`);
+  if (c.stacked === true && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
+    out.errors.push(`${path}.stacked: stacking needs 2 or more bar series in one unit. Set it to false.`);
   if (c.format && !String(c.format).includes("{v}")) out.errors.push(`${path}.format: must contain {v}, e.g. "£{v}m".`);
   const focus = c.series.filter((s) => s?.color === "focus").length;
-  if (focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
+  if (!focusAuto && focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
 }
 
 const count = (list, key) => (list || []).filter((x) => x && x[key]).length;
@@ -366,14 +386,14 @@ function checkNotes(s, style, out) {
 function checkRules(s, style, out) {
   switch (s.template) {
     case "chart": {
-      checkChart(s.chart, "chart", out);
+      checkChart(s.chart, "chart", out, s.focus === "auto");
       if (!s.notes?.length) break;
       checkNotes(s, style, out);
       const cats = s.chart?.categories || [], series = s.chart?.series || [];
       if (cats.length > 6) out.errors.push(`chart.categories: ${cats.length} categories; with notes at most 6. Drop notes or group categories.`);
       s.notes.forEach((n, i) => {
         if (!n?.point) return;
-        if (s.chart?.type !== "bars") return out.errors.push(`notes[${i}].point: points only work with bars charts; remove it.`);
+        if (series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a chart with bars; remove it.`);
         if (!(n.point.series >= 0 && n.point.series < series.length)) out.errors.push(`notes[${i}].point.series: ${n.point.series} is out of range; the chart has ${series.length} series (0–${series.length - 1}).`);
         if (!(n.point.index >= 0 && n.point.index < cats.length)) out.errors.push(`notes[${i}].point.index: ${n.point.index} is out of range; the chart has ${cats.length} categories (0–${cats.length - 1}).`);
       });
@@ -474,4 +494,16 @@ export function validateDeck(deck) {
   });
   if (slides.filter((s) => s.template === "cover").length > 1) out.errors.push("slides: only one cover.");
   return out;
+}
+
+/** Slides saved before the 2026-09-27 chart change: chart.type and series.line become marks; table columns lose `num`. */
+export function upgrade(slide) {
+  const s = structuredClone(slide), c = s.chart;
+  if (c?.type) {
+    (c.series || []).forEach((x) => { x.mark = c.type === "lines" || x.line ? "line" : "bar"; delete x.line; });
+    if (c.type === "bars") c.stacked = false;
+    delete c.type;
+  }
+  (s.table?.columns || []).forEach((col) => delete col.num);
+  return s;
 }
