@@ -144,3 +144,4 @@ The key idea is **"LLM as configurator, not designer."** The agent emits a small
 - **Models:** GLM 5.3 Flash via its subscription endpoint is the main model and the first priority. OpenRouter is used only for Jev (later also image models). Jev picks the template and runs the cheap judgment checks.
 - **Pitch frame:** the title is a 1-line topic ("Business model"), plus an optional 1–2 line subtitle carrying the claim. Pitch slides have no kicker.
 - **Routing (M0 bake-off, 2026-09-26):** Jev picks the template when its probability is ≥ 0.7 (about 80% of requests). Below that, GLM 5.3 Flash with thinking picks. Jev scored 90% at 0.5 s; GLM with thinking scored 92% at 4.7 s. Results are in `docs/research/2026-09-26-routing-bakeoff/`.
+- **Routing principle:** routing picks only the key component a slide is built around. Optional components (notes, takeaway, footnote, source, subtitle, card details) are decided while filling the template, never by the router.

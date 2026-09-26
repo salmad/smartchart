@@ -28,6 +28,7 @@ A user types a prompt and gets a slide (later: a deck) that is beautiful by cons
 | D13 | **Model routing.** GLM 5.3 Flash through its subscription endpoint is the main model (free; first priority). OpenRouter is used **only** for Jev (later also cheap image models), never for other text models. Jev makes every closed-set decision that needs no writing (menu entry, edit intent, chart type, card lead, icons, tones; see 9.1) and runs the cheap judgment checks. GLM writes text and data. |
 | D14 | **Design checks** run after every save: deterministic rule checks (free) plus Jev judgment checks (cheap). For now they are **shown to the user only**, as a checks list on the slide. A later "Get advice" action sends them to the agent to revise. They never block saving; fit does. |
 | D15 | **Presentation mode** like Slidev: keyboard navigation, full screen, overview grid, deep links per slide. |
+| D16 | **Routing picks the key component only; optional components are never a routing decision.** The router chooses what the slide is built around (chart, table, number, steps, cards, cover, section). Everything optional is decided while filling, inside the chosen template: notes, takeaway, footnote, source, kicker, pitch subtitle, card facts, card lead (icon or value). Where an optional component changes the layout (notes on a chart or table), code picks the layout variant deterministically. A new optional component never adds a menu entry. (Evidence: M0 bake-off, 13.) |
 
 ## 3. Composition model
 
@@ -76,7 +77,7 @@ A block owns its default limits. A layout area may **override** them (a chart in
 
 ### 3.4 The menu (allowed combinations)
 
-Generated from the registry; this is everything the agent can choose. Ids name the **content**, not the layout, because the agent never sees layouts. Some entries have two layout variants chosen by code from the content.
+Generated from the registry; this is everything the agent can choose. Each entry is a **key component**: what the slide is built around (D16). Ids name the content, not the layout, because the agent never sees layouts. Some entries have two layout variants chosen by code from the content.
 
 | Menu id | Layout (internal) | Use when |
 |---|---|---|
