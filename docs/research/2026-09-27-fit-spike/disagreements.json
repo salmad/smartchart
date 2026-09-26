@@ -1,0 +1,71 @@
+[
+ {
+  "slot": "consulting-title",
+  "cat": "balance changed the count in Chrome",
+  "s": "Stronger breaks as the churn LATAM 861× since €5,287k across [[infrastructure—e-commerce LATAM with]]",
+  "predicted": 2,
+  "chrome": 3,
+  "minGap": 0.4219,
+  "pLines": [
+   "Stronger breaks as the churn LATAM 861× since €5,287k ",
+   "across infrastructure—e-commerce LATAM with"
+  ],
+  "cLines": [
+   "Stronger breaks as the churn ",
+   "LATAM 861× since €5,287k across ",
+   "infrastructure—e-commerce LATAM with"
+  ],
+  "cWrapLines": [
+   "Stronger breaks as the churn LATAM 861× since €5,287k ",
+   "across infrastructure—e-commerce LATAM with"
+  ]
+ },
+ {
+  "slot": "consulting-title",
+  "cat": "balance changed the count in Chrome",
+  "s": "Quarter payback? falls launch UK! wholesale best-in-class hiring merchants payments with lower crossed per user/month €40.1k, £1,295 pulls in – mid-market LATAM",
+  "predicted": 3,
+  "chrome": 4,
+  "minGap": 0.7031,
+  "pLines": [
+   "Quarter payback? falls launch UK! wholesale best-in-",
+   "class hiring merchants payments with lower crossed per ",
+   "user/month €40.1k, £1,295 pulls in – mid-market LATAM"
+  ],
+  "cLines": [
+   "Quarter payback? falls launch UK! wholesale ",
+   "best-in-class hiring merchants payments ",
+   "with lower crossed per user/month €40.1k, ",
+   "£1,295 pulls in – mid-market LATAM"
+  ],
+  "cWrapLines": [
+   "Quarter payback? falls launch UK! wholesale best-in-",
+   "class hiring merchants payments with lower crossed per ",
+   "user/month €40.1k, £1,295 pulls in – mid-market LATAM"
+  ]
+ },
+ {
+  "slot": "consulting-title",
+  "cat": "balance changed the count in Chrome",
+  "s": "158 pts 7,082 % - every only steady - mid-market segment costs demand EMEA 73% holds Größe €3,385k 51-86% widened sales/marketing 286: 34%",
+  "predicted": 3,
+  "chrome": 4,
+  "minGap": 1.9219,
+  "pLines": [
+   "158 pts 7,082 % - every only steady - mid-market ",
+   "segment costs demand EMEA 73% holds Größe €3,385k ",
+   "51-86% widened sales/marketing 286: 34%"
+  ],
+  "cLines": [
+   "158 pts 7,082 % - every only steady - ",
+   "mid-market segment costs demand ",
+   "EMEA 73% holds Größe €3,385k 51-",
+   "86% widened sales/marketing 286: 34%"
+  ],
+  "cWrapLines": [
+   "158 pts 7,082 % - every only steady - mid-market ",
+   "segment costs demand EMEA 73% holds Größe €3,385k ",
+   "51-86% widened sales/marketing 286: 34%"
+  ]
+ }
+]

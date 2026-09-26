@@ -1,0 +1,14 @@
+{
+ "dpr1": {
+  "n": 1000,
+  "countAgrees": 1000,
+  "breaksAgree": 999,
+  "keepsGreedyCount": 1000
+ },
+ "dpr2": {
+  "n": 1000,
+  "countAgrees": 1000,
+  "breaksAgree": 999,
+  "keepsGreedyCount": 1000
+ }
+}

@@ -1,0 +1,3 @@
+node_modules/
+# Raw Chrome readings (10 MB); regenerate with `npm run chrome`.
+chrome.json

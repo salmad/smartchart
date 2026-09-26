@@ -1,0 +1,12 @@
+{
+  "options": {
+    "chart": "A bar or line chart with a title; optional numbered notes beside it. Use when: Data over categories or time: a trend, a comparison of sizes, a crossover.",
+    "table": "A typeset table with optional sub-notes under values and a total row; optional notes beside it. Use when: Exact figures the reader needs to compare across rows.",
+    "number": "One big number, with the argument beside it. Use when: One number proves the argument: a size, a cost, a gap.",
+    "steps": "Rows of phases: when, a one-word phase name, and what happens. Use when: A sequence in time: a plan, roadmap, process or history in 2–5 steps.",
+    "cards": "2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast. Use when: Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).",
+    "cover": "Opening slide: deck title and a one-sentence subtitle. Use when: The first slide of a deck, once.",
+    "section": "Section divider: big section number and name. Use when: The start of a new part in a deck of 8+ slides."
+  },
+  "guide": "Answer in order and stop at the first match:\n1. If the content is the first slide of a deck: cover\n2. If the content is the start of a new part in a deck of 8+ slides: section\n3. If the content is one number that proves the argument (a size, a cost, a gap): number\n4. If the content is data over categories or time (a series): a trend, a comparison of sizes, a crossover: chart\n5. If the content is exact figures the reader needs to compare: table\n6. If the content is a sequence in time: plan, roadmap, process, history (2–5 steps): steps\n7. If the content is 2–4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast: cards\nCover or section only when the user asks for a title, cover, opening or divider slide; otherwise route the content itself, even into an empty deck.\nChart or table? Chart for a trend, a comparison of sizes or a crossover; table when the reader needs exact values. When in doubt, pick the entry with fewer words."
+}

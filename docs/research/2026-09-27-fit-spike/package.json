@@ -1,0 +1,13 @@
+{
+  "name": "fit-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen": "node gen.mjs 1000",
+    "chrome": "node run.mjs",
+    "analyze": "node analyze.mjs",
+    "balance": "node balance.mjs",
+    "all": "node gen.mjs 1000 && node run.mjs && node analyze.mjs && node balance.mjs"
+  },
+  "dependencies": { "harfbuzzjs": "1.6.2", "linebreak": "1.1.0", "playwright": "1.58.2" }
+}
