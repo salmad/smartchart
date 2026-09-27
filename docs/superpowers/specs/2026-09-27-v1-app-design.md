@@ -87,6 +87,33 @@ Groups, in display order: `charts`, `tables`, `cards`, `numbers` (big number, st
 
 Colour problems are fixed in the engine (colour allocator), never by hand-picking colours in starter content.
 
+### 4.1 Preservation of the calibrated slides
+
+The calibrated slides are not rebuilt, dropped or restyled. Only their words (and, where consistency needs it, their figures) change.
+
+**Inventory (at 788f4d7):**
+
+| Set | Count | Where | In v1 |
+|---|---|---|---|
+| Examples | 17 slides × 2 styles | `v5/examples.js` | all 17 become `starters.json`, same order |
+| Stress deck | 21 slides × 2 styles | `stressFor()` in `v5/examples.js` | a test fixture (`tests/fixtures/stress`), same generator, unchanged |
+| v4 set | 16 examples + stress | `slides-v4.html` | kept as the visual reference; every v4 example already has a v5 counterpart (cover, section, hero→number, split→chart with notes, columns→cards icon, cases→cards framed, table, lines→chart full, timeline→steps, stats→cards value) |
+
+**Guards (all automated, all run in CI):**
+1. **Count lock:** `starters.json` has exactly 17 entries with the ids mapped from the 17 example names. The stress fixture has exactly 21 slides.
+2. **Structure lock:** before any rewrite, a shape snapshot of each example is generated from 788f4d7 and committed (`tests/fixtures/example-shapes.json`). Per style it records:
+   - the template and its variant;
+   - field keys and array lengths (bullets, cards, notes, body);
+   - for charts: category count, series count, each series' mark, colour role, dashed/area, format, stacking, annotations, axis break and note anchor points;
+   - for tables: rows, columns and total rows;
+   - card tones and icons.
+
+   A test asserts every starter matches its snapshot exactly, so only strings (and numbers, within the consistency rules) may differ.
+3. **Fit lock:** the title line count and each text block's line count per style stay as at 788f4d7, measured in the browser test, so rewritten copy fits the same way the calibrated copy did.
+4. **Visual before/after:** the dev review page gets a `?compare=788f4d7` mode that shows the original slide and the Acme version side by side, at full size, for both styles and both palettes. This is what the user approves in the gate above.
+
+Nothing in `v5/examples.js` is deleted until guards 1–3 pass on `starters.json`.
+
 ## 5. Empty state
 
 ### 5.1 Landing: no deck open (first visit, or **New deck**)
@@ -121,7 +148,7 @@ The journey's existing narrow layout applies: the landing gallery is one column,
 2. Build the React shell to parity with the journey (no new features); `/api` through the Vite plugin.
 3. Remove the legacy code and dependencies; update CLAUDE.md.
 4. Verify (section 7).
-5. `starters.json`: rewrite to Acme, fix L5, gate tests, full-size review, **user approval**.
+5. `starters.json`: commit the shape snapshot from 788f4d7 first, then rewrite to Acme, fix L5, preservation guards (4.1) and gate tests, before/after review, **user approval**.
 6. Landing (5.1) and Add slide (5.2).
 7. Verify again; preview deploy.
 
