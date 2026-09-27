@@ -14,8 +14,14 @@ export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: stri
 export interface SavedDeck { id: string; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; thread?: string; updated: number }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
-/** How the app reaches saved decks: async, so a server-backed repo can replace the browser one. */
-export interface DeckRepo { load(): Promise<Store>; save(store: Store): Promise<boolean> }
+/** How the app reaches saved decks, one deck at a time: in this browser (signed out) or on the server (signed in). */
+export interface DeckRepo {
+  list(): Promise<SavedDeck[]>
+  get(id: string): Promise<SavedDeck | null>
+  /** False when the save did not happen (storage full, offline, server error). */
+  save(deck: SavedDeck): Promise<boolean>
+  remove(id: string): Promise<boolean>
+}
 
 /** { active, decks }; an empty store when storage is missing, blocked or corrupt. */
 export function loadStore(storage?: Pick<Storage, 'getItem'>): Store {
@@ -32,8 +38,15 @@ export function saveStore(store: Store, storage?: Pick<Storage, 'setItem'>): boo
   try { (storage ?? localStorage).setItem(KEY, JSON.stringify(store)); return true } catch { return false }
 }
 
+/** Decks in this browser: a visitor's first deck, and decks made before accounts existed. Same key and shape as v1. */
 export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): DeckRepo {
-  return { load: async () => loadStore(storage), save: async (store) => saveStore(store, storage) }
+  const read = () => loadStore(storage), write = (s: Store) => saveStore(s, storage)
+  return {
+    list: async () => deckList(read()),
+    get: async (id) => read().decks[id] ?? null,
+    save: async (deck) => { const s = read(); s.decks[deck.id] = deck; s.active = deck.id; return write(s) },
+    remove: async (id) => { const s = read(); if (!s.decks[id]) return false; delete s.decks[id]; if (s.active === id) s.active = null; return write(s) },
+  }
 }
 
 export const newDeckId = (): string => `d_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`

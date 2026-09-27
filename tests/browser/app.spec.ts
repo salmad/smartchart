@@ -7,8 +7,8 @@ const COVER = { template: 'cover', title: 'Acme', subtitle: 'Cards for small bus
 const load = (page: Page, slides: object[], style: Style = 'consulting') =>
   page.evaluate(([s, st]) => window.__journey?.load(s, st), [slides as Slide[], style] as const)
 
-async function boot(page: Page) {
-  await page.goto('/')
+async function boot(page: Page, path = '/new') {
+  await page.goto(path)
   await page.waitForFunction(() => window.__journey)
 }
 
@@ -48,7 +48,7 @@ test('chart marks do not inherit the app layout strokes', async ({ page }) => {
 test('a deck saved by the prototype opens with its slide and chat (Review Focus 1)', async ({ page }) => {
   const proto = { active: 'd_1', decks: { d_1: { id: 'd_1', style: 'pitch', theme: 'paper', accent: '#2447D1', current: 0, items: [{ id: 's1', slide: { template: 'cover', title: 'Acme', subtitle: 'x' }, status: 'ok', errors: [], warnings: [], checks: [] }], history: [], working: ['s1'], thread: '<div class="msg user"><p>hi from the prototype</p></div>', updated: 1 } } }
   await page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify(proto)] as const)
-  await boot(page)
+  await boot(page, '/d/d_1')
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Acme')
   await expect(page.getByText('hi from the prototype')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')

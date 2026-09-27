@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import type { Pill } from '@/engine/agent/suggest'
 import type { Deck } from '@/engine/types'
 import type { AppState } from '@/app/state'
+import { deckName } from '@/app/store'
 import { Bar, type BarProps } from './Bar'
 import { Chat } from './Chat'
 import { Checks } from './Checks'
@@ -11,14 +12,16 @@ import { Strip } from './Strip'
 
 export interface EditorProps {
   state: AppState; booted: boolean; deck: Deck; chips: Pill[] | 'pending' | null
-  bar: Omit<BarProps, 'deckStyle' | 'theme' | 'accent' | 'hasSlides' | 'busy' | 'live' | 'deckId' | 'canAdd'>
+  bar: Omit<BarProps, 'deckStyle' | 'theme' | 'accent' | 'hasSlides' | 'busy' | 'live' | 'title' | 'canAdd'>
   onSend: (text: string) => void; onClear: () => void; onSelect: (index: number) => void
   /** Replaces the slide, checks and strip: the landing gallery or Add slide. */
   stage?: ReactNode
+  /** A visitor after their free slide: the composer asks them to sign in instead. */
+  locked?: { text: string; action: string; onAction: () => void }
 }
 
 /** The editor screen: bar, chat, the current slide, its checks and the deck strip. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, stage }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, stage, locked }: EditorProps) {
   const { items, current } = s
 
   // F presents; the arrows move through the deck. Typing in a field is left alone.
@@ -35,11 +38,11 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
 
   return (
     <>
-      <Bar {...bar} canAdd={items.length > 0 && s.view === 'editor'} deckStyle={s.style} theme={s.theme} accent={s.accent} hasSlides={items.length > 0} busy={s.busy} live={s.live} deckId={s.deckId} />
+      <Bar {...bar} canAdd={items.length > 0 && s.view === 'editor'} deckStyle={s.style} theme={s.theme} accent={s.accent} hasSlides={items.length > 0} busy={s.busy} live={s.live} title={deckName({ items })} />
       <div className="grid h-[calc(100%-56px)] grid-cols-[400px_1fr] max-[900px]:flex max-[900px]:h-auto max-[900px]:flex-col">
         <aside className="flex min-h-0 flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent">
           <Chat messages={s.messages} legacyThread={s.legacyThread} offline={booted && !s.live} />
-          <Composer chips={chips} canSend={s.live && !s.busy} busy={s.busy} onSend={onSend} onClear={onClear} />
+          <Composer chips={locked ? null : chips} canSend={s.live && !s.busy && !locked} busy={s.busy} onSend={onSend} onClear={onClear} locked={locked} />
         </aside>
         {stage
           ? <main className="grid min-h-0 min-w-0 max-[900px]:contents">{stage}</main>

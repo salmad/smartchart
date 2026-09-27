@@ -3,10 +3,19 @@ import { loadEnv } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 type Handler = (r: Request) => Promise<Response> | Response
-const ROUTES: Record<string, { method: 'GET' | 'POST'; load: () => Promise<Handler> }> = {
-  '/api/glm': { method: 'POST', load: async () => (await import('../api/glm')).POST },
-  '/api/jev': { method: 'POST', load: async () => (await import('../api/jev')).POST },
-  '/api/health': { method: 'GET', load: async () => (await import('../api/health')).GET },
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
+type Module = Partial<Record<Method, Handler>>
+/** Paths ending in `/*` match every path below them, like Vercel's `[...path]` files. */
+const ROUTES: Record<string, () => Promise<Module>> = {
+  '/api/glm': () => import('../api/glm'),
+  '/api/jev': () => import('../api/jev'),
+  '/api/health': () => import('../api/health'),
+  '/api/decks': () => import('../api/decks'),
+  '/api/auth/*': () => import('../api/auth/[...path]'),
+}
+
+export function routeFor(path: string): (() => Promise<Module>) | undefined {
+  return ROUTES[path] ?? Object.entries(ROUTES).find(([k]) => k.endsWith('/*') && path.startsWith(k.slice(0, -1)))?.[1]
 }
 
 export function toWebRequest(req: IncomingMessage, body: Buffer): Request {
@@ -23,7 +32,10 @@ const readBody = (req: IncomingMessage) => new Promise<Buffer>((ok, fail) => {
 
 async function send(res: ServerResponse, r: Response) {
   res.statusCode = r.status
-  r.headers.forEach((v, k) => res.setHeader(k, v))
+  r.headers.forEach((v, k) => { if (k !== 'set-cookie') res.setHeader(k, v) })
+  // Auth answers with several cookies; setHeader per value would keep only the last.
+  const cookies = r.headers.getSetCookie()
+  if (cookies.length) res.setHeader('set-cookie', cookies)
   res.end(Buffer.from(await r.arrayBuffer()))
 }
 
@@ -38,13 +50,13 @@ export function apiDev(opts: { cap?: number } = {}): Plugin {
       const cap = opts.cap ?? (Number(process.env.CALL_CAP) || 2000)
       server.middlewares.use(async (req, res, next) => {
         const path = (req.url ?? '').split('?')[0]
-        const route = ROUTES[path]
+        const route = routeFor(path)
         if (!route) return next()
-        if (req.method !== route.method) return send(res, Response.json({ error: 'method not allowed' }, { status: 405 }))
-        if (route.method === 'POST' && ++calls > cap) return send(res, Response.json({ error: `call cap of ${cap} reached; restart the dev server` }, { status: 429 }))
+        if (path.startsWith('/api/glm') || path.startsWith('/api/jev')) if (++calls > cap) return send(res, Response.json({ error: `call cap of ${cap} reached; restart the dev server` }, { status: 429 }))
         // A handler that throws (upstream unreachable) answers 502 instead of leaving the request hanging.
         try {
-          const handler = await route.load()
+          const handler = (await route())[(req.method ?? 'GET') as Method]
+          if (!handler) return send(res, Response.json({ error: 'method not allowed' }, { status: 405 }))
           await send(res, await handler(toWebRequest(req, await readBody(req))))
         } catch (e) {
           await send(res, Response.json({ error: `dev api: ${e instanceof Error ? e.message : String(e)}` }, { status: 502 }))

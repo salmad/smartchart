@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { loadStore, saveStore, deckName, localDeckRepo, KEY, type Store } from '@/app/store'
+import { loadStore, saveStore, deckName, localDeckRepo, KEY, type SavedDeck } from '@/app/store'
 
 const mem = (init: Record<string, string> = {}) => { const m = { ...init }; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v }, m } }
 
@@ -17,11 +17,15 @@ test('missing, blocked or corrupt storage gives an empty store', () => {
 test('a refused write returns false instead of throwing', () => {
   expect(saveStore({ active: null, decks: {} }, { setItem: () => { throw new Error('quota') } })).toBe(false)
 })
-test('the local repo round-trips a store and resolves false when the write is refused', async () => {
+test('the local repo saves, lists, gets and removes one deck at a time, and resolves false when the write is refused', async () => {
   const storage = mem(), repo = localDeckRepo(storage)
-  const store: Store = { active: 'd_1', decks: { d_1: { id: 'd_1', style: 'consulting', theme: 'ink', accent: null, current: 0, items: [], history: [{ role: 'user', content: 'hi' }], working: [], messages: [], updated: 1 } } }
-  expect(await repo.save(store)).toBe(true)
-  expect(await repo.load()).toEqual(store)
+  const deck: SavedDeck = { id: 'd_1', style: 'consulting', theme: 'ink', accent: null, current: 0, items: [], history: [{ role: 'user', content: 'hi' }], working: [], messages: [], updated: 1 }
+  expect(await repo.save(deck)).toBe(true)
+  expect(await repo.get('d_1')).toEqual(deck)
+  expect(await repo.list()).toEqual([deck])
+  expect(loadStore(storage).active).toBe('d_1')
+  expect(await repo.remove('d_1')).toBe(true)
+  expect(await repo.get('d_1')).toBeNull()
   const full = localDeckRepo({ getItem: () => null, setItem: () => { throw new Error('quota') } })
-  expect(await full.save(store)).toBe(false)
+  expect(await full.save(deck)).toBe(false)
 })

@@ -3,6 +3,7 @@ import type { TraceStep } from '@/engine/agent/agent'
 import type { Message } from '@/app/store'
 import { WORKING } from '@/app/turn'
 import { cn } from '@/app/lib/utils'
+import { config } from '@/app/config'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
 
@@ -27,11 +28,12 @@ function Bubble({ m }: { m: Message }) {
   if (m.kind === 'user') {
     return <div className="max-w-[88%] self-end whitespace-pre-wrap rounded-[12px_12px_4px_12px] border border-line bg-raise px-[13px] py-2.5">{m.text}</div>
   }
-  const working = m.kind === 'bot' && !m.text && m.sub === WORKING, trace = m.trace ?? []
+  // Traces (which model did what, and how long it took) are for debugging, not for the person writing a deck.
+  const working = m.kind === 'bot' && !m.text && m.sub === WORKING, trace = config.debug ? m.trace ?? [] : []
   return (
     <div className="grid gap-2">
       {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={cn('whitespace-pre-line', m.kind === 'error' ? 'text-bad' : 'text-ink')}>{p.trim()}</p>)}
-      {m.sub && !(working && trace.length) && <p className="text-[13px] text-ink-2">{working && <i className="spinner" />}{m.sub}</p>}
+      {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="text-[13px] text-ink-2">{working && <i className="spinner" />}{m.sub}</p>}
       {trace.length > 0 && <Trace trace={trace} pending={working} />}
     </div>
   )

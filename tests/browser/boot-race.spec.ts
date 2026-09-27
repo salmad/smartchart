@@ -9,7 +9,7 @@ test('a tile picked before boot finishes keeps the saved decks', async ({ page }
   let release: () => void = () => {}
   const held = new Promise<void>((ok) => { release = ok })
   await page.route('**/api/health', async (r) => { await held; await r.fulfill({ json: { ok: true, live: false } }) })
-  await page.goto('/')
+  await page.goto('/new')
   await page.locator('[data-starter="table"]').click()
   await page.waitForTimeout(600) // longer than the save debounce
   release()

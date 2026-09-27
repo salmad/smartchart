@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
@@ -12,22 +12,31 @@ import { installDebug } from './debug'
 import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
 import { deckOf, toSaved } from './state'
-import { deckList, deckName, localDeckRepo, newDeckId, type Item, type Store } from './store'
+import { localDeckRepo, newDeckId, type DeckRepo, type Item, type SavedDeck } from './store'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
+import type { Account } from './auth'
+import { SignIn } from './components/SignIn'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const LANDING = 'Pick a ready-made slide, or describe your own. Paste numbers, a table or notes and say what the slide should argue.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const STORAGE_FULL = "This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need."
+const NOT_SAVED = 'Couldn’t save this deck just now. It stays open here and saves again with your next change.'
+const MISSING = 'That deck isn’t in your account.'
 
-/** Holds the state, loads and saves decks, and picks the screen. */
-export function App({ route }: { route: Route }) {
+interface Props {
+  route: Route
+  /** Null for a visitor: their deck lives in this browser and one turn is free before they sign in. */
+  account: Account | null
+  repo: DeckRepo
+}
+
+/** The editor for one deck: loads it, saves it, and gates a visitor after their first slide. */
+export function App({ route, account, repo }: Props) {
   const [s, app] = useAppState()
-  const repo = useMemo(() => localDeckRepo(), [])
-  const store = useRef<Store>({ active: null, decks: {} })
-  const [, setSaved] = useState(0) // re-renders the deck list after a save
+  const [gate, setGate] = useState(false), [gateOpen, setGateOpen] = useState(false)
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
@@ -41,10 +50,8 @@ export function App({ route }: { route: Route }) {
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
 
   const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; say(LANDING) }, [app, say])
-  const openDeck = useCallback((id: string) => {
-    const d = store.current.decks[id]
-    if (!d) return
-    store.current.active = id; turns.current = []
+  const openDeck = useCallback((d: SavedDeck) => {
+    turns.current = []
     app.dispatch({ type: 'open', deck: d })
     // Rule checks re-run with the current code, on slides upgraded to the current schema.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
@@ -52,13 +59,13 @@ export function App({ route }: { route: Route }) {
     if (!d.messages?.length && !d.thread) say(WELCOME)
   }, [app, measurer, say])
 
-  // Boot: the saved decks first (nothing is saved before they are in memory, so an early pick cannot overwrite
-  // them), then fonts (slides measure text), whether the models are reachable, then the last deck.
+  // Boot: the deck in the URL (nothing is saved before it is loaded, so an early pick cannot overwrite it),
+  // then fonts (slides measure text) and whether the models are reachable.
   useEffect(() => {
     if (bootStarted.current) return
     bootStarted.current = true
     void (async () => {
-      store.current = await repo.load()
+      const wanted = route.name === 'deck' ? await findDeck(route.id, repo, account) : null
       setLoaded(true)
       await document.fonts.ready
       let live = false
@@ -67,14 +74,14 @@ export function App({ route }: { route: Route }) {
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
-      const wanted = route.name === 'deck' ? store.current.decks[route.id] : undefined
-      if (wanted) { openDeck(wanted.id); return }
+      if (wanted) { openDeck(wanted); return }
       newDeck()
+      if (route.name === 'deck') say(MISSING)
       // A prompt typed on the site builds the first slide, in the style picked there.
       const pending = parsePending(takePendingPrompt())
       if (pending && live) { app.dispatch({ type: 'set', patch: { style: pending.style } }); void sendRef.current?.(pending.text) }
     })()
-  }, [app, repo, openDeck, newDeck, route])
+  }, [app, repo, openDeck, newDeck, route, account, say])
 
   // Save 250 ms after the last change, never mid-turn; one chat warning if the browser refuses.
   useEffect(() => {
@@ -82,16 +89,13 @@ export function App({ route }: { route: Route }) {
     const t = setTimeout(() => {
       const saved = toSaved(app.getState())
       if (!saved) return
-      store.current.decks[saved.id] = saved
-      store.current.active = saved.id
       if (location.pathname !== `/d/${saved.id}`) go(`/d/${saved.id}`, { replace: true })
-      void repo.save(store.current).then((ok) => {
-        if (!ok && !warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: STORAGE_FULL } }) }
-        setSaved((n) => n + 1)
+      void repo.save(saved).then((ok) => {
+        if (!ok && !warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: account ? NOT_SAVED : STORAGE_FULL } }) }
       })
     }, config.saveDelayMs)
     return () => clearTimeout(t)
-  }, [s, loaded, app, repo])
+  }, [s, loaded, app, repo, account])
 
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])
@@ -99,8 +103,10 @@ export function App({ route }: { route: Route }) {
   const send = useCallback(async (text: string) => {
     const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState })
     turns.current.push(r)
+    // A visitor's first slide is free; keeping it and going on needs an account.
+    if (!account) { setGate(true); setGateOpen(true) }
     return r
-  }, [app, measurer])
+  }, [app, measurer, account])
   const setStyle = useCallback((style: Style) => app.dispatch({ type: 'set', patch: { style } }), [app])
   const load = useCallback((slides: Slide[], style: Style) => {
     turns.current = []
@@ -111,31 +117,13 @@ export function App({ route }: { route: Route }) {
   useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
   const present = useCallback(() => { if (app.getState().items.length) setPresenting(true) }, [app])
-  const deleteDeck = useCallback(() => {
-    const cur = app.getState()
-    if (cur.busy || !cur.deckId || !confirm(`Delete “${deckName({ items: cur.items })}”? This cannot be undone.`)) return
-    delete store.current.decks[cur.deckId]
-    store.current.active = null
-    void repo.save(store.current)
-    const next = deckList(store.current)[0]
-    if (next) openDeck(next.id)
-    else newDeck()
-  }, [app, repo, openDeck, newDeck])
-
-  // Saved decks, newest first, with the open deck's live slides; a new deck shows (as "Untitled deck") before its first save.
-  const decks = deckList(store.current).map((d) => ({ id: d.id, items: d.id === s.deckId ? s.items : d.items }))
-  if (s.deckId && !store.current.decks[s.deckId]) decks.unshift({ id: s.deckId, items: s.items })
   const bar = {
-    canDelete: !!s.deckId && !!store.current.decks[s.deckId],
-    decks: decks.map((d) => ({ id: d.id, label: `${deckName(d)} · ${d.items.length} slide${d.items.length === 1 ? '' : 's'}` })),
     onStyle: setStyle,
     onTheme: (theme: Theme) => app.dispatch({ type: 'set', patch: { theme } }),
     onAccent: (accent: string | null) => app.dispatch({ type: 'set', patch: { accent } }),
-    onOpenDeck: (id: string) => { if (!app.getState().busy) openDeck(id) },
-    onDelete: deleteDeck,
-    onNew: () => { if (!app.getState().busy) newDeck() },
     onPresent: present,
     onAdd: () => { if (!app.getState().busy && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
+    onSignIn: account ? undefined : () => setGateOpen(true),
   }
 
   const onClear = useCallback(() => {
@@ -164,13 +152,28 @@ export function App({ route }: { route: Route }) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} stage={stage} />}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} stage={stage}
+            locked={gate ? { text: 'Sign in to keep this deck and keep going.', action: 'Keep this deck', onAction: () => setGateOpen(true) } : undefined} />}
+      {!account && (
+        <SignIn open={gateOpen} onOpenChange={setGateOpen} returnTo={s.deckId ? `/d/${s.deckId}` : '/new'}
+          title={gate ? 'Keep this deck' : undefined}
+          lede={gate ? 'Your slide is ready. Sign in to save it to your account and keep editing.' : undefined} />
+      )}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>
   )
 }
 
+/** The deck in the URL. Signed in, a deck still in this browser (a visitor's first, or one from before
+    accounts) moves to the account the first time it is opened. */
+async function findDeck(id: string, repo: DeckRepo, account: Account | null): Promise<SavedDeck | null> {
+  const d = await repo.get(id).catch(() => null)
+  if (d || !account) return d
+  const local = localDeckRepo(), mine = await local.get(id)
+  if (mine && await repo.save(mine)) { await local.remove(id); return mine }
+  return mine
+}
 
 function parsePending(raw: string | null): { text: string; style: Style } | null {
   if (!raw) return null

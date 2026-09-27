@@ -1,5 +1,9 @@
 // GLM proxy for the app: only the two GLM 5.3 models are allowed, and the key never reaches the browser.
 // Served by Vercel in production and by vite/api-dev.ts in dev.
+import { userFrom } from './_lib/auth'
+import { getDb } from './_lib/db'
+import { modelGate } from './_lib/quota'
+
 const GLM_URL = 'https://api.z.ai/api/coding/paas/v4/chat/completions'
 const GLM_MODELS = new Set(['glm-5.3-flash', 'glm-5.3'])
 
@@ -15,6 +19,8 @@ interface GlmRequest {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const blocked = await modelGate(request, { userFrom, db: getDb(), salt: process.env.NEON_AUTH_COOKIE_SECRET ?? 'dev' })
+  if (blocked) return blocked
   const p = (await request.json().catch(() => ({}))) as GlmRequest
   if (!p.model || !GLM_MODELS.has(p.model)) return Response.json({ error: `model ${p.model} is not allowed` }, { status: 400 })
   const { model, messages, thinking = false, temperature = 0.3, max_tokens = 4000, response_format, tools, tool_choice } = p

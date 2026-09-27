@@ -5,4 +5,8 @@ export const config = {
   /** Deck saves wait this long after the last change. */
   saveDelayMs: 250,
   dev: import.meta.env.DEV,
+  /** Model traces and check ids in the editor: ?debug=1, or localStorage smartchart.debug = 1. */
+  debug: (() => {
+    try { return new URLSearchParams(location.search).has('debug') || localStorage.getItem('smartchart.debug') === '1' } catch { return false }
+  })(),
 }

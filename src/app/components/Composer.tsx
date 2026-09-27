@@ -4,15 +4,26 @@ import { Button } from '@/app/components/ui/button'
 import { Textarea } from '@/app/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip'
 
-interface Props { chips: Pill[] | 'pending' | null; canSend: boolean; busy: boolean; onSend: (text: string) => void; onClear: () => void }
+interface Props {
+  chips: Pill[] | 'pending' | null; canSend: boolean; busy: boolean; onSend: (text: string) => void; onClear: () => void
+  locked?: { text: string; action: string; onAction: () => void }
+}
 
 /** Prompt box with suggestion pills. It refuses empty text and a send while a turn runs: sendTurn does not check. */
-export function Composer({ chips, canSend, busy, onSend, onClear }: Props) {
+export function Composer({ chips, canSend, busy, onSend, onClear, locked }: Props) {
   const [text, setText] = useState('')
   const send = (t: string) => { if (!t.trim() || !canSend) return; onSend(t.trim()); setText('') }
   const submit = (e: FormEvent) => { e.preventDefault(); send(text) }
   const key = (e: KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(text) } }
 
+  if (locked) {
+    return (
+      <div className="grid gap-3 border-t border-line px-3.5 pb-3.5 pt-4">
+        <p className="text-[13.5px] text-ink-2">{locked.text}</p>
+        <Button onClick={locked.onAction} className="h-10">{locked.action}</Button>
+      </div>
+    )
+  }
   return (
     <form onSubmit={submit} className="grid gap-2.5 border-t border-line px-3.5 pb-3.5 pt-3">
       {chips === 'pending' && <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-3"><i className="spinner" />Suggesting next steps…</span>}
