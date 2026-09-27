@@ -6380,84 +6380,6 @@
     "source": "Provider websites, September 2026."
    }
   },
-  "e12": {
-   "ms": 5169,
-   "totalMs": 5173,
-   "reply": null,
-   "error": "{\"code\":\"1302\",\"message\":\"Rate limit reached for requests\"}",
-   "pre": null,
-   "written": [],
-   "modelCalls": null,
-   "toolCalls": null,
-   "trace": [
-    {
-     "step": "Pre",
-     "model": "Jev",
-     "ms": 421,
-     "detail": "edit_selected · p 1.00"
-    },
-    {
-     "step": "read_slide",
-     "model": "code",
-     "ms": 8,
-     "detail": "s_t0 · cards"
-    }
-   ],
-   "slides": 1,
-   "slide": {
-    "template": "cards",
-    "title": "Market",
-    "subtitle": "A market [[already on cards.]]",
-    "cards": [
-     {
-      "value": "5.7M",
-      "title": "UK SMEs"
-     },
-     {
-      "value": "19%",
-      "tone": "focus",
-      "title": "Use a credit card"
-     },
-     {
-      "value": "30–40%",
-      "title": "Need revolving"
-     },
-     {
-      "value": "€400bn",
-      "title": "Credit gap"
-     }
-    ],
-    "takeaway": "The product is [[the intersection.]]"
-   },
-   "fitIssues": [],
-   "warnings": [],
-   "checksFailed": [],
-   "start": {
-    "template": "cards",
-    "title": "Market",
-    "subtitle": "A market [[already on cards.]]",
-    "cards": [
-     {
-      "value": "5.7M",
-      "title": "UK SMEs"
-     },
-     {
-      "value": "19%",
-      "tone": "focus",
-      "title": "Use a credit card"
-     },
-     {
-      "value": "30–40%",
-      "title": "Need revolving"
-     },
-     {
-      "value": "€400bn",
-      "title": "Credit gap"
-     }
-    ],
-    "takeaway": "The product is [[the intersection.]]"
-   }
-  },
   "e13": {
    "ms": 3679,
    "totalMs": 3682,
@@ -6644,6 +6566,103 @@
     },
     "takeaway": "The gap is not credit or banking alone. It is **both, in one product.**",
     "source": "FinBridge SME interviews (n = 42); British Business Bank, Small Business Finance Markets 2026."
+   }
+  },
+  "e12": {
+   "ms": 3945,
+   "totalMs": 3955,
+   "reply": "Done — the first card now reads 25% instead of 5.7M. Anything else to change on this slide?",
+   "error": null,
+   "pre": {
+    "intent": "edit_selected",
+    "p": 1
+   },
+   "written": [
+    "s_t0"
+   ],
+   "modelCalls": 1,
+   "toolCalls": 2,
+   "trace": [
+    {
+     "step": "Pre",
+     "model": "Jev",
+     "ms": 400,
+     "detail": "edit_selected · p 1.00"
+    },
+    {
+     "step": "read_slide",
+     "model": "code",
+     "ms": 9,
+     "detail": "s_t0 · cards"
+    },
+    {
+     "step": "Agent",
+     "model": "GLM Flash",
+     "ms": 3106,
+     "detail": "patch_slide · 3.7k in, 62 out"
+    },
+    {
+     "step": "patch_slide",
+     "model": "tool",
+     "ms": 25,
+     "detail": "applied · cards[0].value · fits"
+    }
+   ],
+   "slides": 1,
+   "slide": {
+    "template": "cards",
+    "title": "Market",
+    "subtitle": "A market [[already on cards.]]",
+    "cards": [
+     {
+      "value": "25%",
+      "title": "UK SMEs"
+     },
+     {
+      "value": "19%",
+      "tone": "focus",
+      "title": "Use a credit card"
+     },
+     {
+      "value": "30–40%",
+      "title": "Need revolving"
+     },
+     {
+      "value": "€400bn",
+      "title": "Credit gap"
+     }
+    ],
+    "takeaway": "The product is [[the intersection.]]"
+   },
+   "fitIssues": [],
+   "warnings": [
+    "body: 54% empty below the cards; add content or a takeaway, or use another template (L5)"
+   ],
+   "checksFailed": [],
+   "start": {
+    "template": "cards",
+    "title": "Market",
+    "subtitle": "A market [[already on cards.]]",
+    "cards": [
+     {
+      "value": "5.7M",
+      "title": "UK SMEs"
+     },
+     {
+      "value": "19%",
+      "tone": "focus",
+      "title": "Use a credit card"
+     },
+     {
+      "value": "30–40%",
+      "title": "Need revolving"
+     },
+     {
+      "value": "€400bn",
+      "title": "Credit gap"
+     }
+    ],
+    "takeaway": "The product is [[the intersection.]]"
    }
   }
  }

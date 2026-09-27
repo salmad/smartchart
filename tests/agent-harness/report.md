@@ -8,11 +8,11 @@ Single: 30 requests from the routing bake-off set, each in its own style from an
 | First write shape-valid, long session | ≥ 90% | 90% | PASS |
 | First write shape-valid, single |  | 97% |  |
 | Ends with no fit issues (single / long / edits) | ≥ 95% | 100% / 100% / 100% | PASS |
-| Drift on edits (paths outside `allow`) | 0 | 0 of 14 edits | PASS |
+| Drift on edits (paths outside `allow`) | 0 | 0 of 15 edits | PASS |
 | Edits reaching their `expect` |  | 100% |  |
 | Edits done only with patch_slide |  | 100% |  |
 | Latency p50, new slide | ≤ 13 s | 18.6 s | FAIL |
-| Latency p50, small edit | ≤ 6 s | 7.7 s | FAIL |
+| Latency p50, small edit | ≤ 6 s | 7.5 s | FAIL |
 | Template agrees with gold (single + long) | ≥ 90% | 95% | PASS |
 | Short reply, no JSON (single + long) | ≥ 95% | 100% | PASS |
 | Layout lints clean on every final slide | 100% | 100% | PASS |
@@ -20,9 +20,9 @@ Single: 30 requests from the routing bake-off set, each in its own style from an
 
 | Also measured | Result |
 |---|---|
-| PRE made the first tool call | 83% of 54 turns |
+| PRE made the first tool call | 84% of 55 turns |
 | PRE intent right (single: new_slide, edits: edit_selected) | 91% |
-| Turns ended by a write's reply (no extra model call) | 94% |
+| Turns ended by a write's reply (no extra model call) | 95% |
 | Model calls per turn, median (single / long / edits) | 2 / 3 / 1 |
 | Latency p95 (new slide / small edit) | 56.8 s / 15.4 s |
 
@@ -45,8 +45,7 @@ Single: 30 requests from the routing bake-off set, each in its own style from an
 
 ### Edits
 
-- Errors: 
-  - e12: {"code":"1302","message":"Rate limit reached for requests"}
+- Errors: none
 - Drift: none
 - Expected values not reached: none
 - Fit issues left: none
