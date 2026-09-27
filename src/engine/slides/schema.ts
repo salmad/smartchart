@@ -80,7 +80,7 @@ export const THEMES = {
 export const MARKUP = [
   { syntax: "**text**", effect: "bold", use: "Emphasis inside body text. A few words, not whole sentences." },
   { syntax: "[[text]]", effect: "focus colour", use: "The point of the slide. At most one span per title; match the focus series, card or step." },
-  { syntax: "[-text-]", effect: "negative colour", use: "The problem, a loss or a risk." },
+  { syntax: "[-text-]", effect: "negative colour", use: "Rarely: a loss the user named, or when the user asks for red. A problem slide does not need it; [[…]] is the default emphasis." },
   { syntax: "[+text+]", effect: "positive colour", use: "Money made or a gain." },
 ];
 const MARKUP_NOTE = "Fields of type `markup` accept the inline syntax above. Fields of type `text` are plain.";
@@ -114,7 +114,7 @@ const FRAME: Record<string, FieldDef> = {
   source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
 };
 
-const TONE = f("enum", "Colour of the value.", { values: ["focus", "neg", "pos"], default: "focus" });
+const TONE = f("enum", "Colour of the value. `neg` only for a loss the user named or when they ask for red.", { values: ["focus", "neg", "pos"], default: "focus" });
 
 /* The chart guide (spec 9.1): in the chart card for the agent, and in Jev's mark and stacking questions. */
 export const CHART_GUIDE: string[] = [
@@ -291,7 +291,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
         title: f("markup", "Card title. Framed: a big 2-word headline, plain text.", { required: true, max: { consulting: 24, pitch: 22 } }),
         bullets: f("list", "1–3 bullets. Not with `text`.", { items: { min: 1, max: 3 }, of: f("markup", "Bullet.", { max: 60 }), styles: CONSULTING }),
         text: f("markup", "One short line. Not with `bullets`. Value cards: one sentence of context.", { max: { consulting: 80, pitch: 50 } }),
-        tone: f("enum", "`focus`: the card the title is about. `neg`: the problem or losing case. `neutral`: the rest.", { values: ["neutral", "focus", "neg"], default: "neutral" }),
+        tone: f("enum", "`focus`: the card the title is about. `neg`: only the losing case in a two-card contrast, or when the user asks for red. `neutral`: the rest.", { values: ["neutral", "focus", "neg"], default: "neutral" }),
         facts: f("list", "Framed only, optional: up to 2 labelled facts at the bottom of the card.", { items: { min: 1, max: 2 }, styles: CONSULTING, of: f("object", "Fact.", { fields: {
           label: f("text", "Short label: 'Outcome', 'Proof'.", { required: true, max: 14 }),
           text: f("markup", "The fact.", { required: true, max: 38 }),

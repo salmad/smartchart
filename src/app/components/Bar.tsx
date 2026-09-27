@@ -26,7 +26,7 @@ export function Bar(p: BarProps) {
       </div>
       <div className="flex items-center gap-2.5 max-[900px]:contents">
         <span className={cn('flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] font-medium uppercase leading-none tracking-[.08em] before:size-1.5 before:rounded-full before:bg-current before:content-[""] max-[900px]:order-1',
-          p.live ? 'text-ok' : 'text-ink-3')}>{p.live ? 'Live · agent' : 'Models offline'}</span>
+          p.live ? 'text-ok' : 'text-ink-3')}>{p.live ? 'Ready' : 'Offline'}</span>
         {p.decks.length > 0 && (
           <Select value={p.deckId ?? undefined} onValueChange={p.onOpenDeck} disabled={p.busy}>
             <SelectTrigger aria-label="Deck" className="h-8 max-w-[280px] rounded-lg border-line-2 bg-panel px-2 text-[13px] shadow-none disabled:opacity-45 max-[900px]:order-4 max-[900px]:min-w-0 max-[900px]:flex-1">

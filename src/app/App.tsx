@@ -13,7 +13,7 @@ import { deckList, deckName, localDeckRepo, type Item, type Store } from './stor
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 
-const WELCOME = 'Describe a slide. The agent picks a template with Jev, writes the slide with GLM 5.3 Flash and fixes anything that does not fit. Then ask for changes, add slides, or press Present.'
+const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const STORAGE_FULL = "This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need."
 
