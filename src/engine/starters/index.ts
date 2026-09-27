@@ -10,7 +10,7 @@ export const GROUPS: readonly { id: Group; label: string }[] = [
   { id: 'numbers', label: 'Big number and plans' }, { id: 'structure', label: 'Structure' },
 ]
 export interface Starter { id: string; group: Group; label: string; blurb: string; consulting: Slide; pitch: Slide }
-export const FOOTER = 'FinBridge · Seed memorandum'
+export const FOOTER = 'Acme · Board memorandum'
 
 // JSON has no literal types: the schema check below is what makes these Slides.
 export const STARTERS: readonly Starter[] = data as unknown as Starter[]

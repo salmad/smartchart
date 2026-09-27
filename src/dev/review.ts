@@ -7,6 +7,7 @@ import { fitIssues, layoutLints } from '@/engine/slides/lints'
 import { FOOTER, STARTERS } from '@/engine/starters'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { stressFor } from '../../tests/fixtures/stress'
+import baseline from '../../tests/fixtures/starters-788f4d7.json' with { type: 'json' }
 
 declare global { interface Window { __fit?: { issues: number; warnings: number } } }
 
@@ -24,6 +25,10 @@ const deckFor = (style: Style, theme: Theme) => ({ style, theme, accent: null, f
 
 const state: { style: Choice; theme: Theme } = { style: (q.get('style') as Choice | null) || 'both', theme: (q.get('theme') as Theme | null) || 'ink' }
 const only = q.get('only')
+// ?compare=788f4d7: each starter's 788f4d7 version (left) next to the current one (right), per style.
+const COMPARE = !STRESS && q.get('compare') === '788f4d7'
+const BASE = baseline as unknown as { consulting: Slide; pitch: Slide }[]
+const baseDeck = (style: Style, theme: Theme) => ({ style, theme, accent: null, footer: 'FinBridge · Seed memorandum', slides: BASE.map((b) => b[style]) })
 if (q.get('full')) document.body.classList.add('full')
 const listEl = document.getElementById('list') as HTMLElement
 const ro = new ResizeObserver((es) => es.forEach((e) => (e.target.firstElementChild as HTMLElement | null)?.style.setProperty('--s', String(e.contentRect.width / 1920))))
@@ -40,8 +45,8 @@ function render() {
     + SOURCE.map((ex, i) => (only !== null && +only !== i ? '' : `
     <figure data-i="${i}">
       <figcaption><span class="id">${String(i + 1).padStart(2, '0')} · ${ex.id} · ${styles.map((st) => MENU[ex.template].variant(decks[st].slides[i])).join(' / ')}</span><b>${ex.name}</b><span class="badges"></span></figcaption>
-      <div class="frames ${styles.length > 1 ? 'two' : ''}">${styles.map((st) => `<div class="frame-wrap">
-        ${styles.length > 1 ? `<div class="frame-label">${st}</div>` : ''}<div class="frame" data-style="${st}"></div></div>`).join('')}</div>
+      <div class="frames ${styles.length > 1 || COMPARE ? 'two' : ''}">${styles.map((st) => (COMPARE ? `<div class="frame-wrap"><div class="frame-label">${st} · 788f4d7</div><div class="frame" data-base="${st}"></div></div>` : '') + `<div class="frame-wrap">
+        ${styles.length > 1 || COMPARE ? `<div class="frame-label">${st}${COMPARE ? ' · Acme' : ''}</div>` : ''}<div class="frame" data-style="${st}"></div></div>`).join('')}</div>
       <div class="issues"></div>
       <details><summary>Agent output (JSON)</summary><pre>${esc(styles.map((st) => (styles.length > 1 ? `// ${st}\n` : '') + JSON.stringify(decks[st].slides[i], null, 2)).join('\n\n'))}</pre></details>
       <details><summary>Template card: describe("${ex.template}", "${styles[0]}")</summary><pre>${esc(JSON.stringify(describe(ex.template, styles[0]), null, 2))}</pre></details>
@@ -50,9 +55,13 @@ function render() {
   let bad = 0, warn = 0
   listEl.querySelectorAll<HTMLElement>('figure').forEach((fig) => {
     const i = Number(fig.dataset.i), lines: { cls: string; text: string }[] = []
-    fig.querySelectorAll<HTMLElement>('.frame').forEach((fr) => {
+    fig.querySelectorAll<HTMLElement>('.frame[data-style]').forEach((fr) => {
       const st = fr.dataset.style as Style
       mountSlide(fr, decks[st].slides[i], ctx[st][i], decks[st]); ro.observe(fr)
+    })
+    fig.querySelectorAll<HTMLElement>('.frame[data-base]').forEach((fr) => {
+      const d = baseDeck(fr.dataset.base as Style, state.theme)
+      mountSlide(fr, d.slides[i], contexts(d)[i], d); ro.observe(fr)
     })
     styles.forEach((st) => {
       const pre = styles.length > 1 ? `${st}: ` : '', own = (p: string) => p.startsWith(`slides[${i}].`)

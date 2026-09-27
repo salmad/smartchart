@@ -6,13 +6,13 @@
   "blurb": "Deck title and one line on what it is",
   "consulting": {
    "template": "cover",
-   "title": "Acme",
+   "title": "FinBridge",
    "subtitle": "A revolving credit card and business account for UK small and medium-sized businesses."
   },
   "pitch": {
    "template": "cover",
    "title": "The card that [[runs the business.]]",
-   "subtitle": "Credit, cashflow and rewards for UK small businesses, all in one app."
+   "subtitle": "Credit, cashflow and rewards for UK small businesses. In one app."
   }
  },
  {
@@ -37,28 +37,28 @@
   "blurb": "The number that proves the point",
   "consulting": {
    "template": "number",
-   "title": "UK SMEs fund growth on personal cards because no provider bundles business credit with daily banking",
+   "title": "UK SMEs fund growth on [-personal-] cards because no provider bundles business credit with daily banking",
    "body": [
     "Founders put business spend on personal cards. They carry the **personal guarantee** and the limit risk, and the rewards leak out of the business.",
-    "Banks cap SME credit at £25k, neobanks only offer debit, and legacy card issuers were built for large corporates."
+    "Banks won’t lend below £50k, neobanks only offer debit, and legacy card issuers were built for large corporates."
    ],
    "number": {
     "value": "£540k",
     "caption": "typical annual card spend that earns the business nothing back"
    },
    "takeaway": "The gap is not credit or banking alone. It is **both, in one product.**",
-   "source": "Acme SME interviews (n = 42); UK small business finance survey 2026."
+   "source": "FinBridge SME interviews (n = 42); British Business Bank, Small Business Finance Markets 2026."
   },
   "pitch": {
    "template": "number",
    "title": "The problem",
-   "subtitle": "Your business runs on your personal charge card.",
+   "subtitle": "Your business runs on your [-personal-] Amex.",
    "body": [
     "Three logins. One personal guarantee. **Nothing back.**"
    ],
    "number": {
     "value": "£0",
-    "tone": "focus",
+    "tone": "neg",
     "caption": "back on £540k a year of business spend"
    }
   }
@@ -88,8 +88,8 @@
        0.4,
        3.1,
        14,
-       36,
-       80
+       42,
+       85
       ]
      },
      {
@@ -100,8 +100,8 @@
        0.3,
        2.2,
        11,
-       42,
-       85
+       36,
+       80
       ]
      },
      {
@@ -132,7 +132,7 @@
     },
     {
      "title": "Interchange compounds",
-     "text": "Spend per customer grows **3×** as the card replaces personal cards.",
+     "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
      "point": {
       "series": 1,
       "index": 3
@@ -149,7 +149,7 @@
    ],
    "takeaway": "Spend, not lending, is what makes the book profitable.",
    "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
-   "source": "Acme financial model, base case. Illustrative."
+   "source": "FinBridge financial model, base case. Illustrative."
   },
   "pitch": {
    "template": "chart",
@@ -171,8 +171,8 @@
        0.4,
        3.1,
        14,
-       36,
-       80
+       42,
+       85
       ]
      },
      {
@@ -183,8 +183,8 @@
        0.3,
        2.2,
        11,
-       42,
-       85
+       36,
+       80
       ]
      },
      {
@@ -238,7 +238,7 @@
      "title": "Approved in five minutes",
      "bullets": [
       "Limits up to **£250k**, spend the same day",
-      "Underwritten on live bank and sales data, not filed accounts"
+      "Underwritten on live Shopify and ad data, not filed accounts"
      ]
     },
     {
@@ -258,7 +258,7 @@
      ]
     }
    ],
-   "takeaway": "Three providers today. **Acme replaces all of them.**"
+   "takeaway": "Three providers today. **FinBridge replaces all of them.**"
   },
   "pitch": {
    "template": "cards",
@@ -311,14 +311,14 @@
        "text": "Rising losses, rising prices"
       },
       {
-       "label": "Track record",
-       "text": "Most credit-only fintechs shut down"
+       "label": "Examples",
+       "text": "OnDeck, Kabbage, Silvr: none survived"
       }
      ]
     },
     {
      "tone": "focus",
-     "label": "Acme",
+     "label": "FinBridge",
      "title": "Positive loop",
      "bullets": [
       "Customers arrive for non-credit reasons",
@@ -332,7 +332,7 @@
       },
       {
        "label": "Proof",
-       "text": "Card-led lenders are profitable"
+       "text": "Capital on Tap, YouLend are profitable"
       }
      ]
     }
@@ -342,7 +342,7 @@
   "pitch": {
    "template": "cards",
    "title": "The insight",
-   "subtitle": "Credit alone attracts the wrong borrowers.",
+   "subtitle": "Credit alone attracts the [-wrong borrowers.-]",
    "framed": true,
    "cards": [
     {
@@ -353,7 +353,7 @@
     },
     {
      "tone": "focus",
-     "label": "Acme",
+     "label": "FinBridge",
      "title": "Positive loop",
      "text": "Good businesses arrive first. Credit follows."
     }
@@ -460,9 +460,9 @@
      {
       "cells": [
        "Monthly gross margin",
-       "£184",
-       "£15",
-       "£133"
+       "£179",
+       "£10",
+       "£128"
       ],
       "style": "total"
      }
@@ -470,9 +470,9 @@
    },
    "kicker": "Business model",
    "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
-   "takeaway": "A 50/50 revolver–transactor mix earns ~£100 a month each.",
+   "takeaway": "A 50/50 revolver–transactor mix earns ~£95 a month each.",
    "footnote": "Balances and spend are monthly averages per active customer.",
-   "source": "Acme model; funding cost assumes an 8% warehouse rate."
+   "source": "FinBridge model; funding cost assumes an 8% warehouse rate."
   },
   "pitch": {
    "template": "table",
@@ -569,9 +569,9 @@
      {
       "cells": [
        "Monthly gross margin",
-       "£184",
-       "£15",
-       "£133"
+       "£179",
+       "£10",
+       "£128"
       ],
       "style": "total"
      }
@@ -623,7 +623,7 @@
      },
      {
       "cells": [
-       "Corporate charge card",
+       "Corporate Amex",
        "£50k",
        "£550/yr",
        "1%"
@@ -631,7 +631,7 @@
      },
      {
       "cells": [
-       "Acme",
+       "FinBridge",
        "£250k",
        "£0",
        "1%"
@@ -641,7 +641,7 @@
     ]
    },
    "kicker": "Competition",
-   "title": "Acme offers [[five times the limit]] of the nearest SME card with no annual fee",
+   "title": "FinBridge offers [[five times the limit]] of the nearest SME card at no annual fee",
    "notes": [
     {
      "title": "Banks cap at £25k",
@@ -652,7 +652,7 @@
      "text": "No credit line, so spend leaves for personal cards."
     },
     {
-     "title": "Charge card perks cost extra",
+     "title": "Amex charges for rewards",
      "text": "**£550 a year** before the first pound of cashback."
     }
    ],
@@ -695,7 +695,7 @@
      },
      {
       "cells": [
-       "Corporate charge card",
+       "Corporate Amex",
        "£50k",
        "£550/yr",
        "1%"
@@ -703,7 +703,7 @@
      },
      {
       "cells": [
-       "Acme",
+       "FinBridge",
        "£250k",
        "£0",
        "1%"
@@ -719,7 +719,7 @@
      "title": "Banks cap at £25k"
     },
     {
-     "title": "Charge cards: £550 a year"
+     "title": "Amex charges £550 a year"
     }
    ]
   }
@@ -782,7 +782,7 @@
    "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
-   "source": "Acme model."
+   "source": "FinBridge model."
   },
   "pitch": {
    "template": "chart",
@@ -882,8 +882,8 @@
    },
    "kicker": "Growth",
    "title": "The book grows [[86% a year]] to £120m by 2030, ahead of the £100m plan",
-   "takeaway": "The book clears the £100m plan in 2030 with £20m to spare.",
-   "source": "Acme model, base case."
+   "takeaway": "The plan does not need the downside case to fill the warehouse.",
+   "source": "FinBridge model, base case."
   },
   "pitch": {
    "template": "chart",
@@ -968,7 +968,7 @@
    "kicker": "Revenue",
    "title": "ARR reaches £17.5m in FY26; [[new customers]] add £6.2m of the £7.7m growth",
    "takeaway": "Churn costs less than a quarter of what new customers bring.",
-   "source": "Acme model, base case."
+   "source": "FinBridge model, base case."
   },
   "pitch": {
    "template": "chart",
@@ -1057,7 +1057,7 @@
      "text": "Underwriting on live data targets **8%**, not 11%."
     }
    ],
-   "source": "Acme model, year 4."
+   "source": "FinBridge model, year 4."
   },
   "pitch": {
    "template": "chart",
@@ -1160,7 +1160,7 @@
    },
    "kicker": "Plan",
    "title": "The [[warehouse facility]] is the critical path: acquisition cannot scale until Q2 2028",
-   "source": "Acme operating plan."
+   "source": "FinBridge operating plan."
   },
   "pitch": {
    "template": "chart",
@@ -1277,7 +1277,7 @@
    },
    "kicker": "Revenue mix",
    "title": "[[Interchange]] rises from 30% to 53% of revenue by year 5 as spend replaces lending",
-   "source": "Acme model, base case."
+   "source": "FinBridge model, base case."
   },
   "pitch": {
    "template": "chart",
@@ -1354,7 +1354,7 @@
     "format": "£{v}bn",
     "series": [
      {
-      "name": "Card issuer A",
+      "name": "Amex",
       "mark": "line",
       "color": "focus",
       "values": [
@@ -1368,7 +1368,7 @@
       ]
      },
      {
-      "name": "Card issuer B",
+      "name": "Barclaycard",
       "mark": "line",
       "color": "contrast",
       "values": [
@@ -1382,7 +1382,7 @@
       ]
      },
      {
-      "name": "Bank C",
+      "name": "Lloyds",
       "mark": "line",
       "color": "neutral",
       "values": [
@@ -1396,7 +1396,7 @@
       ]
      },
      {
-      "name": "Bank D",
+      "name": "NatWest",
       "mark": "line",
       "color": "neutral",
       "values": [
@@ -1410,7 +1410,7 @@
       ]
      },
      {
-      "name": "Bank E",
+      "name": "HSBC",
       "mark": "line",
       "color": "neutral",
       "values": [
@@ -1440,8 +1440,8 @@
     ]
    },
    "kicker": "Competition",
-   "title": "[[The largest issuer]] widens its lead in UK SME card spend to £15bn while challengers stay near £1bn",
-   "source": "UK card spending statistics; Acme analysis. Illustrative."
+   "title": "[[Amex]] widens its lead in UK SME card spend to £15bn while the challengers stay near £1bn",
+   "source": "UK Finance card spending statistics; FinBridge analysis. Illustrative."
   },
   "pitch": {
    "template": "chart",
@@ -1458,7 +1458,7 @@
     "format": "£{v}bn",
     "series": [
      {
-      "name": "Card issuer A",
+      "name": "Amex",
       "mark": "line",
       "color": "focus",
       "values": [
@@ -1472,7 +1472,7 @@
       ]
      },
      {
-      "name": "Card issuer B",
+      "name": "Barclaycard",
       "mark": "line",
       "color": "contrast",
       "values": [
@@ -1486,7 +1486,7 @@
       ]
      },
      {
-      "name": "Bank C",
+      "name": "Lloyds",
       "mark": "line",
       "color": "neutral",
       "values": [
@@ -1500,7 +1500,7 @@
       ]
      },
      {
-      "name": "Bank D",
+      "name": "NatWest",
       "mark": "line",
       "color": "neutral",
       "values": [
@@ -1514,7 +1514,7 @@
       ]
      },
      {
-      "name": "Bank E",
+      "name": "HSBC",
       "mark": "line",
       "color": "neutral",
       "values": [
@@ -1544,7 +1544,7 @@
     ]
    },
    "title": "Competition",
-   "subtitle": "[[One issuer]] leads SME spend."
+   "subtitle": "[[Amex]] owns SME spend."
   }
  },
  {
@@ -1569,7 +1569,7 @@
      "focus": true
     },
     {
-     "when": "Years 2–4",
+     "when": "Year 2",
      "title": "Scale",
      "text": "£120m book; direct-mail acquisition at 2,000+ customers a month."
     },
@@ -1598,7 +1598,7 @@
      "focus": true
     },
     {
-     "when": "Years 2–4",
+     "when": "Year 2",
      "title": "Scale",
      "text": "£120m book."
     }
@@ -1614,40 +1614,28 @@
   "consulting": {
    "template": "cards",
    "kicker": "Appendix · Market",
-   "title": "Demand is documented: a third of UK SMEs need revolving credit and [[a fifth]] already use a card",
+   "title": "Demand is documented: most UK SMEs need revolving credit and [[a fifth]] already use a card",
    "cards": [
     {
      "value": "5.7M",
      "title": "UK SMEs",
-     "bullets": [
-      "Private-sector businesses across the UK",
-      "34M more across the EU, most under ten staff"
-     ]
+     "text": "Private-sector businesses; 34M more across the EU."
     },
     {
      "value": "19%",
      "tone": "focus",
      "title": "Use a credit card",
-     "bullets": [
-      "The most-used external finance product",
-      "Ahead of overdrafts and term loans"
-     ]
+     "text": "The most-used external finance product, ahead of overdrafts."
     },
     {
      "value": "30–40%",
      "title": "Need revolving",
-     "bullets": [
-      "The most frequent financing need",
-      "Seen in ECB SAFE and our own customer surveys"
-     ]
+     "text": "The most frequent financing need in ECB SAFE and our surveys."
     },
     {
      "value": "€400bn",
      "title": "SME credit gap",
-     "bullets": [
-      "Estimated across the EU and UK",
-      "Banks decline most small unsecured requests"
-     ]
+     "text": "Estimated across the EU and UK."
     }
    ],
    "takeaway": "The product sits where card use and revolving need overlap.",
@@ -1660,24 +1648,20 @@
    "cards": [
     {
      "value": "5.7M",
-     "title": "UK SMEs",
-     "text": "Private-sector firms, most under ten staff."
+     "title": "UK SMEs"
     },
     {
      "value": "19%",
      "tone": "focus",
-     "title": "Use a credit card",
-     "text": "Already paying for business on a card."
+     "title": "Use a credit card"
     },
     {
      "value": "30–40%",
-     "title": "Need revolving",
-     "text": "Their most common financing need."
+     "title": "Need revolving"
     },
     {
      "value": "€400bn",
-     "title": "Credit gap",
-     "text": "Unmet demand across the EU and UK."
+     "title": "Credit gap"
     }
    ],
    "takeaway": "The product is [[the intersection.]]"

@@ -72,7 +72,7 @@
    ],
    "body": 1,
    "number": {
-    "tone": "neg"
+    "tone": "focus"
    }
   }
  },
@@ -1123,27 +1123,27 @@
    "cards": [
     {
      "hasValue": true,
-     "hasText": true,
-     "bullets": 0,
+     "hasText": false,
+     "bullets": 2,
      "facts": 0
     },
     {
      "tone": "focus",
      "hasValue": true,
-     "hasText": true,
-     "bullets": 0,
+     "hasText": false,
+     "bullets": 2,
      "facts": 0
     },
     {
      "hasValue": true,
-     "hasText": true,
-     "bullets": 0,
+     "hasText": false,
+     "bullets": 2,
      "facts": 0
     },
     {
      "hasValue": true,
-     "hasText": true,
-     "bullets": 0,
+     "hasText": false,
+     "bullets": 2,
      "facts": 0
     }
    ]
@@ -1162,26 +1162,26 @@
    "cards": [
     {
      "hasValue": true,
-     "hasText": false,
+     "hasText": true,
      "bullets": 0,
      "facts": 0
     },
     {
      "tone": "focus",
      "hasValue": true,
-     "hasText": false,
+     "hasText": true,
      "bullets": 0,
      "facts": 0
     },
     {
      "hasValue": true,
-     "hasText": false,
+     "hasText": true,
      "bullets": 0,
      "facts": 0
     },
     {
      "hasValue": true,
-     "hasText": false,
+     "hasText": true,
      "bullets": 0,
      "facts": 0
     }

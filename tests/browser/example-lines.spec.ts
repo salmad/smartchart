@@ -24,7 +24,12 @@ test('example line counts are locked', async ({ page }) => {
       })
     }
   }
-  if (process.env.WRITE_LINES) { writeFileSync(FILE, JSON.stringify(got, null, 1)); return }
+  // ONLY=<id,id> re-locks just those starters (a deliberate structure change); everything else stays as locked.
+  const only = process.env.ONLY?.split(',')
+  if (process.env.WRITE_LINES) {
+    const next = only ? (JSON.parse(readFileSync(FILE, 'utf8')) as Lines).map((l, i) => (only.includes(STARTERS[i].id) ? got[i] : l)) : got
+    writeFileSync(FILE, JSON.stringify(next, null, 1)); return
+  }
   expect(existsSync(FILE), 'run with WRITE_LINES=1 first').toBe(true)
   const locked = JSON.parse(readFileSync(FILE, 'utf8')) as Lines
   got.forEach((g, i) => expect(g, STARTERS[i].id).toEqual(locked[i]))
