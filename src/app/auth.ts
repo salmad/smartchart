@@ -18,16 +18,28 @@ let current: SessionState = undefined
 const listeners = new Set<() => void>()
 const publish = (s: SessionState) => { current = s; listeners.forEach((fn) => fn()) }
 
+interface SessionBody { user?: { id?: string; email?: string; name?: string | null; image?: string | null } }
+
+const getSession = async (query = ''): Promise<Response> => fetch(`/api/auth/get-session${query}`, { credentials: 'same-origin' })
+
+// One check at a time: calls made while one runs share its answer.
+let checking: Promise<SessionState> | null = null
+
 /** Asks the server who is signed in; safe to call again after signing in or out. */
-export async function refreshSession(): Promise<SessionState> {
+export function refreshSession(): Promise<SessionState> {
+  return (checking ??= check().finally(() => { checking = null }))
+}
+
+async function check(): Promise<SessionState> {
   // A plain request: Better Auth's get-session answers { user, session }, or null when signed out.
   // Back from Google, the URL carries a one-time verifier; get-session must pass it on to create the session.
+  // It works once, so it leaves the URL before the request; if it fails anyway, the session cookie decides.
   try {
     const here = new URL(location.href), verifier = here.searchParams.get(VERIFIER)
-    const r = await fetch(`/api/auth/get-session${verifier ? `?${VERIFIER}=${encodeURIComponent(verifier)}` : ''}`, { credentials: 'same-origin' })
-    const body = r.ok ? (await r.json()) as { user?: { id?: string; email?: string; name?: string | null; image?: string | null } } | null : null
-    const u = body?.user
     if (verifier) { here.searchParams.delete(VERIFIER); history.replaceState(history.state, '', here.href) }
+    let r = await getSession(verifier ? `?${VERIFIER}=${encodeURIComponent(verifier)}` : '')
+    if (!r.ok && verifier) r = await getSession()
+    const u = r.ok ? ((await r.json()) as SessionBody | null)?.user : undefined
     publish(u?.id ? { id: u.id, email: u.email ?? '', name: u.name ?? '', image: u.image ?? null } : null)
   } catch { publish(null) }
   return current
