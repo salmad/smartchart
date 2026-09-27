@@ -1,20 +1,20 @@
 /* Hybrid agent test (spec 9.7), measured in the journey page: single slides, long sessions, surgical edits.
    Needs the app with the models: npm run dev (port 5173, .env with the keys)
-   Run from this folder:          npm i && node --experimental-strip-types run.mjs [--only=agent|long|edits] [--workers=4]
+   Run from this folder:          npm i && node run.mjs [--only=agent|long|edits] [--workers=4]
    Writes results.json (finished ids are skipped on a rerun); then node analyze.mjs writes report.md. */
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { EXAMPLES } from "../../src/engine/slides/examples.ts";
 
 const URL = "http://localhost:5173/";
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, "").split("=")));
 const WORKERS = Number(args.workers || 4);
 const { single, warmup } = JSON.parse(readFileSync("requests.json", "utf8"));
 const edits = JSON.parse(readFileSync("edits.json", "utf8"));
+// The approved gallery; edits start from a starter by id.
+const STARTERS = JSON.parse(readFileSync("../../src/engine/starters/starters.json", "utf8"));
 const results = existsSync("results.json") ? JSON.parse(readFileSync("results.json", "utf8")) : {};
 results.agent ||= {}; results.long ||= {}; results.edits ||= {};
 const save = () => writeFileSync("results.json", JSON.stringify(results, null, 1));
-const specFor = ({ consulting, pitch, name, ...shared }, style) => ({ ...shared, ...(style === "pitch" ? pitch : consulting) });
 
 const browser = await chromium.launch();
 
@@ -59,10 +59,10 @@ if (!args.only || args.only === "agent") await pool(single.filter((r) => !result
 
 /* Surgical edits: start from an approved example, one request, compare the slide before and after. */
 if (!args.only || args.only === "edits") await pool(edits.filter((e) => !results.edits[e.id]), async (e) => {
-  const ex = EXAMPLES.find((x) => x.name === e.start);
+  const ex = STARTERS.find((x) => x.id === e.start);
   const page = await openPage(e.style);
   try {
-    await page.evaluate(([s, st]) => window.__journey.load([s], st), [specFor(ex, e.style), e.style]);
+    await page.evaluate(([s, st]) => window.__journey.load([s], st), [ex[e.style], e.style]);
     const start = await page.evaluate(() => structuredClone(window.__journey.items[0].slide));
     results.edits[e.id] = { ...(await turn(page, e.prompt)), start };
   } catch (err) { results.edits[e.id] = { error: String(err.message || err) }; }

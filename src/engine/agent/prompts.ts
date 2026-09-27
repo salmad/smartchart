@@ -1,13 +1,10 @@
 /* Prompt pieces shared by the agent and Jev (spec 9.3): the style block, worked examples, the picking guide. */
 import { MENU, PICKING_GUIDE, STYLES } from "../slides/schema";
-import { EXAMPLES, type Example } from "../slides/examples";
+import { STARTERS, starterSlide } from "../starters";
 import type { Slide, Style, TemplateId } from "../types";
 
-// Examples are fixture data: the shared keys and the style's keys together make a whole slide.
-const specFor = (ex: Example, style: Style): Slide => { const { consulting, pitch, name, ...shared } = ex; return { ...shared, ...(style === "pitch" ? pitch : consulting) } as unknown as Slide; };
-
 /* A new slide starts plain (agent prompt, "Start plain"), so the example shows the plain version: the model
-   copies the shape it is shown. The extras stay in the review page's examples. */
+   copies the shape it is shown. The extras stay in the starters. */
 const EXTRAS = ["takeaway", "notes", "kicker", "footnote", "source"] as const;
 const plainExample = (s: Slide): Slide => {
   const out = structuredClone(s);
@@ -18,7 +15,7 @@ const plainExample = (s: Slide): Slide => {
 
 /** The worked example for a template and style, plain; for cards, the one with the same lead. */
 export function exampleFor(id: TemplateId, style: Style, lead?: string | null): string {
-  const pool = EXAMPLES.filter((e) => e.template === id).map((e) => plainExample(specFor(e, style)));
+  const pool = STARTERS.filter((s) => s.consulting.template === id).map((s) => plainExample(starterSlide(s, style)));
   const match = pool.find((s) => MENU[id].variant(s) === lead) || pool[0];
   return match ? JSON.stringify(match, null, 1) : "(none)";
 }

@@ -4,7 +4,7 @@ import '@/engine/slides/slides.css'
 import { MENU, catalogue, describe, validateDeck } from '@/engine/slides/schema'
 import { contexts, esc, mountSlide } from '@/engine/slides/render'
 import { fitIssues, layoutLints } from '@/engine/slides/lints'
-import { EXAMPLES, FOOTER, type Example } from '@/engine/slides/examples'
+import { FOOTER, STARTERS } from '@/engine/starters'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { stressFor } from '../../tests/fixtures/stress'
 
@@ -13,14 +13,13 @@ declare global { interface Window { __fit?: { issues: number; warnings: number }
 type Choice = 'both' | Style
 const q = new URLSearchParams(location.search)
 const STRESS = q.has('stress')
-const strip = ({ name: _name, ...rest }: Slide & { name: string }): Partial<Slide> => rest
-const SOURCE: Example[] = STRESS
-  ? stressFor('consulting').map((sc, i) => ({ template: sc.template, name: sc.name, consulting: strip(sc), pitch: strip(stressFor('pitch')[i]) }))
-  : EXAMPLES
-const specFor = (ex: Example, style: Style): Slide => {
-  const { consulting, pitch, name: _name, ...shared } = ex
-  return { ...shared, ...(style === 'pitch' ? pitch : consulting) } as Slide
-}
+// One entry per figure: the starters (the gallery), or with ?stress=1 every field at its limit.
+interface Entry { id: string; template: Slide['template']; name: string; consulting: Slide; pitch: Slide }
+const strip = ({ name: _name, ...rest }: Slide & { name: string }): Slide => rest
+const SOURCE: Entry[] = STRESS
+  ? stressFor('consulting').map((sc, i) => ({ id: `stress-${i + 1}`, template: sc.template, name: sc.name, consulting: strip(sc), pitch: strip(stressFor('pitch')[i]) }))
+  : STARTERS.map((s) => ({ id: s.id, template: s.consulting.template, name: s.label, consulting: s.consulting, pitch: s.pitch }))
+const specFor = (ex: Entry, style: Style): Slide => ex[style]
 const deckFor = (style: Style, theme: Theme) => ({ style, theme, accent: null, footer: FOOTER, slides: SOURCE.map((ex) => specFor(ex, style)) })
 
 const state: { style: Choice; theme: Theme } = { style: (q.get('style') as Choice | null) || 'both', theme: (q.get('theme') as Theme | null) || 'ink' }
@@ -40,7 +39,7 @@ function render() {
   listEl.innerHTML = `<details><summary>The menu the router sees: catalogue()</summary><pre>${esc(catalogue())}</pre></details>`
     + SOURCE.map((ex, i) => (only !== null && +only !== i ? '' : `
     <figure data-i="${i}">
-      <figcaption><span class="id">${String(i + 1).padStart(2, '0')} · ${ex.template} · ${styles.map((st) => MENU[ex.template].variant(decks[st].slides[i])).join(' / ')}</span><b>${ex.name}</b><span class="badges"></span></figcaption>
+      <figcaption><span class="id">${String(i + 1).padStart(2, '0')} · ${ex.id} · ${styles.map((st) => MENU[ex.template].variant(decks[st].slides[i])).join(' / ')}</span><b>${ex.name}</b><span class="badges"></span></figcaption>
       <div class="frames ${styles.length > 1 ? 'two' : ''}">${styles.map((st) => `<div class="frame-wrap">
         ${styles.length > 1 ? `<div class="frame-label">${st}</div>` : ''}<div class="frame" data-style="${st}"></div></div>`).join('')}</div>
       <div class="issues"></div>

@@ -23,7 +23,7 @@ Dev review page: `/src/dev/review.html` (every example in both styles, validated
 - Use shadcn/ui for primitives: `npx shadcn@latest add <name>`.
 - No `any`, no inline styles. Split components over ~300 lines.
 - Slides use `slides.css` unchanged; app chrome never styles slide internals.
-- The gallery is one approved example set: `src/engine/slides/examples.ts`. Rewrite content, never add a second set.
+- Examples and the gallery come only from `src/engine/starters/starters.json`; never add another example set.
 - Slide system: the source of truth is `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md` (start at section 14).
 - AI: GLM 5.3 Flash is the main model; Jev (via OpenRouter, the only OpenRouter use) handles routing and closed-set decisions.
 - Scratch notes and plans go in `docs/temp/` (gitignored).

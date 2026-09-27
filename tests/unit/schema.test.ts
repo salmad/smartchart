@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { CHART_GUIDE, describe, upgrade, validate } from "../../src/engine/slides/schema";
-import { EXAMPLES } from "../../src/engine/slides/examples";
+import { STARTERS } from "../../src/engine/starters";
 import { stressFor } from "../fixtures/stress";
 import type { Slide, Style } from "../../src/engine/types";
 
@@ -85,10 +85,9 @@ test("the chart card carries the chart guide", () => {
   CHART_GUIDE.forEach((g) => assert.ok(rules.includes(g)));
 });
 
-const specFor = ({ consulting, pitch, name: _name, ...shared }: (typeof EXAMPLES)[number], style: Style) => ({ ...shared, ...(style === "pitch" ? pitch : consulting) });
 for (const style of ["consulting", "pitch"] as const) {
-  test(`examples validate (${style})`, () => {
-    for (const ex of EXAMPLES) assert.deepEqual(errs(specFor(ex, style), style), [], ex.name);
+  test(`starters validate (${style})`, () => {
+    for (const st of STARTERS) assert.deepEqual(errs(st[style], style), [], st.id);
   });
   test(`stress deck validates (${style})`, () => {
     for (const { name, ...s } of stressFor(style)) assert.deepEqual(errs(s, style), [], name);

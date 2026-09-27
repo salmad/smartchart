@@ -5,7 +5,7 @@ Reproduces the hybrid-agent test in `docs/research/2026-09-27-hybrid-agent-2/` (
 ```bash
 npm run dev                      # in the repo root, with the model keys in .env
 cd tests/agent-harness && npm i
-node --experimental-strip-types run.mjs --workers=4 && node analyze.mjs   # writes results.json, then report.md
+node run.mjs --workers=4 && node analyze.mjs   # writes results.json, then report.md
 ```
 
 ## Parity run on the TS engine (2026-09-27)

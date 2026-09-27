@@ -1,0 +1,1670 @@
+[
+ {
+  "id": "cover",
+  "group": "structure",
+  "label": "Cover",
+  "blurb": "Deck title and one line on what it is",
+  "consulting": {
+   "template": "cover",
+   "title": "FinBridge",
+   "subtitle": "A revolving credit card and business account for UK small and medium-sized businesses."
+  },
+  "pitch": {
+   "template": "cover",
+   "title": "The card that [[runs the business.]]",
+   "subtitle": "Credit, cashflow and rewards for UK small businesses. In one app."
+  }
+ },
+ {
+  "id": "section",
+  "group": "structure",
+  "label": "Section divider",
+  "blurb": "A numbered chapter",
+  "consulting": {
+   "template": "section",
+   "title": "The problem",
+   "subtitle": "SME founders fund the business on personal credit because no provider bundles credit with banking."
+  },
+  "pitch": {
+   "template": "section",
+   "title": "The problem"
+  }
+ },
+ {
+  "id": "number",
+  "group": "numbers",
+  "label": "One big number",
+  "blurb": "The number that proves the point",
+  "consulting": {
+   "template": "number",
+   "title": "UK SMEs fund growth on [-personal-] cards because no provider bundles business credit with daily banking",
+   "body": [
+    "Founders put business spend on personal cards. They carry the **personal guarantee** and the limit risk, and the rewards leak out of the business.",
+    "Banks won’t lend below £50k, neobanks only offer debit, and legacy card issuers were built for large corporates."
+   ],
+   "number": {
+    "value": "£540k",
+    "caption": "typical annual card spend that earns the business nothing back"
+   },
+   "takeaway": "The gap is not credit or banking alone. It is **both, in one product.**",
+   "source": "FinBridge SME interviews (n = 42); British Business Bank, Small Business Finance Markets 2026."
+  },
+  "pitch": {
+   "template": "number",
+   "title": "The problem",
+   "subtitle": "Your business runs on your [-personal-] Amex.",
+   "body": [
+    "Three logins. One personal guarantee. **Nothing back.**"
+   ],
+   "number": {
+    "value": "£0",
+    "tone": "neg",
+    "caption": "back on £540k a year of business spend"
+   }
+  }
+ },
+ {
+  "id": "chart-notes",
+  "group": "charts",
+  "label": "Bars and a line, with notes",
+  "blurb": "Mixed chart with numbered call-outs",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "Year 1",
+     "Year 2",
+     "Year 3",
+     "Year 4",
+     "Year 5"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Interest income",
+      "mark": "bar",
+      "color": "neutral",
+      "values": [
+       0.4,
+       3.1,
+       14,
+       42,
+       85
+      ]
+     },
+     {
+      "name": "Interchange",
+      "mark": "bar",
+      "color": "focus",
+      "values": [
+       0.3,
+       2.2,
+       11,
+       36,
+       80
+      ]
+     },
+     {
+      "name": "Gross margin",
+      "mark": "line",
+      "color": "contrast",
+      "format": "{v}%",
+      "values": [
+       12,
+       24,
+       31,
+       36,
+       38
+      ]
+     }
+    ]
+   },
+   "kicker": "Unit economics",
+   "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+   "notes": [
+    {
+     "title": "Interest leads early",
+     "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
+     "point": {
+      "series": 0,
+      "index": 1
+     }
+    },
+    {
+     "title": "Interchange compounds",
+     "text": "Spend per customer grows **3×** as the card replaces the personal Amex.",
+     "point": {
+      "series": 1,
+      "index": 3
+     }
+    },
+    {
+     "title": "Margin settles at 38%",
+     "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
+     "point": {
+      "series": 2,
+      "index": 4
+     }
+    }
+   ],
+   "takeaway": "Spend, not lending, is what makes the book profitable.",
+   "footnote": "Gross margin = revenue less funding cost, rewards and bad debt, as a share of revenue.",
+   "source": "FinBridge financial model, base case. Illustrative."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "Year 1",
+     "Year 2",
+     "Year 3",
+     "Year 4",
+     "Year 5"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Interest income",
+      "mark": "bar",
+      "color": "neutral",
+      "values": [
+       0.4,
+       3.1,
+       14,
+       42,
+       85
+      ]
+     },
+     {
+      "name": "Interchange",
+      "mark": "bar",
+      "color": "focus",
+      "values": [
+       0.3,
+       2.2,
+       11,
+       36,
+       80
+      ]
+     },
+     {
+      "name": "Gross margin",
+      "mark": "line",
+      "color": "contrast",
+      "format": "{v}%",
+      "values": [
+       12,
+       24,
+       31,
+       36,
+       38
+      ]
+     }
+    ]
+   },
+   "title": "Unit economics",
+   "subtitle": "[[Interchange]] triples the margin.",
+   "notes": [
+    {
+     "title": "Matches interest by year 4",
+     "point": {
+      "series": 1,
+      "index": 3
+     }
+    },
+    {
+     "title": "Gross margin reaches [[38%]]",
+     "point": {
+      "series": 2,
+      "index": 4
+     }
+    }
+   ],
+   "takeaway": "Interest first. [[Spend pays forever.]]"
+  }
+ },
+ {
+  "id": "cards-icon",
+  "group": "cards",
+  "label": "Three pillars",
+  "blurb": "Icon cards with bullets",
+  "consulting": {
+   "template": "cards",
+   "kicker": "The solution",
+   "title": "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+   "cards": [
+    {
+     "icon": "zap",
+     "title": "Approved in five minutes",
+     "bullets": [
+      "Limits up to **£250k**, spend the same day",
+      "Underwritten on live Shopify and ad data, not filed accounts"
+     ]
+    },
+    {
+     "icon": "wallet",
+     "title": "Cashflow in one place",
+     "bullets": [
+      "Pay bills, get paid and control team spend",
+      "Move between debit and credit funds per payment"
+     ]
+    },
+    {
+     "icon": "refresh-cw",
+     "title": "Earn on every pound",
+     "bullets": [
+      "**1% cashback** on all card spend",
+      "Rewards attract transactors, lowering adverse selection"
+     ]
+    }
+   ],
+   "takeaway": "Three providers today. **FinBridge replaces all of them.**"
+  },
+  "pitch": {
+   "template": "cards",
+   "title": "The solution",
+   "subtitle": "Bank. Card. Lender. [[One app.]]",
+   "cards": [
+    {
+     "value": "5 min",
+     "title": "to a credit line",
+     "text": "Up to £250k. Spend the same day."
+    },
+    {
+     "value": "1 app",
+     "title": "for all cashflow",
+     "text": "Pay, get paid, control team spend."
+    },
+    {
+     "value": "1%",
+     "tone": "focus",
+     "title": "back on everything",
+     "text": "Rewards bring the right customers."
+    }
+   ],
+   "takeaway": "Today: three companies. [[We are one.]]"
+  }
+ },
+ {
+  "id": "cards-framed",
+  "group": "cards",
+  "label": "Them vs us",
+  "blurb": "Two framed cases side by side",
+  "consulting": {
+   "template": "cards",
+   "kicker": "The insight",
+   "title": "Credit-only lenders attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
+   "framed": true,
+   "cards": [
+    {
+     "tone": "neg",
+     "label": "Credit-only lenders",
+     "title": "Adverse loop",
+     "bullets": [
+      "Expensive acquisition of desperate borrowers",
+      "Little data beyond filed accounts",
+      "High risk drives high prices, then higher risk"
+     ],
+     "facts": [
+      {
+       "label": "Outcome",
+       "text": "Rising losses, rising prices"
+      },
+      {
+       "label": "Examples",
+       "text": "OnDeck, Kabbage, Silvr: none survived"
+      }
+     ]
+    },
+    {
+     "tone": "focus",
+     "label": "FinBridge",
+     "title": "Positive loop",
+     "bullets": [
+      "Customers arrive for non-credit reasons",
+      "Credit funds the cashflow of a working business",
+      "More data, better pricing, better customers"
+     ],
+     "facts": [
+      {
+       "label": "Outcome",
+       "text": "Falling losses, better pricing"
+      },
+      {
+       "label": "Proof",
+       "text": "Capital on Tap, YouLend are profitable"
+      }
+     ]
+    }
+   ],
+   "takeaway": "Why customers join decides how much credit loses."
+  },
+  "pitch": {
+   "template": "cards",
+   "title": "The insight",
+   "subtitle": "Credit alone attracts the [-wrong borrowers.-]",
+   "framed": true,
+   "cards": [
+    {
+     "tone": "neg",
+     "label": "Credit only",
+     "title": "Adverse loop",
+     "text": "Desperate borrowers, thin data, rising prices."
+    },
+    {
+     "tone": "focus",
+     "label": "FinBridge",
+     "title": "Positive loop",
+     "text": "Good businesses arrive first. Credit follows."
+    }
+   ]
+  }
+ },
+ {
+  "id": "table",
+  "group": "tables",
+  "label": "Comparison table",
+  "blurb": "Typeset figures with a total row",
+  "consulting": {
+   "template": "table",
+   "table": {
+    "columns": [
+     {
+      "label": "£ per customer per month"
+     },
+     {
+      "label": "Revolver",
+      "focus": true
+     },
+     {
+      "label": "Transactor"
+     },
+     {
+      "label": "Super-transactor"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "Share of customers",
+       "40–60%",
+       "40–60%",
+       "~10%"
+      ],
+      "style": "muted"
+     },
+     {
+      "cells": [
+       "Interest revenue",
+       {
+        "value": "267",
+        "note": "40% APR × £8.0k"
+       },
+       "—",
+       "—"
+      ]
+     },
+     {
+      "cells": [
+       "Cost of funding",
+       {
+        "value": "(53)",
+        "note": "8% × £8.0k"
+       },
+       {
+        "value": "(33)",
+        "note": "8% × £5.0k"
+       },
+       {
+        "value": "(70)",
+        "note": "8% × £10.5k"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Interchange revenue",
+       {
+        "value": "90",
+        "note": "1.8% × £5.0k spend"
+       },
+       {
+        "value": "120",
+        "note": "1.8% × £6.7k"
+       },
+       {
+        "value": "480",
+        "note": "1.8% × £26.7k"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Cost of rewards",
+       "(50)",
+       "(67)",
+       "(267)"
+      ]
+     },
+     {
+      "cells": [
+       "Bad debt",
+       {
+        "value": "(70)",
+        "note": "~10% of balance p.a."
+       },
+       "(5)",
+       "(10)"
+      ]
+     },
+     {
+      "cells": [
+       "Monthly gross margin",
+       "£179",
+       "£10",
+       "£128"
+      ],
+      "style": "total"
+     }
+    ]
+   },
+   "kicker": "Business model",
+   "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
+   "takeaway": "A 50/50 revolver–transactor mix earns ~£95 a month each.",
+   "footnote": "Balances and spend are monthly averages per active customer.",
+   "source": "FinBridge model; funding cost assumes an 8% warehouse rate."
+  },
+  "pitch": {
+   "template": "table",
+   "table": {
+    "columns": [
+     {
+      "label": "£ per customer per month"
+     },
+     {
+      "label": "Revolver",
+      "focus": true
+     },
+     {
+      "label": "Transactor"
+     },
+     {
+      "label": "Super-transactor"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "Share of customers",
+       "40–60%",
+       "40–60%",
+       "~10%"
+      ],
+      "style": "muted"
+     },
+     {
+      "cells": [
+       "Interest revenue",
+       {
+        "value": "267",
+        "note": "40% APR × £8.0k"
+       },
+       "—",
+       "—"
+      ]
+     },
+     {
+      "cells": [
+       "Cost of funding",
+       {
+        "value": "(53)",
+        "note": "8% × £8.0k"
+       },
+       {
+        "value": "(33)",
+        "note": "8% × £5.0k"
+       },
+       {
+        "value": "(70)",
+        "note": "8% × £10.5k"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Interchange revenue",
+       {
+        "value": "90",
+        "note": "1.8% × £5.0k spend"
+       },
+       {
+        "value": "120",
+        "note": "1.8% × £6.7k"
+       },
+       {
+        "value": "480",
+        "note": "1.8% × £26.7k"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Cost of rewards",
+       "(50)",
+       "(67)",
+       "(267)"
+      ]
+     },
+     {
+      "cells": [
+       "Bad debt",
+       {
+        "value": "(70)",
+        "note": "~10% of balance p.a."
+       },
+       "(5)",
+       "(10)"
+      ]
+     },
+     {
+      "cells": [
+       "Monthly gross margin",
+       "£179",
+       "£10",
+       "£128"
+      ],
+      "style": "total"
+     }
+    ]
+   },
+   "title": "Business model",
+   "subtitle": "Every customer [+makes money.+]"
+  }
+ },
+ {
+  "id": "table-notes",
+  "group": "tables",
+  "label": "Table with notes",
+  "blurb": "Figures and what they mean",
+  "consulting": {
+   "template": "table",
+   "table": {
+    "columns": [
+     {
+      "label": "Provider"
+     },
+     {
+      "label": "Credit limit"
+     },
+     {
+      "label": "Fee"
+     },
+     {
+      "label": "Cashback",
+      "focus": true
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "High-street bank",
+       "£25k",
+       "£120/yr",
+       "0%"
+      ]
+     },
+     {
+      "cells": [
+       "Neobank (debit)",
+       "—",
+       "£0",
+       "0.5%"
+      ]
+     },
+     {
+      "cells": [
+       "Corporate Amex",
+       "£50k",
+       "£550/yr",
+       "1%"
+      ]
+     },
+     {
+      "cells": [
+       "FinBridge",
+       "£250k",
+       "£0",
+       "1%"
+      ],
+      "style": "total"
+     }
+    ]
+   },
+   "kicker": "Competition",
+   "title": "FinBridge offers [[five times the limit]] of the nearest SME card at no annual fee",
+   "notes": [
+    {
+     "title": "Banks cap at £25k",
+     "text": "Underwriting on filed accounts limits young firms."
+    },
+    {
+     "title": "Neobanks stop at debit",
+     "text": "No credit line, so spend leaves for personal cards."
+    },
+    {
+     "title": "Amex charges for rewards",
+     "text": "**£550 a year** before the first pound of cashback."
+    }
+   ],
+   "source": "Provider websites, September 2026."
+  },
+  "pitch": {
+   "template": "table",
+   "table": {
+    "columns": [
+     {
+      "label": "Provider"
+     },
+     {
+      "label": "Credit limit"
+     },
+     {
+      "label": "Fee"
+     },
+     {
+      "label": "Cashback",
+      "focus": true
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "High-street bank",
+       "£25k",
+       "£120/yr",
+       "0%"
+      ]
+     },
+     {
+      "cells": [
+       "Neobank (debit)",
+       "—",
+       "£0",
+       "0.5%"
+      ]
+     },
+     {
+      "cells": [
+       "Corporate Amex",
+       "£50k",
+       "£550/yr",
+       "1%"
+      ]
+     },
+     {
+      "cells": [
+       "FinBridge",
+       "£250k",
+       "£0",
+       "1%"
+      ],
+      "style": "total"
+     }
+    ]
+   },
+   "title": "Competition",
+   "subtitle": "[[5×]] the limit. No fee.",
+   "notes": [
+    {
+     "title": "Banks cap at £25k"
+    },
+    {
+     "title": "Amex charges £550 a year"
+    }
+   ]
+  }
+ },
+ {
+  "id": "chart-lines",
+  "group": "charts",
+  "label": "Scenarios",
+  "blurb": "Base case against downside",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "Q1 ’27",
+     "Q2",
+     "Q3",
+     "Q4",
+     "Q1 ’28",
+     "Q2",
+     "Q3",
+     "Q4"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Base case",
+      "mark": "line",
+      "color": "focus",
+      "area": true,
+      "values": [
+       1,
+       4,
+       10,
+       22,
+       40,
+       62,
+       88,
+       120
+      ]
+     },
+     {
+      "name": "Downside",
+      "mark": "line",
+      "color": "contrast",
+      "dashed": true,
+      "values": [
+       0.8,
+       3,
+       7,
+       15,
+       27,
+       41,
+       56,
+       72
+      ]
+     }
+    ]
+   },
+   "kicker": "Growth",
+   "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
+   "takeaway": "Even the downside case fills a warehouse facility in 2028.",
+   "footnote": "Downside assumes 40% lower acquisition and twice the bad debt.",
+   "source": "FinBridge model."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "Q1 ’27",
+     "Q2",
+     "Q3",
+     "Q4",
+     "Q1 ’28",
+     "Q2",
+     "Q3",
+     "Q4"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Base case",
+      "mark": "line",
+      "color": "focus",
+      "area": true,
+      "values": [
+       1,
+       4,
+       10,
+       22,
+       40,
+       62,
+       88,
+       120
+      ]
+     },
+     {
+      "name": "Downside",
+      "mark": "line",
+      "color": "contrast",
+      "dashed": true,
+      "values": [
+       0.8,
+       3,
+       7,
+       15,
+       27,
+       41,
+       56,
+       72
+      ]
+     }
+    ]
+   },
+   "title": "Growth",
+   "subtitle": "A [[£120m]] book in two years."
+  }
+ },
+ {
+  "id": "chart-cagr",
+  "group": "charts",
+  "label": "Growth with a CAGR",
+  "blurb": "Growth rate and target, computed",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "2026",
+     "2027",
+     "2028",
+     "2029",
+     "2030"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Loan book",
+      "mark": "bar",
+      "color": "focus",
+      "values": [
+       10,
+       24,
+       52,
+       88,
+       120
+      ]
+     }
+    ],
+    "annotations": [
+     {
+      "type": "cagr",
+      "from": 0,
+      "to": 4
+     },
+     {
+      "type": "target",
+      "value": 100,
+      "label": "Plan"
+     }
+    ]
+   },
+   "kicker": "Growth",
+   "title": "The book grows [[86% a year]] to £120m by 2030, ahead of the £100m plan",
+   "takeaway": "The plan does not need the downside case to fill the warehouse.",
+   "source": "FinBridge model, base case."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "2026",
+     "2027",
+     "2028",
+     "2029",
+     "2030"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Loan book",
+      "mark": "bar",
+      "color": "focus",
+      "values": [
+       10,
+       24,
+       52,
+       88,
+       120
+      ]
+     }
+    ],
+    "annotations": [
+     {
+      "type": "cagr",
+      "from": 0,
+      "to": 4
+     },
+     {
+      "type": "target",
+      "value": 100,
+      "label": "Plan"
+     }
+    ]
+   },
+   "title": "Growth",
+   "subtitle": "[[86%]] a year, past plan."
+  }
+ },
+ {
+  "id": "waterfall",
+  "group": "charts",
+  "label": "Bridge",
+  "blurb": "From one total to another",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "items": [
+     {
+      "label": "FY25 ARR",
+      "value": 9.8
+     },
+     {
+      "label": "New",
+      "value": 6.2,
+      "focus": true
+     },
+     {
+      "label": "Expansion",
+      "value": 2.1
+     },
+     {
+      "label": "Churn",
+      "value": -1.4
+     },
+     {
+      "label": "Pricing",
+      "value": 0.8
+     },
+     {
+      "label": "FY26 ARR",
+      "total": true
+     }
+    ]
+   },
+   "kicker": "Revenue",
+   "title": "ARR reaches £17.5m in FY26; [[new customers]] add £6.2m of the £7.7m growth",
+   "takeaway": "Churn costs less than a quarter of what new customers bring.",
+   "source": "FinBridge model, base case."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "items": [
+     {
+      "label": "FY25 ARR",
+      "value": 9.8
+     },
+     {
+      "label": "New",
+      "value": 6.2,
+      "focus": true
+     },
+     {
+      "label": "Expansion",
+      "value": 2.1
+     },
+     {
+      "label": "Churn",
+      "value": -1.4
+     },
+     {
+      "label": "Pricing",
+      "value": 0.8
+     },
+     {
+      "label": "FY26 ARR",
+      "total": true
+     }
+    ]
+   },
+   "title": "ARR bridge",
+   "subtitle": "[[New customers]] drive growth."
+  }
+ },
+ {
+  "id": "waterfall-notes",
+  "group": "charts",
+  "label": "Bridge with notes",
+  "blurb": "The drivers, explained",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "items": [
+     {
+      "label": "Revenue",
+      "value": 42
+     },
+     {
+      "label": "Funding",
+      "value": -9
+     },
+     {
+      "label": "Rewards",
+      "value": -6
+     },
+     {
+      "label": "Bad debt",
+      "value": -11,
+      "focus": true
+     },
+     {
+      "label": "Margin",
+      "total": true
+     }
+    ]
+   },
+   "kicker": "Unit economics",
+   "title": "[[Bad debt]] is the largest cost between £42m of revenue and a £16m gross margin",
+   "notes": [
+    {
+     "title": "Funding is fixed",
+     "text": "Warehouse priced at **SONIA + 4%** for three years."
+    },
+    {
+     "title": "Rewards scale with spend",
+     "text": "1% cashback, paid for by interchange."
+    },
+    {
+     "title": "Bad debt is the lever",
+     "text": "Underwriting on live data targets **8%**, not 11%."
+    }
+   ],
+   "source": "FinBridge model, year 4."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "items": [
+     {
+      "label": "Revenue",
+      "value": 42
+     },
+     {
+      "label": "Funding",
+      "value": -9
+     },
+     {
+      "label": "Rewards",
+      "value": -6
+     },
+     {
+      "label": "Bad debt",
+      "value": -11,
+      "focus": true
+     },
+     {
+      "label": "Margin",
+      "total": true
+     }
+    ]
+   },
+   "title": "Margin",
+   "subtitle": "[[Bad debt]] is the lever.",
+   "notes": [
+    {
+     "title": "Rewards pay for themselves"
+    },
+    {
+     "title": "Target bad debt: [[8%]]"
+    }
+   ]
+  }
+ },
+ {
+  "id": "timeline",
+  "group": "charts",
+  "label": "Timeline",
+  "blurb": "Workstreams over time",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "kind": "timeline",
+    "periods": [
+     "Q1 ’27",
+     "Q2",
+     "Q3",
+     "Q4",
+     "Q1 ’28",
+     "Q2",
+     "Q3",
+     "Q4"
+    ],
+    "rows": [
+     {
+      "label": "Card issuing",
+      "start": 0,
+      "end": 2
+     },
+     {
+      "label": "Underwriting engine",
+      "start": 1,
+      "end": 3
+     },
+     {
+      "label": "Warehouse facility",
+      "start": 2,
+      "end": 5,
+      "focus": true
+     },
+     {
+      "label": "Direct-mail acquisition",
+      "start": 4,
+      "end": 7
+     },
+     {
+      "label": "EU entry",
+      "start": 6,
+      "end": 7
+     }
+    ],
+    "milestones": [
+     {
+      "label": "First 100 cards",
+      "at": 2
+     },
+     {
+      "label": "£10m book",
+      "at": 5
+     }
+    ]
+   },
+   "kicker": "Plan",
+   "title": "The [[warehouse facility]] is the critical path: acquisition cannot scale until Q2 2028",
+   "source": "FinBridge operating plan."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "kind": "timeline",
+    "periods": [
+     "Q1 ’27",
+     "Q2",
+     "Q3",
+     "Q4",
+     "Q1 ’28",
+     "Q2",
+     "Q3",
+     "Q4"
+    ],
+    "rows": [
+     {
+      "label": "Card issuing",
+      "start": 0,
+      "end": 2
+     },
+     {
+      "label": "Underwriting engine",
+      "start": 1,
+      "end": 3
+     },
+     {
+      "label": "Warehouse facility",
+      "start": 2,
+      "end": 5,
+      "focus": true
+     },
+     {
+      "label": "Direct-mail acquisition",
+      "start": 4,
+      "end": 7
+     },
+     {
+      "label": "EU entry",
+      "start": 6,
+      "end": 7
+     }
+    ],
+    "milestones": [
+     {
+      "label": "First 100 cards",
+      "at": 2
+     },
+     {
+      "label": "£10m book",
+      "at": 5
+     }
+    ]
+   },
+   "title": "The plan",
+   "subtitle": "[[Warehouse]] first, then scale."
+  }
+ },
+ {
+  "id": "chart-mix",
+  "group": "charts",
+  "label": "Mix over time",
+  "blurb": "Shares that add to 100%",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "stacked": "100",
+    "categories": [
+     "Year 1",
+     "Year 2",
+     "Year 3",
+     "Year 4",
+     "Year 5"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Interest",
+      "mark": "bar",
+      "color": "neutral",
+      "values": [
+       7,
+       12,
+       20,
+       30,
+       38
+      ]
+     },
+     {
+      "name": "Interchange",
+      "mark": "bar",
+      "color": "focus",
+      "values": [
+       3,
+       8,
+       18,
+       34,
+       50
+      ]
+     },
+     {
+      "name": "Fees",
+      "mark": "bar",
+      "color": "neutral",
+      "values": [
+       0,
+       2,
+       4,
+       7,
+       7
+      ]
+     }
+    ]
+   },
+   "kicker": "Revenue mix",
+   "title": "[[Interchange]] rises from 30% to 53% of revenue by year 5 as spend replaces lending",
+   "source": "FinBridge model, base case."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "stacked": "100",
+    "categories": [
+     "Year 1",
+     "Year 2",
+     "Year 3",
+     "Year 4",
+     "Year 5"
+    ],
+    "format": "£{v}m",
+    "series": [
+     {
+      "name": "Interest",
+      "mark": "bar",
+      "color": "neutral",
+      "values": [
+       7,
+       12,
+       20,
+       30,
+       38
+      ]
+     },
+     {
+      "name": "Interchange",
+      "mark": "bar",
+      "color": "focus",
+      "values": [
+       3,
+       8,
+       18,
+       34,
+       50
+      ]
+     },
+     {
+      "name": "Fees",
+      "mark": "bar",
+      "color": "neutral",
+      "values": [
+       0,
+       2,
+       4,
+       7,
+       7
+      ]
+     }
+    ]
+   },
+   "title": "Revenue mix",
+   "subtitle": "[[Interchange]] becomes half."
+  }
+ },
+ {
+  "id": "chart-six",
+  "group": "charts",
+  "label": "Many series",
+  "blurb": "Up to six series, still readable",
+  "consulting": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "2020",
+     "2021",
+     "2022",
+     "2023",
+     "2024",
+     "2025",
+     "2026"
+    ],
+    "format": "£{v}bn",
+    "series": [
+     {
+      "name": "Amex",
+      "mark": "line",
+      "color": "focus",
+      "values": [
+       9,
+       8,
+       10,
+       12,
+       13,
+       14,
+       15
+      ]
+     },
+     {
+      "name": "Barclaycard",
+      "mark": "line",
+      "color": "contrast",
+      "values": [
+       8,
+       7,
+       8,
+       9,
+       9,
+       10,
+       10
+      ]
+     },
+     {
+      "name": "Lloyds",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       6,
+       5,
+       6,
+       6,
+       7,
+       7,
+       7
+      ]
+     },
+     {
+      "name": "NatWest",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       5,
+       4,
+       4,
+       5,
+       5,
+       5,
+       5
+      ]
+     },
+     {
+      "name": "HSBC",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     },
+     {
+      "name": "Neobanks",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       0,
+       0,
+       0,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    ]
+   },
+   "kicker": "Competition",
+   "title": "[[Amex]] widens its lead in UK SME card spend to £15bn while the challengers stay near £1bn",
+   "source": "UK Finance card spending statistics; FinBridge analysis. Illustrative."
+  },
+  "pitch": {
+   "template": "chart",
+   "chart": {
+    "categories": [
+     "2020",
+     "2021",
+     "2022",
+     "2023",
+     "2024",
+     "2025",
+     "2026"
+    ],
+    "format": "£{v}bn",
+    "series": [
+     {
+      "name": "Amex",
+      "mark": "line",
+      "color": "focus",
+      "values": [
+       9,
+       8,
+       10,
+       12,
+       13,
+       14,
+       15
+      ]
+     },
+     {
+      "name": "Barclaycard",
+      "mark": "line",
+      "color": "contrast",
+      "values": [
+       8,
+       7,
+       8,
+       9,
+       9,
+       10,
+       10
+      ]
+     },
+     {
+      "name": "Lloyds",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       6,
+       5,
+       6,
+       6,
+       7,
+       7,
+       7
+      ]
+     },
+     {
+      "name": "NatWest",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       5,
+       4,
+       4,
+       5,
+       5,
+       5,
+       5
+      ]
+     },
+     {
+      "name": "HSBC",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     },
+     {
+      "name": "Neobanks",
+      "mark": "line",
+      "color": "neutral",
+      "values": [
+       0,
+       0,
+       0,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    ]
+   },
+   "title": "Competition",
+   "subtitle": "[[Amex]] owns SME spend."
+  }
+ },
+ {
+  "id": "steps",
+  "group": "numbers",
+  "label": "Roadmap",
+  "blurb": "Phases: when, what, and why",
+  "consulting": {
+   "template": "steps",
+   "kicker": "Plan and ask",
+   "title": "£5m funds [[18 months]] to a £10m book and a drawn warehouse facility",
+   "steps": [
+    {
+     "when": "0–6 mo",
+     "title": "Build",
+     "text": "Card issuing, partners and underwriting engine live. **First 100 cards.**"
+    },
+    {
+     "when": "6–18 mo",
+     "title": "Prove",
+     "text": "Book reaches **£10m**; gross-margin run-rate ~£1.5m; warehouse drawn.",
+     "focus": true
+    },
+    {
+     "when": "Year 2",
+     "title": "Scale",
+     "text": "£120m book; direct-mail acquisition at 2,000+ customers a month."
+    },
+    {
+     "when": "Year 3+",
+     "title": "Expand",
+     "text": "£250m+ book; gross margin covers opex and CAC; EU entry."
+    }
+   ],
+   "takeaway": "The ask: **£5m for 18 months** to reach a funded book."
+  },
+  "pitch": {
+   "template": "steps",
+   "title": "The plan",
+   "subtitle": "[[£5m]] to a funded book.",
+   "steps": [
+    {
+     "when": "0–6 mo",
+     "title": "Build",
+     "text": "First 100 cards."
+    },
+    {
+     "when": "6–18 mo",
+     "title": "Prove",
+     "text": "£10m book.",
+     "focus": true
+    },
+    {
+     "when": "Year 2",
+     "title": "Scale",
+     "text": "£120m book."
+    }
+   ],
+   "takeaway": "The ask: [[£5m for 18 months.]]"
+  }
+ },
+ {
+  "id": "cards-value",
+  "group": "cards",
+  "label": "Key figures",
+  "blurb": "Big values with short proof",
+  "consulting": {
+   "template": "cards",
+   "kicker": "Appendix · Market",
+   "title": "Demand is documented: most UK SMEs need revolving credit and [[a fifth]] already use a card",
+   "cards": [
+    {
+     "value": "5.7M",
+     "title": "UK SMEs",
+     "text": "Private-sector businesses; 34M more across the EU."
+    },
+    {
+     "value": "19%",
+     "tone": "focus",
+     "title": "Use a credit card",
+     "text": "The most-used external finance product, ahead of overdrafts."
+    },
+    {
+     "value": "30–40%",
+     "title": "Need revolving",
+     "text": "The most frequent financing need in ECB SAFE and our surveys."
+    },
+    {
+     "value": "€400bn",
+     "title": "SME credit gap",
+     "text": "Estimated across the EU and UK."
+    }
+   ],
+   "takeaway": "The product sits where card use and revolving need overlap.",
+   "source": "EC SME Annual Report 2025/26; UK DBT Business Population 2025; ECB SAFE; EIB Group."
+  },
+  "pitch": {
+   "template": "cards",
+   "title": "Market",
+   "subtitle": "A market [[already on cards.]]",
+   "cards": [
+    {
+     "value": "5.7M",
+     "title": "UK SMEs"
+    },
+    {
+     "value": "19%",
+     "tone": "focus",
+     "title": "Use a credit card"
+    },
+    {
+     "value": "30–40%",
+     "title": "Need revolving"
+    },
+    {
+     "value": "€400bn",
+     "title": "Credit gap"
+    }
+   ],
+   "takeaway": "The product is [[the intersection.]]"
+  }
+ }
+]
