@@ -1,6 +1,6 @@
 /* Code fixes what has one right answer and reports it (spec 9.4); it never shortens text or changes meaning.
    Idempotent: the write path runs it before and after `auto` choices are resolved. */
-import { ICONS, KIND_FIELDS, MENU } from "../slides/schema.js";
+import { ICONS, KIND_FIELDS, MENU } from "../slides/schema";
 
 const CHART_KEYS = new Set(Object.values(KIND_FIELDS).flat());
 

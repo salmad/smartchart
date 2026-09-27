@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { resolveAuto } from "../../src/engine/agent/resolve.js";
-import { fakeJev } from "./fakes.js";
+import { resolveAuto } from "../../src/engine/agent/resolve";
+import { fakeJev } from "./fakes";
 
 const cats = ["2021", "2022", "2023", "2024", "2025"];
 const chart = (series, extra = {}) => ({ template: "chart", title: "Revenue [[doubled]] while margin rose", chart: { categories: cats, format: "£{v}m", series, ...extra.chart }, ...extra.slide });

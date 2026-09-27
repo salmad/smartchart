@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { runTurn } from "../../src/engine/agent/agent.js";
-import { fakeAgent, fakeJev, say, toolCall } from "./fakes.js";
+import { runTurn } from "../../src/engine/agent/agent";
+import { fakeAgent, fakeJev, say, toolCall } from "./fakes";
 
 const CHART = { template: "chart", title: "Revenue grew [[4.5×]] from £2.1m to £9.4m", source: "Company accounts",
   chart: { categories: ["2022", "2023", "2024", "2025"], format: "£{v}m", series: [{ name: "Revenue", mark: "bar", color: "focus", values: [2.1, 4.8, 7.2, 9.4] }] } };

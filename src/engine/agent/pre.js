@@ -1,6 +1,6 @@
 /* PRE (spec 9.0): one Jev call before the agent runs: intent, template, card lead, position.
    When the intent is sure, code makes the agent's first tool call itself. */
-import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts.js";
+import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts";
 
 export const P_ACT = 0.7, P_LEAD = 0.6;
 const plainTitle = (s) => String(s || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");

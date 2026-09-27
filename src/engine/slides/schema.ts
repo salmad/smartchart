@@ -10,9 +10,47 @@
    or a number. Prototype limits are hand-tuned and proven by the stress deck;
    the product computes them from geometry (spec 4.3).
    ═══════════════════════════════════════════════════════════════════════════ */
-import { waterfall } from "./charts/chart-math.js";
+import { waterfall } from "./charts/chart-math";
+import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types";
 
-export const STYLES = {
+type ByStyle<T> = T | Partial<Record<Style, T>>;
+export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell";
+export interface FieldDef {
+  type: FieldType;
+  desc: ByStyle<string>;
+  required?: ByStyle<boolean>;
+  max?: ByStyle<number>;
+  values?: readonly unknown[];
+  default?: unknown;
+  items?: { min?: ByStyle<number>; max?: ByStyle<number> };
+  of?: FieldDef;
+  fields?: Record<string, FieldDef>;
+  styles?: readonly Style[];
+}
+/** A field definition resolved for one style (what the agent reads). */
+export interface FieldView {
+  type: FieldType;
+  required?: true;
+  maxChars?: number;
+  values?: readonly unknown[];
+  default?: unknown;
+  items?: { min?: number; max?: number };
+  desc?: string;
+  of?: FieldView;
+  fields?: Record<string, FieldView>;
+}
+export interface MenuEntry {
+  summary: string;
+  use: string;
+  frame?: false;
+  fields: Record<string, FieldDef>;
+  variant: (s: Slide) => string;
+  rules?: string[];
+}
+export interface StyleGuide { summary: string; rules: string[] }
+export interface TemplateCard { template: TemplateId; summary: string; use: string; fields: Record<string, FieldView>; rules: string[] }
+
+export const STYLES: Record<Style, StyleGuide> = {
   consulting: {
     summary: "McKinsey-like. The argument is carried by full-sentence action titles; the body is the evidence.",
     rules: [
@@ -62,11 +100,11 @@ export const ICONS = [
    type: text | markup | number | boolean | enum | list | object | cell
    required, max (chars, markup stripped), items {min,max}, of, fields, values,
    styles (limit a field to some styles), desc (read by the agent).            */
-const f = (type, desc, extra = {}) => ({ type, desc, ...extra });
-const CONSULTING = ["consulting"], PITCH = ["pitch"];
+const f = (type: FieldType, desc: ByStyle<string>, extra: Partial<Omit<FieldDef, "type">> = {}): FieldDef => ({ type, desc, ...extra });
+const CONSULTING: readonly Style[] = ["consulting"], PITCH: readonly Style[] = ["pitch"];
 
 /* The frame every content slide shares. It differs by style (spec 3.1). */
-const FRAME = {
+const FRAME: Record<string, FieldDef> = {
   kicker: f("text", "Small label above the title. Optional: defaults to the current section name.", { max: 40, styles: CONSULTING }),
   title: f("markup", "", { required: true, max: { consulting: 105, pitch: 20 },
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
@@ -79,7 +117,7 @@ const FRAME = {
 const TONE = f("enum", "Colour of the value.", { values: ["focus", "neg", "pos"], default: "focus" });
 
 /* The chart guide (spec 9.1): in the chart card for the agent, and in Jev's mark and stacking questions. */
-export const CHART_GUIDE = [
+export const CHART_GUIDE: string[] = [
   "Comparable series share one mark: series that measure the same thing in the same unit (our revenue vs a competitor's, revenue by segment, scenarios) are all bars or all lines.",
   "Bars for sizes, lines for trends: bars compare sizes across categories or a few periods (up to about 6); lines show a trend over many periods (7 or more), forecasts and scenarios.",
   "A different unit can be a line over bars: a series in another unit (a margin % or a growth rate over £m revenue) is a line on its own scale over the bars. At most two units per chart; a third needs another slide.",
@@ -96,14 +134,15 @@ export const CHART_GUIDE = [
 /* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
 const FOCUS = f("enum", "A top-level slide field, next to `title` (never inside `chart`). Write \"auto\" to let code pick and highlight the one item the title is about (a series, column, step or card). Leave it out when the user named the focus, and set it on that item yourself.", { values: ["auto"] });
 
-const KINDS = ["bars", "waterfall", "timeline"];
+const KINDS = ["bars", "waterfall", "timeline"] as const;
+type Kind = (typeof KINDS)[number];
 /* Fields each chart kind uses; any other chart field is an error for that kind. */
-export const KIND_FIELDS = {
+export const KIND_FIELDS: Record<Kind, string[]> = {
   bars: ["kind", "stacked", "categories", "format", "series", "annotations"],
   waterfall: ["kind", "format", "items"],
   timeline: ["kind", "periods", "rows", "milestones"],
 };
-const idx = (what) => f("number", `0-based index into ${what}.`);
+const idx = (what: string) => f("number", `0-based index into ${what}.`);
 
 const CHART = f("object", "A chart. Values are written on the data; there is no y-axis to configure. `kind` sets which fields it takes.", {
   required: true,
@@ -166,7 +205,7 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
 });
 
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
-const notes = (withPoint) => f("list", "Optional numbered observations beside the chart or table. Add them only if each says something the body does not already show; in pitch, prefer none. Numbers are added automatically.", {
+const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table. Add them only if each says something the body does not already show; in pitch, prefer none. Numbers are added automatically.", {
   items: { min: 2, max: 4 },
   of: f("object", "One observation.", { fields: {
     title: f("markup", "The observation as a short headline.", { required: true, max: 28 }),
@@ -180,7 +219,7 @@ const notes = (withPoint) => f("list", "Optional numbered observations beside th
 
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
-export const MENU = {
+export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
     summary: "A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it.",
     use: "Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.",
@@ -294,7 +333,7 @@ export const MENU = {
 };
 
 /* The picking guide (spec 9.2): used by the router prompt and when Jev is unsure. */
-export const PICKING_GUIDE = [
+export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the first slide of a deck", "cover"],
   ["the start of a new part in a deck of 8+ slides", "section"],
   ["one number that proves the argument (a size, a cost, a gap)", "number"],
@@ -306,25 +345,30 @@ export const PICKING_GUIDE = [
 
 /* ─────────────── Resolving fields for one style ─────────────── */
 
-const byStyle = (v, style) => (v && typeof v === "object" && !Array.isArray(v) && ("consulting" in v || "pitch" in v) ? v[style] : v);
-const inStyle = (def, style) => !def.styles || def.styles.includes(style);
+const isStyleMap = <T>(v: ByStyle<T>): v is Partial<Record<Style, T>> =>
+  !!v && typeof v === "object" && !Array.isArray(v) && ("consulting" in v || "pitch" in v);
+const byStyle = <T>(v: ByStyle<T> | undefined, style: Style): T | undefined => (v !== undefined && isStyleMap(v) ? v[style] : (v as T | undefined));
+const inStyle = (def: FieldDef, style: Style) => !def.styles || def.styles.includes(style);
+
+/** Own keys only, so "constructor" or "toString" is never a template. */
+export const isTemplate = (id: unknown): id is TemplateId => typeof id === "string" && Object.hasOwn(MENU, id);
 
 /** The fields of one entry for one style: frame + body, with style-only fields removed. */
-export function fieldsFor(id, style) {
-  const entry = MENU[id];
+export function fieldsFor(id: string, style: Style): Record<string, FieldDef> {
+  const entry = isTemplate(id) ? MENU[id] : undefined;
   if (!entry) throw new Error(`Unknown template "${id}". Known: ${Object.keys(MENU).join(", ")}`);
   const all = entry.frame === false ? entry.fields : { ...FRAME, ...entry.fields };
   return Object.fromEntries(Object.entries(all).filter(([, d]) => inStyle(d, style)));
 }
 
 /** One line per entry: what the router and planning prompt see. */
-export function catalogue() {
+export function catalogue(): string {
   return Object.entries(MENU).map(([id, t]) => `${id}: ${t.summary} Use when: ${t.use}`).join("\n");
 }
 
 /** A field definition resolved for one style: plain numbers, no style maps. */
-function view(def, style) {
-  const out = { type: def.type };
+function view(def: FieldDef, style: Style): FieldView {
+  const out: FieldView = { type: def.type };
   if (byStyle(def.required, style)) out.required = true;
   const max = byStyle(def.max, style);
   if (max) out.maxChars = max;
@@ -338,7 +382,7 @@ function view(def, style) {
 }
 
 /** The template card body for one entry and style: resolved fields and rules. */
-export function describe(id, style = "consulting") {
+export function describe(id: TemplateId, style: Style = "consulting"): TemplateCard {
   const t = MENU[id];
   return {
     template: id, summary: t.summary, use: t.use,
@@ -351,10 +395,15 @@ export function describe(id, style = "consulting") {
    validate(slide, style) -> { errors, warnings }. Messages name the exact path,
    what was measured, the limit and the fix (spec 9.4).                        */
 
-export const plain = (s) => String(s).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
+export const plain = (s: unknown): string => String(s).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
 const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 
-function check(def, value, path, style, out) {
+type Out = Validation;
+/** Fields of an object value the validator walks; the value is unvalidated input. */
+const fieldsOf = (v: object) => v as Record<string, unknown>;
+const cellOf = (v: unknown) => (typeof v === "object" && v !== null ? v : { value: v }) as { value?: unknown; note?: unknown };
+
+function check(def: FieldDef, value: unknown, path: string, style: Style, out: Out): void {
   if (value === undefined || value === null || value === "") {
     if (byStyle(def.required, style)) out.errors.push(`${path}: required. ${byStyle(def.desc, style)}`);
     return;
@@ -363,7 +412,7 @@ function check(def, value, path, style, out) {
   switch (def.type) {
     case "text":
     case "markup": {
-      if (typeof value !== "string") return out.errors.push(`${path}: must be a string.`);
+      if (typeof value !== "string") { out.errors.push(`${path}: must be a string.`); return; }
       if (/<[a-z/][^>]*>/i.test(value)) out.errors.push(`${path}: HTML is not allowed. Use the markup syntax instead.`);
       if (def.type === "text" && MARKUP_RE.test(value)) out.errors.push(`${path}: plain text only; remove the markup.`);
       const len = plain(value).length;
@@ -377,44 +426,52 @@ function check(def, value, path, style, out) {
       if (typeof value !== "boolean") out.errors.push(`${path}: must be true or false.`);
       break;
     case "enum":
-      if (!def.values.includes(value)) out.errors.push(`${path}: "${value}" is not allowed. Use one of: ${def.values.join(", ")}.`);
+      if (!def.values?.includes(value)) out.errors.push(`${path}: "${String(value)}" is not allowed. Use one of: ${def.values?.join(", ")}.`);
       break;
     case "cell": {
-      const v = typeof value === "object" ? value : { value };
+      const v = cellOf(value);
       if (typeof v.value !== "string" && typeof v.value !== "number") out.errors.push(`${path}: a cell is a string or { "value": "…", "note": "…" }.`);
       else if (max && String(v.value).length > max) out.errors.push(`${path}: ${String(v.value).length} characters, limit ${max}.`);
       if (v.note !== undefined && String(v.note).length > 32) out.errors.push(`${path}.note: limit is 32 characters.`);
       break;
     }
     case "list": {
-      if (!Array.isArray(value)) return out.errors.push(`${path}: must be a list.`);
+      if (!Array.isArray(value)) { out.errors.push(`${path}: must be a list.`); return; }
       const min = byStyle(def.items?.min, style), maxItems = byStyle(def.items?.max, style);
       if (min && value.length < min) out.errors.push(`${path}: needs at least ${min} items (got ${value.length}).`);
       if (maxItems && value.length > maxItems) out.errors.push(`${path}: at most ${maxItems} items (got ${value.length}). Cut or merge.`);
-      value.forEach((item, i) => {
+      const of = def.of;
+      if (!of) break;
+      value.forEach((item: unknown, i) => {
         // A list of numbers has no gaps: a chart draws every value, and a missing one cannot be drawn.
-        if (def.of.type === "number" && (item === null || item === undefined)) return out.errors.push(`${path}[${i}]: missing; every category needs a number. For a single goal or plan figure, use an annotation { "type": "target", "value": … } instead of a series.`);
-        check(def.of, item, `${path}[${i}]`, style, out);
+        if (of.type === "number" && (item === null || item === undefined)) return out.errors.push(`${path}[${i}]: missing; every category needs a number. For a single goal or plan figure, use an annotation { "type": "target", "value": … } instead of a series.`);
+        check(of, item, `${path}[${i}]`, style, out);
       });
       break;
     }
     case "object": {
-      if (typeof value !== "object" || Array.isArray(value)) return out.errors.push(`${path}: must be an object.`);
-      const fields = Object.fromEntries(Object.entries(def.fields).filter(([, d]) => inStyle(d, style)));
-      for (const [k, sub] of Object.entries(fields)) check(sub, value[k], `${path}.${k}`, style, out);
-      for (const k of Object.keys(value)) if (!fields[k]) out.errors.push(`${path}.${k}: not a field here${def.fields[k] ? ` in ${style}` : ""}. Allowed: ${Object.keys(fields).join(", ")}.`);
+      if (typeof value !== "object" || Array.isArray(value)) { out.errors.push(`${path}: must be an object.`); return; }
+      const all = def.fields ?? {};
+      const fields = Object.fromEntries(Object.entries(all).filter(([, d]) => inStyle(d, style)));
+      const obj = fieldsOf(value);
+      for (const [k, sub] of Object.entries(fields)) check(sub, obj[k], `${path}.${k}`, style, out);
+      for (const k of Object.keys(obj)) if (!fields[k]) out.errors.push(`${path}.${k}: not a field here${all[k] ? ` in ${style}` : ""}. Allowed: ${Object.keys(fields).join(", ")}.`);
       break;
     }
   }
 }
 
-const fmtOf = (c, s) => s?.format || c.format || "{v}";
+const fmtOf = (c: Chart, s?: Series) => s?.format || c.format || "{v}";
+const isKind = (k: string): k is Kind => (KINDS as readonly string[]).includes(k);
 
-function checkChart(c, path, out, focusAuto) {
+/* The rule checks below run after the field checks, on input that may still be
+   malformed (a null series, a missing list), so they guard every access. */
+function checkChart(c: Chart | undefined, path: string, out: Out, focusAuto: boolean): void {
   if (!c || typeof c !== "object") return;
   const kind = c.kind || "bars";
-  if (!KIND_FIELDS[kind]) return;
-  for (const k of Object.keys(c)) if (!KIND_FIELDS[kind].includes(k) && CHART.fields[k])
+  if (!isKind(kind)) return;
+  const chartFields = CHART.fields ?? {};
+  for (const k of Object.keys(c)) if (!KIND_FIELDS[kind].includes(k) && chartFields[k])
     out.errors.push(`${path}.${k}: not used by kind "${kind}". Remove it${kind === "bars" ? "" : `; a ${kind} takes ${KIND_FIELDS[kind].filter((x) => x !== "kind").join(", ")}`}.`);
   if (c.format && !String(c.format).includes("{v}")) out.errors.push(`${path}.format: must contain {v}, e.g. "£{v}m".`);
   if (kind === "waterfall") return checkWaterfall(c, path, out);
@@ -422,64 +479,66 @@ function checkChart(c, path, out, focusAuto) {
   if (!Array.isArray(c.categories)) out.errors.push(`${path}.categories: required. X-axis labels, in order.`);
   if (!Array.isArray(c.series)) out.errors.push(`${path}.series: required. Data series.`);
   if (!Array.isArray(c.series) || !Array.isArray(c.categories)) return;
-  const bars = c.series.filter((s) => s?.mark === "bar");
-  c.series.forEach((s, i) => {
-    if (Array.isArray(s?.values) && s.values.length !== c.categories.length)
-      out.errors.push(`${path}.series[${i}].values: ${s.values.length} values, but there are ${c.categories.length} categories. Give exactly one value per category.`);
+  const categories = c.categories, series = c.series;
+  const bars = series.filter((s) => s?.mark === "bar");
+  series.forEach((s, i) => {
+    if (Array.isArray(s?.values) && s.values.length !== categories.length)
+      out.errors.push(`${path}.series[${i}].values: ${s.values.length} values, but there are ${categories.length} categories. Give exactly one value per category.`);
     if (s?.mark === "bar" && (s.area || s.dashed)) out.errors.push(`${path}.series[${i}]: \`area\` and \`dashed\` are only for line series.`);
     if (s?.area && bars.length) out.errors.push(`${path}.series[${i}].area: only when every series is a line.`);
   });
   if (bars.length > 3) out.errors.push(`${path}.series: at most 3 bar series (got ${bars.length}). Cut or merge.`);
-  const names = c.series.map((s) => s?.name), dup = names.find((x, i) => x && names.indexOf(x) !== i);
+  const names = series.map((s) => s?.name), dup = names.find((x, i) => x && names.indexOf(x) !== i);
   if (dup) out.errors.push(`${path}.series: two series are named "${dup}"; each series needs its own name (the legend and colours follow it).`);
-  const formats = new Set(c.series.map((s) => fmtOf(c, s)));
+  const formats = new Set(series.map((s) => fmtOf(c, s)));
   if (formats.size > 2) out.errors.push(`${path}.series: ${formats.size} units (${[...formats].join(", ")}); a chart shows at most 2. Move the third to another slide.`);
-  if (c.series.length && c.series.every((s) => s?.mark === "line") && formats.size > 1)
+  if (series.length && series.every((s) => s?.mark === "line") && formats.size > 1)
     out.errors.push(`${path}.series: a chart of only lines shares one scale, so every series uses one format. Make one unit bars, or plot it on another slide.`);
   if ((c.stacked === true || c.stacked === "100") && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
     out.errors.push(`${path}.stacked: stacking needs 2 or more bar series in one unit. Set it to false.`);
-  const focus = c.series.filter((s) => s?.color === "focus").length;
+  const focus = series.filter((s) => s?.color === "focus").length;
   if (!focusAuto && focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
-  checkAnnotations(c, c.series.filter((s) => s?.mark !== "line"), path, out);
+  checkAnnotations(c, categories, series, series.filter((s) => s?.mark !== "line"), path, out);
 }
 
-function checkAnnotations(c, bars, path, out) {
-  const n = c.categories.length, inRange = (v) => Number.isInteger(v) && v >= 0 && v < n;
+function checkAnnotations(c: Chart, categories: string[], series: Series[], bars: Series[], path: string, out: Out): void {
+  const n = categories.length, inRange = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0 && (v as number) < n;
   (c.annotations || []).forEach((a, i) => {
     if (!a || !a.type) return;
     const at = `${path}.annotations[${i}]`;
     if (!bars.length) return out.errors.push(`${at}: annotations need a bar series; this chart has only lines.`);
     if (a.type === "target") {
       if (typeof a.value !== "number") out.errors.push(`${at}.value: required for a target (the goal, in the bars' unit).`);
-      for (const k of ["from", "to", "series", "relative"]) if (a[k] !== undefined) out.errors.push(`${at}.${k}: not used by a target; remove it.`);
+      for (const k of ["from", "to", "series", "relative"] as const) if (a[k] !== undefined) out.errors.push(`${at}.${k}: not used by a target; remove it.`);
       return;
     }
-    for (const k of ["value", "label"]) if (a[k] !== undefined) out.errors.push(`${at}.${k}: only for a target; remove it.`);
-    if (!inRange(a.from) || !inRange(a.to)) return out.errors.push(`${at}: \`from\` and \`to\` must be category indices 0–${n - 1} (got ${a.from}, ${a.to}).`);
-    if (a.from >= a.to) out.errors.push(`${at}: \`from\` (${a.from}) must come before \`to\` (${a.to}).`);
-    if (a.series !== undefined && (!c.series[a.series] || c.series[a.series].mark === "line")) out.errors.push(`${at}.series: ${a.series} is not a bar series. Point at a bar series or leave it out.`);
+    for (const k of ["value", "label"] as const) if (a[k] !== undefined) out.errors.push(`${at}.${k}: only for a target; remove it.`);
+    const { from, to } = a;
+    if (!inRange(from) || !inRange(to)) return out.errors.push(`${at}: \`from\` and \`to\` must be category indices 0–${n - 1} (got ${from}, ${to}).`);
+    if (from >= to) out.errors.push(`${at}: \`from\` (${from}) must come before \`to\` (${to}).`);
+    if (a.series !== undefined && (!series[a.series] || series[a.series].mark === "line")) out.errors.push(`${at}.series: ${a.series} is not a bar series. Point at a bar series or leave it out.`);
     if (a.relative && a.type !== "difference") out.errors.push(`${at}.relative: only for a difference; remove it.`);
     if (a.type === "cagr") {
-      const s = a.series !== undefined ? c.series[a.series] : c.stacked === true ? null : bars.find((x) => x.color === "focus") || bars[0];
-      const v = s ? [s.values?.[a.from], s.values?.[a.to]] : [a.from, a.to].map((j) => bars.reduce((sum, x) => sum + (x.values?.[j] || 0), 0));
-      if (!(v[0] > 0 && v[1] > 0)) out.errors.push(`${at}: a CAGR needs positive values at both ends (got ${v.join(" and ")}). Use a difference instead.`);
+      const s = a.series !== undefined ? series[a.series] : c.stacked === true ? null : bars.find((x) => x.color === "focus") || bars[0];
+      const v = s ? [s.values?.[from], s.values?.[to]] : [from, to].map((j) => bars.reduce((sum, x) => sum + (x.values?.[j] || 0), 0));
+      if (!(Number(v[0]) > 0 && Number(v[1]) > 0)) out.errors.push(`${at}: a CAGR needs positive values at both ends (got ${v.join(" and ")}). Use a difference instead.`);
     }
   });
   if (c.stacked === "100" && (c.annotations || []).some((a) => a?.type !== undefined)) out.errors.push(`${path}.annotations: not on a 100% stacked chart (the bars are shares, not values).`);
 }
 
-function checkWaterfall(c, path, out) {
-  if (!Array.isArray(c.items)) return out.errors.push(`${path}.items: required. The start total, the signed changes, then the end total.`);
+function checkWaterfall(c: Chart, path: string, out: Out): void {
+  if (!Array.isArray(c.items)) { out.errors.push(`${path}.items: required. The start total, the signed changes, then the end total.`); return; }
   waterfall(c.items, `${path}.items`).errors.forEach((e) => out.errors.push(e));
   if (c.items.length && !c.items.at(-1)?.total) out.warnings.push(`${path}.items: the last item is a change; a bridge usually ends with a total ({ "label": "…", "total": true }).`);
   if (count(c.items, "focus") > 1) out.errors.push(`${path}.items: at most one focus item.`);
 }
 
-function checkTimeline(c, path, out) {
+function checkTimeline(c: Chart, path: string, out: Out): void {
   if (!Array.isArray(c.periods)) out.errors.push(`${path}.periods: required. Column labels, in order.`);
   if (!Array.isArray(c.rows)) out.errors.push(`${path}.rows: required. One bar per workstream.`);
   if (!Array.isArray(c.periods) || !Array.isArray(c.rows)) return;
-  const n = c.periods.length, ok = (v) => Number.isInteger(v) && v >= 0 && v < n;
+  const n = c.periods.length, ok = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) < n;
   c.rows.forEach((r, i) => {
     if (!r) return;
     if (!ok(r.start) || !ok(r.end)) out.errors.push(`${path}.rows[${i}]: \`start\` and \`end\` must be period indices 0–${n - 1} (got ${r.start}, ${r.end}).`);
@@ -489,28 +548,29 @@ function checkTimeline(c, path, out) {
   if (count(c.rows, "focus") > 1) out.errors.push(`${path}.rows: at most one focus row.`);
 }
 
-const count = (list, key) => (list || []).filter((x) => x && x[key]).length;
+const count = <T extends object>(list: readonly (T | null | undefined)[] | undefined, key: keyof T) => (list || []).filter((x) => x && x[key]).length;
 
-function checkNotes(s, style, out) {
+function checkNotes(s: Slide, style: Style, out: Out): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
   const textLen = list.reduce((sum, n) => sum + (n?.text ? plain(n.text).length : 0), 0);
   if (s.takeaway && textLen > 200) out.errors.push(`notes[].text: ${textLen} characters in total; with a takeaway the limit is 200. Shorten the notes or drop the takeaway.`);
 }
 
-function checkRules(s, style, out) {
+function checkRules(s: Slide, style: Style, out: Out): void {
   switch (s.template) {
     case "chart": {
       checkChart(s.chart, "chart", out, s.focus === "auto");
       if (!s.notes?.length) break;
       checkNotes(s, style, out);
       const kind = s.chart?.kind || "bars", cats = s.chart?.categories || [], series = s.chart?.series || [];
-      if (kind === "waterfall" && (s.chart.items || []).length > 7) out.errors.push(`chart.items: ${s.chart.items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
-      if (kind === "timeline" && (s.chart.periods || []).length > 8) out.errors.push(`chart.periods: ${s.chart.periods.length} periods; with notes at most 8. Drop notes or use wider periods.`);
-      if (kind === "timeline" && (s.chart.rows || []).length > 4) out.errors.push(`chart.rows: ${s.chart.rows.length} workstreams; with notes at most 4. Drop notes or merge workstreams.`);
-      if (kind === "timeline") (s.chart.rows || []).forEach((r, i) => { if (r?.label && r.label.length > 20) out.errors.push(`chart.rows[${i}].label: ${r.label.length} characters; with notes at most 20. Shorten it.`); });
+      const items = s.chart?.items || [], periods = s.chart?.periods || [], rows = s.chart?.rows || [], annotations = s.chart?.annotations || [];
+      if (kind === "waterfall" && items.length > 7) out.errors.push(`chart.items: ${items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
+      if (kind === "timeline" && periods.length > 8) out.errors.push(`chart.periods: ${periods.length} periods; with notes at most 8. Drop notes or use wider periods.`);
+      if (kind === "timeline" && rows.length > 4) out.errors.push(`chart.rows: ${rows.length} workstreams; with notes at most 4. Drop notes or merge workstreams.`);
+      if (kind === "timeline") rows.forEach((r, i) => { if (r?.label && r.label.length > 20) out.errors.push(`chart.rows[${i}].label: ${r.label.length} characters; with notes at most 20. Shorten it.`); });
       if (kind === "bars" && cats.length > 6) out.errors.push(`chart.categories: ${cats.length} categories; with notes at most 6. Drop notes or group categories.`);
-      if (kind === "bars" && (s.chart.annotations || []).length > 2) out.errors.push(`chart.annotations: ${s.chart.annotations.length}; with notes at most 2.`);
+      if (kind === "bars" && annotations.length > 2) out.errors.push(`chart.annotations: ${annotations.length}; with notes at most 2.`);
       s.notes.forEach((n, i) => {
         if (!n?.point) return;
         if (kind !== "bars" || series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a bars chart with bar series; remove it.`);
@@ -520,14 +580,14 @@ function checkRules(s, style, out) {
       break;
     }
     case "table": {
-      const t = s.table || {}, n = (t.columns || []).length;
+      const t: Partial<NonNullable<Slide["table"]>> = s.table || {}, n = (t.columns || []).length;
       (t.rows || []).forEach((r, i) => {
         if (Array.isArray(r?.cells) && r.cells.length !== n) out.errors.push(`table.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
       });
       if (count(t.columns, "focus") > 1) out.errors.push("table.columns: at most one focus column.");
       (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
-      const noted = (r) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
+      const noted = (r: (typeof rows)[number]) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
       const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0), budget = style === "pitch" ? 7 : 10.5;
       if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5). Cut rows, drop cell notes or drop the takeaway.`);
       if (s.notes?.length) {
@@ -541,7 +601,7 @@ function checkRules(s, style, out) {
     }
     case "steps": {
       if (count(s.steps, "focus") > 1) out.errors.push("steps: at most one step can be focus.");
-      if (style === "pitch" && s.takeaway && (s.steps || []).length > 3) out.errors.push(`steps: pitch steps with a takeaway are at most 3 (got ${s.steps.length}).`);
+      if (style === "pitch" && s.takeaway && (s.steps || []).length > 3) out.errors.push(`steps: pitch steps with a takeaway are at most 3 (got ${s.steps?.length}).`);
       break;
     }
     case "cards": {
@@ -570,7 +630,7 @@ function checkRules(s, style, out) {
       if (count(cards, "bullets") && count(cards, "text")) out.errors.push("cards: mix of bullets and text; use the same on every card.");
       // Limits per look: framed cards are wide, value cards set text small, icon cards set it large.
       const look = MENU.cards.variant(s), four = cards.length === 4;
-      const textMax = { framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50 }[look];
+      const textMax = ({ framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50 } as Record<string, number>)[look];
       const bulletMax = look === "framed" || four ? 48 : 60;
       cards.forEach((c, i) => {
         if (!c) return;
@@ -592,21 +652,23 @@ function checkRules(s, style, out) {
   }
 }
 
-/** Validate one slide for the deck style. */
-export function validate(slide, style = "consulting") {
-  const out = { errors: [], warnings: [] };
+/** Validate one slide for the deck style. The slide is unvalidated input (usually model output). */
+export function validate(slide: unknown, style: Style = "consulting"): Validation {
+  const out: Out = { errors: [], warnings: [] };
   if (!slide || typeof slide !== "object") return { errors: ["slide: must be an object."], warnings: [] };
-  if (!MENU[slide.template]) return { errors: [`template: "${slide.template}" does not exist. Use one of: ${Object.keys(MENU).join(", ")}.`], warnings: [] };
-  const fields = fieldsFor(slide.template, style);
-  for (const [k, def] of Object.entries(fields)) check(def, slide[k], k, style, out);
-  for (const k of Object.keys(slide)) if (k !== "template" && !fields[k]) out.errors.push(`${k}: not a field of "${slide.template}" in ${style}. Allowed: ${Object.keys(fields).join(", ")}.`);
-  checkRules(slide, style, out);
+  const obj = fieldsOf(slide);
+  if (!isTemplate(obj.template)) return { errors: [`template: "${String(obj.template)}" does not exist. Use one of: ${Object.keys(MENU).join(", ")}.`], warnings: [] };
+  const fields = fieldsFor(obj.template, style);
+  for (const [k, def] of Object.entries(fields)) check(def, obj[k], k, style, out);
+  for (const k of Object.keys(obj)) if (k !== "template" && !fields[k]) out.errors.push(`${k}: not a field of "${obj.template}" in ${style}. Allowed: ${Object.keys(fields).join(", ")}.`);
+  // The field checks above reported any shape problems; the rule checks guard their own access.
+  checkRules(slide as Slide, style, out);
   return out;
 }
 
 /** Validate a deck: every slide plus deck-level rules. */
-export function validateDeck(deck) {
-  const out = { errors: [], warnings: [] };
+export function validateDeck(deck: { style: Style; slides?: readonly Slide[] }): Validation {
+  const out: Out = { errors: [], warnings: [] };
   const slides = deck.slides || [];
   slides.forEach((s, i) => {
     const r = validate(s, deck.style);
@@ -617,14 +679,18 @@ export function validateDeck(deck) {
   return out;
 }
 
+/* Shapes saved before the 2026-09-27 chart change. */
+type LegacyChart = Omit<Chart, "series"> & { type?: string; series?: (Series & { line?: boolean })[] };
+type LegacyColumn = { label?: string; focus?: boolean; num?: unknown };
+
 /** Slides saved before the 2026-09-27 chart change: chart.type and series.line become marks; table columns lose `num`. */
-export function upgrade(slide) {
-  const s = structuredClone(slide), c = s.chart;
+export function upgrade(slide: Slide): Slide {
+  const s = structuredClone(slide), c: LegacyChart | undefined = s.chart;
   if (c?.type) {
     (c.series || []).forEach((x) => { x.mark = c.type === "lines" || x.line ? "line" : "bar"; delete x.line; });
     if (c.type === "bars") c.stacked = false;
     delete c.type;
   }
-  (s.table?.columns || []).forEach((col) => delete col.num);
+  (s.table?.columns || []).forEach((col: LegacyColumn) => delete col.num);
   return s;
 }

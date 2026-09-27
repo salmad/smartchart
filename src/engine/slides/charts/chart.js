@@ -1,11 +1,11 @@
 /* Charts: SVG for shapes, HTML for every label. `chart.kind` picks the drawing: bars (bar and line
    series, stacked, 100% or side by side, with computed annotations), waterfall or timeline.
    Colours come from the allocator (colours.js) as slots; this file never picks a colour. */
-import { annotationLabel, annotationSeries, axisBreak, fmt, shares } from "./chart-math.js";
-import { seriesSlots } from "../colours.js";
-import { esc, hits, lbl, plotRects, thinCategories, topRounded } from "./chart-parts.js";
-import { waterfallChart } from "./chart-waterfall.js";
-import { timelineChart } from "./chart-timeline.js";
+import { annotationLabel, annotationSeries, axisBreak, fmt, shares } from "./chart-math";
+import { seriesSlots } from "../colours";
+import { esc, hits, lbl, plotRects, thinCategories, topRounded } from "./chart-parts";
+import { waterfallChart } from "./chart-waterfall";
+import { timelineChart } from "./chart-timeline";
 
 const niceStep = (raw) => { const p = 10 ** Math.floor(Math.log10(raw)), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; };
 

@@ -1,8 +1,8 @@
 /* Design checks (spec 6): rule checks in code, judgment checks as one Jev call.
    They are advisory: shown on the slide, never blocking. */
-import { MENU, plain } from "../slides/schema.js";
-import { derivedFigures } from "../slides/charts/chart-math.js";
-import { jev } from "./llm.js";
+import { MENU, plain } from "../slides/schema";
+import { derivedFigures } from "../slides/charts/chart-math";
+import { jev } from "./llm";
 
 const words = (s) => plain(s || "").toLowerCase().match(/[a-z0-9£$€%]+/g) || [];
 const hasFocusSpan = (s) => /\[\[.+?\]\]/.test(s || "");

@@ -1,8 +1,8 @@
 /* Fast repair (spec 9.4): text that is over its limit is shortened by one small GLM call per field, with no
    deck context, instead of another agent step. A rewrite is kept only if it fits and keeps every figure;
    otherwise the issue goes back to the agent as before. */
-import { plain } from "../slides/schema.js";
-import { parsePath } from "./patch.js";
+import { plain } from "../slides/schema";
+import { parsePath } from "./patch";
 
 const SYSTEM = `You shorten one piece of slide text. Reply with the new text only: no quotes, no notes.
 - Stay at or under the character limit; markup does not count.

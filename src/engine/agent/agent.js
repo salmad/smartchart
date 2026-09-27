@@ -2,16 +2,16 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { MENU, describe, validate } from "../slides/schema.js";
-import { agentStep as glmStep, jev as jevCall } from "./llm.js";
-import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
-import { autofix } from "./autofix.js";
-import { applyPatch } from "./patch.js";
-import { resolveAuto } from "./resolve.js";
-import { ruleChecks } from "./checks.js";
-import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep } from "./pre.js";
-import { TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt.js";
-import { shorten, targets } from "./shorten.js";
+import { MENU, describe, validate } from "../slides/schema";
+import { agentStep as glmStep, jev as jevCall } from "./llm";
+import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts";
+import { autofix } from "./autofix";
+import { applyPatch } from "./patch";
+import { resolveAuto } from "./resolve";
+import { ruleChecks } from "./checks";
+import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep } from "./pre";
+import { TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt";
+import { shorten, targets } from "./shorten";
 
 const MAX_TOOL_CALLS = 10, SHORTEN_ROUNDS = 2;
 const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;

@@ -35,6 +35,8 @@ export default tseslint.config(
     rules: {
       ...hooks.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'error',
+      // `const { omitted, ...rest } = x` is how the engine drops a field
+      '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true, argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'react/forbid-component-props': 'off',
       'no-restricted-syntax': ['error', { selector: "JSXAttribute[name.name='style']", message: 'No inline styles (CLAUDE.md).' }],
     },

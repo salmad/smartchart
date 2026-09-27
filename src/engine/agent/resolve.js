@@ -1,6 +1,6 @@
 /* Every "auto" choice on a slide, resolved with ONE Jev call (spec 9.1). A concrete value is never
    touched. Below P_AUTO the default stands; icons always take Jev's top pick. */
-import { CHART_GUIDE, ICONS, plain } from "../slides/schema.js";
+import { CHART_GUIDE, ICONS, plain } from "../slides/schema";
 
 export const P_AUTO = 0.6;
 const GUIDE = CHART_GUIDE.join("\n");

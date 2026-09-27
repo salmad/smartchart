@@ -1,8 +1,8 @@
 /* Waterfall (bridge): totals from zero, changes floating from the running sum, dashed connectors.
    Totals are the quiet grey, steps the pos/neg hue toned down (their labels keep the full colour), and one focus
    item takes the focus colour: the eye lands on the point, not on the biggest block. */
-import { fmt, signed, waterfall } from "./chart-math.js";
-import { esc, lbl, settle } from "./chart-parts.js";
+import { fmt, signed, waterfall } from "./chart-math";
+import { esc, lbl, settle } from "./chart-parts";
 
 export function waterfallChart(box, spec, W, H) {
   const { steps } = waterfall(spec.items), f = spec.format || "{v}";

@@ -1,5 +1,5 @@
 /* Measurements on a rendered slide: fit issues and layout lints. */
-import { MIN_MARK, contrast } from "./colours.js";
+import { MIN_MARK, contrast } from "./colours";
 
 /* ═════════════ Fit check (prototype): measures the rendered slide at 1920×1080 ═════════════ */
 export function fitIssues(slide, style) {

@@ -1,6 +1,6 @@
 /* Next-step pills after a turn: GLM Flash reads the slide and the conversation, works out what the slide is
    trying to say, and suggests a few changes that help it say that. Runs in the background; no pills on failure. */
-import { complete } from "./llm.js";
+import { complete } from "./llm";
 
 const CAN = "Charts: bars and lines (stacked, side by side or 100% shares), waterfall (a bridge between two totals), timeline (workstreams and milestones); computed annotations: CAGR arrow, difference arrow, target line; highlight one series, bar, step, card or column. Any slide: title, takeaway, numbered notes, footnote, source; another template (chart, table, big number, steps, cards); a new slide.";
 

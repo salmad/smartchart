@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { PALETTES, MIN_DISTANCE, MIN_HUE_GAP, allocate, contrast, distance, hueGap, oklch, resolveAccent, secondHue, seriesSlots } from "../../src/engine/slides/colours.js";
+import { PALETTES, MIN_DISTANCE, MIN_HUE_GAP, allocate, contrast, distance, hueGap, oklch, resolveAccent, secondHue, seriesSlots } from "../../src/engine/slides/colours";
 
 const THEMES = Object.keys(PALETTES);
 // Every 15° of hue at two strengths, plus the palette defaults, pure red and green, and near-greys.
@@ -107,7 +107,7 @@ test("text colour on every fill reads at 4.5:1 or better where possible", () => 
 });
 
 test("every series has its own text colour: 4.5:1, and grey labels a clear step apart", async () => {
-  const { MIN_TEXT, TEXT_STEP } = await import("../../src/engine/slides/colours.js");
+  const { MIN_TEXT, TEXT_STEP } = await import("../../src/engine/slides/colours");
   for (const t of THEMES) for (const a of [null, "#2447D1", "#E8B94A", "#14B8A6"]) {
     const { vars } = allocate(chartSlide({ series: series(6, { mark: "line" }) }), t, a), bg = PALETTES[t].bg;
     for (const k of ["quiet", "ctx3", "ctx2", "ctx1", "focus", "alt1", "alt2"]) assert.ok(contrast(vars[`${k}-text`], bg) >= MIN_TEXT, `${t} ${a} ${k}-text`);

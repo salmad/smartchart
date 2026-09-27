@@ -1,6 +1,6 @@
 /* Timeline (Gantt): one bar per workstream over period columns, milestones as diamonds.
    Rows are labelled, so they share the quiet grey (colour spec C4); the focus row takes the focus colour. */
-import { esc, lbl, thinCategories } from "./chart-parts.js";
+import { esc, lbl, thinCategories } from "./chart-parts";
 
 /* Milestone labels: measured first, then each takes the first lane where it clears the labels before it.
    The foot of the chart is as tall as the lanes need; rows share what is left. */

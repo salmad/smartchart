@@ -1,7 +1,7 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the review page and the journey prototype. */
-import { MENU } from "./schema.js";
-import { drawChart } from "./charts/chart.js";
-import { allocate } from "./colours.js";
+import { MENU } from "./schema";
+import { drawChart } from "./charts/chart";
+import { allocate } from "./colours";
 export { drawChart };
 
 export const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);

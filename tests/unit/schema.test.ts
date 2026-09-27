@@ -1,13 +1,19 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { CHART_GUIDE, describe, upgrade, validate } from "../../src/engine/slides/schema.js";
-import { EXAMPLES, stressFor } from "../../src/engine/slides/examples.js";
+import { CHART_GUIDE, describe, upgrade, validate } from "../../src/engine/slides/schema";
+import { EXAMPLES, stressFor } from "../../src/engine/slides/examples";
+import type { Slide, Style } from "../../src/engine/types";
 
-const chart = (c, extra = {}) => ({ template: "chart", title: "Revenue grew four times while the margin tripled", chart: c, ...extra });
+/* Tests feed malformed and legacy slides on purpose; these helpers name that. */
+const legacy = (v: object) => v as Slide;
+type LegacyView = { chart: { type?: string; series: { mark: string; line?: boolean }[] }; table: { columns: { num?: unknown }[] } };
+const legacyView = (s: Slide) => s as unknown as LegacyView;
+
+const chart = (c: object, extra: object = {}) => ({ template: "chart", title: "Revenue grew four times while the margin tripled", chart: c, ...extra });
 const REV = { name: "Revenue", mark: "bar", color: "focus", values: [2.1, 4.8, 9.4] };
 const MARGIN = { name: "Margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 24, 31] };
 const cats = ["2023", "2024", "2025"];
-const errs = (s, style = "consulting") => validate(s, style).errors;
+const errs = (s: unknown, style: Style = "consulting") => validate(s, style).errors;
 
 test("bars with a line in another unit are valid", () => {
   assert.deepEqual(errs(chart({ categories: cats, format: "£{v}m", series: [REV, MARGIN] })), []);
@@ -61,14 +67,14 @@ test("icon and focus accept auto", () => {
 
 test("upgrade converts old charts and tables", () => {
   const old = { template: "chart", title: "t", chart: { type: "bars", categories: cats, series: [{ name: "A", color: "focus", values: [1, 2, 3] }, { name: "B", color: "contrast", line: true, format: "{v}%", values: [1, 2, 3] }] } };
-  const u = upgrade(old);
+  const u = legacyView(upgrade(legacy(old)));
   assert.equal(u.chart.type, undefined);
   assert.deepEqual(u.chart.series.map((s) => s.mark), ["bar", "line"]);
   assert.equal(u.chart.series[1].line, undefined);
   assert.equal(old.chart.type, "bars", "upgrade must not mutate its input");
-  const lines = upgrade({ template: "chart", chart: { type: "lines", categories: cats, series: [{ name: "A", values: [1, 2, 3] }] } });
+  const lines = legacyView(upgrade(legacy({ template: "chart", chart: { type: "lines", categories: cats, series: [{ name: "A", values: [1, 2, 3] }] } })));
   assert.equal(lines.chart.series[0].mark, "line");
-  const t = upgrade({ template: "table", table: { columns: [{ label: "A" }, { label: "B", num: true }], rows: [] } });
+  const t = legacyView(upgrade(legacy({ template: "table", table: { columns: [{ label: "A" }, { label: "B", num: true }], rows: [] } })));
   assert.equal(t.table.columns[1].num, undefined);
 });
 
@@ -78,8 +84,8 @@ test("the chart card carries the chart guide", () => {
   CHART_GUIDE.forEach((g) => assert.ok(rules.includes(g)));
 });
 
-const specFor = ({ consulting, pitch, name, ...shared }, style) => ({ ...shared, ...(style === "pitch" ? pitch : consulting) });
-for (const style of ["consulting", "pitch"]) {
+const specFor = ({ consulting, pitch, name: _name, ...shared }: (typeof EXAMPLES)[number], style: Style) => ({ ...shared, ...(style === "pitch" ? pitch : consulting) });
+for (const style of ["consulting", "pitch"] as const) {
   test(`examples validate (${style})`, () => {
     for (const ex of EXAMPLES) assert.deepEqual(errs(specFor(ex, style), style), [], ex.name);
   });
@@ -96,7 +102,7 @@ test("annotations: valid cagr, difference and target", () => {
 });
 
 test("annotations: indices, order, bar series, target fields, CAGR sign", () => {
-  const e = (a, c = REV5) => errs(chart({ ...c, annotations: [a] })).join("\n");
+  const e = (a: object, c: object = REV5) => errs(chart({ ...c, annotations: [a] })).join("\n");
   assert.match(e({ type: "cagr", from: 0, to: 9 }), /category indices 0–4/);
   assert.match(e({ type: "difference", from: 3, to: 1 }), /must come before/);
   assert.match(e({ type: "target" }), /value: required/);
@@ -123,7 +129,7 @@ test("series names are unique within a chart", () => {
 });
 
 test("up to 6 series; a 7th is cut or merged", () => {
-  const lines = (n) => ({ ...REV5, series: Array.from({ length: n }, (_, i) => ({ name: `S${i}`, mark: "line", color: i ? "neutral" : "focus", values: [1, 2, 3, 4, 5] })) });
+  const lines = (n: number) => ({ ...REV5, series: Array.from({ length: n }, (_, i) => ({ name: `S${i}`, mark: "line", color: i ? "neutral" : "focus", values: [1, 2, 3, 4, 5] })) });
   assert.deepEqual(errs(chart(lines(6))), []);
   assert.match(errs(chart(lines(7))).join(), /at most 6 items/);
 });

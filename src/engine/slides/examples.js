@@ -1,6 +1,6 @@
 /* Example deck and stress deck. Each example holds what the agent writes per style;
    shared keys (template, chart, table) are written once because the review page shows both styles. */
-import { fieldsFor } from "./schema.js";
+import { fieldsFor } from "./schema";
 
 export const FOOTER = "FinBridge · Seed memorandum";
 

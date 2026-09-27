@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { TOOLS, agentSystem, workingBlock } from "../../src/engine/agent/agent-prompt.js";
+import { TOOLS, agentSystem, workingBlock } from "../../src/engine/agent/agent-prompt";
 
 test("four tools; patch_slide takes a set and an optional reply", () => {
   assert.deepEqual(TOOLS.map((t) => t.function.name), ["create_slide", "edit_slide", "patch_slide", "read_slide"]);
@@ -26,7 +26,7 @@ test("working block: current JSON, open issues, failed checks", () => {
 });
 
 test("the example the agent copies is plain: no takeaway, notes, kicker, footnote, source or annotations", async () => {
-  const { exampleFor } = await import("../../src/engine/agent/prompts.js");
+  const { exampleFor } = await import("../../src/engine/agent/prompts");
   for (const id of ["chart", "table", "number", "steps", "cards"]) for (const style of ["consulting", "pitch"]) {
     const ex = JSON.parse(exampleFor(id, style));
     for (const k of ["takeaway", "notes", "kicker", "footnote", "source"]) assert.equal(ex[k], undefined, `${id} ${style} ${k}`);

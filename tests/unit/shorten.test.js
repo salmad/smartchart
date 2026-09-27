@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { shorten, targets } from "../../src/engine/agent/shorten.js";
-import { fakeAgent, say } from "./fakes.js";
+import { shorten, targets } from "../../src/engine/agent/shorten";
+import { fakeAgent, say } from "./fakes";
 
 const slide = { template: "chart", title: "A title that runs onto three lines of text on the slide", takeaway: "x".repeat(97),
   notes: [{ title: "a", text: "y".repeat(120) }, { title: "b" }, { title: "c", text: "z".repeat(95) }],

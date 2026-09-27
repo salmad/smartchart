@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { firstCall, preStep } from "../../src/engine/agent/pre.js";
-import { fakeJev } from "./fakes.js";
+import { firstCall, preStep } from "../../src/engine/agent/pre";
+import { fakeJev } from "./fakes";
 
 const deck = { style: "consulting", slides: [{ id: "s_ab12", slide: { template: "chart", title: "Revenue grew" } }] };
 const sel = { slideId: "s_ab12" };
