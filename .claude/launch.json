@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "proto",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["docs/design/proposals/journey/server.mjs"],
+      "port": 8787
+    }
+  ]
+}
