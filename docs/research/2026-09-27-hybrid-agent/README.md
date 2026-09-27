@@ -48,3 +48,5 @@ Also: PRE made the first tool call in 80% of 55 turns, and its intent was right 
 7. c26 (a comparison with no figures) got a question back instead of a slide ("do you have the actual figures…"). This is allowed when a request is unclear, but the rules prefer marked illustrative figures, so it is counted as no slide.
 
 Against the MVP agent (2026-09-26, same single requests and setup): the median fell from 4 model calls per turn to 3, but p50 for a new slide rose from 17.4 s to 22.9 s. The hybrid makes fewer GLM steps per turn (2.5 vs 3.3) and half as many separate replies. Each step, however, is slower: median agent step 6.3 s vs 4.6 s, and median reply 5.4 s vs 3.0 s. The prompt, the chart card (with the chart guide) and the working block are all longer. This run did not separate those causes; running the same requests with a shorter card would.
+
+> Ran at commit 788f4d7; paths refer to that tree (the prototype has since moved to src/).

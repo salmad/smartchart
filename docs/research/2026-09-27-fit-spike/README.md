@@ -128,3 +128,5 @@ Both are fast. The gain is that the predictor needs no DOM, so it runs in Node, 
 | `analyze.mjs` → `results.json`, `disagreements.json`, `analyze.log` | Comparison, variants, margin sweep, timing |
 | `balance.mjs` → `balance.json`, `balance.log` | Computed-width balance check |
 | `fonts/` | The exact TTFs and their OFL licences |
+
+> Ran at commit 788f4d7; paths refer to that tree (the prototype has since moved to src/).

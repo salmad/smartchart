@@ -1,33 +1,29 @@
 # CLAUDE.md
 
-SmartChart: users create and edit charts through natural-language chat. The bar is "the Apple of charts and presentations" with Linear/Revolut-level polish: restrained, precise, premium.
+SmartChart: users make consulting and pitch slides by chatting. The bar is "the Apple of charts and presentations" with Linear/Revolut-level polish: restrained, precise, premium. Guiding philosophy: `docs/product/PRODUCT_INPUT.md` — the agent configures, never designs; beauty and taste are the product.
 
-**Rewrite in progress:** the existing code was written with older model generations and is being rewritten. Treat current patterns as reference, not precedent. Prefer clean, simple implementations over matching legacy code.
-
-Stack: React 18 + TypeScript (strict), Vite, Tailwind + shadcn/ui, Recharts (legacy; slides and charts move to a custom chart engine), lucide-react. Deployed on Vercel.
+Stack: React 18 + TypeScript (strict), Vite, Tailwind + shadcn/ui, lucide, vitest, Playwright. Deployed on Vercel (`api/` functions).
 
 ## Commands
 
-`npm run dev` (serves the app and `/api` locally, reads `.env`) · `npm run build` (runs `tsc -b`, so use it to typecheck) · `npm run lint` · `npm test` (vitest) · `npm run test:browser` (Playwright: review page, lints, app smoke)
+`npm run dev` (app + `/api` locally, reads `.env`) · `npm run build` (typechecks) · `npm run lint` · `npm test` (vitest) · `npm run test:browser` (Playwright: review page, lints, app smoke)
 
 Dev review page: `/src/dev/review.html` (every example in both styles, validated and measured; `?stress=1`, `?theme=paper`, `?only=<i>&full=1` for one slide at full size).
 
 ## Structure
 
-- `src/engine/{slides,agent}` holds the ported prototype engine (slide schema/render/charts, journey agent), tested by `tests/unit`
-- `src/features/{chart,chat,settings}` holds the feature components and hooks
-- `src/app/providers` holds the React Context state (`ChartConfigProvider`, `UIStateProvider`)
-- `src/services/ai` holds the **legacy** LLM layer (`docs/AI_SERVICE.md`), which the rewrite replaces
-- `src/shared/{components,lib,types}` holds shared code, including the shadcn primitives in `shared/components/ui`
-
-**Legacy duplicates:** `src/components`, `src/lib`, `src/utils` and `src/types` mirror files in `src/shared`. Edit the `shared/` copy. A few files still import `@/lib/utils` and `@/types/chart`, so check before deleting either tree.
+- `src/engine`: framework-free. `slides/` (schema, render, charts, lints, colours, `slides.css`), `agent/` (agent loop, prompts, checks, LLM calls)
+- `src/app`: the React app. `App.tsx` holds state and picks the screen; `components/` (screens and parts), `components/ui` (shadcn)
+- `src/dev`: review page and lint fixture (dev only, not built)
+- `api/`: Vercel functions (web `Request`/`Response`; keys stay here)
+- `tests/unit` (vitest), `tests/browser` (Playwright), `tests/fixtures`
 
 ## Rules
 
 - Use shadcn/ui for primitives: `npx shadcn@latest add <name>`.
 - No `any`, no inline styles. Split components over ~300 lines.
-- Legacy AI layer (old chart app only): Gemini Flash is primary, Claude Haiku is the fallback, and both share `services/ai/shared/`.
-- **Slide-system rewrite:** the source of truth is `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md`. Start at section 14. The visual design is `docs/design/proposals/slides-v4.html`.
-- `docs/DESIGN_SYSTEM.md` covers the legacy app UI only. Never apply it to slides or charts.
-- The AI layer is changing: GLM 5.3 Flash is the main model and Jev handles routing and closed-set decisions. OpenRouter is used only for Jev.
+- Slides use `slides.css` unchanged; app chrome never styles slide internals.
+- The gallery is one approved example set: `src/engine/slides/examples.ts`. Rewrite content, never add a second set.
+- Slide system: the source of truth is `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md` (start at section 14).
+- AI: GLM 5.3 Flash is the main model; Jev (via OpenRouter, the only OpenRouter use) handles routing and closed-set decisions.
 - Scratch notes and plans go in `docs/temp/` (gitignored).

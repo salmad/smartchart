@@ -42,3 +42,5 @@ Re-run with `node --env-file=../../../.env run.mjs`, then `node analyze.mjs`.
 - Jev routes when its probability is ≥ 0.7; otherwise GLM 5.3 Flash with thinking picks.
 - The menu becomes 7 entries.
 - Re-run on the 7-entry menu before M2.
+
+> Ran at commit 788f4d7; paths refer to that tree (the prototype has since moved to src/).

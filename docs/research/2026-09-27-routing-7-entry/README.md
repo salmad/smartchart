@@ -75,3 +75,5 @@ Re-run with `node --env-file=../../../.env run.mjs`, then `node analyze.mjs`. To
 - Jev ran with 8 requests in parallel and GLM with 4. Latency is measured client-side with direct API calls, without the journey proxy.
 
 **Decision:** keep the threshold at 0.7. Jev routes when its top template probability is ≥ 0.7, which covers about 87% of requests. Below that, GLM 5.3 Flash with thinking picks. No change to §9.2 or §13.
+
+> Ran at commit 788f4d7; paths refer to that tree (the prototype has since moved to src/).

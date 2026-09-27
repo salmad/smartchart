@@ -124,9 +124,8 @@ The key idea is **"LLM as configurator, not designer."** The agent emits a small
   - templates: cover, section, hero, split, columns, cases, table, chart, timeline, stats
   - two palettes on semantic tokens: **Ink** (dark, gold focus) and **Paper** (light, cobalt focus)
   - `?style=consulting&theme=paper&only=3&full=1` renders one slide at 1920×1080; `?stress=1` renders every template with every slot at its limit
-  - agent contract: `slides-v4-schema.js` (catalogue, per-template schemas, validator); prompt and tools: `slides-v4-agent-prompt.md`
-- `docs/design/proposals/slides-v3.html` ("Colour-linked"): designed from first principles, without the example decks. It uses one type family (Instrument Sans, with condensed widths for Pitch) and two themes (Porcelain, Midnight). The signature is **colour linking**: `[[words]]` in a headline take the colour of the focus series, column or stat that proves them. Charts follow a data-journalism style. Data is in `slides-v3-data.js`.
-- `slides-v2.html` / `slides-v1.html`: earlier passes that followed the example decks, kept for comparison.
+  - agent contract: `src/engine/slides/schema.ts` (catalogue, per-template schemas, validator); prompt and tools: `src/engine/agent/agent-prompt.ts`
+- `slides-v3.html` ("Colour-linked"), `slides-v2.html`, `slides-v1.html`: earlier passes, removed in v1 (see commit 788f4d7).
 
 **Rendering note for the build:** Chrome misplaces SVG `<text>` inside CSS-scaled slide frames. Chart labels must be HTML positioned over the SVG, not SVG text.
 

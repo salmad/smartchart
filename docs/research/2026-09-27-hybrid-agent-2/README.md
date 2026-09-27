@@ -72,3 +72,5 @@
 - p95 latency.
 - Streaming the first write, so the slide builds as it is written.
 - Tables can only focus a column, so "highlight the Growth plan" highlights the title word and a column, not the row. Seen while recording the replays.
+
+> Ran at commit 788f4d7; paths refer to that tree (the prototype has since moved to src/).
