@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { columnAlign } from "../v5/render.js";
+import { columnAlign } from "../../src/engine/slides/render.js";
 
 test("alignment follows the column's content", () => {
   const t = { columns: [{ label: "Plan" }, { label: "Price" }, { label: "Margin" }, { label: "SLA" }, { label: "Notes" }],

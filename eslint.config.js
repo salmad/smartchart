@@ -1,0 +1,42 @@
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import hooks from 'eslint-plugin-react-hooks'
+import refresh from 'eslint-plugin-react-refresh'
+import globals from 'globals'
+
+export default tseslint.config(
+  {
+    ignores: [
+      'dist',
+      'docs',
+      'node_modules',
+      'tests/agent-harness',
+      '.superpowers',
+      // legacy app, removed in v1 Task 12
+      'src/features',
+      'src/services',
+      'src/shared',
+      'src/components',
+      'src/lib',
+      'src/types',
+      'src/utils',
+      'src/app/providers',
+      'src/App.tsx',
+      'src/main.tsx',
+      'src/index.css',
+    ],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.strict,
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+    plugins: { 'react-hooks': hooks, 'react-refresh': refresh },
+    rules: {
+      ...hooks.configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'error',
+      'react/forbid-component-props': 'off',
+      'no-restricted-syntax': ['error', { selector: "JSXAttribute[name.name='style']", message: 'No inline styles (CLAUDE.md).' }],
+    },
+  },
+)

@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { annotationLabel, axisBreak, cagr, derivedFigures, fmt, shares, signed, waterfall } from "../v5/chart-math.js";
+import { annotationLabel, axisBreak, cagr, derivedFigures, fmt, shares, signed, waterfall } from "../../src/engine/slides/charts/chart-math.js";
 
 const years = ["2021", "2022", "2023", "2024", "2025"];
 const rev = { categories: years, format: "£{v}m", series: [{ name: "Revenue", mark: "bar", color: "focus", values: [10, 12, 15, 18, 20] }] };

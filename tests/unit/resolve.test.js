@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { resolveAuto } from "../journey/resolve.js";
+import { resolveAuto } from "../../src/engine/agent/resolve.js";
 import { fakeJev } from "./fakes.js";
 
 const cats = ["2021", "2022", "2023", "2024", "2025"];

@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { autofix } from "../journey/autofix.js";
+import { autofix } from "../../src/engine/agent/autofix.js";
 
 const chart = (c, extra = {}) => ({ template: "chart", title: "Revenue grew four times", chart: { categories: ["a", "b", "c"], format: "£{v}m", ...c }, ...extra });
 

@@ -8,10 +8,11 @@ Stack: React 18 + TypeScript (strict), Vite, Tailwind + shadcn/ui, Recharts (leg
 
 ## Commands
 
-`npm run dev` · `npm run build` (runs `tsc -b`, so use it to typecheck) · `npm run lint`
+`npm run dev` · `npm run build` (runs `tsc -b`, so use it to typecheck) · `npm run lint` · `npm test` (vitest)
 
 ## Structure
 
+- `src/engine/{slides,agent}` holds the ported prototype engine (slide schema/render/charts, journey agent), tested by `tests/unit`
 - `src/features/{chart,chat,settings}` holds the feature components and hooks
 - `src/app/providers` holds the React Context state (`ChartConfigProvider`, `UIStateProvider`)
 - `src/services/ai` holds the **legacy** LLM layer (`docs/AI_SERVICE.md`), which the rewrite replaces

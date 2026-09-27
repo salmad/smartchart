@@ -1,5 +1,5 @@
 /* Shared drawing helpers for every chart kind: SVG shapes, HTML labels, plot-pixel geometry. */
-export { esc } from "./render.js";
+export { esc } from "../render.js";
 
 /** An HTML label at a point; `a` is the anchor (bc = bottom centre, tc, mc, tl, br, ml, tc0). */
 export const lbl = (cls, x, y, a, html, attrs = "") => `<span class="lbl a-${a} ${cls}" style="left:${x}px;top:${y}px"${attrs}>${html}</span>`;

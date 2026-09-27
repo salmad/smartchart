@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { parseSuggestions, suggestMessages } from "../journey/suggest.js";
+import { parseSuggestions, suggestMessages } from "../../src/engine/agent/suggest.js";
 
 const BOOK = { template: "chart", title: "The book grows to [[£120m]] by 2030", chart: { categories: ["2026", "2030"], format: "£{v}m",
   series: [{ name: "Loan book", mark: "bar", color: "focus", values: [10, 120] }] } };

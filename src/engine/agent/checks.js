@@ -1,7 +1,7 @@
 /* Design checks (spec 6): rule checks in code, judgment checks as one Jev call.
    They are advisory: shown on the slide, never blocking. */
-import { MENU, plain } from "../v5/schema.js";
-import { derivedFigures } from "../v5/chart-math.js";
+import { MENU, plain } from "../slides/schema.js";
+import { derivedFigures } from "../slides/charts/chart-math.js";
 import { jev } from "./llm.js";
 
 const words = (s) => plain(s || "").toLowerCase().match(/[a-z0-9£$€%]+/g) || [];

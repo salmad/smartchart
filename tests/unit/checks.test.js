@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { numbersIn, ruleChecks } from "../journey/checks.js";
+import { numbersIn, ruleChecks } from "../../src/engine/agent/checks.js";
 
 const get = (s, id, style = "consulting") => ruleChecks(s, style, 1).find((c) => c.id === id);
 const chart = (series, extra = {}) => ({ template: "chart", title: "Revenue grew [[4.5×]] from £2.1m to £9.4m by 2025", source: "Accounts", chart: { categories: ["2022", "2023", "2024", "2025"], format: "£{v}m", series, ...extra } });

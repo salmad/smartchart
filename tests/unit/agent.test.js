@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { runTurn } from "../journey/agent.js";
+import { runTurn } from "../../src/engine/agent/agent.js";
 import { fakeAgent, fakeJev, say, toolCall } from "./fakes.js";
 
 const CHART = { template: "chart", title: "Revenue grew [[4.5×]] from £2.1m to £9.4m", source: "Company accounts",

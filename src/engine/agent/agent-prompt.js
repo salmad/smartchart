@@ -1,5 +1,5 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
-import { MARKUP, MENU } from "../v5/schema.js";
+import { MARKUP, MENU } from "../slides/schema.js";
 import { styleBlock } from "./prompts.js";
 
 const templates = () => Object.entries(MENU).map(([id, t]) => `- ${id}: ${t.summary} Use when: ${t.use}`).join("\n");

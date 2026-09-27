@@ -2,7 +2,7 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { MENU, describe, validate } from "../v5/schema.js";
+import { MENU, describe, validate } from "../slides/schema.js";
 import { agentStep as glmStep, jev as jevCall } from "./llm.js";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
 import { autofix } from "./autofix.js";

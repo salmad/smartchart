@@ -1,7 +1,7 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { CHART_GUIDE, describe, upgrade, validate } from "../v5/schema.js";
-import { EXAMPLES, stressFor } from "../v5/examples.js";
+import { CHART_GUIDE, describe, upgrade, validate } from "../../src/engine/slides/schema.js";
+import { EXAMPLES, stressFor } from "../../src/engine/slides/examples.js";
 
 const chart = (c, extra = {}) => ({ template: "chart", title: "Revenue grew four times while the margin tripled", chart: c, ...extra });
 const REV = { name: "Revenue", mark: "bar", color: "focus", values: [2.1, 4.8, 9.4] };

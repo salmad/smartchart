@@ -1,6 +1,6 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { applyPatch, parsePath } from "../journey/patch.js";
+import { applyPatch, parsePath } from "../../src/engine/agent/patch.js";
 
 const S = { template: "cards", title: "Three levers", cards: [{ icon: "zap", title: "A", text: "a" }, { icon: "zap", title: "B", text: "b" }, { icon: "zap", title: "C", text: "c" }], takeaway: "So what." };
 

@@ -10,7 +10,7 @@
    or a number. Prototype limits are hand-tuned and proven by the stress deck;
    the product computes them from geometry (spec 4.3).
    ═══════════════════════════════════════════════════════════════════════════ */
-import { waterfall } from "./chart-math.js";
+import { waterfall } from "./charts/chart-math.js";
 
 export const STYLES = {
   consulting: {

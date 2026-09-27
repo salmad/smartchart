@@ -1,6 +1,6 @@
 /* Prompt pieces shared by the agent and Jev (spec 9.3): the style block, worked examples, the picking guide. */
-import { MENU, PICKING_GUIDE, STYLES } from "../v5/schema.js";
-import { EXAMPLES } from "../v5/examples.js";
+import { MENU, PICKING_GUIDE, STYLES } from "../slides/schema.js";
+import { EXAMPLES } from "../slides/examples.js";
 
 const specFor = (ex, style) => { const { consulting, pitch, name, ...shared } = ex; return { ...shared, ...(style === "pitch" ? pitch : consulting) }; };
 

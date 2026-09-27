@@ -1,6 +1,6 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the review page and the journey prototype. */
 import { MENU } from "./schema.js";
-import { drawChart } from "./chart.js";
+import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 export { drawChart };
 

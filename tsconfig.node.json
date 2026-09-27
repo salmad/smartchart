@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "composite": true, "module": "ESNext", "moduleResolution": "bundler", "strict": true, "skipLibCheck": true, "noEmit": false, "emitDeclarationOnly": true, "outDir": "node_modules/.tmp/node" },
+  "include": ["vite.config.ts", "vitest.config.ts", "vite/**/*.ts"]
+}

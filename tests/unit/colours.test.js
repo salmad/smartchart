@@ -1,7 +1,7 @@
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { PALETTES, MIN_DISTANCE, MIN_HUE_GAP, allocate, contrast, distance, hueGap, oklch, resolveAccent, secondHue, seriesSlots } from "../v5/colours.js";
+import { PALETTES, MIN_DISTANCE, MIN_HUE_GAP, allocate, contrast, distance, hueGap, oklch, resolveAccent, secondHue, seriesSlots } from "../../src/engine/slides/colours.js";
 
 const THEMES = Object.keys(PALETTES);
 // Every 15° of hue at two strengths, plus the palette defaults, pure red and green, and near-greys.
@@ -25,7 +25,7 @@ test("palette set: greys ≥ 3:1, ≥ 14 L* apart, and distinct from focus, neg 
 });
 
 test("palette values match slides.css", () => {
-  const css = readFileSync(new URL("../v5/slides.css", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../../src/engine/slides/slides.css", import.meta.url), "utf8");
   for (const t of THEMES) {
     const block = css.match(new RegExp(`\\.theme-${t} \\{([^}]+)\\}`))[1], P = PALETTES[t];
     for (const k of ["bg", "fg", "focus", "neg", "pos"]) assert.ok(block.includes(`--${k}: ${P[k]}`), `${t} --${k}`);
@@ -107,7 +107,7 @@ test("text colour on every fill reads at 4.5:1 or better where possible", () => 
 });
 
 test("every series has its own text colour: 4.5:1, and grey labels a clear step apart", async () => {
-  const { MIN_TEXT, TEXT_STEP } = await import("../v5/colours.js");
+  const { MIN_TEXT, TEXT_STEP } = await import("../../src/engine/slides/colours.js");
   for (const t of THEMES) for (const a of [null, "#2447D1", "#E8B94A", "#14B8A6"]) {
     const { vars } = allocate(chartSlide({ series: series(6, { mark: "line" }) }), t, a), bg = PALETTES[t].bg;
     for (const k of ["quiet", "ctx3", "ctx2", "ctx1", "focus", "alt1", "alt2"]) assert.ok(contrast(vars[`${k}-text`], bg) >= MIN_TEXT, `${t} ${a} ${k}-text`);
