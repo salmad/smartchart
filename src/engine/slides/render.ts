@@ -41,7 +41,7 @@ function tableHTML(t: Table) {
   const cell = (c: Cell, j: number) => { const v: { value: string; note?: string } = typeof c === "object" && c ? c : { value: c };
     return `<td class="${cls(t.columns[j], j)}">${esc(v.value)}${v.note ? `<small>${esc(v.note)}</small>` : ""}</td>`; };
   return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
-    <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}">${esc(c.label)}</th>`).join("")}</tr></thead>
+    <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}">${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
     <tbody>${t.rows.map((r) => `<tr class="${r.style || ""}">${r.cells.map(cell).join("")}</tr>`).join("")}</tbody></table>`;
 }
 
