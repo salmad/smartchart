@@ -52,7 +52,10 @@ tests/
 
 **Kept:** `slides-v4.html` (the visual reference in CLAUDE.md), `example_template/`, the specs, and `docs/research/`. Research `run.mjs` scripts import prototype paths. They stay as frozen records, and each README gets one line: "Ran at commit 788f4d7; paths refer to that tree."
 
-**Updated:** CLAUDE.md is rewritten for v1 (structure, commands, stack, no legacy notes), along with the `smartchart-slide-system` memory. `package.json` scripts: `dev`, `build`, `lint`, `test` (vitest), `test:browser`.
+**Updated:**
+- **CLAUDE.md is a short, current description of v1:** product line, stack, commands, structure, rules and pointers (to `docs/product/PRODUCT_INPUT.md` as the guiding philosophy, the slide-system spec, and `starters.json` as the only gallery). The target is about 30 lines, with no history and no legacy notes. Every task that changes structure, commands, rules or the gallery updates it in the same commit, and the final verification re-reads it against the code.
+- **`docs/product/PRODUCT_INPUT.md`:** only its stale file pointers change (`slides-v1..v3`, `slides-v4-schema.js` and `slides-v4-agent-prompt.md` are removed; the schema and prompt now live in `src/engine/`). Its philosophy and decisions are not edited.
+- The `smartchart-slide-system` memory. `package.json` scripts: `dev`, `build`, `lint`, `test` (vitest), `test:browser`.
 
 ## 4. The gallery: one set, `starters.json`
 
@@ -115,6 +118,13 @@ The calibrated slides are not rebuilt, dropped or restyled. Only their words (an
 Nothing in `v5/examples.js` is deleted until guards 1–3 pass on `starters.json`.
 
 ## 5. Empty state
+
+### 5.0 Guiding philosophy (`docs/product/PRODUCT_INPUT.md`)
+The landing page is the first thing a user sees, so it has to carry the product's philosophy, not a marketing layer on top of it:
+- **Beauty and taste are the product.** The finished slides are the hero. The chrome is restrained: no badges, gradients, hype copy or illustrations. Any element that isn't a slide or a control has to earn its place.
+- **The agent configures; it never designs.** The gallery *is* the closed menu: every template and chart feature the app has, and nothing it doesn't. Users can see what SmartChart can and cannot make before they type, and picking a slide starts from a component that was designed once and reviewed.
+- **Writing style is the user's choice.** Consulting vs Pitch is a visible, first-class choice on the landing (with one line each: "Consulting: the argument in the title, the evidence below." / "Pitch: one bold claim, big numbers, little text."), and the whole gallery re-renders in the chosen style.
+- **Copy follows the house style:** answer first (Minto), concise, no filler. That applies to the page's own copy as much as the slides.
 
 ### 5.1 Landing: no deck open (first visit, or **New deck**)
 - **Layout (mockup A):** the bar (brand, Consulting/Pitch, Ink/Paper, Accent, deck picker, New deck, Present disabled), the chat panel on the left, the gallery in the stage.
