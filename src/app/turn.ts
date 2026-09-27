@@ -1,8 +1,8 @@
 /* One agent turn and the checks after it, as plain functions: the UI only dispatches and renders.
-   The agent works on its own copy of the deck; every applied write shows at once. Judgment checks run
-   after the reply, on the slides written this turn (spec 9.4). */
+   The agent works on its own copy of the deck; every applied write shows at once. Before the reply shows,
+   the slides written this turn get their checks, and the reply points the user at what failed. */
 import { runTurn, type AgentDeck, type MeasureFn, type TraceStep } from '@/engine/agent/agent'
-import { judgmentChecks, ruleChecks } from '@/engine/agent/checks'
+import { judgmentChecks, nudge, ruleChecks, withNudge, type Check } from '@/engine/agent/checks'
 import type { Slide } from '@/engine/types'
 import type { createMeasurer } from './measure'
 import { deckOf, type Action, type AppState } from './state'
@@ -56,13 +56,18 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
   try {
     const r = await runTurn({ text, deck: adeck, history, working, selection: cur ? { slideId: cur.id } : null, measure, log, onChange: sync, models })
     sync(adeck, r.written.at(-1) || getState().items[getState().current]?.id)
-    const replyMs = Math.round(performance.now() - t0), secs = (replyMs / 1000).toFixed(1)
-    setBot({ kind: 'bot', text: r.reply, sub: `${plural(r.modelCalls, 'model call')} · ${plural(r.toolCalls, 'tool call')} · ${secs}s`, trace })
     dispatch({ type: 'items', items: recheckRules(getState(), measurer) })
+    // Checks before the reply: what failed on the slides just written becomes a nudge in the reply.
+    const tc = performance.now(), checks = (await Promise.all(r.written.map((id) => runChecks(id, deps, judge)))).flat()
+    if (r.written.length) log({ step: 'Checks', model: 'Jev', ms: Math.round(performance.now() - tc), detail: `${checks.filter((c) => !c.ok).length} to look at` })
+    const reply = withNudge(r.reply, nudge(checks))
+    // The history holds the reply as shown, so "fix that" next turn knows what "that" is.
+    const last = history.at(-1)
+    if (last?.role === 'assistant' && !last.tool_calls?.length) last.content = reply
+    const replyMs = Math.round(performance.now() - t0), secs = (replyMs / 1000).toFixed(1)
+    setBot({ kind: 'bot', text: reply, sub: `${plural(r.modelCalls, 'model call')} · ${plural(r.toolCalls, 'tool call')} · ${secs}s`, trace })
     dispatch({ type: 'set', patch: { busy: false, history, working } })
-    await Promise.all(r.written.map((id) => runChecks(id, deps, judge)))
-    // Time to the reply, as the prototype measured it; the judgment checks after it are not part of the turn's latency.
-    return { request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: replyMs,
+    return { request: text, reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: replyMs,
       pre: { intent: r.pre.intent, p: r.pre.p }, written: r.written, items: structuredClone(getState().items) }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -82,14 +87,17 @@ export function recheckRules(s: AppState, measurer: TurnDeps['measurer']): Item[
   })
 }
 
-/** Rule checks at once, then judgment checks (one Jev call) for one slide. */
-async function runChecks(id: string, { measurer, dispatch, getState }: TurnDeps, judge: typeof judgmentChecks) {
+/** Rule checks at once, then judgment checks (one Jev call) for one slide; returns them all. */
+async function runChecks(id: string, { measurer, dispatch, getState }: TurnDeps, judge: typeof judgmentChecks): Promise<Check[]> {
   const update = (patch: Partial<Item>) => dispatch({ type: 'items', items: getState().items.map((it) => (it.id === id ? { ...it, ...patch } : it)) })
   const s = getState(), i = s.items.findIndex((it) => it.id === id), item = s.items[i]
-  if (!item) return
+  if (!item) return []
   measurer.measure(item.slide, deckOf(s), i)
   const rules = ruleChecks(item.slide, s.style, measurer.lines)
   update({ checks: rules, checksPending: true })
-  try { update({ checks: [...rules, ...(await judge(item.slide, s.style)).checks], checksPending: false }) }
-  catch (e) { update({ checks: [...rules, { id: 'J', ok: false, msg: `judgment checks failed: ${e instanceof Error ? e.message : String(e)}` }], checksPending: false }) }
+  let checks: Check[]
+  try { checks = [...rules, ...(await judge(item.slide, s.style)).checks] }
+  catch (e) { checks = [...rules, { id: 'J', ok: false, msg: `judgment checks failed: ${e instanceof Error ? e.message : String(e)}` }] }
+  update({ checks, checksPending: false })
+  return checks
 }

@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { numbersIn, ruleChecks } from "../../src/engine/agent/checks";
+import { numbersIn, nudge, ruleChecks, withNudge } from "../../src/engine/agent/checks";
 import type { Chart, Series, Slide, Style } from "../../src/engine/types";
 
 type ChartSlide = Slide & { chart: Chart & { categories: string[]; series: Series[] } };
@@ -72,4 +72,17 @@ test("focus counts per chart kind; a timeline carries no figure rules", () => {
   const tl: Slide = { template: "chart", title: "The [[pilot]] is the critical path for the whole launch", chart: { kind: "timeline", periods: ["Q1", "Q2", "Q3"], rows: [{ label: "Build", start: 0, end: 1 }, { label: "Pilot", start: 1, end: 2, focus: true }] } };
   assert.equal(get(tl, "R4")?.ok, true);
   for (const id of ["R5", "R8", "R12", "R14"]) assert.equal(get(tl, id), undefined, id);
+});
+
+test("nudge: judgment first, a rule that repeats it left out, at most two, never the passes or a Jev failure", () => {
+  const J1 = { id: "J1", ok: false, msg: "Title reads like a topic label" }, R2 = { id: "R2", ok: false, msg: "Title has 3 words; action titles state a so-what" };
+  const R8 = { id: "R8", ok: false, msg: "Figures have no source" }, R11 = { id: "R11", ok: false, msg: "Headline figure 12 is not on the slide" };
+  assert.equal(nudge([R8, R2, J1, R11]), "Worth a look: title reads like a topic label, and figures have no source.");
+  assert.equal(nudge([{ id: "J", ok: false, msg: "judgment checks failed: down" }, { ...R8, ok: true }]), "");
+});
+
+test("withNudge: before the closing question, else at the end", () => {
+  assert.equal(withNudge("Added it. Want a takeaway?", "Worth a look: x."), "Added it. Worth a look: x. Want a takeaway?");
+  assert.equal(withNudge("Added it.", "Worth a look: x."), "Added it. Worth a look: x.");
+  assert.equal(withNudge("Added it.", ""), "Added it.");
 });

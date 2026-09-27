@@ -56,12 +56,22 @@ test('a failed turn leaves the conversation as it was, so the next turn can run'
   expect(h.state().history.some((m) => m.tool_calls?.length)).toBe(false)
 })
 
-test('the turn time is taken at the reply, before the judgment checks (as the prototype did)', async () => {
+test('a failed judgment check shows in the reply, before its closing question, and in the history', async () => {
+  const agentStep = fakeAgent([(m) => toolCall('edit_slide', { slideId: reservedId(m), slide: COVER, reply: 'Added the cover. What next?' })])
+  const h = harness({ agentStep, jev: fakeJev({ intent: ['new_slide', 0.95], template: ['cover', 0.9] }) })
+  h.deps.judge = async () => ({ checks: [{ id: 'J1', ok: false, msg: 'Title reads like a topic label' }], ms: 0 })
+  const r = await sendTurn('A cover', h.deps)
+  const want = 'Added the cover. Worth a look: title reads like a topic label. What next?'
+  expect(r.reply).toBe(want)
+  expect(h.state().messages[1].text).toBe(want)
+  expect(h.state().history.at(-1)?.content).toBe(want)
+})
+
+test('passing checks leave the reply as the agent wrote it', async () => {
   const agentStep = fakeAgent([(m) => toolCall('edit_slide', { slideId: reservedId(m), slide: COVER, reply: 'Done.' })])
   const h = harness({ agentStep, jev: fakeJev({ intent: ['new_slide', 0.95], template: ['cover', 0.9] }) })
-  h.deps.judge = async () => { await new Promise((ok) => setTimeout(ok, 300)); return { checks: [], ms: 300 } }
-  const r = await sendTurn('A cover', h.deps)
-  expect(r.ms).toBeLessThan(250)
+  h.deps.judge = async () => ({ checks: [{ id: 'J1', ok: true, msg: 'Title states a so-what' }], ms: 0 })
+  expect((await sendTurn('A cover', h.deps)).reply).toBe('Done.')
 })
 
 test('a rate-limited model call reads as a plain sentence, not the API JSON', async () => {

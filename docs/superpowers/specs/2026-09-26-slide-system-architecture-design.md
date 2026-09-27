@@ -26,7 +26,7 @@ A user types a prompt and gets a slide (later: a deck) that is beautiful by cons
 | D11 | **Chromium only for the MVP** (Chrome, Edge, Arc). Safari/Firefox shape and break text differently; they come later with their own calibration. |
 | D12 | **Fixed format, not responsive.** A slide is always laid out at 1920×1080, and a standalone chart on its own fixed canvas (the same geometry as the `chart` entry without notes). On screen the whole canvas is scaled uniformly (`transform: scale`), like PowerPoint or Keynote: fit-to-panel, zoom, thumbnails. Layout never reflows with the viewport: no breakpoints, container queries or viewport units inside a slide. This is what makes fit computable: there is exactly one geometry to calculate against. Only the app around the slide (chat, panels) is responsive. |
 | D13 | **Model routing.** GLM 5.3 Flash through its subscription endpoint is the main model (free; first priority). OpenRouter is used **only** for Jev (later also cheap image models), never for other text models. Jev makes every closed-set decision that needs no writing (menu entry, edit intent, card lead, bar or line per series, stacking, focus element, icons; see 9.1) and runs the cheap judgment checks. GLM writes text and data. |
-| D14 | **Design checks** run after every save: deterministic rule checks (free) plus Jev judgment checks (cheap). For now they are **shown to the user only**, as a checks list on the slide. A later "Get advice" action sends them to the agent to revise. They never block saving; fit does. |
+| D14 | **Design checks** run after every save: deterministic rule checks (free) plus Jev judgment checks (cheap). They are shown as a checks list on the slide, and the turn's reply names up to two failed ones so the user can ask for a fix (revised 2026-09-27). The agent never fixes them unasked. They never block saving; fit does. |
 | D15 | **Presentation mode** like Slidev: keyboard navigation, full screen, overview grid, deep links per slide. |
 | D16 | **Routing picks the key component only; optional components are never a routing decision.** The router chooses what the slide is built around (chart, table, number, steps, cards, cover, section). Everything optional is decided while filling, inside the chosen template: notes, takeaway, footnote, source, kicker, card facts, card lead (icon or value). Where an optional component changes the layout (notes on a chart or table), code picks the layout variant deterministically. A new optional component never adds a menu entry. (Evidence: M0 bake-off, 13.) |
 
@@ -239,7 +239,7 @@ Chat UI → Agent loop ── model call ─────────────
 
 - One model interface: OpenAI-compatible chat with tool calls, behind the proxy. Replaces the current Gemini/Claude factory and the exposed `VITE_*` keys.
 - **The proxy enforces routing** with an allowlist: GLM goes to the GLM subscription endpoint; OpenRouter accepts only Jev model ids (later: named image models). Any other model id is rejected.
-- **Jev** makes every closed-set decision: the intent, template and choices before the agent runs, icons in the write path (9.1), and the judgment checks after the turn (6).
+- **Jev** makes every closed-set decision: the intent, template and choices before the agent runs, icons in the write path (9.1), and the judgment checks before the reply shows (6).
 - Because fit needs no DOM, the loop can move server-side later without changing the fit engine.
 - Stored slides carry a `fitVersion`. When geometry or fonts change, slides saved under an older version are re-checked on load, and any that fail are flagged.
 - Fonts use `font-display: block` so thumbnails never render with fallback metrics.
@@ -283,7 +283,7 @@ User message
       a write that comes back clean (applied, no issues) ends the turn:
         with its `reply`, or, when PRE was sure and the step only wrote, with a short reply written by code
   → reply to the user
-  → POST (Jev, one call, after the reply): judgment checks J1–J8 on each slide written this turn
+  → POST (Jev, one call, before the reply shows): judgment checks J1–J8 on each slide written this turn; up to two failed checks join the reply
 ```
 
 Target model calls: clean new slide = 1 Jev + 1 GLM; clean small edit = 1 Jev + 1 GLM; an over-long field adds one small GLM call (2 in parallel, hedged); other issues add 1 GLM per fix round.
@@ -381,7 +381,7 @@ Tie-breakers, stated to the agent and to Jev:
 - **Chart choices stay with code.** On a new slide, series marks and stacking the user did not name are set to `auto` whatever the agent wrote; Jev resolves them with the user's request in its state. A series a patch adds takes the mark of an existing series in the same unit.
 - **Every write re-checks the whole slide**, not only the patched paths: autofix → validate → resolve `auto` (Jev) → measure → rules R1–R14. Issues on paths the patch did not touch come back in a separate `elsewhere` list, so the agent sees knock-on effects (a longer title that now takes 3 lines, a removed category that a note still points at) and decides whether to patch them too.
 - **Rule checks R1–R14** come back as `warnings`: the agent sees them, it is not required to act.
-- **Judgment checks J1–J8** (spec 6) run in POST, once per turn, after the reply, so they add no wait. They are shown on the slide and appear in the working-slides block on the next turn. Advisory.
+- **Judgment checks J1–J8** (spec 6) run in POST, once per turn, before the reply shows (one Jev call, about 0.5 s of wait). Code adds up to two failed checks (judgment first, then rules) to the reply as a "Worth a look" line before its closing question; the history keeps the reply as shown. They are also shown on the slide and appear in the working-slides block on the next turn. Advisory: the agent does not fix them unless the user asks. (Revised 2026-09-27; before, they ran after the reply.)
 - **Code fixes trivia and reports it** (never meaning). Also misplaced fields with one right place: `focus` written inside `chart` or `table` moves to the slide; a card row with no lead gets `icon: "auto"`. The first table column's header is optional.
 - **Code fixes dependent fields instead of reporting them.** When a rule spanning several fields has one right answer, code applies it in autofix and lists it in `autofixes`: a chart whose series are all lines loses its note points; `stacked` goes off when fewer than 2 bar series remain; `area`/`dashed` are dropped from bar series; a removed category drops the note points that referred to it; a second focus the user did not name is set back to neutral. Only rules with a choice left in them come back as issues. This is the main lever for first-write validity: what the model cannot get wrong it is not asked to get right.
 - Measurement is deterministic (fixed 1920×1080 canvas, fixed fonts): the prototype uses the browser as its ruler; the product uses the fit engine (4).

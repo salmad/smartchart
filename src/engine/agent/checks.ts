@@ -162,3 +162,24 @@ export async function judgmentChecks(s: Slide, style: Style): Promise<{ checks: 
   }).filter((c): c is Check => c !== null);
   return { checks, ms: r._ms };
 }
+
+// A rule check that says the same as a failed judgment check is left out of the nudge.
+const SAME_AS: Record<string, string> = { R2: "J1", R6: "J5" };
+const NUDGE_MAX = 2;
+
+/** One sentence pointing the user at the failed checks worth fixing (judgment first, at most 2), or "". */
+export function nudge(checks: Check[]): string {
+  const failed = checks.filter((c) => !c.ok && /^[JR]\d/.test(c.id));
+  const ids = new Set(failed.map((c) => c.id));
+  const picked = [...failed.filter((c) => c.id.startsWith("J")), ...failed.filter((c) => c.id.startsWith("R") && !ids.has(SAME_AS[c.id]))].slice(0, NUDGE_MAX);
+  if (!picked.length) return "";
+  const lower = (m: string) => m.charAt(0).toLowerCase() + m.slice(1);
+  return `Worth a look: ${picked.map((c) => lower(c.msg)).join(", and ")}.`;
+}
+
+/** The reply with the nudge before its closing question, or at the end when it has none. */
+export function withNudge(reply: string, line: string): string {
+  if (!line) return reply;
+  const q = reply.match(/[^.!?]*\?\s*$/);
+  return q ? `${reply.slice(0, q.index).trimEnd()} ${line} ${q[0].trim()}`.trim() : `${reply.trimEnd()} ${line}`.trim();
+}
