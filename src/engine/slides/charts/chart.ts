@@ -51,18 +51,21 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
   const brk = stacked ? null : axisBreak(spec);
   // A target keeps a gutter on the right for its label, level with the end of its line.
   const gutter = targets.length ? 190 : 0;
-  const P = { t: 96, b: labelPx(box) + 22 }, ph = H - P.t - P.b, n = spec.categories.length, band = (W - gutter) / n;
+  // Headroom above the bars: arrows, note markers and a cut outlier bar need room; otherwise one value label's height,
+  // or two when a line on the bars' scale can put its labels over theirs.
+  const roomy = arrows.length > 0 || markers.length > 0 || !!brk, lp = labelPx(box);
+  const shared = L.some((s) => (s.format || spec.format) === unit);
+  const P = { t: roomy ? 96 : lp + 28 + (shared ? lp + 12 : 0), b: lp + 22 }, ph = H - P.t - P.b, n = spec.categories.length, band = (W - gutter) / n;
   const totals = spec.categories.map((_, i) => B.reduce((sum, s) => sum + Math.max(0, val(s, i)), 0));
   const bMax = Math.max(brk ? brk.cap : stacked ? Math.max(...totals) : Math.max(...B.flatMap((s) => s.values)), ...targets.map((a) => a.value ?? NaN));
   const own = L.filter((s) => (s.format || spec.format) !== unit);
   const lVals = own.flatMap((s) => s.values), lMax = own.length ? Math.max(...lVals) : 1, lMin = own.length ? Math.min(...lVals) : 0;
   // Each arrow level takes headroom from the bars, so annotations never leave the plot.
-  const head = .86 - .13 * Math.min(arrows.length, 3);
+  const head = roomy ? .86 - .13 * Math.min(arrows.length, 3) : 1;
   // A line in another unit gets its own band above the bars and their labels, so it never runs through them.
   // It has no axis and every point is labelled, so it spans its own range (lowest to highest), not zero up.
   // The band is at least 56 px high; below it, a label's height of clear space, then the bars.
-  // With no arrows, the band takes the headroom they would have used, up to just under the line's top labels.
-  const room = own.length && !arrows.length ? ph + 40 : ph * head, lineBand = own.length ? Math.max(room * .28, 56) : 0, gap = own.length ? 52 : 0;
+  const room = ph * head, lineBand = own.length ? Math.max(room * .28, 56) : 0, gap = own.length ? 52 : 0;
   const bandTop = P.t + ph - room, bandBottom = bandTop + lineBand, barsH = room - lineBand - gap;
   const yb = (v: number) => P.t + ph - (v / bMax) * barsH;
   const yLine = (v: number) => lMax === lMin ? (bandTop + bandBottom) / 2 : bandBottom - ((v - lMin) / (lMax - lMin)) * (bandBottom - bandTop);

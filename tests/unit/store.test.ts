@@ -29,3 +29,9 @@ test('the local repo saves, lists, gets and removes one deck at a time, and reso
   const full = localDeckRepo({ getItem: () => null, setItem: () => { throw new Error('quota') } })
   expect(await full.save(deck)).toBe(false)
 })
+test('the deck name reads as the title does on the slide, even with a sign inside a highlight', () => {
+  const named = (title: string) => deckName({ items: [{ id: 's', slide: { template: 'chart', title } as SavedDeck['items'][number]['slide'], status: 'ok', errors: [], warnings: [], checks: [] }] })
+  expect(named('ARR grew [[+£7.7m+]] to £17.5m')).toBe('ARR grew +£7.7m+ to £17.5m')
+  expect(named('Churn cost [-£1.4m-] while [+pricing+] added [[£0.8m]]')).toBe('Churn cost £1.4m while pricing added £0.8m')
+  expect(named('[[ ]]')).toBe('Untitled deck')
+})

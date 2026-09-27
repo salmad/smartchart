@@ -3,6 +3,7 @@
    Same key and shape as the prototype's decks.js, so decks saved there open here. */
 import type { Slide, Style, Theme } from '@/engine/types'
 import type { Check } from '@/engine/agent/checks'
+import { plain } from '@/engine/slides/schema'
 import type { ChatMessage } from '@/engine/agent/llm'
 import type { TraceStep } from '@/engine/agent/agent'
 
@@ -58,5 +59,6 @@ export const deckList = (store: Store): SavedDeck[] => Object.values(store.decks
 export function deckName(d: { items?: Item[] }): string {
   const slides = (d.items || []).map((it) => it.slide)
   const t = (slides.find((s) => s.template === 'cover') || slides[0])?.title
-  return t ? t.replace(/\[\[|\]\]|\[[-+]|[-+]\]|\*\*/g, '').trim() : 'Untitled deck'
+  // Markup is stripped in pairs, as the slide draws it, so the name reads exactly as the title on the slide.
+  return t ? plain(t).trim() || 'Untitled deck' : 'Untitled deck'
 }

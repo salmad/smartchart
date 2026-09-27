@@ -2,6 +2,7 @@
 import type { Deck, Slide, Style, Theme } from '@/engine/types'
 import type { ChatMessage } from '@/engine/agent/llm'
 import type { Pill } from '@/engine/agent/suggest'
+import { plain } from '@/engine/slides/schema'
 import { newDeckId, type Item, type Message, type SavedDeck } from './store'
 
 export type View = 'landing' | 'editor' | 'add'
@@ -85,6 +86,6 @@ export function toSaved(s: AppState): SavedDeck | null {
 /** The engine's deck: the footer is the cover title; with no cover, only the page number. */
 export function deckOf(s: AppState): Deck {
   const cover = s.items.find((i) => i.slide.template === 'cover')
-  const footer = cover ? cover.slide.title.replace(/\[\[|\]\]/g, '') : ''
+  const footer = cover ? plain(cover.slide.title) : ''
   return { style: s.style, theme: s.theme, accent: s.accent, footer, slides: s.items.map((i) => i.slide) }
 }

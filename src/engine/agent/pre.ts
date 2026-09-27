@@ -2,6 +2,7 @@
    When the intent is sure, code makes the agent's first tool call itself. */
 import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts";
 import type { JevFn, JevQuestion } from "./llm";
+import { plain } from "../slides/schema";
 import type { Slide, Style } from "../types";
 
 /** What PRE reads of the deck: the slides in order (a pending slide has no content yet). */
@@ -14,7 +15,7 @@ export type PreChoice = Pick<Pre, "intent" | "p" | "template" | "after">;
 export interface FirstCall { name: "create_slide" | "read_slide"; args: Record<string, string> }
 
 export const P_ACT = 0.7, P_LEAD = 0.6;
-const plainTitle = (s: unknown) => String(s || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
+const plainTitle = (s: unknown) => plain(s ?? "");
 
 const INTENTS: Record<string, string> = {
   new_slide: "Add one new slide with this content.",

@@ -1,5 +1,5 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
-import { MARKUP, MENU } from "../slides/schema";
+import { MARKUP, MENU, plain } from "../slides/schema";
 import { styleBlock } from "./prompts";
 import type { Check } from "./checks";
 import type { Selection } from "./pre";
@@ -95,8 +95,7 @@ export const TOOLS: ToolDef[] = FUNCTIONS.map((f) => ({ type: "function", functi
 
 /** State block: rebuilt every user turn and sent as the last message before the user's. */
 export function stateBlock({ style, theme, slides, selection }: { style: Style; theme: Theme; slides: { id: string; slide: Slide | null }[]; selection: Selection }): string {
-  const plainTitle = (t: unknown) => String(t || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
-  const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide?.template}] ${plainTitle(s.slide?.title)}`).join("\n") : "(empty)";
+  const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide?.template}] ${plain(s.slide?.title ?? "")}`).join("\n") : "(empty)";
   const sel = selection?.slideId ? `${selection.slideId}${selection.path ? ` · component ${selection.path}` : ""}` : "nothing";
   return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}`;
 }

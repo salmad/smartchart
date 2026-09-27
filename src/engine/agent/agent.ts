@@ -2,7 +2,7 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { describe, isTemplate, validate } from "../slides/schema";
+import { describe, isTemplate, plain, validate } from "../slides/schema";
 import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts";
 import { autofix } from "./autofix";
@@ -45,7 +45,7 @@ const MAX_TOOL_CALLS = 10, SHORTEN_ROUNDS = 2;
 const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;
 // Intents where a clean write finishes the request, so code ends the turn without a reply call.
 const DONE_BY: Record<string, boolean> = { new_slide: true, change_template: true, edit_selected: true };
-const plainTitle = (s: unknown) => String(s || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
+const plainTitle = (s: unknown) => plain(s ?? "");
 const newId = (taken: Set<string>) => { let id: string; do id = `s_${Math.random().toString(36).slice(2, 6)}`; while (taken.has(id)); return id; };
 // Models sometimes send objects as JSON strings; accept both.
 const asValue = (v: unknown): unknown => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v); } catch { /* keep the string */ } } return v; };

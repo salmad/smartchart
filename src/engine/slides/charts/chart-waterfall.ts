@@ -10,7 +10,7 @@ export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: numb
   const { steps } = waterfall(spec.items ?? []), f = spec.format || "{v}";
   const lo = Math.min(0, ...steps.flatMap((s) => [s.from, s.to])), hi = Math.max(0, ...steps.flatMap((s) => [s.from, s.to]));
   // Room above for up labels and totals, below the lowest bar for a down label: both follow the style's label size.
-  const L = labelPx(box), P = { t: L + 40 + extra, b: 60 }, ph = H - P.t - P.b, n = steps.length, band = W / n, bw = band * .62;
+  const L = labelPx(box), P = { t: L + 20 + extra, b: 60 }, ph = H - P.t - P.b, n = steps.length, band = W / n, bw = band * .62;
   const y = (v: number) => P.t + 12 + (hi - v) / (hi - lo || 1) * (ph - L - 18);
   const xc = (i: number) => band * i + band / 2;
   let g = `<line class="base" x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}"/>`, t = "";
