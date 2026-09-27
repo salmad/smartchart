@@ -101,6 +101,12 @@
 /* ═════════════ Number: argument left, one number right ═════════════ */
 .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 96px; align-items: start; }
 .hero.solo { grid-template-columns: 1fr; }
+/* Consulting: the number leads on the left, the argument beside it; both share the space between the title and
+   the takeaway, centred in it, so a short argument never leaves an empty band above the takeaway. */
+.style-consulting .hero { flex: 1; align-content: center; align-items: center; }
+.style-consulting .hero:not(.solo) { grid-template-columns: .95fr 1.05fr; }
+.style-consulting .hero:not(.solo) .hero-n { order: -1; }
+.style-consulting .hero .hero-v { font-size: 300px; line-height: .9; }
 .hero-v { font-size: 250px; color: var(--focus); white-space: nowrap; }
 .hero-v.neg { color: var(--neg); } .hero-v.pos { color: var(--pos); }
 .style-pitch .hero-v { font-size: 290px; }
