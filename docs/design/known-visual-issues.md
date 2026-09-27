@@ -30,6 +30,7 @@ Systematic problems seen while reviewing the 17 starters (68 renders: both style
 16. **Number slides repeat the figure three times** (title or subtitle, big number, caption) and pitch number slides leave the right half empty. Direction: caption says what the number means, not the number again; a split layout when there is body text.
 17. **Content slips the checks do not catch**: a sentence in another language (Norwegian) in an English deck, `$` in a `£` deck, a stray "(60)", a caption contradicting the table ("last" when it is second), invented figures. Direction: judgment checks for language, currency consistency and caption-vs-data.
 18. **Requests with a premise the data contradicts** (a crossover that never happens; "interchange is 82" when interchange is 85): the agent writes around it instead of saying so. Direction: prompt rule to state the mismatch in the reply.
+20. **Edits drop what they were not asked to change.** Walk-through: "use my numbers: revenue £4.2m, £6.8m, £9.1m" on the CAGR starter kept the starter's "loan book" wording (the user said revenue), dropped the chart's `£{v}m` format (bars read "4.2") and the CAGR annotation while the title still quotes 47% a year. Direction: patch rules that keep format and annotations unless asked; a check that a title figure computed by code still has its annotation.
 19. **Tall empty cards and lower thirds** on cards and number slides with little text (y ≈ 620–750 is where content ends). Same family as #8.
 
 ## App chrome (not slides)
