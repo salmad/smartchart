@@ -46,6 +46,16 @@ test('a turn whose model call fails ends with an error message and not busy', as
   expect(r.error).toContain('api down')
 })
 
+test('a failed turn leaves the conversation as it was, so the next turn can run', async () => {
+  let calls = 0
+  const agentStep = fakeAgent([(m) => { calls++; return toolCall('edit_slide', { slideId: reservedId(m), slide: COVER, reply: 'x' }) }])
+  const h = harness({ agentStep: async (a) => { if (calls > 0) throw new Error('api down'); return agentStep(a) }, jev: async () => { throw new Error('jev down') } })
+  const before = structuredClone(h.state().history)
+  await sendTurn('A cover', h.deps)
+  expect(h.state().history).toEqual(before)
+  expect(h.state().history.some((m) => m.tool_calls?.length)).toBe(false)
+})
+
 test('a rate-limited model call reads as a plain sentence, not the API JSON', async () => {
   const agentStep = async () => { throw new Error('{"code":"1302","message":"Rate limit reached for requests"}') }
   const h = harness({ agentStep, jev: fakeJev({ intent: ['other', 0.9] }) })

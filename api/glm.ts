@@ -19,14 +19,21 @@ export async function POST(request: Request): Promise<Response> {
   if (!p.model || !GLM_MODELS.has(p.model)) return Response.json({ error: `model ${p.model} is not allowed` }, { status: 400 })
   const { model, messages, thinking = false, temperature = 0.3, max_tokens = 4000, response_format, tools, tool_choice } = p
   const t0 = performance.now()
-  const r = await fetch(GLM_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.GLM_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model, messages, temperature, max_tokens, thinking: { type: thinking ? 'enabled' : 'disabled' },
-      ...(response_format ? { response_format } : {}), ...(tools ? { tools, tool_choice } : {}),
-    }),
-  })
+  // An unreachable or hung upstream answers JSON, which the app turns into a plain sentence.
+  let r: Response
+  try {
+    r = await fetch(GLM_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.GLM_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model, messages, temperature, max_tokens, thinking: { type: thinking ? 'enabled' : 'disabled' },
+        ...(response_format ? { response_format } : {}), ...(tools ? { tools, tool_choice } : {}),
+      }),
+      signal: AbortSignal.timeout(55_000),
+    })
+  } catch {
+    return Response.json({ error: 'The model service is unreachable.' }, { status: 502 })
+  }
   const ms = Math.round(performance.now() - t0)
   return new Response(await r.text(), { status: r.status, headers: { 'Content-Type': 'application/json', 'X-Upstream-Ms': String(ms) } })
 }

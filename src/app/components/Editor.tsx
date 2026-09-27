@@ -24,7 +24,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   // F presents; the arrows move through the deck. Typing in a field is left alone.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (stage || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
+      if (stage || e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
       if (e.key === 'f') bar.onPresent()
       if (e.key === 'ArrowRight' && current < items.length - 1) onSelect(current + 1)
       if (e.key === 'ArrowLeft' && current > 0) onSelect(current - 1)

@@ -29,7 +29,7 @@ export function App() {
   const [, setSaved] = useState(0) // re-renders the deck list after a save
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
-  const [presenting, setPresenting] = useState(false), [booted, setBooted] = useState(false)
+  const [presenting, setPresenting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   const deck = deckOf(s)
 
   const measurer = useCallback((): Measurer => {
@@ -50,16 +50,18 @@ export function App() {
     if (!d.messages?.length && !d.thread) say(WELCOME)
   }, [app, measurer, say])
 
-  // Boot: fonts (slides measure text), whether the models are reachable, then the last deck.
+  // Boot: the saved decks first (nothing is saved before they are in memory, so an early pick cannot overwrite
+  // them), then fonts (slides measure text), whether the models are reachable, then the last deck.
   useEffect(() => {
     if (bootStarted.current) return
     bootStarted.current = true
     void (async () => {
+      store.current = await repo.load()
+      setLoaded(true)
       await document.fonts.ready
       let live = false
-      try { live = !!((await (await fetch(config.healthUrl)).json()) as { live?: unknown }).live } catch { /* offline */ }
+      try { live = !!((await (await fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) })).json()) as { live?: unknown }).live } catch { /* offline */ }
       app.dispatch({ type: 'set', patch: { live } })
-      store.current = await repo.load()
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
@@ -71,7 +73,7 @@ export function App() {
 
   // Save 250 ms after the last change, never mid-turn; one chat warning if the browser refuses.
   useEffect(() => {
-    if (s.busy || !s.deckId) return
+    if (!loaded || s.busy || !s.deckId) return
     const t = setTimeout(() => {
       const saved = toSaved(app.getState())
       if (!saved) return
@@ -83,7 +85,7 @@ export function App() {
       })
     }, config.saveDelayMs)
     return () => clearTimeout(t)
-  }, [s, app, repo])
+  }, [s, loaded, app, repo])
 
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])

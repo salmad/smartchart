@@ -37,6 +37,7 @@ export function Present({ deck, start, onExit }: Props) {
     const show = (to: number) => { indexRef.current = Math.max(0, Math.min(n - 1, to)); setIndex(indexRef.current) }
     let typed = ''
     const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       const k = e.key
       if (k === 'ArrowRight' || k === 'ArrowDown' || k === ' ' || k === 'PageDown') show(indexRef.current + 1)
       else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') show(indexRef.current - 1)

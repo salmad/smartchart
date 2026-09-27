@@ -80,8 +80,8 @@ export const THEMES = {
 export const MARKUP = [
   { syntax: "**text**", effect: "bold", use: "Emphasis inside body text. A few words, not whole sentences." },
   { syntax: "[[text]]", effect: "focus colour", use: "The point of the slide. At most one span per title; match the focus series, card or step." },
-  { syntax: "[-text-]", effect: "negative colour", use: "Rarely: a loss the user named, or when the user asks for red. A problem slide does not need it; [[…]] is the default emphasis." },
-  { syntax: "[+text+]", effect: "positive colour", use: "Money made or a gain." },
+  { syntax: "[-text-]", effect: "negative colour", use: "Rarely: a loss the user named, or when the user asks for red. Never in a title or subtitle unless the user asks. A problem slide does not need it; [[…]] is the default emphasis." },
+  { syntax: "[+text+]", effect: "positive colour", use: "Rarely: a gain the user named, or when the user asks for green. Never in a title or subtitle unless the user asks; [[…]] is the default emphasis." },
 ];
 const MARKUP_NOTE = "Fields of type `markup` accept the inline syntax above. Fields of type `text` are plain.";
 
@@ -114,7 +114,7 @@ const FRAME: Record<string, FieldDef> = {
   source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
 };
 
-const TONE = f("enum", "Colour of the value. `neg` only for a loss the user named or when they ask for red.", { values: ["focus", "neg", "pos"], default: "focus" });
+const TONE = f("enum", "Colour of the value. `focus` by default; `neg` or `pos` only for a loss or gain the user named, or when they ask for red or green.", { values: ["focus", "neg", "pos"], default: "focus" });
 
 /* The chart guide (spec 9.1): in the chart card for the agent, and in Jev's mark and stacking questions. */
 export const CHART_GUIDE: string[] = [

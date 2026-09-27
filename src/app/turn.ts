@@ -19,6 +19,7 @@ export const WORKING = 'Working…'
 /** What the chat shows for a failed turn: known API errors as a sentence, anything else as it came. */
 function readable(msg: string): string {
   if (/rate limit|"1302"|\b429\b/i.test(msg)) return 'the model is busy right now. Wait a few seconds and send it again.'
+  if (/timed? ?out|aborted/i.test(msg)) return 'the model did not answer in time. Send it again in a moment.'
   return msg
 }
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
@@ -65,7 +66,8 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     setBot({ kind: 'error', text: `Something went wrong: ${readable(msg)}`, trace })
-    dispatch({ type: 'set', patch: { busy: false, history, working } })
+    // The agent's copy may end in a tool call with no result, which the next model call would reject: keep the start.
+    dispatch({ type: 'set', patch: { busy: false, history: start.history, working: start.working } })
     return { request: text, error: msg, trace, ms: Math.round(performance.now() - t0), items: structuredClone(getState().items) }
   }
 }

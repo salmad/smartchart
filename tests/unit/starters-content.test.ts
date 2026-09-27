@@ -16,9 +16,9 @@ test('100% stacked shares sum to 100 in every category', () => {
   const rows = shares(mix), n = mix.categories?.length ?? 0
   for (let i = 0; i < n; i++) expect(rows.reduce((t, r) => t + r[i], 0)).toBeCloseTo(100, 9)
 })
-test('red is used sparingly: no negative markup in titles or subtitles, no red big numbers', () => {
+test('red and green are rare: none in titles or subtitles, no red or green big numbers', () => {
   for (const s of STARTERS) for (const st of [s.consulting, s.pitch]) {
-    expect(`${st.title} ${st.subtitle ?? ''}`, s.id).not.toMatch(/\[-/)
-    expect(st.number?.tone, s.id).not.toBe('neg')
+    expect(`${st.title} ${st.subtitle ?? ''}`, s.id).not.toMatch(/\[-|\[\+/)
+    expect(['neg', 'pos'], s.id).not.toContain(st.number?.tone)
   }
 })

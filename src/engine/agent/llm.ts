@@ -18,12 +18,18 @@ interface Usage { total_tokens?: number; prompt_tokens?: number; completion_toke
 interface GlmResponse { choices?: { message?: { content?: string | null; tool_calls?: ToolCall[] } }[]; usage?: Usage }
 interface JevResponse { answers?: Record<string, { choice: string; probabilities: Record<string, number> }>; usage?: Usage }
 
+/** A model call that takes longer than this is abandoned (then retried). */
+const TIMEOUT_MS = 60_000;
+
 async function post<T>(path: string, payload: unknown): Promise<{ j: T; ms: number }> {
   for (let attempt = 0; ; attempt++) {
     const t0 = performance.now();
     try {
-      const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const j: T & { error?: unknown } = await r.json();
+      const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: AbortSignal.timeout(TIMEOUT_MS) });
+      // A platform error page is text, not JSON: report the status, not a parse error.
+      const text = await r.text();
+      let j: T & { error?: unknown };
+      try { j = JSON.parse(text); } catch { throw new Error(`The model service is not responding (HTTP ${r.status}).`); }
       if (!r.ok || j.error) throw new Error(typeof j.error === "string" ? j.error : JSON.stringify(j.error ?? j).slice(0, 300));
       return { j, ms: Math.round(performance.now() - t0) };
     } catch (e) {

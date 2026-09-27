@@ -37,7 +37,7 @@ export function reducer(s: AppState, a: Action): AppState {
       return {
         ...s, deckId: d.id, style: d.style, theme: d.theme, accent: d.accent || null,
         items, current: clamp(d.current || 0, items), history: d.history || [], working: new Set(d.working || []),
-        messages: d.messages ?? [], legacyThread: d.messages ? null : d.thread ?? null,
+        messages: d.messages ?? [], legacyThread: d.thread ?? null,
         view: items.length ? 'editor' : 'landing', pills: {},
       }
     }
@@ -57,7 +57,7 @@ export function reducer(s: AppState, a: Action): AppState {
       // Double clicks and clicks while busy must still give one deck with one slide.
       if (s.busy || s.items.length) return s
       return {
-        ...s, deckId: newDeckId(), items: [starterItem(a.id, a.slide)], current: 0, view: 'editor',
+        ...s, deckId: s.deckId ?? newDeckId(), items: [starterItem(a.id, a.slide)], current: 0, view: 'editor',
         messages: [...s.messages, { kind: 'bot', text: PICKED }],
       }
     case 'insertStarter': {
