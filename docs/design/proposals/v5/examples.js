@@ -178,6 +178,117 @@ export const EXAMPLES = [
     pitch: { title: "Growth", subtitle: "A [[£120m]] book in two years." },
   },
   {
+    template: "chart", name: "Chart · annotations (CAGR, target)",
+    chart: {
+      categories: ["2026", "2027", "2028", "2029", "2030"], format: "£{v}m",
+      series: [{ name: "Loan book", mark: "bar", color: "focus", values: [10, 24, 52, 88, 120] }],
+      annotations: [{ type: "cagr", from: 0, to: 4 }, { type: "target", value: 100, label: "Plan" }],
+    },
+    consulting: {
+      kicker: "Growth",
+      title: "The book grows [[86% a year]] to £120m by 2030, ahead of the £100m plan",
+      takeaway: "The plan does not need the downside case to fill the warehouse.",
+      source: "FinBridge model, base case.",
+    },
+    pitch: { title: "Growth", subtitle: "[[86%]] a year, past plan." },
+  },
+  {
+    template: "chart", name: "Chart · waterfall",
+    chart: {
+      kind: "waterfall", format: "£{v}m",
+      items: [
+        { label: "FY25 ARR", value: 9.8 }, { label: "New", value: 6.2, focus: true }, { label: "Expansion", value: 2.1 },
+        { label: "Churn", value: -1.4 }, { label: "Pricing", value: 0.8 }, { label: "FY26 ARR", total: true },
+      ],
+    },
+    consulting: {
+      kicker: "Revenue",
+      title: "ARR reaches £17.5m in FY26; [[new customers]] add £6.2m of the £7.7m growth",
+      takeaway: "Churn costs less than a quarter of what new customers bring.",
+      source: "FinBridge model, base case.",
+    },
+    pitch: { title: "ARR bridge", subtitle: "[[New customers]] drive growth." },
+  },
+  {
+    template: "chart", name: "Chart · waterfall + notes",
+    chart: {
+      kind: "waterfall", format: "£{v}m",
+      items: [
+        { label: "Revenue", value: 42 }, { label: "Funding", value: -9 }, { label: "Rewards", value: -6 },
+        { label: "Bad debt", value: -11, focus: true }, { label: "Margin", total: true },
+      ],
+    },
+    consulting: {
+      kicker: "Unit economics",
+      title: "[[Bad debt]] is the largest cost between £42m of revenue and a £16m gross margin",
+      notes: [
+        { title: "Funding is fixed", text: "Warehouse priced at **SONIA + 4%** for three years." },
+        { title: "Rewards scale with spend", text: "1% cashback, paid for by interchange." },
+        { title: "Bad debt is the lever", text: "Underwriting on live data targets **8%**, not 11%." },
+      ],
+      source: "FinBridge model, year 4.",
+    },
+    pitch: { title: "Margin", subtitle: "[[Bad debt]] is the lever.", notes: [{ title: "Rewards pay for themselves" }, { title: "Target bad debt: [[8%]]" }] },
+  },
+  {
+    template: "chart", name: "Chart · timeline",
+    chart: {
+      kind: "timeline",
+      periods: ["Q1 ’27", "Q2", "Q3", "Q4", "Q1 ’28", "Q2", "Q3", "Q4"],
+      rows: [
+        { label: "Card issuing", start: 0, end: 2 },
+        { label: "Underwriting engine", start: 1, end: 3 },
+        { label: "Warehouse facility", start: 2, end: 5, focus: true },
+        { label: "Direct-mail acquisition", start: 4, end: 7 },
+        { label: "EU entry", start: 6, end: 7 },
+      ],
+      milestones: [{ label: "First 100 cards", at: 2 }, { label: "£10m book", at: 5 }],
+    },
+    consulting: {
+      kicker: "Plan",
+      title: "The [[warehouse facility]] is the critical path: acquisition cannot scale until Q2 2028",
+      source: "FinBridge operating plan.",
+    },
+    pitch: { title: "The plan", subtitle: "[[Warehouse]] first, then scale." },
+  },
+  {
+    template: "chart", name: "Chart · 100% stacked",
+    chart: {
+      stacked: "100", categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"], format: "£{v}m",
+      series: [
+        { name: "Interest", mark: "bar", color: "neutral", values: [7, 12, 20, 30, 38] },
+        { name: "Interchange", mark: "bar", color: "focus", values: [3, 8, 18, 34, 50] },
+        { name: "Fees", mark: "bar", color: "neutral", values: [0, 2, 4, 7, 7] },
+      ],
+    },
+    consulting: {
+      kicker: "Revenue mix",
+      title: "[[Interchange]] rises from 30% to 53% of revenue by year 5 as spend replaces lending",
+      source: "FinBridge model, base case.",
+    },
+    pitch: { title: "Revenue mix", subtitle: "[[Interchange]] becomes half." },
+  },
+  {
+    template: "chart", name: "Chart · six series (second hue)",
+    chart: {
+      categories: ["2020", "2021", "2022", "2023", "2024", "2025", "2026"], format: "£{v}bn",
+      series: [
+        { name: "Amex", mark: "line", color: "focus", values: [9, 8, 10, 12, 13, 14, 15] },
+        { name: "Barclaycard", mark: "line", color: "contrast", values: [8, 7, 8, 9, 9, 10, 10] },
+        { name: "Lloyds", mark: "line", color: "neutral", values: [6, 5, 6, 6, 7, 7, 7] },
+        { name: "NatWest", mark: "line", color: "neutral", values: [5, 4, 4, 5, 5, 5, 5] },
+        { name: "HSBC", mark: "line", color: "neutral", values: [3, 3, 3, 3, 3, 3, 3] },
+        { name: "Neobanks", mark: "line", color: "neutral", values: [0, 0, 0, 1, 1, 1, 1] },
+      ],
+    },
+    consulting: {
+      kicker: "Competition",
+      title: "[[Amex]] widens its lead in UK SME card spend to £15bn while the challengers stay near £1bn",
+      source: "UK Finance card spending statistics; FinBridge analysis. Illustrative.",
+    },
+    pitch: { title: "Competition", subtitle: "[[Amex]] owns SME spend." },
+  },
+  {
     template: "steps", name: "Steps",
     consulting: {
       kicker: "Plan and ask",
@@ -262,8 +373,27 @@ export function stressFor(st) {
     { template: "chart", name: "Stress · chart full", ...frame("chart"), chart: { categories: TIMES(12).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
       series: [{ name: "Base case", mark: "line", color: "focus", area: true, values: TIMES(12).map((_, i) => (i + 1) ** 2) }, { name: "Downside", mark: "line", color: "contrast", dashed: true, values: TIMES(12).map((_, i) => (i + 1) ** 2 * .6) }, { name: "Market", mark: "line", color: "neutral", values: TIMES(12).map((_, i) => 20 + i * 5) }] } },
     { template: "chart", name: "Stress · chart stacked", ...frame("chart"), chart: { stacked: true, categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
-      series: [{ name: W(24), mark: "bar", color: "focus", values: [4, 9, 15, 24, 33, 41] }, { name: W(24), mark: "bar", color: "neutral", values: [2, 5, 9, 14, 20, 26] },
-        { name: W(24), mark: "bar", color: "contrast", values: [1, 2, 4, 7, 11, 15] }, { name: "Margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 18, 24, 29, 33, 36] }] } },
+      series: [{ name: `${W(22)} 1`, mark: "bar", color: "focus", values: [4, 9, 15, 24, 33, 41] }, { name: `${W(22)} 2`, mark: "bar", color: "neutral", values: [2, 5, 9, 14, 20, 26] },
+        { name: `${W(22)} 3`, mark: "bar", color: "contrast", values: [1, 2, 4, 7, 11, 15] }, { name: "Margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 18, 24, 29, 33, 36] }] } },
+    { template: "chart", name: "Stress · bars + 3 annotations", ...frame("chart"), chart: { categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
+      series: [{ name: "Interest income", mark: "bar", color: "neutral", values: [4, 9, 15, 24, 33, 41] }, { name: "Interchange", mark: "bar", color: "focus", values: [2, 6, 13, 26, 40, 58] }],
+      annotations: [{ type: "cagr", from: 0, to: 5 }, { type: "difference", from: 3, to: 5, series: 0 }, { type: "target", value: 50, label: W(16) }] } },
+    { template: "chart", name: "Stress · axis break", ...frame("chart"), chart: { categories: TIMES(6).map((_, i) => `Region ${i + 1}`), format: "£{v}m",
+      series: [{ name: "Spend", mark: "bar", color: "focus", values: [240, 38, 31, 26, 20, 12] }] } },
+    { template: "chart", name: "Stress · waterfall 10", ...frame("chart"), chart: { kind: "waterfall", format: "£{v}m",
+      items: [{ label: W(12), value: 120 }, ...TIMES(7).map((_, i) => ({ label: W(12), value: i % 3 === 2 ? -14.5 : 18.5 })), { label: W(12), total: true, value: 183.5 }, { label: W(12), value: -30.5 }] } },
+    { template: "chart", name: "Stress · waterfall + notes", ...frame("chart"), notes: notes(3, false), chart: { kind: "waterfall", format: "£{v}m",
+      items: [{ label: W(12), value: 120 }, ...TIMES(5).map((_, i) => ({ label: W(12), value: i % 2 ? -21.5 : 34.5, focus: i === 2 })), { label: W(12), total: true }] } },
+    { template: "chart", name: "Stress · waterfall below zero", ...frame("chart"), chart: { kind: "waterfall", format: "£{v}m",
+      items: [{ label: "Start", value: 4 }, { label: "Loss", value: -9 }, { label: "Low", total: true }, { label: "Raise", value: 12 }, { label: "End", total: true }] } },
+    { template: "chart", name: "Stress · timeline 8×16", ...frame("chart"), chart: { kind: "timeline", periods: TIMES(16).map((_, i) => `M${i + 1}`),
+      rows: TIMES(8).map((_, i) => ({ label: W(28), start: i, end: Math.min(15, i + 7), focus: i === 3 })),
+      milestones: TIMES(4).map((_, i) => ({ label: W(16), at: 2 + i * 4 })) } },
+    { template: "chart", name: "Stress · timeline + notes", ...frame("chart"), notes: notes(3, false), chart: { kind: "timeline", periods: TIMES(8).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`),
+      rows: TIMES(4).map((_, i) => ({ label: W(20), start: i, end: Math.min(7, i + 3) })), milestones: [{ label: W(16), at: 1 }, { label: W(16), at: 2 }, { label: W(16), at: 6 }] } },
+    { template: "chart", name: "Stress · six bars and lines", ...frame("chart"), chart: { categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
+      series: [1, 2, 3, 4, 5, 6].map((k) => ({ name: `${W(22)} ${k}`, mark: k <= 3 ? "bar" : "line", color: k === 1 ? "focus" : k === 4 ? "contrast" : "neutral",
+        values: [[4, 9, 15, 24, 33, 41], [2, 5, 9, 14, 20, 26], [1, 2, 4, 7, 11, 15], [3, 6, 10, 16, 22, 30], [5, 8, 12, 18, 25, 35], [1, 3, 6, 9, 13, 20]][k - 1] })) } },
     { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...TIMES(5).map(() => ({ cells: [W(40), { value: "(1,234)", note: "8% × £10.5k" }, "12,345", "(34)", "—"] })), { cells: [W(30), "£179", "£10", "£128", "£95"], style: "total" }]
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },

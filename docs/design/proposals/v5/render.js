@@ -1,7 +1,7 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the review page and the journey prototype. */
 import { MENU } from "./schema.js";
 import { drawChart } from "./chart.js";
-import { applyAccent } from "./accent.js";
+import { allocate } from "./colours.js";
 export { drawChart };
 
 export const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -105,11 +105,13 @@ export function mountSlide(frame, s, ctx, deck) {
   frame.innerHTML = slideHTML(s, ctx, deck);
   const slide = frame.firstElementChild;
   slide.style.setProperty("--s", frame.clientWidth / 1920);
-  applyAccent(slide, deck.accent);
+  // Every colour on the slide comes from the allocator; the palette CSS only holds the defaults.
+  const colours = allocate(s, deck.theme, deck.accent);
+  for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
   sizeTable(slide); growTable(slide);
   const host = slide.querySelector("[data-chart]");
-  if (host) drawChart(host, s.chart, (s.notes || []).map((n, k) => n.point && { n: k + 1, ...n.point }).filter(Boolean));
+  if (host) drawChart(host, s.chart, (s.notes || []).map((n, k) => n.point && { n: k + 1, ...n.point }).filter(Boolean), colours);
   if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
   return slide;
 }

@@ -91,7 +91,7 @@ test("a sure new slide that ends on a clean write needs no reply call", async ()
   const agentStep = fakeAgent([(m) => toolCall("edit_slide", { slideId: reservedId(m), slide: { ...CHART, footnote: "Illustrative figures" } })]);
   const r = await runTurn({ ...ctx, text: "x", selection: null, models: { agentStep, jev: fakeJev({ intent: ["new_slide", 0.9], template: ["chart", 0.9] }) } });
   assert.equal(r.modelCalls, 1);
-  assert.equal(r.reply, "Added a chart slide. The figures are illustrative and marked in the footnote. Showing Revenue as bars; ask if you want it the other way.");
+  assert.equal(r.reply, "Added a chart slide. The figures are illustrative and marked in the footnote. Showing Revenue as bars; ask if you want it the other way. What would you like to change next?");
 });
 
 test("an unsure request still ends with the agent's own reply", async () => {

@@ -25,6 +25,12 @@ export async function agentStep({ messages, tools, toolChoice = "auto", model = 
   return { message, ms, tokens: j.usage?.total_tokens ?? 0, tokensIn: j.usage?.prompt_tokens ?? 0, tokensOut: j.usage?.completion_tokens ?? 0 };
 }
 
+/** A plain completion (no tools): GLM 5.3 Flash with thinking off. Returns the text. */
+export async function complete({ messages, model = FLASH, temperature = 0.3, max_tokens = 1000 }) {
+  const { j } = await post("/api/glm", { model, messages, temperature, max_tokens });
+  return j.choices?.[0]?.message?.content || "";
+}
+
 /* Jev option keys must be plain identifiers; map anything else and back. */
 const keyOf = (s) => s.replace(/[^A-Za-z0-9_]/g, "_");
 

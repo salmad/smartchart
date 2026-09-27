@@ -10,6 +10,7 @@
    or a number. Prototype limits are hand-tuned and proven by the stress deck;
    the product computes them from geometry (spec 4.3).
    ═══════════════════════════════════════════════════════════════════════════ */
+import { waterfall } from "./chart-math.js";
 
 export const STYLES = {
   consulting: {
@@ -86,19 +87,33 @@ export const CHART_GUIDE = [
   "Stack only parts of a whole: stack bar series that add up to a total that matters (revenue by segment); keep them side by side when the point is comparing them (us vs them). Never stack rates or percentages that do not sum to a whole; lines never stack.",
   "Pitch: one series, two at most.",
   "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
+  "Shares of a whole that change over time (mix, market share) are `stacked: \"100\"`: write the raw values; code converts them to %.",
+  "A bridge from one total to another (revenue FY24 → FY25 by driver, a cost walk, an EBITDA bridge) is `kind: \"waterfall\"`. Write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
+  "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead.",
+  "Annotations are computed by code; never write their figure yourself. `cagr` when the title claims a growth rate over a period (\"grows 86% a year\", \"growth rate per year across the period\"; year-on-year rates for each year are a % line instead), `difference` when it claims a gap between two categories, `target` when it compares with a goal. At most 3 (2 with notes); only when the user asked for them.",
 ];
 
 /* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
 const FOCUS = f("enum", "A top-level slide field, next to `title` (never inside `chart`). Write \"auto\" to let code pick and highlight the one item the title is about (a series, column, step or card). Leave it out when the user named the focus, and set it on that item yourself.", { values: ["auto"] });
 
-const CHART = f("object", "A chart of bar and line series. Values are written on the data; there is no y-axis to configure.", {
+const KINDS = ["bars", "waterfall", "timeline"];
+/* Fields each chart kind uses; any other chart field is an error for that kind. */
+export const KIND_FIELDS = {
+  bars: ["kind", "stacked", "categories", "format", "series", "annotations"],
+  waterfall: ["kind", "format", "items"],
+  timeline: ["kind", "periods", "rows", "milestones"],
+};
+const idx = (what) => f("number", `0-based index into ${what}.`);
+
+const CHART = f("object", "A chart. Values are written on the data; there is no y-axis to configure. `kind` sets which fields it takes.", {
   required: true,
   fields: {
-    stacked: f("enum", "Bar series stacked into one column per category (true) or side by side (false). \"auto\": code decides by the chart guide.", { values: [true, false, "auto"], default: false }),
-    categories: f("list", "X-axis labels, in order. Short: 'Year 1', 'Q2', 'Q1 ’27'.", { required: true, items: { min: 2, max: 12 }, of: f("text", "Category label.", { max: 10 }) }),
+    kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt).", { values: KINDS, default: "bars" }),
+    stacked: f("enum", "Bars only. Bar series stacked into one column per category (true), side by side (false), or stacked as shares of 100% (\"100\"). \"auto\": code decides by the chart guide.", { values: [true, false, "100", "auto"], default: false }),
+    categories: f("list", "Bars only. X-axis labels, in order. Short: 'Year 1', 'Q2', 'Q1 ’27'.", { items: { min: 2, max: 12 }, of: f("text", "Category label.", { max: 10 }) }),
     format: f("text", "Value format; `{v}` is replaced by the number. E.g. '£{v}m', '{v}%'.", { default: "{v}" }),
-    series: f("list", "Data series. One series is the focus: the one the title is about.", {
-      required: true, items: { min: 1, max: 4 },
+    series: f("list", "Bars only. Data series. One series is the focus: the one the title is about.", {
+      items: { min: 1, max: 6 },
       of: f("object", "One series.", { fields: {
         name: f("text", "Series name, shown in the legend or end label.", { required: true, max: 24 }),
         values: f("list", "One number per category, same order. Plain numbers, no units.", { required: true, of: f("number", "Value.") }),
@@ -107,6 +122,44 @@ const CHART = f("object", "A chart of bar and line series. Values are written on
         format: f("text", "Overrides the chart format for this series (a % line over £ bars)."),
         area: f("boolean", "Line series in a chart of only lines: shade the area under it. Focus series only.", { default: false }),
         dashed: f("boolean", "Line series only: dashed, for a forecast, a scenario or a reference (target, average).", { default: false }),
+      } }),
+    }),
+    annotations: f("list", "Bars only. Figures code computes and draws on the chart; you never write the figure.", {
+      items: { max: 3 },
+      of: f("object", "One annotation.", { fields: {
+        type: f("enum", "`cagr`: growth rate per period between two categories. `difference`: the change between two categories. `target`: a dashed goal line.", { required: true, values: ["cagr", "difference", "target"] }),
+        from: idx("chart.categories (cagr, difference)"),
+        to: idx("chart.categories, after `from` (cagr, difference)"),
+        series: idx("chart.series, a bar series. Leave it out for the focus series (or the stack total when stacked)"),
+        relative: f("boolean", "difference only: show the % change instead of the absolute change.", { default: false }),
+        value: f("number", "target only: the goal, in the bars' unit."),
+        label: f("text", "target only: the line's name. Default 'Target'.", { max: 16 }),
+      } }),
+    }),
+    items: f("list", "Waterfall only. The start total, the signed changes, then totals. Subtotals may sit in between.", {
+      items: { min: 3, max: 10 },
+      of: f("object", "One bar of the bridge.", { fields: {
+        label: f("text", "Bar label: 'FY24', 'Price', 'FX'.", { required: true, max: 12 }),
+        value: f("number", "The first item: the starting total. A change: signed (3.1 or -1.2). A total: leave it out and code computes it."),
+        total: f("boolean", "A subtotal or end total: code draws it from zero at the running sum.", { default: false }),
+        focus: f("boolean", "Highlight the driver the title is about. At most one.", { default: false }),
+      } }),
+    }),
+    periods: f("list", "Timeline only. Column labels, in order: 'Q1', 'Q2', 'Jan'.", { items: { min: 3, max: 16 }, of: f("text", "Period label.", { max: 8 }) }),
+    rows: f("list", "Timeline only. One bar per workstream.", {
+      items: { min: 2, max: 8 },
+      of: f("object", "One workstream.", { fields: {
+        label: f("text", "Workstream name.", { required: true, max: 28 }),
+        start: f("number", "0-based index of its first period.", { required: true }),
+        end: f("number", "0-based index of its last period (inclusive).", { required: true }),
+        focus: f("boolean", "Highlight the workstream the title is about. At most one.", { default: false }),
+      } }),
+    }),
+    milestones: f("list", "Timeline only. Optional diamonds on the time axis.", {
+      items: { max: 4 },
+      of: f("object", "One milestone.", { fields: {
+        label: f("text", "What happens.", { required: true, max: 16 }),
+        at: f("number", "0-based index of the period it falls at the end of.", { required: true }),
       } }),
     }),
   },
@@ -129,11 +182,11 @@ const notes = (withPoint) => f("list", "Optional numbered observations beside th
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU = {
   chart: {
-    summary: "A bar or line chart with a title; optional numbered notes beside it.",
-    use: "Data over categories or time: a trend, a comparison of sizes, a crossover.",
+    summary: "A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it.",
+    use: "Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.",
     fields: { chart: CHART, focus: FOCUS, notes: notes(true) },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories.", "`notes[].point` only works on a chart with bars.", "At most 3 notes when any note has text, and at most 3 in pitch.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 4 workstreams of up to 20 characters).", "`notes[].point` only works on a bars chart with bar series.", "At most 3 notes when any note has text, and at most 3 in pitch.", ...CHART_GUIDE],
   },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
@@ -245,7 +298,7 @@ export const PICKING_GUIDE = [
   ["the first slide of a deck", "cover"],
   ["the start of a new part in a deck of 8+ slides", "section"],
   ["one number that proves the argument (a size, a cost, a gap)", "number"],
-  ["data over categories or time (a series): a trend, a comparison of sizes, a crossover", "chart"],
+  ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time", "chart"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
   ["2–4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast", "cards"],
@@ -338,7 +391,11 @@ function check(def, value, path, style, out) {
       const min = byStyle(def.items?.min, style), maxItems = byStyle(def.items?.max, style);
       if (min && value.length < min) out.errors.push(`${path}: needs at least ${min} items (got ${value.length}).`);
       if (maxItems && value.length > maxItems) out.errors.push(`${path}: at most ${maxItems} items (got ${value.length}). Cut or merge.`);
-      value.forEach((item, i) => check(def.of, item, `${path}[${i}]`, style, out));
+      value.forEach((item, i) => {
+        // A list of numbers has no gaps: a chart draws every value, and a missing one cannot be drawn.
+        if (def.of.type === "number" && (item === null || item === undefined)) return out.errors.push(`${path}[${i}]: missing; every category needs a number. For a single goal or plan figure, use an annotation { "type": "target", "value": … } instead of a series.`);
+        check(def.of, item, `${path}[${i}]`, style, out);
+      });
       break;
     }
     case "object": {
@@ -354,7 +411,17 @@ function check(def, value, path, style, out) {
 const fmtOf = (c, s) => s?.format || c.format || "{v}";
 
 function checkChart(c, path, out, focusAuto) {
-  if (!c || !Array.isArray(c.series) || !Array.isArray(c.categories)) return;
+  if (!c || typeof c !== "object") return;
+  const kind = c.kind || "bars";
+  if (!KIND_FIELDS[kind]) return;
+  for (const k of Object.keys(c)) if (!KIND_FIELDS[kind].includes(k) && CHART.fields[k])
+    out.errors.push(`${path}.${k}: not used by kind "${kind}". Remove it${kind === "bars" ? "" : `; a ${kind} takes ${KIND_FIELDS[kind].filter((x) => x !== "kind").join(", ")}`}.`);
+  if (c.format && !String(c.format).includes("{v}")) out.errors.push(`${path}.format: must contain {v}, e.g. "£{v}m".`);
+  if (kind === "waterfall") return checkWaterfall(c, path, out);
+  if (kind === "timeline") return checkTimeline(c, path, out);
+  if (!Array.isArray(c.categories)) out.errors.push(`${path}.categories: required. X-axis labels, in order.`);
+  if (!Array.isArray(c.series)) out.errors.push(`${path}.series: required. Data series.`);
+  if (!Array.isArray(c.series) || !Array.isArray(c.categories)) return;
   const bars = c.series.filter((s) => s?.mark === "bar");
   c.series.forEach((s, i) => {
     if (Array.isArray(s?.values) && s.values.length !== c.categories.length)
@@ -363,15 +430,63 @@ function checkChart(c, path, out, focusAuto) {
     if (s?.area && bars.length) out.errors.push(`${path}.series[${i}].area: only when every series is a line.`);
   });
   if (bars.length > 3) out.errors.push(`${path}.series: at most 3 bar series (got ${bars.length}). Cut or merge.`);
+  const names = c.series.map((s) => s?.name), dup = names.find((x, i) => x && names.indexOf(x) !== i);
+  if (dup) out.errors.push(`${path}.series: two series are named "${dup}"; each series needs its own name (the legend and colours follow it).`);
   const formats = new Set(c.series.map((s) => fmtOf(c, s)));
   if (formats.size > 2) out.errors.push(`${path}.series: ${formats.size} units (${[...formats].join(", ")}); a chart shows at most 2. Move the third to another slide.`);
   if (c.series.length && c.series.every((s) => s?.mark === "line") && formats.size > 1)
     out.errors.push(`${path}.series: a chart of only lines shares one scale, so every series uses one format. Make one unit bars, or plot it on another slide.`);
-  if (c.stacked === true && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
+  if ((c.stacked === true || c.stacked === "100") && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
     out.errors.push(`${path}.stacked: stacking needs 2 or more bar series in one unit. Set it to false.`);
-  if (c.format && !String(c.format).includes("{v}")) out.errors.push(`${path}.format: must contain {v}, e.g. "£{v}m".`);
   const focus = c.series.filter((s) => s?.color === "focus").length;
   if (!focusAuto && focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
+  checkAnnotations(c, c.series.filter((s) => s?.mark !== "line"), path, out);
+}
+
+function checkAnnotations(c, bars, path, out) {
+  const n = c.categories.length, inRange = (v) => Number.isInteger(v) && v >= 0 && v < n;
+  (c.annotations || []).forEach((a, i) => {
+    if (!a || !a.type) return;
+    const at = `${path}.annotations[${i}]`;
+    if (!bars.length) return out.errors.push(`${at}: annotations need a bar series; this chart has only lines.`);
+    if (a.type === "target") {
+      if (typeof a.value !== "number") out.errors.push(`${at}.value: required for a target (the goal, in the bars' unit).`);
+      for (const k of ["from", "to", "series", "relative"]) if (a[k] !== undefined) out.errors.push(`${at}.${k}: not used by a target; remove it.`);
+      return;
+    }
+    for (const k of ["value", "label"]) if (a[k] !== undefined) out.errors.push(`${at}.${k}: only for a target; remove it.`);
+    if (!inRange(a.from) || !inRange(a.to)) return out.errors.push(`${at}: \`from\` and \`to\` must be category indices 0–${n - 1} (got ${a.from}, ${a.to}).`);
+    if (a.from >= a.to) out.errors.push(`${at}: \`from\` (${a.from}) must come before \`to\` (${a.to}).`);
+    if (a.series !== undefined && (!c.series[a.series] || c.series[a.series].mark === "line")) out.errors.push(`${at}.series: ${a.series} is not a bar series. Point at a bar series or leave it out.`);
+    if (a.relative && a.type !== "difference") out.errors.push(`${at}.relative: only for a difference; remove it.`);
+    if (a.type === "cagr") {
+      const s = a.series !== undefined ? c.series[a.series] : c.stacked === true ? null : bars.find((x) => x.color === "focus") || bars[0];
+      const v = s ? [s.values?.[a.from], s.values?.[a.to]] : [a.from, a.to].map((j) => bars.reduce((sum, x) => sum + (x.values?.[j] || 0), 0));
+      if (!(v[0] > 0 && v[1] > 0)) out.errors.push(`${at}: a CAGR needs positive values at both ends (got ${v.join(" and ")}). Use a difference instead.`);
+    }
+  });
+  if (c.stacked === "100" && (c.annotations || []).some((a) => a?.type !== undefined)) out.errors.push(`${path}.annotations: not on a 100% stacked chart (the bars are shares, not values).`);
+}
+
+function checkWaterfall(c, path, out) {
+  if (!Array.isArray(c.items)) return out.errors.push(`${path}.items: required. The start total, the signed changes, then the end total.`);
+  waterfall(c.items, `${path}.items`).errors.forEach((e) => out.errors.push(e));
+  if (c.items.length && !c.items.at(-1)?.total) out.warnings.push(`${path}.items: the last item is a change; a bridge usually ends with a total ({ "label": "…", "total": true }).`);
+  if (count(c.items, "focus") > 1) out.errors.push(`${path}.items: at most one focus item.`);
+}
+
+function checkTimeline(c, path, out) {
+  if (!Array.isArray(c.periods)) out.errors.push(`${path}.periods: required. Column labels, in order.`);
+  if (!Array.isArray(c.rows)) out.errors.push(`${path}.rows: required. One bar per workstream.`);
+  if (!Array.isArray(c.periods) || !Array.isArray(c.rows)) return;
+  const n = c.periods.length, ok = (v) => Number.isInteger(v) && v >= 0 && v < n;
+  c.rows.forEach((r, i) => {
+    if (!r) return;
+    if (!ok(r.start) || !ok(r.end)) out.errors.push(`${path}.rows[${i}]: \`start\` and \`end\` must be period indices 0–${n - 1} (got ${r.start}, ${r.end}).`);
+    else if (r.start > r.end) out.errors.push(`${path}.rows[${i}]: \`start\` (${r.start}) is after \`end\` (${r.end}).`);
+  });
+  (c.milestones || []).forEach((m, i) => { if (m && !ok(m.at)) out.errors.push(`${path}.milestones[${i}].at: must be a period index 0–${n - 1} (got ${m.at}).`); });
+  if (count(c.rows, "focus") > 1) out.errors.push(`${path}.rows: at most one focus row.`);
 }
 
 const count = (list, key) => (list || []).filter((x) => x && x[key]).length;
@@ -389,11 +504,16 @@ function checkRules(s, style, out) {
       checkChart(s.chart, "chart", out, s.focus === "auto");
       if (!s.notes?.length) break;
       checkNotes(s, style, out);
-      const cats = s.chart?.categories || [], series = s.chart?.series || [];
-      if (cats.length > 6) out.errors.push(`chart.categories: ${cats.length} categories; with notes at most 6. Drop notes or group categories.`);
+      const kind = s.chart?.kind || "bars", cats = s.chart?.categories || [], series = s.chart?.series || [];
+      if (kind === "waterfall" && (s.chart.items || []).length > 7) out.errors.push(`chart.items: ${s.chart.items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
+      if (kind === "timeline" && (s.chart.periods || []).length > 8) out.errors.push(`chart.periods: ${s.chart.periods.length} periods; with notes at most 8. Drop notes or use wider periods.`);
+      if (kind === "timeline" && (s.chart.rows || []).length > 4) out.errors.push(`chart.rows: ${s.chart.rows.length} workstreams; with notes at most 4. Drop notes or merge workstreams.`);
+      if (kind === "timeline") (s.chart.rows || []).forEach((r, i) => { if (r?.label && r.label.length > 20) out.errors.push(`chart.rows[${i}].label: ${r.label.length} characters; with notes at most 20. Shorten it.`); });
+      if (kind === "bars" && cats.length > 6) out.errors.push(`chart.categories: ${cats.length} categories; with notes at most 6. Drop notes or group categories.`);
+      if (kind === "bars" && (s.chart.annotations || []).length > 2) out.errors.push(`chart.annotations: ${s.chart.annotations.length}; with notes at most 2.`);
       s.notes.forEach((n, i) => {
         if (!n?.point) return;
-        if (series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a chart with bars; remove it.`);
+        if (kind !== "bars" || series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a bars chart with bar series; remove it.`);
         if (!(n.point.series >= 0 && n.point.series < series.length)) out.errors.push(`notes[${i}].point.series: ${n.point.series} is out of range; the chart has ${series.length} series (0–${series.length - 1}).`);
         if (!(n.point.index >= 0 && n.point.index < cats.length)) out.errors.push(`notes[${i}].point.index: ${n.point.index} is out of range; the chart has ${cats.length} categories (0–${cats.length - 1}).`);
       });

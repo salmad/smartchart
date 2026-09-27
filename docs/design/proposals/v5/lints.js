@@ -1,4 +1,5 @@
 /* Measurements on a rendered slide: fit issues and layout lints. */
+import { MIN_MARK, contrast } from "./colours.js";
 
 /* ═════════════ Fit check (prototype): measures the rendered slide at 1920×1080 ═════════════ */
 export function fitIssues(slide, style) {
@@ -68,5 +69,50 @@ export function layoutLints(slide, style) {
   if (spread(cards) > 1) out.push(`cards: heights differ by ${Math.round(spread(cards))}px; parallel cards share one size (L6)`);
   const steps = [...slide.querySelectorAll(".steps > .d")].map((d) => box(d).h);
   if (spread(steps) > 1) out.push(`steps: row heights differ by ${Math.round(spread(steps))}px (L6)`);
+  out.push(...chartLabelLints(slide), ...colourLints(slide));
   return { issues: out, warnings };
+}
+
+/* Chart labels (spec 4.2a): none leaves the chart area and no two overlap. */
+export function chartLabelLints(slide) {
+  const host = slide.querySelector("[data-chart]");
+  if (!host) return [];
+  const R = slide.getBoundingClientRect(), k = R.width / 1920;
+  const box = (el) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
+  const H = box(host), out = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));
+  const what = (el) => `“${el.textContent.trim().slice(0, 20)}”`;
+  labels.forEach(({ el, r }) => { if (r.l < H.l - 2 || r.r > H.r + 2 || r.t < H.t - 2 || r.b > H.b + 2) out.push(`chart: label ${what(el)} runs outside the chart area (C1)`); });
+  for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) {
+    const [a, b] = [labels[i].r, labels[j].r];
+    if (a.l < b.r - 1 && b.l < a.r - 1 && a.t < b.b - 1 && b.t < a.b - 1) out.push(`chart: labels ${what(labels[i].el)} and ${what(labels[j].el)} overlap (C1)`);
+  }
+  return out;
+}
+
+const hex = (css) => { const m = css.match(/[\d.]+/g); return m ? `#${m.slice(0, 3).map((v) => Math.round(+v).toString(16).padStart(2, "0")).join("")}` : null; };
+
+/* R15: the colours Chrome painted. Different slots never share a colour; every mark has 3:1 against the
+   background, except quiet bars, which must each carry a value label (colour spec C4). */
+export function colourLints(slide) {
+  const out = [], bg = hex(getComputedStyle(slide).backgroundColor), bySlot = new Map();
+  // Series marks are keyed by series (two series must differ even if code gave them one slot); other marks by slot.
+  slide.querySelectorAll("[data-chart] :is(.bar, .ln, .wf, .tl-bar)").forEach((el) => {
+    const slot = [...el.classList].find((c) => c.startsWith("c-"));
+    if (!slot) return;
+    const key = el.dataset.series !== undefined ? `series ${el.dataset.series}` : slot.slice(2);
+    const cs = getComputedStyle(el), colour = hex(el.classList.contains("ln") ? cs.stroke : cs.fill);
+    if (colour && !bySlot.has(key)) bySlot.set(key, { slot, colour });
+  });
+  const seen = new Map();
+  for (const [key, { slot, colour }] of bySlot) {
+    if (seen.has(colour)) out.push(`colours: ${key} and ${seen.get(colour)} are both ${colour}; different things never share a colour (R15)`);
+    seen.set(colour, key);
+    if (contrast(colour, bg) < MIN_MARK) {
+      const bars = slide.querySelectorAll(`.bar.${slot}`).length, labels = slide.querySelectorAll(`.v-lbl.${slot}`).length;
+      if (slot !== "c-quiet" || labels < bars) out.push(`colours: ${slot.slice(2)} ${colour} has ${contrast(colour, bg).toFixed(1)}:1 on the background and ${labels} of ${bars} values labelled (R15)`);
+    }
+  }
+  const marks = [".hl-focus", ".hl-neg", ".hl-pos"].map((sel) => slide.querySelector(sel)).filter(Boolean).map((el) => hex(getComputedStyle(el).color));
+  if (new Set(marks).size < marks.length) out.push("colours: focus, loss and gain highlights share a colour (R15)");
+  return out;
 }

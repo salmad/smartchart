@@ -12,7 +12,7 @@ test("four tools; patch_slide takes a set and an optional reply", () => {
 
 test("the system prompt states the patch rule, auto and the working block", () => {
   const s = agentSystem("consulting");
-  for (const phrase of ["patch_slide", "never rewrite", "\"auto\"", "Working slides", "reply"]) assert.ok(s.includes(phrase), phrase);
+  for (const phrase of ["patch_slide", "never rewrite", "\"auto\"", "Working slides", "reply", "Start plain", "only when the user asked", "what to change next"]) assert.ok(s.includes(phrase), phrase);
 });
 
 test("working block: current JSON, open issues, failed checks", () => {
@@ -23,4 +23,13 @@ test("working block: current JSON, open issues, failed checks", () => {
   assert.ok(b.includes("J2: Body supports the claim only partly"));
   assert.ok(!b.includes("J1"));
   assert.ok(workingBlock([]).includes("none yet"));
+});
+
+test("the example the agent copies is plain: no takeaway, notes, kicker, footnote, source or annotations", async () => {
+  const { exampleFor } = await import("../journey/prompts.js");
+  for (const id of ["chart", "table", "number", "steps", "cards"]) for (const style of ["consulting", "pitch"]) {
+    const ex = JSON.parse(exampleFor(id, style));
+    for (const k of ["takeaway", "notes", "kicker", "footnote", "source"]) assert.equal(ex[k], undefined, `${id} ${style} ${k}`);
+    assert.equal(ex.chart?.annotations, undefined);
+  }
 });

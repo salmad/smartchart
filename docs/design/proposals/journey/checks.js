@@ -1,6 +1,7 @@
 /* Design checks (spec 6): rule checks in code, judgment checks as one Jev call.
    They are advisory: shown on the slide, never blocking. */
 import { MENU, plain } from "../v5/schema.js";
+import { derivedFigures } from "../v5/chart-math.js";
 import { jev } from "./llm.js";
 
 const words = (s) => plain(s || "").toLowerCase().match(/[a-z0-9£$€%]+/g) || [];
@@ -9,7 +10,12 @@ const UNIT = /[%£$€×]|\dx\b|\d\s?(k|m|bn|mn|pp|h|hrs?|min|s)\b|\b(bps|hours?
 
 function focusCount(s) {
   switch (s.template) {
-    case "chart": return (s.chart?.series || []).filter((x) => x.color === "focus").length;
+    case "chart": {
+      const kind = s.chart?.kind || "bars";
+      if (kind === "waterfall") return (s.chart.items || []).filter((x) => x?.focus).length;
+      if (kind === "timeline") return (s.chart.rows || []).filter((x) => x?.focus).length;
+      return (s.chart?.series || []).filter((x) => x.color === "focus").length;
+    }
     case "table": return (s.table?.columns || []).filter((c) => c.focus).length;
     case "steps": return (s.steps || []).filter((x) => x.focus).length;
     case "cards": return s.framed ? 1 : (s.cards || []).filter((c) => c.tone === "focus").length;
@@ -23,11 +29,14 @@ function parallelTexts(s) {
   return (s.notes || []).map((n) => plain(n.title + " " + (n.text || "")));
 }
 
-const hasFigures = (s) => ["chart", "table", "number"].includes(s.template) || (s.template === "cards" && (s.cards || []).some((c) => c.value));
+// A timeline is a plan, not figures: no unit, source or quantified-title rules.
+const isTimeline = (s) => s.template === "chart" && s.chart?.kind === "timeline";
+const hasFigures = (s) => (["chart", "table", "number"].includes(s.template) && !isTimeline(s)) || (s.template === "cards" && (s.cards || []).some((c) => c.value));
 
 const YEAR = (n, raw) => Number.isInteger(n) && n >= 1900 && n <= 2100 && !/[,.]/.test(raw);
 /** Figures in a text: "£9,400k" → 9400, "4.5×" → 4.5; four-digit years are left out. */
-export const numbersIn = (text) => [...String(text).matchAll(/\d[\d,]*(?:\.\d+)?/g)].map((m) => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
+// Thousands separators only between digit groups: "2030," at the end of a clause is the year 2030.
+export const numbersIn = (text) => [...String(text).matchAll(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g)].map((m) => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
 const close = (a, b) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
 
 function bodyText(s) {
@@ -71,7 +80,7 @@ export function ruleChecks(s, style, lines) {
     const titled = hasFocusSpan(head) || (s.framed && /\[-.+?-\]|\[\+.+?\+\]/.test(head));
     add("R4", fc === 1 && titled, fc !== 1 ? `${fc} focus elements; exactly one should stand out` : titled ? "One focus element, highlighted in the title" : "Focus element is not highlighted in the title with [[…]]");
   }
-  if (s.template === "chart") add("R5", UNIT.test(s.chart?.format || "") || (s.chart?.series || []).some((x) => UNIT.test(x.format || "")), "Chart values carry a unit");
+  if (s.template === "chart" && !isTimeline(s)) add("R5", UNIT.test(s.chart?.format || "") || (s.chart?.series || []).some((x) => UNIT.test(x.format || "")), "Chart values carry a unit");
   if (s.template === "number") add("R5", UNIT.test(s.number?.value || "") || /\d/.test(s.number?.value || "") === false, UNIT.test(s.number?.value || "") ? "The big number carries a unit" : "The big number has no unit");
   if (s.takeaway) {
     const t = new Set(words(s.title)), k = words(s.takeaway), overlap = k.filter((w) => t.has(w)).length / Math.max(1, k.length);
@@ -95,7 +104,8 @@ export function ruleChecks(s, style, lines) {
   }
   const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" "));
   if (heads.length) {
-    const nums = numbersIn(bodyText(s)), missing = heads.filter((h) => !derivable(h, nums));
+    // Figures code computed (a CAGR, a difference, a waterfall total, a 100% share) count as on the slide.
+    const nums = [...numbersIn(bodyText(s)), ...derivedFigures(s.template === "chart" ? s.chart : null)], missing = heads.filter((h) => !derivable(h, nums));
     add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide` : "Headline figures are on the slide");
   }
   if (style === "consulting" && hasFigures(s)) add("R12", numbersIn(plain(s.title)).length > 0, numbersIn(plain(s.title)).length ? "The title quantifies the so-what" : "The title has no figure; quantify the so-what");

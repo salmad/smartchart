@@ -63,3 +63,12 @@ test("table and steps focus", async () => {
   const st = await resolveAuto({ template: "steps", title: "t", focus: "auto", steps: [{ when: "1", title: "A", text: "a" }, { when: "2", title: "B", text: "b" }] }, "consulting", fakeJev({ focus: ["item1", 0.9] }));
   assert.deepEqual(st.slide.steps.map((x) => !!x.focus), [false, true]);
 });
+
+test("focus auto on a waterfall or a timeline flags one item", async () => {
+  const wf = { template: "chart", title: "[[Price]] adds most", focus: "auto", chart: { kind: "waterfall", format: "£{v}m", items: [{ label: "FY24", value: 10 }, { label: "Price", value: 3 }, { label: "FY25", total: true }] } };
+  const r = await resolveAuto(wf, "consulting", fakeJev({ focus: ["item1", 0.9] }));
+  assert.deepEqual(r.slide.chart.items.map((x) => !!x.focus), [false, true, false]);
+  const tl = { template: "chart", title: "[[Pilot]] gates launch", focus: "auto", chart: { kind: "timeline", periods: ["Q1", "Q2", "Q3"], rows: [{ label: "Build", start: 0, end: 1 }, { label: "Pilot", start: 1, end: 2 }] } };
+  const r2 = await resolveAuto(tl, "consulting", fakeJev({ focus: ["item1", 0.9] }));
+  assert.deepEqual(r2.slide.chart.rows.map((x) => !!x.focus), [false, true]);
+});

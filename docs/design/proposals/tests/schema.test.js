@@ -73,7 +73,7 @@ test("upgrade converts old charts and tables", () => {
 });
 
 test("the chart card carries the chart guide", () => {
-  assert.equal(CHART_GUIDE.length, 7);
+  assert.equal(CHART_GUIDE.length, 11);
   const rules = describe("chart", "consulting").rules.join("\n");
   CHART_GUIDE.forEach((g) => assert.ok(rules.includes(g)));
 });
@@ -87,3 +87,75 @@ for (const style of ["consulting", "pitch"]) {
     for (const { name, ...s } of stressFor(style)) assert.deepEqual(errs(s, style), [], name);
   });
 }
+
+/* Chart kinds and annotations (spec 2026-09-27-chart-capabilities-design.md). */
+const REV5 = { categories: ["2021", "2022", "2023", "2024", "2025"], format: "£{v}m", series: [{ name: "Revenue", mark: "bar", color: "focus", values: [10, 12, 15, 18, 20] }] };
+
+test("annotations: valid cagr, difference and target", () => {
+  assert.deepEqual(errs(chart({ ...REV5, annotations: [{ type: "cagr", from: 0, to: 4 }, { type: "difference", from: 3, to: 4, relative: true }, { type: "target", value: 25 }] })), []);
+});
+
+test("annotations: indices, order, bar series, target fields, CAGR sign", () => {
+  const e = (a, c = REV5) => errs(chart({ ...c, annotations: [a] })).join("\n");
+  assert.match(e({ type: "cagr", from: 0, to: 9 }), /category indices 0–4/);
+  assert.match(e({ type: "difference", from: 3, to: 1 }), /must come before/);
+  assert.match(e({ type: "target" }), /value: required/);
+  assert.match(e({ type: "target", value: 3, from: 0 }), /from: not used by a target/);
+  assert.match(e({ type: "cagr", from: 0, to: 1, value: 2 }), /value: only for a target/);
+  assert.match(e({ type: "cagr", from: 0, to: 1, series: 1 }, { ...REV5, series: [...REV5.series, { name: "M", mark: "line", values: [1, 2, 3, 4, 5] }] }), /not a bar series/);
+  assert.match(e({ type: "cagr", from: 0, to: 1 }, { ...REV5, series: [{ ...REV5.series[0], values: [0, 2, 3, 4, 5] }] }), /positive values/);
+  assert.match(errs(chart({ ...REV5, annotations: [1, 2, 3, 4].map(() => ({ type: "target", value: 1 })) })).join(), /at most 3/);
+});
+
+test("100% stacked needs 2 bar series and takes no annotations", () => {
+  const two = { ...REV5, stacked: "100", series: [REV5.series[0], { name: "Other", mark: "bar", color: "neutral", values: [1, 2, 3, 4, 5] }] };
+  assert.deepEqual(errs(chart(two)), []);
+  assert.match(errs(chart({ ...REV5, stacked: "100" })).join(), /stacking needs 2/);
+  assert.match(errs(chart({ ...two, annotations: [{ type: "target", value: 50 }] })).join(), /100% stacked/);
+});
+
+test("a gap in the values is an error that points at a target", () => {
+  assert.match(errs(chart({ categories: cats, series: [{ ...REV, values: [2.1, null, 9.4] }] })).join(), /series\[0\]\.values\[1\]: missing.*target/);
+});
+
+test("series names are unique within a chart", () => {
+  assert.match(errs(chart({ categories: cats, series: [REV, { ...REV, color: "neutral" }] })).join(), /two series are named "Revenue"/);
+});
+
+test("up to 6 series; a 7th is cut or merged", () => {
+  const lines = (n) => ({ ...REV5, series: Array.from({ length: n }, (_, i) => ({ name: `S${i}`, mark: "line", color: i ? "neutral" : "focus", values: [1, 2, 3, 4, 5] })) });
+  assert.deepEqual(errs(chart(lines(6))), []);
+  assert.match(errs(chart(lines(7))).join(), /at most 6 items/);
+});
+
+const WF = { kind: "waterfall", format: "£{v}m", items: [{ label: "FY24", value: 100 }, { label: "Price", value: 12, focus: true }, { label: "Volume", value: -5 }, { label: "FY25", total: true }] };
+
+test("waterfall: valid, checked totals, bars fields refused", () => {
+  assert.deepEqual(validate(chart(WF), "consulting"), { errors: [], warnings: [] });
+  assert.match(errs(chart({ ...WF, items: [...WF.items.slice(0, 3), { label: "FY25", total: true, value: 110 }] })).join(), /110, but the steps before it sum to 107/);
+  assert.match(errs(chart({ ...WF, series: REV5.series })).join(), /chart\.series: not used by kind "waterfall"/);
+  assert.match(errs(chart({ ...WF, items: WF.items.map((x) => ({ ...x, focus: true })) })).join(), /at most one focus item/);
+  assert.match(validate(chart({ ...WF, items: WF.items.slice(0, 3) })).warnings.join(), /ends with a total/);
+});
+
+const TL = { kind: "timeline", periods: ["Q1", "Q2", "Q3", "Q4"], rows: [{ label: "Build", start: 0, end: 1 }, { label: "Pilot", start: 1, end: 3, focus: true }], milestones: [{ label: "Launch", at: 2 }] };
+
+test("timeline: valid, ranges checked", () => {
+  assert.deepEqual(errs(chart(TL)), []);
+  assert.match(errs(chart({ ...TL, rows: [{ label: "x", start: 2, end: 1 }, TL.rows[0]] })).join(), /is after/);
+  assert.match(errs(chart({ ...TL, rows: [{ label: "x", start: 0, end: 9 }, TL.rows[0]] })).join(), /period indices 0–3/);
+  assert.match(errs(chart({ ...TL, milestones: [{ label: "x", at: 7 }] })).join(), /milestones\[0\]\.at/);
+  assert.match(errs(chart({ ...TL, categories: ["a", "b"] })).join(), /not used by kind "timeline"/);
+});
+
+test("notes limits per kind; points only on bars", () => {
+  const notes = [{ title: "One" }, { title: "Two" }];
+  assert.match(errs(chart(WF, { notes: [{ title: "One", point: { series: 0, index: 1 } }, { title: "Two" }] })).join(), /points only work on a bars chart/);
+  assert.match(errs(chart({ ...TL, periods: Array.from({ length: 9 }, (_, i) => `M${i}`) }, { notes })).join(), /with notes at most 8/);
+  assert.match(errs(chart({ ...TL, rows: Array.from({ length: 5 }, (_, i) => ({ label: `R${i}`, start: 0, end: 1 })) }, { notes })).join(), /with notes at most 4/);
+  assert.match(errs(chart({ ...TL, rows: [{ label: "A workstream label that is long", start: 0, end: 1 }, TL.rows[1]] }, { notes })).join(), /with notes at most 20/);
+});
+
+test("annotations accept series whose mark is still auto", () => {
+  assert.deepEqual(errs(chart({ ...REV5, series: [{ ...REV5.series[0], mark: "auto" }], annotations: [{ type: "target", value: 25 }, { type: "cagr", from: 0, to: 4, series: 0 }] })), []);
+});

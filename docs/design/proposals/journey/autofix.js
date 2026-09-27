@@ -1,6 +1,8 @@
 /* Code fixes what has one right answer and reports it (spec 9.4); it never shortens text or changes meaning.
    Idempotent: the write path runs it before and after `auto` choices are resolved. */
-import { ICONS, MENU } from "../v5/schema.js";
+import { ICONS, KIND_FIELDS, MENU } from "../v5/schema.js";
+
+const CHART_KEYS = new Set(Object.values(KIND_FIELDS).flat());
 
 const cellText = (c) => String(c && typeof c === "object" ? c.value : c ?? "").trim();
 /** "£1,000" → 1000, "(200)" → -200, "12%" → 12; null when the cell is not a number. */
@@ -39,6 +41,18 @@ export function autofix(slide, style) {
   if (out.template === "cards" && !out.framed && Array.isArray(out.cards) && out.cards.every((c) => c && !c.icon && !c.value)) {
     out.cards.forEach((c) => { c.icon = "auto"; }); fixes.push("cards[].icon: auto (no lead given)");
   }
+  // Chart fields written at the slide's top level belong inside `chart` (no slide field shares their names).
+  if (out.template === "chart") for (const k of Object.keys(out)) {
+    if (!CHART_KEYS.has(k)) continue;
+    out.chart ||= {};
+    if (out.chart[k] === undefined) { out.chart[k] = out[k]; fixes.push(`${k}: moved into chart`); }
+    delete out[k];
+  }
+  // `items` belong only to a waterfall and `periods`/`rows` only to a timeline, so a missing kind is certain.
+  if (out.template === "chart" && out.chart && !out.chart.kind && !out.chart.series) {
+    const kind = Array.isArray(out.chart.items) ? "waterfall" : Array.isArray(out.chart.rows) && Array.isArray(out.chart.periods) ? "timeline" : null;
+    if (kind) { out.chart.kind = kind; fixes.push(`chart.kind: ${kind} (inferred from its fields)`); }
+  }
   if (out.template === "chart" && out.chart && Array.isArray(out.chart.series)) fixChart(out, fixes);
   if (out.template === "table" && out.table) fixTable(out.table, fixes);
   return { slide: out, fixes };
@@ -55,6 +69,21 @@ function fixChart(s, fixes) {
   if (s.focus !== "auto") {
     const focus = series.map((x, i) => (x?.color === "focus" ? i : -1)).filter((i) => i >= 0);
     focus.slice(1).forEach((i) => { series[i].color = "neutral"; fixes.push(`chart.series[${i}].color: neutral (only one series is the focus)`); });
+  }
+  // A flat line in the bars' unit is a reference: it becomes a target, labelled once instead of on every point.
+  // "auto" marks are still undecided here, so any non-line series may be the bars.
+  const barLike = series.filter((x) => x && x.mark !== "line" && x.values?.every((y) => typeof y === "number"));
+  const barUnit = barLike[0] && fmt(barLike[0]);
+  for (let i = series.length - 1; i >= 0; i--) {
+    // Gaps (null) do not count: a plan written only at its year is still one flat reference.
+    const x = series[i], v = Array.isArray(x?.values) ? x.values.filter((y) => typeof y === "number") : [];
+    const gaps = Array.isArray(x?.values) && x.values.some((y) => y === null);
+    if ((x?.mark !== "line" && !gaps) || x.color === "focus" || !barUnit || fmt(x) !== barUnit || !v.length || v.some((y) => y !== v[0])) continue;
+    if ((c.annotations || []).length >= 3 || (s.notes || []).some((n) => n?.point?.series === i)) continue;
+    (c.annotations ||= []).push({ type: "target", value: v[0], label: String(x.name).replace(/\s*\(.*\)$/, "").slice(0, 16) });
+    series.splice(i, 1);
+    (s.notes || []).forEach((n) => { if (n?.point && n.point.series > i) n.point.series -= 1; });
+    fixes.push(`chart.series[${i}]: a flat reference line, drawn as a target`);
   }
   const allLines = series.length && series.every((x) => x?.mark === "line");
   (s.notes || []).forEach((n, i) => {

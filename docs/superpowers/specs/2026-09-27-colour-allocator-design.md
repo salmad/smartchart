@@ -1,6 +1,6 @@
 # Colour allocator: design
 
-Status: design approved in chat 2026-09-27; spec awaiting review.
+Status: design approved in chat 2026-09-27; built in the v5 prototype (`v5/colours.js`, tests in `tests/colours.test.js`, R15 in `v5/lints.js`).
 Parent spec: `2026-09-26-slide-system-architecture-design.md` (this adds a deterministic step next to fit, 4, and a rule check, 6).
 
 ## 1. Problem
@@ -24,10 +24,11 @@ A deterministic guarantee, like fit: **no two different things on a slide share 
 | C2 | `allocateColours(slide, palette, accent)` runs on every write, after validation and before fit (it can turn on labels, which fit must then measure). Pure function, no DOM, no model. |
 | C3 | At most **6 series** per chart: 1 focus + up to 3 greys + a second hue for series 5–6. A 7th is a hard error to the agent: "merge the smallest into Other, or cut". |
 | C4 | Contrast rule: **every mark ≥ 3:1 against the slide background, or the series shows direct value labels.** Only `quiet` sits below 3:1, and the allocator switches its labels on. |
-| C5 | Greys are assigned by **role, then data order**, not by value: stable when data change. `contrast` takes the strongest grey; `neutral` series take the next steps in the order written. |
+| C5 | Greys are assigned by **role, then data order**, not by value: stable when data change. Context recedes: `neutral` series take the **quietest** grey that still has 3:1 first (ctx-3, then ctx-2, then ctx-1), in the order written; a `contrast` series (one that must read clearly) takes the strongest. On Ink the strongest grey is near white and would outshout the focus, so it is never the default for context. |
 | C6 | `neg` and `pos` are **meaning colours only** (loss/gain markup, waterfall down/up, difference arrows). They are never given to an ordinary series. |
-| C7 | When the accent's hue is within 30° of `neg` or `pos`, the **meaning colour moves**, within its own family (red stays red, green stays green), by up to 25°. If it still cannot get 30° apart, the accent picker refuses the colour with a reason ("too close to the loss red"). |
-| C8 | Same series name → same colour everywhere on the slide (chart, legend, end labels, notes). Deck-wide consistency comes later with the claims registry (parent spec, 14). |
+| C7 | When the accent's hue is within 30° of `neg` or `pos`, the **meaning colour moves**, within its own family (red stays red, green stays green), by up to 15° (a larger turn makes the red read as orange). If it still cannot get 30° apart, the accent is refused with a reason ("too close to the loss red") and the palette focus is used. An accent with too little chroma to stand apart from the greys is refused the same way. |
+| C9 | Every series has its own **text colour** (`<slot>-text`): its mark colour lifted towards the foreground until it reads as text (4.5:1). The greys lift in order (quiet, ctx-3, ctx-2, ctx-1), each at least 0.06 OKLab L past the one before, so value and end labels read in their own series' shade and no two grey labels look alike. Marks keep their receding greys; only text is lifted. |
+| C8 | Series names are unique within a chart (a validation error otherwise), so one name is one colour everywhere on the slide (bars, legend, end labels, notes). Deck-wide consistency comes later with the claims registry (parent spec, 14). |
 
 ## 4. The colour set
 
@@ -36,18 +37,19 @@ Fixed per palette, checked in CI like geometry constants. Grey candidates are in
 | Slot | Ink (bg `#0B0A09`) | Paper (bg `#F6F3EC`) | Use |
 |---|---|---|---|
 | `focus` | accent or `#E8B94A` (10.8:1) | accent or `#2447D1` (6.5:1) | the one focus item |
-| `ctx-1` | `#CAC6BE` L\*80, 11.6:1 | `#44423D` L\*28, 9.1:1 | `contrast` series; first context series otherwise |
-| `ctx-2` | `#9E9A94` L\*64, 7.1:1 | `#66635D` L\*42, 5.4:1 | next context series |
-| `ctx-3` | `#74716C` L\*48, 4.1:1 | `#898680` L\*56, 3.3:1 | next context series |
-| `quiet` | `#524F4C` L\*34, 2.4:1 | `#B8B6AF` L\*74, 1.8:1 | only when there is exactly one context series; labels on (C4). Keeps the calm v4 look |
+| `ctx-1` | `#ADAAA2`, 8.5:1 | `#44423D` L\*28, 9.1:1 | a `contrast` series; the third `neutral` series |
+| `ctx-2` | `#8A8782`, 5.9:1 | `#66635D` L\*42, 5.4:1 | the second `neutral` series |
+| `ctx-3` | `#686561`, 3.4:1 | `#898680` L\*56, 3.3:1 | the first `neutral` series; waterfall totals |
+| `pos-fill`, `neg-fill` | computed | computed | waterfall steps: the pos/neg hue toned towards the background until just above 3:1 (3.2:1), so a step never outshouts the focus; their labels keep the full `pos`/`neg` |
+| `quiet` | `#4A443B` (today's neutral), 2.05:1 | `#CFC6B6` (today's neutral), 1.53:1 | only when there is exactly one context series; labels on (C4). Keeps the calm v4 look |
 | `alt`, `alt-2` | chosen at run time (below) | chosen at run time | series 5 and 6 |
 | `neg`, `pos` | `#FF5A45`, `#7BD88F` (may move, C7) | `#D2402C`, `#1C8248` (may move, C7) | meaning only |
 
 Adjacent grey steps are ≥ 14 L\* apart, and differ in lightness only, so they survive colour-vision deficiency. The hex values are candidates: they are approved on the visual baseline (parent spec, 5) before they ship.
 
-**The quiet default.** A chart with the focus plus **one** context series gives that series `quiet` with labels on, which keeps today's restrained look. With two or more context series, the ramp `ctx-1…3` is used and `quiet` is not.
+**The quiet default.** In an unstacked bar chart with exactly **one** context *bar* series, that series gets `quiet` with a value label on every bar, which keeps today's restrained look. Lines, stacked segments and every other context series use the ramp `ctx-1…3` (a thin line or a small segment cannot always carry a label).
 
-**Second hue.** Candidate hues: 200° (teal), 230° (blue), 275° (violet), 35° (amber). The allocator picks the candidate whose minimum hue distance to `focus`, `neg` and `pos` is largest, sets its lightness to the middle of the ≥ 3:1 band, and makes `alt-2` the same hue ≥ 15 L\* away. It must stay distinguishable from `focus` under deuteranopia simulation (ΔE2000 ≥ 10); otherwise the next candidate is taken.
+**Second hue.** Candidate hues: 200° (teal), 230° (blue), 275° (violet), 35° (amber). The allocator picks the candidate whose minimum hue distance to `focus`, `neg` and `pos` is largest, sets its lightness to the middle of the ≥ 3:1 band, and makes `alt-2` the same hue ≥ 15 L\* away. It must stay distinguishable from `focus` under deuteranopia simulation (OKLab distance ≥ 0.10); otherwise the next candidate is taken.
 
 ## 5. Algorithm
 
@@ -57,13 +59,13 @@ allocateColours(slide, palette, accent) → { map: itemId → colour, labelsOn: 
 2. neg/pos = resolveMeaning(focus, palette)            // C7; may return an accent error
 3. series = chart series in written order; count > 6 → error (C3)
 4. focus series → focus
-5. grey slots = one context series ? [quiet]
+5. grey slots = unstacked bars with one context bar series ? that bar → quiet, the rest → ramp
               : [ctx-1, ctx-2, ctx-3]
-   `contrast` series first, then `neutral` series in order (C5)
+   `contrast` series take the strongest grey, `neutral` series the quietest first, in order (C5)
 6. series 5–6 → alt, alt-2 (4, second hue)
 7. any series on `quiet` → labelsOn (C4)
-8. same name → same colour (C8); cards, steps, markup take focus/neg/pos from the same map
-9. assert: all assigned colours pairwise distinct (ΔE2000 ≥ 10) and C4 holds; else throw (a bug, not a content error)
+8. cards, steps, markup take focus/neg/pos from the same map (names are unique, C8)
+9. assert: all assigned colours pairwise distinct (OKLab distance ≥ 0.08) and C4 holds; else throw (a bug, not a content error)
 ```
 
 The renderer reads the map and sets classes/CSS variables; it no longer decides colours. `semanticClash()` is replaced by `resolveMeaning()`.

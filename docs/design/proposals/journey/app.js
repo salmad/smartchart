@@ -8,9 +8,10 @@ import { judgmentChecks, ruleChecks } from "./checks.js";
 import { startPresentation } from "./present.js";
 import { deckList, deckName, loadStore, newDeckId, saveStore } from "./decks.js";
 import { accentPicker } from "./accent-picker.js";
+import { suggest } from "./suggest.js";
 
 const $ = (id) => document.getElementById(id);
-const state = { style: "consulting", theme: "ink", accent: null, items: [], current: 0, turns: [], history: [], working: new Set(), busy: false, live: false, replay: null };
+const state = { style: "consulting", theme: "ink", accent: null, items: [], current: 0, turns: [], history: [], working: new Set(), busy: false, live: false, replay: null, pills: {} };
 window.__journey = state; // read by the recording script
 
 const SUGGEST = {
@@ -24,7 +25,6 @@ const SUGGEST = {
     "Our traction: 40 paying cafés, £38k MRR, growing 22% a month",
     "Why we win: suppliers compete for orders instead of cafés chasing suppliers",
   ],
-  edit: ["Make the title punchier", "Show this as a table instead", "Add a slide with our 3-step plan to get there"],
 };
 
 const deck = () => ({ style: state.style, theme: state.theme, accent: state.accent, footer: footer(), slides: state.items.map((i) => i.slide) });
@@ -102,11 +102,31 @@ function renderChecks() {
     <ul>${list.map((c) => `<li class="${c.ok ? "ok" : c.bad ? "bad" : "warn"}"><span class="ico">${c.ok ? "✓" : c.bad ? "✕" : "!"}</span><code>${esc(c.id)}</code><span>${esc(c.msg)}</span></li>`).join("")}</ul>`;
 }
 
+/* Pills: starter prompts on an empty deck; after that, next steps tailored to the current slide and the
+   conversation (suggest.js), fetched in the background and kept per slide version. */
 function renderChips() {
-  const chips = $("chips");
-  const list = state.replay || !state.live || state.busy ? [] : state.items.length ? SUGGEST.edit : SUGGEST[state.style];
-  chips.innerHTML = list.map((s) => `<button type="button">${esc(s)}</button>`).join("");
-  chips.querySelectorAll("button").forEach((b) => (b.onclick = () => send(b.textContent)));
+  const chips = $("chips"), it = state.items[state.current];
+  if (state.replay || !state.live || state.busy) { chips.innerHTML = ""; return; }
+  let list = SUGGEST[state.style].map((s) => ({ label: s, prompt: s }));
+  if (it) {
+    const got = state.pills[it.id];
+    if (!got || got.key !== JSON.stringify(it.slide)) { refreshPills(it); return; }
+    if (got.pending) { chips.innerHTML = `<span class="chips-pending"><i class="spinner"></i>Suggesting next steps…</span>`; return; }
+    list = got.pills;
+  }
+  chips.innerHTML = list.map((p, i) => `<button type="button" data-i="${i}" title="${esc(p.prompt)}">${esc(p.label)}</button>`).join("");
+  chips.querySelectorAll("button").forEach((b) => (b.onclick = () => send(list[+b.dataset.i].prompt)));
+}
+
+function refreshPills(it) {
+  const key = JSON.stringify(it.slide), entry = { key, pending: true, pills: [] };
+  state.pills[it.id] = entry;
+  renderChips();
+  suggest({ slide: it.slide, style: state.style, history: state.history, checks: it.checks || [] }).then(({ pills }) => {
+    if (state.pills[it.id] !== entry) return; // the slide changed while we waited
+    Object.assign(entry, { pending: false, pills });
+    renderChips();
+  });
 }
 
 /* ─────────── Thread ─────────── */

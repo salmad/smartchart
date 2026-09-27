@@ -211,6 +211,7 @@ function compact(history) {
 
 /* The reply code writes when it ends the turn: what changed, and anything the user should know. */
 const FIELD = { title: "title", subtitle: "subtitle", takeaway: "takeaway", kicker: "kicker", footnote: "footnote", source: "source", notes: "notes", chart: "chart", table: "table", cards: "cards", steps: "steps", number: "number", body: "text", focus: "highlight" };
+const NEXT = "What would you like to change next?";
 function codeReply(intent, r, slide) {
   const extra = [];
   if (/illustrative/i.test(slide?.footnote || "")) extra.push("The figures are illustrative and marked in the footnote.");
@@ -221,10 +222,10 @@ function codeReply(intent, r, slide) {
   if (intent === "edit_selected") {
     const parts = [...new Set((r.out.changed || []).map((p) => { const [head, i] = [p.split(/[.[]/)[0], p.match(/^\w+\[(\d+)\]/)?.[1]];
       return i !== undefined && ["cards", "steps", "notes"].includes(head) ? `${head.replace(/s$/, "")} ${Number(i) + 1}` : FIELD[head] || head; }))];
-    return [`Updated the ${parts.join(", ")}.`, ...extra].join(" ");
+    return [`Updated the ${parts.join(", ")}.`, ...extra, NEXT].join(" ");
   }
   const kind = slide?.template === "number" ? "big-number" : slide?.template || "new";
-  return [intent === "change_template" ? `Switched it to a ${kind} slide.` : `Added a ${kind} slide.`, ...extra].join(" ");
+  return [intent === "change_template" ? `Switched it to a ${kind} slide.` : `Added a ${kind} slide.`, ...extra, NEXT].join(" ");
 }
 
 /** "rows[0]" → "table.rows[0]" when the head is not a slide field but belongs to exactly one of its objects. */

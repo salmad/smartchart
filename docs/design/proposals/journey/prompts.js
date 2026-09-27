@@ -4,9 +4,19 @@ import { EXAMPLES } from "../v5/examples.js";
 
 const specFor = (ex, style) => { const { consulting, pitch, name, ...shared } = ex; return { ...shared, ...(style === "pitch" ? pitch : consulting) }; };
 
-/** The worked example for a template and style; for cards, the one with the same lead. */
+/* A new slide starts plain (agent prompt, "Start plain"), so the example shows the plain version: the model
+   copies the shape it is shown. The extras stay in the review page's examples. */
+const EXTRAS = ["takeaway", "notes", "kicker", "footnote", "source"];
+const plainExample = (s) => {
+  const out = structuredClone(s);
+  EXTRAS.forEach((k) => delete out[k]);
+  if (out.chart) delete out.chart.annotations;
+  return out;
+};
+
+/** The worked example for a template and style, plain; for cards, the one with the same lead. */
 export function exampleFor(id, style, lead) {
-  const pool = EXAMPLES.filter((e) => e.template === id).map((e) => specFor(e, style));
+  const pool = EXAMPLES.filter((e) => e.template === id).map((e) => plainExample(specFor(e, style)));
   const match = pool.find((s) => MENU[id].variant(s) === lead) || pool[0];
   return match ? JSON.stringify(match, null, 1) : "(none)";
 }

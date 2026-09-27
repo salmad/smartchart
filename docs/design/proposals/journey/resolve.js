@@ -11,7 +11,12 @@ const slideText = (s) => JSON.stringify(s, (k, v) => (typeof v === "string" ? pl
 function focusItems(s) {
   const one = (list, set) => (i) => list.forEach((x, j) => set(x, i === j));
   switch (s.template) {
-    case "chart": return { names: s.chart.series.map((x) => x.name), apply: one(s.chart.series, (x, on) => { x.color = on ? "focus" : x.color === "contrast" ? "contrast" : "neutral"; }) };
+    case "chart": {
+      const flag = (x, on) => { if (on) x.focus = true; else delete x.focus; };
+      if (s.chart.kind === "waterfall") return { names: s.chart.items.map((x) => x.label), apply: one(s.chart.items, flag) };
+      if (s.chart.kind === "timeline") return { names: s.chart.rows.map((x) => x.label), apply: one(s.chart.rows, flag) };
+      return { names: s.chart.series.map((x) => x.name), apply: one(s.chart.series, (x, on) => { x.color = on ? "focus" : x.color === "contrast" ? "contrast" : "neutral"; }) };
+    }
     case "table": { const cols = s.table.columns.slice(1); return { names: cols.map((c) => c.label), apply: one(cols, (c, on) => { if (on) c.focus = true; else delete c.focus; }) }; }
     case "steps": return { names: s.steps.map((x) => x.title), apply: one(s.steps, (x, on) => { if (on) x.focus = true; else delete x.focus; }) };
     case "cards": return s.framed ? null : { names: s.cards.map((c) => plain(c.title)), apply: one(s.cards, (c, on) => { c.tone = on ? "focus" : c.tone === "neg" ? "neg" : "neutral"; }) };

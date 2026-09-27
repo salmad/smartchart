@@ -34,7 +34,8 @@ Presentation: **Present** or `F`. Arrows, Space, PgUp/PgDn, Home/End, a number t
 - `pre.js`: the PRE step. `shorten.js`: fast shortening of over-long text. `patch.js`: path patches. `autofix.js`: code fixes. `resolve.js`: `auto` choices. `checks.js`: rule checks R1–R14 and judgment checks J1–J8.
 - `server.mjs`: local static server plus `/api/glm` and `/api/jev` proxies with a model allowlist and a call cap. Not deployed; the repo-root `api/` functions are its deployed twin (spend limits are set on the provider accounts).
 - `llm.js`: model client. `prompts.js`: style block, worked examples, picking guide.
-- `accent-picker.js`: the Accent popover (curated swatches, custom colour, hex). The colour is saved per deck and applied by `../v5/accent.js`, which keeps it legible on each palette and flags hues close to the problem red or gain green.
+- `suggest.js`: the next-step pills after a turn. GLM Flash reads the slide, the recent conversation and the failed checks, works out the slide's message and suggests 3–4 changes that help convey it; runs in the background, cached per slide version, no pills if the call fails. New slides start plain (agent prompt, "Start plain"); the pills are how the user adds the rest.
+- `accent-picker.js`: the Accent popover (curated swatches, custom colour, hex). The colour is saved per deck and applied by the colour allocator `../v5/colours.js`, which keeps it legible on each palette, turns the loss red or gain green away from it, and refuses accents too grey or too close to them (the palette default is used).
 - `decks.js`: the deck store in localStorage (one key, newest first; empty decks are not kept).
 - `app.js`: UI; `window.__journey` exposes `send`, `setStyle`, `load` and `turns` for test harnesses. `present.js`: presentation mode. `journey.css`: page chrome (slides use `../v5/slides.css`).
 - `replays.json`: two recorded runs of the earlier pipeline (consulting and pitch, 4 turns each), recorded 2026-09-26.

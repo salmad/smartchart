@@ -7,6 +7,7 @@ const chart = (series, extra = {}) => ({ template: "chart", title: "Revenue grew
 const REV = { name: "Revenue", mark: "bar", color: "focus", values: [2.1, 4.8, 7.2, 9.4] };
 
 test("numbersIn ignores years", () => assert.deepEqual(numbersIn("£2.1m in 2022 to £9,400k, 4.5×"), [2.1, 9400, 4.5]));
+test("numbersIn: a year before a comma is still a year", () => assert.deepEqual(numbersIn("£120m by 2030, £20m ahead"), [120, 20]));
 
 test("R9: comparable series mixing marks, three units, bad stacking", () => {
   assert.equal(get(chart([REV, { ...REV, name: "Cost", color: "neutral", mark: "line" }]), "R9").ok, false);
@@ -51,4 +52,21 @@ test("R14: time runs oldest first; single-series bars sorted by value", () => {
   assert.equal(get(bars, "R14").ok, false);
   bars.chart.series[0].values = [9, 5, 3, 1];
   assert.equal(get(bars, "R14").ok, true);
+});
+
+test("R11 accepts figures code computed: a CAGR, a waterfall total, a 100% share", () => {
+  const cagr = { ...chart([{ ...REV, values: [10, 12, 15, 20] }], { annotations: [{ type: "cagr", from: 0, to: 3 }] }), title: "Revenue grows [[26% a year]] to £20m" };
+  assert.equal(get(cagr, "R11").ok, true);
+  assert.equal(get({ ...cagr, title: "Revenue grows [[31% a year]] to £20m" }, "R11").ok, false);
+  const wf = { template: "chart", title: "ARR reaches £17.5m; [[new]] adds £6.2m", source: "Model", chart: { kind: "waterfall", format: "£{v}m",
+    items: [{ label: "FY25", value: 9.8 }, { label: "New", value: 6.2, focus: true }, { label: "Churn", value: -1.4 }, { label: "Price", value: 2.9 }, { label: "FY26", total: true }] } };
+  assert.equal(get(wf, "R11").ok, true);
+  const mix = { ...chart([{ ...REV, color: "neutral", values: [7, 12, 20, 30] }, { ...REV, name: "Card", values: [3, 8, 18, 34] }], { stacked: "100" }), title: "[[Card]] rises from 30% to 53%" };
+  assert.equal(get(mix, "R11").ok, true);
+});
+
+test("focus counts per chart kind; a timeline carries no figure rules", () => {
+  const tl = { template: "chart", title: "The [[pilot]] is the critical path for the whole launch", chart: { kind: "timeline", periods: ["Q1", "Q2", "Q3"], rows: [{ label: "Build", start: 0, end: 1 }, { label: "Pilot", start: 1, end: 2, focus: true }] } };
+  assert.equal(get(tl, "R4").ok, true);
+  for (const id of ["R5", "R8", "R12", "R14"]) assert.equal(get(tl, id), undefined, id);
 });
