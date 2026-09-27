@@ -30,7 +30,7 @@ function Bubble({ m }: { m: Message }) {
   const working = m.kind === 'bot' && !m.text && m.sub === WORKING, trace = m.trace ?? []
   return (
     <div className="grid gap-2">
-      {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={m.kind === 'error' ? 'text-bad' : 'text-ink'}>{p.trim()}</p>)}
+      {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={cn('whitespace-pre-line', m.kind === 'error' ? 'text-bad' : 'text-ink')}>{p.trim()}</p>)}
       {m.sub && !(working && trace.length) && <p className="text-[13px] text-ink-2">{working && <i className="spinner" />}{m.sub}</p>}
       {trace.length > 0 && <Trace trace={trace} pending={working} />}
     </div>

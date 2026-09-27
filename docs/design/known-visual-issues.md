@@ -36,3 +36,4 @@ Systematic problems seen while reviewing the 17 starters (68 renders: both style
 ## App chrome (not slides)
 
 12. **Chat shows builder detail**: the step trace names models and tools (Jev, GLM Flash, create_slide). Useful for us, noise for customers. Direction: hide it behind a "details" toggle, or show plain steps.
+13. **Dev server: `/api/*` once served the handler source instead of running it** (the app then reads "offline" and disables the composer). Seen after a long day of dependency installs/removals; a restart fixed it and editing `api/*` or `tsconfig.json` did not reproduce it. If it recurs, check `vite/api-dev.ts` survives a Vite server restart.
