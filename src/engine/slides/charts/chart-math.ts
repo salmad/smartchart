@@ -82,8 +82,9 @@ export const shares = (c: Chart): number[][] => {
 };
 
 /**
- * Automatic axis break (spec 3): unstacked bars where the tallest bar is more than 2.5× the next tallest,
- * with no line or target in the bar unit above the cap. Returns { cap, series, index } or null.
+ * Automatic axis break (spec 3): three or more unstacked bars where the tallest is more than 2.5× the next
+ * tallest, with no line or target in the bar unit above the cap. Two bars are never cut: they are the comparison.
+ * Returns { cap, series, index } or null.
  */
 export interface AxisBreak { cap: number; series: number; index: number }
 export function axisBreak(c: Chart): AxisBreak | null {
@@ -91,7 +92,7 @@ export function axisBreak(c: Chart): AxisBreak | null {
   const B = bars(c);
   if (!B.length) return null;
   const all = B.flatMap((s) => s.values.map((v, i) => ({ v, series: (c.series ?? []).indexOf(s), index: i }))).sort((a, b) => b.v - a.v);
-  if (all.length < 2 || !(all[0].v > 2.5 * all[1].v) || all[1].v <= 0) return null;
+  if (all.length < 3 || !(all[0].v > 2.5 * all[1].v) || all[1].v <= 0) return null;
   const cap = all[1].v * 1.5, unit = fmtOf(c, B[0]);
   const sameUnitLines = (c.series || []).filter((s) => s.mark === "line" && fmtOf(c, s) === unit).flatMap((s) => s.values);
   const targets = (c.annotations || []).filter((a) => a?.type === "target").map((a) => a.value);

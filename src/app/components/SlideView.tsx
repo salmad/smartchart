@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { mountSlide } from '@/engine/slides/render'
 import type { Deck, Slide, SlideContext } from '@/engine/types'
+import { cn } from '@/app/lib/utils'
 
 interface Props { slide: Slide; deck: Pick<Deck, 'style' | 'theme' | 'accent'>; ctx: SlideContext; className?: string }
 
@@ -19,5 +20,5 @@ export function SlideView({ slide, deck, ctx, className }: Props) {
     return () => ro.disconnect()
   }, [slide, style, theme, accent, page, section, kicker, footer])
 
-  return <div ref={frame} className={className} />
+  return <div ref={frame} className={cn('slide-frame', className)} />
 }

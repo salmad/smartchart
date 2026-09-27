@@ -69,6 +69,9 @@ test("axis break only for one outlier bar with nothing above the cap", () => {
   assert.equal(axisBreak(c([10, 12, 25])), null);
   assert.equal(axisBreak(c([10, 12, 90], { stacked: true })), null);
   assert.equal(axisBreak(c([10, 12, 90], { annotations: [{ type: "target", value: 50 }] })), null);
+  // Two bars are the comparison itself: cutting one would hide the ratio the slide is about.
+  assert.equal(axisBreak(c([2.1, 5.4])), null);
+  assert.equal(axisBreak({ categories: ["2023"], format: "{v}", series: [{ name: "a", mark: "bar", values: [2] }, { name: "b", mark: "bar", values: [9] }] }), null);
 });
 
 test("derived figures feed R11", () => {

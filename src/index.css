@@ -12,6 +12,10 @@
 }
 
 @layer components {
+  /* slides.css draws chart gridlines with a bare .grid class, which also matches Tailwind's grid utility on the
+     app's wrappers; SVG strokes inherit, so every mark would turn dotted. Each slide frame resets them. */
+  .slide-frame { stroke: none; stroke-width: 1; stroke-dasharray: none; }
+
   .spinner { @apply mr-2 inline-block size-3 animate-spin rounded-full border-[1.5px] border-line-2 border-t-ink align-[-1px]; animation-duration: .8s; }
 
   /* The custom swatch: a colour wheel, and the chosen colour as a dot in its middle when it is on.

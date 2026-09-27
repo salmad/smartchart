@@ -44,7 +44,7 @@ Arrows are placed above every bar and label in their range; several arrows stack
 
 **Also added to `bars`:**
 - `stacked: "100"`: 100% stacked. Code converts to shares; segment labels are percentages; no totals.
-- **Axis break (automatic):** unstacked bars where the tallest bar is more than 2.5× the next tallest (and no line or target in the bar unit sits above the cap). The tallest bar is drawn cut with a break mark, and its label keeps the true value. The agent never asks for it.
+- **Axis break (automatic):** three or more unstacked bars where the tallest bar is more than 2.5× the next tallest (and no line or target in the bar unit sits above the cap). The tallest bar is drawn cut with a break mark, and its label keeps the true value. Two bars are never cut: they are the comparison itself. The agent never asks for it.
 
 ## 4. Validation (errors phrased as fixes)
 
