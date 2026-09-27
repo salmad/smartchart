@@ -30,7 +30,7 @@ export function Bar(p: BarProps) {
         {p.decks.length > 0 && (
           <Select value={p.deckId ?? undefined} onValueChange={p.onOpenDeck} disabled={p.busy}>
             <SelectTrigger aria-label="Deck" className="h-8 max-w-[280px] rounded-lg border-line-2 bg-panel px-2 text-[13px] shadow-none disabled:opacity-45 max-[900px]:order-4 max-[900px]:min-w-0 max-[900px]:flex-1">
-              <SelectValue />
+              <SelectValue placeholder="Untitled deck" />
             </SelectTrigger>
             <SelectContent className="border-line-2 bg-raise text-ink">
               {p.decks.map((d) => <SelectItem key={d.id} value={d.id} className="text-[13px]">{d.label}</SelectItem>)}

@@ -107,9 +107,9 @@ export function App() {
     else newDeck()
   }, [app, repo, openDeck, newDeck])
 
-  // Saved decks, newest first, with the open deck's live slides; a new deck shows before its first save.
+  // Saved decks, newest first, with the open deck's live slides; a new deck shows (as "Untitled deck") before its first save.
   const decks = deckList(store.current).map((d) => ({ id: d.id, items: d.id === s.deckId ? s.items : d.items }))
-  if (s.deckId && !store.current.decks[s.deckId] && s.items.length) decks.unshift({ id: s.deckId, items: s.items })
+  if (s.deckId && !store.current.decks[s.deckId]) decks.unshift({ id: s.deckId, items: s.items })
   const bar = {
     decks: decks.map((d) => ({ id: d.id, label: `${deckName(d)} · ${d.items.length} slide${d.items.length === 1 ? '' : 's'}` })),
     onStyle: setStyle,
