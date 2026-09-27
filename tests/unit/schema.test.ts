@@ -1,7 +1,8 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { CHART_GUIDE, describe, upgrade, validate } from "../../src/engine/slides/schema";
-import { EXAMPLES, stressFor } from "../../src/engine/slides/examples";
+import { EXAMPLES } from "../../src/engine/slides/examples";
+import { stressFor } from "../fixtures/stress";
 import type { Slide, Style } from "../../src/engine/types";
 
 /* Tests feed malformed and legacy slides on purpose; these helpers name that. */
