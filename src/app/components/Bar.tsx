@@ -8,9 +8,10 @@ import { AccentPicker } from './AccentPicker'
 export interface DeckOption { id: string; label: string }
 export interface BarProps {
   deckStyle: Style; theme: Theme; accent: string | null; hasSlides: boolean; busy: boolean; live: boolean
-  decks: DeckOption[]; deckId: string | null
+  decks: DeckOption[]; deckId: string | null; canDelete: boolean
   onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void
   onOpenDeck: (id: string) => void; onDelete: () => void; onNew: () => void; onPresent: () => void
+  canAdd: boolean; onAdd: () => void
 }
 
 /** Top bar: deck style and palette, accent, saved decks, new deck and Present. */
@@ -37,7 +38,8 @@ export function Bar(p: BarProps) {
             </SelectContent>
           </Select>
         )}
-        {p.deckId && p.decks.length > 0 && <Button variant="outline" onClick={p.onDelete} disabled={p.busy} className="max-[900px]:order-4">Delete</Button>}
+        {p.canDelete && <Button variant="outline" onClick={p.onDelete} disabled={p.busy} className="max-[900px]:order-4">Delete</Button>}
+        <Button variant="outline" onClick={p.onAdd} disabled={!p.canAdd || p.busy} className="max-[900px]:order-4">Add slide</Button>
         <Button variant="outline" onClick={p.onNew} disabled={p.busy} className="max-[900px]:order-4">New deck</Button>
         <Button onClick={p.onPresent} disabled={!p.hasSlides} className="max-[900px]:order-5">Present <kbd className="max-[900px]:hidden">F</kbd></Button>
       </div>

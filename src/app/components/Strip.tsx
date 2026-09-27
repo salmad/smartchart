@@ -3,10 +3,10 @@ import type { Deck } from '@/engine/types'
 import type { Item } from '@/app/store'
 import { SlideView } from './SlideView'
 
-interface Props { items: Item[]; current: number; deck: Deck; onSelect: (index: number) => void }
+interface Props { items: Item[]; current: number; deck: Deck; onSelect: (index: number) => void; onAdd: () => void; busy: boolean }
 
 /** The deck as a row of thumbnails; a click selects the slide. */
-export function Strip({ items, current, deck, onSelect }: Props) {
+export function Strip({ items, current, deck, onSelect, onAdd, busy }: Props) {
   if (!items.length) return null
   const ctx = contexts(deck)
   return (
@@ -26,6 +26,8 @@ export function Strip({ items, current, deck, onSelect }: Props) {
             </span>
           </button>
         ))}
+        <button type="button" aria-label="Add a slide" onClick={onAdd} disabled={busy}
+          className="grid aspect-video w-44 flex-none cursor-pointer place-items-center self-start rounded-md border border-dashed border-line-2 text-[22px] font-light text-ink-3 transition-colors hover:border-ink-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-45 max-[900px]:w-36">+</button>
       </div>
     </div>
   )

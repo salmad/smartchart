@@ -6,19 +6,19 @@ import { cn } from '@/app/lib/utils'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
 
-interface Props { messages: Message[]; legacyThread: string | null; live: boolean }
+interface Props { messages: Message[]; legacyThread: string | null; offline: boolean }
 
 /** The conversation: an old prototype chat (read-only) first, then the messages, newest at the bottom. */
-export function Chat({ messages, legacyThread, live }: Props) {
+export function Chat({ messages, legacyThread, offline }: Props) {
   const thread = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, legacyThread, live])
+  useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, legacyThread, offline])
 
   return (
     <div ref={thread} className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:overflow-visible max-[900px]:px-4">
       {/* HTML the prototype itself produced and escaped when it saved this deck; shown as it was, never edited. */}
       {legacyThread && <div className="legacy" dangerouslySetInnerHTML={{ __html: legacyThread }} />}
       {messages.map((m, k) => <Bubble key={k} m={m} />)}
-      {!live && <p className="text-[13px] text-ink-2">{OFFLINE}</p>}
+      {offline && <p className="text-[13px] text-ink-2">{OFFLINE}</p>}
     </div>
   )
 }

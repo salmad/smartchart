@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
+import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
+import { Landing } from './components/Landing'
+import { AddSlide } from './components/AddSlide'
 import { Present } from './components/Present'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
@@ -9,11 +12,12 @@ import { installDebug } from './debug'
 import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
 import { deckOf, toSaved } from './state'
-import { deckList, deckName, localDeckRepo, type Item, type Store } from './store'
+import { deckList, deckName, localDeckRepo, newDeckId, type Item, type Store } from './store'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
+const LANDING = 'Pick a ready-made slide, or describe your own. Paste numbers, a table or notes and say what the slide should argue.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const STORAGE_FULL = "This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need."
 
@@ -24,8 +28,8 @@ export function App() {
   const store = useRef<Store>({ active: null, decks: {} })
   const [, setSaved] = useState(0) // re-renders the deck list after a save
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
-  const turns = useRef<TurnRecord[]>([]), warned = useRef(false), booted = useRef(false)
-  const [presenting, setPresenting] = useState(false)
+  const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
+  const [presenting, setPresenting] = useState(false), [booted, setBooted] = useState(false)
   const deck = deckOf(s)
 
   const measurer = useCallback((): Measurer => {
@@ -34,7 +38,7 @@ export function App() {
   }, [])
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
 
-  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; say(WELCOME) }, [app, say])
+  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; say(LANDING) }, [app, say])
   const openDeck = useCallback((id: string) => {
     const d = store.current.decks[id]
     if (!d) return
@@ -48,14 +52,17 @@ export function App() {
 
   // Boot: fonts (slides measure text), whether the models are reachable, then the last deck.
   useEffect(() => {
-    if (booted.current) return
-    booted.current = true
+    if (bootStarted.current) return
+    bootStarted.current = true
     void (async () => {
       await document.fonts.ready
       let live = false
       try { live = !!((await (await fetch(config.healthUrl)).json()) as { live?: unknown }).live } catch { /* offline */ }
       app.dispatch({ type: 'set', patch: { live } })
       store.current = await repo.load()
+      setBooted(true)
+      // A tile picked while this loaded already started a deck: it wins over reopening the last one.
+      if (app.getState().deckId) return
       const last = store.current.decks[store.current.active ?? ''] ?? deckList(store.current)[0]
       if (last) openDeck(last.id)
       else newDeck()
@@ -111,6 +118,7 @@ export function App() {
   const decks = deckList(store.current).map((d) => ({ id: d.id, items: d.id === s.deckId ? s.items : d.items }))
   if (s.deckId && !store.current.decks[s.deckId]) decks.unshift({ id: s.deckId, items: s.items })
   const bar = {
+    canDelete: !!s.deckId && !!store.current.decks[s.deckId],
     decks: decks.map((d) => ({ id: d.id, label: `${deckName(d)} · ${d.items.length} slide${d.items.length === 1 ? '' : 's'}` })),
     onStyle: setStyle,
     onTheme: (theme: Theme) => app.dispatch({ type: 'set', patch: { theme } }),
@@ -119,6 +127,7 @@ export function App() {
     onDelete: deleteDeck,
     onNew: () => { if (!app.getState().busy) newDeck() },
     onPresent: present,
+    onAdd: () => { if (!app.getState().busy && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
   }
 
   const onClear = useCallback(() => {
@@ -126,13 +135,27 @@ export function App() {
     app.dispatch({ type: 'set', patch: { history: [], working: new Set(), messages: [{ kind: 'bot', text: '', sub: CLEARED }], legacyThread: null } })
   }, [app])
   const onSelect = useCallback((index: number) => app.dispatch({ type: 'select', index }), [app])
-  const onSend = useCallback((text: string) => { void send(text) }, [send])
+  // A prompt from the landing (or Add slide) builds the slide in the editor.
+  const onSend = useCallback((text: string) => {
+    if (app.getState().view !== 'editor') app.dispatch({ type: 'set', patch: { view: 'editor' } })
+    void send(text)
+  }, [app, send])
+  // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
+  // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
+  const onUse = useCallback((st: Starter) => app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }), [app])
+  const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
+  const onPick = useCallback((st: Starter) => app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }), [app])
+  const stage = s.view === 'landing'
+    ? <Landing deckStyle={s.style} theme={s.theme} accent={s.accent} onStyle={setStyle} onPick={onPick} />
+    : s.view === 'add'
+      ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
+      : undefined
 
   return (
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} />}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} stage={stage} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>

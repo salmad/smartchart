@@ -10,7 +10,8 @@ export function Stage({ deck, current, busy, onPresent }: Props) {
   const slide = deck.slides[current]
   return (
     <div className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4 max-[900px]:pb-3 max-[900px]:pt-4">
-      <div onClick={() => slide && onPresent()} title="Present (F)"
+      {/* The second click of a double click (e.g. on a gallery tile that just became this slide) does not present. */}
+      <div onClick={(e) => { if (slide && e.detail < 2) onPresent() }} title="Present (F)"
         className={cn('relative aspect-video w-[min(100%,calc((100vh_-_56px_-_44px_-_250px)*16/9))] overflow-hidden rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] max-[900px]:w-full max-[900px]:rounded-lg',
           slide && 'cursor-zoom-in',
           busy && 'after:absolute after:inset-0 after:bg-[rgba(10,10,11,.35)] after:content-[""]')}>
