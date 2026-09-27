@@ -32,7 +32,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "cover", name: "Stress · cover", title: W(max("cover", st, "title")), subtitle: W(max("cover", st, "subtitle")) },
     { template: "section", name: "Stress · section", title: W(max("section", st, "title")), subtitle: W(max("section", st, "subtitle")) },
     { template: "number", name: "Stress · number", ...frame("number"), body: TIMES(c ? 2 : 1).map(() => W(max("number", st, "body"))), number: { value: "€400bn", caption: W(max("number", st, "number", "caption")) } },
-    { template: "chart", name: "Stress · chart + notes", ...frame("chart"), chart: bars, notes: notes(3, true) },
+    { template: "chart", name: "Stress · chart + notes", ...frame("chart"), chart: bars, notes: notes(3, false) },
     { template: "chart", name: "Stress · chart full", ...frame("chart"), chart: { categories: TIMES(12).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
       series: [{ name: "Base case", mark: "line", color: "focus", area: true, values: TIMES(12).map((_, i) => (i + 1) ** 2) }, { name: "Downside", mark: "line", color: "contrast", dashed: true, values: TIMES(12).map((_, i) => (i + 1) ** 2 * .6) }, { name: "Market", mark: "line", color: "neutral", values: TIMES(12).map((_, i) => 20 + i * 5) }] } },
     { template: "chart", name: "Stress · chart stacked", ...frame("chart"), chart: { stacked: true, categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",

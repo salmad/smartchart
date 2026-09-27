@@ -104,6 +104,14 @@
 .hero-v { font-size: 250px; color: var(--focus); white-space: nowrap; }
 .hero-v.neg { color: var(--neg); } .hero-v.pos { color: var(--pos); }
 .style-pitch .hero-v { font-size: 290px; }
+/* Pitch: the number is the slide. It stands on the bottom of the content area, left; its caption and the
+   argument read beside it as its label, on its baseline. A short value (up to 4 characters) is drawn larger. */
+.style-pitch .hero:not(.solo) { flex: 1; grid-template: "v ." 1fr "v c" auto "v b" auto / auto 1fr; column-gap: 88px; row-gap: 20px; align-items: end; }
+.style-pitch .hero:not(.solo) .hero-n { display: contents; }
+.style-pitch .hero:not(.solo) .hero-v { grid-area: v; font-size: 380px; line-height: .8; }
+.style-pitch .hero:not(.solo) .hero-c { grid-area: c; margin-top: 0; max-width: 820px; font-size: 40px; line-height: 1.25; color: var(--fg); }
+.style-pitch .hero:not(.solo) .prose { grid-area: b; max-width: 820px; color: var(--fg-2); }
+.style-pitch .hero:not(.solo) .hero-v.short { font-size: 540px; }
 .hero-c { margin-top: 22px; font-size: 32px; line-height: 1.35; color: var(--fg-2); max-width: 640px; }
 .style-pitch .hero.solo .hero-c { max-width: 1100px; font-size: 40px; }
 
@@ -184,7 +192,7 @@
 
 /* ═════════════ Charts (SVG for shapes, HTML for every label) ═════════════ */
 .chart { position: relative; display: flex; flex-direction: column; min-height: 0; }
-.legend { display: flex; gap: 36px; font: 500 17px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
+.legend { display: flex; gap: 36px; font: 500 20px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
 .legend span { display: inline-flex; align-items: center; gap: 12px; }
 .legend i { width: 16px; height: 16px; border-radius: 4px; background: var(--c); }
 .legend i.line { height: 4px; width: 26px; border-radius: 2px; }
@@ -200,17 +208,17 @@
 .a-bc { transform: translate(-50%, -100%); } .a-tc { transform: translate(-50%, 0); } .a-mc { transform: translate(-50%, -50%); }
 .a-tl { transform: translate(0, -100%); } .a-tc0 { transform: none; } .a-br { transform: translate(-100%, -100%); } .a-tr { transform: translate(-100%, 0); }
 /* Value labels carry a halo in the background colour: a target line behind one is cut, never crossed. */
-.v-lbl { font: 500 19px/1 var(--mono); color: var(--muted); background: var(--bg); padding: 3px 5px; border-radius: 4px; }
+.v-lbl { font: 500 23px/1 var(--mono); color: var(--muted); background: var(--bg); padding: 3px 5px; border-radius: 4px; }
 .v-lbl[class*=" c-"] { color: var(--t); }
-.seg-lbl { font: 500 19px/1 var(--mono); color: var(--on-c); }
+.seg-lbl { font: 500 23px/1 var(--mono); color: var(--on-c); }
 .v-lbl.c-total { color: var(--fg); font-weight: 600; }
-.cat { font: 500 20px/1 var(--mono); color: var(--muted); letter-spacing: .06em; }
-.tick { font: 500 17px/1 var(--mono); color: var(--muted); }
+.cat { font: 500 23px/1 var(--mono); color: var(--muted); letter-spacing: .06em; }
+.tick { font: 500 20px/1 var(--mono); color: var(--muted); }
 .end { display: grid; gap: 8px; transform: translate(0, -50%); }
 .end b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 64px; line-height: .86; color: var(--t); }
 .end.compact { gap: 6px; } .end.compact b { font-size: 46px; }
-.end span { font: 500 17px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--t); opacity: .85; }
-.mk { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--focus); color: var(--on-focus); font: 700 18px/1 var(--mono); }
+.end span { font: 500 20px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--t); opacity: .85; }
+.mk { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--focus); color: var(--on-focus); font: 700 21px/1 var(--mono); }
 .bar { fill: var(--c); }
 .base { stroke: var(--line-2); stroke-width: 2; }
 .grid { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 8; }
@@ -226,28 +234,28 @@
 /* The computed figure is a hero number in the display face; the unit is a small caption beside it. */
 .ann { display: inline-flex; align-items: baseline; gap: 10px; padding: 10px 20px 9px; border-radius: 999px; background: var(--bg); border: 1.5px solid var(--line-2); }
 .ann b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 44px; line-height: .86; color: var(--fg); }
-.ann span { font: 500 16px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ann span { font: 500 19px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .ann.focus b { color: var(--focus); } .ann.pos b { color: var(--pos); } .ann.neg b { color: var(--neg); }
 .target { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 8 8; }
 .tgt { display: grid; justify-items: end; gap: 6px; padding-bottom: 8px; }
-.tgt span { font: 500 16px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.tgt span { font: 500 19px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .tgt b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 40px; line-height: .86; color: var(--fg); }
 .brk { stroke: var(--bg); stroke-width: 7; fill: none; }
 /* Waterfall */
 .wf { fill: var(--c); }
 .wf.c-pos { fill: var(--pos-fill); } .wf.c-neg { fill: var(--neg-fill); }
 .conn { stroke: var(--line-2); stroke-width: 1.5; }
-.wf-lbl { font-size: 22px; }
+.wf-lbl { font-size: 25px; }
 .wf-lbl.c-ctx3 { color: var(--fg); font-weight: 600; }
 .cat.wrap { white-space: normal; overflow-wrap: anywhere; text-align: center; line-height: 1.2; }
 /* Timeline */
 .grid-v { stroke: var(--line); stroke-width: 1.5; }
 .row-rule { stroke: var(--line); stroke-width: 1.5; }
 .tl-bar { fill: var(--c); }
-.row-lbl { transform: translate(0, -50%); white-space: normal; font: 500 24px/1.2 var(--text); color: var(--fg-2); }
+.row-lbl { transform: translate(0, -50%); white-space: normal; font: 500 26px/1.2 var(--text); color: var(--fg-2); }
 .row-lbl.focus { color: var(--fg); font-weight: 600; }
 .ms { fill: var(--fg); }
 .ms-line { stroke: var(--fg-2); stroke-width: 1.5; stroke-dasharray: 3 6; }
-.ms-lbl { font: 500 17px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
+.ms-lbl { font: 500 20px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
 .area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
 .theme-paper .area-top { stop-opacity: .16; }

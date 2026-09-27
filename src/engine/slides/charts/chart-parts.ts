@@ -22,7 +22,13 @@ export function thinCategories(box: HTMLElement): void {
   const cats = [...box.querySelectorAll(".cat")], rect = plotRects(box), rs = cats.map(rect);
   for (let k = 1; k < cats.length; k++) {
     const shown = (i: number) => (cats.length - 1 - i) % k === 0, kept = cats.map((_, i) => i).filter(shown);
-    if (kept.every((i, j) => !j || rs[i].l >= rs[kept[j - 1]].r + 28)) { cats.forEach((c, i) => { if (!shown(i)) c.remove(); }); return; }
+    if (kept.every((i, j) => !j || rs[i].l >= rs[kept[j - 1]].r + 28)) { cats.forEach((c, i) => { if (!shown(i)) c.remove(); }); break; }
+  }
+  // A label wider than its column (the last period of a narrow timeline) moves in to stay inside the chart.
+  const W = box.clientWidth;
+  for (const el of box.querySelectorAll<HTMLElement>(".cat")) {
+    const r = rect(el), shift = r.r > W ? W - r.r : r.l < 0 ? -r.l : 0;
+    if (shift) el.style.left = `${parseFloat(el.style.left) + shift}px`;
   }
 }
 

@@ -90,8 +90,9 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
     if (s.mark !== "line") return;
     const y = yOf(s), pts = s.values.map((v, i) => [xc(i), y(v)]), slot = slots[si];
     g += `<path class="ln c-${slot} ${s.dashed ? "dashed" : ""}" data-series="${si}" d="${pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("")}"/>`;
+    // A line keeps its first and last values (the "from 12% to 38%" a title quotes); the ones between may drop.
     pts.forEach(([x, py], i) => { g += `<circle class="pt c-${slot}" cx="${x}" cy="${py}" r="7"/>`;
-      t += lbl(`v-lbl on-line c-${slot}`, x, py - 16, "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, py - 40]; tops[i] = Math.min(tops[i], py); });
+      t += lbl(`v-lbl on-line c-${slot}${i === 0 || i === n - 1 ? " keep" : ""}`, x, py - 16, "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, py - 40]; tops[i] = Math.min(tops[i], py); });
   });
   targets.forEach((a) => { const y = yb(a.value ?? NaN), l = annotationLabel(spec, a);
     if (!l) return;
@@ -141,7 +142,8 @@ function lines(box: HTMLElement, chart: Chart, W: number, H: number, _markers: M
   let g = `<defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop class="area-top" offset="0"/><stop class="area-bot" offset="1"/></linearGradient></defs>`, t = "";
   for (let v = step; v <= top; v += step) { g += `<line class="grid" x1="0" x2="${pw}" y1="${y(v)}" y2="${y(v)}"/>`; t += lbl("tick", 0, y(v) - 10, "tl", fmt(spec.format, v)); }
   g += `<line class="base" x1="0" x2="${pw}" y1="${y(0)}" y2="${y(0)}"/>`;
-  spec.categories.forEach((c, i) => { t += lbl("cat", x(i), y(0) + 16, i === 0 ? "tc0" : "tc", esc(c)); });
+  // The first and last categories align to the plot's edges, so the last never runs into the end labels.
+  spec.categories.forEach((c, i) => { t += lbl("cat", x(i), y(0) + 16, i === 0 ? "tc0" : i === n - 1 ? "tr" : "tc", esc(c)); });
   // End labels: stacked apart when two series end at similar values (spec 4.2a).
   // Five or more series use compact labels; all of them stay inside the plot, pushed up from the bottom if needed.
   const compact = spec.series.length >= 5, gap = compact ? 70 : 96, half = compact ? 34 : 46;

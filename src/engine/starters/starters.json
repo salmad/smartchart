@@ -124,27 +124,15 @@
    "notes": [
     {
      "title": "Interest leads early",
-     "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps.",
-     "point": {
-      "series": 0,
-      "index": 1
-     }
+     "text": "Revolvers are **40–60%** of customers and carry margin while spend ramps."
     },
     {
      "title": "Interchange compounds",
-     "text": "Spend per customer grows **3×** as the card replaces personal cards.",
-     "point": {
-      "series": 1,
-      "index": 3
-     }
+     "text": "Spend per customer grows **3×** as the card replaces personal cards."
     },
     {
      "title": "Margin settles at 38%",
-     "text": "Bad debt stabilises near **10%** of revolver balances from year 4.",
-     "point": {
-      "series": 2,
-      "index": 4
-     }
+     "text": "Bad debt stabilises near **10%** of revolver balances from year 4."
     }
    ],
    "takeaway": "Spend, not lending, is what makes the book profitable.",
@@ -206,18 +194,10 @@
    "subtitle": "[[Interchange]] triples the margin.",
    "notes": [
     {
-     "title": "Overtakes interest by year 4",
-     "point": {
-      "series": 1,
-      "index": 3
-     }
+     "title": "Overtakes interest by year 4"
     },
     {
-     "title": "Gross margin reaches [[38%]]",
-     "point": {
-      "series": 2,
-      "index": 4
-     }
+     "title": "Gross margin reaches [[38%]]"
     }
    ],
    "takeaway": "Interest first. [[Spend pays forever.]]"

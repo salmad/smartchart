@@ -116,3 +116,15 @@ test("every series has its own text colour: 4.5:1, and grey labels a clear step 
     for (let i = 1; i < L.length; i++) assert.ok(Math.abs(L[i] - L[i - 1]) >= TEXT_STEP - 1e-9, `${t} step ${i}: ${L}`);
   }
 });
+
+test("two grey series take the ends of the grey scale, so they never read as one grey (revenue mix)", () => {
+  const mix: Chart = { stacked: "100", categories: ["A", "B"], series: [
+    { name: "Interest", mark: "bar", color: "neutral", values: [7, 12] },
+    { name: "Interchange", mark: "bar", color: "focus", values: [3, 8] },
+    { name: "Fees", mark: "bar", color: "neutral", values: [1, 2] }] };
+  assert.deepEqual(seriesSlots(mix).slots, ["ctx3", "focus", "ctx1"]);
+  for (const theme of THEMES) {
+    const [a, , c] = PALETTES[theme].ctx;
+    assert.ok(distance(a, c) >= .2, `${theme}: the ends of the grey scale are ${distance(a, c).toFixed(3)} apart`);
+  }
+});

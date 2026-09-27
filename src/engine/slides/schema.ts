@@ -205,6 +205,8 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
 });
 
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
+/** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
+export const NOTE_POINTS = false;
 const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table. Add them only if each says something the body does not already show; in pitch, prefer none. Numbers are added automatically.", {
   items: { min: 2, max: 4 },
   of: f("object", "One observation.", { fields: {
@@ -223,9 +225,9 @@ export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
     summary: "A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it.",
     use: "Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.",
-    fields: { chart: CHART, focus: FOCUS, notes: notes(true) },
+    fields: { chart: CHART, focus: FOCUS, notes: notes(NOTE_POINTS) },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 4 workstreams of up to 20 characters).", "`notes[].point` only works on a bars chart with bar series.", "At most 3 notes when any note has text, and at most 3 in pitch.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 4 workstreams of up to 20 characters).", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "At most 3 notes when any note has text, and at most 3 in pitch.", ...CHART_GUIDE],
   },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
@@ -692,5 +694,6 @@ export function upgrade(slide: Slide): Slide {
     delete c.type;
   }
   (s.table?.columns || []).forEach((col: LegacyColumn) => delete col.num);
+  if (!NOTE_POINTS) (s.notes || []).forEach((n) => { if (n) delete n.point; });
   return s;
 }

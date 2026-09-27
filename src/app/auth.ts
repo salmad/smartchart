@@ -12,6 +12,8 @@ let client: Promise<VanillaBetterAuthClient> | null = null
 const auth = (): Promise<VanillaBetterAuthClient> => (client ??= Promise.all([import('@neondatabase/auth'), import('@neondatabase/auth/vanilla/adapters')])
   .then(([{ createAuthClient }, { BetterAuthVanillaAdapter }]) => createAuthClient(`${location.origin}/api/auth`, { adapter: BetterAuthVanillaAdapter() })))
 
+const VERIFIER = 'neon_auth_session_verifier'
+
 let current: SessionState = undefined
 const listeners = new Set<() => void>()
 const publish = (s: SessionState) => { current = s; listeners.forEach((fn) => fn()) }
@@ -19,10 +21,13 @@ const publish = (s: SessionState) => { current = s; listeners.forEach((fn) => fn
 /** Asks the server who is signed in; safe to call again after signing in or out. */
 export async function refreshSession(): Promise<SessionState> {
   // A plain request: Better Auth's get-session answers { user, session }, or null when signed out.
+  // Back from Google, the URL carries a one-time verifier; get-session must pass it on to create the session.
   try {
-    const r = await fetch('/api/auth/get-session', { credentials: 'same-origin' })
+    const here = new URL(location.href), verifier = here.searchParams.get(VERIFIER)
+    const r = await fetch(`/api/auth/get-session${verifier ? `?${VERIFIER}=${encodeURIComponent(verifier)}` : ''}`, { credentials: 'same-origin' })
     const body = r.ok ? (await r.json()) as { user?: { id?: string; email?: string; name?: string | null; image?: string | null } } | null : null
     const u = body?.user
+    if (verifier) { here.searchParams.delete(VERIFIER); history.replaceState(history.state, '', here.href) }
     publish(u?.id ? { id: u.id, email: u.email ?? '', name: u.name ?? '', image: u.image ?? null } : null)
   } catch { publish(null) }
   return current

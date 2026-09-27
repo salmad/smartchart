@@ -126,7 +126,9 @@ export function seriesSlots(chart: Chart): { slots: (Slot | null)[]; labelled: b
   // Context recedes: `neutral` series take the quietest grey that still has 3:1, then louder ones; a `contrast`
   // series (one that must read clearly) takes the strongest. Series 5–6 take the second hue.
   // Names are unique within a chart (validation), so one name is one colour in the bars, legend and end labels (C8).
-  const greys: Slot[] = ["ctx3", "ctx2", "ctx1"], rest: Slot[] = ["alt1", "alt2"];
+  // Two greys take the ends of the scale: neighbouring steps pass the distance check but read as one grey.
+  const need = ctx.filter((i) => !slots[i]).length;
+  const greys: Slot[] = need === 2 ? ["ctx3", "ctx1"] : ["ctx3", "ctx2", "ctx1"], rest: Slot[] = ["alt1", "alt2"];
   const take = (strong: boolean) => { const g = strong ? greys.pop() : greys.shift(); return g || rest.shift() || null; };
   ctx.filter((i) => !slots[i] && series[i].color === "contrast").forEach((i) => { slots[i] = take(true); });
   ctx.filter((i) => !slots[i]).forEach((i) => { slots[i] = take(false); });

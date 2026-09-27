@@ -32,10 +32,9 @@ export function Site({ onSignIn }: Props) {
               Charts that look designed.
             </h1>
             <p className="max-w-[44ch] text-[18px] leading-[1.55] text-type-2">
-              Because they were. Describe the slide you need, and SmartChart builds it from components
-              a designer made once, so every chart, table and title comes out right the first time.
+              Because they were. Describe your slide, and SmartChart builds it from components a designer made once.
             </p>
-            <div className="max-[1100px]:order-last"><PromptBox id="hero-prompt" /></div>
+            <PromptBox id="hero-prompt" />
           </div>
           <BeforeAfter />
         </section>

@@ -1,6 +1,6 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
-import { MENU } from "./schema";
+import { MENU, NOTE_POINTS } from "./schema";
 import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types";
 import { drawChart } from "./charts/chart";
 import { allocate } from "./colours";
@@ -65,7 +65,7 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section">, (s: Slide, variant:
     : tableHTML(table(s)),
   number: (s) => {
     const n = s.number ?? { value: "", caption: "" };
-    const num = `<div><p class="shout hero-v ${n.tone || ""}">${esc(n.value)}</p><p class="hero-c">${md(n.caption)}</p></div>`;
+    const num = `<div class="hero-n"><p class="shout hero-v ${n.tone || ""} ${n.value.length <= 4 ? "short" : ""}">${esc(n.value)}</p><p class="hero-c">${md(n.caption)}</p></div>`;
     return s.body?.length ? `<div class="hero"><div class="prose">${s.body.map((p) => `<p>${md(p)}</p>`).join("")}</div>${num}</div>` : `<div class="hero solo">${num}</div>`;
   },
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r) => `
@@ -119,7 +119,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   fitValues(slide);
   sizeTable(slide); growTable(slide);
   const host = slide.querySelector<HTMLElement>("[data-chart]");
-  if (host && s.chart) drawChart(host, s.chart, (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])), colours);
+  if (host && s.chart) drawChart(host, s.chart, NOTE_POINTS ? (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])) : [], colours);
   drawIcons(slide);
   return slide;
 }

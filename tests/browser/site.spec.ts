@@ -36,7 +36,7 @@ test('a prompt on the site opens the editor and keeps the style picked there', a
   await site(page, 1440)
   await page.getByRole('button', { name: 'Pitch' }).first().click()
   await page.getByLabel('Describe your slide').first().fill('Revenue grew from £2.1m to £5.4m')
-  await page.getByRole('button', { name: 'Build my slide' }).first().click()
+  await page.locator('#hero-prompt').getByRole('button', { name: 'Make a slide' }).click()
   await expect(page).toHaveURL(/\/new$/)
   await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
 })
@@ -96,4 +96,18 @@ test('when the session ends, a save asks to sign in again', async ({ page }) => 
   await page.goto('/d/d_a')
   await expect(page.getByRole('dialog')).toContainText('Sign in again')
   await expect(page.getByRole('dialog')).toContainText('Continue with Google')
+})
+
+test('back from Google, the session check passes the one-time verifier on, then drops it from the URL', async ({ page }) => {
+  const seen: (string | null)[] = []
+  await page.route('**/api/auth/get-session**', (r) => {
+    const v = new URL(r.request().url()).searchParams.get('neon_auth_session_verifier')
+    seen.push(v)
+    return r.fulfill({ json: v === 'abc' ? { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } : null })
+  })
+  await page.route('**/api/decks**', (r) => r.fulfill({ json: [] }))
+  await page.goto('/?neon_auth_session_verifier=abc')
+  await expect(page.getByText('Your first deck starts with a sentence.')).toBeVisible()
+  expect(seen[0]).toBe('abc')
+  await expect(page).toHaveURL(/localhost:\d+\/$/)
 })

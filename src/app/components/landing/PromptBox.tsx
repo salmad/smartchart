@@ -18,7 +18,8 @@ export function PromptBox({ id, autoFocus = false }: { id?: string; autoFocus?: 
 
   const submit = (e?: FormEvent) => {
     e?.preventDefault()
-    if (!ready) return
+    // The CTA is never greyed out: pressed with nothing typed, it puts the cursor in the box.
+    if (!ready) { document.getElementById(`${id ?? 'p'}-text`)?.focus(); return }
     setPendingPrompt(JSON.stringify({ text: text.trim(), style }))
     go('/new')
   }
@@ -40,9 +41,9 @@ export function PromptBox({ id, autoFocus = false }: { id?: string; autoFocus?: 
               </button>
             ))}
           </div>
-          <button type="submit" disabled={!ready}
-            className="h-11 rounded-full bg-type px-5 text-[14px] font-medium text-paper transition-opacity disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-type focus-visible:ring-offset-2">
-            Build my slide
+          <button type="submit"
+            className="h-11 rounded-full bg-type px-5 text-[14px] font-medium text-paper transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-type focus-visible:ring-offset-2">
+            Make a slide
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 /* Code fixes what has one right answer and reports it (spec 9.4); it never shortens text or changes meaning.
    Idempotent: the write path runs it before and after `auto` choices are resolved. */
-import { ICONS, KIND_FIELDS, MENU } from "../slides/schema";
+import { ICONS, KIND_FIELDS, MENU, NOTE_POINTS } from "../slides/schema";
 import type { Cell, Chart, Series, Slide, Style, Table } from "../types";
 
 /* Autofix reads model output before validation, so any field may hold anything; the slide types describe
@@ -97,6 +97,7 @@ function fixChart(s: Slide, c: Chart, series: Series[], fixes: string[]) {
   const allLines = series.length && series.every((x) => x?.mark === "line");
   (s.notes || []).forEach((n, i) => {
     if (!n?.point) return;
+    if (!NOTE_POINTS) { delete n.point; fixes.push(`notes[${i}].point: removed (note numbers on the chart are off)`); return; }
     if (allLines || !series[n.point.series] || !(n.point.index >= 0 && n.point.index < (c.categories || []).length)) { delete n.point; fixes.push(`notes[${i}].point: removed (${allLines ? "a chart of only lines has no points" : "it points past the data"})`); }
   });
 }

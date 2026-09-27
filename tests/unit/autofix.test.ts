@@ -36,14 +36,11 @@ test("stacked auto is left for Jev", () => {
   assert.equal(chartOf(slide).stacked, "auto");
 });
 
-test("note points go when every series is a line, or when they point past the data", () => {
-  const notes = { notes: [{ title: "x", point: { series: 1, index: 0 } }, { title: "y", point: { series: 0, index: 5 } }] };
-  const mixed = autofix(chart({ series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }, { name: "B", mark: "line", format: "{v}%", values: [1, 2, 3] }] }, structuredClone(notes)), "consulting");
-  assert.deepEqual(notesOf(mixed.slide)[0].point, { series: 1, index: 0 }, "a line over bars keeps its point");
-  assert.equal(notesOf(mixed.slide)[1].point, undefined);
-  const lines = autofix(chart({ series: [{ name: "A", mark: "line", color: "focus", values: [1, 2, 3] }, { name: "B", mark: "line", values: [1, 2, 3] }] }, structuredClone(notes)), "consulting");
-  assert.equal(notesOf(lines.slide)[0].point, undefined);
-  assert.equal(lines.fixes.filter((f) => f.startsWith("notes[")).length, 2);
+test("note points are removed while note numbers on the chart are off", () => {
+  const notes = { notes: [{ title: "x", point: { series: 0, index: 0 } }, { title: "y" }] };
+  const { slide, fixes } = autofix(chart({ series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }, { name: "B", mark: "bar", values: [1, 2, 3] }] }, structuredClone(notes)), "consulting");
+  assert.equal(notesOf(slide)[0].point, undefined);
+  assert.equal(fixes.filter((f) => f.startsWith("notes[0].point")).length, 1);
 });
 
 test("a second focus series goes back to neutral; missing colours default to neutral", () => {

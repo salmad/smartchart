@@ -93,24 +93,9 @@
    ],
    "body": 0,
    "notes": [
-    {
-     "point": {
-      "series": 0,
-      "index": 1
-     }
-    },
-    {
-     "point": {
-      "series": 1,
-      "index": 3
-     }
-    },
-    {
-     "point": {
-      "series": 2,
-      "index": 4
-     }
-    }
+    {},
+    {},
+    {}
    ],
    "chart": {
     "format": "£{v}m",
@@ -148,18 +133,8 @@
    ],
    "body": 0,
    "notes": [
-    {
-     "point": {
-      "series": 1,
-      "index": 3
-     }
-    },
-    {
-     "point": {
-      "series": 2,
-      "index": 4
-     }
-    }
+    {},
+    {}
    ],
    "chart": {
     "format": "£{v}m",

@@ -48,11 +48,9 @@ test("area and dashed are line-only", () => {
   assert.ok(errs(chart({ categories: cats, series: [{ ...REV, dashed: true }] })).some((x) => x.includes("only for line series")));
 });
 
-test("note points need a chart with bars", () => {
+test("note points are not offered while note numbers on the chart are off", () => {
   const notes = { notes: [{ title: "Margin triples", point: { series: 1, index: 2 } }, { title: "Revenue grows" }] };
-  assert.deepEqual(errs(chart({ categories: cats, format: "£{v}m", series: [REV, MARGIN] }, notes)), [], "a line over bars can be pinned");
-  const lines = [{ ...REV, mark: "line" }, { ...REV, name: "Cost", mark: "line", color: "neutral" }];
-  assert.ok(errs(chart({ categories: cats, format: "£{v}m", series: lines }, notes)).some((x) => x.startsWith("notes[0].point:")));
+  assert.ok(errs(chart({ categories: cats, format: "£{v}m", series: [REV, MARGIN] }, notes)).some((x) => x.startsWith("notes[0].point: not a field")));
 });
 
 test("table columns have no num flag", () => {
@@ -154,9 +152,8 @@ test("timeline: valid, ranges checked", () => {
   assert.match(errs(chart({ ...TL, categories: ["a", "b"] })).join(), /not used by kind "timeline"/);
 });
 
-test("notes limits per kind; points only on bars", () => {
+test("notes limits per kind", () => {
   const notes = [{ title: "One" }, { title: "Two" }];
-  assert.match(errs(chart(WF, { notes: [{ title: "One", point: { series: 0, index: 1 } }, { title: "Two" }] })).join(), /points only work on a bars chart/);
   assert.match(errs(chart({ ...TL, periods: Array.from({ length: 9 }, (_, i) => `M${i}`) }, { notes })).join(), /with notes at most 8/);
   assert.match(errs(chart({ ...TL, rows: Array.from({ length: 5 }, (_, i) => ({ label: `R${i}`, start: 0, end: 1 })) }, { notes })).join(), /with notes at most 4/);
   assert.match(errs(chart({ ...TL, rows: [{ label: "A workstream label that is long", start: 0, end: 1 }, TL.rows[1]] }, { notes })).join(), /with notes at most 20/);
