@@ -8,15 +8,15 @@ Stack: React 18 + TypeScript (strict), Vite, Tailwind + shadcn/ui, lucide, vites
 
 `npm run dev` (app + `/api` locally, reads `.env`) · `npm run build` (typechecks) · `npm run lint` · `npm test` (vitest) · `npm run test:browser` (Playwright: review page, lints, app smoke)
 
-Dev review page: `/src/dev/review.html` (every example in both styles, validated and measured; `?stress=1`, `?theme=paper`, `?only=<i>&full=1` for one slide at full size).
+Dev review page: `/src/dev/review.html` (every example in both styles, validated and measured; `?stress=1`, `?theme=paper`, `?only=<i>&full=1` for one slide at full size, `?compare=788f4d7` against the pre-Acme starters).
 
 ## Structure
 
-- `src/engine`: framework-free. `slides/` (schema, render, charts, lints, colours, `slides.css`), `agent/` (agent loop, prompts, checks, LLM calls)
+- `src/engine`: framework-free. `slides/` (schema, render, charts, lints, colours, `slides.css`), `agent/` (agent loop, prompts, checks, LLM calls), `starters/` (the gallery)
 - `src/app`: the React app. `App.tsx` holds state and picks the screen; `components/` (screens and parts), `components/ui` (shadcn)
 - `src/dev`: review page and lint fixture (dev only, not built)
 - `api/`: Vercel functions (web `Request`/`Response`; keys stay here)
-- `tests/unit` (vitest), `tests/browser` (Playwright), `tests/fixtures`
+- `tests/unit` (vitest), `tests/browser` (Playwright), `tests/fixtures`, `tests/agent-harness` (live agent quality run, needs the models)
 
 ## Rules
 
