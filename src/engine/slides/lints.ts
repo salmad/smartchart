@@ -1,13 +1,15 @@
 /* Measurements on a rendered slide: fit issues and layout lints. */
 import { MIN_MARK, contrast } from "./colours";
+import type { Style } from "../types";
 
 /* ═════════════ Fit check (prototype): measures the rendered slide at 1920×1080 ═════════════ */
-export function fitIssues(slide, style) {
+export function fitIssues(slide: HTMLElement, style: Style): string[] {
   const R = slide.getBoundingClientRect(), k = R.width / 1920, cs = getComputedStyle(slide);
-  const box = (el) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
-  const name = (el) => (el.className.baseVal !== undefined ? el.tagName : (el.className || el.tagName).split(" ")[0]);
-  const lines = (el, pad = 0) => Math.round((el.clientHeight - pad) / parseFloat(getComputedStyle(el).lineHeight));
-  const bottom = 1080 - parseFloat(cs.paddingBottom), right = 1920 - parseFloat(cs.paddingRight), out = [];
+  const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
+  // SVG elements have an SVGAnimatedString className: name them by tag.
+  const name = (el: Element) => (typeof el.className !== "string" ? el.tagName : (el.className || el.tagName).split(" ")[0]);
+  const lines = (el: Element, pad = 0) => Math.round((el.clientHeight - pad) / parseFloat(getComputedStyle(el).lineHeight));
+  const bottom = 1080 - parseFloat(cs.paddingBottom), right = 1920 - parseFloat(cs.paddingRight), out: string[] = [];
   for (const el of slide.children) {
     if (el.classList.contains("rail")) continue;
     const b = box(el);
@@ -16,7 +18,7 @@ export function fitIssues(slide, style) {
   }
   slide.querySelectorAll(".notes, .cards.framed .card, .card, .hero > div, .sec-n, .hero-v, .cards .v, .title").forEach((el) => {
     if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflow !== "visible") out.push(`${name(el)} content is taller than its box`);
-    if (el.scrollWidth > el.clientWidth + 1) out.push(`${name(el)} “${el.textContent.trim().slice(0, 24)}” is wider than its column`);
+    if (el.scrollWidth > el.clientWidth + 1) out.push(`${name(el)} “${(el.textContent ?? "").trim().slice(0, 24)}” is wider than its column`);
   });
   slide.querySelectorAll(".notes, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
     if (last && box(last).b > box(el).b - pb + 1) out.push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`); });
@@ -36,10 +38,11 @@ export function fitIssues(slide, style) {
 /* Layout lints (spec 3.6), measured on the rendered slide in slide pixels. Messages start with the
    part of the slide they are about and end with the rule id. L5 (body fill) is a warning: some approved
    slides leave room on purpose. */
-export function layoutLints(slide, style) {
-  const R = slide.getBoundingClientRect(), k = R.width / 1920, out = [], warnings = [];
-  const box = (el) => { const r = el.getBoundingClientRect(); return { t: (r.top - R.top) / k, b: (r.bottom - R.top) / k, w: r.width / k, h: r.height / k }; };
-  const spread = (xs) => (xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0);
+export interface LayoutLints { issues: string[]; warnings: string[] }
+export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
+  const R = slide.getBoundingClientRect(), k = R.width / 1920, out: string[] = [], warnings: string[] = [];
+  const box = (el: Element) => { const r = el.getBoundingClientRect(); return { t: (r.top - R.top) / k, b: (r.bottom - R.top) / k, w: r.width / k, h: r.height / k }; };
+  const spread = (xs: number[]) => (xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0);
 
   const tbl = slide.querySelector(".tbl");
   if (tbl) {
@@ -74,13 +77,13 @@ export function layoutLints(slide, style) {
 }
 
 /* Chart labels (spec 4.2a): none leaves the chart area and no two overlap. */
-export function chartLabelLints(slide) {
+export function chartLabelLints(slide: HTMLElement): string[] {
   const host = slide.querySelector("[data-chart]");
   if (!host) return [];
   const R = slide.getBoundingClientRect(), k = R.width / 1920;
-  const box = (el) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
-  const H = box(host), out = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));
-  const what = (el) => `“${el.textContent.trim().slice(0, 20)}”`;
+  const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
+  const H = box(host), out: string[] = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));
+  const what = (el: Element) => `“${(el.textContent ?? "").trim().slice(0, 20)}”`;
   labels.forEach(({ el, r }) => { if (r.l < H.l - 2 || r.r > H.r + 2 || r.t < H.t - 2 || r.b > H.b + 2) out.push(`chart: label ${what(el)} runs outside the chart area (C1)`); });
   for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) {
     const [a, b] = [labels[i].r, labels[j].r];
@@ -89,21 +92,21 @@ export function chartLabelLints(slide) {
   return out;
 }
 
-const hex = (css) => { const m = css.match(/[\d.]+/g); return m ? `#${m.slice(0, 3).map((v) => Math.round(+v).toString(16).padStart(2, "0")).join("")}` : null; };
+const hex = (css: string) => { const m = css.match(/[\d.]+/g); return m ? `#${m.slice(0, 3).map((v) => Math.round(+v).toString(16).padStart(2, "0")).join("")}` : null; };
 
 /* R15: the colours Chrome painted. Different slots never share a colour; every mark has 3:1 against the
    background, except quiet bars, which must each carry a value label (colour spec C4). */
-export function colourLints(slide) {
-  const out = [], bg = hex(getComputedStyle(slide).backgroundColor), bySlot = new Map();
+export function colourLints(slide: HTMLElement): string[] {
+  const out: string[] = [], bg = hex(getComputedStyle(slide).backgroundColor) ?? "#000000", bySlot = new Map<string, { slot: string; colour: string }>();
   // Series marks are keyed by series (two series must differ even if code gave them one slot); other marks by slot.
-  slide.querySelectorAll("[data-chart] :is(.bar, .ln, .wf, .tl-bar)").forEach((el) => {
+  slide.querySelectorAll<SVGElement>("[data-chart] :is(.bar, .ln, .wf, .tl-bar)").forEach((el) => {
     const slot = [...el.classList].find((c) => c.startsWith("c-"));
     if (!slot) return;
     const key = el.dataset.series !== undefined ? `series ${el.dataset.series}` : slot.slice(2);
     const cs = getComputedStyle(el), colour = hex(el.classList.contains("ln") ? cs.stroke : cs.fill);
     if (colour && !bySlot.has(key)) bySlot.set(key, { slot, colour });
   });
-  const seen = new Map();
+  const seen = new Map<string, string>();
   for (const [key, { slot, colour }] of bySlot) {
     if (seen.has(colour)) out.push(`colours: ${key} and ${seen.get(colour)} are both ${colour}; different things never share a colour (R15)`);
     seen.set(colour, key);
@@ -112,7 +115,7 @@ export function colourLints(slide) {
       if (slot !== "c-quiet" || labels < bars) out.push(`colours: ${slot.slice(2)} ${colour} has ${contrast(colour, bg).toFixed(1)}:1 on the background and ${labels} of ${bars} values labelled (R15)`);
     }
   }
-  const marks = [".hl-focus", ".hl-neg", ".hl-pos"].map((sel) => slide.querySelector(sel)).filter(Boolean).map((el) => hex(getComputedStyle(el).color));
+  const marks = [".hl-focus", ".hl-neg", ".hl-pos"].map((sel) => slide.querySelector(sel)).flatMap((el) => (el ? [hex(getComputedStyle(el).color)] : []));
   if (new Set(marks).size < marks.length) out.push("colours: focus, loss and gain highlights share a colour (R15)");
   return out;
 }

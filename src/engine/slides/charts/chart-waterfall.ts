@@ -3,14 +3,15 @@
    item takes the focus colour: the eye lands on the point, not on the biggest block. */
 import { fmt, signed, waterfall } from "./chart-math";
 import { esc, lbl, settle } from "./chart-parts";
+import type { Chart } from "../../types";
 
-export function waterfallChart(box, spec, W, H) {
-  const { steps } = waterfall(spec.items), f = spec.format || "{v}";
+export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: number): void {
+  const { steps } = waterfall(spec.items ?? []), f = spec.format || "{v}";
   const lo = Math.min(0, ...steps.flatMap((s) => [s.from, s.to])), hi = Math.max(0, ...steps.flatMap((s) => [s.from, s.to]));
   const P = { t: 64, b: 60 }, ph = H - P.t - P.b, n = steps.length, band = W / n, bw = band * .62;
   // Room below the lowest bar for a down label; room above for up labels and totals.
-  const y = (v) => P.t + 12 + (hi - v) / (hi - lo || 1) * (ph - 44);
-  const xc = (i) => band * i + band / 2;
+  const y = (v: number) => P.t + 12 + (hi - v) / (hi - lo || 1) * (ph - 44);
+  const xc = (i: number) => band * i + band / 2;
   let g = `<line class="base" x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}"/>`, t = "";
   // Category labels sit under the axis, or under the lowest down-step label when one reaches below it.
   const catTop = Math.max(y(Math.min(0, lo)) + 16, ...steps.filter((s) => s.kind === "down").map((s) => y(Math.min(s.from, s.to)) + 48));
@@ -27,7 +28,7 @@ export function waterfallChart(box, spec, W, H) {
   });
   box.innerHTML = `<svg width="${W}" height="${H}">${g}</svg>${t}`;
   // Labels are never dropped: each keeps clear of the others, moving away from its bar.
-  const up = [...box.querySelectorAll(".wf-lbl.a-bc")], down = [...box.querySelectorAll(".wf-lbl.a-tc")];
+  const up = [...box.querySelectorAll<HTMLElement>(".wf-lbl.a-bc")], down = [...box.querySelectorAll<HTMLElement>(".wf-lbl.a-tc")];
   settle(box, up, 4, -1);
   settle(box, down, 4, 1);
 }
