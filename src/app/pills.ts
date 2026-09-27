@@ -18,26 +18,41 @@ const STARTERS: Record<Style, string[]> = {
   ],
 }
 
-/** What the composer shows: nothing while offline or busy, 'pending' while suggestions load. */
-export function chipsFor(s: AppState): Pill[] | 'pending' | null {
+/** What the composer shows: starter prompts on an empty deck, then the current slide's pills once they are ready.
+    Nothing while offline, busy or still fetching: pills appear when ready and never show a loading state. */
+export function chipsFor(s: AppState): Pill[] | null {
   if (!s.live || s.busy) return null
   const it = s.items[s.current]
   if (!it) return STARTERS[s.style].map((p) => ({ label: p, prompt: p }))
   const got = s.pills[it.id]
-  return !got || got.pending || got.key !== JSON.stringify(it.slide) ? 'pending' : got.pills
+  return got && !got.pending && got.key === JSON.stringify(it.slide) && got.pills.length ? got.pills : null
 }
 
-/** Fetches suggestions for the current slide when its version has none yet. */
+// One suggestion call at a time; a chat turn aborts it, so the two never compete for the model.
+let inflight: { id: string; ctl: AbortController } | null = null
+
+/** Fetches suggestions for the current slide when its version has none yet, only while no turn runs. */
 export function refreshPills({ getState, dispatch }: AppStore): void {
   const s = getState(), it = s.items[s.current]
+  if (s.busy && inflight) {
+    // A turn started: drop the pending fetch so it is asked again, for the new version, once the turn ends.
+    const { id } = inflight
+    inflight.ctl.abort(); inflight = null
+    const { [id]: _dropped, ...rest } = s.pills
+    dispatch({ type: 'set', patch: { pills: rest } })
+    return
+  }
   if (!s.live || s.busy || !it) return
   const key = JSON.stringify(it.slide), got = s.pills[it.id]
   if (got && got.key === key) return
-  const entry = { key, pending: true, pills: [] }
+  inflight?.ctl.abort()
+  const ctl = new AbortController(), entry = { key, pending: true, pills: [] }
+  inflight = { id: it.id, ctl }
   dispatch({ type: 'set', patch: { pills: { ...s.pills, [it.id]: entry } } })
-  void suggest({ slide: it.slide, style: s.style, history: s.history, checks: it.checks || [] }).then(({ pills }) => {
+  void suggest({ slide: it.slide, style: s.style, history: s.history, checks: it.checks || [] }, ctl.signal).then(({ pills }) => {
+    if (inflight?.ctl === ctl) inflight = null
     const now = getState().pills
-    if (now[it.id] !== entry) return // the slide changed while we waited
+    if (ctl.signal.aborted || now[it.id] !== entry) return // a turn started, or the slide changed, while we waited
     dispatch({ type: 'set', patch: { pills: { ...now, [it.id]: { key, pending: false, pills } } } })
   })
 }

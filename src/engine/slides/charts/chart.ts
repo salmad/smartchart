@@ -5,7 +5,7 @@ import { annotationLabel, annotationSeries, axisBreak, fmt, shares } from "./cha
 import { seriesSlots } from "../colours";
 import type { Slot } from "../colours";
 import type { Chart, Series } from "../../types";
-import { esc, hits, lbl, plotRects, thinCategories, topRounded } from "./chart-parts";
+import { esc, hits, labelPx, lbl, plotRects, thinCategories, topRounded } from "./chart-parts";
 import type { Rect } from "./chart-parts";
 import { waterfallChart } from "./chart-waterfall";
 import { timelineChart } from "./chart-timeline";
@@ -51,7 +51,7 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
   const brk = stacked ? null : axisBreak(spec);
   // A target keeps a gutter on the right for its label, level with the end of its line.
   const gutter = targets.length ? 190 : 0;
-  const P = { t: 96, b: 44 }, ph = H - P.t - P.b, n = spec.categories.length, band = (W - gutter) / n;
+  const P = { t: 96, b: labelPx(box) + 22 }, ph = H - P.t - P.b, n = spec.categories.length, band = (W - gutter) / n;
   const totals = spec.categories.map((_, i) => B.reduce((sum, s) => sum + Math.max(0, val(s, i)), 0));
   const bMax = Math.max(brk ? brk.cap : stacked ? Math.max(...totals) : Math.max(...B.flatMap((s) => s.values)), ...targets.map((a) => a.value ?? NaN));
   const own = L.filter((s) => (s.format || spec.format) !== unit);
@@ -136,7 +136,12 @@ function placeTarget(box: HTMLElement, el: HTMLElement, W: number) {
 
 // Lines with dashed gridlines and big direct end labels instead of a legend.
 function lines(box: HTMLElement, chart: Chart, W: number, H: number, _markers: Marker[], { slots }: SeriesColours) {
-  const spec = asBars(chart), P = { t: 40, r: 250, b: 48 }, pw = W - P.r, ph = H - P.t - P.b, n = spec.categories.length;
+  const spec = asBars(chart);
+  // The right gutter holds the end labels: as wide as the widest one, measured at this style's size.
+  box.innerHTML = spec.series.map((s) => `<div class="lbl end${spec.series.length >= 5 ? " compact" : ""}"><b>${fmt(s.format || spec.format, s.values.at(-1) ?? 0)}</b><span>${esc(s.name)}</span></div>`).join("");
+  const k = box.getBoundingClientRect().width / box.clientWidth || 1;
+  const widest = Math.max(0, ...[...box.querySelectorAll(".end")].map((el) => el.getBoundingClientRect().width / k));
+  const P = { t: 40, r: Math.max(200, Math.ceil(widest) + 44), b: labelPx(box) + 26 }, pw = W - P.r, ph = H - P.t - P.b, n = spec.categories.length;
   const max = Math.max(...spec.series.flatMap((s) => s.values)), step = niceStep(max / 3), top = Math.ceil(max / step) * step;
   const x = (i: number) => (i / (n - 1)) * pw, y = (v: number) => P.t + ph - (v / top) * ph;
   let g = `<defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop class="area-top" offset="0"/><stop class="area-bot" offset="1"/></linearGradient></defs>`, t = "";

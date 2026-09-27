@@ -182,3 +182,34 @@ test("a patch path missing its object prefix is completed when unambiguous", asy
   assert.equal(seriesOf(slideAt(ctx.deck, 0))[0].name, "Sales");
   assert.ok(!("series" in slideAt(ctx.deck, 0)));
 });
+
+test("a template change the user did not ask for is refused: the agent asks, and the slide keeps its template", async () => {
+  const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
+  const agentStep = fakeAgent([toolCall("create_slide", { about: "x", replace: "s_ab12", template: "table" }), say("Should I switch it to a table?\n1. Switch it to a table\n2. Keep the chart")]);
+  const r = await runTurn({ ...ctx, text: "remove the 2022 bar", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
+  const out = JSON.parse(text(ctx.history.filter((m) => m.role === "tool").at(-1)));
+  assert.equal(out.confirm, "template");
+  assert.match(out.error, /needs the user's go-ahead/);
+  assert.equal(slideAt(ctx.deck, 0).template, "chart");
+  assert.match(r.reply, /1\. Switch/);
+});
+
+test("a template change the user asked for goes ahead", async () => {
+  const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
+  const agentStep = fakeAgent([say("Switched.")]);
+  await runTurn({ ...ctx, text: "show this as a table", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["change_template", 0.9], template: ["table", 0.9] }) } });
+  const out = JSON.parse(text(ctx.history.find((m) => m.role === "tool")));
+  assert.equal(out.confirm, undefined);
+  assert.equal(out.template, "table");
+});
+
+test("after the agent asked, the user's answer lets the template change through on the next turn", async () => {
+  const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
+  const ask = fakeAgent([toolCall("create_slide", { about: "x", replace: "s_ab12", template: "table" }), say("1. Switch it to a table\n2. Keep the chart")]);
+  await runTurn({ ...ctx, text: "tidy this up", selection: { slideId: "s_ab12" }, models: { agentStep: ask, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
+  const yes = fakeAgent([toolCall("create_slide", { about: "x", replace: "s_ab12", template: "table" }), say("Switching.")]);
+  await runTurn({ ...ctx, text: "1", selection: { slideId: "s_ab12" }, models: { agentStep: yes, jev: fakeJev({ intent: ["other", 0.6] }) } });
+  const out = JSON.parse(text(ctx.history.filter((m) => m.role === "tool").at(-1)));
+  assert.equal(out.confirm, undefined);
+  assert.equal(out.template, "table");
+});

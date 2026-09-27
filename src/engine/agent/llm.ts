@@ -21,11 +21,13 @@ interface JevResponse { answers?: Record<string, { choice: string; probabilities
 /** A model call that takes longer than this is abandoned (then retried). */
 const TIMEOUT_MS = 60_000;
 
-async function post<T>(path: string, payload: unknown): Promise<{ j: T; ms: number }> {
+/** `signal` cancels the call (a background call giving way to a chat turn); a cancelled call is not retried. */
+async function post<T>(path: string, payload: unknown, signal?: AbortSignal): Promise<{ j: T; ms: number }> {
   for (let attempt = 0; ; attempt++) {
     const t0 = performance.now();
     try {
-      const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: AbortSignal.timeout(TIMEOUT_MS) });
+      const timeout = AbortSignal.timeout(TIMEOUT_MS);
+      const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
       // A platform error page is text, not JSON: report the status, not a parse error.
       const text = await r.text();
       let j: T & { error?: unknown };
@@ -33,7 +35,7 @@ async function post<T>(path: string, payload: unknown): Promise<{ j: T; ms: numb
       if (!r.ok || j.error) throw new Error(typeof j.error === "string" ? j.error : JSON.stringify(j.error ?? j).slice(0, 300));
       return { j, ms: Math.round(performance.now() - t0) };
     } catch (e) {
-      if (attempt >= 2) throw e;
+      if (attempt >= 2 || signal?.aborted) throw e;
       await new Promise((ok) => setTimeout(ok, 1200 * (attempt + 1)));
     }
   }
@@ -48,8 +50,8 @@ export const agentStep: AgentStepFn = async ({ messages, tools, toolChoice = "au
 };
 
 /** A plain completion (no tools): GLM 5.3 Flash with thinking off. Returns the text. */
-export async function complete({ messages, model = FLASH, temperature = 0.3, max_tokens = 1000 }: { messages: ChatMessage[]; model?: string; temperature?: number; max_tokens?: number }): Promise<string> {
-  const { j } = await post<GlmResponse>("/api/glm", { model, messages, temperature, max_tokens });
+export async function complete({ messages, model = FLASH, temperature = 0.3, max_tokens = 1000, signal }: { messages: ChatMessage[]; model?: string; temperature?: number; max_tokens?: number; signal?: AbortSignal }): Promise<string> {
+  const { j } = await post<GlmResponse>("/api/glm", { model, messages, temperature, max_tokens }, signal);
   return j.choices?.[0]?.message?.content || "";
 }
 

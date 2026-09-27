@@ -5,7 +5,7 @@ import { Textarea } from '@/app/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip'
 
 interface Props {
-  chips: Pill[] | 'pending' | null; canSend: boolean; busy: boolean; onSend: (text: string) => void; onClear: () => void
+  chips: Pill[] | null; canSend: boolean; busy: boolean; onSend: (text: string) => void; onClear: () => void
   locked?: { text: string; action: string; onAction: () => void }
 }
 
@@ -26,8 +26,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, locked }: Prop
   }
   return (
     <form onSubmit={submit} className="grid gap-2.5 border-t border-line px-3.5 pb-3.5 pt-3">
-      {chips === 'pending' && <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-3"><i className="spinner" />Suggesting next steps…</span>}
-      {Array.isArray(chips) && chips.length > 0 && (
+      {chips && chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {chips.map((p, k) => (
             <Tooltip key={k}>

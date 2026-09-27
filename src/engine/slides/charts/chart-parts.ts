@@ -1,6 +1,12 @@
 /* Shared drawing helpers for every chart kind: SVG shapes, HTML labels, plot-pixel geometry. */
 export { esc } from "../render";
 
+/** The chart text size of the slide's style (slides.css --lbl, or --lbl-s for the small one), in slide pixels:
+    space for labels follows it. */
+export function labelPx(box: HTMLElement, small = false): number {
+  return parseFloat(getComputedStyle(box).getPropertyValue(small ? "--lbl-s" : "--lbl")) || (small ? 22 : 26);
+}
+
 /** A box in plot pixels. */
 export interface Rect { l: number; r: number; t: number; b: number }
 

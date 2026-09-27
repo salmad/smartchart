@@ -2,19 +2,20 @@
    Totals are the quiet grey, steps the pos/neg hue toned down (their labels keep the full colour), and one focus
    item takes the focus colour: the eye lands on the point, not on the biggest block. */
 import { fmt, signed, waterfall } from "./chart-math";
-import { esc, lbl, settle } from "./chart-parts";
+import { esc, labelPx, lbl, plotRects, settle } from "./chart-parts";
 import type { Chart } from "../../types";
 
-export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: number): void {
+/** `extra`: more room on top, when labels moved apart ran above the chart on the first draw. */
+export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: number, extra = 0): void {
   const { steps } = waterfall(spec.items ?? []), f = spec.format || "{v}";
   const lo = Math.min(0, ...steps.flatMap((s) => [s.from, s.to])), hi = Math.max(0, ...steps.flatMap((s) => [s.from, s.to]));
-  const P = { t: 64, b: 60 }, ph = H - P.t - P.b, n = steps.length, band = W / n, bw = band * .62;
-  // Room below the lowest bar for a down label; room above for up labels and totals.
-  const y = (v: number) => P.t + 12 + (hi - v) / (hi - lo || 1) * (ph - 44);
+  // Room above for up labels and totals, below the lowest bar for a down label: both follow the style's label size.
+  const L = labelPx(box), P = { t: L + 40 + extra, b: 60 }, ph = H - P.t - P.b, n = steps.length, band = W / n, bw = band * .62;
+  const y = (v: number) => P.t + 12 + (hi - v) / (hi - lo || 1) * (ph - L - 18);
   const xc = (i: number) => band * i + band / 2;
   let g = `<line class="base" x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}"/>`, t = "";
   // Category labels sit under the axis, or under the lowest down-step label when one reaches below it.
-  const catTop = Math.max(y(Math.min(0, lo)) + 16, ...steps.filter((s) => s.kind === "down").map((s) => y(Math.min(s.from, s.to)) + 48));
+  const catTop = Math.max(y(Math.min(0, lo)) + 16, ...steps.filter((s) => s.kind === "down").map((s) => y(Math.min(s.from, s.to)) + L + 22));
   steps.forEach((s, i) => {
     const x = xc(i) - bw / 2, top = y(Math.max(s.from, s.to)), bottom = y(Math.min(s.from, s.to));
     const slot = s.focus ? "focus" : s.kind === "total" ? "ctx3" : s.kind === "up" ? "pos" : "neg";
@@ -31,4 +32,6 @@ export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: numb
   const up = [...box.querySelectorAll<HTMLElement>(".wf-lbl.a-bc")], down = [...box.querySelectorAll<HTMLElement>(".wf-lbl.a-tc")];
   settle(box, up, 4, -1);
   settle(box, down, 4, 1);
+  const top = Math.min(0, ...up.map(plotRects(box)).map((r) => r.t));
+  if (top < 0 && !extra) waterfallChart(box, spec, W, H, 4 - top);
 }

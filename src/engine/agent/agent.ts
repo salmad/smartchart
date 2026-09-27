@@ -33,6 +33,8 @@ interface ToolOut {
   error?: string; applied?: boolean; issues?: string[]; warnings?: string[]; elsewhere?: string[]; changed?: string[]
   autofixes?: string[]; resolved?: Resolved; shortened?: string[]
   slideId?: string; template?: TemplateId; probabilities?: Record<string, number> | null; decided?: Record<string, string>
+  /** A refused template change: the agent must ask the user first (see create_slide). */
+  confirm?: "template";
   card?: ReturnType<typeof describe>; example?: unknown; note?: string
 }
 interface WriteResult extends ToolOut { applied: boolean; issues: string[] }
@@ -64,6 +66,10 @@ export async function runTurn({ text, deck, history, working, selection, measure
   const find = (id: string | undefined) => deck.slides.find((s) => s.id === id);
   const unknown = (id: string | undefined): ToolOut => ({ error: `unknown slideId ${id}; valid ids: ${deck.slides.filter((s) => !s.pending).map((s) => s.id).join(", ") || "none yet"}` });
   const visible = () => deck.slides.filter((s): s is AgentSlide & { slide: Slide } => !s.pending && !!s.slide);
+  // Template changes need the user: allowed when this turn's message asks for one (PRE, sure), or when the last
+  // turn asked about this slide and the user answered. Otherwise create_slide refuses and the agent asks.
+  let turnPre: Pre | null = null;
+  const confirmable = askedLastTurn(history);
 
   async function classify(about: string): Promise<{ template: TemplateId; probabilities: Record<string, number>; lead: string | null }> {
     const titles = visible().map((s, i) => `${i + 1}. [${s.slide.template}] ${plainTitle(s.slide.title)}`).join("\n");
@@ -105,6 +111,11 @@ export async function runTurn({ text, deck, history, working, selection, measure
       if (replace && !find(replace)) return unknown(replace);
       let template: TemplateId, probabilities = pre?.probabilities || null, lead = pre?.lead || null;
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
+      const current = replace ? find(replace)?.slide?.template : undefined;
+      const requested = !!turnPre && turnPre.intent === "change_template" && isSure(turnPre, deck);
+      if (replace && current && current !== template && !requested && !confirmable.has(replace)) {
+        return { confirm: "template", slideId: replace, template, error: `Changing ${replace} from a ${current} slide to a ${template} slide needs the user's go-ahead. Write nothing more this turn. Reply with one sentence on why, then numbered options, e.g. "1. Switch it to a ${template} slide" and "2. Keep it as a ${current} slide" with how you would do the request that way. If they pick the switch, call create_slide with replace again.` };
+      }
       let slideId = replace;
       if (!slideId) {
         slideId = newId(new Set(deck.slides.map((s) => s.id)));
@@ -188,6 +199,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
   if (selection?.slideId && find(selection.slideId)?.slide) working.add(selection.slideId);
   history.push({ role: "user", content: `${stateBlock({ style, theme: deck.theme, slides: visible(), selection })}\n\n${text}` });
   const pre = await preStep({ text, deck, selection, jev });
+  turnPre = pre;
   const sure = isSure(pre, deck), first = firstCall(pre, selection, text, deck);
   log({ step: "Pre", model: "Jev", ms: pre.ms, detail: `${pre.intent} · p ${pre.p.toFixed(2)}${sure ? "" : " · agent decides"}` });
   if (first) await callTool({ id: "pre_1", name: first.name, args: first.args }, pre, true);
@@ -218,6 +230,17 @@ export async function runTurn({ text, deck, history, working, selection, measure
   deck.slides = deck.slides.filter((s) => !s.pending);
   compact(history);
   return { reply, pre, written: [...written], ...trail };
+}
+
+/** Slides whose template change the last turn refused and asked the user about: this turn may make it. */
+function askedLastTurn(history: ChatMessage[]): Set<string> {
+  const ids = new Set<string>();
+  for (let i = history.length - 1; i >= 0 && history[i].role !== "user"; i--) {
+    const m = history[i];
+    if (m.role !== "tool" || !m.content?.includes('"confirm":"template"')) continue;
+    try { const o = JSON.parse(m.content) as { slideId?: unknown }; if (typeof o.slideId === "string") ids.add(o.slideId); } catch { /* not a tool result */ }
+  }
+  return ids;
 }
 
 /* After a turn, the history keeps what was done, not the reference material: template cards and examples

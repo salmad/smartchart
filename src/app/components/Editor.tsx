@@ -11,7 +11,7 @@ import { Stage } from './Stage'
 import { Strip } from './Strip'
 
 export interface EditorProps {
-  state: AppState; booted: boolean; deck: Deck; chips: Pill[] | 'pending' | null
+  state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
   bar: Omit<BarProps, 'deckStyle' | 'theme' | 'accent' | 'hasSlides' | 'busy' | 'live' | 'title' | 'canAdd'>
   onSend: (text: string) => void; onClear: () => void; onSelect: (index: number) => void
   /** Replaces the slide, checks and strip: the landing gallery or Add slide. */

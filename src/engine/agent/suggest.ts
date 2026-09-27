@@ -30,7 +30,7 @@ export function parseSuggestions(text: unknown): Suggestions {
   return { message: typeof o?.message === "string" ? o.message : "", pills };
 }
 
-export async function suggest(args: SuggestArgs): Promise<Suggestions> {
-  try { return parseSuggestions(await complete({ messages: suggestMessages(args), max_tokens: 900, temperature: 0.5 })); }
+export async function suggest(args: SuggestArgs, signal?: AbortSignal): Promise<Suggestions> {
+  try { return parseSuggestions(await complete({ messages: suggestMessages(args), max_tokens: 900, temperature: 0.5, signal })); }
   catch { return { message: "", pills: [] }; }
 }
