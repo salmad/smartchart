@@ -38,7 +38,7 @@ test('a prompt on the site opens the editor and keeps the style picked there', a
   await page.getByLabel('Describe your slide').first().fill('Revenue grew from £2.1m to £5.4m')
   await page.locator('#hero-prompt').getByRole('button', { name: 'Make a slide' }).click()
   await expect(page).toHaveURL(/\/new$/)
-  await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Look' })).toContainText('Pitch')
 })
 
 test('Sign in opens the sign-in dialog, which explains when accounts are not set up', async ({ page }) => {

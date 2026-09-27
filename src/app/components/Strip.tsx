@@ -10,7 +10,7 @@ export function Strip({ items, current, deck, onSelect, onAdd, busy }: Props) {
   if (!items.length) return null
   const ctx = contexts(deck)
   return (
-    <div className="min-w-0 max-[900px]:order-2 max-[900px]:px-4 max-[900px]:pb-5 max-[900px]:pt-1">
+    <div className="min-w-0 flex-none max-[900px]:order-2 max-[900px]:px-4 max-[900px]:pb-5 max-[900px]:pt-1">
       <h3 className="mb-2.5 font-mono text-[11px] font-medium uppercase leading-none tracking-[.1em] text-ink-3">
         Deck · {items.length} slide{items.length > 1 ? 's' : ''}
       </h3>

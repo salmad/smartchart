@@ -15,6 +15,7 @@ async function boot(page: Page, path = '/new') {
 test('the app loads', async ({ page }) => {
   await boot(page)
   await expect(page.getByText('SmartChart', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Look' }).click()
   await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
 })
 
@@ -51,6 +52,7 @@ test('a deck saved by the prototype opens with its slide and chat (Review Focus 
   await boot(page, '/d/d_1')
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Acme')
   await expect(page.getByText('hi from the prototype')).toBeVisible()
+  await page.getByRole('button', { name: 'Look' }).click()
   await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Paper' })).toHaveAttribute('aria-pressed', 'true')
 })

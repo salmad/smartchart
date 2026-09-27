@@ -18,7 +18,8 @@
 
   /* The public site: one measure for every section, so headings and content share a left edge. */
   .site-wrap { @apply mx-auto w-full max-w-[1440px] px-10 max-[700px]:px-4; }
-  .site-section { @apply site-wrap grid gap-14 py-36 max-[900px]:gap-10 max-[900px]:py-20; }
+  /* One rhythm: every section has the same padding, so every gap between two sections is the same. */
+  .site-section { @apply site-wrap grid gap-14 py-24 max-[900px]:gap-10 max-[900px]:py-16; }
   .site-head { @apply grid max-w-[760px] gap-4; }
   .site-h2 { @apply max-w-[20ch] font-display text-[clamp(38px,4.6vw,64px)] font-extrabold leading-[.98] tracking-[-.015em] [font-stretch:78%] [text-wrap:balance]; }
   .site-lede { @apply max-w-[56ch] text-[18px] leading-[1.55] text-type-2; }

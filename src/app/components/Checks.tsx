@@ -15,20 +15,22 @@ export function Checks({ item }: { item: Item | undefined }) {
     ...(item.warnings || []).map((msg) => ({ id: 'rule', ok: false, msg })),
   ]
   const todo = list.filter((c) => !c.ok), passed = list.filter((c) => c.ok)
+  if (!list.length && !item.checksPending) return null
   return (
-    <div className="overflow-y-auto max-[900px]:order-4 max-[900px]:overflow-visible max-[900px]:border-t max-[900px]:border-line max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-5">
-      <h3 className="mb-3 flex items-baseline gap-2 text-[13px] font-medium text-ink">
-        {item.checksPending ? <><i className="spinner" />Checking…</> : todo.length ? `${todo.length} to look at` : 'Every check passed'}
-        {!item.checksPending && <span className="font-normal text-ink-3">{list.length} checks</span>}
-      </h3>
+    <div className="min-h-0 flex-1 overflow-y-auto max-[900px]:order-4 max-[900px]:overflow-visible max-[900px]:border-t max-[900px]:border-line max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-5">
+      {(item.checksPending || todo.length > 0) && (
+        <h3 className="mb-3 flex items-baseline gap-2 text-[13px] font-medium text-ink">
+          {item.checksPending ? <><i className="spinner" />Checking…</> : `${todo.length} to look at`}
+        </h3>
+      )}
       <ul className="grid gap-1.5">
         {todo.map((c, k) => <CheckRow key={k} c={c} />)}
       </ul>
       {passed.length > 0 && (
-        <div className="mt-2">
+        <div className={cn(todo.length > 0 && 'mt-2')}>
           <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
             className="flex items-center gap-2 text-[13px] text-ink-2 hover:text-ink">
-            <span className="font-semibold text-ok" aria-hidden>✓</span>{passed.length} passed<span aria-hidden className={cn('text-ink-3 transition-transform', open && 'rotate-90')}>›</span>
+            <span className="font-semibold text-ok" aria-hidden>✓</span>{todo.length ? `${passed.length} passed` : `All ${passed.length} checks pass`}<span aria-hidden className={cn('text-ink-3 transition-transform', open && 'rotate-90')}>›</span>
           </button>
           {open && <ul className="mt-1.5 grid gap-1.5">{passed.map((c, k) => <CheckRow key={k} c={c} />)}</ul>}
         </div>

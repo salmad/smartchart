@@ -55,11 +55,18 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
   const totals = spec.categories.map((_, i) => B.reduce((sum, s) => sum + Math.max(0, val(s, i)), 0));
   const bMax = Math.max(brk ? brk.cap : stacked ? Math.max(...totals) : Math.max(...B.flatMap((s) => s.values)), ...targets.map((a) => a.value ?? NaN));
   const own = L.filter((s) => (s.format || spec.format) !== unit);
-  const lMax = own.length ? Math.max(...own.flatMap((s) => s.values)) : 1;
+  const lVals = own.flatMap((s) => s.values), lMax = own.length ? Math.max(...lVals) : 1, lMin = own.length ? Math.min(...lVals) : 0;
   // Each arrow level takes headroom from the bars, so annotations never leave the plot.
   const head = .86 - .13 * Math.min(arrows.length, 3);
-  const yb = (v: number) => P.t + ph - (v / bMax) * ph * head;
-  const yOf = (s: Series) => (own.includes(s) ? (v: number) => P.t + ph - (v / lMax) * ph * head : yb);
+  // A line in another unit gets its own band above the bars and their labels, so it never runs through them.
+  // It has no axis and every point is labelled, so it spans its own range (lowest to highest), not zero up.
+  // The band is at least 56 px high; below it, a label's height of clear space, then the bars.
+  // With no arrows, the band takes the headroom they would have used, up to just under the line's top labels.
+  const room = own.length && !arrows.length ? ph + 40 : ph * head, lineBand = own.length ? Math.max(room * .28, 56) : 0, gap = own.length ? 52 : 0;
+  const bandTop = P.t + ph - room, bandBottom = bandTop + lineBand, barsH = room - lineBand - gap;
+  const yb = (v: number) => P.t + ph - (v / bMax) * barsH;
+  const yLine = (v: number) => lMax === lMin ? (bandTop + bandBottom) / 2 : bandBottom - ((v - lMin) / (lMax - lMin)) * (bandBottom - bandTop);
+  const yOf = (s: Series) => (own.includes(s) ? yLine : yb);
   const gw = band * .56, bw = stacked ? gw : gw / B.length, xc = (i: number) => band * i + band / 2;
   const barX = (s: Series, i: number) => (stacked ? xc(i) - gw / 2 : xc(i) - gw / 2 + B.indexOf(s) * bw) + 4;
   // Target lines go first, so the bars pass in front of them.

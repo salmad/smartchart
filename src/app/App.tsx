@@ -11,7 +11,7 @@ import { config } from './config'
 import { installDebug } from './debug'
 import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
-import { deckOf, toSaved } from './state'
+import { LANDING, deckOf, toSaved } from './state'
 import { localDeckRepo, newDeckId, type DeckRepo, type Item, type SavedDeck } from './store'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
@@ -21,7 +21,6 @@ import { SignIn } from './components/SignIn'
 import { findDeck } from './remote'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
-const LANDING = 'Pick a ready-made slide, or describe your own. Paste numbers, a table or notes and say what the slide should argue.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const STORAGE_FULL = "This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need."
 const NOT_SAVED = 'Couldn’t save. Retrying. A copy is kept in this browser until it saves.'
@@ -79,9 +78,10 @@ export function App({ route, account, repo }: Props) {
       if (wanted) { openDeck(wanted); return }
       newDeck()
       if (route.name === 'deck') say(MISSING)
-      // A prompt typed on the site builds the first slide, in the style picked there.
+      // A prompt typed on the site sets the style picked there, and builds the first slide when the models are up.
       const pending = parsePending(takePendingPrompt())
-      if (pending && live) { app.dispatch({ type: 'set', patch: { style: pending.style } }); void sendRef.current?.(pending.text) }
+      if (pending) app.dispatch({ type: 'set', patch: { style: pending.style } })
+      if (pending && live) void sendRef.current?.(pending.text)
     })()
   }, [app, repo, openDeck, newDeck, route, account, say])
 
@@ -158,9 +158,11 @@ export function App({ route, account, repo }: Props) {
   sendRef.current = onSend
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
   // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
-  const onUse = useCallback((st: Starter) => app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }), [app])
+  // A starter's checks run as it lands, so its check line is never empty.
+  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
+  const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
-  const onPick = useCallback((st: Starter) => app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }), [app])
+  const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const stage = s.view === 'landing'
     ? <Gallery deckStyle={s.style} theme={s.theme} accent={s.accent} onStyle={setStyle} onPick={onPick} />
     : s.view === 'add'

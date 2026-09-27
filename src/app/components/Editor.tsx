@@ -7,7 +7,7 @@ import { Bar, type BarProps } from './Bar'
 import { Chat } from './Chat'
 import { Checks } from './Checks'
 import { Composer } from './Composer'
-import { Stage } from './Stage'
+import { SLIDE_W, Stage } from './Stage'
 import { Strip } from './Strip'
 
 export interface EditorProps {
@@ -46,11 +46,12 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
         </aside>
         {stage
           ? <main className="grid min-h-0 min-w-0 max-[900px]:contents">{stage}</main>
-          : <main className="grid min-h-0 min-w-0 grid-rows-[1fr_auto] max-[900px]:contents">
+          : <main className="flex min-h-0 min-w-0 flex-col justify-center max-[900px]:contents">
               <Stage deck={deck} current={current} busy={s.busy} onPresent={bar.onPresent} />
-              <section className="grid h-[250px] grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-6 px-8 pb-5 max-[900px]:contents">
-                <Checks item={items[current]} />
+              {/* Under the slide and as wide as it: the deck, then the current slide's checks. */}
+              <section className={`mx-auto flex max-h-[250px] min-w-0 max-w-[calc(100%-4rem)] flex-col gap-4 pb-5 max-[900px]:contents ${SLIDE_W}`}>
                 <Strip items={items} current={current} deck={deck} onSelect={onSelect} onAdd={bar.onAdd} busy={s.busy} />
+                <Checks item={items[current]} />
               </section>
             </main>}
       </div>

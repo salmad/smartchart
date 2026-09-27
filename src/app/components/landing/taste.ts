@@ -9,7 +9,7 @@ export interface TasteRule { value: string; rule: string; ids: string[] }
 export const TASTE: TasteRule[] = [
   { value: '2 lines', rule: 'The longest a title may run. Measured, not estimated.', ids: ['R1'] },
   { value: '1', rule: 'Focus element per slide, and the title names it.', ids: ['R4', 'J4'] },
-  { value: 'Every', rule: 'Figure you give appears on the slide.', ids: ['R11'] },
+  { value: '100%', rule: 'Of the figures you give appear on the slide.', ids: ['R11'] },
   { value: '0 px', rule: 'Difference in height between parallel cards.', ids: ['L6'] },
   { value: '2.5×', rule: 'The most one parallel item may outweigh another.', ids: ['R7'] },
   { value: '3', rule: 'Significant figures at most. No false precision.', ids: ['R13'] },

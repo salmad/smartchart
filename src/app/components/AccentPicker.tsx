@@ -1,9 +1,8 @@
-/* Accent picker: a bar button and a popover with curated swatches, a custom colour and a hex field.
+/* Accent panel: curated swatches, a custom colour and a hex field, shown in the Look menu.
    Swatches show the colour as the slides will draw it on the current palette. */
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useLayoutEffect, useRef, type KeyboardEvent } from 'react'
 import { PALETTES, accentOn, resolveAccent } from '@/engine/slides/colours'
 import type { Theme } from '@/engine/types'
-import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { cn } from '@/app/lib/utils'
 
 // Curated: distinct hues that stay clear of the palettes' problem red and gain green.
@@ -11,10 +10,10 @@ const PRESETS = [['Gold', '#E8B94A'], ['Cobalt', '#2447D1'], ['Sky', '#0EA5E9'],
 const HEX = /^#?([0-9a-f]{6})$/i
 
 interface Props { accent: string | null; theme: Theme; onChange: (hex: string | null) => void }
-type Look = ReturnType<typeof look>
+type Look = ReturnType<typeof accentLook>
 
 /** What to draw: the chosen hex, how it is shown on this palette, and why when that differs. */
-function look(accent: string | null, theme: Theme) {
+export function accentLook(accent: string | null, theme: Theme) {
   const pal = PALETTES[theme], chosen = accent || pal.focus, name = theme === 'ink' ? 'Ink' : 'Paper'
   const refused = accent ? resolveAccent(theme, accent).error : undefined
   const drawn = (hex: string) => accentOn(hex, pal.bg), shown = refused ? pal.focus : drawn(chosen)
@@ -24,36 +23,10 @@ function look(accent: string | null, theme: Theme) {
   return { chosen, shown, drawn, refused: !!refused, note }
 }
 
-const paint = (el: HTMLElement | null, hex: string) => el?.style.setProperty('--sw', hex)
+export const paint = (el: HTMLElement | null, hex: string) => el?.style.setProperty('--sw', hex)
 
-export function AccentPicker({ accent, theme, onChange }: Props) {
-  const [open, setOpen] = useState(false)
-  const dot = useRef<HTMLElement>(null), content = useRef<HTMLDivElement>(null)
-  const l = look(accent, theme)
-  useLayoutEffect(() => { paint(dot.current, l.shown) }, [l.shown])
-
-  // Open on the chosen swatch, else the hex field.
-  const focusChosen = (e: Event) => {
-    e.preventDefault()
-    const el = content.current?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? content.current?.querySelector<HTMLElement>('input[aria-label="Hex colour"]')
-    el?.focus()
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="flex min-h-8 cursor-pointer items-center gap-2 rounded-[9px] border border-line bg-panel pl-[11px] pr-3 text-[13px] text-ink-2 transition-colors hover:border-line-2 hover:text-ink data-[state=open]:border-line-2 data-[state=open]:text-ink">
-        <i ref={dot} className="size-3 flex-none rounded-full bg-[var(--sw)] shadow-[0_0_0_1px_rgba(255,255,255,.14)]" />Accent
-      </PopoverTrigger>
-      <PopoverContent ref={content} align="center" sideOffset={8} aria-label="Accent colour" onOpenAutoFocus={focusChosen}
-        className="grid w-64 gap-3 rounded-[14px] border-line-2 bg-raise p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
-        <Panel look={l} accent={accent} onChange={onChange} />
-      </PopoverContent>
-    </Popover>
-  )
-}
-
-/** The popover body: mounted only while open, so it paints its own swatches. */
-function Panel({ look: l, accent, onChange }: { look: Look; accent: string | null; onChange: Props['onChange'] }) {
+/** The accent section of the Look menu: mounted only while open, so it paints its own swatches. */
+export function AccentPanel({ look: l, accent, onChange }: { look: Look; accent: string | null; onChange: Props['onChange'] }) {
   const swatches = useRef<(HTMLButtonElement | null)[]>([])
   const wheel = useRef<HTMLLabelElement>(null), hexDot = useRef<HTMLElement>(null), hex = useRef<HTMLInputElement>(null)
   const custom = !PRESETS.some(([, h]) => h === l.chosen)

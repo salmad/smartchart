@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState, type RefObject } from 'react'
+import { cn } from '@/app/lib/utils'
 import { BeforeAfter } from './BeforeAfter'
 import { Problems } from './Problems'
 import { PromptBox } from './PromptBox'
@@ -7,26 +9,29 @@ interface Props { onSignIn: () => void }
 
 /** The public site at /: the problem you recognise, the answer, how it works, and a prompt to try it. */
 export function Site({ onSignIn }: Props) {
+  const page = useRef<HTMLDivElement>(null)
+  const night = useNightUnderNav(page)
   const start = () => {
     const box = document.getElementById('hero-prompt-text')
     box?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
     box?.focus({ preventScroll: true })
   }
   return (
-    <div className="site h-full overflow-y-auto overflow-x-clip bg-paper text-type">
-      <nav className="sticky top-0 z-20 border-b border-transparent bg-paper/80 backdrop-blur-xl supports-[backdrop-filter]:bg-paper/70">
+    <div ref={page} className="site h-full overflow-y-auto overflow-x-clip bg-paper text-type">
+      {/* Solid, and the colour of the section under it: a translucent bar smears over the dark section. */}
+      <nav className={cn('sticky top-0 z-20 transition-colors duration-300', night ? 'bg-stage text-[#F3EEE4]' : 'bg-paper')}>
         <div className="site-wrap flex h-16 items-center justify-between">
           <a href="/" className="font-display text-[22px] font-extrabold tracking-[-.01em] [font-stretch:78%]">SmartChart</a>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onSignIn} className="h-10 rounded-full px-4 text-[14px] text-type-2 transition-colors hover:text-type">Sign in</button>
-            <button type="button" onClick={start} className="h-10 rounded-full bg-type px-4 text-[14px] font-medium text-paper">Make a slide</button>
+            <button type="button" onClick={onSignIn} className={cn('h-10 rounded-full px-4 text-[14px] transition-colors', night ? 'text-[#A39B8E] hover:text-[#F3EEE4]' : 'text-type-2 hover:text-type')}>Sign in</button>
+            <button type="button" onClick={start} className={cn('h-10 rounded-full px-4 text-[14px] font-medium transition-colors duration-300', night ? 'bg-[#F3EEE4] text-stage' : 'bg-type text-paper')}>Make a slide</button>
           </div>
         </div>
       </nav>
 
       <main>
         {/* Hero: the promise and the prompt on the left, the proof on the right, both above the fold. */}
-        <section className="mx-auto grid w-full max-w-[1440px] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-14 px-10 pb-28 pt-14 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-8 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-8">
+        <section className="mx-auto grid w-full max-w-[1440px] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-14 px-10 pb-24 pt-14 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-8 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-8">
           <div className="grid gap-7 max-[1100px]:contents">
             <h1 className="font-display text-[clamp(46px,5.2vw,80px)] font-extrabold leading-[.94] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]">
               Charts that look designed.
@@ -60,4 +65,20 @@ export function Site({ onSignIn }: Props) {
       </footer>
     </div>
   )
+}
+
+/** Whether a dark section ([data-night]) is under the sticky nav, as the page scrolls. */
+function useNightUnderNav(page: RefObject<HTMLDivElement | null>) {
+  const [night, setNight] = useState(false)
+  useEffect(() => {
+    const root = page.current
+    if (!root) return
+    const nav = 64
+    // A thin band just under the nav's bottom edge: a section crossing it is the one behind the nav.
+    const io = new IntersectionObserver((es) => es.forEach((e) => setNight(e.isIntersecting)),
+      { root, rootMargin: `-${nav / 2}px 0px -${root.clientHeight - nav / 2 - 1}px 0px` })
+    root.querySelectorAll('[data-night]').forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [page])
+  return night
 }

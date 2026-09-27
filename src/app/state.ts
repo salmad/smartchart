@@ -17,6 +17,8 @@ export type Action =
   | { type: 'select'; index: number } | { type: 'message'; message: Message } | { type: 'items'; items: Item[]; focusId?: string }
   | { type: 'pickStarter'; slide: Slide; id: string } | { type: 'insertStarter'; slide: Slide; id: string }
 
+/** The first instruction on a new deck; it goes once a slide is picked, so two instructions never stack. */
+export const LANDING = 'Pick a ready-made slide, or describe your own. Paste numbers, a table or notes and say what the slide should argue.'
 const PICKED = "Here's your slide. Tell me what to change: your numbers, your words, a different chart."
 
 export function initialState(): AppState {
@@ -58,7 +60,7 @@ export function reducer(s: AppState, a: Action): AppState {
       if (s.busy || s.items.length) return s
       return {
         ...s, deckId: s.deckId ?? newDeckId(), items: [starterItem(a.id, a.slide)], current: 0, view: 'editor',
-        messages: [...s.messages, { kind: 'bot', text: PICKED }],
+        messages: [...s.messages.filter((m) => m.text !== LANDING), { kind: 'bot', text: PICKED }],
       }
     case 'insertStarter': {
       if (s.busy) return s
