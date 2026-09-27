@@ -3,7 +3,7 @@ import type { Style } from '@/engine/types'
 import { LiveSlide, MENU } from './LiveSlide'
 import { CHECK_COUNT, TASTE } from './taste'
 
-/** The answer, as an outcome: seven kinds of slide, designed once, so a deck never drifts. */
+/** The answer, as an outcome: six kinds of slide, designed once, so a deck never drifts. */
 export function Answer() {
   const strip = useRef<HTMLUListElement>(null)
   const [edge, setEdge] = useState({ start: true, end: false })
@@ -23,7 +23,7 @@ export function Answer() {
           <div className="site-head">
             <h2 id="answer" className="site-h2">Every slide from the same designer.</h2>
             <p className="site-lede">
-              Seven kinds of slide, each drawn once by a designer and reused every time. Your words and numbers change;
+              Six kinds of slide, each drawn once by a designer and reused every time. Your words and numbers change;
               the type, colour and spacing never do. Slide thirty looks like slide one.
             </p>
           </div>
@@ -114,7 +114,7 @@ export function Taste() {
 
 const CASES: [string, string, string, string][] = [
   ['waterfall', 'Board update', 'Where the growth came from, as a bridge the board reads in one glance.', 'consulting'],
-  ['number', 'Seed pitch', 'The problem as one number investors remember.', 'pitch'],
+  ['cards-value', 'Seed pitch', 'The market in a few numbers investors remember.', 'pitch'],
   ['table', 'Finance review', 'Unit economics in a table that is typeset, not pasted.', 'consulting'],
 ]
 

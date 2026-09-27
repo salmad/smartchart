@@ -50,10 +50,10 @@ export function annotationLabel(c: Chart, a: Annotation): AnnotationLabel | null
 const halfDigit = (v: number) => 0.5 * 10 ** -((String(v).split(".")[1] || "").length);
 
 /**
- * A waterfall's steps: [{ label, kind: total|up|down, from, to, value, focus }], plus errors when a written
+ * A waterfall's steps: [{ label, kind: total|up|down, from, to, value, focus, tone }], plus errors when a written
  * total does not match the running sum (the maths is checked, spec 2.1).
  */
-export interface WaterfallStep { label: string; kind: "total" | "up" | "down"; from: number; to: number; value: number; focus: boolean }
+export interface WaterfallStep { label: string; kind: "total" | "up" | "down"; from: number; to: number; value: number; focus: boolean; tone?: "neg" | "pos" }
 export function waterfall(items: readonly (WaterfallItem | null | undefined)[], path = "chart.items"): { steps: WaterfallStep[]; errors: string[] } {
   const steps: WaterfallStep[] = [], errors: string[] = [];
   let run = 0;
@@ -68,7 +68,7 @@ export function waterfall(items: readonly (WaterfallItem | null | undefined)[], 
       steps.push({ label: it.label, kind: "total", from: 0, to: value, value, focus: !!it.focus });
     } else {
       if (typeof it.value !== "number") { errors.push(`${path}[${i}].value: a step needs a signed number (e.g. 3.1 or -1.2).`); return; }
-      steps.push({ label: it.label, kind: it.value < 0 ? "down" : "up", from: run, to: run + it.value, value: it.value, focus: !!it.focus });
+      steps.push({ label: it.label, kind: it.value < 0 ? "down" : "up", from: run, to: run + it.value, value: it.value, focus: !!it.focus, tone: it.tone });
       run += it.value;
     }
   });

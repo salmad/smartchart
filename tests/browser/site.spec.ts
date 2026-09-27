@@ -13,7 +13,7 @@ for (const width of [1440, 390]) {
     await site(page, width)
     await page.evaluate(() => document.fonts.ready)
     const slides = page.locator('.site .slide')
-    expect(await slides.count()).toBeGreaterThanOrEqual(12)
+    expect(await slides.count()).toBeGreaterThanOrEqual(11)
     const overflow = await page.locator('.site').evaluate((el) => el.scrollWidth - el.clientWidth)
     expect(overflow).toBe(0)
   })

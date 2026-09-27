@@ -31,39 +31,6 @@
   }
  },
  {
-  "id": "number",
-  "group": "number",
-  "label": "One big number",
-  "blurb": "When a single figure proves the point",
-  "consulting": {
-   "template": "number",
-   "title": "UK SMEs fund growth on personal cards because no provider bundles business credit with daily banking",
-   "body": [
-    "Founders put business spend on personal cards. They carry the **personal guarantee** and the limit risk, and the rewards leak out of the business.",
-    "Banks cap SME credit at £25k, neobanks only offer debit, and legacy card issuers were built for large corporates."
-   ],
-   "number": {
-    "value": "£540k",
-    "caption": "typical annual card spend that earns the business nothing back"
-   },
-   "takeaway": "The gap is not credit or banking alone. It is **both, in one product.**",
-   "source": "Acme SME interviews (n = 42); UK small business finance survey 2026."
-  },
-  "pitch": {
-   "template": "number",
-   "title": "The problem",
-   "subtitle": "Your business runs on your personal charge card.",
-   "body": [
-    "Three logins. One personal guarantee. **Nothing back.**"
-   ],
-   "number": {
-    "value": "£540k",
-    "tone": "focus",
-    "caption": "a year of business spend that earns nothing back"
-   }
-  }
- },
- {
   "id": "chart-notes",
   "group": "trend",
   "label": "Trend with reasons",
@@ -119,6 +86,7 @@
      }
     ]
    },
+   "caption": "Income and gross margin, years 1–5 · £m, %",
    "kicker": "Unit economics",
    "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
    "notes": [
@@ -193,6 +161,9 @@
    "title": "Unit economics",
    "subtitle": "[[Interchange]] triples the margin.",
    "notes": [
+    {
+     "title": "Interest leads early"
+    },
     {
      "title": "Overtakes interest by year 4"
     },
@@ -620,6 +591,7 @@
      }
     ]
    },
+   "caption": "SME business cards compared, 2026",
    "kicker": "Competition",
    "title": "Acme offers [[five times the limit]] of the nearest SME card with no annual fee",
    "notes": [
@@ -692,11 +664,15 @@
      }
     ]
    },
+   "caption": "SME business cards compared",
    "title": "Competition",
    "subtitle": "[[5×]] the limit. No fee.",
    "notes": [
     {
      "title": "Banks cap at £25k"
+    },
+    {
+     "title": "Neobanks stop at debit"
     },
     {
      "title": "Charge cards: £550 a year"
@@ -758,6 +734,7 @@
      }
     ]
    },
+   "caption": "Loan book, Q1 2027 to Q4 2028 · £m",
    "kicker": "Growth",
    "title": "The [[base case]] reaches a £120m book by Q4 2028; the downside still clears £70m",
    "takeaway": "Even the downside case fills a warehouse facility in 2028.",
@@ -860,6 +837,7 @@
      }
     ]
    },
+   "caption": "Loan book, 2026–2030 · £m",
    "kicker": "Growth",
    "title": "The book grows [[86% a year]] to £120m by 2030, ahead of the £100m plan",
    "takeaway": "The book clears the £100m plan in 2030 with £20m to spare.",
@@ -945,6 +923,7 @@
      }
     ]
    },
+   "caption": "ARR bridge, FY25 to FY26 · £m",
    "kicker": "Revenue",
    "title": "ARR reaches £17.5m in FY26; [[new customers]] add £6.2m of the £7.7m growth",
    "takeaway": "Churn costs less than a quarter of what new customers bring.",
@@ -1021,6 +1000,7 @@
      }
     ]
    },
+   "caption": "Revenue to gross margin, year 4 · £m",
    "kicker": "Unit economics",
    "title": "[[Bad debt]] is the largest cost between £42m of revenue and a £16m gross margin",
    "notes": [
@@ -1071,6 +1051,9 @@
    "title": "Margin",
    "subtitle": "[[Bad debt]] is the lever.",
    "notes": [
+    {
+     "title": "Funding fixed for 3 years"
+    },
     {
      "title": "Rewards pay for themselves"
     },
@@ -1138,6 +1121,7 @@
      }
     ]
    },
+   "caption": "Launch plan by workstream, 2027–2028",
    "kicker": "Plan",
    "title": "The [[warehouse facility]] is the critical path: acquisition cannot scale until Q2 2028",
    "source": "Acme operating plan."
@@ -1255,6 +1239,7 @@
      }
     ]
    },
+   "caption": "Revenue mix by source, years 1–5 · % of revenue",
    "kicker": "Revenue mix",
    "title": "[[Interchange]] rises from 30% to 53% of revenue by year 5 as spend replaces lending",
    "source": "Acme model, base case."
@@ -1419,6 +1404,7 @@
      }
     ]
    },
+   "caption": "UK SME card spend by issuer, 2020–2026 · £bn",
    "kicker": "Competition",
    "title": "[[The largest issuer]] widens its lead in UK SME card spend to £15bn while challengers stay near £1bn",
    "source": "UK card spending statistics; Acme analysis. Illustrative."

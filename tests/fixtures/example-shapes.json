@@ -45,43 +45,12 @@
   }
  },
  {
-  "name": "Number",
-  "consulting": {
-   "template": "number",
-   "variant": "split",
-   "keys": [
-    "body",
-    "number",
-    "source",
-    "takeaway",
-    "template",
-    "title"
-   ],
-   "body": 2,
-   "number": {}
-  },
-  "pitch": {
-   "template": "number",
-   "variant": "split",
-   "keys": [
-    "body",
-    "number",
-    "subtitle",
-    "template",
-    "title"
-   ],
-   "body": 1,
-   "number": {
-    "tone": "focus"
-   }
-  }
- },
- {
   "name": "Chart · with notes (split)",
   "consulting": {
    "template": "chart",
    "variant": "split",
    "keys": [
+    "caption",
     "chart",
     "footnote",
     "kicker",
@@ -133,6 +102,7 @@
    ],
    "body": 0,
    "notes": [
+    {},
     {},
     {}
    ],
@@ -395,6 +365,7 @@
    "template": "table",
    "variant": "split",
    "keys": [
+    "caption",
     "kicker",
     "notes",
     "source",
@@ -438,6 +409,7 @@
    "template": "table",
    "variant": "split",
    "keys": [
+    "caption",
     "notes",
     "subtitle",
     "table",
@@ -446,6 +418,7 @@
    ],
    "body": 0,
    "notes": [
+    {},
     {},
     {}
    ],
@@ -482,6 +455,7 @@
    "template": "chart",
    "variant": "full",
    "keys": [
+    "caption",
     "chart",
     "footnote",
     "kicker",
@@ -546,6 +520,7 @@
    "template": "chart",
    "variant": "full",
    "keys": [
+    "caption",
     "chart",
     "kicker",
     "source",
@@ -617,6 +592,7 @@
    "template": "chart",
    "variant": "full",
    "keys": [
+    "caption",
     "chart",
     "kicker",
     "source",
@@ -696,6 +672,7 @@
    "template": "chart",
    "variant": "split",
    "keys": [
+    "caption",
     "chart",
     "kicker",
     "notes",
@@ -746,6 +723,7 @@
    "body": 0,
    "notes": [
     {},
+    {},
     {}
    ],
    "chart": {
@@ -779,6 +757,7 @@
    "template": "chart",
    "variant": "full",
    "keys": [
+    "caption",
     "chart",
     "kicker",
     "source",
@@ -877,6 +856,7 @@
    "template": "chart",
    "variant": "full",
    "keys": [
+    "caption",
     "chart",
     "kicker",
     "source",
@@ -947,6 +927,7 @@
    "template": "chart",
    "variant": "full",
    "keys": [
+    "caption",
     "chart",
     "kicker",
     "source",

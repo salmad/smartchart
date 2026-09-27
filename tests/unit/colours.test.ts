@@ -94,9 +94,11 @@ test("second hue keeps clear of the focus for deuteranopes", () => {
   }
 });
 
-test("waterfall uses toned neg and pos fills and the quiet total grey; difference annotations reserve neg and pos", () => {
-  assert.deepEqual(allocate(chartSlide({ kind: "waterfall", items: [] }), "ink").used.sort(), ["ctx3", "focus", "neg-fill", "pos-fill"]);
-  for (const t of THEMES) { const { vars } = allocate(chartSlide({ kind: "waterfall", items: [] }), t);
+test("waterfall steps are grey, totals a steadier grey; toned neg and pos only for items the user toned; difference annotations reserve neg and pos", () => {
+  assert.deepEqual(allocate(chartSlide({ kind: "waterfall", items: [{ label: "a", value: 1 }, { label: "b", value: -1 }] }), "ink").used.sort(), ["ctx2", "ctx3", "focus"]);
+  const toned = { kind: "waterfall" as const, items: [{ label: "a", value: 1 }, { label: "b", value: -1, tone: "neg" as const }, { label: "c", value: 1, tone: "pos" as const }] };
+  assert.deepEqual(allocate(chartSlide(toned), "ink").used.sort(), ["ctx2", "ctx3", "focus", "neg-fill", "pos-fill"]);
+  for (const t of THEMES) { const { vars } = allocate(chartSlide(toned), t);
     for (const k of ["neg-fill", "pos-fill"] as const) { const c = contrast(vars[k], PALETTES[t].bg); assert.ok(c >= 3 && c < contrast(vars[k.slice(0, 3)], PALETTES[t].bg) + .01, `${t} ${k} ${c}`); } }
   const r = allocate(chartSlide({ series: series(1), annotations: [{ type: "difference", from: 0, to: 1 }] }), "paper");
   assert.ok(r.used.includes("neg") && r.used.includes("pos"));

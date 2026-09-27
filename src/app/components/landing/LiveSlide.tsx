@@ -16,8 +16,9 @@ export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', 
     className={cn('relative aspect-video w-full overflow-hidden', className)} />
 }
 
-/** One starter per template, in menu order: the whole closed menu (distinct from the slides shown elsewhere on the page). */
+/** One starter per template, in menu order (distinct from the slides shown elsewhere on the page). Big number is
+    left out while its starter is archived, until it gets its own layout. */
 export const MENU: { id: string; name: string }[] = [
-  { id: 'chart-lines', name: 'Chart' }, { id: 'table-notes', name: 'Table' }, { id: 'number', name: 'Big number' },
+  { id: 'chart-lines', name: 'Chart' }, { id: 'table-notes', name: 'Table' },
   { id: 'steps', name: 'Steps' }, { id: 'cards-icon', name: 'Cards' }, { id: 'cover', name: 'Cover' }, { id: 'section', name: 'Section' },
 ]

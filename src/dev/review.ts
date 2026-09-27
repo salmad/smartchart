@@ -27,7 +27,8 @@ const state: { style: Choice; theme: Theme } = { style: (q.get('style') as Choic
 const only = q.get('only')
 // ?compare=788f4d7: each starter's 788f4d7 version (left) next to the current one (right), per style.
 const COMPARE = !STRESS && q.get('compare') === '788f4d7'
-const BASE = baseline as unknown as { consulting: Slide; pitch: Slide }[]
+// Matched by id: starters archived since then drop out, so each current starter meets its own old version.
+const BASE = (baseline as unknown as { id: string; consulting: Slide; pitch: Slide }[]).filter((b) => STARTERS.some((s) => s.id === b.id))
 const baseDeck = (style: Style, theme: Theme) => ({ style, theme, accent: null, footer: 'FinBridge · Seed memorandum', slides: BASE.map((b) => b[style]) })
 if (q.get('full')) document.body.classList.add('full')
 const listEl = document.getElementById('list') as HTMLElement

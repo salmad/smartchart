@@ -162,3 +162,16 @@ test("notes limits per kind", () => {
 test("annotations accept series whose mark is still auto", () => {
   assert.deepEqual(errs(chart({ ...REV5, series: [{ ...REV5.series[0], mark: "auto" }], annotations: [{ type: "target", value: 25 }, { type: "cagr", from: 0, to: 4, series: 0 }] })), []);
 });
+
+test("charts and tables take an optional one-line caption and notes heading, in both styles", () => {
+  const s = chart({ categories: cats, format: "£{v}m", series: [REV] }, { caption: "Revenue, 2023–2025 · £m", notesTitle: "Notes", notes: [{ title: "a" }, { title: "b" }, { title: "c" }] });
+  for (const style of ["consulting", "pitch"] as const) assert.deepEqual(errs(style === "pitch" ? { ...s, subtitle: "It grew." } : s, style).filter((e) => /caption|notesTitle/.test(e)), []);
+  assert.ok(errs({ ...s, caption: "x".repeat(49) }).some((e) => e.startsWith("caption")));
+  assert.ok(errs({ ...s, notesTitle: "x".repeat(21) }).some((e) => e.startsWith("notesTitle")));
+});
+
+test("a notes heading does not go with a takeaway", () => {
+  const s = chart({ categories: cats, format: "£{v}m", series: [REV] }, { notesTitle: "Notes", takeaway: "So what.", notes: [{ title: "a" }, { title: "b" }, { title: "c" }] });
+  assert.ok(errs(s).some((e) => e.startsWith("notesTitle: a notes heading and a takeaway")));
+  assert.ok(!errs({ ...s, takeaway: undefined }).some((e) => e.startsWith("notesTitle")));
+});

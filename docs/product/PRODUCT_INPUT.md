@@ -121,6 +121,7 @@ The key idea is **"LLM as configurator, not designer."** The agent emits a small
 
    The agent picks what to highlight and why; the engine draws it. This should replace free-form inline word colouring as the main way to add emphasis. Open: which highlight types each block supports, and how the "why" label is placed so it always fits.
 10. **Edit slide by hand.** Let the user edit a slide directly (text, numbers, maybe highlights) without going through the chat. Edits go through the same schema limits and fit check as agent edits, so a hand edit can't break the design. Open: inline editing on the slide or a side panel, and which fields can be edited.
+11. **Big number as a quote-like slide.** The `number` starter (the £540k problem slide) is archived from the gallery since 2026-09-28: next to a title and subtitle, one number left most of the slide empty. Next layout: no title, just the number and a line of text, like a pull quote. Until then the agent cannot pick or name `number` (`ARCHIVED` in `schema.ts`: out of the router, the picking guide and the create_slide enum); existing slides still render.
 
 ### Design proposals
 - `docs/design/proposals/slides-v4.html` (**chosen for the MVP**, "Ink"): v1 rebuilt with the vocabulary of the marketing-heavy example deck:

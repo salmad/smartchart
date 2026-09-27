@@ -1,5 +1,5 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
-import { MARKUP, MENU, plain } from "../slides/schema";
+import { MARKUP, MENU, OFFERED, plain } from "../slides/schema";
 import { styleBlock } from "./prompts";
 import type { Check } from "./checks";
 import type { Selection } from "./pre";
@@ -10,7 +10,7 @@ export interface ToolDef { type: "function"; function: { name: string; descripti
 /** A slide as the agent sees it: id, content and what is still open on it. */
 export interface WorkingSlide { id: string; slide: Slide; issues?: string[]; warnings?: string[]; checks?: Check[] }
 
-const templates = () => Object.entries(MENU).map(([id, t]) => `- ${id}: ${t.summary} Use when: ${t.use}`).join("\n");
+const templates = () => OFFERED.map((id) => `- ${id}: ${MENU[id].summary} Use when: ${MENU[id].use}`).join("\n");
 
 /** System prompt: fixed for the whole deck (the style is locked after the first slide). */
 export function agentSystem(style: Style): string {
@@ -44,7 +44,7 @@ Finish every turn with a short reply. After a new slide, the first sentence says
   "You gave 2023 and 2025 but not 2024. How should the slide show it?
   1. Add the 2024 figure (tell me the number)
   2. A two-year comparison: 2023 vs 2025 as two bars
-  3. One big number: revenue up 2.6× from 2023 to 2025"
+  3. Key figures: revenue up 2.6× from 2023 to 2025, next to the two years"
 - When the user answers with a number or a choice, do exactly that option. If it turns out it cannot be done, say so and ask again; never swap in another option.
 
 # Writing slide JSON
@@ -79,7 +79,7 @@ const FUNCTIONS: ToolDef["function"][] = [
     parameters: { type: "object", required: ["about"], properties: {
       about: { type: "string", description: "The slide's content, keeping the user's words and every figure." },
       after: { type: "string", description: "Slide id to insert after, or \"end\". Not used with replace." },
-      template: { type: "string", enum: Object.keys(MENU), description: "Only when the user named the kind of slide." },
+      template: { type: "string", enum: OFFERED, description: "Only when the user named the kind of slide." },
       replace: { ...ID, description: "For a template change: the slide to re-template (it keeps its id)." } } } },
   { name: "edit_slide", description: "Write a WHOLE slide, only right after create_slide reserved it (a new slide or a template change). Existing slides change with patch_slide. Code fixes trivia, resolves \"auto\" choices, validates and measures it at 1920×1080.",
     parameters: { type: "object", required: ["slideId", "slide"], properties: { slideId: ID,

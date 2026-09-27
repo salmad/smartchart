@@ -6,7 +6,7 @@ export type SeriesColor = 'focus' | 'neutral' | 'contrast'
 
 export interface Series { name: string; values: number[]; mark: 'bar' | 'line' | 'auto'; color?: SeriesColor; format?: string; area?: boolean; dashed?: boolean }
 export interface Annotation { type: 'cagr' | 'difference' | 'target'; from?: number; to?: number; series?: number; relative?: boolean; value?: number; label?: string }
-export interface WaterfallItem { label: string; value?: number; total?: boolean; focus?: boolean }
+export interface WaterfallItem { label: string; value?: number; total?: boolean; focus?: boolean; tone?: 'neg' | 'pos' }
 export interface TimelineRow { label: string; start: number; end: number; focus?: boolean }
 export interface Milestone { label: string; at: number }
 export interface Chart {
@@ -28,7 +28,7 @@ export interface Slide {
   subtitle?: string; kicker?: string; takeaway?: string; footnote?: string; source?: string
   focus?: 'auto'
   chart?: Chart; notes?: Note[]
-  table?: Table
+  table?: Table; caption?: string; notesTitle?: string
   body?: string[]; number?: { value: string; caption: string; tone?: Tone }
   steps?: Step[]
   framed?: boolean; cards?: Card[]

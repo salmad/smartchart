@@ -22,6 +22,20 @@ const list = (items: string[]) => `<ul class="bullets">${items.map((b) => `<li>$
 const notesHTML = (notes: Note[]) => `<div class="notes">${notes.map((n, i) => `<div class="note"><span class="n">${pad2(i + 1)}</span>
   <div><h4>${md(n.title)}</h4>${n.text ? `<p>${md(n.text)}</p>` : ""}</div></div>`).join("")}</div>`;
 
+/* Exhibit caption: what the chart or table shows; the unit after the last " · " is set quieter. */
+const capHTML = (text: string | undefined, cls = "") => {
+  if (!text) return `<p class="cap blank ${cls}"></p>`;
+  const i = text.lastIndexOf(" · ");
+  return `<p class="cap ${cls}">${i > 0 ? `${esc(text.slice(0, i))}<span> · ${esc(text.slice(i + 3))}</span>` : esc(text)}</p>`;
+};
+/* Split body: main ⅔ + notes ⅓. With a notes heading, both columns get a header row on one line (a missing
+   caption stays blank). With a caption alone, the notes keep the column's full height from the body line. */
+const splitHTML = (s: Slide, main: string, extra = "") => {
+  const head = s.notesTitle ? capHTML(s.caption) + capHTML(s.notesTitle, "notes-h") : s.caption ? capHTML(s.caption) : "";
+  const cls = s.notesTitle ? "has-head" : s.caption ? "has-head cap-only" : "";
+  return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${notesHTML(s.notes ?? [])}</div>`;
+};
+
 const cellValue = (c: Cell | undefined) => String(c && typeof c === "object" ? c.value : c ?? "").trim();
 const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
 
@@ -58,11 +72,11 @@ function cardHTML(c: Card, variant: string) {
 const table = (s: Slide): Table => s.table ?? { columns: [], rows: [] };
 const BODY: Record<Exclude<TemplateId, "cover" | "section">, (s: Slide, variant: string) => string> = {
   chart: (s, v) => v === "split"
-    ? `<div class="split grow"><div class="chart" data-chart></div>${notesHTML(s.notes ?? [])}</div>`
-    : `<div class="chart full grow" data-chart></div>`,
+    ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow")
+    : `${s.caption ? capHTML(s.caption) : ""}<div class="chart full grow" data-chart></div>`,
   table: (s, v) => v === "split"
-    ? `<div class="split with-table"><div>${tableHTML(table(s))}</div>${notesHTML(s.notes ?? [])}</div>`
-    : tableHTML(table(s)),
+    ? splitHTML(s, tableHTML(table(s)), "with-table")
+    : `${s.caption ? capHTML(s.caption) : ""}${tableHTML(table(s))}`,
   number: (s) => {
     const n = s.number ?? { value: "", caption: "" };
     const num = `<div class="hero-n"><p class="shout hero-v ${n.tone || ""} ${n.value.length <= 4 ? "short" : ""}">${esc(n.value)}</p><p class="hero-c">${md(n.caption)}</p></div>`;
@@ -148,9 +162,11 @@ function sizeTable(slide: HTMLElement) {
   col.style.width = `${(share * 100).toFixed(2)}%`;
 }
 
-/* L5: a full-width table under 60% of the body grows its rows, up to 1.5× its natural height. */
+/* L5: a table under 60% of the body grows its rows, up to 1.5× its natural height; beside notes too, so the
+   notes' bands (which share the split's height) grow with it. */
 function growTable(slide: HTMLElement) {
-  const tbl = slide.matches(".t-table.v-full") ? slide.querySelector<HTMLElement>(":scope > .tbl") : null;
+  const tbl = slide.matches(".t-table.v-full") ? slide.querySelector<HTMLElement>(":scope > .tbl")
+    : slide.matches(".t-table.v-split") ? slide.querySelector<HTMLElement>(".split.with-table > .main > .tbl") : null;
   if (!tbl) return;
   // The slide is scaled with a transform: measure in slide pixels.
   const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;

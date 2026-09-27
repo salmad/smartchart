@@ -40,14 +40,18 @@ Every content slide shares one frame. Cover and section are frame variants with 
 |---|---|---|
 | `kicker` | optional small label; defaults to the current section name | **not used** (the title already names the topic) |
 | `title` | required; markup; the **action title**: a full sentence stating the so-what; ≤ 2 lines | required; the **topic**: "Business model", "Unit economics", "The problem"; **exactly 1 line** |
-| `subtitle` | not used | **required**; markup; the claim in a few more words, smaller type; ≤ 2 lines |
+| `subtitle` | not used | **required**; markup; the claim in a few more words, smaller type; **exactly 1 line** (≤ 60 characters) |
 | `takeaway` | optional; markup; exactly 1 line | optional; markup; exactly 1 line |
 | `footnote` | optional; ≤ 2 lines together with `source` | optional, rare |
 | `source` | optional; renderer adds "Source:" | optional, rare |
+| `caption` (chart, table) | written by default: what is shown, plainly (measure, scope, period, then " · " and the unit); exactly 1 line, ≤ 48 characters; a table counts it as 1 row of its budget | optional, only when asked |
+| `notesTitle` (with notes) | optional, only when asked or offered as a suggestion: "Notes", "What drives it"; exactly 1 line, ≤ 20 characters; not with a takeaway | same |
+
+**Exhibit heads (2026-09-28).** The caption sits over the chart or table on a hairline; the unit after the last " · " is set quieter. With notes and a notes heading, both columns get one header row on one line (a missing caption leaves its side blank). With a caption alone, the notes keep the full column height from the body line.
 
 Derived, never written by the agent: page number, section number, note numbers, default kicker, footer (deck setting).
 
-**Fixed head.** The frame's head (kicker, title, subtitle) reserves the height of its longest form: consulting keeps the kicker line (even when empty) and 2 title lines; pitch keeps 1 title line and 2 subtitle lines. A shorter title or subtitle leaves room below it; it never moves the body (L3). Section dividers follow the same idea: the section title is exactly 1 line and the subtitle keeps 2 lines, so the section number and title sit in the same place on every divider.
+**Fixed head.** The frame's head (kicker, title, subtitle) reserves the height of its longest form: consulting keeps the kicker line (even when empty) and 2 title lines; pitch keeps 1 title line and 1 subtitle line (2026-09-28: the second line was reserved on every slide and never used). A shorter title or subtitle leaves room below it; it never moves the body (L3). Section dividers follow the same idea: the section title is exactly 1 line and the subtitle keeps 2 lines, so the section number and title sit in the same place on every divider.
 
 > Design change from v4: pitch content slides move from a 2-line claim title to a 1-line topic title plus a 1–2 line subtitle. The v4 prototype and its stress deck are updated to match before the quality matrix baseline is approved. Section dividers stay available in both styles but are rarely useful in pitch.
 
@@ -125,7 +129,7 @@ Spacing, sizing and alignment follow consulting formatting practice and are **ne
 |---|---|
 | L1 | **Table columns.** The first (label) column is sized to its longest label, within 20–40% of the table width; every other column has exactly the same width (fixed table layout). |
 | L2 | **Alignment is derived from content, not written.** Label and text columns align left; numeric columns align right with tabular figures, so the digits line up; a header aligns like its column; short symbol columns (✓, –, ratings, 3 characters or fewer) are centred. Cells are top-aligned, so wrapped text reads from the top and single-line values share a baseline. The `num` flag is removed from the schema. |
-| L3 | **One body line.** The body starts at the same y on every content slide of a style, whatever the title, kicker or subtitle length: top padding + the head's reserved height (3.1) + one gap token (consulting 56 px, pitch 72 px), which is y ≈ 349 in consulting and y ≈ 442 in pitch. A fixed gap under a variable head is not enough: it moves the body by a line whenever the title or subtitle wraps. |
+| L3 | **One body line.** The body starts at the same y on every content slide of a style, whatever the title, kicker or subtitle length: top padding + the head's reserved height (3.1) + one gap token (consulting 56 px, pitch 72 px), which is y ≈ 349 in consulting and y ≈ 384 in pitch. A fixed gap under a variable head is not enough: it moves the body by a line whenever the title or subtitle wraps. |
 | L4 | **Grid, not centring.** Body blocks start at the left edge of the 12-column grid and at the body offset (L3), so content starts at the same place on every slide. Only `cover`, `section` and the big number of `number` are centred. |
 | L5 | **Small content grows first, then is flagged.** When the body fills under 60% of its area, code first grows it within limits: table rows gain padding up to a maximum, cards stretch to the body height, charts always fill their area. A narrow table (2 columns, or short cells) is capped at 2/3 of the content width, not stretched across the slide. If the body is still under 60% of its area, the write returns a fit issue: `body: 45% empty below the table; add notes or a takeaway, or use a number or cards slide`. |
 | L6 | **Parallel items share a size.** Cards in a row have equal width and equal height; steps have equal row height; notes share one width. |
@@ -201,7 +205,7 @@ Two kinds, both cheap:
 | R7 | Parallel items are balanced: longest ÷ shortest text in a row of cards, notes or steps ≤ 2.5 | both |
 | R8 | A slide with figures has a `source` | consulting |
 | R9 | Chart guide: series with the same format share one mark unless one is dashed (a reference); at most two formats; `stacked` only with 2+ bar series of one format | both |
-| R10 | Rule of three: 3 parallel items (cards, notes, bullets in a card) is the default; 2 is fine for a contrast; 4 warns ("merge or cut to 3"). Steps are a sequence and are exempt | consulting |
+| R10 | Rule of three: 3 parallel items (cards, notes, bullets in a card) is the default; 2 cards are fine for a contrast; 4 warns ("merge or cut to 3"). Notes are 3 or none in both styles (2026-09-28): 2 notes fail with "delete the notes, or add a third", since the title and takeaway already carry a pair. Steps are a sequence and are exempt | consulting (notes: both) |
 | R11 | Every figure in the title, subtitle or takeaway appears in the body, or is derived from two body values within rounding (a difference, ratio or growth rate) | both |
 | R12 | A consulting slide with figures has a figure in its title (the so-what is quantified) | consulting |
 | R13 | Consistent precision: within a series, a table column or a row of value cards, one unit and one number of decimals; no false precision (at most 3 significant digits on a slide, e.g. £9.8m, not £9,837,221) | both |

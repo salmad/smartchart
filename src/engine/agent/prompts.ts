@@ -1,5 +1,5 @@
 /* Prompt pieces shared by the agent and Jev (spec 9.3): the style block, worked examples, the picking guide. */
-import { MENU, PICKING_GUIDE, STYLES } from "../slides/schema";
+import { MENU, OFFERED, PICKING_GUIDE, STYLES } from "../slides/schema";
 import { STARTERS, starterSlide } from "../starters";
 import type { Slide, Style, TemplateId } from "../types";
 
@@ -29,5 +29,5 @@ export const STYLE_STATE: Record<Style, string> = {
 
 export const GUIDE = `Answer in order and stop at the first match:\n${PICKING_GUIDE.map(([q, id], i) => `${i + 1}. If the content is ${q}: ${id}`).join("\n")}\nCover or section only when the user asks for a title, cover, opening or divider slide; otherwise route the content itself, even into an empty deck.\nChart or table? Chart for a trend, a comparison of sizes or a crossover; table when the reader needs exact values. When in doubt, pick the entry with fewer words.`;
 
-export const MENU_OPTIONS = Object.fromEntries(Object.entries(MENU).map(([id, t]) => [id, `${t.summary} Use when: ${t.use}`]));
+export const MENU_OPTIONS = Object.fromEntries(OFFERED.map((id) => [id, `${MENU[id].summary} Use when: ${MENU[id].use}`]));
 

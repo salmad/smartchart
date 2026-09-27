@@ -156,7 +156,10 @@ export function allocate(slide: Slide | null | undefined, theme: Theme, accent?:
     if (slots.some((s) => s?.startsWith("alt"))) [vars.alt1, vars.alt2] = secondHue(theme, [vars.focus, vars.neg, vars.pos]);
     (chart.annotations || []).forEach((a) => { if (a?.type === "difference") { used.add("neg"); used.add("pos"); } });
   }
-  if (chart && kind === "waterfall") ["neg-fill", "pos-fill", "ctx3"].forEach((s) => used.add(s));
+  if (chart && kind === "waterfall") {
+    ["ctx2", "ctx3"].forEach((s) => used.add(s));
+    for (const t of ["neg", "pos"] as const) if ((chart.items || []).some((x) => x?.tone === t && !x.focus)) used.add(`${t}-fill`);
+  }
   if (chart && kind === "timeline") used.add("quiet");
   const list = [...used];
   for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {

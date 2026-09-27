@@ -101,8 +101,11 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const barUnits = new Set(bars.map(fmt)).size;
     add("R9", !mixed && units <= 2 && !badStack && barUnits <= 1, mixed ? `Series in ${mixed[0]} mix bars and lines; comparable series share one mark` : units > 2 ? `${units} units on one chart; at most 2` : badStack ? "Stacked bars need 2 or more bar series in one unit" : barUnits > 1 ? "Bars in 2 units share one scale; draw the second unit as a line" : "Chart follows the chart guide");
   }
-  if (style === "consulting") {
-    const n = s.template === "cards" && !s.framed ? (s.cards || []).length : (s.notes || []).length || null;
+  // Notes are 3 or none, in both styles: two notes only restate what the title and takeaway already say.
+  const nn = (s.notes || []).length;
+  if (nn) add("R10", nn === 3, nn === 3 ? "3 notes" : nn < 3 ? `${nn} notes; the title and takeaway already carry the point: delete the notes, or add a third` : `${nn} notes; 3 reads best: merge or cut to 3`);
+  else if (style === "consulting" && s.template === "cards" && !s.framed) {
+    const n = (s.cards || []).length;
     if (n) add("R10", n <= 3, n <= 3 ? `${n} parallel items` : `${n} parallel items; 3 reads best: merge or cut to 3`);
   }
   const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" "));

@@ -38,7 +38,7 @@ export function targets(issues: string[], slide: Slide): Target[] {
     }
     if ((m = issue.match(/^([\w.[\]]+): (\d+) characters(?:, limit (\d+)|; .*?(?:at most|allow) (\d+))/))) [path, max] = [m[1], Number(m[3] || m[4])];
     else if ((m = issue.match(/^([\w.[\]]+): limit is (\d+) characters/))) [path, max] = [m[1], Number(m[2])];
-    else if ((m = issue.match(/^(title|subtitle|takeaway) wraps to (\d+) lines(?: \(max (\d+)\))?/))) {
+    else if ((m = issue.match(/^(title|subtitle|takeaway|caption|notesTitle) wraps to (\d+) lines(?: \(max (\d+)\))?/))) {
       path = m[1];
       const len = plain(get(slide, path) || "").length, lines = Number(m[2]), limit = Number(m[3] || 1);
       max = Math.floor((len * limit) / lines * 0.9);

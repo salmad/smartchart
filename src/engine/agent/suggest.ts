@@ -8,7 +8,7 @@ export interface Pill { label: string; prompt: string }
 export interface SuggestArgs { slide: Slide; style: Style; history?: ChatMessage[]; checks?: Pick<Check, "ok" | "msg">[] }
 export interface Suggestions { message: string; pills: Pill[] }
 
-const CAN = "Charts: bars and lines (stacked, side by side or 100% shares), waterfall (a bridge between two totals), timeline (workstreams and milestones); computed annotations: CAGR arrow, difference arrow, target line; highlight one series, bar, step, card or column. Any slide: title, takeaway, numbered notes, footnote, source; another template (chart, table, big number, steps, cards); a new slide.";
+const CAN = "Charts: bars and lines (stacked, side by side or 100% shares), waterfall (a bridge between two totals), timeline (workstreams and milestones); computed annotations: CAGR arrow, difference arrow, target line; highlight one series, bar, step, card or column. Any slide: title, takeaway, numbered notes, footnote, source; a chart or table: a caption saying what it shows (measure, scope, period, unit); notes: a one- or two-word heading over them (Notes, What drives it), only as a suggestion; another template (chart, table, steps, cards); a new slide.";
 
 export function suggestMessages({ slide, style, history = [], checks = [] }: SuggestArgs): ChatMessage[] {
   const convo = history.filter((m) => m.role === "user" || m.role === "assistant").slice(-6)

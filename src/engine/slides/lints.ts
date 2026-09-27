@@ -27,7 +27,14 @@ export function fitIssues(slide: HTMLElement, style: Style): string[] {
   const maxTitle = slide.matches(".t-section") || (style === "pitch" && !slide.matches(".t-cover")) ? 1 : 2;
   if (title && lines(title) > maxTitle) out.push(`title wraps to ${lines(title)} lines (max ${maxTitle}); shorten it`);
   const sub = slide.querySelector(".subtitle");
-  if (sub && lines(sub) > 2) out.push(`subtitle wraps to ${lines(sub)} lines (max 2); shorten it`);
+  // A pitch content subtitle is one line: the head reserves one, so the body starts right below it.
+  const maxSub = style === "pitch" && !slide.matches(".t-cover, .t-section") ? 1 : 2;
+  if (sub && lines(sub) > maxSub) out.push(`subtitle wraps to ${lines(sub)} lines (max ${maxSub}); shorten it`);
+  // The caption and the notes heading hold one line, so both columns keep one header row.
+  slide.querySelectorAll(".cap:not(.blank)").forEach((el) => {
+    const field = el.classList.contains("notes-h") ? "notesTitle" : "caption", n = lines(el, 16);
+    if (n > 1) out.push(`${field} wraps to ${n} lines (max 1); shorten it`);
+  });
   const tk = slide.querySelector(".takeaway");
   if (tk && lines(tk, 12) > 1) out.push(`takeaway wraps to ${lines(tk, 12)} lines; it must fit on one`);
   const fn = slide.querySelector(".rail .fn");

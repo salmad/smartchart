@@ -29,3 +29,10 @@ test("shorten keeps a rewrite only when it fits and its figures survive on the s
   const bad = await shorten([{ path: "title", text: s.title, max: 30 }], "consulting", fakeAgent([say("Revenue grew 4.5×"), say("Revenue grew 4.5×")]), s);
   assert.deepEqual(bad.set, {}); // "36" is nowhere else
 });
+
+test("targets: a wrapped caption or notes heading is shortened to one line", () => {
+  const s = { template: "chart", title: "t", caption: "Annual recurring revenue by customer segment, FY25–FY26 · £m", notesTitle: "What drives the margin here" } as const;
+  const t = Object.fromEntries(targets(["caption wraps to 2 lines (max 1); shorten it", "notesTitle wraps to 2 lines (max 1); shorten it"], s as never).map((x) => [x.path, x.max]));
+  assert.deepEqual(Object.keys(t).sort(), ["caption", "notesTitle"]);
+  assert.ok(t.caption < s.caption.length / 2 + 1 && t.notesTitle < s.notesTitle.length / 2 + 1);
+});

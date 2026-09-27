@@ -26,6 +26,17 @@ test("R10: four cards warn in consulting; framed and pitch exempt", () => {
   assert.equal(get(cards(4), "R10", "pitch"), undefined);
 });
 
+test("R10: notes are 3 or none in both styles; 2 suggests deleting them", () => {
+  const notes = (n: number) => ({ ...chart([REV]), notes: Array.from({ length: n }, (_, i) => ({ title: `N${i}` })) });
+  for (const style of ["consulting", "pitch"] as const) {
+    assert.equal(get(notes(3), "R10", style)?.ok, true);
+    assert.match(get(notes(2), "R10", style)?.msg ?? "", /delete the notes, or add a third/);
+    assert.equal(get(notes(2), "R10", style)?.ok, false);
+    assert.equal(get(notes(4), "R10", style)?.ok, false);
+  }
+  assert.equal(get(chart([REV]), "R10"), undefined);
+});
+
 test("R11: title figures on the slide or derived", () => {
   assert.equal(get(chart([REV]), "R11")?.ok, true); // 2.1 and 9.4 in the data; 4.5 ≈ 9.4 / 2.1
   const s = chart([REV]); s.title = "Revenue reached £12m by 2025";

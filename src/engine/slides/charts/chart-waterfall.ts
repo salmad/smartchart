@@ -1,6 +1,7 @@
 /* Waterfall (bridge): totals from zero, changes floating from the running sum, dashed connectors.
-   Totals are the quiet grey, steps the pos/neg hue toned down (their labels keep the full colour), and one focus
-   item takes the focus colour: the eye lands on the point, not on the biggest block. */
+   One colour carries the point: totals are a steady grey, steps the quietest grey, and the one focus item takes
+   the focus colour. Direction is already in the float and the signed label, so steps are not coloured by sign;
+   a step takes the toned red or green only when the user asked for it (item `tone`). */
 import { fmt, signed, waterfall } from "./chart-math";
 import { esc, labelPx, lbl, plotRects, settle } from "./chart-parts";
 import type { Chart } from "../../types";
@@ -18,7 +19,7 @@ export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: numb
   const catTop = Math.max(y(Math.min(0, lo)) + 16, ...steps.filter((s) => s.kind === "down").map((s) => y(Math.min(s.from, s.to)) + L + 22));
   steps.forEach((s, i) => {
     const x = xc(i) - bw / 2, top = y(Math.max(s.from, s.to)), bottom = y(Math.min(s.from, s.to));
-    const slot = s.focus ? "focus" : s.kind === "total" ? "ctx3" : s.kind === "up" ? "pos" : "neg";
+    const slot = s.focus ? "focus" : s.kind === "total" ? "ctx2" : s.tone ?? "ctx3";
     g += `<rect class="wf c-${slot}" x="${x}" y="${top}" width="${bw}" height="${Math.max(2, bottom - top)}" rx="4"/>`;
     const next = steps[i + 1];
     if (next) { const lv = y(s.to); g += `<line class="conn" x1="${x + bw}" x2="${xc(i + 1) - bw / 2}" y1="${lv}" y2="${lv}"/>`; }

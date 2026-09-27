@@ -68,5 +68,15 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "cards", name: "Stress · cards value ×4", ...frame("cards"), cards: TIMES(4).map((_, i) => ({ value: "€400bn", title: W(c ? 24 : 22), text: W(c ? 80 : 44), tone: i === 1 ? "focus" : "neutral" })) },
     { template: "cards", name: "Stress · cards framed", ...frame("cards"), framed: true, cards: TIMES(2).map((_, i) => ({ tone: i ? "focus" : "neg", label: W(30), title: W(14),
       ...(c ? { bullets: TIMES(3).map(() => W(48)), facts: TIMES(2).map(() => ({ label: W(14), text: W(38) })) } : { text: W(50) }) })) },
-  ];
+  ].map((s) => withExhibitHeads(s as Slide & { name: string }, st));
+}
+
+/** Charts take a caption at its limit. A table takes one only where its row budget leaves room (the full consulting
+    table is already at 10 of 10.5 rows; pitch tables stay plain). A notes heading does not go with a takeaway, so
+    the waterfall with notes trades its takeaway for a heading at its limit. */
+function withExhibitHeads(s: Slide & { name: string }, st: Style): Slide & { name: string } {
+  const caption = s.template === "chart" || (s.template === "table" && st === "consulting" && s.notes?.length) ? { caption: `${W(max(s.template, st, "caption") - 5)} · £m` } : {};
+  if (s.name !== "Stress · waterfall + notes") return { ...s, ...caption };
+  const { takeaway: _dropped, ...rest } = s;
+  return { ...rest, ...caption, notesTitle: W(max(s.template, st, "notesTitle")) };
 }

@@ -45,5 +45,5 @@ test('L3: the body starts on the same line whatever the title, kicker or subtitl
   }
   expect((await tops('consulting', [{ title }, { title: 'Revolvers carry the margin' }, { title: 'Revolvers carry the margin', kicker: '02 · Economics' }])).size).toBe(1)
   expect((await tops('pitch', [{ title: 'The plan', subtitle: 'Five million to a funded book.' },
-    { title: 'The plan', subtitle: 'Five million pounds gets us to a funded book with three hundred customers.' }])).size).toBe(1)
+    { title: 'The plan', subtitle: 'Five million pounds gets us to a funded book by 2027.' }])).size).toBe(1)
 })

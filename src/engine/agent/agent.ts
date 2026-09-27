@@ -2,7 +2,7 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { describe, isTemplate, plain, validate } from "../slides/schema";
+import { OFFERED, describe, isTemplate, plain, validate } from "../slides/schema";
 import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts";
 import { autofix } from "./autofix";
@@ -110,6 +110,8 @@ export async function runTurn({ text, deck, history, working, selection, measure
     async create_slide({ about = "", after = "end", template: asked, replace }, pre) {
       if (replace && !find(replace)) return unknown(replace);
       let template: TemplateId, probabilities = pre?.probabilities || null, lead = pre?.lead || null;
+      // An archived template cannot be named (it is not in the tool's enum); a model that writes it anyway is refused.
+      if (isTemplate(asked) && !OFFERED.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${OFFERED.join(", ")}, or leave template out.` };
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
       const current = replace ? find(replace)?.slide?.template : undefined;
       const requested = !!turnPre && turnPre.intent === "change_template" && isSure(turnPre, deck);
@@ -264,7 +266,7 @@ function compact(history: ChatMessage[]) {
 }
 
 /* The reply code writes when it ends the turn: what changed, and anything the user should know. */
-const FIELD: Record<string, string> = { title: "title", subtitle: "subtitle", takeaway: "takeaway", kicker: "kicker", footnote: "footnote", source: "source", notes: "notes", chart: "chart", table: "table", cards: "cards", steps: "steps", number: "number", body: "text", focus: "highlight" };
+const FIELD: Record<string, string> = { title: "title", subtitle: "subtitle", takeaway: "takeaway", kicker: "kicker", footnote: "footnote", source: "source", notes: "notes", notesTitle: "notes heading", caption: "caption", chart: "chart", table: "table", cards: "cards", steps: "steps", number: "number", body: "text", focus: "highlight" };
 const NEXT = "What would you like to change next?";
 function codeReply(intent: string, r: CallResult, slide: Slide | null | undefined): string {
   const extra: string[] = [];

@@ -66,7 +66,7 @@ export const STYLES: Record<Style, StyleGuide> = {
     rules: [
       "The title is the topic in 1–3 words: 'Unit economics', 'The problem', 'Market'. Never a sentence.",
       "Every content slide has a subtitle: the claim in one short sentence, ending with a full stop.",
-      "One idea per slide. Prefer a single big number over a paragraph. Cut every word that does not change the meaning.",
+      "One idea per slide. Prefer a big figure over a paragraph. Cut every word that does not change the meaning.",
       "Leave optional detail empty unless it is essential. `footnote` and `source` are rare.",
     ],
   },
@@ -108,7 +108,7 @@ const FRAME: Record<string, FieldDef> = {
   kicker: f("text", "Small label above the title. Optional: defaults to the current section name.", { max: 40, styles: CONSULTING }),
   title: f("markup", "", { required: true, max: { consulting: 105, pitch: 20 },
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
-  subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; at most 2 lines.", { required: true, max: 90, styles: PITCH }),
+  subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; one line.", { required: true, max: 60, styles: PITCH }),
   takeaway: f("markup", "Optional one-line conclusion at the bottom. Must fit on ONE line.", { max: { consulting: 75, pitch: 42 } }),
   footnote: f("markup", "Optional footnote: definitions, caveats, assumptions.", { max: 110 }),
   source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
@@ -182,6 +182,7 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
         value: f("number", "The first item: the starting total. A change: signed (3.1 or -1.2). A total: leave it out and code computes it."),
         total: f("boolean", "A subtotal or end total: code draws it from zero at the running sum.", { default: false }),
         focus: f("boolean", "Highlight the driver the title is about. At most one.", { default: false }),
+        tone: f("enum", "A change only, and only when the user asks for red or green: `neg` or `pos`. Steps are grey by default; the focus carries the colour.", { values: ["neg", "pos"] }),
       } }),
     }),
     periods: f("list", "Timeline only. Column labels, in order: 'Q1', 'Q2', 'Jan'.", { items: { min: 3, max: 16 }, of: f("text", "Period label.", { max: 8 }) }),
@@ -204,10 +205,14 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
   },
 });
 
+/* An exhibit caption over a chart or table, and an optional heading over its notes. */
+const CAPTION = f("text", "What the chart or table shows, stated plainly: the measure, its scope and period, then ' · ' and the unit. 'Annual recurring revenue, FY25–FY26 · £m', 'SME cards compared'. One line. Consulting: always write one. Pitch: leave it out unless the user asks.", { max: 48 });
+const NOTES_TITLE = f("text", "A one- or two-word heading over the notes: 'Notes', 'What drives it'. Only when the user asks for it; never by default. Not with a takeaway.", { max: 20 });
+
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
 export const NOTE_POINTS = false;
-const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table. Add them only if each says something the body does not already show; in pitch, prefer none. Numbers are added automatically.", {
+const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table: 3, or none. Add them only if each says something the body does not already show; in pitch, prefer none. Two notes only restate the title and takeaway: write a third or leave them out. Numbers are added automatically.", {
   items: { min: 2, max: 4 },
   of: f("object", "One observation.", { fields: {
     title: f("markup", "The observation as a short headline.", { required: true, max: 28 }),
@@ -225,9 +230,9 @@ export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
     summary: "A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it.",
     use: "Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.",
-    fields: { chart: CHART, focus: FOCUS, notes: notes(NOTE_POINTS) },
+    fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 4 workstreams of up to 20 characters).", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "At most 3 notes when any note has text, and at most 3 in pitch.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 4 workstreams of up to 20 characters).", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
@@ -243,12 +248,14 @@ export const MENU: Record<TemplateId, MenuEntry> = {
           style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
         } }) }),
       } }),
+      caption: CAPTION,
       focus: FOCUS,
       notes: notes(false),
+      notesTitle: NOTES_TITLE,
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Row budget: a row costs 1, a row with a cell note 1.5, a takeaway 1.5. Consulting: at most 10.5. Pitch: at most 7 (cell notes and muted rows are hidden in pitch).",
+      "Row budget: a row costs 1, a row with a cell note 1.5, a takeaway 1.5, a caption 1. Consulting: at most 10.5. Pitch: at most 7 (cell notes and muted rows are hidden in pitch).",
       "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters.",
     ],
   },
@@ -338,7 +345,6 @@ export const MENU: Record<TemplateId, MenuEntry> = {
 export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the first slide of a deck", "cover"],
   ["the start of a new part in a deck of 8+ slides", "section"],
-  ["one number that proves the argument (a size, a cost, a gap)", "number"],
   ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time", "chart"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
@@ -363,9 +369,15 @@ export function fieldsFor(id: string, style: Style): Record<string, FieldDef> {
   return Object.fromEntries(Object.entries(all).filter(([, d]) => inStyle(d, style)));
 }
 
-/** One line per entry: what the router and planning prompt see. */
+/** Templates the agent does not create while their layout is being redone. Existing slides still render and
+    validate. `number` waits for its quote-like layout (no title, the number and a line of text). */
+export const ARCHIVED: readonly TemplateId[] = ["number"];
+/** The templates the agent may pick: the menu minus the archived ones. */
+export const OFFERED = (Object.keys(MENU) as TemplateId[]).filter((id) => !ARCHIVED.includes(id));
+
+/** One line per offered entry: what the router and planning prompt see. */
 export function catalogue(): string {
-  return Object.entries(MENU).map(([id, t]) => `${id}: ${t.summary} Use when: ${t.use}`).join("\n");
+  return OFFERED.map((id) => `${id}: ${MENU[id].summary} Use when: ${MENU[id].use}`).join("\n");
 }
 
 /** A field definition resolved for one style: plain numbers, no style maps. */
@@ -557,6 +569,8 @@ function checkNotes(s: Slide, style: Style, out: Out): void {
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
   const textLen = list.reduce((sum, n) => sum + (n?.text ? plain(n.text).length : 0), 0);
   if (s.takeaway && textLen > 200) out.errors.push(`notes[].text: ${textLen} characters in total; with a takeaway the limit is 200. Shorten the notes or drop the takeaway.`);
+  // The heading takes a header row from the notes column; with a takeaway there is no room for both.
+  if (s.notesTitle && s.takeaway) out.errors.push("notesTitle: a notes heading and a takeaway do not fit together. Drop the notes heading, or the takeaway.");
 }
 
 function checkRules(s: Slide, style: Style, out: Out): void {
@@ -590,8 +604,8 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       const noted = (r: (typeof rows)[number]) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
-      const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0), budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5). Cut rows, drop cell notes or drop the takeaway.`);
+      const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0), budget = style === "pitch" ? 7 : 10.5;
+      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5, caption = 1). Cut rows, drop cell notes, the takeaway or the caption.`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
@@ -659,7 +673,7 @@ export function validate(slide: unknown, style: Style = "consulting"): Validatio
   const out: Out = { errors: [], warnings: [] };
   if (!slide || typeof slide !== "object") return { errors: ["slide: must be an object."], warnings: [] };
   const obj = fieldsOf(slide);
-  if (!isTemplate(obj.template)) return { errors: [`template: "${String(obj.template)}" does not exist. Use one of: ${Object.keys(MENU).join(", ")}.`], warnings: [] };
+  if (!isTemplate(obj.template)) return { errors: [`template: "${String(obj.template)}" does not exist. Use one of: ${OFFERED.join(", ")}.`], warnings: [] };
   const fields = fieldsFor(obj.template, style);
   for (const [k, def] of Object.entries(fields)) check(def, obj[k], k, style, out);
   for (const k of Object.keys(obj)) if (k !== "template" && !fields[k]) out.errors.push(`${k}: not a field of "${obj.template}" in ${style}. Allowed: ${Object.keys(fields).join(", ")}.`);

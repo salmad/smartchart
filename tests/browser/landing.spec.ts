@@ -6,7 +6,7 @@ test('landing shows every starter and picking one creates a one-slide deck', asy
   await page.goto('/new')
   const tiles = page.getByRole('button', { name: /Trend with reasons|Comparison table|Roadmap/ })
   await expect(page.getByRole('heading', { name: 'What should this slide say?' })).toBeVisible()
-  await expect(page.locator('[data-starter]')).toHaveCount(17)
+  await expect(page.locator('[data-starter]')).toHaveCount(16)
   await tiles.first().dblclick()
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
   await expect.poll(async () => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{}').decks ?? {}).length)).toBe(1)
