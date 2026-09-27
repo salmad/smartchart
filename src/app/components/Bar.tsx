@@ -3,6 +3,7 @@ import type { Style, Theme } from '@/engine/types'
 import { Button } from '@/app/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select'
 import { cn } from '@/app/lib/utils'
+import { go } from '@/app/route'
 import { AccentPicker } from './AccentPicker'
 
 export interface DeckOption { id: string; label: string }
@@ -18,7 +19,7 @@ export interface BarProps {
 export function Bar(p: BarProps) {
   return (
     <header className="flex h-14 items-center gap-6 border-b border-line pl-5 pr-4 max-[900px]:h-auto max-[900px]:flex-wrap max-[900px]:gap-x-3 max-[900px]:gap-y-2.5 max-[900px]:px-4 max-[900px]:py-3">
-      <div className="flex min-w-0 items-baseline gap-2.5 max-[900px]:flex-1"><b className="font-semibold tracking-[-.01em]">SmartChart</b></div>
+      <div className="flex min-w-0 items-baseline gap-2.5 max-[900px]:flex-1"><a href="/" onClick={(e) => { e.preventDefault(); go('/') }} className="font-semibold tracking-[-.01em]">SmartChart</a></div>
       <div className="mx-auto flex gap-2.5 max-[900px]:order-3 max-[900px]:m-0 max-[900px]:w-full">
         <Seg label="Deck style" value={p.deckStyle} disabled={p.hasSlides} onChange={p.onStyle}
           options={[['consulting', 'Consulting'], ['pitch', 'Pitch']]} />

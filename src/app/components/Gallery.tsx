@@ -11,7 +11,7 @@ const STYLES: [Style, string, string][] = [
 ]
 
 /** The empty state: every starter, live in the chosen style, palette and accent. Picking one starts a deck. */
-export function Landing({ deckStyle: style, theme, accent, onStyle, onPick }: Props) {
+export function Gallery({ deckStyle: style, theme, accent, onStyle, onPick }: Props) {
   return (
     <div className="min-h-0 overflow-y-auto px-8 pb-16 pt-9 max-[900px]:order-1 max-[900px]:overflow-visible max-[900px]:px-4 max-[900px]:pt-6">
       <div className="mx-auto grid max-w-[1400px] gap-10">

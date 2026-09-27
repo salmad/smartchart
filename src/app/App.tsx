@@ -3,7 +3,7 @@ import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
-import { Landing } from './components/Landing'
+import { Gallery } from './components/Gallery'
 import { AddSlide } from './components/AddSlide'
 import { Present } from './components/Present'
 import { TooltipProvider } from './components/ui/tooltip'
@@ -15,6 +15,7 @@ import { deckOf, toSaved } from './state'
 import { deckList, deckName, localDeckRepo, newDeckId, type Item, type Store } from './store'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
+import { go, takePendingPrompt, type Route } from './route'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const LANDING = 'Pick a ready-made slide, or describe your own. Paste numbers, a table or notes and say what the slide should argue.'
@@ -22,12 +23,13 @@ const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversa
 const STORAGE_FULL = "This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need."
 
 /** Holds the state, loads and saves decks, and picks the screen. */
-export function App() {
+export function App({ route }: { route: Route }) {
   const [s, app] = useAppState()
   const repo = useMemo(() => localDeckRepo(), [])
   const store = useRef<Store>({ active: null, decks: {} })
   const [, setSaved] = useState(0) // re-renders the deck list after a save
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
+  const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const [presenting, setPresenting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   const deck = deckOf(s)
@@ -65,11 +67,14 @@ export function App() {
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
-      const last = store.current.decks[store.current.active ?? ''] ?? deckList(store.current)[0]
-      if (last) openDeck(last.id)
-      else newDeck()
+      const wanted = route.name === 'deck' ? store.current.decks[route.id] : undefined
+      if (wanted) { openDeck(wanted.id); return }
+      newDeck()
+      // A prompt typed on the site builds the first slide, in the style picked there.
+      const pending = parsePending(takePendingPrompt())
+      if (pending && live) { app.dispatch({ type: 'set', patch: { style: pending.style } }); void sendRef.current?.(pending.text) }
     })()
-  }, [app, repo, openDeck, newDeck])
+  }, [app, repo, openDeck, newDeck, route])
 
   // Save 250 ms after the last change, never mid-turn; one chat warning if the browser refuses.
   useEffect(() => {
@@ -79,6 +84,7 @@ export function App() {
       if (!saved) return
       store.current.decks[saved.id] = saved
       store.current.active = saved.id
+      if (location.pathname !== `/d/${saved.id}`) go(`/d/${saved.id}`, { replace: true })
       void repo.save(store.current).then((ok) => {
         if (!ok && !warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: STORAGE_FULL } }) }
         setSaved((n) => n + 1)
@@ -142,13 +148,14 @@ export function App() {
     if (app.getState().view !== 'editor') app.dispatch({ type: 'set', patch: { view: 'editor' } })
     void send(text)
   }, [app, send])
+  sendRef.current = onSend
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
   // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
   const onUse = useCallback((st: Starter) => app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }), [app])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }), [app])
   const stage = s.view === 'landing'
-    ? <Landing deckStyle={s.style} theme={s.theme} accent={s.accent} onStyle={setStyle} onPick={onPick} />
+    ? <Gallery deckStyle={s.style} theme={s.theme} accent={s.accent} onStyle={setStyle} onPick={onPick} />
     : s.view === 'add'
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
@@ -164,3 +171,12 @@ export function App() {
   )
 }
 
+
+function parsePending(raw: string | null): { text: string; style: Style } | null {
+  if (!raw) return null
+  try {
+    const p = JSON.parse(raw) as { text?: unknown; style?: unknown }
+    if (typeof p.text === 'string' && p.text.trim()) return { text: p.text, style: p.style === 'pitch' ? 'pitch' : 'consulting' }
+  } catch { /* a bare string from an older page */ }
+  return { text: raw, style: 'consulting' }
+}

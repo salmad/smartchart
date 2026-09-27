@@ -16,6 +16,21 @@
      app's wrappers; SVG strokes inherit, so every mark would turn dotted. Each slide frame resets them. */
   .slide-frame { stroke: none; stroke-width: 1; stroke-dasharray: none; }
 
+  /* The public site: one measure for every section, so headings and content share a left edge. */
+  .site-wrap { @apply mx-auto w-full max-w-[1440px] px-10 max-[700px]:px-4; }
+  .site-section { @apply site-wrap grid gap-14 py-36 max-[900px]:gap-10 max-[900px]:py-20; }
+  .site-head { @apply grid max-w-[760px] gap-4; }
+  .site-h2 { @apply max-w-[20ch] font-display text-[clamp(38px,4.6vw,64px)] font-extrabold leading-[.98] tracking-[-.015em] [font-stretch:78%] [text-wrap:balance]; }
+  .site-lede { @apply max-w-[56ch] text-[18px] leading-[1.55] text-type-2; }
+  .site-night { @apply bg-stage text-[#F3EEE4]; }
+  .site-night .site-lede { color: #A39B8E; }
+  .site ::selection { background: #121211; color: #F5F5F3; }
+
+  /* The site's before/after: --x is the divider's position, set from BeforeAfter as it moves. */
+  .ba { --x: 50%; }
+  .ba-before { clip-path: inset(0 calc(100% - var(--x)) 0 0); }
+  .ba-line { left: var(--x); }
+
   .spinner { @apply mr-2 inline-block size-3 animate-spin rounded-full border-[1.5px] border-line-2 border-t-ink align-[-1px]; animation-duration: .8s; }
 
   /* The custom swatch: a colour wheel, and the chosen colour as a dot in its middle when it is on.
