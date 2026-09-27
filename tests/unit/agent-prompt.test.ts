@@ -27,7 +27,7 @@ test("working block: current JSON, open issues, failed checks", () => {
 
 test("the example the agent copies is plain: no takeaway, notes, kicker, footnote, source or annotations", async () => {
   const { exampleFor } = await import("../../src/engine/agent/prompts");
-  for (const id of ["chart", "table", "number", "steps", "cards"]) for (const style of ["consulting", "pitch"]) {
+  for (const id of ["chart", "table", "number", "steps", "cards"] as const) for (const style of ["consulting", "pitch"] as const) {
     const ex = JSON.parse(exampleFor(id, style));
     for (const k of ["takeaway", "notes", "kicker", "footnote", "source"]) assert.equal(ex[k], undefined, `${id} ${style} ${k}`);
     assert.equal(ex.chart?.annotations, undefined);

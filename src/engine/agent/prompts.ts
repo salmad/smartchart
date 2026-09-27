@@ -1,9 +1,7 @@
 /* Prompt pieces shared by the agent and Jev (spec 9.3): the style block, worked examples, the picking guide. */
 import { MENU, PICKING_GUIDE, STYLES } from "../slides/schema";
-import { EXAMPLES } from "../slides/examples";
+import { EXAMPLES, type Example } from "../slides/examples";
 import type { Slide, Style, TemplateId } from "../types";
-
-interface Example { consulting?: object; pitch?: object; name?: string; [shared: string]: unknown }
 
 // Examples are fixture data: the shared keys and the style's keys together make a whole slide.
 const specFor = (ex: Example, style: Style): Slide => { const { consulting, pitch, name, ...shared } = ex; return { ...shared, ...(style === "pitch" ? pitch : consulting) } as unknown as Slide; };

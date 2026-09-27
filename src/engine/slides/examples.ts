@@ -1,6 +1,10 @@
 /* Example deck and stress deck. Each example holds what the agent writes per style;
    shared keys (template, chart, table) are written once because the review page shows both styles. */
-import { fieldsFor } from "./schema";
+import { fieldsFor, type FieldDef } from "./schema";
+import type { Chart, Slide, Style, TemplateId } from "../types";
+
+/** One example: shared keys (template, chart, table) plus what the agent writes per style. */
+export interface Example { template: TemplateId; name: string; consulting?: Partial<Slide>; pitch?: Partial<Slide>; [shared: string]: unknown }
 
 export const FOOTER = "FinBridge · Seed memorandum";
 
@@ -13,7 +17,7 @@ const UNIT_BARS = {
   ],
 };
 
-export const EXAMPLES = [
+export const EXAMPLES: Example[] = [
   {
     template: "cover", name: "Cover",
     consulting: { title: "FinBridge", subtitle: "A revolving credit card and business account for UK small and medium-sized businesses." },
@@ -343,28 +347,29 @@ export const EXAMPLES = [
 /* ═════════════ Stress deck (?stress=1): every field filled to its limit, within the rules ═════════════
    The claim under test: if a slide passes validate(), it fits. */
 const WORDS = ["market", "credit", "the", "growth", "customers", "revenue", "and", "for", "business", "card", "a", "lending", "of", "spend"];
-const W = (n) => { let t = "", i = 0; while (t.length < n) t += (t ? " " : "") + WORDS[i++ % WORDS.length]; return t.slice(0, n).trim(); };
-const TIMES = (n) => Array.from({ length: n });
+const W = (n: number) => { let t = "", i = 0; while (t.length < n) t += (t ? " " : "") + WORDS[i++ % WORDS.length]; return t.slice(0, n).trim(); };
+const TIMES = (n: number) => Array.from({ length: n });
 
 /** The limit of a field path for a style, read from the registry so the stress deck follows the schema. */
-function max(id, style, ...path) {
-  let d = { fields: fieldsFor(id, style) };
-  for (const k of path) d = d.fields?.[k] || d.of?.fields?.[k];
-  if (d.type === "list") d = d.of;
-  return typeof d.max === "object" ? d.max[style] : d.max;
+function max(id: TemplateId, style: Style, ...path: string[]): number {
+  let d: Partial<FieldDef> | undefined = { fields: fieldsFor(id, style) };
+  for (const k of path) d = d?.fields?.[k] || d?.of?.fields?.[k];
+  if (d?.type === "list") d = d.of;
+  // A field with no limit gives 0, which W() turns into empty text.
+  return (typeof d?.max === "object" ? d.max[style] : d?.max) ?? 0;
 }
 
-export function stressFor(st) {
+export function stressFor(st: Style): (Slide & { name: string })[] {
   const c = st === "consulting";
-  const frame = (id) => ({
+  const frame = (id: TemplateId) => ({
     ...(c ? { kicker: W(40) } : { subtitle: W(max(id, st, "subtitle")) }),
     title: W(max(id, st, "title")), takeaway: W(max(id, st, "takeaway")), footnote: W(110), source: W(110),
   });
-  const bars = { categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6"], format: "£{v}m", series: [
+  const bars: Chart = { categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6"], format: "£{v}m", series: [
     { name: "Interest income", mark: "bar", color: "neutral", values: [1, 3, 14, 42, 85, 99] }, { name: "Interchange", mark: "bar", color: "focus", values: [1, 2, 11, 36, 80, 95] },
     { name: "Gross margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 24, 31, 36, 38, 40] }] };
-  const notes = (n, withPoint) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(i ? 75 : 50) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
-  const rows = (n, noted) => TIMES(n).map(() => ({ cells: [W(noted ? 40 : 24), noted ? { value: "(1,234)", note: "8% × £10.5k" } : "(1,234)", "12,345", "(34)"] }));
+  const notes = (n: number, withPoint: boolean) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(i ? 75 : 50) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
+  const rows = (n: number, noted: boolean) => TIMES(n).map(() => ({ cells: [W(noted ? 40 : 24), noted ? { value: "(1,234)", note: "8% × £10.5k" } : "(1,234)", "12,345", "(34)"] }));
   return [
     { template: "cover", name: "Stress · cover", title: W(max("cover", st, "title")), subtitle: W(max("cover", st, "subtitle")) },
     { template: "section", name: "Stress · section", title: W(max("section", st, "title")), subtitle: W(max("section", st, "subtitle")) },

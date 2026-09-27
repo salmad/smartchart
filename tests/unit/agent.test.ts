@@ -1,15 +1,26 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { runTurn } from "../../src/engine/agent/agent";
+import type { AgentDeck, AgentSlide, MeasureFn } from "../../src/engine/agent/agent";
+import type { ChatMessage } from "../../src/engine/agent/llm";
+import type { Slide } from "../../src/engine/types";
 import { fakeAgent, fakeJev, say, toolCall } from "./fakes";
+import { must } from "./must";
 
-const CHART = { template: "chart", title: "Revenue grew [[4.5×]] from £2.1m to £9.4m", source: "Company accounts",
+const CHART: Slide = { template: "chart", title: "Revenue grew [[4.5×]] from £2.1m to £9.4m", source: "Company accounts",
   chart: { categories: ["2022", "2023", "2024", "2025"], format: "£{v}m", series: [{ name: "Revenue", mark: "bar", color: "focus", values: [2.1, 4.8, 7.2, 9.4] }] } };
-const setup = (slides = []) => {
-  const measure = () => []; measure.lines = 1;
-  return { deck: { style: "consulting", theme: "ink", slides }, history: [], working: new Set(), measure, log: () => {} };
+const noIssues = (): string[] => [];
+const setup = (slides: AgentSlide[] = []) => {
+  const deck: AgentDeck = { style: "consulting", theme: "ink", slides };
+  const measure: MeasureFn = Object.assign(noIssues, { lines: 1 });
+  return { deck, history: [] as ChatMessage[], working: new Set<string>(), measure, log: () => {} };
 };
-const reservedId = (messages) => JSON.parse(messages.findLast((m) => m.role === "tool").content).slideId;
+/** A title over 40 characters wraps to 3 lines. */
+const wrapsLongTitles = (): MeasureFn => Object.assign((s: Slide) => (s.title.length > 40 ? ["title wraps to 3 lines (max 2); shorten it"] : []), { lines: 1 });
+const text = (m: ChatMessage | undefined) => m?.content ?? "";
+const reservedId = (messages: ChatMessage[]) => JSON.parse(text(messages.filter((m) => m.role === "tool").at(-1))).slideId;
+const slideAt = (deck: AgentDeck, i: number) => must(deck.slides[i]?.slide, `slides[${i}].slide`);
+const seriesOf = (s: Slide) => must(s.chart?.series, "chart.series");
 
 test("new slide: PRE creates it, one GLM call writes it and ends the turn", async () => {
   const ctx = setup();
@@ -19,21 +30,21 @@ test("new slide: PRE creates it, one GLM call writes it and ends the turn", asyn
   assert.equal(r.modelCalls, 1);
   assert.equal(r.reply, "Added the revenue chart.");
   assert.equal(ctx.deck.slides.length, 1);
-  assert.equal(ctx.deck.slides[0].slide.chart.series[0].mark, "bar");
-  assert.equal(ctx.history.at(-1).content, "Added the revenue chart.");
+  assert.equal(seriesOf(slideAt(ctx.deck, 0))[0].mark, "bar");
+  assert.equal(text(ctx.history.at(-1)), "Added the revenue chart.");
 });
 
 test("edit: PRE reads the selected slide; one patch changes only the title", async () => {
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   const agentStep = fakeAgent([(m) => {
-    assert.ok(m.at(-1).content.startsWith("Working slides"), "working block is last");
-    assert.ok(m.at(-1).content.includes("s_ab12"));
+    assert.ok(text(m.at(-1)).startsWith("Working slides"), "working block is last");
+    assert.ok(text(m.at(-1)).includes("s_ab12"));
     return toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]] in three years" }, reply: "Shortened the title." });
   }]);
   const r = await runTurn({ ...ctx, text: "Shorter title", selection: { slideId: "s_ab12" },
     models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
   assert.equal(r.modelCalls, 1);
-  const after = ctx.deck.slides[0].slide;
+  const after = slideAt(ctx.deck, 0);
   assert.equal(after.title, "Revenue grew [[4.5×]] in three years");
   assert.deepEqual({ ...after, title: null }, { ...CHART, title: null });
   assert.ok(ctx.working.has("s_ab12"));
@@ -43,7 +54,7 @@ test("edit_slide on an existing slide is refused", async () => {
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   const agentStep = fakeAgent([toolCall("edit_slide", { slideId: "s_ab12", slide: CHART }), say("Done.")]);
   await runTurn({ ...ctx, text: "x", selection: null, models: { agentStep, jev: fakeJev({ intent: ["other", 0.9] }) } });
-  const out = JSON.parse(ctx.history.find((m) => m.role === "tool").content);
+  const out = JSON.parse(text(ctx.history.find((m) => m.role === "tool")));
   assert.equal(out.applied, false);
   assert.ok(out.error.includes("patch_slide"));
 });
@@ -52,38 +63,38 @@ test("a patch with a shape error applies nothing; the next step sees the old sli
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   const agentStep = fakeAgent([toolCall("patch_slide", { slideId: "s_ab12", set: { "chart.series[0].mark": "pie" } }), say("Could not.")]);
   await runTurn({ ...ctx, text: "x", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["other", 0.9] }) } });
-  assert.equal(ctx.deck.slides[0].slide.chart.series[0].mark, "bar");
-  assert.equal(JSON.parse(ctx.history.find((m) => m.role === "tool").content).applied, false);
+  assert.equal(seriesOf(slideAt(ctx.deck, 0))[0].mark, "bar");
+  assert.equal(JSON.parse(text(ctx.history.find((m) => m.role === "tool"))).applied, false);
 });
 
 test("over-long text is shortened by a small call, not another agent step", async () => {
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
-  ctx.measure = (s) => (s.title.length > 40 ? ["title wraps to 3 lines (max 2); shorten it"] : []); ctx.measure.lines = 1;
+  ctx.measure = wrapsLongTitles();
   const agentStep = fakeAgent([
     toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]] from £2.1m to £9.4m over three straight years of growth" }, reply: "Done." }),
-    (m) => { assert.ok(m[0].content.startsWith("You shorten")); return say("Revenue grew [[4.5×]], £2.1m to £9.4m"); },
+    (m) => { assert.ok(text(m[0]).startsWith("You shorten")); return say("Revenue grew [[4.5×]], £2.1m to £9.4m"); },
     say("Revenue grew [[4.5×]], £2.1m to £9.4m"),
   ]);
   const r = await runTurn({ ...ctx, text: "x", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
   assert.equal(r.modelCalls, 2);
   assert.equal(r.reply, "Done.");
-  assert.equal(ctx.deck.slides[0].slide.title, "Revenue grew [[4.5×]], £2.1m to £9.4m");
+  assert.equal(slideAt(ctx.deck, 0).title, "Revenue grew [[4.5×]], £2.1m to £9.4m");
   assert.deepEqual(ctx.deck.slides[0].issues, []);
 });
 
 test("a shortened text that drops a figure is rejected; the agent fixes it", async () => {
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
-  ctx.measure = (s) => (s.title.length > 40 ? ["title wraps to 3 lines (max 2); shorten it"] : []); ctx.measure.lines = 1;
+  ctx.measure = wrapsLongTitles();
   const agentStep = fakeAgent([
     toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]] in 36 months across all of our customer segments" } }),
     say("Revenue grew [[4.5×]] across segments"), say("Revenue grew [[4.5×]] across segments"),
-    (m) => { assert.ok(m.at(-1).content.includes("in 36 months across all")); return toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]] in 36 months" } }); },
+    (m) => { assert.ok(text(m.at(-1)).includes("in 36 months across all")); return toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]] in 36 months" } }); },
     say("Shortened."),
   ]);
   const r = await runTurn({ ...ctx, text: "x", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["other", 0.9] }) } });
   assert.equal(r.reply, "Shortened.");
-  assert.equal(ctx.deck.slides[0].slide.title, "Revenue grew [[4.5×]] in 36 months");
-  ctx.history.filter((m) => m.role === "tool" && m.content.includes("\"applied\"")).forEach((m) => assert.ok(!m.content.includes("\"chart\"")));
+  assert.equal(slideAt(ctx.deck, 0).title, "Revenue grew [[4.5×]] in 36 months");
+  ctx.history.filter((m) => m.role === "tool" && text(m).includes("\"applied\"")).forEach((m) => assert.ok(!text(m).includes("\"chart\"")));
 });
 
 test("a sure new slide that ends on a clean write needs no reply call", async () => {
@@ -116,19 +127,19 @@ test("after a turn the history drops template cards, examples and whole-slide JS
 test("patch_slide without slideId uses the one working slide; the working set starts with the selection", async () => {
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }, { id: "s_cd34", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   ctx.working.add("s_cd34");
-  const agentStep = fakeAgent([(m) => { assert.ok(!m.at(-1).content.includes("s_cd34")); return toolCall("patch_slide", { set: { title: "Revenue grew [[4.5×]]" }, reply: "Done." }); }]);
+  const agentStep = fakeAgent([(m) => { assert.ok(!text(m.at(-1)).includes("s_cd34")); return toolCall("patch_slide", { set: { title: "Revenue grew [[4.5×]]" }, reply: "Done." }); }]);
   await runTurn({ ...ctx, text: "x", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
-  assert.equal(ctx.deck.slides[0].slide.title, "Revenue grew [[4.5×]]");
+  assert.equal(slideAt(ctx.deck, 0).title, "Revenue grew [[4.5×]]");
 });
 
 test("auto choices are resolved by Jev in the write path", async () => {
   const ctx = setup();
-  const slide = { ...CHART, focus: "auto", chart: { ...CHART.chart, series: [{ name: "Revenue", mark: "auto", values: [2.1, 4.8, 7.2, 9.4] }] } };
+  const slide: Slide = { ...CHART, focus: "auto", chart: { ...CHART.chart, series: [{ name: "Revenue", mark: "auto", values: [2.1, 4.8, 7.2, 9.4] }] } };
   const agentStep = fakeAgent([(m) => toolCall("edit_slide", { slideId: reservedId(m), slide, reply: "Done." })]);
   await runTurn({ ...ctx, text: "x", selection: null, models: { agentStep, jev: fakeJev({ intent: ["new_slide", 0.9], template: ["chart", 0.9], mark0: ["line", 0.8], focus: ["item0", 0.9] }) } });
-  const s = ctx.deck.slides[0].slide;
-  assert.equal(s.chart.series[0].mark, "line");
-  assert.equal(s.chart.series[0].color, "focus");
+  const s = slideAt(ctx.deck, 0);
+  assert.equal(seriesOf(s)[0].mark, "line");
+  assert.equal(seriesOf(s)[0].color, "focus");
   assert.equal(s.focus, undefined);
 });
 
@@ -152,14 +163,14 @@ test("a series added by a patch takes the mark of a series in the same unit", as
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   const agentStep = fakeAgent([toolCall("patch_slide", { slideId: "s_ab12", set: { "chart.series[1]": { name: "Costs", mark: "line", values: [1, 2, 3, 4] } }, reply: "Added." })]);
   await runTurn({ ...ctx, text: "Add costs 1, 2, 3, 4", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
-  assert.equal(ctx.deck.slides[0].slide.chart.series[1].mark, "bar");
+  assert.equal(seriesOf(slideAt(ctx.deck, 0))[1].mark, "bar");
 });
 
 test("building a new slide hides the selected slide unless it was read this turn", async () => {
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   const agentStep = fakeAgent([
     toolCall("create_slide", { about: "plan", template: "steps" }),
-    (m) => { assert.ok(!m.at(-1).content.includes("s_ab12"), "old slide not in the working block"); return say("Which steps?"); },
+    (m) => { assert.ok(!text(m.at(-1)).includes("s_ab12"), "old slide not in the working block"); return say("Which steps?"); },
   ]);
   await runTurn({ ...ctx, text: "a plan", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["ask", 0.5] }) } });
 });
@@ -168,6 +179,6 @@ test("a patch path missing its object prefix is completed when unambiguous", asy
   const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
   const agentStep = fakeAgent([toolCall("patch_slide", { slideId: "s_ab12", set: { "series[0].name": "Sales" }, reply: "Renamed." })]);
   await runTurn({ ...ctx, text: "rename the series to Sales", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.9] }) } });
-  assert.equal(ctx.deck.slides[0].slide.chart.series[0].name, "Sales");
-  assert.ok(!("series" in ctx.deck.slides[0].slide));
+  assert.equal(seriesOf(slideAt(ctx.deck, 0))[0].name, "Sales");
+  assert.ok(!("series" in slideAt(ctx.deck, 0)));
 });

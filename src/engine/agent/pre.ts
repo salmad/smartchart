@@ -6,7 +6,8 @@ import type { Slide, Style } from "../types";
 
 /** What PRE reads of the deck: the slides in order (a pending slide has no content yet). */
 export interface PreDeck { style: Style; slides: { id: string; slide: Slide | null }[] }
-export type Selection = { slideId?: string } | null | undefined;
+/** The user's selection: a slide, and optionally a component on it (a path such as cards[2]). */
+export type Selection = { slideId?: string; path?: string } | null | undefined;
 export interface Pre { intent: string; p: number; template: string; probabilities: Record<string, number>; lead: string | null; after: string; ms: number }
 /** What isSure and firstCall read of a PRE result. */
 export type PreChoice = Pick<Pre, "intent" | "p" | "template" | "after">;

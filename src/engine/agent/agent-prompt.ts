@@ -1,11 +1,19 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
 import { MARKUP, MENU } from "../slides/schema";
 import { styleBlock } from "./prompts";
+import type { Check } from "./checks";
+import type { Selection } from "./pre";
+import type { Slide, Style, Theme } from "../types";
+
+/** A tool in OpenAI function format; parameters are JSON Schema. */
+export interface ToolDef { type: "function"; function: { name: string; description: string; parameters: { type: "object"; required: string[]; properties: Record<string, Record<string, unknown>> } } }
+/** A slide as the agent sees it: id, content and what is still open on it. */
+export interface WorkingSlide { id: string; slide: Slide; issues?: string[]; warnings?: string[]; checks?: Check[] }
 
 const templates = () => Object.entries(MENU).map(([id, t]) => `- ${id}: ${t.summary} Use when: ${t.use}`).join("\n");
 
 /** System prompt: fixed for the whole deck (the style is locked after the first slide). */
-export function agentSystem(style) {
+export function agentSystem(style: Style): string {
   return `You are the SmartChart slide agent. You talk with the user and build and edit their slide deck through tools. You write slide content as JSON; code owns layout, colours and sizes, so you never design.
 
 # Hard rules
@@ -55,7 +63,7 @@ const ID = { type: "string", description: "Slide id from the deck state, e.g. s_
 const REPLY = { type: "string", description: "Your reply to the user, when this write should finish the request. Used only if the write comes back with no issues." };
 
 /** Tool definitions (OpenAI function format), spec 9.5. */
-export const TOOLS = [
+const FUNCTIONS: ToolDef["function"][] = [
   { name: "create_slide", description: "Start a new slide, or change a slide's template. Picks the template (unless you pass one) and returns the slide id, the template, its card, a good example and any values already decided. Writes nothing yet: follow with edit_slide.",
     parameters: { type: "object", required: ["about"], properties: {
       about: { type: "string", description: "The slide's content, keeping the user's words and every figure." },
@@ -71,18 +79,19 @@ export const TOOLS = [
       reply: REPLY } } },
   { name: "read_slide", description: "Add a slide to the Working slides message (its current JSON and issues) and get its template card. Changes nothing.",
     parameters: { type: "object", required: ["slideId"], properties: { slideId: ID } } },
-].map((f) => ({ type: "function", function: f }));
+];
+export const TOOLS: ToolDef[] = FUNCTIONS.map((f) => ({ type: "function", function: f }));
 
 /** State block: rebuilt every user turn and sent as the last message before the user's. */
-export function stateBlock({ style, theme, slides, selection }) {
-  const plainTitle = (t) => String(t || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
-  const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide.template}] ${plainTitle(s.slide.title)}`).join("\n") : "(empty)";
+export function stateBlock({ style, theme, slides, selection }: { style: Style; theme: Theme; slides: { id: string; slide: Slide | null }[]; selection: Selection }): string {
+  const plainTitle = (t: unknown) => String(t || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
+  const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide?.template}] ${plainTitle(s.slide?.title)}`).join("\n") : "(empty)";
   const sel = selection?.slideId ? `${selection.slideId}${selection.path ? ` · component ${selection.path}` : ""}` : "nothing";
   return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}`;
 }
 
 /** Working slides (spec 9.3): rebuilt before every model step, sent last, never stored in the history. */
-export function workingBlock(items) {
+export function workingBlock(items: WorkingSlide[]): string {
   if (!items.length) return "Working slides (current JSON)\n(none yet)";
   return `Working slides (current JSON; this replaces any earlier copy in the conversation)\n\n${items.map((it) => {
     const failed = (it.checks || []).filter((c) => !c.ok && c.id.startsWith("J")).map((c) => `${c.id}: ${c.msg}`);
