@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test'
 async function site(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 })
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Charts that look designed, because they were.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Charts that look designed.' })).toBeVisible()
 }
 
 for (const width of [1440, 390]) {
@@ -71,4 +71,29 @@ test('signed in, / lists your decks; one opens, one is deleted after a confirm',
   await page.getByRole('button', { name: 'Open Acme' }).click()
   await expect(page).toHaveURL(/\/d\/d_a$/)
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
+})
+
+const oneDeck = { id: 'd_a', name: 'Acme', updated: 1, data: { id: 'd_a', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: 1,
+  items: [{ id: 's', slide: { template: 'cover', title: 'Acme', subtitle: 'Board update.' }, status: 'ok', errors: [], warnings: [], checks: [] }] } }
+
+test('a failed save is retried, with one message, and a browser copy kept until it saves', async ({ page }) => {
+  let puts = 0 // the first two saves fail (the second follows the warning at once), then the retry succeeds
+  await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
+  await page.route('**/api/decks**', (r) => {
+    if (r.request().method() === 'PUT') return ++puts <= 2 ? r.fulfill({ status: 500, json: {} }) : r.fulfill({ json: { ok: true } })
+    return r.fulfill({ json: oneDeck })
+  })
+  await page.goto('/d/d_a')
+  await expect(page.getByText('Couldn’t save. Retrying.')).toHaveCount(1)
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('smartchart.journey.decks.v1') ?? '')).toContain('d_a')
+  await expect.poll(() => puts, { timeout: 6000 }).toBeGreaterThanOrEqual(3)
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{"decks":{}}').decks.d_a ?? null)).toBeNull()
+})
+
+test('when the session ends, a save asks to sign in again', async ({ page }) => {
+  await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
+  await page.route('**/api/decks**', (r) => r.request().method() === 'PUT' ? r.fulfill({ status: 401, json: { error: 'Sign in to see your decks.' } }) : r.fulfill({ json: oneDeck }))
+  await page.goto('/d/d_a')
+  await expect(page.getByRole('dialog')).toContainText('Sign in again')
+  await expect(page.getByRole('dialog')).toContainText('Continue with Google')
 })

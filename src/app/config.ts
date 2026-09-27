@@ -4,6 +4,9 @@ export const config = {
   healthUrl: '/api/health',
   /** Deck saves wait this long after the last change. */
   saveDelayMs: 250,
+  /** A failed save is tried again after this long, doubling up to the cap. */
+  saveRetryMs: 2000,
+  saveRetryMaxMs: 30_000,
   dev: import.meta.env.DEV,
   /** Model traces and check ids in the editor: ?debug=1, or localStorage smartchart.debug = 1. */
   debug: (() => {

@@ -18,12 +18,13 @@ import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
 import { SignIn } from './components/SignIn'
+import { findDeck } from './remote'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const LANDING = 'Pick a ready-made slide, or describe your own. Paste numbers, a table or notes and say what the slide should argue.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const STORAGE_FULL = "This browser's storage is full, so this deck is not being saved. Delete a deck you no longer need."
-const NOT_SAVED = 'Couldn’t save this deck just now. It stays open here and saves again with your next change.'
+const NOT_SAVED = 'Couldn’t save. Retrying. A copy is kept in this browser until it saves.'
 const MISSING = 'That deck isn’t in your account.'
 
 interface Props {
@@ -40,6 +41,7 @@ export function App({ route, account, repo }: Props) {
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
+  const retry = useRef({ timer: 0, wait: 0 })
   const [presenting, setPresenting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   const deck = deckOf(s)
 
@@ -83,19 +85,36 @@ export function App({ route, account, repo }: Props) {
     })()
   }, [app, repo, openDeck, newDeck, route, account, say])
 
-  // Save 250 ms after the last change, never mid-turn; one chat warning if the browser refuses.
+  // Signed in, a failed save keeps a copy in this browser and tries again, waiting longer each time;
+  // the copy goes once a save succeeds. One chat warning per run of failures.
+  const persist = useCallback(async (saved: SavedDeck) => {
+    const r = retry.current
+    clearTimeout(r.timer)
+    if (await repo.save(saved)) {
+      if (r.wait) void localDeckRepo().remove(saved.id)
+      r.wait = 0; warned.current = false
+      return
+    }
+    const warn = (text: string) => { if (!warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text } }) } }
+    if (!account) { warn(STORAGE_FULL); return }
+    void localDeckRepo().save(saved)
+    warn(NOT_SAVED)
+    r.wait = Math.min(config.saveRetryMaxMs, r.wait ? r.wait * 2 : config.saveRetryMs)
+    r.timer = window.setTimeout(() => { const now = toSaved(app.getState()); if (now) void persist(now) }, r.wait)
+  }, [app, repo, account])
+  useEffect(() => () => clearTimeout(retry.current.timer), [])
+
+  // Save 250 ms after the last change, never mid-turn.
   useEffect(() => {
     if (!loaded || s.busy || !s.deckId) return
     const t = setTimeout(() => {
       const saved = toSaved(app.getState())
       if (!saved) return
       if (location.pathname !== `/d/${saved.id}`) go(`/d/${saved.id}`, { replace: true })
-      void repo.save(saved).then((ok) => {
-        if (!ok && !warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: account ? NOT_SAVED : STORAGE_FULL } }) }
-      })
+      void persist(saved)
     }, config.saveDelayMs)
     return () => clearTimeout(t)
-  }, [s, loaded, app, repo, account])
+  }, [s, loaded, app, persist])
 
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])
@@ -163,16 +182,6 @@ export function App({ route, account, repo }: Props) {
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>
   )
-}
-
-/** The deck in the URL. Signed in, a deck still in this browser (a visitor's first, or one from before
-    accounts) moves to the account the first time it is opened. */
-async function findDeck(id: string, repo: DeckRepo, account: Account | null): Promise<SavedDeck | null> {
-  const d = await repo.get(id).catch(() => null)
-  if (d || !account) return d
-  const local = localDeckRepo(), mine = await local.get(id)
-  if (mine && await repo.save(mine)) { await local.remove(id); return mine }
-  return mine
 }
 
 function parsePending(raw: string | null): { text: string; style: Style } | null {

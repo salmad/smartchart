@@ -1,6 +1,6 @@
 # SmartChart: landing page, accounts and decks per user
 
-Status: approved to build, 2026-09-27 ("build the way you describe"; the visual bar is the priority). Branch `feat/landing-accounts`.
+Status: built on `feat/landing-accounts`, 2026-09-27; this spec is updated to match what was built. Approved as "build the way you describe"; the visual bar is the priority.
 
 ## 1. Intent
 
@@ -15,8 +15,8 @@ The page sells `docs/product/PRODUCT_INPUT.md`: **the agent configures, it never
 | Framework | Stay on Vite + Vercel functions for this branch | Next.js stays its own migration spec (memory: product-goal-beyond-mvp); the engine is framework-free either way |
 | Routing | A tiny History-API router in `src/app/route.ts`: `/`, `/d/:id`, `/new` | Three routes do not justify a dependency |
 | Auth | Neon Auth (managed Better Auth): **Continue with Google** (Neon's shared credentials, no Google Console) and **email one-time code** | Zero setup; own Google OAuth client is a later production step (§9) |
-| Database | Neon Postgres via `@neondatabase/serverless` (HTTP) from `api/` | Same project as auth; users live in `neon_auth` |
-| Server auth | `Authorization: Bearer <JWT>`; verified with `jose` against Neon Auth's JWKS | Stateless functions |
+| Database | Neon Postgres via `@neondatabase/serverless` (HTTP) from `api/`; the tables create themselves on first use (`create table if not exists`, once per cold start) | Same project as auth; users live in `neon_auth`; no migration step |
+| Server auth | Neon Auth is reached through `/api/auth/*` on our own origin (`handleAuthProxyRequest`), so its session cookies are first-party; `api/` reads the user by asking Neon Auth's `get-session` with those cookies | No tokens in the browser, no third-party cookies; the auth library loads only on sign-in or sign-out |
 | First slide | Anonymous visitors may run **one turn**; the email is asked for to keep the slide and continue | The ask comes after the magic, not before it |
 | Model spend | `/api/glm` and `/api/jev` require a signed-in user **or** an anonymous IP quota (hashed IP, 20 model calls a day) | Closes the v1 "lock down /api" follow-up |
 | "Before" chart | A generic default-slide-tool chart drawn by us; no product is named or copied | Recognisable without trademark use |
@@ -28,9 +28,9 @@ Dark, the app's Ink tokens; Archivo condensed for display (the slides' own face)
 
 1. **Nav:** wordmark · Sign in · **Start free**.
 2. **Hero (the scroll stopper):**
-   - Headline in Archivo, 2 lines max, the problem named plainly (working copy: "Your chart deserves better than the default.").
-   - One-line lede: describe the slide; SmartChart builds it from components designed once, by hand.
-   - **Before / after**, full width, 16:9: left, the default chart (rainbow series, gridlines, legend box, Arial, cramped labels, a topic title "Revenue by Quarter"); right, the same data as a SmartChart slide (action title, one focus colour, direct labels, source). A draggable divider (keyboard: arrows) reveals one over the other; it starts at 50% and eases from 15% to 50% once on first view.
+   - Headline in Archivo, 2 lines max at every desktop width: "Charts that look designed." The left column (headline, lede, prompt) is centred on the before/after.
+   - Lede opens with the payoff: "Because they were." then: describe the slide; SmartChart builds it from components a designer made once.
+   - **Before / after**, full width, 16:9: left, the default chart (rainbow series, gridlines, legend box, Arial, cramped labels, a topic title "Revenue by Quarter"); right, the same data as a SmartChart slide (action title, one focus colour, direct labels, source). A draggable divider (keyboard: arrows) reveals one over the other; it rests at 50% and, the first time it is seen, sweeps once from 90% to 50% (no motion with reduced motion).
    - The **prompt box** under it: textarea + **Build my slide**, and 3 example prompts as chips.
 3. **The problem, three ways** (one line each plus a small drawn visual):
    - **Defaults are noise.** Rainbow series, a legend to decode, gridlines everywhere.
@@ -62,7 +62,7 @@ Responsive: at 390 px every section is one column, the before/after stays 16:9, 
 From the review of the running app:
 - **Bar:** wordmark (link back to *Your decks*) · deck name · style, palette, accent · **Add slide** · **Present**. The deck picker, **Delete**, **New deck** and the Ready pill leave the bar (decks and delete live in *Your decks*; Offline still shows when offline).
 - **Chat:** model traces show only in debug (`?debug=1` or dev with `localStorage.smartchart.debug`).
-- **Checks:** headed "Checked · N rules"; failures first with their message, passes folded into "N passed" (expandable). Rule ids show only in debug.
+- **Checks:** lead with what needs attention ("2 to look at"), each with its message; passes folded into one "N passed" line (expandable). Rule ids show only in debug.
 
 ## 4. Data and API
 
@@ -71,44 +71,48 @@ create table decks (
   id text primary key, user_id text not null, name text not null,
   data jsonb not null, updated_at timestamptz not null default now());
 create index decks_user on decks(user_id, updated_at desc);
-create table anon_usage (ip_hash text, day date, calls int not null default 0, primary key (ip_hash, day));
+create table anon_usage (key text not null, day date not null default current_date, calls int not null default 0, primary key (key, day));
 ```
 
-- `data` is the existing `SavedDeck`; `name` is `deckName()` at save time.
-- `GET /api/decks` → `[{ id, name, updated, slides, first, style, theme, accent }]` (`first` is the first slide, for the card).
+- Created by `api/_lib/db.ts` on first use; there is no separate SQL file. `key` is a salted SHA-256 of the first forwarded IP.
+- `data` is the existing `SavedDeck`; `name` is `deckName()` at save time. A deck id belongs to whoever saved it first: an upsert never takes over another user's row.
+- `GET /api/decks` → `[{ id, name, updated, data }]`, newest first, at most 200 (`data` is the whole deck, so a card draws its first slide; decks are tens of kB).
 - `GET /api/decks?id=` → `SavedDeck`; `PUT /api/decks` (body `SavedDeck`) upserts; `DELETE /api/decks?id=`. Every query is scoped by the verified `user_id`; another user's id answers 404.
-- `DeckRepo` becomes per-deck: `list()`, `get(id)`, `save(deck)`, `remove(id)`. `localDeckRepo` keeps the same key (anonymous and legacy decks); `remoteDeckRepo(token)` calls the API.
+- `DeckRepo` becomes per-deck: `list()`, `get(id)`, `save(deck)`, `remove(id)`. `localDeckRepo` keeps the same key (anonymous and legacy decks, and a copy kept while saves fail); `remoteDeckRepo({ onSignedOut })` calls the API with the session cookie and reports a 401.
 - Legacy browser decks (from v1) are offered once after first sign-in: "Import 3 decks from this browser".
 
 ## 5. Units
 
 | Unit | Does | Depends on |
 |---|---|---|
-| `api/_lib/auth.ts` | `userFrom(request)`: verifies the JWT, returns `{ id, email }` or null | `jose`, `NEON_AUTH_URL` |
-| `api/_lib/db.ts` | `sql` tagged template | `DATABASE_URL` |
-| `api/_lib/quota.ts` | `allow(request)`: user → yes; else counts the hashed IP for today | db |
-| `api/decks.ts` | CRUD above | auth, db |
-| `src/app/auth.ts` | client: `session()`, `signInGoogle()`, `sendCode(email)`, `verifyCode()`, `signOut()`, `token()` | `@neondatabase/auth` |
+| `api/_lib/auth.ts` | `proxyAuth(request)` for `/api/auth/*`; `userFrom(request)`: the signed-in `{ id, email }` from the session cookies, or null | `@neondatabase/auth/server`, `NEON_AUTH_URL`, `NEON_AUTH_COOKIE_SECRET` |
+| `api/auth/[...path].ts` | the auth proxy route | auth |
+| `api/_lib/db.ts` | `getDb()`: every query the API makes, scoped by user; null without a database | `DATABASE_URL` |
+| `api/_lib/quota.ts` | `modelGate(request)`: user → go; else counts the hashed IP for today, 429 past 20 | db |
+| `api/_lib/decks.ts`, `api/decks.ts` | CRUD above | auth, db |
+| `src/app/auth.ts` | client: `useSession()` (one plain `get-session` request), `signInWithGoogle()`, `sendCode(email)`, `verifyCode()`, `signOut()`; the library itself loads lazily | `@neondatabase/auth` |
+| `src/app/remote.ts` | `remoteDeckRepo`, and `findDeck` (the deck in the URL; a newer browser copy moves to the account) | store |
 | `src/app/route.ts` | `useRoute()`, `go(path)` | History API |
 | `src/app/components/landing/*` | the sections of 3.1, each < 300 lines | engine starters, `SlideView` |
 | `src/app/components/Home.tsx`, `DeckCard.tsx` | 3.3 | repo |
 | `src/app/components/SignIn.tsx` | the sign-in card and dialog | auth |
 
 ## 6. Errors
-- API down or 5xx: the editor keeps working and says once "Couldn't save. Retrying." (retry with backoff; the local copy is kept until a save succeeds).
-- Expired token: refreshed once, then the sign-in dialog.
+- API down or 5xx: the editor keeps working and says once "Couldn't save. Retrying." It tries again after 2 s, doubling to at most 30 s, and any new change saves at once. A copy stays in this browser until a save succeeds; opening the deck later uploads that copy if it is newer than the account's.
+- Session ended (a 401 from `/api/decks`): the "Sign in again" dialog opens over the current screen; the browser copy keeps the work. Signing in clears it.
 - Quota spent (429): the chat says "That's the free slide for today. Sign in to keep going."
-- Auth not configured (no `VITE_NEON_AUTH_URL`): sign-in buttons explain that accounts are not set up; the landing still renders.
+- Auth not configured (no `NEON_AUTH_URL` or cookie secret on the server): `/api/auth/*` answers 503 and the sign-in dialog says accounts aren't set up; the landing still renders. Without `DATABASE_URL`, decks answer 503 and model calls are not limited (local dev).
 
 ## 7. Testing
-- **vitest:** JWT verification (valid, expired, wrong issuer), deck handlers scoped per user (a fake `sql`), quota counting, router, repo round trip, the checks count used on the landing.
-- **Playwright:** the landing at 1440 and 390 (every slide 0 fit issues, no horizontal scroll, the divider moves by keyboard); signed-out prompt goes to `/new`; with a mocked API: the decks grid lists, opens and deletes.
+- **vitest:** reading the user from Better Auth's session body, deck handlers scoped per user (a fake `Db`), quota counting and IP hashing, the router, the server repo round trip and its 401, `findDeck` (browser copy vs account copy), the checks count used on the landing.
+- **Playwright** (the test server blanks the Neon settings, so it never reaches the real database): the landing at 1440 and 390 (every slide 0 fit issues, no horizontal scroll, the divider moves by keyboard); signed-out prompt goes to `/new`; with a mocked API: the decks grid lists, opens and deletes; a failed save retries and keeps then drops the browser copy; a 401 opens "Sign in again".
+- **Live** (dev server against Neon): sign-up, session, deck save, list, open and delete through `/api`; the email-code and Google endpoints answer.
 - **Visual review:** every landing section screenshotted at 1440 and 390 and checked one by one before it is shown.
 
 ## 8. Out of scope
 Sharing links, billing, teams, export, Next.js, own Google OAuth client, own SMTP.
 
 ## 9. Production steps (user)
-1. Neon project with Neon Auth; `DATABASE_URL`, `VITE_NEON_AUTH_URL` in `.env` and in Vercel.
+1. Neon project `divine-wildflower` with Neon Auth on the `production` branch (done). In `.env` (done) and in Vercel: `DATABASE_URL` (pooled), `NEON_AUTH_URL` (the branch's auth base URL), `NEON_AUTH_COOKIE_SECRET` (32+ random bytes, hex; a different one per environment).
 2. Add the production and preview origins to Neon Auth's trusted domains.
 3. Before real users: own Google OAuth client and own SMTP in Neon Auth (their production checklist).

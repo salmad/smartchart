@@ -29,11 +29,11 @@ export function Site({ onSignIn }: Props) {
         <section className="mx-auto grid w-full max-w-[1440px] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-14 px-10 pb-28 pt-14 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-8 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-8">
           <div className="grid gap-7 max-[1100px]:contents">
             <h1 className="font-display text-[clamp(46px,5.2vw,80px)] font-extrabold leading-[.94] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]">
-              Charts that look designed, because they were.
+              Charts that look designed.
             </h1>
             <p className="max-w-[44ch] text-[18px] leading-[1.55] text-type-2">
-              Describe the slide you need. SmartChart builds it from components a designer made once,
-              so every chart, table and title comes out right the first time.
+              Because they were. Describe the slide you need, and SmartChart builds it from components
+              a designer made once, so every chart, table and title comes out right the first time.
             </p>
             <div className="max-[1100px]:order-last"><PromptBox id="hero-prompt" /></div>
           </div>
