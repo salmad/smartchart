@@ -56,6 +56,14 @@ test('a failed turn leaves the conversation as it was, so the next turn can run'
   expect(h.state().history.some((m) => m.tool_calls?.length)).toBe(false)
 })
 
+test('the turn time is taken at the reply, before the judgment checks (as the prototype did)', async () => {
+  const agentStep = fakeAgent([(m) => toolCall('edit_slide', { slideId: reservedId(m), slide: COVER, reply: 'Done.' })])
+  const h = harness({ agentStep, jev: fakeJev({ intent: ['new_slide', 0.95], template: ['cover', 0.9] }) })
+  h.deps.judge = async () => { await new Promise((ok) => setTimeout(ok, 300)); return { checks: [], ms: 300 } }
+  const r = await sendTurn('A cover', h.deps)
+  expect(r.ms).toBeLessThan(250)
+})
+
 test('a rate-limited model call reads as a plain sentence, not the API JSON', async () => {
   const agentStep = async () => { throw new Error('{"code":"1302","message":"Rate limit reached for requests"}') }
   const h = harness({ agentStep, jev: fakeJev({ intent: ['other', 0.9] }) })

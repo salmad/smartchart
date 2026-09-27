@@ -56,12 +56,13 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
   try {
     const r = await runTurn({ text, deck: adeck, history, working, selection: cur ? { slideId: cur.id } : null, measure, log, onChange: sync, models })
     sync(adeck, r.written.at(-1) || getState().items[getState().current]?.id)
-    const secs = ((performance.now() - t0) / 1000).toFixed(1)
+    const replyMs = Math.round(performance.now() - t0), secs = (replyMs / 1000).toFixed(1)
     setBot({ kind: 'bot', text: r.reply, sub: `${plural(r.modelCalls, 'model call')} · ${plural(r.toolCalls, 'tool call')} · ${secs}s`, trace })
     dispatch({ type: 'items', items: recheckRules(getState(), measurer) })
     dispatch({ type: 'set', patch: { busy: false, history, working } })
     await Promise.all(r.written.map((id) => runChecks(id, deps, judge)))
-    return { request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: Math.round(performance.now() - t0),
+    // Time to the reply, as the prototype measured it; the judgment checks after it are not part of the turn's latency.
+    return { request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: replyMs,
       pre: { intent: r.pre.intent, p: r.pre.p }, written: r.written, items: structuredClone(getState().items) }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
