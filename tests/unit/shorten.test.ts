@@ -2,10 +2,14 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { shorten, targets } from "../../src/engine/agent/shorten";
 import { fakeAgent, say } from "./fakes";
+import type { Slide } from "../../src/engine/types";
 
-const slide = { template: "chart", title: "A title that runs onto three lines of text on the slide", takeaway: "x".repeat(97),
+// Partial slides: shorten reads only the fields a path names.
+const partial = (v: object) => v as Slide;
+
+const slide = partial({ template: "chart", title: "A title that runs onto three lines of text on the slide", takeaway: "x".repeat(97),
   notes: [{ title: "a", text: "y".repeat(120) }, { title: "b" }, { title: "c", text: "z".repeat(95) }],
-  table: { rows: [{ cells: ["a", { value: "1", note: "n".repeat(40) }] }] } };
+  table: { rows: [{ cells: ["a", { value: "1", note: "n".repeat(40) }] }] } });
 
 test("targets: per-field limits, totals across notes, cell notes and line wraps", () => {
   const t = Object.fromEntries(targets([
@@ -19,7 +23,7 @@ test("targets: per-field limits, totals across notes, cell notes and line wraps"
 });
 
 test("shorten keeps a rewrite only when it fits and its figures survive on the slide", async () => {
-  const s = { template: "chart", title: "Revenue grew 4.5× to £9.4m in 36 months", chart: { series: [{ values: [9.4] }] } };
+  const s = partial({ template: "chart", title: "Revenue grew 4.5× to £9.4m in 36 months", chart: { series: [{ values: [9.4] }] } });
   const r = await shorten([{ path: "title", text: s.title, max: 30 }], "consulting", fakeAgent([say("Revenue grew 4.5× in 36 months"), say("x")]), s);
   assert.deepEqual(r.set, { title: "Revenue grew 4.5× in 36 months" }); // £9.4m stays on the slide in the chart
   const bad = await shorten([{ path: "title", text: s.title, max: 30 }], "consulting", fakeAgent([say("Revenue grew 4.5×"), say("Revenue grew 4.5×")]), s);

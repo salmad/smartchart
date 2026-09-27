@@ -1,13 +1,14 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { parseSuggestions, suggestMessages } from "../../src/engine/agent/suggest";
+import type { Slide } from "../../src/engine/types";
 
-const BOOK = { template: "chart", title: "The book grows to [[£120m]] by 2030", chart: { categories: ["2026", "2030"], format: "£{v}m",
+const BOOK: Slide = { template: "chart", title: "The book grows to [[£120m]] by 2030", chart: { categories: ["2026", "2030"], format: "£{v}m",
   series: [{ name: "Loan book", mark: "bar", color: "focus", values: [10, 120] }] } };
 
 test("the prompt asks for the slide's message and carries the slide, conversation and failed checks", () => {
   const [sys, user] = suggestMessages({ slide: BOOK, style: "consulting", history: [{ role: "user", content: "For the board" }, { role: "tool", content: "tool-output" }],
-    checks: [{ ok: false, msg: "Figures have no source" }, { ok: true, msg: "fine" }] });
+    checks: [{ ok: false, msg: "Figures have no source" }, { ok: true, msg: "fine" }] }).map((m) => ({ ...m, content: m.content ?? "" }));
   assert.ok(sys.content.includes("message the slide is trying to convey"));
   assert.ok(user.content.includes('"Loan book"') && user.content.includes("User: For the board"));
   assert.ok(!user.content.includes("tool-output"));

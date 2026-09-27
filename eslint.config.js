@@ -37,6 +37,8 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       // `const { omitted, ...rest } = x` is how the engine drops a field
       '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true, argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      // Slides are JSON: patches and fixes remove fields by path or by name
+      '@typescript-eslint/no-dynamic-delete': 'off',
       'react/forbid-component-props': 'off',
       'no-restricted-syntax': ['error', { selector: "JSXAttribute[name.name='style']", message: 'No inline styles (CLAUDE.md).' }],
     },

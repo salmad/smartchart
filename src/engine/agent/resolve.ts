@@ -1,40 +1,49 @@
 /* Every "auto" choice on a slide, resolved with ONE Jev call (spec 9.1). A concrete value is never
    touched. Below P_AUTO the default stands; icons always take Jev's top pick. */
 import { CHART_GUIDE, ICONS, plain } from "../slides/schema";
+import type { JevFn } from "./llm";
+import type { Chart, Series, Slide, Style } from "../types";
+
+export type Resolved = Record<string, { value: string; p: number }>;
+interface Question { id: string; path: string; instructions: string; options: Record<string, string>; min: number; fallback: string; apply: (choice: string) => void }
+interface FocusItems { names: (string | undefined)[]; apply: (i: number) => void }
 
 export const P_AUTO = 0.6;
 const GUIDE = CHART_GUIDE.join("\n");
-const fmtOf = (c, s) => s.format || c.format || "{v}";
-const slideText = (s) => JSON.stringify(s, (k, v) => (typeof v === "string" ? plain(v) : v));
+const fmtOf = (c: Chart, s: Series) => s.format || c.format || "{v}";
+const slideText = (s: Slide) => JSON.stringify(s, (_k, v) => (typeof v === "string" ? plain(v) : v));
 
 /** The items a focus can land on, with a function that sets it. */
-function focusItems(s) {
-  const one = (list, set) => (i) => list.forEach((x, j) => set(x, i === j));
+// Runs on validated slides; the `?? []` guards only keep invalid input from throwing.
+function focusItems(s: Slide): FocusItems | null {
+  const one = <T>(list: T[], set: (x: T, on: boolean) => void) => (i: number) => list.forEach((x, j) => set(x, i === j));
+  const flag = (x: { focus?: boolean }, on: boolean) => { if (on) x.focus = true; else delete x.focus; };
   switch (s.template) {
     case "chart": {
-      const flag = (x, on) => { if (on) x.focus = true; else delete x.focus; };
-      if (s.chart.kind === "waterfall") return { names: s.chart.items.map((x) => x.label), apply: one(s.chart.items, flag) };
-      if (s.chart.kind === "timeline") return { names: s.chart.rows.map((x) => x.label), apply: one(s.chart.rows, flag) };
-      return { names: s.chart.series.map((x) => x.name), apply: one(s.chart.series, (x, on) => { x.color = on ? "focus" : x.color === "contrast" ? "contrast" : "neutral"; }) };
+      const c = s.chart ?? {};
+      if (c.kind === "waterfall") { const items = c.items ?? []; return { names: items.map((x) => x.label), apply: one(items, flag) }; }
+      if (c.kind === "timeline") { const rows = c.rows ?? []; return { names: rows.map((x) => x.label), apply: one(rows, flag) }; }
+      const series = c.series ?? [];
+      return { names: series.map((x) => x.name), apply: one(series, (x, on) => { x.color = on ? "focus" : x.color === "contrast" ? "contrast" : "neutral"; }) };
     }
-    case "table": { const cols = s.table.columns.slice(1); return { names: cols.map((c) => c.label), apply: one(cols, (c, on) => { if (on) c.focus = true; else delete c.focus; }) }; }
-    case "steps": return { names: s.steps.map((x) => x.title), apply: one(s.steps, (x, on) => { if (on) x.focus = true; else delete x.focus; }) };
-    case "cards": return s.framed ? null : { names: s.cards.map((c) => plain(c.title)), apply: one(s.cards, (c, on) => { c.tone = on ? "focus" : c.tone === "neg" ? "neg" : "neutral"; }) };
+    case "table": { const cols = (s.table?.columns ?? []).slice(1); return { names: cols.map((c) => c.label), apply: one(cols, flag) }; }
+    case "steps": { const steps = s.steps ?? []; return { names: steps.map((x) => x.title), apply: one(steps, flag) }; }
+    case "cards": { const cards = s.cards ?? []; return s.framed ? null : { names: cards.map((c) => plain(c.title)), apply: one(cards, (c, on) => { c.tone = on ? "focus" : c.tone === "neg" ? "neg" : "neutral"; }) }; }
     default: return null;
   }
 }
 
 /** Questions for every auto on the slide: { id, path, instructions, options, min, fallback, apply(choice) }. */
-function collect(s) {
-  const qs = [];
+function collect(s: Slide): Question[] {
+  const qs: Question[] = [];
   if (s.template === "chart" && s.chart?.series) {
-    const c = s.chart, others = (i) => c.series.filter((_, j) => j !== i).map((x) => `"${x.name}" (${fmtOf(c, x)}, ${x.mark})`).join(", ") || "none";
-    c.series.forEach((x, i) => {
+    const c = s.chart, series = s.chart.series, categories = c.categories ?? [], others = (i: number) => series.filter((_, j) => j !== i).map((x) => `"${x.name}" (${fmtOf(c, x)}, ${x.mark})`).join(", ") || "none";
+    series.forEach((x, i) => {
       if (x.mark !== "auto") return;
-      qs.push({ id: `mark${i}`, path: `chart.series[${i}].mark`, min: P_AUTO, fallback: c.categories.length >= 7 ? "line" : "bar",
-        instructions: `Should the series "${x.name}" (format ${fmtOf(c, x)}) be drawn as bars or as a line? The chart has ${c.categories.length} categories (${c.categories.join(", ")}). Other series: ${others(i)}.\nChart guide:\n${GUIDE}`,
+      qs.push({ id: `mark${i}`, path: `chart.series[${i}].mark`, min: P_AUTO, fallback: categories.length >= 7 ? "line" : "bar",
+        instructions: `Should the series "${x.name}" (format ${fmtOf(c, x)}) be drawn as bars or as a line? The chart has ${categories.length} categories (${categories.join(", ")}). Other series: ${others(i)}.\nChart guide:\n${GUIDE}`,
         options: { bar: "Bars: sizes compared across categories or a few periods.", line: "A line: a trend over many periods, a forecast or scenario, a rate in another unit over bars, or a reference such as a target." },
-        apply: (v) => { x.mark = v; } });
+        apply: (v) => { x.mark = v as Series["mark"]; } });
     });
     if (c.stacked === "auto") qs.push({ id: "stacked", path: "chart.stacked", min: P_AUTO, fallback: "side_by_side",
       instructions: `Should the bar series be stacked or side by side?\nChart guide:\n${GUIDE}`,
@@ -60,19 +69,20 @@ function collect(s) {
   return qs;
 }
 
-export async function resolveAuto(slide, style, jev, request = "") {
+export async function resolveAuto(slide: Slide, style: Style, jev: JevFn, request = ""): Promise<{ slide: Slide; resolved: Resolved; ms: number }> {
   const out = structuredClone(slide), qs = collect(out);
   if (!qs.length) return { slide: out, resolved: {}, ms: 0 };
   // The user's words ("curves", "since launch", "each line") often settle a choice the slide alone does not.
   const r = await jev(`Deck style: ${style}.${request ? `\nThe user's request: ${request}` : ""}\nSlide: ${slideText(out)}`, Object.fromEntries(qs.map((q) => [q.id, { instructions: q.instructions, options: q.options }])));
   const picks = Object.fromEntries(qs.map((q) => { const a = r[q.id]; return [q.id, a && a.p >= q.min ? { value: a.choice, p: a.p } : { value: q.fallback, p: a?.p ?? 0 }]; }));
   // Comparable series (same unit) that were all auto get one mark: the most confident pick.
-  if (out.template === "chart") {
-    const c = out.chart, groups = {};
-    qs.filter((q) => q.id.startsWith("mark")).forEach((q) => { const x = c.series[Number(q.id.slice(4))]; (groups[fmtOf(c, x)] ||= []).push(q.id); });
+  // Mark questions exist only when the chart has series.
+  if (out.template === "chart" && out.chart?.series) {
+    const c = out.chart, series = out.chart.series, groups: Record<string, string[]> = {};
+    qs.filter((q) => q.id.startsWith("mark")).forEach((q) => { const x = series[Number(q.id.slice(4))]; (groups[fmtOf(c, x)] ||= []).push(q.id); });
     Object.values(groups).forEach((ids) => { const best = ids.reduce((a, b) => (picks[b].p > picks[a].p ? b : a)); ids.forEach((id) => { picks[id] = { ...picks[id], value: picks[best].value }; }); });
   }
-  const resolved = {};
+  const resolved: Resolved = {};
   for (const q of qs) { q.apply(picks[q.id].value); resolved[q.path] = { value: picks[q.id].value, p: Math.round(picks[q.id].p * 100) / 100 }; }
   delete out.focus;
   return { slide: out, resolved, ms: r._ms || 0 };

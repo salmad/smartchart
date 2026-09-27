@@ -1,11 +1,21 @@
 /* PRE (spec 9.0): one Jev call before the agent runs: intent, template, card lead, position.
    When the intent is sure, code makes the agent's first tool call itself. */
 import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts";
+import type { JevFn, JevQuestion } from "./llm";
+import type { Slide, Style } from "../types";
+
+/** What PRE reads of the deck: the slides in order (a pending slide has no content yet). */
+export interface PreDeck { style: Style; slides: { id: string; slide: Slide | null }[] }
+export type Selection = { slideId?: string } | null | undefined;
+export interface Pre { intent: string; p: number; template: string; probabilities: Record<string, number>; lead: string | null; after: string; ms: number }
+/** What isSure and firstCall read of a PRE result. */
+export type PreChoice = Pick<Pre, "intent" | "p" | "template" | "after">;
+export interface FirstCall { name: "create_slide" | "read_slide"; args: Record<string, string> }
 
 export const P_ACT = 0.7, P_LEAD = 0.6;
-const plainTitle = (s) => String(s || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
+const plainTitle = (s: unknown) => String(s || "").replace(/\[\[|\]\]|\*\*|\[-|-\]|\[\+|\+\]/g, "");
 
-const INTENTS = {
+const INTENTS: Record<string, string> = {
   new_slide: "Add one new slide with this content.",
   edit_selected: "Change something on the selected slide: wording, numbers, a series, a choice such as bar or line, a card, the focus.",
   change_template: "Show the selected slide as another kind of slide (as a table, as a chart, as cards).",
@@ -13,19 +23,19 @@ const INTENTS = {
   ask: "Too unclear to act on: the agent must ask one question first.",
   other: "A question, a comment, thanks, or anything that does not change the deck.",
 };
-export const LEADS = {
+export const LEADS: Record<string, string> = {
   icon: "Each card leads with an icon.",
   value: "Each card leads with a big number.",
   framed: "Two framed cards contrasting a losing case and a winning case.",
 };
 export const LEAD_Q = "If the slide were cards, how should they lead? Value when every card has a number worth showing; framed for a two-way contrast (them vs us, before vs after); otherwise icon.";
 
-export async function preStep({ text, deck, selection, jev }) {
-  const slides = deck.slides.filter((s) => s.slide);
+export async function preStep({ text, deck, selection, jev }: { text: string; deck: PreDeck; selection: Selection; jev: JevFn }): Promise<Pre> {
+  const slides = deck.slides.filter((s): s is { id: string; slide: Slide } => !!s.slide);
   const list = slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide.template}] ${plainTitle(s.slide.title)}`).join("\n");
   const state = [`Deck style: ${STYLE_STATE[deck.style]}.`, list ? `Slides:\n${list}` : "The deck is empty.",
     selection?.slideId ? `Selected slide: ${selection.slideId}.` : "No slide is selected.", `User message: ${text}`].join("\n");
-  const qs = {
+  const qs: Record<string, JevQuestion> = {
     intent: { instructions: "What does the user want done with this message?", options: INTENTS },
     template: { instructions: `If this message asks for a new slide or another kind of slide, which template fits its content?\n${GUIDE}`, options: MENU_OPTIONS },
     lead: { instructions: LEAD_Q, options: LEADS },
@@ -38,13 +48,13 @@ export async function preStep({ text, deck, selection, jev }) {
 }
 
 /** Sure enough for code to act: p ≥ P_ACT, or a new slide into an empty deck (nothing else can be meant). */
-export const isSure = (pre, deck) => pre.p >= P_ACT || (pre.intent === "new_slide" && !deck.slides.some((s) => s.slide));
+export const isSure = (pre: PreChoice, deck: PreDeck): boolean => pre.p >= P_ACT || (pre.intent === "new_slide" && !deck.slides.some((s) => s.slide));
 
-export function firstCall(pre, selection, text, deck) {
+export function firstCall(pre: PreChoice, selection: Selection, text: string, deck: PreDeck): FirstCall | null {
   if (!isSure(pre, deck)) return null;
-  const current = deck.slides.find((s) => s.id === selection?.slideId)?.slide;
+  const id = selection?.slideId, current = deck.slides.find((s) => s.id === id)?.slide;
   if (pre.intent === "new_slide") return { name: "create_slide", args: { about: text, after: pre.after, template: pre.template } };
-  if (pre.intent === "edit_selected" && current) return { name: "read_slide", args: { slideId: selection.slideId } };
-  if (pre.intent === "change_template" && current && pre.template !== current.template) return { name: "create_slide", args: { about: text, replace: selection.slideId, template: pre.template } };
+  if (pre.intent === "edit_selected" && current && id) return { name: "read_slide", args: { slideId: id } };
+  if (pre.intent === "change_template" && current && id && pre.template !== current.template) return { name: "create_slide", args: { about: text, replace: id, template: pre.template } };
   return null;
 }

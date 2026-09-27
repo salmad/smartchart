@@ -1,32 +1,41 @@
 /* Code fixes what has one right answer and reports it (spec 9.4); it never shortens text or changes meaning.
    Idempotent: the write path runs it before and after `auto` choices are resolved. */
 import { ICONS, KIND_FIELDS, MENU } from "../slides/schema";
+import type { Cell, Chart, Series, Slide, Style, Table } from "../types";
+
+/* Autofix reads model output before validation, so any field may hold anything; the slide types describe
+   what it expects, and every access is guarded as in a raw object. Extra keys are reached by name. */
+type Loose<T> = T & Record<string, unknown>;
+type Draft = Loose<Slide>;
 
 const CHART_KEYS = new Set(Object.values(KIND_FIELDS).flat());
 
-const cellText = (c) => String(c && typeof c === "object" ? c.value : c ?? "").trim();
+const cellText = (c: Cell | null | undefined) => String(c && typeof c === "object" ? c.value : c ?? "").trim();
 /** "£1,000" → 1000, "(200)" → -200, "12%" → 12; null when the cell is not a number. */
-const num = (c) => {
+const num = (c: Cell | null | undefined): number | null => {
   const t = cellText(c), m = t.match(/^\(?[+−-]?[£$€]?(\d[\d,]*(?:\.\d+)?)\s?[%kmbn×x]*\)?$/i);
   return m ? (t.startsWith("(") || /^[−-]/.test(t) ? -1 : 1) * parseFloat(m[1].replace(/,/g, "")) : null;
 };
 
-export function autofix(slide, style) {
-  const fixes = [];
-  const walk = (v) => {
+/** Input is the model's slide as parsed JSON; the result is still unvalidated. */
+export function autofix(slide: unknown, style: Style): { slide: Slide; fixes: string[] } {
+  const fixes: string[] = [];
+  const walk = (v: unknown): unknown => {
     if (typeof v === "string") return v.trim().replace(/\s+/g, " ").replace(/(\d)\s?percent\b/gi, "$1%").replace(/(^|[\s(])"(\S)/g, "$1“$2").replace(/(\S)"/g, "$1”").replace(/(\w)'(\w)/g, "$1’$2");
     if (Array.isArray(v)) return v.map(walk);
     if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null && x !== undefined && x !== "").map(([k, x]) => [k, walk(x)]));
     return v;
   };
-  const out = walk(slide);
+  const out = walk(slide) as Draft;
   if (typeof out.source === "string" && /^source:\s*/i.test(out.source)) { out.source = out.source.replace(/^source:\s*/i, ""); fixes.push("removed 'Source:' prefix"); }
   if (style === "consulting" && MENU[out.template]?.frame !== false && /[^.]\.$/.test(out.title || "")) { out.title = out.title.slice(0, -1); fixes.push("removed title full stop"); }
   if (style === "pitch") delete out.kicker;
   // `focus` is a slide field; models often put it inside the chart or table.
-  for (const k of ["chart", "table"]) if (out[k] && typeof out[k] === "object" && !Array.isArray(out[k]) && "focus" in out[k] && typeof out[k].focus !== "boolean") {
-    if (out.focus === undefined) out.focus = out[k].focus;
-    delete out[k].focus; fixes.push(`focus: moved from ${k} to the slide`);
+  for (const k of ["chart", "table"]) {
+    const box = out[k];
+    if (!(box && typeof box === "object" && !Array.isArray(box) && "focus" in box && typeof box.focus !== "boolean")) continue;
+    if (out.focus === undefined) out.focus = box.focus as Slide["focus"];
+    delete box.focus; fixes.push(`focus: moved from ${k} to the slide`);
   }
   if (out.template === "cards" && Array.isArray(out.cards)) out.cards.forEach((c, i) => {
     if (!c || typeof c !== "object") return;
@@ -44,8 +53,8 @@ export function autofix(slide, style) {
   // Chart fields written at the slide's top level belong inside `chart` (no slide field shares their names).
   if (out.template === "chart") for (const k of Object.keys(out)) {
     if (!CHART_KEYS.has(k)) continue;
-    out.chart ||= {};
-    if (out.chart[k] === undefined) { out.chart[k] = out[k]; fixes.push(`${k}: moved into chart`); }
+    const chart = (out.chart ||= {}) as Loose<Chart>;
+    if (chart[k] === undefined) { chart[k] = out[k]; fixes.push(`${k}: moved into chart`); }
     delete out[k];
   }
   // `items` belong only to a waterfall and `periods`/`rows` only to a timeline, so a missing kind is certain.
@@ -53,13 +62,13 @@ export function autofix(slide, style) {
     const kind = Array.isArray(out.chart.items) ? "waterfall" : Array.isArray(out.chart.rows) && Array.isArray(out.chart.periods) ? "timeline" : null;
     if (kind) { out.chart.kind = kind; fixes.push(`chart.kind: ${kind} (inferred from its fields)`); }
   }
-  if (out.template === "chart" && out.chart && Array.isArray(out.chart.series)) fixChart(out, fixes);
+  if (out.template === "chart" && out.chart && Array.isArray(out.chart.series)) fixChart(out, out.chart, out.chart.series, fixes);
   if (out.template === "table" && out.table) fixTable(out.table, fixes);
   return { slide: out, fixes };
 }
 
-function fixChart(s, fixes) {
-  const c = s.chart, series = c.series, fmt = (x) => x?.format || c.format || "{v}";
+function fixChart(s: Slide, c: Chart, series: Series[], fixes: string[]) {
+  const fmt = (x: Series | undefined) => x?.format || c.format || "{v}";
   series.forEach((x, i) => {
     if (x?.mark === "bar" && (x.area || x.dashed)) { delete x.area; delete x.dashed; fixes.push(`chart.series[${i}]: removed area/dashed (bar series)`); }
     if (x && !x.color && s.focus !== "auto") x.color = "neutral";
@@ -92,14 +101,15 @@ function fixChart(s, fixes) {
   });
 }
 
-function fixTable(t, fixes) {
+function fixTable(t: Table, fixes: string[]) {
   (t.columns || []).forEach((col, j) => { if (col && "num" in col) { delete col.num; fixes.push(`table.columns[${j}].num: removed (alignment is set by code)`); } });
   const rows = t.rows || [], last = rows.at(-1);
   if (rows.length < 2 || !last || last.style) return;
   const n = (t.columns || []).length;
   const sums = Array.from({ length: n }, (_, j) => j).slice(1).filter((j) => rows.every((r) => num(r.cells?.[j]) !== null));
   const isSum = sums.length > 0 && sums.every((j) => {
-    const total = rows.slice(0, -1).reduce((sum, r) => sum + num(r.cells[j]), 0), v = num(last.cells[j]);
+    // Every row holds a number in a `sums` column (filtered above).
+    const total = rows.slice(0, -1).reduce((sum, r) => sum + (num(r.cells[j]) ?? 0), 0), v = num(last.cells[j]) ?? 0;
     return Math.abs(total - v) <= Math.max(1e-9, Math.abs(v) * 0.01);
   });
   if (/^\s*(total|sum|overall)\b/i.test(cellText(last.cells?.[0])) || isSum) { last.style = "total"; fixes.push(`table.rows[${rows.length - 1}].style: total`); }

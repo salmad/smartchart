@@ -1,10 +1,16 @@
 /* Next-step pills after a turn: GLM Flash reads the slide and the conversation, works out what the slide is
    trying to say, and suggests a few changes that help it say that. Runs in the background; no pills on failure. */
-import { complete } from "./llm";
+import { complete, type ChatMessage } from "./llm";
+import type { Check } from "./checks";
+import type { Slide, Style } from "../types";
+
+export interface Pill { label: string; prompt: string }
+export interface SuggestArgs { slide: Slide; style: Style; history?: ChatMessage[]; checks?: Pick<Check, "ok" | "msg">[] }
+export interface Suggestions { message: string; pills: Pill[] }
 
 const CAN = "Charts: bars and lines (stacked, side by side or 100% shares), waterfall (a bridge between two totals), timeline (workstreams and milestones); computed annotations: CAGR arrow, difference arrow, target line; highlight one series, bar, step, card or column. Any slide: title, takeaway, numbered notes, footnote, source; another template (chart, table, big number, steps, cards); a new slide.";
 
-export function suggestMessages({ slide, style, history = [], checks = [] }) {
+export function suggestMessages({ slide, style, history = [], checks = [] }: SuggestArgs): ChatMessage[] {
   const convo = history.filter((m) => m.role === "user" || m.role === "assistant").slice(-6)
     .map((m) => `${m.role === "user" ? "User" : "Agent"}: ${String(m.content).slice(0, 400)}`).join("\n");
   const failed = checks.filter((c) => !c.ok && c.msg).map((c) => c.msg).join("; ");
@@ -15,16 +21,16 @@ export function suggestMessages({ slide, style, history = [], checks = [] }) {
 }
 
 /** The model's answer as { message, pills }; at most 4 pills. */
-export function parseSuggestions(text) {
-  let o = null;
+export function parseSuggestions(text: unknown): Suggestions {
+  let o: { message?: unknown; suggestions?: unknown } | null = null;
   try { o = JSON.parse(String(text).match(/\{[\s\S]*\}/)?.[0] ?? "null"); } catch { /* no pills */ }
   const pills = (Array.isArray(o?.suggestions) ? o.suggestions : [])
-    .filter((p) => typeof p?.label === "string" && typeof p?.prompt === "string" && p.label.trim() && p.prompt.trim())
+    .filter((p): p is Pill => typeof p?.label === "string" && typeof p?.prompt === "string" && !!p.label.trim() && !!p.prompt.trim())
     .slice(0, 4).map((p) => ({ label: p.label.trim(), prompt: p.prompt.trim() }));
   return { message: typeof o?.message === "string" ? o.message : "", pills };
 }
 
-export async function suggest(args) {
+export async function suggest(args: SuggestArgs): Promise<Suggestions> {
   try { return parseSuggestions(await complete({ messages: suggestMessages(args), max_tokens: 900, temperature: 0.5 })); }
   catch { return { message: "", pills: [] }; }
 }
