@@ -1,5 +1,5 @@
-// GLM proxy for the journey prototype (/proto/journey/). Same contract as the local server.mjs:
-// only the two GLM 5.3 models are allowed, and the key never reaches the browser.
+// GLM proxy for the app: only the two GLM 5.3 models are allowed, and the key never reaches the browser.
+// Served by Vercel in production and by vite/api-dev.ts in dev.
 const GLM_URL = 'https://api.z.ai/api/coding/paas/v4/chat/completions'
 const GLM_MODELS = new Set(['glm-5.3-flash', 'glm-5.3'])
 

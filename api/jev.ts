@@ -1,4 +1,4 @@
-// Jev proxy for the journey prototype. OpenRouter only ever receives the Jev decision model.
+// Jev proxy for the app. OpenRouter only ever receives the Jev decision model.
 const JEV_URL = 'https://openrouter.ai/api/alpha/decisions'
 const JEV_MODEL = '~typesafe/jev-latest'
 

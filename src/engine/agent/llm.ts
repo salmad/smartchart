@@ -1,4 +1,4 @@
-/* Model client: GLM agent steps and Jev, through the proxy (server.mjs locally, api/ on Vercel). */
+/* Model client: GLM agent steps and Jev, through the api/ proxy (Vercel in production, vite/api-dev.ts in dev). */
 
 export const FLASH = "glm-5.3-flash";
 

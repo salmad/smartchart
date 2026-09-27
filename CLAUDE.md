@@ -8,7 +8,7 @@ Stack: React 18 + TypeScript (strict), Vite, Tailwind + shadcn/ui, Recharts (leg
 
 ## Commands
 
-`npm run dev` · `npm run build` (runs `tsc -b`, so use it to typecheck) · `npm run lint` · `npm test` (vitest)
+`npm run dev` (serves the app and `/api` locally, reads `.env`) · `npm run build` (runs `tsc -b`, so use it to typecheck) · `npm run lint` · `npm test` (vitest)
 
 ## Structure
 
