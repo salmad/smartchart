@@ -46,6 +46,14 @@ test('a turn whose model call fails ends with an error message and not busy', as
   expect(r.error).toContain('api down')
 })
 
+test('a rate-limited model call reads as a plain sentence, not the API JSON', async () => {
+  const agentStep = async () => { throw new Error('{"code":"1302","message":"Rate limit reached for requests"}') }
+  const h = harness({ agentStep, jev: fakeJev({ intent: ['other', 0.9] }) })
+  const r = await sendTurn('hello', h.deps)
+  expect(h.state().messages[1].text).toBe('Something went wrong: the model is busy right now. Wait a few seconds and send it again.')
+  expect(r.error).toContain('1302')
+})
+
 test('judgment checks land on the slide written this turn and the pending flag clears', async () => {
   const agentStep = fakeAgent([(m) => toolCall('edit_slide', { slideId: reservedId(m), slide: COVER, reply: 'Done.' })])
   const h = harness({ agentStep, jev: fakeJev({ intent: ['new_slide', 0.95], template: ['cover', 0.9] }) })

@@ -16,6 +16,11 @@ export interface TurnRecord { request: string; reply?: string; error?: string; t
 
 /** The bot message's sub line while the turn runs. */
 export const WORKING = 'Working…'
+/** What the chat shows for a failed turn: known API errors as a sentence, anything else as it came. */
+function readable(msg: string): string {
+  if (/rate limit|"1302"|\b429\b/i.test(msg)) return 'the model is busy right now. Wait a few seconds and send it again.'
+  return msg
+}
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecord> {
@@ -59,7 +64,7 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
       pre: { intent: r.pre.intent, p: r.pre.p }, written: r.written, items: structuredClone(getState().items) }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    setBot({ kind: 'error', text: `Something went wrong: ${msg}`, trace })
+    setBot({ kind: 'error', text: `Something went wrong: ${readable(msg)}`, trace })
     dispatch({ type: 'set', patch: { busy: false, history, working } })
     return { request: text, error: msg, trace, ms: Math.round(performance.now() - t0), items: structuredClone(getState().items) }
   }
