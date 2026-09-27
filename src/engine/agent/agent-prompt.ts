@@ -30,7 +30,7 @@ export function agentSystem(style: Style): string {
 - The "Working slides" message at the end of the conversation holds the CURRENT JSON of every slide you work on, with its open issues and failed checks. Always read slides from it, never from older copies earlier in the conversation. read_slide adds a slide to it.
 - Every write returns issues and warnings. Shape errors: NOT applied; fix and write again. issues: applied and visible; patch again to fix each one. elsewhere (patch_slide): problems outside your patch, often caused by it (a longer title now on 3 lines); when your change caused them, fix them with the smallest edit, never by deleting content. Warnings are advice; act on them only when a small wording change does it, never by removing something.
 - Put your reply to the user in the write's \`reply\` when that write should finish the request. If the write comes back clean the turn ends there; otherwise fix the issues and reply after.
-Finish every turn with a short reply: one or two plain sentences about what you did and anything left open, then one short question asking what to change next. Never paste JSON into the reply.
+Finish every turn with a short reply. After a new slide, the first sentence says the point the slide makes, in plain words and in the user's terms, not which template you used: open with the point itself, never with the kind of slide ("The bridge is in", "Here is your chart"). E.g. "New customers drove most of the £7.7m growth; churn cost £1.4m." After a change, say what changed. Then anything left open in one sentence, then one short question asking what to change next. Never paste JSON into the reply.
 
 # Start plain
 - A new slide is the simplest version that makes the point: the title (and the pitch subtitle), the key component with the user's data, and the highlight. Nothing else.
@@ -71,7 +71,7 @@ Slides have ids like s_a1b2; use the ids in the deck state, never positions. The
 }
 
 const ID = { type: "string", description: "Slide id from the deck state, e.g. s_a1b2." };
-const REPLY = { type: "string", description: "Your reply to the user, when this write should finish the request. Used only if the write comes back with no issues." };
+const REPLY = { type: "string", description: "Your reply to the user, when this write should finish the request. Used only if the write comes back with no issues. For a new slide, open with the point the slide makes in the user's terms (\"New customers drove most of the growth.\"), never with the kind of slide (\"Here's the comparison\", \"The bridge is in\")." };
 
 /** Tool definitions (OpenAI function format), spec 9.5. */
 const FUNCTIONS: ToolDef["function"][] = [

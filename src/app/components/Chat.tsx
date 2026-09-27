@@ -4,6 +4,7 @@ import type { Message } from '@/app/store'
 import { WORKING } from '@/app/turn'
 import { cn } from '@/app/lib/utils'
 import { config } from '@/app/config'
+import { phaseOf } from '@/app/phase'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
 
@@ -33,7 +34,7 @@ function Bubble({ m }: { m: Message }) {
   return (
     <div className="grid gap-2">
       {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={cn('whitespace-pre-line', m.kind === 'error' ? 'text-bad' : 'text-ink')}>{p.trim()}</p>)}
-      {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="text-[13px] text-ink-2">{working && <i className="spinner" />}{m.sub}</p>}
+      {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="text-[13px] text-ink-2">{working && <i className="spinner" />}{working ? phaseOf(m.trace) : m.sub}</p>}
       {trace.length > 0 && <Trace trace={trace} pending={working} />}
     </div>
   )

@@ -21,7 +21,7 @@ export function Strip({ items, current, deck, onSelect, onAdd, busy }: Props) {
             <SlideView slide={it.slide} deck={deck} ctx={ctx[i]}
               className="relative aspect-video w-44 overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] group-aria-[current=true]:shadow-[0_0_0_2px_theme(colors.ink)] max-[900px]:w-36" />
             <span className="flex gap-2 font-mono text-[11px] font-medium leading-none text-ink-3">
-              <b className="font-medium text-ink-2">{String(i + 1).padStart(2, '0')}</b>{it.slide.template}
+              <b className="font-medium text-ink-2">{String(i + 1).padStart(2, '0')}</b>
               {it.status === 'draft' && <i className="not-italic text-warn">draft</i>}
             </span>
           </button>

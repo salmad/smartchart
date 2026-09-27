@@ -1,9 +1,9 @@
 [
  {
   "id": "cover",
-  "group": "structure",
+  "group": "open",
   "label": "Cover",
-  "blurb": "Deck title and one line on what it is",
+  "blurb": "The deck’s title and what it is about",
   "consulting": {
    "template": "cover",
    "title": "Acme",
@@ -17,9 +17,9 @@
  },
  {
   "id": "section",
-  "group": "structure",
-  "label": "Section divider",
-  "blurb": "A numbered chapter",
+  "group": "open",
+  "label": "Chapter divider",
+  "blurb": "Start a new part of the story",
   "consulting": {
    "template": "section",
    "title": "The problem",
@@ -32,9 +32,9 @@
  },
  {
   "id": "number",
-  "group": "numbers",
+  "group": "number",
   "label": "One big number",
-  "blurb": "The number that proves the point",
+  "blurb": "When a single figure proves the point",
   "consulting": {
    "template": "number",
    "title": "UK SMEs fund growth on personal cards because no provider bundles business credit with daily banking",
@@ -65,9 +65,9 @@
  },
  {
   "id": "chart-notes",
-  "group": "charts",
-  "label": "Bars and a line, with notes",
-  "blurb": "Mixed chart with numbered call-outs",
+  "group": "trend",
+  "label": "Trend with reasons",
+  "blurb": "Two figures over time, and why they moved",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -205,9 +205,9 @@
  },
  {
   "id": "cards-icon",
-  "group": "cards",
+  "group": "case",
   "label": "Three pillars",
-  "blurb": "Icon cards with bullets",
+  "blurb": "The parts of your answer, side by side",
   "consulting": {
    "template": "cards",
    "kicker": "The solution",
@@ -267,9 +267,9 @@
  },
  {
   "id": "cards-framed",
-  "group": "cards",
+  "group": "case",
   "label": "Them vs us",
-  "blurb": "Two framed cases side by side",
+  "blurb": "Why your approach beats the old one",
   "consulting": {
    "template": "cards",
    "kicker": "The insight",
@@ -342,9 +342,9 @@
  },
  {
   "id": "table",
-  "group": "tables",
+  "group": "compare",
   "label": "Comparison table",
-  "blurb": "Typeset figures with a total row",
+  "blurb": "Options against the same criteria",
   "consulting": {
    "template": "table",
    "table": {
@@ -563,9 +563,9 @@
  },
  {
   "id": "table-notes",
-  "group": "tables",
+  "group": "compare",
   "label": "Table with notes",
-  "blurb": "Figures and what they mean",
+  "blurb": "The figures, and what they mean",
   "consulting": {
    "template": "table",
    "table": {
@@ -706,9 +706,9 @@
  },
  {
   "id": "chart-lines",
-  "group": "charts",
+  "group": "trend",
   "label": "Scenarios",
-  "blurb": "Base case against downside",
+  "blurb": "A base case against a downside",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -819,9 +819,9 @@
  },
  {
   "id": "chart-cagr",
-  "group": "charts",
-  "label": "Growth with a CAGR",
-  "blurb": "Growth rate and target, computed",
+  "group": "trend",
+  "label": "Growth to a target",
+  "blurb": "How fast it grows, and whether it beats plan",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -909,9 +909,9 @@
  },
  {
   "id": "waterfall",
-  "group": "charts",
+  "group": "change",
   "label": "Bridge",
-  "blurb": "From one total to another",
+  "blurb": "What took one total to another",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -989,9 +989,9 @@
  },
  {
   "id": "waterfall-notes",
-  "group": "charts",
-  "label": "Bridge with notes",
-  "blurb": "The drivers, explained",
+  "group": "change",
+  "label": "Bridge with reasons",
+  "blurb": "What moved the number, explained",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -1082,9 +1082,9 @@
  },
  {
   "id": "timeline",
-  "group": "charts",
+  "group": "plan",
   "label": "Timeline",
-  "blurb": "Workstreams over time",
+  "blurb": "Workstreams and milestones over time",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -1201,9 +1201,9 @@
  },
  {
   "id": "chart-mix",
-  "group": "charts",
+  "group": "trend",
   "label": "Mix over time",
-  "blurb": "Shares that add to 100%",
+  "blurb": "How the shares of a whole shift",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -1316,9 +1316,9 @@
  },
  {
   "id": "chart-six",
-  "group": "charts",
-  "label": "Many series",
-  "blurb": "Up to six series, still readable",
+  "group": "trend",
+  "label": "Market race",
+  "blurb": "Up to six players over time",
   "consulting": {
    "template": "chart",
    "chart": {
@@ -1529,9 +1529,9 @@
  },
  {
   "id": "steps",
-  "group": "numbers",
+  "group": "plan",
   "label": "Roadmap",
-  "blurb": "Phases: when, what, and why",
+  "blurb": "Phases: when, what and why",
   "consulting": {
    "template": "steps",
    "kicker": "Plan and ask",
@@ -1588,9 +1588,9 @@
  },
  {
   "id": "cards-value",
-  "group": "cards",
+  "group": "number",
   "label": "Key figures",
-  "blurb": "Big values with short proof",
+  "blurb": "A few numbers, each with its proof",
   "consulting": {
    "template": "cards",
    "kicker": "Appendix · Market",

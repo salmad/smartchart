@@ -32,8 +32,10 @@ export default {
       keyframes: {
         spin: { to: { transform: 'rotate(360deg)' } },
         pop: { from: { opacity: '0', transform: 'translateY(-4px)' } },
+        // A new slide arriving: it comes into focus rather than popping in.
+        reveal: { from: { opacity: '0', transform: 'scale(.985)', filter: 'blur(8px)' } },
       },
-      animation: { pop: 'pop .14s ease-out' },
+      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)' },
     },
   },
   plugins: [animate],

@@ -26,7 +26,7 @@ export function Bar(p: BarProps) {
           onStyle={p.onStyle} onTheme={p.onTheme} onAccent={p.onAccent} />
         {p.onSignIn && <Button variant="ghost" onClick={p.onSignIn}>Sign in</Button>}
         {p.canAdd && <Button variant="outline" onClick={p.onAdd} disabled={p.busy} className="max-[900px]:hidden">Add slide</Button>}
-        <Button onClick={p.onPresent} disabled={!p.hasSlides}>Present <kbd className="max-[900px]:hidden">F</kbd></Button>
+        {p.hasSlides && <Button onClick={p.onPresent}>Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
       </div>
     </header>
   )

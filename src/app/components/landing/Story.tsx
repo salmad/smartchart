@@ -3,7 +3,7 @@ import type { Style } from '@/engine/types'
 import { LiveSlide, MENU } from './LiveSlide'
 import { CHECK_COUNT, TASTE } from './taste'
 
-/** The answer: a closed menu of seven components, designed once, that the agent fills and never redraws. */
+/** The answer, as an outcome: seven kinds of slide, designed once, so a deck never drifts. */
 export function Answer() {
   const strip = useRef<HTMLUListElement>(null)
   const [edge, setEdge] = useState({ start: true, end: false })
@@ -21,10 +21,10 @@ export function Answer() {
       <div className="site-section">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="site-head">
-            <h2 id="answer" className="site-h2">Designed once. Configured forever.</h2>
+            <h2 id="answer" className="site-h2">Every slide from the same designer.</h2>
             <p className="site-lede">
-              SmartChart’s agent never draws a slide. It picks one of seven components a designer built and reviewed,
-              and fills them with your words and numbers. The design lives in code, so it can’t drift.
+              Seven kinds of slide, each drawn once by a designer and reused every time. Your words and numbers change;
+              the type, colour and spacing never do. Slide thirty looks like slide one.
             </p>
           </div>
           <div className="flex gap-2 max-[700px]:hidden">
@@ -32,7 +32,7 @@ export function Answer() {
             <Paddle label="Next" disabled={edge.end} onClick={() => page(1)}>›</Paddle>
           </div>
         </div>
-        <ul ref={strip} onScroll={onScroll} className="-mx-10 flex snap-x snap-mandatory scroll-px-10 gap-6 overflow-x-auto px-10 pb-2 [scrollbar-width:none] max-[700px]:-mx-4 max-[700px]:scroll-px-4 max-[700px]:px-4" aria-label="The seven components">
+        <ul ref={strip} onScroll={onScroll} className="-mx-10 flex snap-x snap-mandatory scroll-px-10 gap-6 overflow-x-auto px-10 pb-2 [scrollbar-width:none] max-[700px]:-mx-4 max-[700px]:scroll-px-4 max-[700px]:px-4" aria-label="The seven kinds of slide">
           {MENU.map(({ id, name }, i) => (
             <li key={id} className="grid w-[min(640px,84vw)] flex-none snap-start gap-3">
               <LiveSlide id={id} className="rounded-xl shadow-[0_0_0_1px_rgba(243,238,228,.1)]" />
@@ -56,7 +56,7 @@ function Paddle({ label, disabled, onClick, children }: { label: string; disable
 
 const STEPS: [string, string][] = [
   ['Describe it', 'Paste numbers, notes or a table, and say what the slide should argue.'],
-  ['It picks the component', 'A chart, a table, a big number, steps or cards, then an action title that states the so-what.'],
+  ['It picks the right slide', 'A chart, a table, a big number, a plan or cards, with a title that states the so-what.'],
   ['It measures every slide', 'At 1920 × 1080, before you see it. Anything that doesn’t fit goes back to be fixed.'],
 ]
 

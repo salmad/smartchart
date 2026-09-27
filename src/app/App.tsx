@@ -11,7 +11,7 @@ import { config } from './config'
 import { installDebug } from './debug'
 import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
-import { LANDING, deckOf, toSaved } from './state'
+import { deckOf, toSaved } from './state'
 import { localDeckRepo, newDeckId, type DeckRepo, type Item, type SavedDeck } from './store'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
@@ -50,7 +50,8 @@ export function App({ route, account, repo }: Props) {
   }, [])
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
 
-  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; say(LANDING) }, [app, say])
+  // A new deck asks its question on the stage (the gallery), so the chat starts empty.
+  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = [] }, [app])
   const openDeck = useCallback((d: SavedDeck) => {
     turns.current = []
     app.dispatch({ type: 'open', deck: d })
@@ -122,8 +123,9 @@ export function App({ route, account, repo }: Props) {
   const send = useCallback(async (text: string) => {
     const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState })
     turns.current.push(r)
-    // A visitor's first slide is free; keeping it and going on needs an account.
-    if (!account) { setGate(true); setGateOpen(true) }
+    // A visitor's first slide is free; keeping it and going on needs an account. The ask waits a moment,
+    // so the slide they just made is seen before anything covers it.
+    if (!account) { setGate(true); window.setTimeout(() => setGateOpen(true), config.gateDelayMs) }
     return r
   }, [app, measurer, account])
   const setStyle = useCallback((style: Style) => app.dispatch({ type: 'set', patch: { style } }), [app])
@@ -163,8 +165,9 @@ export function App({ route, account, repo }: Props) {
   const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
+  const locked = gate ? { text: 'Sign in to keep this deck and keep going.', action: 'Keep this deck', onAction: () => setGateOpen(true) } : undefined
   const stage = s.view === 'landing'
-    ? <Gallery deckStyle={s.style} theme={s.theme} accent={s.accent} onStyle={setStyle} onPick={onPick} />
+    ? <Gallery deckStyle={s.style} theme={s.theme} accent={s.accent} live={s.live} onStyle={setStyle} onPick={onPick} onSend={onSend} locked={locked} />
     : s.view === 'add'
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
@@ -174,7 +177,7 @@ export function App({ route, account, repo }: Props) {
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} stage={stage}
-            locked={gate ? { text: 'Sign in to keep this deck and keep going.', action: 'Keep this deck', onAction: () => setGateOpen(true) } : undefined} />}
+            solo={s.view === 'landing'} locked={locked} />}
       {!account && (
         <SignIn open={gateOpen} onOpenChange={setGateOpen} returnTo={s.deckId ? `/d/${s.deckId}` : '/new'}
           title={gate ? 'Keep this deck' : undefined}

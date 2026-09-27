@@ -13,6 +13,7 @@ test('Add slide shows starters in the deck style and inserts after the current s
   await page.locator('[data-strip-thumb]').first().click()          // current = cover
   await page.getByRole('button', { name: 'Add slide' }).click()
   await expect(page.locator('[data-featured] .slide.style-pitch.theme-paper')).toBeVisible()
+  await page.getByRole('tab', { name: 'Open the deck' }).click()
   await page.locator('[data-starter="section"]').click()
   await page.getByRole('button', { name: 'Use this slide' }).click()
   const titles = await page.evaluate(() => window.__journey?.items.map((i) => i.slide.template))

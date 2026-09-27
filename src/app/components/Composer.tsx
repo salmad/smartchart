@@ -43,8 +43,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, locked }: Prop
         placeholder="Describe a slide, or ask for a change…"
         className="min-h-0 resize-none rounded-[10px] border-line-2 bg-app-bg px-3 py-2.5 text-sm leading-[1.45] shadow-none focus-visible:border-ink-3 focus-visible:ring-0 disabled:opacity-50" />
       <div className="flex items-center gap-2">
-        <span className="mr-auto text-xs text-ink-3">Enter to send · Shift+Enter for a new line</span>
-        <Button type="button" variant="outline" onClick={onClear} disabled={busy}>Clear chat</Button>
+        <Button type="button" variant="ghost" onClick={onClear} disabled={busy} className="mr-auto px-1 text-[12.5px] text-ink-3">Clear chat</Button>
         <Button type="submit" disabled={!canSend}>Send</Button>
       </div>
     </form>

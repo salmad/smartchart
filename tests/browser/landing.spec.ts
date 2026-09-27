@@ -4,8 +4,8 @@ test.beforeEach(async ({ page }) => { await page.addInitScript(() => { if (!sess
 
 test('landing shows every starter and picking one creates a one-slide deck', async ({ page }) => {
   await page.goto('/new')
-  const tiles = page.getByRole('button', { name: /Bars and a line|Comparison table|Roadmap/ })
-  await expect(page.getByRole('heading', { name: 'Start from a slide' })).toBeVisible()
+  const tiles = page.getByRole('button', { name: /Trend with reasons|Comparison table|Roadmap/ })
+  await expect(page.getByRole('heading', { name: 'What should this slide say?' })).toBeVisible()
   await expect(page.locator('[data-starter]')).toHaveCount(17)
   await tiles.first().dblclick()
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
@@ -13,8 +13,7 @@ test('landing shows every starter and picking one creates a one-slide deck', asy
 })
 test('style switch re-renders the gallery in pitch', async ({ page }) => {
   await page.goto('/new')
-  await expect(page.getByText('Pitch: one bold claim, big numbers, little text.')).toBeVisible()
-  await page.getByRole('button', { name: 'Pitch' }).first().click()
+  await page.getByRole('group', { name: 'Writing style' }).getByRole('button', { name: 'Pitch' }).click()
   await expect(page.locator('[data-starter] .slide.style-pitch').first()).toBeVisible()
 })
 test('with the API down the gallery still works', async ({ page }) => {

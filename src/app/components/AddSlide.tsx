@@ -9,7 +9,8 @@ import { Tile } from './Tile'
 
 interface Props { deck: Deck; current: number; onUse: (s: Starter) => void; onCancel: () => void }
 
-const GROUP_OF: Record<TemplateId, Group> = { chart: 'charts', table: 'tables', cards: 'cards', number: 'numbers', steps: 'numbers', cover: 'structure', section: 'structure' }
+// Add slide opens on the group of the slide you are on: its likeliest neighbour.
+const GROUP_OF: Record<TemplateId, Group> = { chart: 'trend', table: 'compare', cards: 'case', number: 'number', steps: 'plan', cover: 'trend', section: 'trend' }
 
 /** Add slide: one featured starter at full size in the deck's own look, a filmstrip of every starter below. */
 export function AddSlide({ deck, current, onUse, onCancel }: Props) {

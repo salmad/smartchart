@@ -4,10 +4,12 @@ import { validateDeck } from '../slides/schema'
 import type { Slide, Style } from '../types'
 import data from './starters.json' with { type: 'json' }
 
-export type Group = 'charts' | 'tables' | 'cards' | 'numbers' | 'structure'
+/** Starters are grouped by what the slide has to do for the person making it, not by what it is drawn with. */
+export type Group = 'trend' | 'change' | 'compare' | 'number' | 'case' | 'plan' | 'open'
 export const GROUPS: readonly { id: Group; label: string }[] = [
-  { id: 'charts', label: 'Charts' }, { id: 'tables', label: 'Tables' }, { id: 'cards', label: 'Cards' },
-  { id: 'numbers', label: 'Big number and plans' }, { id: 'structure', label: 'Structure' },
+  { id: 'trend', label: 'Show a trend' }, { id: 'change', label: 'Explain a change' }, { id: 'compare', label: 'Compare options' },
+  { id: 'number', label: 'Land one number' }, { id: 'case', label: 'Make the case' }, { id: 'plan', label: 'Lay out a plan' },
+  { id: 'open', label: 'Open the deck' },
 ]
 export interface Starter { id: string; group: Group; label: string; blurb: string; consulting: Slide; pitch: Slide }
 export const FOOTER = 'Acme · Board memorandum'
