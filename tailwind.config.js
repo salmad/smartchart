@@ -1,66 +1,36 @@
+import animate from 'tailwindcss-animate'
+
+// App chrome tokens (the slides use slides.css). The shadcn names map onto the same dark tokens.
+const app = {
+  'app-bg': '#0A0A0B', panel: '#111113', raise: '#18181B', line: 'rgba(255,255,255,.08)', 'line-2': 'rgba(255,255,255,.14)',
+  ink: '#EDEDEF', 'ink-2': '#A1A1AA', 'ink-3': '#71717A', ok: '#7BD88F', warn: '#F2B35B', bad: '#FF6B57',
+}
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ['./index.html', './src/app/**/*.{ts,tsx}', './src/main.tsx'],
   theme: {
-  	extend: {
-  		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		},
-  		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			}
-  		}
-  	}
-  },
-  plugins: [
-    require('tailwindcss-animate'),
-    function({ addUtilities }) {
-      addUtilities({
-        '.bg-grid-slate-100': {
-          backgroundImage: 'linear-gradient(to right, rgb(241 245 249 / 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgb(241 245 249 / 0.05) 1px, transparent 1px)',
-        },
-      })
+    extend: {
+      colors: {
+        ...app,
+        background: app['app-bg'], foreground: app.ink,
+        popover: { DEFAULT: app.raise, foreground: app.ink },
+        primary: { DEFAULT: app.ink, foreground: app['app-bg'] },
+        accent: { DEFAULT: app.raise, foreground: app.ink },
+        muted: { DEFAULT: app.raise, foreground: app['ink-3'] },
+        destructive: { DEFAULT: app.bad, foreground: app.ink },
+        border: app.line, input: app['line-2'], ring: app['ink-3'],
+      },
+      fontFamily: {
+        sans: ['Geist', 'system-ui', 'sans-serif'],
+        mono: ['"Geist Mono"', 'monospace'],
+      },
+      keyframes: {
+        spin: { to: { transform: 'rotate(360deg)' } },
+        pop: { from: { opacity: '0', transform: 'translateY(-4px)' } },
+      },
+      animation: { pop: 'pop .14s ease-out' },
     },
-  ],
+  },
+  plugins: [animate],
 }

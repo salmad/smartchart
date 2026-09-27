@@ -14,6 +14,8 @@ export interface TurnDeps {
 }
 export interface TurnRecord { request: string; reply?: string; error?: string; trace: TraceStep[]; modelCalls?: number; toolCalls?: number; ms: number; pre?: { intent: string; p: number }; written?: string[]; items: Item[] }
 
+/** The bot message's sub line while the turn runs. */
+export const WORKING = 'Working…'
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecord> {
@@ -24,10 +26,10 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
 
   dispatch({ type: 'set', patch: { busy: true } })
   dispatch({ type: 'message', message: { kind: 'user', text } })
-  dispatch({ type: 'message', message: { kind: 'bot', text: '', sub: 'Working…', trace: [] } })
+  dispatch({ type: 'message', message: { kind: 'bot', text: '', sub: WORKING, trace: [] } })
   const botAt = getState().messages.length - 1
   const setBot = (m: Message) => { const messages = getState().messages.slice(); messages[botAt] = m; dispatch({ type: 'set', patch: { messages } }) }
-  const log = (step: TraceStep) => { trace.push(step); setBot({ kind: 'bot', text: '', sub: 'Working…', trace: trace.slice() }) }
+  const log = (step: TraceStep) => { trace.push(step); setBot({ kind: 'bot', text: '', sub: WORKING, trace: trace.slice() }) }
 
   const adeck: AgentDeck = { style: start.style, theme: start.theme, slides: start.items.map((it) => ({ id: it.id, slide: it.slide, issues: it.errors || [], warnings: it.warnings || [], checks: it.checks || [] })) }
   const cur = start.items[start.current]
@@ -50,13 +52,7 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
     sync(adeck, r.written.at(-1) || getState().items[getState().current]?.id)
     const secs = ((performance.now() - t0) / 1000).toFixed(1)
     setBot({ kind: 'bot', text: r.reply, sub: `${plural(r.modelCalls, 'model call')} · ${plural(r.toolCalls, 'tool call')} · ${secs}s`, trace })
-    // Rule checks for every slide with the current code; judgment checks already made are kept.
-    const s = getState(), d = deckOf(s)
-    const items = s.items.map((it, i) => {
-      measurer.measure(it.slide, d, i)
-      return { ...it, checks: [...ruleChecks(it.slide, s.style, measurer.lines), ...(it.checks || []).filter((c) => c.id.startsWith('J'))] }
-    })
-    dispatch({ type: 'items', items })
+    dispatch({ type: 'items', items: recheckRules(getState(), measurer) })
     dispatch({ type: 'set', patch: { busy: false, history, working } })
     await Promise.all(r.written.map((id) => runChecks(id, deps, judge)))
     return { request: text, reply: r.reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: Math.round(performance.now() - t0),
@@ -67,6 +63,15 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
     dispatch({ type: 'set', patch: { busy: false, history, working } })
     return { request: text, error: msg, trace, ms: Math.round(performance.now() - t0), items: structuredClone(getState().items) }
   }
+}
+
+/** Rule checks for every slide with the current code; judgment checks already made are kept. */
+export function recheckRules(s: AppState, measurer: TurnDeps['measurer']): Item[] {
+  const d = deckOf(s)
+  return s.items.map((it, i) => {
+    measurer.measure(it.slide, d, i)
+    return { ...it, checks: [...ruleChecks(it.slide, s.style, measurer.lines), ...(it.checks || []).filter((c) => c.id.startsWith('J'))], checksPending: false }
+  })
 }
 
 /** Rule checks at once, then judgment checks (one Jev call) for one slide. */

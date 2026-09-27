@@ -3,122 +3,33 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Premium background colors - inspired by Linear's depth */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    
-    /* Card with subtle elevation */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    
-    /* Bold primary - Linear purple with Revolut energy */
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    
-    /* Subtle secondary - Canvas sophistication */
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    
-    /* Accent with energy */
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    
-    /* Refined borders */
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.5rem;
-    
-    /* Premium chart colors - Linear/Revolut/Framer inspired */
-    --chart-1: 12 76% 61%;   /* Vibrant Purple - primary accent */
-    --chart-2: 173 58% 39%;   /* Ocean Blue - professional depth */
-    --chart-3: 197 37% 24%;   /* Emerald Green - growth indicator */
-    --chart-4: 43 74% 66%;   /* Rich Violet - premium secondary */
-    --chart-5: 27 87% 67%;    /* Warm Amber - energy & attention */
-  }
-
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
+  html, body, #root { height: 100%; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { @apply bg-app-bg font-sans text-sm text-ink antialiased; line-height: 1.5; overflow: hidden; }
+  button, textarea, select { font: inherit; color: inherit; }
+  kbd { @apply ml-1.5 font-mono text-[11px] font-medium leading-none opacity-60; }
+  @media (max-width: 900px) { body { overflow: auto; } }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-  
-  /* Premium typography */
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
-  }
-}
+@layer components {
+  .spinner { @apply mr-2 inline-block size-3 animate-spin rounded-full border-[1.5px] border-line-2 border-t-ink align-[-1px]; animation-duration: .8s; }
 
-@layer utilities {
-  /* Premium gradients */
-  .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--chart-1)) 0%, hsl(var(--chart-4)) 100%);
-  }
-  
-  .gradient-mesh {
-    background:
-      radial-gradient(at 27% 37%, hsla(262, 80%, 60%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 97% 21%, hsla(199, 89%, 48%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 52% 99%, hsla(142, 71%, 45%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 10% 29%, hsla(280, 65%, 60%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 97% 96%, hsla(24, 95%, 53%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 33% 50%, hsla(199, 89%, 48%, 0.08) 0px, transparent 50%),
-      radial-gradient(at 79% 53%, hsla(262, 80%, 60%, 0.08) 0px, transparent 50%);
-  }
-  
-  /* Glass morphism */
-  .glass {
-    @apply backdrop-blur-xl bg-white/80 border border-white/20;
-  }
-  
-  .glass-dark {
-    @apply backdrop-blur-xl bg-black/40 border border-white/10;
-  }
-  
-  /* Smooth transitions */
-  .transition-smooth {
-    @apply transition-all duration-300 ease-out;
-  }
+  /* The custom swatch: a colour wheel, and the chosen colour as a dot in its middle when it is on.
+     Two gradients stacked with a CSS variable are clearer here than a Tailwind arbitrary value. */
+  .sw-wheel { background: conic-gradient(from 200deg, #E8B94A, #14B8A6, #0EA5E9, #2447D1, #7C5CFF, #D946EF, #E8B94A); }
+  .sw-wheel.on { background: radial-gradient(circle, var(--sw) 0 42%, transparent 44%), conic-gradient(from 200deg, #E8B94A, #14B8A6, #0EA5E9, #2447D1, #7C5CFF, #D946EF, #E8B94A); }
+
+  /* A chat saved by the prototype is HTML it produced (Chat renders it read-only); these are its classes. */
+  .legacy { @apply flex flex-col gap-[18px]; }
+  .legacy .msg { @apply grid gap-2; }
+  .legacy .msg.user { @apply max-w-[88%] justify-self-end rounded-[12px_12px_4px_12px] border border-line bg-raise px-[13px] py-2.5; }
+  .legacy .msg.bot p.sub { @apply text-[13px] text-ink-2; }
+  .legacy .msg.error p { @apply text-bad; }
+  .legacy .trace { @apply grid list-none gap-0.5 border-l border-line-2 pl-3; }
+  .legacy .trace li { @apply grid grid-cols-[96px_1fr_auto] items-baseline gap-2 text-[12.5px] text-ink-2; }
+  .legacy .trace li b { @apply font-mono text-[11px] font-medium uppercase leading-[1.6] tracking-[.04em] text-ink; }
+  .legacy .trace li em { @apply whitespace-nowrap font-mono text-[11px] not-italic leading-[1.6] text-ink-3; }
+  .legacy .trace li span { overflow-wrap: anywhere; }
+  .legacy .trace li span i { @apply not-italic text-ink-3; }
+  .legacy .spinner, .legacy .trace li.pending { display: none; }
 }
