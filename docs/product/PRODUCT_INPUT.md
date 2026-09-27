@@ -114,6 +114,13 @@ The key idea is **"LLM as configurator, not designer."** The agent emits a small
 6. **Model reliability** in multi-turn edits needs testing (GLM 5.3 Flash vs jev-router picks) before we commit to a default.
 7. **Illustrations:** in the columns and ⅔ templates, "illustration" means icon only, or also images / generated art?
 8. **Beyond the MVP: a sellable product on Next.js.** The goal after the MVP is a product other people sign up for and build their decks in. That needs server features the MVP skips: accounts and auth, decks stored per user, share links, billing, and a server-side agent with locked-down model endpoints. Proposed: move from Vite to Next.js at that point, so these have one home (API routes, middleware, server rendering for public and shared pages). The MVP stays on Vite. The engine (`src/engine`) is framework-free TypeScript and moves as is. Open: when to start, and which auth, database and billing providers.
+9. **Intentional highlighting.** In consulting slides, highlighting always has a reason. Colouring random words does not count. Types:
+   - **Colour with a reason:** colour a bar, row or number, and either say why right next to it or explain it in a legend.
+   - **Box:** draw a box around the thing that matters (a group of bars, a column, a cluster of cards).
+   - **Table areas:** highlight rows, columns or cells of a comparison table (e.g. the winning option).
+
+   The agent picks what to highlight and why; the engine draws it. This should replace free-form inline word colouring as the main way to add emphasis. Open: which highlight types each block supports, and how the "why" label is placed so it always fits.
+10. **Edit slide by hand.** Let the user edit a slide directly (text, numbers, maybe highlights) without going through the chat. Edits go through the same schema limits and fit check as agent edits, so a hand edit can't break the design. Open: inline editing on the slide or a side panel, and which fields can be edited.
 
 ### Design proposals
 - `docs/design/proposals/slides-v4.html` (**chosen for the MVP**, "Ink"): v1 rebuilt with the vocabulary of the marketing-heavy example deck:
