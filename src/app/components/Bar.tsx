@@ -16,7 +16,7 @@ export function Bar(p: BarProps) {
   return (
     <header className="flex h-14 items-center gap-6 border-b border-line pl-5 pr-4 max-[900px]:gap-3 max-[900px]:px-4">
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-baseline gap-2 text-[13px]">
-        <a href="/" onClick={(e) => { e.preventDefault(); go('/') }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">SmartChart</a>
+        <a href="/" onClick={(e) => { e.preventDefault(); go('/') }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
         <span aria-hidden className="text-ink-3">/</span>
         <span className="truncate text-ink-2" aria-current="page">{p.title}</span>
       </nav>

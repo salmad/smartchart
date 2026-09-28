@@ -41,7 +41,7 @@ export function Home({ account, repo }: Props) {
   return (
     <div className="site h-full overflow-y-auto bg-paper text-type">
       <header className="site-wrap flex h-16 items-center justify-between">
-        <a href="/" className="font-display text-[22px] font-extrabold tracking-[-.01em] [font-stretch:78%]">SmartChart</a>
+        <a href="/" className="font-display text-[22px] font-extrabold tracking-[-.01em] [font-stretch:78%]">Occam</a>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => go('/new')} className="h-10 rounded-full bg-type px-4 text-[14px] font-medium text-paper">New deck</button>
           <DropdownMenu>
@@ -101,7 +101,7 @@ function Empty() {
   return (
     <section className="mx-auto grid w-full max-w-[720px] gap-8 pt-10 text-center">
       <h1 className="site-h2 mx-auto">Your first deck starts with a sentence.</h1>
-      <p className="site-lede mx-auto">Paste your numbers, say what the slide should argue, and SmartChart builds it.</p>
+      <p className="site-lede mx-auto">Paste your doc, notes or numbers. Occam turns them into slides that land your point.</p>
       <div className="text-left"><PromptBox id="home-prompt" autoFocus /></div>
     </section>
   )

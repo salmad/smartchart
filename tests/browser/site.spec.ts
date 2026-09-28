@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test'
 async function site(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 })
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Board-ready slides from one sentence.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Nobody reads your docs/ })).toBeVisible()
 }
 
 for (const width of [1440, 390]) {
@@ -36,7 +36,7 @@ test('a prompt on the site opens the editor and keeps the style picked there', a
   await site(page, 1440)
   await page.getByRole('button', { name: 'Pitch' }).first().click()
   await page.getByLabel('Describe your slide').first().fill('Revenue grew from £2.1m to £5.4m')
-  await page.locator('#hero-prompt').getByRole('button', { name: 'Make a slide' }).click()
+  await page.locator('#hero-prompt').getByRole('button', { name: 'Turn my doc into slides' }).click()
   await expect(page).toHaveURL(/\/new$/)
   await expect(page.getByRole('button', { name: 'Look' })).toContainText('Pitch')
 })

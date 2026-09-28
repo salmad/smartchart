@@ -25,7 +25,7 @@ export function PromptBox({ id, autoFocus = false }: { id?: string; autoFocus?: 
       <div className="grid rounded-[18px] bg-white p-2 shadow-[0_1px_2px_rgba(18,18,17,.06),0_0_0_1px_rgba(18,18,17,.09)] transition-shadow focus-within:shadow-[0_1px_2px_rgba(18,18,17,.06),0_0_0_2px_#121211]">
         <label htmlFor={`${id ?? 'p'}-text`} className="sr-only">Describe your slide</label>
         <textarea id={`${id ?? 'p'}-text`} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} autoFocus={autoFocus} rows={3}
-          placeholder="Paste your numbers and say what the slide should argue. Revenue grew from £2.1m in 2023 to £5.4m in 2025…"
+          placeholder="Paste your doc, notes or numbers, and say what the room should take away…"
           className="min-h-[96px] resize-none bg-transparent px-3 pt-2.5 text-[16px] leading-[1.5] text-type outline-none placeholder:text-type-3" />
         <div className="flex items-center justify-between gap-3 pl-1.5">
           <div role="group" aria-label="Writing style" className="flex gap-1">
@@ -38,7 +38,7 @@ export function PromptBox({ id, autoFocus = false }: { id?: string; autoFocus?: 
           </div>
           <button type="submit"
             className="h-11 rounded-full bg-type px-5 text-[14px] font-medium text-paper transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-type focus-visible:ring-offset-2">
-            Make a slide
+            Turn my doc into slides
           </button>
         </div>
       </div>

@@ -15,7 +15,7 @@ const field = 'h-12 w-full rounded-xl border border-rule bg-white px-4 text-[15p
 const primary = 'h-12 w-full rounded-xl bg-type text-[15px] font-medium text-paper transition-opacity disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-type focus-visible:ring-offset-2'
 
 /** Sign in or keep a deck: Continue with Google, or a 6-digit code sent to any email. Always on paper. */
-export function SignIn({ open, onOpenChange, title = 'Sign in to SmartChart', lede = 'Your decks are saved to your account, on every device.', returnTo, onSignedIn }: Props) {
+export function SignIn({ open, onOpenChange, title = 'Sign in to Occam', lede = 'Your decks are saved to your account, on every device.', returnTo, onSignedIn }: Props) {
   const [email, setEmail] = useState(''), [code, setCode] = useState('')
   const [step, setStep] = useState<'email' | 'code'>('email'), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null)
 

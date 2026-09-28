@@ -4,7 +4,7 @@ import { LiveSlide } from './LiveSlide'
 
 const START = 50, FROM = 90 // the one orchestrated moment: on first view the line sweeps from 90% to 50%
 
-/** The same numbers twice: a slide tool's default chart over the SmartChart slide, split by a line you drag. */
+/** The same numbers twice: a slide tool's default chart over the Occam slide, split by a line you drag. */
 export function BeforeAfter() {
   const box = useRef<HTMLDivElement>(null), handle = useRef<HTMLDivElement>(null)
   const at = useRef(START), dragging = useRef(false)
@@ -56,7 +56,7 @@ export function BeforeAfter() {
         className="ba relative aspect-video cursor-ew-resize touch-pan-y select-none overflow-hidden rounded-2xl bg-stage shadow-[0_30px_80px_-30px_rgba(18,18,17,.45),0_0_0_1px_rgba(18,18,17,.06)]">
         <LiveSlide id="chart-notes" className="absolute inset-0" />
         <div className="ba-before absolute inset-0" aria-hidden><DefaultChart className="block size-full" /></div>
-        <div ref={handle} role="slider" tabIndex={0} aria-label="Compare the default chart with SmartChart" aria-valuemin={0} aria-valuemax={100} aria-valuenow={START}
+        <div ref={handle} role="slider" tabIndex={0} aria-label="Compare the default chart with Occam" aria-valuemin={0} aria-valuemax={100} aria-valuenow={START}
           aria-valuetext="Drag to compare" onKeyDown={key}
           className="ba-line group absolute inset-y-0 w-11 -translate-x-1/2 outline-none">
           <span className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-white shadow-[0_0_0_1px_rgba(0,0,0,.18)]" />
@@ -66,8 +66,8 @@ export function BeforeAfter() {
         </div>
       </div>
       <figcaption className="flex justify-between gap-6 text-[13px] text-type-2">
-        <span>A slide tool’s default chart</span>
-        <span className="text-right">The same numbers from SmartChart</span>
+        <span>What your slide tool gives you</span>
+        <span className="text-right">Same numbers, argued</span>
       </figcaption>
     </figure>
   )
