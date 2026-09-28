@@ -103,8 +103,10 @@ function useNightUnderNav(page: RefObject<HTMLDivElement | null>) {
     if (!root) return
     const nav = 64
     // A thin band just under the nav's bottom edge: a section crossing it is the one behind the nav.
+    // Before layout the root can be 0 px tall; a negative bottom inset would then read "--33px" and throw.
+    const below = Math.max(0, root.clientHeight - nav / 2 - 1)
     const io = new IntersectionObserver((es) => es.forEach((e) => setNight(e.isIntersecting)),
-      { root, rootMargin: `-${nav / 2}px 0px -${root.clientHeight - nav / 2 - 1}px 0px` })
+      { root, rootMargin: `-${nav / 2}px 0px -${below}px 0px` })
     root.querySelectorAll('[data-night]').forEach((el) => io.observe(el))
     return () => io.disconnect()
   }, [page])
