@@ -3,11 +3,11 @@ import { cn } from '@/app/lib/utils'
 import { BeforeAfter } from './BeforeAfter'
 import { Problems } from './Problems'
 import { PromptBox } from './PromptBox'
-import { Answer, How, Taste, UseCases } from './Story'
+import { Answer, How, UseCases, Why } from './Story'
 
 interface Props { onSignIn: () => void }
 
-/** The public site at /: the problem you recognise, the answer, how it works, and a prompt to try it. */
+/** The public site at /: the problem you recognise, the answer, how it works, why it holds, and a prompt to try it. */
 export function Site({ onSignIn }: Props) {
   const page = useRef<HTMLDivElement>(null)
   const night = useNightUnderNav(page)
@@ -34,10 +34,10 @@ export function Site({ onSignIn }: Props) {
         <section className="mx-auto grid w-full max-w-[1440px] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-14 px-10 pb-24 pt-14 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-8 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-8">
           <div className="grid gap-7 max-[1100px]:contents">
             <h1 className="font-display text-[clamp(46px,5.2vw,80px)] font-extrabold leading-[.94] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]">
-              Charts that look designed.
+              Board-ready slides from one sentence.
             </h1>
             <p className="max-w-[44ch] text-[18px] leading-[1.55] text-type-2">
-              Because they were. Describe your slide, and SmartChart builds it from components a designer made once.
+              Paste your numbers and say the point. You get the slide a top consulting designer would make. No formatting.
             </p>
             <PromptBox id="hero-prompt" />
           </div>
@@ -47,13 +47,13 @@ export function Site({ onSignIn }: Props) {
         <Problems />
         <Answer />
         <How />
-        <Taste />
+        <Why />
         <UseCases />
 
         <section aria-labelledby="closing" className="site-section">
           <div className="mx-auto grid max-w-[760px] gap-8 text-center">
-            <h2 id="closing" className="site-h2 mx-auto">Start with a sentence.</h2>
-            <p className="site-lede mx-auto">Your first slide needs no account. Keep it with your email.</p>
+            <h2 id="closing" className="site-h2 mx-auto">Your next slide takes a minute.</h2>
+            <p className="site-lede mx-auto">No account for the first one.</p>
             <div className="text-left"><PromptBox id="closing-prompt" /></div>
           </div>
         </section>

@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test'
 async function site(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 })
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Charts that look designed.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Board-ready slides from one sentence.' })).toBeVisible()
 }
 
 for (const width of [1440, 390]) {

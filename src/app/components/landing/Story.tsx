@@ -1,9 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { Style } from '@/engine/types'
 import { LiveSlide, MENU } from './LiveSlide'
-import { CHECK_COUNT, TASTE } from './taste'
+import { TASTE } from './taste'
 
-/** The answer, as an outcome: six kinds of slide, designed once, so a deck never drifts. */
+/** The answer, as an outcome: every slide in the gallery, designed once, so a deck never drifts. */
 export function Answer() {
   const strip = useRef<HTMLUListElement>(null)
   const [edge, setEdge] = useState({ start: true, end: false })
@@ -21,10 +21,10 @@ export function Answer() {
       <div className="site-section">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="site-head">
-            <h2 id="answer" className="site-h2">Every slide from the same designer.</h2>
+            <h2 id="answer" className="site-h2">One designer. Every slide.</h2>
             <p className="site-lede">
-              Six kinds of slide, each drawn once by a designer and reused every time. Your words and numbers change;
-              the type, colour and spacing never do. Slide thirty looks like slide one.
+              Each layout was drawn once, by hand. Your words and numbers change; the design never does.
+              Slide thirty looks like slide one.
             </p>
           </div>
           <div className="flex gap-2 max-[700px]:hidden">
@@ -32,11 +32,11 @@ export function Answer() {
             <Paddle label="Next" disabled={edge.end} onClick={() => page(1)}>›</Paddle>
           </div>
         </div>
-        <ul ref={strip} onScroll={onScroll} className="-mx-10 flex snap-x snap-mandatory scroll-px-10 gap-6 overflow-x-auto px-10 pb-2 [scrollbar-width:none] max-[700px]:-mx-4 max-[700px]:scroll-px-4 max-[700px]:px-4" aria-label="The seven kinds of slide">
-          {MENU.map(({ id, name }, i) => (
+        <ul ref={strip} onScroll={onScroll} className="-mx-10 flex snap-x snap-mandatory scroll-px-10 gap-6 overflow-x-auto px-10 pb-2 [scrollbar-width:none] max-[700px]:-mx-4 max-[700px]:scroll-px-4 max-[700px]:px-4" aria-label="Every slide in the gallery">
+          {MENU.map(({ id, name, group }, i) => (
             <li key={id} className="grid w-[min(640px,84vw)] flex-none snap-start gap-3">
               <LiveSlide id={id} className="rounded-xl shadow-[0_0_0_1px_rgba(243,238,228,.1)]" />
-              <span className="flex gap-3 text-[14px] text-[#A39B8E]"><b className="font-medium tabular-nums text-[#F3EEE4]">{i + 1}/{MENU.length}</b>{name}</span>
+              <span className="flex gap-3 text-[14px] text-[#A39B8E]"><b className="font-medium tabular-nums text-[#F3EEE4]">{i + 1}/{MENU.length}</b>{group} · {name}</span>
             </li>
           ))}
         </ul>
@@ -55,9 +55,9 @@ function Paddle({ label, disabled, onClick, children }: { label: string; disable
 }
 
 const STEPS: [string, string][] = [
-  ['Describe it', 'Paste numbers, notes or a table, and say what the slide should argue.'],
-  ['It picks the right slide', 'A chart, a table, a big number, a plan or cards, with a title that states the so-what.'],
-  ['It measures every slide', 'At 1920 × 1080, before you see it. Anything that doesn’t fit goes back to be fixed.'],
+  ['Describe it', 'Paste your numbers, say the point. A minute, not an evening.'],
+  ['Refine it', 'Ask in plain words: a sharper title, another chart, one more slide. The design holds.'],
+  ['Present it', 'Full screen, straight from the app.'],
 ]
 
 export function How() {
@@ -65,7 +65,10 @@ export function How() {
     <section aria-labelledby="how" className="site-section">
       <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-16 max-[900px]:grid-cols-1 max-[900px]:gap-10">
         <div className="grid gap-10">
-          <h2 id="how" className="site-h2">From a sentence to a finished slide.</h2>
+          <div className="grid gap-4">
+            <h2 id="how" className="site-h2">You write. We format.</h2>
+            <p className="site-lede">Every slide comes out calibrated: sized, aligned and on message.</p>
+          </div>
           <ol className="grid gap-8">
             {STEPS.map(([title, text], i) => (
               <li key={title} className="grid grid-cols-[40px_1fr] gap-x-4">
@@ -77,6 +80,10 @@ export function How() {
               </li>
             ))}
           </ol>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-rule pt-6 text-[15px] text-type-2">
+            <span className="rounded-full bg-paper-2 px-2.5 py-0.5 text-[12px] font-medium text-type">Soon</span>
+            Export to PDF and PowerPoint, share links, and connect your own agents.
+          </p>
         </div>
         <figure className="grid gap-4">
           <blockquote className="justify-self-end rounded-[18px_18px_4px_18px] bg-white px-4 py-3 text-[15px] leading-[1.5] text-type shadow-[0_0_0_1px_rgba(18,18,17,.08)]">
@@ -89,18 +96,27 @@ export function How() {
   )
 }
 
-/** Taste as a spec sheet: numbers the engine checks, not adjectives. */
-export function Taste() {
+const PILLARS: [string, string][] = [
+  ['Dozens of rules on every slide.', 'The standards top consulting firms teach, enforced in code. Every title makes a point. Every figure you gave shows up. Widths and clashes are measured. Drift from your point gets caught.'],
+  ['Templates from consulting designers.', 'Battle-tested layouts for charts, bridges, tables and plans. You never touch a font, a colour or an alignment.'],
+]
+
+/** Why it holds: the rules and the templates, then the rules as a spec sheet of numbers the engine checks. */
+export function Why() {
   return (
-    <section aria-labelledby="taste" className="site-section">
+    <section aria-labelledby="why" className="site-section">
       <div className="site-head">
-        <h2 id="taste" className="site-h2">Taste, quantified.</h2>
-        <p className="site-lede">
-          Good design is usually a matter of opinion. Here it is {CHECK_COUNT} checks every slide is held to,
-          plus a measurement of every line at full size. A slide ships only when it passes.
-        </p>
+        <h2 id="why" className="site-h2">Why it looks right every time.</h2>
       </div>
-      <dl className="grid grid-cols-4 gap-x-8 max-[1000px]:grid-cols-2 max-[520px]:grid-cols-1">
+      <div className="grid grid-cols-2 gap-x-12 gap-y-8 max-[900px]:grid-cols-1">
+        {PILLARS.map(([title, text]) => (
+          <div key={title} className="grid content-start gap-2">
+            <h3 className="text-[20px] font-semibold tracking-[-.01em]">{title}</h3>
+            <p className="max-w-[48ch] text-[16px] leading-[1.55] text-type-2">{text}</p>
+          </div>
+        ))}
+      </div>
+      <dl className="grid grid-cols-4 gap-x-8 max-[1000px]:grid-cols-2 max-[520px]:grid-cols-1" aria-label="Some of the rules">
         {TASTE.map((r) => (
           <div key={r.value} className="grid content-start gap-3 border-t border-type py-7">
             <dt className="font-display text-[clamp(40px,4.4vw,60px)] font-extrabold leading-none tracking-[-.01em] [font-stretch:78%]">{r.value}</dt>
@@ -125,7 +141,7 @@ export function UseCases() {
       <div className="site-head flex flex-wrap items-end justify-between gap-6">
         <div className="grid gap-4">
           <h2 id="cases" className="site-h2">For the decks that matter.</h2>
-          <p className="site-lede">Two writing styles on the same components. Consulting puts the argument in the title; Pitch keeps it to one bold claim.</p>
+          <p className="site-lede">Two writing styles, one design. Consulting argues in the title. Pitch lands one bold claim.</p>
         </div>
         <div role="group" aria-label="Writing style" className="flex rounded-full bg-paper-2 p-1">
           {([[null, 'Mixed'], ['consulting', 'All consulting'], ['pitch', 'All pitch']] as [Style | null, string][]).map(([v, label]) => (

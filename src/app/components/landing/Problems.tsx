@@ -6,17 +6,17 @@ export function Problems() {
   return (
     <section aria-labelledby="problems" className="site-section">
       <div className="site-head">
-        <h2 id="problems" className="site-h2">Slide tools hand you a blank page and a box of defaults.</h2>
-        <p className="site-lede">So every deck ends up with the same three problems.</p>
+        <h2 id="problems" className="site-h2">Good slides eat your evening.</h2>
+        <p className="site-lede">Slide tools leave the formatting to you. AI tools make it worse.</p>
       </div>
       <div className="grid grid-cols-3 gap-x-8 gap-y-12 max-[900px]:grid-cols-1">
-        <Problem title="Defaults are noise." text="Four colours, a legend to decode and a grid behind every bar. The point is in there somewhere.">
+        <Problem title="Default charts bury the point." text="Clashing colours, a legend, a grid. Nobody can tell what matters.">
           <DefaultChart className="block size-full" />
         </Problem>
-        <Problem title="Every slide starts from zero." text="Fonts, sizes and colours drift from slide to slide, until the deck reads as if five people wrote it.">
+        <Problem title="Every slide drifts." text="Fonts, sizes and colours change from slide to slide. The deck looks like five people made it.">
           <Drift />
         </Problem>
-        <Problem title="AI tools improvise." text="They invent a new layout for every prompt. Text spills out of its box and no two slides agree.">
+        <Problem title="AI slides break." text="A new layout for every prompt. Text spills out of its box.">
           <Spill />
         </Problem>
       </div>
