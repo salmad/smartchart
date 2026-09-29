@@ -23,8 +23,7 @@ export function Insight() {
           <h2 id="insight" className="site-h2">The room doesn’t read. It scans.</h2>
           <p className="site-lede">
             Nobody reads a wall of text in a meeting. They read the titles, glance at the charts and decide.
-            The best consulting slides are built for exactly that: the point first, one idea per slide, nothing the eye has to fight.
-            It looks like taste. It’s a set of laws.
+            The best slides are built for that: the point first, one idea per slide. It looks like taste. It’s a set of laws.
           </p>
         </div>
         <figure className="grid gap-5 rounded-2xl bg-white p-8 shadow-[0_0_0_1px_rgba(18,18,17,.08)] max-[700px]:p-5">

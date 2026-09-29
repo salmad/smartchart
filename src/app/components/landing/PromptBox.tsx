@@ -36,9 +36,9 @@ export function PromptBox({ id, autoFocus = false }: { id?: string; autoFocus?: 
               </button>
             ))}
           </div>
-          <button type="submit"
-            className="h-11 rounded-full bg-type px-5 text-[14px] font-medium text-paper transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-type focus-visible:ring-offset-2">
-            Turn my doc into slides
+          <button type="submit" aria-label="Turn my doc into slides"
+            className="h-11 whitespace-nowrap rounded-full bg-type px-5 text-[14px] font-medium text-paper transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-type focus-visible:ring-offset-2">
+            <span className="max-[700px]:hidden">Turn my doc into slides</span><span className="min-[701px]:hidden">Make slides</span>
           </button>
         </div>
       </div>

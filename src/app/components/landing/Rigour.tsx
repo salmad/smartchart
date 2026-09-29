@@ -7,14 +7,14 @@ import { LiveSlide } from './LiveSlide'
    enough to see the rigour, never the rules themselves. */
 const LAWS: [string, string, string, string][] = [
   ['Logic', 'What you argue',
-    'Your material broken into a claim, the reasons that hold it up and the evidence under each. No reason overlaps another, none is missing, every number is one you gave.',
+    'A claim, the reasons that hold it, the evidence under each. No reason overlaps, none is missing.',
     'So the argument holds when someone pushes on it.'],
   ['Writing', 'How you say it',
-    'The answer first, in the title. One idea per slide. Parallel points in the same form. Every word earns its place.',
-    'So the room gets it in one look, and the titles alone tell the story.'],
+    'The answer first, in the title. One idea per slide. Every word earns its place.',
+    'So the titles alone tell the story.'],
   ['Design', 'How it looks',
-    'Built for how people take in a page: the eye goes to the title, then to the one highlighted thing. Every edge on the grid, nothing spilling.',
-    'So nothing competes with your point, and slide thirty looks like slide one.'],
+    'The eye goes to the title, then to the one thing highlighted. Every edge on the grid.',
+    'So slide thirty looks like slide one.'],
 ]
 
 /* What the check caught on the way to the slide shown, in plain words. Each maps to a check the engine runs
@@ -37,11 +37,11 @@ export function Rigour() {
   return (
     <section aria-labelledby="rigour" className="site-section">
       <div className="site-head">
-        <p className="text-[14px] font-medium text-type-2">Rules, not vibes.</p>
+        <p className="text-[14px] font-medium text-type-2">Laws, not vibes.</p>
         <h2 id="rigour" className="site-h2">Your point, argued like a proof.</h2>
         <p className="site-lede">
-          A convincing slide is an argument: a claim, the reasons that hold it up, the evidence under each.
-          People have studied how to build one since Aristotle. We broke it down into laws, and our agents follow them on every slide.
+          A convincing slide is an argument. People have studied how to build one since Aristotle.
+          We wrote its laws down, and our agents follow them on every slide.
         </p>
       </div>
 
@@ -57,11 +57,6 @@ export function Rigour() {
           </div>
         ))}
       </div>
-      <p className="-mt-8 text-[12px] text-type-3">
-        Drawn from Aristotle’s logic and rhetoric, Barbara Minto’s <i>The Pyramid Principle</i>, taught at top consulting firms for decades,
-        and research on how people read a page.
-      </p>
-
       {/* One slide as its argument: the pyramid on the left becomes the slide on the right. */}
       <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-10 max-[1000px]:grid-cols-1">
         <figure className="grid gap-4" aria-label="The argument behind the slide">
@@ -82,20 +77,17 @@ export function Rigour() {
           <p className="text-[13px] text-type-3">Evidence: the chart, from the numbers you gave.</p>
         </figure>
         <figure className="grid gap-4">
-          <figcaption className="text-[13px] text-type-3">2 · The slide: the claim is the title, the reasons are the notes, the evidence is the chart</figcaption>
+          <figcaption className="text-[13px] text-type-3">2 · The slide</figcaption>
           <LiveSlide id={DEMO} className="rounded-xl shadow-[0_24px_60px_-28px_rgba(18,18,17,.45)]" />
         </figure>
       </div>
 
       <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-10 max-[1000px]:grid-cols-1">
         <figure className="grid content-start gap-4">
-          <figcaption className="text-[13px] text-type-3">3 · The cut: caught and fixed before you saw it</figcaption>
+          <figcaption className="text-[13px] text-type-3">3 · The cut</figcaption>
           <ul className="grid gap-2.5">
             {CUT.map((c) => (
-              <li key={c} className="flex items-baseline justify-between gap-4 border-b border-rule pb-2.5 text-[15px]">
-                <span className="text-type-2 line-through decoration-type-3">{c}</span>
-                <span className="shrink-0 text-[12px] text-type-3">fixed</span>
-              </li>
+              <li key={c} className="border-b border-rule pb-2.5 text-[15px] text-type-2 line-through decoration-type-3">{c}</li>
             ))}
           </ul>
           <p className="text-[15px] font-medium">Nothing left to remove. This runs on every slide.</p>

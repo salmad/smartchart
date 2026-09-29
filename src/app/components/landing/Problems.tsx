@@ -2,29 +2,27 @@ import type { ReactNode } from 'react'
 import { Cta } from './Cta'
 import { SlopSlide } from './SlopSlide'
 
-/* The maker's own words about the pain, from docs/product/USERS.md. Voice of customer, never praise of Occam. */
-const QUOTES: [string, string][] = [
-  ['Just think it’s insane how much time gets spent formatting slides.', 'https://news.ycombinator.com/item?id=39430872'],
-  ['messes up one trivial formatting detail and his boss makes him redo the entire thing.', 'https://news.ycombinator.com/item?id=17263428'],
-]
+/* The maker's own words about the pain, from docs/product/USERS.md: the review loop, the one idea the 11pm block doesn't say.
+   Voice of customer, never praise of Occam. */
+const QUOTE: [string, string] = ['messes up one trivial formatting detail and his boss makes him redo the entire thing.', 'https://news.ycombinator.com/item?id=17263428']
 const STUDY = 'https://www.empowersuite.com/hubfs/Marketing/Downloads/PowerPoint%20Studie%202020/Englisch/The%20Ultimate%20Global%20PowerPoint%20Study%20-%20empower.pdf'
 
-/** The problem three ways, each shown rather than told; then the night before, what it costs, and the maker's own words. */
+/** The three ways slides get made today, each shown rather than told; then the night before and what it costs. */
 export function Problems() {
   return (
     <section aria-labelledby="problems" className="site-section">
       <div className="site-head">
-        <h2 id="problems" className="site-h2">You have the thinking. The slides take the evening.</h2>
+        <h2 id="problems" className="site-h2">Your thinking is done. The slides aren’t.</h2>
         <p className="site-lede">The room decides in seconds, and it judges the slide before it hears your point.</p>
       </div>
       <div className="grid grid-cols-3 gap-x-8 gap-y-12 max-[900px]:grid-cols-1">
-        <Problem title="Docs pasted into slides." text="A wall of bullets and a stock picture. The point is in there somewhere.">
-          <SlopSlide className="block size-full" />
-        </Problem>
-        <Problem title="Every slide drifts." text="An hour a slide, fixing fonts and edges. And the deck still looks like five people made it.">
+        <Problem title="By hand." text="An hour a slide on the aligns, and the deck still looks like five people made it.">
           <Drift />
         </Problem>
-        <Problem title="AI slides that say nothing." text="Ask a chatbot for slides: a new layout every time, text off the page, and nobody checked any of it.">
+        <Problem title="From a template." text="Your doc, pasted: a wall of bullets and a stock picture. The point is in there somewhere.">
+          <SlopSlide className="block size-full" />
+        </Problem>
+        <Problem title="From a chatbot." text="A new layout every time, text off the page, and checked by nobody.">
           <Spill />
         </Problem>
       </div>
@@ -42,14 +40,10 @@ export function Problems() {
             And every deck is a verdict on you, not just the idea.
           </p>
         </div>
-        <div className="grid content-start gap-8">
-          {QUOTES.map(([q, url]) => (
-            <figure key={url} className="grid gap-2">
-              <blockquote className="font-display text-[clamp(22px,2vw,28px)] font-bold leading-[1.15] tracking-[-.01em] [font-stretch:78%]">“{q}”</blockquote>
-              <figcaption className="text-[13px] text-type-3">— <a href={url} className="underline decoration-rule underline-offset-4 hover:text-type-2">on Hacker News</a></figcaption>
-            </figure>
-          ))}
-        </div>
+        <figure className="grid content-start gap-2">
+          <blockquote className="font-display text-[clamp(22px,2vw,28px)] font-bold leading-[1.15] tracking-[-.01em] [font-stretch:78%]">“{QUOTE[0]}”</blockquote>
+          <figcaption className="text-[13px] text-type-3">— <a href={QUOTE[1]} className="underline decoration-rule underline-offset-4 hover:text-type-2">on Hacker News</a></figcaption>
+        </figure>
       </div>
       <div className="grid gap-4">
         <Cta />

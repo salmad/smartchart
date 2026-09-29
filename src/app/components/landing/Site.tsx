@@ -15,7 +15,7 @@ interface Props { onSignIn: () => void }
 const VALUE: [string, string][] = [
   ['You get', 'Slides built on the laws of logic, writing and design, checked and ready to present.'],
   ['It replaces', 'An evening of nudging boxes, or waiting on a designer.'],
-  ['It costs', 'Your first slide nothing. Then $10 for 30 slides, about 33 cents each.'],
+  ['It costs', 'Nothing for the first slide. Then $10 for 30.'],
 ]
 
 /** The public site at /: who it is for and the promise, the problem, why the room scans, the rigour behind every slide,
@@ -40,18 +40,14 @@ export function Site({ onSignIn }: Props) {
         {/* Hero: who it is for, the promise and the prompt on the left, the proof on the right, all above the fold. */}
         <section className="mx-auto grid w-full max-w-[1440px] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-14 px-10 pb-24 pt-8 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-8 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-8">
           <div className="grid gap-5 max-[1100px]:contents">
-            <p className="text-[14px] text-type-2">For founders, operators and anyone who has to make the case</p>
+            <p className="text-[14px] text-type-2">For founders and operators who have to make the case</p>
             <h1 className="font-display text-[clamp(40px,4vw,62px)] font-extrabold leading-[.96] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]">
               Nobody reads your docs.<br /> Make slides that land.
               <span className="mt-3 block text-[.62em] leading-none text-type-3">With taste. Without the slop.</span>
             </h1>
-            <div className="grid gap-2">
-              <p className="max-w-[50ch] text-[18px] leading-[1.5] text-type-2">
-                We decoded the laws of clear thinking, writing and design, from Aristotle’s logic to the way top consulting firms write.
-                Our agents build every slide on them and check it before you see it, in a minute. Even if you’ve never made a slide.
-              </p>
-              <p className="text-[14px] text-type-3">Built by physicists who take proof seriously.</p>
-            </div>
+            <p className="max-w-[46ch] text-[18px] leading-[1.5] text-type-2">
+              Paste the doc. Our agents build each slide on the laws of logic, writing and design, and check it before you see it.
+            </p>
             <div className="grid gap-3">
               <PromptBox id="hero-prompt" />
               <p className="text-[13px] text-type-3">Your first slide is free. No card, no account.</p>

@@ -40,6 +40,7 @@ export function Answer() {
             </li>
           ))}
         </ul>
+        <p className="text-[14px] text-[#A39B8E]">Every slide on this page is rendered live by the engine. Nothing here is a mockup.</p>
       </div>
     </section>
   )
@@ -66,8 +67,8 @@ export function How() {
       <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-16 max-[900px]:grid-cols-1 max-[900px]:gap-10">
         <div className="grid gap-10">
           <div className="grid gap-4">
-            <h2 id="how" className="site-h2">You bring the thinking. We do the rest.</h2>
-            <p className="site-lede">No layouts to pick, no boxes to nudge. A finished slide in a minute.</p>
+            <h2 id="how" className="site-h2">Paste. Refine. Present.</h2>
+            <p className="site-lede">You bring the thinking. We do the rest: no layouts to pick, no boxes to nudge.</p>
           </div>
           <ol className="grid gap-8">
             {STEPS.map(([title, text], i) => (
@@ -98,9 +99,9 @@ export function How() {
 }
 
 const PEOPLE: [string, string, string, Style][] = [
-  ['cards-value', 'Founders', 'Your raise, your investor update, your board meeting. Look like you have a strategy team.', 'pitch'],
-  ['table-notes', 'Operators', 'Your business case lives in a 12-page doc nobody will read. Turn it into ten slides they will.', 'consulting'],
-  ['waterfall-notes', 'Ex-consultants', 'The standard you were trained to, without the late nights.', 'consulting'],
+  ['cards-value', 'Founders', 'Your raise, your board meeting. Slides that look like you have a strategy team.', 'pitch'],
+  ['table-notes', 'Operators', 'Your business case, your quarterly review. A 12-page doc turned into ten slides they’ll read.', 'consulting'],
+  ['waterfall-notes', 'Ex-consultants', 'Your first deck without the slide team. The standard you were trained to, without the nights.', 'consulting'],
 ]
 
 /** Who it is for, each with a real slide; the same components in either writing style. */

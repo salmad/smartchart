@@ -13,7 +13,7 @@ export function Compare() {
   return (
     <section aria-labelledby="compare" className="site-section">
       <div className="site-head">
-        <h2 id="compare" className="site-h2">Other tools make slides pretty. We make them right.</h2>
+        <h2 id="compare" className="site-h2">Others make it pretty. We make it right.</h2>
       </div>
       <table className="w-full border-collapse text-left text-[16px] max-[700px]:text-[15px]">
         <thead>
@@ -31,6 +31,7 @@ export function Compare() {
           ))}
         </tbody>
       </table>
+      <p className="text-[15px] text-type-2">Occam, after the razor: nothing left to remove.</p>
       <Cta />
     </section>
   )
@@ -38,9 +39,8 @@ export function Compare() {
 
 /* Objections, answered before the close. Claims stay within what the product does today. */
 const FAQ: [string, string][] = [
-  ['I’ve never made a good slide. Will mine look like this?', 'Yes. The laws do the design; you bring the content. Every slide is built and checked the same way, whoever writes it.'],
-  ['Why not just ask ChatGPT or Gemini?', 'They write slides from scratch every time, and nothing checks them. Our agents build on laws designed once and check every slide before you see it.'],
-  ['Will it look like every other AI deck?', 'No. Every slide is built on layouts designed once and checked against the same laws, so it looks like a top firm made it, not a model.'],
+  ['I’ve never made a good slide. Will mine look like this?', 'Yes. The laws do the design; you bring the content. Every slide is built and checked the same way, whoever writes it, so it looks like a top firm made it, not a model.'],
+  ['Why not just ask ChatGPT or Gemini?', 'They write slides from scratch every time, and nothing checks them. Ours are built on layouts designed once and checked before you see them.'],
   ['I have a long doc. Will it work?', 'Paste it and say what the room should take away. You get the deck: the story in the titles, the evidence as charts and tables.'],
   ['Can I change it myself?', 'Ask in plain words: a sharper title, another chart, one more slide. Only what you asked changes, and the laws still hold.'],
   ['Can I export to PowerPoint?', 'Soon. Today you present straight from the app, full screen.'],
