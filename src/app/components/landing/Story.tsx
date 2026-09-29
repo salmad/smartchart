@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { Style } from '@/engine/types'
 import { Cta } from './Cta'
-import { Demo } from './Demo'
+import { Film } from './Film'
 import { LiveSlide, MENU } from './LiveSlide'
 import { Em, Head } from './parts'
 
@@ -56,10 +56,8 @@ function Paddle({ label, disabled, onClick, children }: { label: string; disable
 export function How() {
   return (
     <section aria-labelledby="how" className="site-section">
-      <Head id="how" kicker="The solution" center title={<>Ask in plain words. <Em>Get a checked slide.</Em></>}
-        lede="Occam asks what it needs, builds the slide, and runs three checks before you see it. Then it changes only what you ask for." />
-      <div className="mx-auto w-full max-w-[1200px]"><Demo /></div>
-      <div className="grid justify-items-center"><Cta /></div>
+      <Head id="how" kicker="The solution" center title={<>Ask in plain words.<br /> <Em>Get a checked slide.</Em></>} />
+      <div className="mx-auto w-full max-w-[1200px]"><Film /></div>
     </section>
   )
 }
