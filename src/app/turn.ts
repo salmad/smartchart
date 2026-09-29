@@ -19,6 +19,7 @@ export const WORKING = 'Working…'
 /** What the chat shows for a failed turn: known API errors as a sentence, anything else as it came. */
 function readable(msg: string): string {
   if (/rate limit|"1302"|\b429\b/i.test(msg)) return 'the model is busy right now. Wait a few seconds and send it again.'
+  if (/"signin"|Sign in to make slides/i.test(msg)) return 'your session ended. Sign in again, then send it again.'
   if (/timed? ?out|aborted/i.test(msg)) return 'the model did not answer in time. Send it again in a moment.'
   return msg
 }

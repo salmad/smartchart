@@ -12,11 +12,14 @@ export interface AppState {
   messages: Message[]; legacyThread: string | null
   busy: boolean; live: boolean; view: View
   pills: Record<string, { key: string; pending: boolean; pills: Pill[] }>
+  /** The last slide deleted and where it was, so it can come back (Undo). */
+  removed: { item: Item; at: number } | null
 }
 export type Action =
   | { type: 'open'; deck: SavedDeck } | { type: 'new' } | { type: 'set'; patch: Partial<AppState> }
   | { type: 'select'; index: number } | { type: 'message'; message: Message } | { type: 'items'; items: Item[]; focusId?: string }
   | { type: 'pickStarter'; slide: Slide; id: string } | { type: 'insertStarter'; slide: Slide; id: string }
+  | { type: 'removeSlide'; id: string } | { type: 'restoreSlide' } | { type: 'moveSlide'; id: string; to: number }
 
 const PICKED = "Here's your slide. Tell me what to change: your numbers, your words, a different chart."
 
@@ -24,7 +27,7 @@ export function initialState(): AppState {
   return {
     deckId: null, style: 'consulting', theme: 'ink', accent: null,
     items: [], current: 0, history: [], working: new Set(), messages: [], legacyThread: null,
-    busy: false, live: false, view: 'landing', pills: {},
+    busy: false, live: false, view: 'landing', pills: {}, removed: null,
   }
 }
 
@@ -39,7 +42,7 @@ export function reducer(s: AppState, a: Action): AppState {
         ...s, deckId: d.id, style: d.style, theme: d.theme, accent: d.accent || null,
         items, current: clamp(d.current || 0, items), history: d.history || [], working: new Set(d.working || []),
         messages: d.messages ?? [], legacyThread: d.thread ?? null,
-        view: items.length ? 'editor' : 'landing', pills: {},
+        view: items.length ? 'editor' : 'landing', pills: {}, removed: null,
       }
     }
     case 'new':
@@ -67,6 +70,28 @@ export function reducer(s: AppState, a: Action): AppState {
       items.splice(at, 0, starterItem(a.id, a.slide))
       return { ...s, items, current: at, view: 'editor' }
     }
+    // Deleting and moving wait for a running turn: the agent is writing to these slides.
+    case 'removeSlide': {
+      const at = s.items.findIndex((it) => it.id === a.id)
+      if (s.busy || at < 0) return s
+      const items = s.items.filter((it) => it.id !== a.id), working = new Set(s.working)
+      working.delete(a.id)
+      return { ...s, items, working, removed: { item: s.items[at], at }, current: clamp(at < s.current || (at === s.current && at === items.length) ? s.current - 1 : s.current, items) }
+    }
+    case 'restoreSlide': {
+      if (s.busy || !s.removed) return s
+      const at = Math.min(s.removed.at, s.items.length), items = s.items.slice()
+      items.splice(at, 0, s.removed.item)
+      return { ...s, items, current: at, removed: null }
+    }
+    case 'moveSlide': {
+      const from = s.items.findIndex((it) => it.id === a.id), to = Math.max(0, Math.min(a.to, s.items.length - 1))
+      if (s.busy || from < 0 || from === to) return s
+      const items = s.items.slice(), [it] = items.splice(from, 1)
+      items.splice(to, 0, it)
+      const cur = s.items[s.current]?.id
+      return { ...s, items, current: Math.max(0, items.findIndex((x) => x.id === cur)) }
+    }
   }
 }
 
@@ -82,6 +107,11 @@ export function toSaved(s: AppState): SavedDeck | null {
     updated: Date.now(),
   }
 }
+
+/** What counts as an edit: the slides and their order, the look, and the chat. Opening a deck, selecting a slide or
+    re-running its checks is not one, so it neither saves the deck nor moves it up the list of decks. */
+export const editKey = (d: SavedDeck): string =>
+  JSON.stringify([d.style, d.theme, d.accent, d.items.map((it) => [it.id, it.slide]), (d.messages ?? []).map((m) => [m.kind, m.text]), d.history.length])
 
 /** The engine's deck: the footer is the cover title; with no cover, only the page number. */
 export function deckOf(s: AppState): Deck {

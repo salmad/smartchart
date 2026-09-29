@@ -24,10 +24,6 @@
 }
 
 @layer components {
-  /* slides.css draws chart gridlines with a bare .grid class, which also matches Tailwind's grid utility on the
-     app's wrappers; SVG strokes inherit, so every mark would turn dotted. Each slide frame resets them. */
-  .slide-frame { stroke: none; stroke-width: 1; stroke-dasharray: none; }
-
   /* The public site: one measure for every section, so headings and content share a left edge. */
   .site-wrap { @apply mx-auto w-full max-w-[1280px] px-10 max-[700px]:px-4; }
   /* One rhythm: every section has the same padding, so every gap between two sections is the same. */

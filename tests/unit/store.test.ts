@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { loadStore, saveStore, deckName, localDeckRepo, KEY, type SavedDeck } from '@/app/store'
+import { loadStore, saveStore, deckName, localDeckRepo, summaryOf, KEY, type SavedDeck } from '@/app/store'
 
 const mem = (init: Record<string, string> = {}) => { const m = { ...init }; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v }, m } }
 
@@ -20,14 +20,14 @@ test('a refused write returns false instead of throwing', () => {
 test('the local repo saves, lists, gets and removes one deck at a time, and resolves false when the write is refused', async () => {
   const storage = mem(), repo = localDeckRepo(storage)
   const deck: SavedDeck = { id: 'd_1', style: 'consulting', theme: 'ink', accent: null, current: 0, items: [], history: [{ role: 'user', content: 'hi' }], working: [], messages: [], updated: 1 }
-  expect(await repo.save(deck)).toBe(true)
+  expect(await repo.save(deck)).toBeNull()
   expect(await repo.get('d_1')).toEqual(deck)
-  expect(await repo.list()).toEqual([deck])
+  expect(await repo.list()).toEqual([summaryOf(deck)])
   expect(loadStore(storage).active).toBe('d_1')
   expect(await repo.remove('d_1')).toBe(true)
   expect(await repo.get('d_1')).toBeNull()
   const full = localDeckRepo({ getItem: () => null, setItem: () => { throw new Error('quota') } })
-  expect(await full.save(deck)).toBe(false)
+  expect(await full.save(deck)).toMatch(/storage is full/)
 })
 test('the deck name reads as the title does on the slide, even with a sign inside a highlight', () => {
   const named = (title: string) => deckName({ items: [{ id: 's', slide: { template: 'chart', title } as SavedDeck['items'][number]['slide'], status: 'ok', errors: [], warnings: [], checks: [] }] })

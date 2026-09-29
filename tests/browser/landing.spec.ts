@@ -1,6 +1,9 @@
-/* The empty state: every starter, style switch, one deck per pick, and the gallery with the API down. */
+/* A new deck: the editor with the chat's question, every starter in the strip, the style switch in the composer,
+   one deck per pick, and picking with the API down. */
 import { test, expect } from '@playwright/test'
+import { signInAsDev } from './dev-account'
 test.beforeEach(async ({ page }) => { await page.addInitScript(() => { if (!sessionStorage.getItem('cleared')) { localStorage.clear(); sessionStorage.setItem('cleared', '1') } }) })
+signInAsDev()
 
 test('landing shows every starter and picking one creates a one-slide deck', async ({ page }) => {
   await page.goto('/new')
@@ -20,6 +23,7 @@ test('with the API down the gallery still works', async ({ page }) => {
   await page.route('**/api/health', (r) => r.fulfill({ status: 500, body: '{}' }))
   await page.goto('/new')
   await page.locator('[data-starter]').first().click()
+  await page.getByRole('button', { name: 'Start with this slide' }).click()
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
   await expect(page.getByText('The models are not reachable right now')).toBeVisible()
 })

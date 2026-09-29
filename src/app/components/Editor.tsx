@@ -4,7 +4,7 @@ import type { Deck } from '@/engine/types'
 import type { AppState } from '@/app/state'
 import { deckName } from '@/app/store'
 import { cn } from '@/app/lib/utils'
-import { phaseOf } from '@/app/phase'
+import { phaseLinesOf } from '@/app/phase'
 import { Bar, type BarProps } from './Bar'
 import { Chat } from './Chat'
 import { Checks } from './Checks'
@@ -16,16 +16,15 @@ export interface EditorProps {
   state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
   bar: Omit<BarProps, 'deckStyle' | 'theme' | 'accent' | 'hasSlides' | 'busy' | 'live' | 'title' | 'canAdd'>
   onSend: (text: string) => void; onClear: () => void; onSelect: (index: number) => void
-  /** Replaces the slide, checks and strip: the landing gallery or Add slide. */
+  onMove: (id: string, to: number) => void; onRemove: (id: string) => void; onRestore: () => void
+  /** Replaces the slide, checks and strip: the starter picker (a new deck, or Add slide). */
   stage?: ReactNode
-  /** The stage alone, without the chat: a new deck asks its one question before there is anything to talk about. */
-  solo?: boolean
-  /** A visitor after their free slide: the composer asks them to sign in instead. */
-  locked?: { text: string; action: string; onAction: () => void }
+  /** Your decks, down the left; null while hidden. */
+  decks: ReactNode
 }
 
 /** The editor screen: bar, chat, the current slide, its checks and the deck strip. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, stage, solo, locked }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks }: EditorProps) {
   const { items, current } = s
 
   // F presents; the arrows move through the deck. Typing in a field is left alone.
@@ -43,18 +42,22 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   return (
     <>
       <Bar {...bar} canAdd={items.length > 0 && s.view === 'editor'} deckStyle={s.style} theme={s.theme} accent={s.accent} hasSlides={items.length > 0} busy={s.busy} live={s.live} title={deckName({ items })} />
-      <div className={cn('grid h-[calc(100%-56px)] max-[900px]:flex max-[900px]:h-auto max-[900px]:flex-col', solo ? 'grid-cols-1' : 'grid-cols-[400px_1fr]')}>
-        {!solo && <aside className="flex min-h-0 flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent">
+      <div className={cn('grid h-[calc(100%-56px)] max-[900px]:flex max-[900px]:h-auto max-[900px]:flex-col',
+        decks ? 'grid-cols-[248px_400px_1fr]' : 'grid-cols-[400px_1fr]')}>
+        {decks}
+        <aside className="flex min-h-0 flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent">
           <Chat messages={s.messages} legacyThread={s.legacyThread} offline={booted && !s.live} />
-          <Composer chips={locked ? null : chips} canSend={s.live && !s.busy && !locked} busy={s.busy} onSend={onSend} onClear={onClear} locked={locked} />
-        </aside>}
+          <Composer chips={chips} canSend={s.live && !s.busy} busy={s.busy} onSend={onSend} onClear={onClear}
+            start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
+        </aside>
         {stage
           ? <main className="grid min-h-0 min-w-0 max-[900px]:contents">{stage}</main>
           : <main className="flex min-h-0 min-w-0 flex-col justify-center max-[900px]:contents">
-              <Stage deck={deck} current={current} slideId={items[current]?.id} phase={s.busy ? phaseOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
+              <Stage deck={deck} current={current} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
               {/* Under the slide and as wide as it: the deck, then the current slide's checks. */}
               <section className={`mx-auto flex max-h-[250px] min-w-0 max-w-[calc(100%-4rem)] flex-col gap-4 pb-5 max-[900px]:contents ${SLIDE_W}`}>
-                <Strip items={items} current={current} deck={deck} onSelect={onSelect} onAdd={bar.onAdd} busy={s.busy} />
+                <Strip items={items} current={current} deck={deck} busy={s.busy} onSelect={onSelect} onAdd={bar.onAdd}
+                  onMove={onMove} onRemove={onRemove} removed={s.removed?.item ?? null} onRestore={onRestore} />
                 <Checks item={items[current]} />
               </section>
             </main>}

@@ -19,7 +19,7 @@ interface GlmRequest {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const blocked = await modelGate(request, { userFrom, db: getDb(), salt: process.env.NEON_AUTH_COOKIE_SECRET ?? 'dev' })
+  const blocked = await modelGate(request, { userFrom, db: getDb() })
   if (blocked) return blocked
   const p = (await request.json().catch(() => ({}))) as GlmRequest
   if (!p.model || !GLM_MODELS.has(p.model)) return Response.json({ error: `model ${p.model} is not allowed` }, { status: 400 })

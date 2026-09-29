@@ -1,6 +1,11 @@
 /* Decks on the server for a signed-in user (/api/decks). The session cookie authenticates each call;
    a 401 means the session ended, and `onSignedOut` hears about it. */
-import { deckName, localDeckRepo, type DeckRepo, type SavedDeck } from './store'
+import { deckName, localDeckRepo, type DeckRepo, type DeckSummary, type SavedDeck } from './store'
+
+/** Why a save failed, by status, as the chat says it. */
+const SAVE_FAILED: Record<number, string> = {
+  401: 'Your session ended.', 404: 'This deck belongs to another account.', 413: 'This deck is too large to save.', 503: 'Saving isn’t set up on this server.',
+}
 
 interface Row { id: string; name: string; updated: number; data: SavedDeck }
 
@@ -14,7 +19,11 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     list: async () => {
       const r = await call('')
       if (!r.ok) throw new Error(`decks: ${r.status}`)
-      return ((await r.json()) as Row[]).map((row) => ({ ...row.data, id: row.id, updated: row.updated }))
+      // A missing look falls back to the defaults, so a deck saved before a field existed still lists.
+      return ((await r.json()) as Partial<DeckSummary>[]).map((d) => ({
+        id: String(d.id), name: d.name || 'Untitled deck', updated: Number(d.updated) || 0, slides: Number(d.slides) || 0,
+        style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink', accent: typeof d.accent === 'string' ? d.accent : null, first: d.first ?? null,
+      }))
     },
     get: async (id) => {
       const r = await call(`?id=${encodeURIComponent(id)}`)
@@ -26,8 +35,11 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     save: async (deck) => {
       try {
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: deck.id, name: deckName(deck), data: deck }) })
-        return r.ok
-      } catch { return false }
+        if (r.ok) return null
+        const said = ((await r.json().catch(() => null)) as { error?: unknown } | null)?.error
+        console.warn('deck save failed', r.status, said)
+        return SAVE_FAILED[r.status] ?? `The server answered ${r.status}${typeof said === 'string' ? `: ${said}` : '.'}`
+      } catch { return 'You’re offline, or the server can’t be reached.' }
     },
     remove: async (id) => {
       try { return (await call(`?id=${encodeURIComponent(id)}`, { method: 'DELETE' })).ok } catch { return false }
@@ -35,13 +47,13 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
   }
 }
 
-/** The deck in the URL. Signed in, a deck still in this browser (a visitor's first, one from before accounts,
-    or a copy kept while saves failed) moves to the account the first time it is opened, unless the account's is newer. */
-export async function findDeck(id: string, repo: DeckRepo, account: { id: string } | null, local: DeckRepo = localDeckRepo()): Promise<SavedDeck | null> {
+/** The deck in the URL. A copy kept in this browser while saves failed moves to the account the first time the deck
+    is opened, unless the account's is newer. `backup` is null when the decks already live in this browser (the dev account). */
+export async function findDeck(id: string, repo: DeckRepo, backup: DeckRepo | null = localDeckRepo()): Promise<SavedDeck | null> {
   const d = await repo.get(id).catch(() => null)
-  if (!account) return d
-  const mine = await local.get(id)
+  if (!backup) return d
+  const local = backup, mine = await local.get(id)
   if (!mine || (d && d.updated >= mine.updated)) { if (mine) await local.remove(id); return d }
-  if (await repo.save(mine)) await local.remove(id)
+  if (!(await repo.save(mine))) await local.remove(id)
   return mine
 }

@@ -155,7 +155,7 @@ function lines(box: HTMLElement, chart: Chart, W: number, H: number, _markers: M
   const max = Math.max(...spec.series.flatMap((s) => s.values)), step = niceStep(max / 3), top = Math.ceil(max / step) * step;
   const x = (i: number) => (i / (n - 1)) * pw, y = (v: number) => P.t + ph - (v / top) * ph;
   let g = `<defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop class="area-top" offset="0"/><stop class="area-bot" offset="1"/></linearGradient></defs>`, t = "";
-  for (let v = step; v <= top; v += step) { g += `<line class="grid" x1="0" x2="${pw}" y1="${y(v)}" y2="${y(v)}"/>`; t += lbl("tick", 0, y(v) - 10, "tl", fmt(spec.format, v)); }
+  for (let v = step; v <= top; v += step) { g += `<line class="gridline" x1="0" x2="${pw}" y1="${y(v)}" y2="${y(v)}"/>`; t += lbl("tick", 0, y(v) - 10, "tl", fmt(spec.format, v)); }
   g += `<line class="base" x1="0" x2="${pw}" y1="${y(0)}" y2="${y(0)}"/>`;
   // The first and last categories align to the plot's edges, so the last never runs into the end labels.
   spec.categories.forEach((c, i) => { t += lbl("cat", x(i), y(0) + 16, i === 0 ? "tc0" : i === n - 1 ? "tr" : "tc", esc(c)); });

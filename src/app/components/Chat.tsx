@@ -4,7 +4,8 @@ import type { Message } from '@/app/store'
 import { WORKING } from '@/app/turn'
 import { cn } from '@/app/lib/utils'
 import { config } from '@/app/config'
-import { phaseOf } from '@/app/phase'
+import { phaseLinesOf } from '@/app/phase'
+import { Glint, Thinking } from './Working'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
 
@@ -19,6 +20,13 @@ export function Chat({ messages, legacyThread, offline }: Props) {
     <div ref={thread} className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:overflow-visible max-[900px]:px-4">
       {/* HTML the prototype itself produced and escaped when it saved this deck; shown as it was, never edited. */}
       {legacyThread && <div className="legacy" dangerouslySetInnerHTML={{ __html: legacyThread }} />}
+      {/* A new deck: the question the first message answers. */}
+      {!messages.length && !legacyThread && (
+        <div className="grid gap-1.5">
+          <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>
+          <p className="text-ink-2">Paste your numbers, notes or doc and say what the room should take away. Or start from a slide on the right.</p>
+        </div>
+      )}
       {messages.map((m, k) => <Bubble key={k} m={m} />)}
       {offline && <p className="text-[13px] text-ink-2">{OFFLINE}</p>}
     </div>
@@ -34,7 +42,7 @@ function Bubble({ m }: { m: Message }) {
   return (
     <div className="grid gap-2">
       {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={cn('whitespace-pre-line', m.kind === 'error' ? 'text-bad' : 'text-ink')}>{p.trim()}</p>)}
-      {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="text-[13px] text-ink-2">{working && <i className="spinner" />}{working ? phaseOf(m.trace) : m.sub}</p>}
+      {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="flex items-center gap-2 text-[13px] text-ink-2">{working && <Glint />}{working ? <Thinking lines={phaseLinesOf(m.trace)} /> : m.sub}</p>}
       {trace.length > 0 && <Trace trace={trace} pending={working} />}
     </div>
   )

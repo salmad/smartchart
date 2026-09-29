@@ -1,38 +1,44 @@
 import { useEffect, useMemo, useState } from 'react'
 import { App } from './App'
 import { useSession } from './auth'
-import { Home } from './components/Home'
 import { SignIn } from './components/SignIn'
 import { Site } from './components/landing/Site'
+import { devAccount } from './dev-account'
 import { remoteDeckRepo } from './remote'
-import { useRoute } from './route'
+import { go, useRoute } from './route'
 import { localDeckRepo } from './store'
 
-/** Picks the screen: at /, the site (signed out) or your decks (signed in); the editor at /new and /d/:id. */
+/** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
+    on the site waits through sign-in). Signed in: the editor, at / on the deck worked on last. */
 export function Root() {
-  const route = useRoute(), session = useSession()
+  const route = useRoute(), live = useSession(), dev = useMemo(devAccount, [])
+  const session = dev ?? live
   const [signingIn, setSigningIn] = useState(false), [ended, setEnded] = useState(false)
-  // Signed in, decks live in the account; a visitor's deck lives in this browser until they sign in.
-  // A 401 from the decks API means the session ended: ask to sign in again, over whatever screen is open.
-  const repo = useMemo(() => (session ? remoteDeckRepo({ onSignedOut: () => setEnded(true) }) : localDeckRepo()), [session])
-  useEffect(() => setEnded(false), [session])
-  const again = session && (
-    <SignIn open={ended} onOpenChange={setEnded} returnTo={location.pathname} title="Sign in again"
-      lede="Your session ended. Your deck is kept in this browser until you sign in and it saves to your account." />
-  )
+  // Decks live in the account; a 401 from the decks API means the session ended: ask to sign in again, over
+  // whatever screen is open. The dev account keeps its decks in this browser, with nothing to back them up to.
+  const repo = useMemo(() => (dev ? localDeckRepo() : remoteDeckRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
+  useEffect(() => setEnded(false), [live])
 
   // The first session check is quick; until it answers, a blank page beats a flash of the wrong screen.
   if (session === undefined) return <div className={route.name === 'home' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />
-  if (route.name === 'home') {
-    if (session) return <><Home account={session} repo={repo} />{again}</>
+  if (!session) {
+    const wantsEditor = route.name !== 'home'
     return (
       <>
         <Site onSignIn={() => setSigningIn(true)} />
-        <SignIn open={signingIn} onOpenChange={setSigningIn} returnTo="/" />
+        <SignIn open={signingIn || wantsEditor} returnTo={wantsEditor ? location.pathname : '/'}
+          onOpenChange={(o) => { setSigningIn(o); if (!o && wantsEditor) go('/') }}
+          lede={route.name === 'new' ? 'Sign in and Occam makes your slide. Your decks are saved to your account.' : undefined} />
       </>
     )
   }
-  // Keyed by account, not by deck: signing in mid-deck restarts the editor on the account's repo, which picks the
-  // deck up; a new deck's URL becoming /d/:id after its first save must not restart it.
-  return <><App key={session?.id ?? 'visitor'} route={route} account={session} repo={repo} />{again}</>
+  // Keyed by account, not by deck: a new deck's URL becoming /d/:id after its first save must not restart it.
+  return (
+    <>
+      <App key={session.id} route={route} account={session} repo={repo} backup={backup} />
+      <SignIn open={ended} onOpenChange={setEnded} returnTo={location.pathname} title="Sign in again"
+        lede="Your session ended. Your deck is kept in this browser until you sign in and it saves to your account." />
+    </>
+  )
 }

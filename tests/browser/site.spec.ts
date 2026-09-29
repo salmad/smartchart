@@ -1,6 +1,7 @@
-/* The public site and Your decks: real slides with no fit issues, the before/after by keyboard, the prompt
-   opening the editor, and the decks list against a mocked account. */
+/* The public site and accounts: real slides with no fit issues, the before/after by keyboard, the prompt waiting
+   through sign-in, and the decks sidebar against a mocked account. */
 import { test, expect, type Page } from '@playwright/test'
+import { devAccount } from './dev-account'
 
 async function site(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 })
@@ -40,14 +41,30 @@ test('the before/after divider moves with the keyboard', async ({ page }) => {
   await expect(slider).toHaveAttribute('aria-valuenow', '100')
 })
 
-test('a prompt on the site opens the editor and keeps the style picked there', async ({ page }) => {
-  await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, live: false } }))
+test('signed out, a prompt on the site asks to sign in first and keeps the prompt for after', async ({ page }) => {
   await site(page, 1440)
   await page.getByRole('button', { name: 'Pitch' }).first().click()
   await page.getByLabel('Describe your slide').first().fill('Revenue grew from £2.1m to £5.4m')
   await page.locator('#hero-prompt').getByRole('button', { name: 'Turn my doc into slides' }).click()
   await expect(page).toHaveURL(/\/new$/)
-  await expect(page.getByRole('button', { name: 'Look' })).toContainText('Pitch')
+  await expect(page.getByRole('dialog')).toContainText('Sign in and Occam makes your slide')
+  expect(await page.evaluate(() => sessionStorage.getItem('smartchart.pendingPrompt'))).toContain('Revenue grew')
+})
+
+test('after sign-in, the prompt kept from the site opens the editor in the style picked there', async ({ page }) => {
+  await devAccount(page)
+  await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, live: false } }))
+  await page.addInitScript(() => sessionStorage.setItem('smartchart.pendingPrompt', JSON.stringify({ text: 'Revenue grew from £2.1m to £5.4m', style: 'pitch' })))
+  await page.goto('/new')
+  await page.getByRole('button', { name: 'deck look' }).click()
+  await expect(page.getByRole('group', { name: 'Deck style' }).getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('signed out, a deck link asks to sign in; closing the dialog goes to the site', async ({ page }) => {
+  await page.goto('/d/d_x')
+  await expect(page.getByRole('dialog')).toContainText('Continue with Google')
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL(/localhost:\d+\/$/)
 })
 
 test('Sign in opens the sign-in dialog, which explains when accounts are not set up', async ({ page }) => {
@@ -56,31 +73,46 @@ test('Sign in opens the sign-in dialog, which explains when accounts are not set
   await expect(page.getByRole('dialog')).toContainText('Continue with Google')
 })
 
-test('signed in, / lists your decks; one opens, one is deleted after a confirm', async ({ page }) => {
+test('signed in, / opens the last deck; the sidebar lists summaries, switches decks and deletes one after a confirm', async ({ page }) => {
   let decks = [
     { id: 'd_a', name: 'Acme', updated: Date.now(), data: { id: 'd_a', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: Date.now(),
       items: [{ id: 's', slide: { template: 'cover', title: 'Acme', subtitle: 'Board update.' }, status: 'ok', errors: [], warnings: [], checks: [] }] } },
     { id: 'd_b', name: 'Plan', updated: Date.now() - 3600e3, data: { id: 'd_b', style: 'pitch', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: 1,
       items: [{ id: 's', slide: { template: 'section', title: 'Plan' }, status: 'ok', errors: [], warnings: [], checks: [] }] } },
   ]
+  const fullReads: string[] = []
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
   await page.route('**/api/decks**', (r) => {
-    const id = new URL(r.request().url()).searchParams.get('id')
-    if (r.request().method() === 'DELETE') { decks = decks.filter((d) => d.id !== id); return r.fulfill({ status: 204 }) }
-    if (id) { const d = decks.find((x) => x.id === id); return d ? r.fulfill({ json: d }) : r.fulfill({ status: 404, json: {} }) }
-    return r.fulfill({ json: decks })
+    const id = new URL(r.request().url()).searchParams.get('id'), method = r.request().method()
+    if (method === 'PUT') return r.fulfill({ json: { ok: true } })
+    if (method === 'DELETE') { decks = decks.filter((d) => d.id !== id); return r.fulfill({ status: 204 }) }
+    if (id) { fullReads.push(id); const d = decks.find((x) => x.id === id); return d ? r.fulfill({ json: d }) : r.fulfill({ status: 404, json: {} }) }
+    // The list is summaries only, as the server sends it.
+    return r.fulfill({ json: decks.map(({ id, name, updated, data }) => ({ id, name, updated, slides: data.items.length, style: data.style, theme: data.theme, accent: data.accent, first: data.items[0].slide })) })
   })
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Your decks' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Open / })).toHaveCount(2)
-  await page.getByRole('button', { name: 'More for Plan' }).click()
-  await page.getByRole('menuitem', { name: 'Delete…' }).click()
-  await page.getByRole('button', { name: 'Delete deck' }).click()
-  await expect(page.getByRole('button', { name: /^Open / })).toHaveCount(1)
-  await page.getByRole('button', { name: 'Open Acme' }).click()
   await expect(page).toHaveURL(/\/d\/d_a$/)
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
+  expect(fullReads).toEqual(['d_a']) // only the deck being opened is read in full
+  const sidebar = page.getByRole('navigation', { name: 'Your decks' })
+  await expect(sidebar.getByRole('listitem')).toHaveCount(2)
+  await expect(sidebar).toContainText('Ann')
+  await sidebar.getByText('Plan').click()
+  await expect(page).toHaveURL(/\/d\/d_b$/)
+  await sidebar.getByRole('listitem').filter({ hasText: 'Acme' }).hover()
+  await sidebar.getByRole('button', { name: 'More for Acme' }).click()
+  await page.getByRole('menuitem', { name: 'Delete deck…' }).click()
+  await page.getByRole('button', { name: 'Delete deck' }).click()
+  await expect(sidebar.getByRole('listitem')).toHaveCount(1)
+  expect(decks.map((d) => d.id)).toEqual(['d_b'])
 })
+
+/** A real edit, so the deck saves: opening a deck alone does not. */
+async function edit(page: Page) {
+  await page.getByRole('button', { name: 'deck look' }).click()
+  await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Paper' }).click()
+  await page.keyboard.press('Escape')
+}
 
 const oneDeck = { id: 'd_a', name: 'Acme', updated: 1, data: { id: 'd_a', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: 1,
   items: [{ id: 's', slide: { template: 'cover', title: 'Acme', subtitle: 'Board update.' }, status: 'ok', errors: [], warnings: [], checks: [] }] } }
@@ -93,7 +125,8 @@ test('a failed save is retried, with one message, and a browser copy kept until 
     return r.fulfill({ json: oneDeck })
   })
   await page.goto('/d/d_a')
-  await expect(page.getByText('Couldn’t save. Retrying.')).toHaveCount(1)
+  await edit(page)
+  await expect(page.getByText('Couldn’t save. The server answered 500. Retrying; a copy is kept in this browser until it saves.')).toHaveCount(1)
   await expect.poll(() => page.evaluate(() => localStorage.getItem('smartchart.journey.decks.v1') ?? '')).toContain('d_a')
   await expect.poll(() => puts, { timeout: 6000 }).toBeGreaterThanOrEqual(3)
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{"decks":{}}').decks.d_a ?? null)).toBeNull()
@@ -103,6 +136,7 @@ test('when the session ends, a save asks to sign in again', async ({ page }) => 
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
   await page.route('**/api/decks**', (r) => r.request().method() === 'PUT' ? r.fulfill({ status: 401, json: { error: 'Sign in to see your decks.' } }) : r.fulfill({ json: oneDeck }))
   await page.goto('/d/d_a')
+  await edit(page)
   await expect(page.getByRole('dialog')).toContainText('Sign in again')
   await expect(page.getByRole('dialog')).toContainText('Continue with Google')
 })
@@ -116,7 +150,7 @@ test('back from Google, the session check passes the one-time verifier on, then 
   })
   await page.route('**/api/decks**', (r) => r.fulfill({ json: [] }))
   await page.goto('/?neon_auth_session_verifier=abc')
-  await expect(page.getByText('Your first deck starts with a sentence.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'What should this slide say?' })).toBeVisible() // no decks yet: a new one
   expect(seen[0]).toBe('abc')
   await expect(page).toHaveURL(/localhost:\d+\/$/)
 })

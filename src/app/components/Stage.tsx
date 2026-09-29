@@ -3,6 +3,7 @@ import { contexts } from '@/engine/slides/render'
 import type { Deck } from '@/engine/types'
 import { cn } from '@/app/lib/utils'
 import { SlideView } from './SlideView'
+import { Glint, Stars, Thinking } from './Working'
 
 /** The slide's width: the largest 16:9 that leaves room for the bar and the checks and strip below. The row under it shares it. */
 export const SLIDE_W = 'w-[min(100%,calc((100vh_-_56px_-_44px_-_250px)*16/9))]'
@@ -11,8 +12,8 @@ interface Props {
   deck: Deck; current: number; onPresent: () => void
   /** The current slide's id: a slide the stage has not shown before comes into focus once. */
   slideId: string | undefined
-  /** While a turn runs: what is happening, in plain words. */
-  phase: string | null
+  /** While a turn runs: what is happening, in plain words, as lines that take turns. */
+  phase: string[] | null
 }
 
 /** The current slide at the largest size that leaves room for the checks and the strip; a click presents. */
@@ -39,9 +40,10 @@ export function Stage({ deck, current, onPresent, slideId, phase }: Props) {
             </div>
           )}
         {slide && phase !== null && <div aria-hidden className="absolute inset-0 bg-[rgba(10,10,11,.45)] transition-opacity" />}
+        {phase !== null && <Stars />}
         {phase !== null && (
           <p role="status" className="absolute bottom-[6%] left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-full bg-raise/90 px-4 py-2 text-[13px] text-ink shadow-[0_0_0_1px_theme(colors.line-2),0_12px_32px_rgba(0,0,0,.5)] backdrop-blur">
-            <i className="spinner !mr-0" />{phase}
+            <Glint /><Thinking lines={phase} />
           </p>
         )}
       </div>

@@ -15,12 +15,18 @@ export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: stri
 export interface SavedDeck { id: string; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; thread?: string; updated: number }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
-/** How the app reaches saved decks, one deck at a time: in this browser (signed out) or on the server (signed in). */
+/** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
+/** A deck as a list shows it: name, time, size and the first slide in the deck's look. Open it with `get`. */
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; first: Slide | null }
+export const summaryOf = (d: SavedDeck): DeckSummary => ({
+  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, first: d.items?.[0]?.slide ?? null,
+})
+
 export interface DeckRepo {
-  list(): Promise<SavedDeck[]>
+  list(): Promise<DeckSummary[]>
   get(id: string): Promise<SavedDeck | null>
-  /** False when the save did not happen (storage full, offline, server error). */
-  save(deck: SavedDeck): Promise<boolean>
+  /** Null when saved; otherwise why not, as a sentence (storage full, offline, what the server said). */
+  save(deck: SavedDeck): Promise<string | null>
   remove(id: string): Promise<boolean>
 }
 
@@ -39,13 +45,13 @@ export function saveStore(store: Store, storage?: Pick<Storage, 'setItem'>): boo
   try { (storage ?? localStorage).setItem(KEY, JSON.stringify(store)); return true } catch { return false }
 }
 
-/** Decks in this browser: a visitor's first deck, and decks made before accounts existed. Same key and shape as v1. */
+/** Decks in this browser: copies kept while a save to the account fails, and the dev account's decks. Same key and shape as v1. */
 export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): DeckRepo {
   const read = () => loadStore(storage), write = (s: Store) => saveStore(s, storage)
   return {
-    list: async () => deckList(read()),
+    list: async () => deckList(read()).map(summaryOf),
     get: async (id) => read().decks[id] ?? null,
-    save: async (deck) => { const s = read(); s.decks[deck.id] = deck; s.active = deck.id; return write(s) },
+    save: async (deck) => { const s = read(); s.decks[deck.id] = deck; s.active = deck.id; return write(s) ? null : 'This browser’s storage is full.' },
     remove: async (id) => { const s = read(); if (!s.decks[id]) return false; delete s.decks[id]; if (s.active === id) s.active = null; return write(s) },
   }
 }

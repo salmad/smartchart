@@ -7,45 +7,60 @@ import { cn } from '@/app/lib/utils'
 import { SlideView } from './SlideView'
 import { Tile } from './Tile'
 
-interface Props { deck: Deck; current: number; onUse: (s: Starter) => void; onCancel: () => void }
+interface Props {
+  deck: Deck; current: number; onUse: (s: Starter) => void
+  /** Leaves Add slide; absent for a new deck, where this is the first screen and there is nothing to go back to. */
+  onCancel?: () => void
+}
 
 // Add slide opens on the group of the slide you are on: its likeliest neighbour.
 const GROUP_OF: Record<TemplateId, Group> = { chart: 'trend', table: 'compare', cards: 'case', number: 'number', steps: 'plan', cover: 'trend', section: 'trend' }
 const GROUPED = GROUPS.map((g) => ({ ...g, starters: STARTERS.filter((s) => s.group === g.id) })).filter((g) => g.starters.length)
 
-/** Add slide: one featured starter at full size in the deck's own look, a filmstrip of every starter below,
-    in deck order; a group's tab scrolls the strip to it and the tab of the featured slide stays lit. */
+/** Add slide, and a new deck's first screen: pick a starter from the filmstrip (nothing is picked at first), see it
+    full size in the deck's own look where it would land, then add it. A double click adds straight away; a group's
+    tab scrolls the strip to it. In a new deck the empty frame also points at the chat, where the slide can be described. */
 export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   const start = GROUP_OF[deck.slides[current]?.template ?? 'chart']
   const film = useRef<HTMLDivElement>(null)
-  const [featured, setFeatured] = useState<Starter>(() => STARTERS.find((s) => s.group === start) ?? STARTERS[0])
+  const [picked, setPicked] = useState<Starter | null>(null), [group, setGroup] = useState<Group>(start)
 
-  const group = featured.group
-  const pickGroup = (g: Group) => { setFeatured(STARTERS.find((s) => s.group === g) ?? featured); scrollTo(film.current, g, true) }
+  const pickGroup = (g: Group) => { setGroup(g); scrollTo(film.current, g, true) }
+  const pick = (s: Starter) => { setPicked(s); setGroup(s.group) }
   // Opens scrolled to the likeliest group, with the groups before it one scroll away.
   useEffect(() => scrollTo(film.current, start, false), [start])
 
   useEffect(() => {
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel?.()
+      if (e.key === 'Enter' && picked && !(e.target instanceof HTMLButtonElement)) onUse(picked)
+    }
     document.addEventListener('keydown', key)
     return () => document.removeEventListener('keydown', key)
-  }, [onCancel])
+  }, [onCancel, onUse, picked])
 
-  // The featured slide is shown where it would land (after the current slide), so its numbering is the real one.
-  const slide = starterSlide(featured, deck.style), at = Math.min(current + 1, deck.slides.length)
-  const preview = { ...deck, slides: [...deck.slides.slice(0, at), slide, ...deck.slides.slice(at)] }
+  // The picked slide is shown where it would land (after the current slide), so its numbering is the real one.
+  const at = Math.min(current + 1, deck.slides.length), slide = picked && starterSlide(picked, deck.style)
+  const preview = slide && { ...deck, slides: [...deck.slides.slice(0, at), slide, ...deck.slides.slice(at)] }
+  const frame = 'relative aspect-video w-full overflow-hidden rounded-[10px]', first = !deck.slides.length
 
   return (
     <div className="grid min-h-0 grid-rows-[1fr_auto] max-[900px]:order-1 max-[900px]:flex max-[900px]:flex-col">
       <div className="grid min-h-0 content-center justify-items-center gap-4 px-8 pb-3 pt-7 max-[900px]:px-4 max-[900px]:pt-4">
-        <div data-featured className="w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] max-[900px]:w-full">
-          <SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]}
-            className="relative aspect-video w-full overflow-hidden rounded-[10px] shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)]" />
+        <div data-add-preview className="w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] max-[900px]:w-full">
+          {slide && preview
+            ? <div data-featured><SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]} className={cn(frame, 'shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)]')} /></div>
+            : <div className={cn(frame, 'grid place-content-center gap-1.5 border border-dashed border-line-2 text-center')}>
+                <p className="text-[17px] font-medium">{first ? 'Your slide appears here.' : 'Add a slide'}</p>
+                <span className="text-ink-3">{first ? 'Describe it in the chat, or start from a slide below.' : 'Pick one below to preview it here, in your deck’s look.'}</span>
+              </div>}
         </div>
         <div className="flex w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] items-center gap-3 max-[900px]:w-full max-[900px]:flex-wrap">
-          <p className="mr-auto text-ink-2"><b className="font-medium text-ink">{featured.label}.</b> {featured.blurb}.</p>
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button onClick={() => onUse(featured)}>Use this slide</Button>
+          <p className="mr-auto text-ink-2">
+            {picked ? <><b className="font-medium text-ink">{picked.label}.</b> {picked.blurb}. <span className="text-ink-3">Change it in your own words once it’s in.</span></> : <span className="text-ink-3">{first ? 'Pick a starting slide to preview it.' : `Goes in after slide ${current + 1}.`}</span>}
+          </p>
+          {onCancel && <Button variant="outline" onClick={onCancel}>Cancel</Button>}
+          <Button onClick={() => picked && onUse(picked)} disabled={!picked}>{first ? 'Start with this slide' : `Add as slide ${at + 1}`}</Button>
         </div>
       </div>
       <div className="grid gap-3 border-t border-line px-8 pb-5 pt-4 max-[900px]:px-4">
@@ -57,11 +72,11 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
             </button>
           ))}
         </div>
-        <div ref={film} role="tabpanel" className="relative flex gap-6 overflow-x-auto px-0.5 pb-1 pt-0.5">
+        <div ref={film} role="tabpanel" className="relative flex gap-6 overflow-x-auto px-0.5 pb-3 pt-0.5">
           {GROUPED.map((g) => (
             <div key={g.id} data-group={g.id} className="flex flex-none gap-3">
               {g.starters.map((s) => (
-                <Tile key={s.id} starter={s} deckStyle={deck.style} theme={deck.theme} accent={deck.accent ?? null} size="film" selected={s.id === featured.id} onPick={setFeatured} />
+                <Tile key={s.id} starter={s} deckStyle={deck.style} theme={deck.theme} accent={deck.accent ?? null} selected={s.id === picked?.id} onPick={pick} onConfirm={onUse} />
               ))}
             </div>
           ))}

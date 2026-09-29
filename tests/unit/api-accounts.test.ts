@@ -2,15 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { sessionUser, type User } from '../../api/_lib/auth'
 import type { Db, DeckRow } from '../../api/_lib/db'
 import { decksHandler } from '../../api/_lib/decks'
-import { ANON_CALLS_PER_DAY, clientKey, modelGate } from '../../api/_lib/quota'
+import { modelGate } from '../../api/_lib/quota'
 import { routeFor } from '../../vite/api-dev'
 
 /** An in-memory Db with the same ownership rules as the SQL one. */
-function fakeDb(): Db & { rows: Map<string, DeckRow & { user: string }>; usage: Map<string, number> } {
-  const rows = new Map<string, DeckRow & { user: string }>(), usage = new Map<string, number>()
+function fakeDb(): Db & { rows: Map<string, DeckRow & { user: string }> } {
+  const rows = new Map<string, DeckRow & { user: string }>()
   return {
-    rows, usage,
-    listDecks: async (u) => [...rows.values()].filter((r) => r.user === u).sort((a, b) => b.updated - a.updated),
+    rows,
+    listDecks: async (u) => [...rows.values()].filter((r) => r.user === u).sort((a, b) => b.updated - a.updated).map(({ id, name, updated, data }) => {
+      const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
+      return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null }
+    }),
     getDeck: async (u, id) => { const r = rows.get(id); return r && r.user === u ? r : null },
     putDeck: async (u, id, name, data) => {
       const r = rows.get(id)
@@ -19,7 +22,6 @@ function fakeDb(): Db & { rows: Map<string, DeckRow & { user: string }>; usage: 
       return true
     },
     deleteDeck: async (u, id) => { const r = rows.get(id); return !!r && r.user === u && rows.delete(id) },
-    bumpUsage: async (k) => { const n = (usage.get(k) ?? 0) + 1; usage.set(k, n); return n },
   }
 }
 
@@ -36,7 +38,9 @@ describe('decks API', () => {
   it('saves, lists, opens and deletes a deck for its owner', async () => {
     const db = fakeDb(), h = decksHandler({ userFrom: as(ann), db: () => db })
     expect((await h(req('PUT', '', { id: 'd_1', name: 'Board update', data: { items: [] } }))).status).toBe(200)
-    expect(await (await h(req('GET'))).json()).toMatchObject([{ id: 'd_1', name: 'Board update' }])
+    const listed = await (await h(req('GET'))).json()
+    expect(listed).toMatchObject([{ id: 'd_1', name: 'Board update', slides: 0 }])
+    expect(listed[0]).not.toHaveProperty('data') // the list never carries a whole deck
     expect(await (await h(req('GET', '?id=d_1'))).json()).toMatchObject({ id: 'd_1', data: { items: [] } })
     expect((await h(req('DELETE', '?id=d_1'))).status).toBe(204)
     expect(await (await h(req('GET'))).json()).toEqual([])
@@ -61,26 +65,14 @@ describe('decks API', () => {
   })
 })
 
-describe('model quota', () => {
-  const call = () => new Request('http://x/api/glm', { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.7, 10.0.0.1' } })
-  it('lets a visitor make the day’s allowance of calls, then answers 429', async () => {
-    const db = fakeDb(), deps = { userFrom: as(null), db, salt: 's' }
-    for (let i = 0; i < ANON_CALLS_PER_DAY; i++) expect(await modelGate(call(), deps)).toBeNull()
-    const r = await modelGate(call(), deps)
-    expect(r?.status).toBe(429)
-    expect(await r?.json()).toMatchObject({ code: 'quota' })
-  })
-  it('never limits a signed-in user, and without a database nothing is limited', async () => {
-    const db = fakeDb()
-    for (let i = 0; i < ANON_CALLS_PER_DAY + 5; i++) expect(await modelGate(call(), { userFrom: as(ann), db, salt: 's' })).toBeNull()
-    expect(db.usage.size).toBe(0)
-    expect(await modelGate(call(), { userFrom: as(null), db: null, salt: 's' })).toBeNull()
-  })
-  it('keys by the first forwarded IP, hashed with a salt', () => {
-    const k = clientKey(call(), 's')
-    expect(k).toMatch(/^[0-9a-f]{32}$/)
-    expect(k).not.toContain('203')
-    expect(clientKey(call(), 't')).not.toBe(k)
+describe('model gate', () => {
+  const call = () => new Request('http://x/api/glm', { method: 'POST' })
+  it('answers 401 to a signed-out caller, lets a signed-in user through, and gates nothing without a database', async () => {
+    const r = await modelGate(call(), { userFrom: as(null), db: fakeDb() })
+    expect(r?.status).toBe(401)
+    expect(await r?.json()).toMatchObject({ code: 'signin' })
+    expect(await modelGate(call(), { userFrom: as(ann), db: fakeDb() })).toBeNull()
+    expect(await modelGate(call(), { userFrom: as(null), db: null })).toBeNull()
   })
 })
 

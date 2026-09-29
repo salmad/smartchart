@@ -1,6 +1,9 @@
 /* App smoke without the models: load, a deck through window.__journey, present, and a prototype deck. */
 import { test, expect, type Page } from '@playwright/test'
 import type { Slide, Style } from '@/engine/types'
+import { signInAsDev } from './dev-account'
+
+signInAsDev()
 
 const KEY = 'smartchart.journey.decks.v1'
 const COVER = { template: 'cover', title: 'Acme', subtitle: 'Cards for small businesses.' }
@@ -42,6 +45,14 @@ test('chart marks do not inherit the app layout strokes', async ({ page }) => {
   await boot(page)
   await load(page, [{ template: 'chart', title: 'Revenue grew', chart: { categories: ['2023', '2024', '2025'], format: '£{v}m', series: [{ name: 'Revenue', mark: 'bar', values: [2.1, 3.4, 5.4] }] } }])
   const dashes = await page.locator('main .slide .bar').evaluateAll((els) => els.map((e) => getComputedStyle(e).strokeDasharray))
+  expect(dashes.length).toBeGreaterThan(0)
+  expect(new Set(dashes)).toEqual(new Set(['none']))
+})
+
+test('app icons are solid lines: slide styles never reach the chrome', async ({ page }) => {
+  await boot(page)
+  await load(page, [{ template: 'chart', title: 'Revenue grew', chart: { categories: ['2023', '2024', '2025'], format: '£{v}m', series: [{ name: 'Revenue', mark: 'bar', values: [2.1, 3.4, 5.4] }] } }])
+  const dashes = await page.locator('header svg, nav svg').evaluateAll((els) => els.map((e) => getComputedStyle(e).strokeDasharray))
   expect(dashes.length).toBeGreaterThan(0)
   expect(new Set(dashes)).toEqual(new Set(['none']))
 })

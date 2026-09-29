@@ -1,18 +1,19 @@
-/* The deck's look in one bar button: writing style, palette and accent, in a popover. */
+/* The deck's own menu, opened from its name in the bar: its look (writing style, palette, accent) in a popover. */
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { ChevronDown } from 'lucide-react'
 import type { Style, Theme } from '@/engine/types'
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { AccentPanel, accentLook, paint } from './AccentPicker'
 
 interface Props {
+  /** The deck's name: the trigger, and the panel's heading. */
+  title: string
   deckStyle: Style; theme: Theme; accent: string | null
   /** The writing style is fixed once the deck has slides: the agent wrote them in it. */
   styleLocked: boolean
   onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void
 }
 
-const STYLE_NAME: Record<Style, string> = { consulting: 'Consulting', pitch: 'Pitch' }
-const THEME_NAME: Record<Theme, string> = { ink: 'Ink', paper: 'Paper' }
 
 export function LookMenu(p: Props) {
   const [open, setOpen] = useState(false)
@@ -22,13 +23,18 @@ export function LookMenu(p: Props) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger aria-label="Look"
-        className="flex h-8 cursor-pointer items-center gap-2 rounded-[9px] border border-line bg-panel pl-[11px] pr-3 text-[13px] max-[900px]:pr-[11px] text-ink-2 transition-colors hover:border-line-2 hover:text-ink data-[state=open]:border-line-2 data-[state=open]:text-ink">
-        <i ref={dot} className="size-3 flex-none rounded-full bg-[var(--sw)] shadow-[0_0_0_1px_rgba(255,255,255,.14)]" />
-        <span className="max-[900px]:hidden">{STYLE_NAME[p.deckStyle]} · {THEME_NAME[p.theme]}</span>
+      <PopoverTrigger aria-label={`${p.title}: deck look`} title="This deck’s look"
+        className="-mx-1.5 flex h-8 min-w-0 cursor-pointer items-center gap-2 rounded-lg px-1.5 text-[13px] text-ink-2 outline-none transition-colors hover:bg-panel hover:text-ink focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel data-[state=open]:text-ink">
+        <span className="truncate">{p.title}</span>
+        <i ref={dot} className="size-2.5 flex-none rounded-full bg-[var(--sw)] shadow-[0_0_0_1px_rgba(255,255,255,.14)]" />
+        <ChevronDown className="size-3.5 flex-none text-ink-3" />
       </PopoverTrigger>
-      <PopoverContent align="center" sideOffset={8} aria-label="Look"
+      <PopoverContent align="start" sideOffset={8} aria-label="Deck look"
         className="grid w-72 gap-5 rounded-[14px] border-line-2 bg-raise p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
+        <header className="grid gap-0.5">
+          <h2 className="truncate text-[14px] font-medium text-ink">{p.title}</h2>
+          <p className="text-[12.5px] text-ink-3">This deck’s look, on every slide.</p>
+        </header>
         <Section title="Writing" note={p.styleLocked ? 'Set when the deck starts.' : undefined}>
           <Seg label="Deck style" value={p.deckStyle} disabled={p.styleLocked} onChange={p.onStyle}
             options={[['consulting', 'Consulting'], ['pitch', 'Pitch']]} />

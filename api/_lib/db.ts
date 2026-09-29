@@ -3,7 +3,8 @@
 import { neon } from '@neondatabase/serverless'
 
 export interface DeckRow { id: string; name: string; updated: number; data: unknown }
-export interface DeckSummary { id: string; name: string; updated: number; data: unknown }
+/** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown }
 
 /** Everything the API does with the database, so tests can swap in a fake. Every call is scoped to a user. */
 export interface Db {
@@ -11,14 +12,11 @@ export interface Db {
   getDeck(userId: string, id: string): Promise<DeckRow | null>
   putDeck(userId: string, id: string, name: string, data: unknown): Promise<boolean>
   deleteDeck(userId: string, id: string): Promise<boolean>
-  /** Adds one to today's count for this key and returns the new count. */
-  bumpUsage(key: string): Promise<number>
 }
 
 const SCHEMA = [
   `create table if not exists decks (id text primary key, user_id text not null, name text not null, data jsonb not null, updated_at timestamptz not null default now())`,
   `create index if not exists decks_user on decks (user_id, updated_at desc)`,
-  `create table if not exists anon_usage (key text not null, day date not null default current_date, calls int not null default 0, primary key (key, day))`,
 ]
 
 let db: Db | null | undefined
@@ -31,15 +29,20 @@ export function getDb(): Db | null {
   const sql = neon(url)
   let ready: Promise<unknown> | null = null
   const q = async <T>(text: string, params: unknown[] = []): Promise<T[]> => {
-    ready ??= SCHEMA.reduce<Promise<unknown>>((p, s) => p.then(() => sql.query(s)), Promise.resolve())
+    // A failed setup is not kept: the next query tries again instead of failing until the next cold start.
+    ready ??= SCHEMA.reduce<Promise<unknown>>((p, s) => p.then(() => sql.query(s)), Promise.resolve()).catch((e: unknown) => { ready = null; throw e })
     await ready
     return (await sql.query(text, params)) as T[]
   }
   type Row = { id: string; name: string; updated: string | Date; data: unknown }
   const row = (r: Row) => ({ id: r.id, name: r.name, updated: new Date(r.updated).getTime(), data: r.data })
   return (db = {
-    // The list carries each deck's data so a card can draw its first slide; decks are small (tens of kB).
-    listDecks: async (u) => (await q<Row>('select id, name, updated_at as updated, data from decks where user_id = $1 order by updated_at desc limit 200', [u])).map(row),
+    // The list carries only what a card draws (the first slide and the look); a deck's chat and agent history
+    // can run to megabytes, so the whole deck is read only when it is opened.
+    listDecks: async (u) => (await q<Omit<DeckSummary, 'updated'> & { updated: string | Date }>(
+      `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
+         data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first
+       from decks where user_id = $1 order by updated_at desc limit 200`, [u])).map((r) => ({ ...r, slides: Number(r.slides), updated: new Date(r.updated).getTime() })),
     getDeck: async (u, id) => { const r = await q<Row>('select id, name, updated_at as updated, data from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? row(r[0]) : null },
     // A deck id belongs to whoever saved it first: another user's id is never overwritten.
     putDeck: async (u, id, name, data) => (await q<{ id: string }>(
@@ -47,7 +50,5 @@ export function getDb(): Db | null {
        on conflict (id) do update set name = excluded.name, data = excluded.data, updated_at = now() where decks.user_id = excluded.user_id
        returning id`, [id, u, name, JSON.stringify(data)])).length > 0,
     deleteDeck: async (u, id) => (await q<{ id: string }>('delete from decks where user_id = $1 and id = $2 returning id', [u, id])).length > 0,
-    bumpUsage: async (key) => (await q<{ calls: number }>(
-      `insert into anon_usage (key, calls) values ($1, 1) on conflict (key, day) do update set calls = anon_usage.calls + 1 returning calls`, [key]))[0]?.calls ?? 0,
   })
 }
