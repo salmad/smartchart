@@ -28,7 +28,7 @@ export function Doc({ marks, scanning }: { marks: number; scanning: boolean }) {
 function Mark({ on, children }: { on: boolean; children: ReactNode }) {
   return (
     <span className="relative">
-      <span aria-hidden className={cn('absolute -inset-x-[.2cqw] inset-y-[.05cqw] origin-left rounded-[.2cqw] bg-[#E8B94A]/40 transition-transform duration-[900ms] ease-[cubic-bezier(.2,.8,.2,1)]', on ? 'scale-x-100' : 'scale-x-0')} />
+      <span aria-hidden className={cn('absolute -inset-x-[.2cqw] inset-y-[.05cqw] origin-left rounded-[.2cqw] bg-[#E8B94A]/40 transition-transform duration-900 ease-film', on ? 'scale-x-100' : 'scale-x-0')} />
       <span className="relative">{children}</span>
     </span>
   )
@@ -62,20 +62,21 @@ export function Celebrate() {
 /** The request. Typing: the composer, with a cursor and the send button. Sent: the message rises away into the chat and
     Occam's status is left in its place (working on it, then done). */
 export function Prompt({ text, sent, status }: { text: string; sent: boolean; status?: 'working' | 'done' }) {
-  if (!sent) {
-    return (
-      <div className="flex items-center gap-[1cqw] whitespace-nowrap rounded-full bg-[#1C1A17] py-[.7cqw] pl-[1.6cqw] pr-[.7cqw] text-[1.3cqw] text-[#F3EEE4] shadow-[0_0_0_1px_#3A352E,0_1.5cqw_3cqw_-1cqw_rgba(0,0,0,.8)]">
-        <span>{text}<i aria-hidden className="ml-px inline-block h-[1.1em] w-px translate-y-[.15em] animate-pulse bg-[#F3EEE4]" /></span>
-        <span aria-hidden className="grid size-[2.2cqw] place-items-center rounded-full bg-[#F3EEE4] text-[1.2cqw] text-[#0B0A09]">↑</span>
-      </div>
-    )
-  }
-  // Sent: the message lifts off the composer and leaves upward, into the chat; Occam's status takes its place.
+  const composer = (
+    <div className={cn('flex items-center gap-[1cqw] whitespace-nowrap rounded-full bg-[#1C1A17] py-[.7cqw] pl-[1.6cqw] pr-[.7cqw] text-[1.3cqw] text-[#F3EEE4] shadow-[0_0_0_1px_#3A352E,0_1.5cqw_3cqw_-1cqw_rgba(0,0,0,.8)]',
+      sent && 'absolute motion-safe:animate-leave')}>
+      <span>{text}{!sent && <i aria-hidden className="ml-px inline-block h-[1.1em] w-px translate-y-[.15em] animate-pulse bg-[#F3EEE4]" />}</span>
+      <span aria-hidden className="grid size-[2.2cqw] place-items-center rounded-full bg-[#F3EEE4] text-[1.2cqw] text-[#0B0A09]">↑</span>
+    </div>
+  )
+  if (!sent) return composer
+  // Sent: the composer melts away as the message lifts off it and leaves upward, into the chat; Occam's status takes its place.
   return (
     <div className="relative grid place-items-center whitespace-nowrap">
+      {composer}
       <p className="absolute rounded-[1.4cqw_1.4cqw_.3cqw_1.4cqw] bg-[#F3EEE4] px-[1.5cqw] py-[.8cqw] text-[1.3cqw] text-[#0B0A09] shadow-[0_1.5cqw_3cqw_-1cqw_rgba(0,0,0,.8)] motion-safe:animate-send">{text}</p>
       {status && (
-        <p key={status} className="flex items-center gap-[.6cqw] py-[.8cqw] text-[1.2cqw] text-[#A39B8E] motion-safe:animate-rise motion-safe:[animation-delay:.5s]">
+        <p key={status} className={cn('flex items-center gap-[.6cqw] py-[.8cqw] text-[1.2cqw] text-[#A39B8E] motion-safe:animate-rise', status === 'working' && 'motion-safe:[animation-delay:.5s]')}>
           <span className="font-medium text-[#E8B94A]">Occam</span>
           {status === 'working'
             ? <><i aria-hidden className="inline-block size-[1.1cqw] animate-spin rounded-full border-2 border-white/20 border-t-[#E8B94A] [animation-duration:.8s]" />working on it</>

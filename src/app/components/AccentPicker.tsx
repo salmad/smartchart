@@ -58,12 +58,12 @@ export function AccentPanel({ look: l, accent, onChange }: { look: Look; accent:
         {PRESETS.map(([name, h], i) => (
           <button key={h} type="button" ref={(el) => { swatches.current[i] = el }} aria-label={name} title={name} aria-pressed={h === l.chosen}
             onClick={() => onChange(h)}
-            className={cn('aspect-square cursor-pointer rounded-full border-0 bg-[var(--sw)] shadow-[inset_0_0_0_1px_rgba(255,255,255,.12)] transition-[transform,box-shadow] duration-[120ms] hover:scale-110',
+            className={cn('aspect-square cursor-pointer rounded-full border-0 bg-[var(--sw)] shadow-[inset_0_0_0_1px_rgba(255,255,255,.12)] transition-[transform,box-shadow] duration-120 hover:scale-110',
               'focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_theme(colors.raise),0_0_0_3px_theme(colors.ink-3)]',
               h === l.chosen && 'shadow-[0_0_0_2px_theme(colors.raise),0_0_0_4px_theme(colors.ink)] focus-visible:shadow-[0_0_0_2px_theme(colors.raise),0_0_0_4px_theme(colors.ink)]')} />
         ))}
         <label ref={wheel} title="Custom colour"
-          className={cn('sw-wheel relative aspect-square cursor-pointer rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,.12)] transition-[transform,box-shadow] duration-[120ms] hover:scale-110',
+          className={cn('sw-wheel relative aspect-square cursor-pointer rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,.12)] transition-[transform,box-shadow] duration-120 hover:scale-110',
             'focus-within:shadow-[0_0_0_2px_theme(colors.raise),0_0_0_3px_theme(colors.ink-3)]',
             custom && 'on shadow-[0_0_0_2px_theme(colors.raise),0_0_0_4px_theme(colors.ink)] focus-within:shadow-[0_0_0_2px_theme(colors.raise),0_0_0_4px_theme(colors.ink)]')}>
           <input type="color" aria-label="Custom colour" value={l.chosen.toLowerCase()} onChange={(e) => onChange(e.target.value.toUpperCase())}

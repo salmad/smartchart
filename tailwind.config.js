@@ -29,6 +29,10 @@ export default {
         destructive: { DEFAULT: app.bad, foreground: app.ink },
         border: app.line, input: app['line-2'], ring: app['ink-3'],
       },
+      // Named, never arbitrary: tailwindcss-animate also owns duration-* and ease-*, so duration-[1400ms] or
+      // ease-[cubic-bezier(…)] is ambiguous and silently dropped, and the transition snaps at the 150ms default.
+      transitionDuration: { 120: '120ms', 900: '900ms', 1100: '1100ms', 1400: '1400ms', 8000: '8000ms' },
+      transitionTimingFunction: { film: 'cubic-bezier(.2,.8,.2,1)', glide: 'cubic-bezier(.65,0,.25,1)' },
       fontFamily: {
         sans: ['Geist', 'system-ui', 'sans-serif'],
         mono: ['"Geist Mono"', 'monospace'],
@@ -56,7 +60,7 @@ export default {
         glint: { '0%, 100%': { opacity: '.7', transform: 'scale(.8) rotate(0deg)' }, '50%': { opacity: '1', transform: 'scale(1.1) rotate(90deg)' } },
         sheen: { from: { transform: 'translateX(-120%) skewX(-20deg)' }, to: { transform: 'translateX(220%) skewX(-20deg)' } },
         // A sent message leaving the composer, up into the chat.
-        send: { '0%': { opacity: '1', transform: 'none' }, '100%': { opacity: '0', transform: 'translateY(-5cqw) scale(.94)' } },
+        send: { '0%': { opacity: '0', transform: 'scale(.97)' }, '20%': { opacity: '1', transform: 'none' }, '100%': { opacity: '0', transform: 'translateY(-5cqw) scale(.94)' } },
       },
       animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', send: 'send .9s cubic-bezier(.4,0,.2,1) .15s both', leave: 'leave .6s cubic-bezier(.4,0,.2,1) both', scan: 'scan 3.4s cubic-bezier(.4,0,.2,1) both', sparkle: 'sparkle 1.4s cubic-bezier(.2,.8,.2,1) both', sheen: 'sheen 1.4s cubic-bezier(.4,0,.2,1) .2s both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
     },
