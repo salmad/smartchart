@@ -1,7 +1,6 @@
 import type { Style, Theme } from '@/engine/types'
 import { PanelLeft } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
-import { go } from '@/app/route'
 import { LookMenu } from './LookMenu'
 
 export interface BarProps {
@@ -9,6 +8,8 @@ export interface BarProps {
   onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void
   onPresent: () => void; canAdd: boolean; onAdd: () => void
   decksOpen: boolean; onToggleDecks: () => void
+  /** Occam: the site, at /home. */
+  onSite: () => void
 }
 
 /** Top bar: the decks toggle, and the deck's name, which opens its look; Add slide and Present on the right. */
@@ -20,7 +21,7 @@ export function Bar(p: BarProps) {
         <PanelLeft className="size-[18px]" strokeWidth={1.75} />
       </button>
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
-        <a href="/" onClick={(e) => { e.preventDefault(); go('/') }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
+        <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
         <span aria-hidden className="text-ink-3">/</span>
         <LookMenu title={p.title} deckStyle={p.deckStyle} theme={p.theme} accent={p.accent} styleLocked={p.hasSlides}
           onStyle={p.onStyle} onTheme={p.onTheme} onAccent={p.onAccent} />

@@ -180,6 +180,7 @@ export function App({ route, account, repo, backup }: Props) {
     onPresent: present,
     onAdd: () => { if (!app.getState().busy && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks,
+    onSite: () => leaveTo('/home'),
   }
 
   const onClear = useCallback(() => {

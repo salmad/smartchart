@@ -1,10 +1,12 @@
-/* Three routes on the History API: the site or your decks at /, a new deck at /new, a saved deck at /d/:id. */
+/* Four routes on the History API: the site or your decks at /, the site for everyone at /home, a new deck at /new,
+   a saved deck at /d/:id. */
 import { useSyncExternalStore } from 'react'
 
-export type Route = { name: 'home' } | { name: 'new' } | { name: 'deck'; id: string }
+export type Route = { name: 'home' } | { name: 'site' } | { name: 'new' } | { name: 'deck'; id: string }
 
 export function parseRoute(path: string): Route {
   if (path === '/new') return { name: 'new' }
+  if (path === '/home') return { name: 'site' }
   const m = /^\/d\/([\w-]+)$/.exec(path)
   return m ? { name: 'deck', id: m[1] } : { name: 'home' }
 }

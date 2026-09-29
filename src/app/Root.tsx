@@ -9,7 +9,8 @@ import { go, useRoute } from './route'
 import { localDeckRepo } from './store'
 
 /** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
-    on the site waits through sign-in). Signed in: the editor, at / on the deck worked on last. */
+    on the site waits through sign-in). Signed in: the editor, at / on the deck worked on last; the site stays at
+    /home, reached from Occam in the editor's bar, with Open app in place of sign-in. */
 export function Root() {
   const route = useRoute(), live = useSession(), dev = useMemo(devAccount, [])
   const session = dev ?? live
@@ -21,9 +22,9 @@ export function Root() {
   useEffect(() => setEnded(false), [live])
 
   // The first session check is quick; until it answers, a blank page beats a flash of the wrong screen.
-  if (session === undefined) return <div className={route.name === 'home' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />
+  if (session === undefined) return <div className={route.name === 'home' || route.name === 'site' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />
   if (!session) {
-    const wantsEditor = route.name !== 'home'
+    const wantsEditor = route.name !== 'home' && route.name !== 'site'
     return (
       <>
         <Site onSignIn={() => setSigningIn(true)} />
@@ -33,6 +34,7 @@ export function Root() {
       </>
     )
   }
+  if (route.name === 'site') return <Site signedIn onSignIn={() => go('/')} />
   // Keyed by account, not by deck: a new deck's URL becoming /d/:id after its first save must not restart it.
   return (
     <>
