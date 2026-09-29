@@ -217,7 +217,7 @@
    "body": 0,
    "cards": [
     {
-     "tone": "neg",
+     "tone": "neutral",
      "hasValue": false,
      "hasText": false,
      "bullets": 3,
@@ -245,7 +245,7 @@
    "body": 0,
    "cards": [
     {
-     "tone": "neg",
+     "tone": "neutral",
      "hasValue": false,
      "hasText": true,
      "bullets": 0,

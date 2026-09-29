@@ -292,7 +292,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     summary: "2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast.",
     use: "Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).",
     fields: {
-      framed: f("boolean", "Two framed cards side by side, for a contrast: the losing case left (tone `neg`), the winning case right (tone `focus`).", { default: false }),
+      framed: f("boolean", "Two framed cards side by side, for a contrast: the losing case left (tone `neutral`), the winning case right (tone `focus`). Red (`neg`) only when the user asks for it.", { default: false }),
       cards: f("list", "The cards, left to right.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One card.", { fields: {
         icon: f("enum", "Icon lead: an icon from the curated set, or \"auto\" to let code pick one from the card's text. Not with `value` or `framed`.", { values: [...ICONS, "auto"] }),
         value: f("text", "Value lead: a big number with its unit, e.g. '5 min', '19%'. Not with `icon` or `framed`.", { max: 6 }),
@@ -300,7 +300,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
         title: f("markup", "Card title. Framed: a big 2-word headline, plain text.", { required: true, max: { consulting: 24, pitch: 22 } }),
         bullets: f("list", "1–3 bullets. Not with `text`.", { items: { min: 1, max: 3 }, of: f("markup", "Bullet.", { max: 60 }), styles: CONSULTING }),
         text: f("markup", "One short line. Not with `bullets`. Value cards: one sentence of context.", { max: { consulting: 80, pitch: 50 } }),
-        tone: f("enum", "`focus`: the card the title is about. `neg`: only the losing case in a two-card contrast, or when the user asks for red. `neutral`: the rest.", { values: ["neutral", "focus", "neg"], default: "neutral" }),
+        tone: f("enum", "`focus`: the card the title is about. `neg`: only when the user asks for red. `neutral`: the rest, including the losing case in a two-card contrast.", { values: ["neutral", "focus", "neg"], default: "neutral" }),
         facts: f("list", "Framed only, optional: up to 2 labelled facts at the bottom of the card.", { items: { min: 1, max: 2 }, styles: CONSULTING, of: f("object", "Fact.", { fields: {
           label: f("text", "Short label: 'Outcome', 'Proof'.", { required: true, max: 14 }),
           text: f("markup", "The fact.", { required: true, max: 38 }),

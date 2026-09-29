@@ -248,7 +248,7 @@
    "framed": true,
    "cards": [
     {
-     "tone": "neg",
+     "tone": "neutral",
      "label": "Credit-only lenders",
      "title": "Adverse loop",
      "bullets": [
@@ -297,7 +297,7 @@
    "framed": true,
    "cards": [
     {
-     "tone": "neg",
+     "tone": "neutral",
      "label": "Credit only",
      "title": "Adverse loop",
      "text": "Desperate borrowers, thin data, rising prices."
