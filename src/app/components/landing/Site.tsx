@@ -45,11 +45,11 @@ export function Site({ onSignIn }: Props) {
         <div className="site-glow">
           <section className="site-wrap grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-14 pb-28 pt-14 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-10 max-[700px]:pb-16 max-[700px]:pt-8">
             <div className="grid justify-items-start gap-6 max-[1100px]:contents">
-              <p className="site-kicker">For founders and operators</p>
+              <p className="site-kicker">Nobody reads your docs</p>
               <h1 className="font-display text-[clamp(44px,4.6vw,72px)] font-extrabold leading-[.94] tracking-[-.025em] [font-stretch:78%] [text-wrap:balance]">
-                Nobody reads your docs.<br /> <Em>Make slides that land.</Em>
+                Slides,<br /> <Em>scientifically precise.</Em>
               </h1>
-              <p className="text-[19px] leading-[1.5] text-type-2">Paste the doc. Get the deck in a minute.</p>
+              <p className="text-[19px] leading-[1.5] text-type-2">Built on the laws of clear writing. Every slide passes 57 checks for design, meaning and logic.</p>
               <div className="grid w-full gap-3">
                 <PromptBox id="hero-prompt" />
                 <p className="text-[13px] text-type-3">Your first slide is free. No card, no account.</p>
