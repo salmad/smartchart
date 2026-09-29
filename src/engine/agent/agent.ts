@@ -36,12 +36,16 @@ interface ToolOut {
   /** A refused template change: the agent must ask the user first (see create_slide). */
   confirm?: "template";
   card?: ReturnType<typeof describe>; example?: unknown; note?: string
+  /** Reserved slides still to write this turn. */
+  todo?: string
 }
 interface WriteResult extends ToolOut { applied: boolean; issues: string[] }
 interface CallResult { clean: boolean; name: string; out: ToolOut; args: ToolArgs | null; reply: string | null }
 type Draft = Slide & Record<string, unknown>;
 
 const MAX_TOOL_CALLS = 10, SHORTEN_ROUNDS = 2;
+// A deck opens on content: a cover or divider is made only when the user's message asks for one.
+const ASKS_OPENER = /\b(covers?|title (slide|page)|opening slide|dividers?|sections?|chapters?)\b/i;
 const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;
 // Intents where a clean write finishes the request, so code ends the turn without a reply call.
 const DONE_BY: Record<string, boolean> = { new_slide: true, change_template: true, edit_selected: true };
@@ -65,6 +69,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
   const trail = { modelCalls: 0, toolCalls: 0, modelMs: 0 };
   const find = (id: string | undefined) => deck.slides.find((s) => s.id === id);
   const unknown = (id: string | undefined): ToolOut => ({ error: `unknown slideId ${id}; valid ids: ${deck.slides.filter((s) => !s.pending).map((s) => s.id).join(", ") || "none yet"}` });
+  const unwritten = () => deck.slides.filter((s) => s.pending).map((s) => s.id);
   const visible = () => deck.slides.filter((s): s is AgentSlide & { slide: Slide } => !s.pending && !!s.slide);
   // Template changes need the user: allowed when this turn's message asks for one (PRE, sure), or when the last
   // turn asked about this slide and the user answered. Otherwise create_slide refuses and the agent asks.
@@ -113,6 +118,9 @@ export async function runTurn({ text, deck, history, working, selection, measure
       // An archived template cannot be named (it is not in the tool's enum); a model that writes it anyway is refused.
       if (isTemplate(asked) && !OFFERED.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${OFFERED.join(", ")}, or leave template out.` };
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
+      if ((template === "cover" || template === "section") && !ASKS_OPENER.test(text)) {
+        return { error: `The user did not ask for a ${template === "cover" ? "cover" : "section divider"}. Start with the content itself: call create_slide again for the first point, without a template.` };
+      }
       const current = replace ? find(replace)?.slide?.template : undefined;
       const requested = !!turnPre && turnPre.intent === "change_template" && isSure(turnPre, deck);
       if (replace && current && current !== template && !requested && !confirmable.has(replace)) {
@@ -151,7 +159,9 @@ export async function runTurn({ text, deck, history, working, selection, measure
         if (!NAMED_MARK.test(text)) chart.series.forEach((x) => { if (x && typeof x === "object" && x.mark !== "auto") x.mark = "auto"; });
         if (!/stack/i.test(text) && chart.stacked !== undefined) chart.stacked = "auto";
       }
-      return write(item, draft);
+      const res = await write(item, draft), left = unwritten();
+      // Several slides reserved in one go: a reply on the first write must not end the turn early.
+      return res.applied && left.length ? { ...res, todo: `Still to write with edit_slide: ${left.join(", ")}. Reply only after the last one.` } : res;
     },
 
     async patch_slide({ slideId, set }) {
@@ -227,7 +237,8 @@ export async function runTurn({ text, deck, history, working, selection, measure
     const finishing = sure && DONE_BY[pre.intent] && done.every((r) => r.name === "edit_slide" || r.name === "patch_slide");
     const last = done[done.length - 1];
     if (clean && !carried && finishing) carried = message.content?.trim() || codeReply(pre.intent, last, find(last.args?.slideId)?.slide || deck.slides.find((x) => written.has(x.id))?.slide);
-    if (clean && carried) { reply = carried; history.push({ role: "assistant", content: reply }); }
+    // Reserved slides still unwritten keep the turn going (the tool result lists them).
+    if (clean && carried && !unwritten().length) { reply = carried; history.push({ role: "assistant", content: reply }); }
   }
   deck.slides = deck.slides.filter((s) => !s.pending);
   compact(history);

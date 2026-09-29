@@ -225,3 +225,37 @@ test("the model cannot name an archived template: create_slide refuses it and re
   const create = TOOLS.find((t) => t.function.name === "create_slide");
   assert.ok(!JSON.stringify(create).includes('"number"'), "not in the tool enum");
 });
+
+test("a cover or section the user did not ask for is refused: decks open on content", async () => {
+  const ctx = setup();
+  const agentStep = fakeAgent([toolCall("create_slide", { about: "Q3 review", template: "cover" }), say("Ok.")]);
+  await runTurn({ ...ctx, text: "Turn this into slides for the exec team. Revenue grew from £4.2m to £5.1m.", selection: null,
+    models: { agentStep, jev: fakeJev({ intent: ["several_slides", 0.9] }) } });
+  const out = JSON.parse(text(ctx.history.find((m) => m.role === "tool")));
+  assert.match(out.error, /did not ask for a cover/);
+  assert.equal(ctx.deck.slides.length, 0);
+});
+
+test("a cover the user asked for is made", async () => {
+  const ctx = setup();
+  const agentStep = fakeAgent([toolCall("create_slide", { about: "Q3 review", template: "cover" }), say("Ok.")]);
+  await runTurn({ ...ctx, text: "Add a cover slide: Q3 review", selection: null,
+    models: { agentStep, jev: fakeJev({ intent: ["other", 0.5] }) } });
+  const out = JSON.parse(text(ctx.history.find((m) => m.role === "tool")));
+  assert.equal(out.template, "cover");
+});
+
+test("several slides: a reply on the first write does not end the turn while reserved slides are unwritten", async () => {
+  const ctx = setup();
+  const ids = (m: ChatMessage[]) => m.filter((x) => x.role === "tool").map((x) => JSON.parse(text(x)).slideId).filter(Boolean);
+  const agentStep = fakeAgent([
+    toolCall("create_slide", { about: "revenue", template: "chart" }),
+    toolCall("create_slide", { about: "margin", template: "chart" }),
+    (m) => toolCall("edit_slide", { slideId: ids(m)[0], slide: CHART, reply: "Done." }),
+    (m) => { assert.match(text(m.filter((x) => x.role === "tool").at(-1)), /Still to write/); return toolCall("edit_slide", { slideId: ids(m)[1], slide: CHART, reply: "Both done." }); },
+  ]);
+  const r = await runTurn({ ...ctx, text: "Turn this into slides: revenue and margin", selection: null,
+    models: { agentStep, jev: fakeJev({ intent: ["several_slides", 0.9] }) } });
+  assert.equal(ctx.deck.slides.length, 2);
+  assert.equal(r.reply, "Both done.");
+});
