@@ -1,17 +1,23 @@
+import { useMemo } from 'react'
 import { contexts } from '@/engine/slides/render'
 import { GROUPS, STARTERS, starterSlide } from '@/engine/starters'
 import type { Style, Theme } from '@/engine/types'
 import { cn } from '@/app/lib/utils'
 import { SlideView } from '../SlideView'
 
-interface Props { id: string; deckStyle?: Style; theme?: Theme; className?: string }
+interface Props { id: string; deckStyle?: Style; theme?: Theme; withoutNotes?: boolean; className?: string }
 
-/** A starter from starters.json, drawn live by the engine: the site shows only real slides. */
-export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', className }: Props) {
-  const starter = STARTERS.find((s) => s.id === id)
-  if (!starter) throw new Error(`no starter ${id}`)
-  const slide = starterSlide(starter, style)
-  const ctx = contexts({ footer: 'Acme', slides: [slide] })[0]
+/** A starter from starters.json, drawn live by the engine: the site shows only real slides.
+    `withoutNotes` draws it as a first draft, before the reasons were asked for (the solution demo). */
+export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', withoutNotes = false, className }: Props) {
+  // Memoised: SlideView remounts the slide whenever the object changes, and the demo re-renders its parent often.
+  const { slide, ctx } = useMemo(() => {
+    const starter = STARTERS.find((s) => s.id === id)
+    if (!starter) throw new Error(`no starter ${id}`)
+    const slide = starterSlide(starter, style)
+    if (withoutNotes) delete slide.notes
+    return { slide, ctx: contexts({ footer: 'Acme', slides: [slide] })[0] }
+  }, [id, style, withoutNotes])
   return <SlideView slide={slide} deck={{ style, theme, accent: null }} ctx={{ ...ctx, section: Math.max(ctx.section, 1) }}
     className={cn('relative aspect-video w-full overflow-hidden', className)} />
 }

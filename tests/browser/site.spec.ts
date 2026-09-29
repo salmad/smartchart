@@ -19,6 +19,15 @@ for (const width of [1440, 390]) {
   })
 }
 
+test('the page switches between the Ink and Paper looks and remembers the pick', async ({ page }) => {
+  await site(page, 1440)
+  await expect(page.locator('.site')).toHaveAttribute('data-look', 'ink')
+  await page.getByRole('group', { name: 'Page look' }).getByRole('button', { name: 'paper' }).click()
+  await expect(page.locator('.site')).toHaveAttribute('data-look', 'paper')
+  await page.reload()
+  await expect(page.locator('.site')).toHaveAttribute('data-look', 'paper')
+})
+
 test('the before/after divider moves with the keyboard', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await site(page, 1440)

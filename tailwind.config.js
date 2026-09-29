@@ -1,8 +1,13 @@
 import animate from 'tailwindcss-animate'
 
 // App chrome tokens (the slides use slides.css). The shadcn names map onto the same dark tokens.
-// The public site: a light page (day) around the dark Ink slides (night).
-const site = { paper: '#F5F5F3', 'paper-2': '#ECECE8', type: '#121211', 'type-2': '#5C5B57', 'type-3': '#8A8984', rule: '#E1E0DB', stage: '#0B0A09' }
+// The public site: two looks on one set of tokens, switched by [data-look] on .site (see index.css).
+// Paper: a light page around the dark slides. Ink: the brand board's warm black, cream type and gold focus.
+const v = (n) => `rgb(var(--site-${n}) / <alpha-value>)`
+const site = {
+  paper: v('paper'), 'paper-2': v('paper-2'), card: v('card'), type: v('type'), 'type-2': v('type-2'), 'type-3': v('type-3'),
+  rule: v('rule'), focus: v('focus'), night: v('night'), stage: '#0B0A09',
+}
 
 const app = {
   'app-bg': '#0A0A0B', panel: '#111113', raise: '#18181B', line: 'rgba(255,255,255,.08)', 'line-2': 'rgba(255,255,255,.14)',
@@ -28,6 +33,7 @@ export default {
         sans: ['Geist', 'system-ui', 'sans-serif'],
         mono: ['"Geist Mono"', 'monospace'],
         display: ['Archivo', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
       },
       keyframes: {
         spin: { to: { transform: 'rotate(360deg)' } },

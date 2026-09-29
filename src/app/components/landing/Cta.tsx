@@ -7,10 +7,10 @@ export function startPrompt() {
   box?.focus({ preventScroll: true })
 }
 
-/** The site's call to action, repeated after each section that makes the case. */
+/** The site's call to action, repeated after each section that makes the case: the button, the offer under it. */
 export function Cta({ night = false, className }: { night?: boolean; className?: string }) {
   return (
-    <div className={cn('flex flex-wrap items-center gap-x-4 gap-y-2', className)}>
+    <div className={cn('grid justify-items-center gap-2.5 text-center', className)}>
       <button type="button" onClick={startPrompt}
         className={cn('h-11 rounded-full px-5 text-[14px] font-medium transition-opacity hover:opacity-90', night ? 'bg-[#F3EEE4] text-stage' : 'bg-type text-paper')}>
         Turn my doc into slides

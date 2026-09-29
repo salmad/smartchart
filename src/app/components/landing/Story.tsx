@@ -1,7 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { Style } from '@/engine/types'
 import { Cta } from './Cta'
+import { Demo } from './Demo'
 import { LiveSlide, MENU } from './LiveSlide'
+import { Em, Head } from './parts'
 
 /** The answer, as an outcome: every slide in the gallery, designed once, so a deck never drifts. */
 export function Answer() {
@@ -20,13 +22,8 @@ export function Answer() {
     <section aria-labelledby="answer" className="site-night" data-night>
       <div className="site-section">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <div className="site-head">
-            <h2 id="answer" className="site-h2">Every slide a case needs.</h2>
-            <p className="site-lede">
-              Trends, bridges, comparisons, plans, key numbers. Each designed once and used on every slide,
-              so slide thirty looks like slide one.
-            </p>
-          </div>
+          <Head id="answer" kicker="The gallery" title={<>Every slide a case <Em>needs.</Em></>}
+            lede="Trends, bridges, comparisons, plans, key figures. Each one designed once and reused, so slide thirty looks like slide one." />
           <div className="flex gap-2 max-[700px]:hidden">
             <Paddle label="Previous" disabled={edge.start} onClick={() => page(-1)}>‹</Paddle>
             <Paddle label="Next" disabled={edge.end} onClick={() => page(1)}>›</Paddle>
@@ -35,12 +32,12 @@ export function Answer() {
         <ul ref={strip} onScroll={onScroll} className="-mx-10 flex snap-x snap-mandatory scroll-px-10 gap-6 overflow-x-auto px-10 pb-2 [scrollbar-width:none] max-[700px]:-mx-4 max-[700px]:scroll-px-4 max-[700px]:px-4" aria-label="Every slide in the gallery">
           {MENU.map(({ id, name, group }, i) => (
             <li key={id} className="grid w-[min(640px,84vw)] flex-none snap-start gap-3">
-              <LiveSlide id={id} className="rounded-xl shadow-[0_0_0_1px_rgba(243,238,228,.1)]" />
+              <LiveSlide id={id} className="rounded-[14px] shadow-[0_0_0_1px_rgba(243,238,228,.1)]" />
               <span className="flex gap-3 text-[14px] text-[#A39B8E]"><b className="font-medium tabular-nums text-[#F3EEE4]">{i + 1}/{MENU.length}</b>{group} · {name}</span>
             </li>
           ))}
         </ul>
-        <p className="text-[14px] text-[#A39B8E]">Every slide on this page is rendered live by the engine. Nothing here is a mockup.</p>
+        <p className="text-[14px] text-[#A39B8E]">Every slide on this page is drawn live by the same engine you use. None of them is a mockup.</p>
       </div>
     </section>
   )
@@ -55,84 +52,44 @@ function Paddle({ label, disabled, onClick, children }: { label: string; disable
   )
 }
 
-const STEPS: [string, string][] = [
-  ['Paste it', 'Your doc, your notes or your numbers. Say what the room should take away.'],
-  ['Refine it', '“Make the title sharper.” “Show it as a bridge.” “Add the plan.” Only what you asked changes, and the laws still hold.'],
-  ['Present it', 'Full screen, straight from the app. Walk in with a deck that argues your point.'],
-]
-
+/** The solution, revealed right after the problem: a line of words, then the product at work. */
 export function How() {
   return (
     <section aria-labelledby="how" className="site-section">
-      <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-16 max-[900px]:grid-cols-1 max-[900px]:gap-10">
-        <div className="grid gap-10">
-          <div className="grid gap-4">
-            <h2 id="how" className="site-h2">Paste. Refine. Present.</h2>
-            <p className="site-lede">You bring the thinking. We do the rest: no layouts to pick, no boxes to nudge.</p>
-          </div>
-          <ol className="grid gap-8">
-            {STEPS.map(([title, text], i) => (
-              <li key={title} className="grid grid-cols-[40px_1fr] gap-x-4">
-                <span className="font-display text-[28px] font-extrabold leading-none text-type-3 [font-stretch:78%]">{i + 1}</span>
-                <div className="grid gap-1">
-                  <h3 className="text-[17px] font-semibold tracking-[-.01em]">{title}</h3>
-                  <p className="max-w-[40ch] text-[15px] leading-[1.55] text-type-2">{text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-rule pt-6 text-[15px] text-type-2">
-            <span className="rounded-full bg-paper-2 px-2.5 py-0.5 text-[12px] font-medium text-type">Soon</span>
-            Export to PowerPoint and PDF, share links, and connect your own agents: your research in Claude or Gemini, your slides from Occam.
-          </p>
-          <Cta />
-        </div>
-        <figure className="grid gap-4">
-          <blockquote className="justify-self-end rounded-[18px_18px_4px_18px] bg-white px-4 py-3 text-[15px] leading-[1.5] text-type shadow-[0_0_0_1px_rgba(18,18,17,.08)]">
-            The loan book grows from £10m to £120m by 2030. Show it against the £100m plan.
-          </blockquote>
-          <LiveSlide id="chart-cagr" className="rounded-xl shadow-[0_24px_60px_-28px_rgba(18,18,17,.45)]" />
-        </figure>
-      </div>
+      <Head id="how" kicker="The solution" center title={<>Ask in plain words. <Em>Get a checked slide.</Em></>}
+        lede="Occam asks what it needs, builds the slide, and runs three checks before you see it. Then it changes only what you ask for." />
+      <div className="mx-auto w-full max-w-[1200px]"><Demo /></div>
+      <div className="grid justify-items-center"><Cta /></div>
     </section>
   )
 }
 
-const PEOPLE: [string, string, string, Style][] = [
-  ['cards-value', 'Founders', 'Your raise, your board meeting. Slides that look like you have a strategy team.', 'pitch'],
-  ['table-notes', 'Operators', 'Your business case, your quarterly review. A 12-page doc turned into ten slides they’ll read.', 'consulting'],
-  ['waterfall-notes', 'Ex-consultants', 'Your first deck without the slide team. The standard you were trained to, without the nights.', 'consulting'],
+/* Use cases, split by what the deck asks the room for: money, a yes, or trust in the numbers. Each with a real slide. */
+const USES: [id: string, ask: string, title: string, text: string, style: Style][] = [
+  ['cards-value', 'Fund it', 'The raise', 'Seed deck or investor update: the market, the model, the ask.', 'pitch'],
+  ['table-notes', 'Approve it', 'The business case', 'The 12-page proposal nobody will read, as ten slides the execs will.', 'consulting'],
+  ['chart-mix', 'Trust it', 'The board or quarterly review', 'What moved, why it moved, and what happens next.', 'consulting'],
 ]
 
-/** Who it is for, each with a real slide; the same components in either writing style. */
+/** What it is for: three decks, one per thing the room is asked to do. */
 export function Who() {
-  const [style, setStyle] = useState<Style | null>(null)
   return (
     <section aria-labelledby="who" className="site-section">
-      <div className="site-head flex flex-wrap items-end justify-between gap-6">
-        <div className="grid gap-4">
-          <h2 id="who" className="site-h2">For whoever has to make the case.</h2>
-          <p className="site-lede">Two writing styles, one set of laws. Consulting argues in the title. Pitch lands one bold claim.</p>
-        </div>
-        <div role="group" aria-label="Writing style" className="flex rounded-full bg-paper-2 p-1">
-          {([[null, 'Mixed'], ['consulting', 'All consulting'], ['pitch', 'All pitch']] as [Style | null, string][]).map(([v, label]) => (
-            <button key={label} type="button" aria-pressed={style === v} onClick={() => setStyle(v)}
-              className="h-9 rounded-full px-4 text-[13px] text-type-2 transition-colors aria-pressed:bg-white aria-pressed:text-type aria-pressed:shadow-sm">{label}</button>
-          ))}
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-8 max-[1000px]:grid-cols-1">
-        {PEOPLE.map(([id, title, text, own]) => (
-          <div key={id} className="grid content-start gap-4">
-            <LiveSlide id={id} deckStyle={style ?? own} className="rounded-xl shadow-[0_18px_44px_-24px_rgba(18,18,17,.4)]" />
-            <div className="grid gap-1">
-              <h3 className="text-[17px] font-semibold tracking-[-.01em]">{title}</h3>
+      <Head id="who" kicker="Use cases" center title={<>For decks that <Em>ask for something.</Em></>}
+        lede="Money, a yes, or trust in the numbers. Made for founders, operators and ex-consultants with no slide team." />
+      <div className="grid grid-cols-3 gap-6 max-[1000px]:grid-cols-1">
+        {USES.map(([id, ask, title, text, style]) => (
+          <div key={id} className="site-card grid content-start gap-6 p-3 pb-7">
+            <LiveSlide id={id} deckStyle={style} className="rounded-[12px]" />
+            <div className="grid gap-2 px-4">
+              <span className="font-mono text-[12px] text-type-3">{ask}</span>
+              <h3 className="text-[19px] font-semibold tracking-[-.015em]">{title}</h3>
               <p className="max-w-[40ch] text-[15px] leading-[1.55] text-type-2">{text}</p>
             </div>
           </div>
         ))}
       </div>
-      <Cta />
+      <div className="grid justify-items-center"><Cta /></div>
     </section>
   )
 }

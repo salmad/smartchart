@@ -4,6 +4,18 @@
 
 @layer base {
   html, body, #root { height: 100%; }
+  /* Site tokens (tailwind.config: paper, type, rule…), as RGB channels. Paper is the default everywhere;
+     .site[data-look="ink"] swaps them for the brand board's palette. */
+  :root {
+    --site-paper: 245 245 243; --site-paper-2: 236 236 232; --site-card: 255 255 255; --site-type: 18 18 17;
+    --site-type-2: 92 91 87; --site-type-3: 138 137 132; --site-rule: 225 224 219; --site-focus: 18 18 17; --site-night: 11 10 9;
+    --site-shadow: 18 18 17;
+  }
+  .site[data-look="ink"] {
+    --site-paper: 11 10 9; --site-paper-2: 24 22 19; --site-card: 19 17 15; --site-type: 243 238 228;
+    --site-type-2: 207 200 187; --site-type-3: 163 155 142; --site-rule: 42 38 33; --site-focus: 232 185 74; --site-night: 19 17 15;
+    --site-shadow: 0 0 0; color-scheme: dark;
+  }
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body { @apply bg-app-bg font-sans text-sm text-ink antialiased; line-height: 1.5; overflow: hidden; }
   button, textarea, select { font: inherit; color: inherit; }
@@ -17,15 +29,33 @@
   .slide-frame { stroke: none; stroke-width: 1; stroke-dasharray: none; }
 
   /* The public site: one measure for every section, so headings and content share a left edge. */
-  .site-wrap { @apply mx-auto w-full max-w-[1440px] px-10 max-[700px]:px-4; }
+  .site-wrap { @apply mx-auto w-full max-w-[1280px] px-10 max-[700px]:px-4; }
   /* One rhythm: every section has the same padding, so every gap between two sections is the same. */
-  .site-section { @apply site-wrap grid gap-14 py-24 max-[900px]:gap-10 max-[900px]:py-16; }
-  .site-head { @apply grid max-w-[760px] gap-4; }
-  .site-h2 { @apply max-w-[20ch] font-display text-[clamp(38px,4.6vw,64px)] font-extrabold leading-[.98] tracking-[-.015em] [font-stretch:78%] [text-wrap:balance]; }
-  .site-lede { @apply max-w-[56ch] text-[18px] leading-[1.55] text-type-2; }
-  .site-night { @apply bg-stage text-[#F3EEE4]; }
+  .site-section { @apply site-wrap grid gap-16 py-28 max-[900px]:gap-10 max-[900px]:py-16; }
+  .site-head { @apply grid max-w-[760px] content-start justify-items-start gap-5; }
+  /* A full-width section's head sits centred over its content. */
+  .site-head-c { @apply mx-auto justify-items-center text-center; }
+  .site-head-c .site-lede { @apply mx-auto; }
+  .site-h2 { @apply max-w-[20ch] font-display text-[clamp(38px,4.4vw,62px)] font-extrabold leading-[.98] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]; }
+  .site-lede { @apply max-w-[54ch] text-[18px] leading-[1.55] text-type-2 [text-wrap:pretty]; }
+  /* The label above a heading: a pill with a dot. Ink sets it in mono capitals, as on the brand board. */
+  .site-kicker { @apply inline-flex h-7 items-center gap-2 rounded-full border border-rule px-3 text-[13px] font-medium text-type-2; }
+  .site-kicker::before { content: ""; @apply size-1.5 rounded-full bg-focus; }
+  [data-look="ink"] .site-kicker { @apply font-mono text-[11px] font-normal uppercase tracking-[.08em] text-type-3; }
+  /* The one emphasis in a heading: grey in Paper, gold serif italic in Ink. */
+  .site-em { font-style: normal; @apply text-type-3; }
+  [data-look="ink"] .site-em { @apply font-serif font-normal italic tracking-normal text-focus; font-stretch: 100%; }
+  /* A surface: cards, figures and panels share one radius, one hairline and one shadow. */
+  .site-card { @apply rounded-[20px] bg-card; box-shadow: 0 0 0 1px rgb(var(--site-rule)), 0 1px 2px rgb(var(--site-shadow) / .04); }
+  .site-lift { box-shadow: 0 0 0 1px rgb(var(--site-rule)), 0 30px 70px -32px rgb(var(--site-shadow) / .45); }
+  [data-look="ink"] .site-lift { box-shadow: 0 0 0 1px rgb(var(--site-rule)), 0 30px 80px -30px rgb(0 0 0 / .8); }
+  .site-night { @apply bg-night text-[#F3EEE4]; }
+  [data-look="ink"] .site-night { @apply border-y border-rule; }
   .site-night .site-lede { color: #A39B8E; }
-  .site ::selection { background: #121211; color: #F5F5F3; }
+  .site-night .site-kicker { @apply border-[#3A352E] text-[#A39B8E]; }
+  /* Ink's hero light: a faint gold glow behind the proof, the only gradient on the page. */
+  [data-look="ink"] .site-glow { background: radial-gradient(60% 55% at 70% 45%, rgb(232 185 74 / .10), transparent 70%); }
+  .site ::selection { background: rgb(var(--site-type)); color: rgb(var(--site-paper)); }
 
   /* The site's before/after: --x is the divider's position, set from BeforeAfter as it moves. */
   .ba { --x: 50%; }

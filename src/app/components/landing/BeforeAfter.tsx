@@ -53,7 +53,7 @@ export function BeforeAfter() {
   return (
     <figure className="grid gap-4">
       <div ref={box} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-        className="ba relative aspect-video cursor-ew-resize touch-pan-y select-none overflow-hidden rounded-2xl bg-stage shadow-[0_30px_80px_-30px_rgba(18,18,17,.45),0_0_0_1px_rgba(18,18,17,.06)]">
+        className="ba relative aspect-video cursor-ew-resize touch-pan-y select-none overflow-hidden site-lift rounded-[20px] bg-stage">
         <LiveSlide id="chart-notes" className="absolute inset-0" />
         <div className="ba-before absolute inset-0" aria-hidden><DefaultChart className="block size-full" /></div>
         <div ref={handle} role="slider" tabIndex={0} aria-label="Compare the default chart with Occam" aria-valuemin={0} aria-valuemax={100} aria-valuenow={START}
@@ -65,9 +65,9 @@ export function BeforeAfter() {
           </span>
         </div>
       </div>
-      <figcaption className="flex justify-between gap-6 text-[13px] text-type-2">
-        <span>What your slide tool gives you</span>
-        <span className="text-right">Same numbers, argued</span>
+      <figcaption className="flex justify-between gap-6 text-[13px] text-type-3">
+        <span>Your slide tool’s default</span>
+        <span className="text-right">The same numbers, on Occam</span>
       </figcaption>
     </figure>
   )

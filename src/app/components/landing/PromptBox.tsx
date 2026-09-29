@@ -22,7 +22,7 @@ export function PromptBox({ id, autoFocus = false }: { id?: string; autoFocus?: 
 
   return (
     <form id={id} onSubmit={submit} className="grid gap-3">
-      <div className="grid rounded-[18px] bg-white p-2 shadow-[0_1px_2px_rgba(18,18,17,.06),0_0_0_1px_rgba(18,18,17,.09)] transition-shadow focus-within:shadow-[0_1px_2px_rgba(18,18,17,.06),0_0_0_2px_#121211]">
+      <div className="grid rounded-[20px] bg-card p-2 shadow-[0_0_0_1px_rgb(var(--site-rule)),0_12px_32px_-18px_rgb(var(--site-shadow)/.35)] transition-shadow focus-within:shadow-[0_0_0_2px_rgb(var(--site-type)),0_12px_32px_-18px_rgb(var(--site-shadow)/.35)]">
         <label htmlFor={`${id ?? 'p'}-text`} className="sr-only">Describe your slide</label>
         <textarea id={`${id ?? 'p'}-text`} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} autoFocus={autoFocus} rows={3}
           placeholder="Paste your doc, notes or numbers, and say what the room should take away…"
