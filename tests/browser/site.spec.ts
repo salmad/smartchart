@@ -33,22 +33,25 @@ test('the before/after divider moves with the keyboard', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await site(page, 1440)
   const slider = page.getByRole('slider', { name: /Compare/ })
-  await expect(slider).toHaveAttribute('aria-valuenow', '50')
+  await expect(slider).toHaveAttribute('aria-valuenow', '82')
   await slider.focus()
   await page.keyboard.press('ArrowLeft')
-  await expect(slider).toHaveAttribute('aria-valuenow', '45')
+  await expect(slider).toHaveAttribute('aria-valuenow', '77')
   await page.keyboard.press('End')
   await expect(slider).toHaveAttribute('aria-valuenow', '100')
 })
 
-test('signed out, a prompt on the site asks to sign in first and keeps the prompt for after', async ({ page }) => {
+test('signed out, a prompt on the site asks to sign in first and keeps the prompt, and its example’s style, for after', async ({ page }) => {
   await site(page, 1440)
-  await page.getByRole('button', { name: 'Pitch' }).first().click()
+  await expect(page.getByRole('group', { name: 'Writing style' })).toHaveCount(0)
+  await page.locator('#hero-prompt').getByRole('button', { name: 'A seed pitch' }).click()
   await page.getByLabel('Describe your slide').first().fill('Revenue grew from £2.1m to £5.4m')
-  await page.locator('#hero-prompt').getByRole('button', { name: 'Turn my doc into slides' }).click()
+  await page.locator('#hero-prompt').getByRole('button', { name: 'Make slides' }).click()
   await expect(page).toHaveURL(/\/new$/)
   await expect(page.getByRole('dialog')).toContainText('Sign in and Occam makes your slide')
-  expect(await page.evaluate(() => sessionStorage.getItem('smartchart.pendingPrompt'))).toContain('Revenue grew')
+  const pending = await page.evaluate(() => sessionStorage.getItem('smartchart.pendingPrompt'))
+  expect(pending).toContain('Revenue grew')
+  expect(pending).toContain('"pitch"')
 })
 
 test('after sign-in, the prompt kept from the site opens the editor in the style picked there', async ({ page }) => {
@@ -153,4 +156,17 @@ test('back from Google, the session check passes the one-time verifier on, then 
   await expect(page.getByRole('heading', { name: 'What should this slide say?' })).toBeVisible() // no decks yet: a new one
   expect(seen[0]).toBe('abc')
   await expect(page).toHaveURL(/localhost:\d+\/$/)
+})
+
+test('signed in, Occam in the bar opens the site at /home, with Open app back to the editor', async ({ page }) => {
+  await devAccount(page)
+  await page.goto('/')
+  await expect(page.getByRole('link', { name: 'Occam' })).toBeVisible()
+  await page.getByRole('link', { name: 'Occam' }).click()
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(page.getByRole('heading', { name: /scientifically precise/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign in' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Open app' }).click()
+  await expect(page.getByRole('link', { name: 'Occam' })).toBeVisible()
+  await expect(page).not.toHaveURL(/\/home$/)
 })

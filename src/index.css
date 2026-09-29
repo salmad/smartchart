@@ -50,12 +50,13 @@
   .site-night .site-lede { color: #A39B8E; }
   .site-night .site-kicker { @apply border-[#3A352E] text-[#A39B8E]; }
   /* Ink's hero light: a faint gold glow behind the proof, the only gradient on the page. */
-  [data-look="ink"] .site-glow { background: radial-gradient(60% 55% at 70% 45%, rgb(232 185 74 / .10), transparent 70%); }
+  [data-look="ink"] .site-glow { background: radial-gradient(60% 45% at 50% 62%, rgb(232 185 74 / .10), transparent 70%); }
   .site ::selection { background: rgb(var(--site-type)); color: rgb(var(--site-paper)); }
 
   /* The site's before/after: --x is the divider's position, set from BeforeAfter as it moves. */
   .ba { --x: 50%; }
-  .ba-before { clip-path: inset(0 calc(100% - var(--x)) 0 0); }
+  /* The default sits on the right: the Occam slide's title, on the left, is never under it. */
+  .ba-before { clip-path: inset(0 0 0 var(--x)); }
   .ba-line { left: var(--x); }
 
   .spinner { @apply mr-2 inline-block size-3 animate-spin rounded-full border-[1.5px] border-line-2 border-t-ink align-[-1px]; animation-duration: .8s; }

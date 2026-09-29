@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Cta } from './Cta'
 import { Em, Head } from './parts'
 
@@ -38,16 +39,32 @@ export function Compare() {
   )
 }
 
+/** Why not a chatbot: the differentiation, point by point. Each point is true of the engine today. */
+const VERSUS: [lead: string, text: string][] = [
+  ['Designed once, never improvised.', 'A chatbot writes a new layout for every slide, so margins drift and text spills off the edge. Occam’s AI never draws. It fills layouts designed once, to one set of rules, so slide thirty looks like slide one.'],
+  ['Argued like a proof.', 'Every slide is a claim in the title, reasons that don’t overlap, and your numbers as the evidence: the structure consultants are trained to write in.'],
+  ['Checked, not trusted.', '57 checks run on every slide. Code measures what can be measured: text that overflows, an edge a few pixels off, a figure given with false precision. A model judges the rest: a chart that doesn’t back the title, two reasons that say the same thing.'],
+  ['Your numbers, not plausible ones.', 'Charts are drawn from the figures you give, and code checks your headline number made it onto the slide.'],
+]
+const Versus = (
+  <>
+    <p>A chatbot improvises each slide and hopes. Occam follows laws, and checks every slide against them before you see it. A slide that fails goes back to the agent, not to you.</p>
+    <ul className="mt-4 grid gap-3">
+      {VERSUS.map(([lead, text]) => <li key={lead}><strong className="font-semibold text-type">{lead}</strong> {text}</li>)}
+    </ul>
+  </>
+)
+
 /* Objections, answered before the close. Claims stay within what the product does today. */
-const FAQ: [string, string][] = [
+const FAQ: [string, ReactNode][] = [
   ['I’ve never made a good slide. Will mine look like this?', 'Yes. You bring the content; the layout, the charts and the checks are built in. Every slide is made the same way, whoever writes it.'],
-  ['Why not just ask ChatGPT or Gemini?', 'They draw each slide from scratch and nothing checks the result. Occam fills layouts designed once and checks every slide before you see it.'],
+  ['Why not just ask ChatGPT or Gemini?', Versus],
   ['Consulting or pitch?', 'Pick per deck. Consulting puts the argument in a full-sentence title. Pitch leads with one bold claim and big numbers.'],
   ['I have a long doc. Will it work?', 'Paste it and say what the room should take away. You get the deck: the story in the titles, the evidence as charts and tables.'],
   ['Can I change it myself?', 'Ask in plain words: a sharper title, another chart, one more slide. Only what you asked changes, and every check still runs.'],
   ['Can I export to PowerPoint?', 'Soon. Today you present straight from the app, full screen.'],
   ['Is my data private?', 'Your decks are saved to your account, or only in your browser until you sign in. What you paste is sent to the AI models that write the slide, and to nobody else. We never sell it.'],
-  ['What does it cost?', 'Your first slide is free, no account needed. After that, $10 buys 100 credits, about 30 slides. That’s about 33 cents a slide, against an hour of your evening.'],
+  ['What does it cost?', 'Your first slide is free. After that, $10 buys 100 credits, about 30 slides. That’s about 33 cents a slide, against an hour of your evening.'],
 ]
 
 export function Faq() {
@@ -62,7 +79,7 @@ export function Faq() {
                 {q}
                 <span aria-hidden className="text-[22px] font-normal leading-none text-type-3 transition-transform group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-3 max-w-[60ch] text-[15px] leading-[1.6] text-type-2">{a}</p>
+              <div className="mt-3 max-w-[60ch] text-[15px] leading-[1.6] text-type-2">{typeof a === 'string' ? <p>{a}</p> : a}</div>
             </details>
           ))}
         </div>

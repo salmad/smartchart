@@ -2,12 +2,17 @@ import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import { DefaultChart } from './DefaultChart'
 import { LiveSlide } from './LiveSlide'
 
-const START = 50, FROM = 90 // the one orchestrated moment: on first view the line sweeps from 90% to 50%
+// The one orchestrated moment: on first view the default slides in from the right edge to PEEK, holds so the two can be
+// compared, then draws back to REST, where the Occam slide's title reads whole (it ends near 72% across).
+const REST = 82, FROM = 100, PEEK = 45
+const LEGS: [from: number, to: number, ms: number][] = [[FROM, PEEK, 1200], [PEEK, PEEK, 900], [PEEK, REST, 1100]]
+const ease = (k: number) => (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2)
 
-/** The same numbers twice: a slide tool's default chart over the Occam slide, split by a line you drag. */
+/** The same numbers twice: the Occam slide, with a slide tool's default chart over its right side, split by a line you
+    drag. It rests mostly on Occam, so the slide reads whole without a drag. */
 export function BeforeAfter() {
   const box = useRef<HTMLDivElement>(null), handle = useRef<HTMLDivElement>(null)
-  const at = useRef(START), dragging = useRef(false)
+  const at = useRef(REST), dragging = useRef(false)
 
   const set = (pct: number) => {
     at.current = Math.min(100, Math.max(0, pct))
@@ -18,18 +23,19 @@ export function BeforeAfter() {
   useEffect(() => {
     const el = box.current
     if (!el) return
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { set(START); return }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { set(REST); return }
     set(FROM)
     let raf = 0
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return
       io.disconnect()
-      const t0 = performance.now(), dur = 1400
+      let leg = 0, t0 = performance.now()
       const step = (t: number) => {
         if (dragging.current) return
-        const k = Math.min(1, (t - t0) / dur), ease = 1 - Math.pow(1 - k, 3)
-        set(FROM + (START - FROM) * ease)
-        if (k < 1) raf = requestAnimationFrame(step)
+        const [a, b, ms] = LEGS[leg], k = Math.min(1, (t - t0) / ms)
+        set(a + (b - a) * ease(k))
+        if (k === 1) { leg += 1; t0 = t }
+        if (leg < LEGS.length) raf = requestAnimationFrame(step)
       }
       raf = requestAnimationFrame(step)
     }, { threshold: 0.35 })
@@ -56,7 +62,7 @@ export function BeforeAfter() {
         className="ba relative aspect-video cursor-ew-resize touch-pan-y select-none overflow-hidden site-lift rounded-[20px] bg-stage">
         <LiveSlide id="chart-notes" className="absolute inset-0" />
         <div className="ba-before absolute inset-0" aria-hidden><DefaultChart className="block size-full" /></div>
-        <div ref={handle} role="slider" tabIndex={0} aria-label="Compare the default chart with Occam" aria-valuemin={0} aria-valuemax={100} aria-valuenow={START}
+        <div ref={handle} role="slider" tabIndex={0} aria-label="Compare the default chart with Occam" aria-valuemin={0} aria-valuemax={100} aria-valuenow={REST}
           aria-valuetext="Drag to compare" onKeyDown={key}
           className="ba-line group absolute inset-y-0 w-11 -translate-x-1/2 outline-none">
           <span className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-white shadow-[0_0_0_1px_rgba(0,0,0,.18)]" />
@@ -66,8 +72,8 @@ export function BeforeAfter() {
         </div>
       </div>
       <figcaption className="flex justify-between gap-6 text-[13px] text-type-3">
-        <span>Your slide tool’s default</span>
-        <span className="text-right">The same numbers, on Occam</span>
+        <span>Occam</span>
+        <span className="text-right">The same numbers, in your slide tool</span>
       </figcaption>
     </figure>
   )

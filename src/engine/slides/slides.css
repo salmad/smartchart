@@ -25,6 +25,7 @@
   -webkit-font-smoothing: antialiased; padding: 96px 128px 136px; display: flex; flex-direction: column; overflow: hidden;
   font-kerning: normal; font-variant-ligatures: none; font-synthesis: none;
   -webkit-text-size-adjust: none; text-size-adjust: none; /* iOS must not inflate text in the 1920px canvas */
+  text-align: left; /* the host page's alignment never reaches in: a slide looks the same wherever it is shown */
 }
 /* L3: the body starts on one line per style. The head reserves its longest form (consulting: kicker +
    2 title lines; pitch: 1 title line + 1 subtitle line) and the body follows it after one gap, so a

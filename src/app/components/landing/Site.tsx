@@ -9,7 +9,8 @@ import { Rigour } from './Rigour'
 import { Answer, How, Who } from './Story'
 import { Em, Head, LookSwitch, useLook } from './parts'
 
-interface Props { onSignIn: () => void }
+/** Signed in, the header offers Open app (`onSignIn` then goes to the editor) in place of Sign in and Start free. */
+interface Props { onSignIn: () => void; signedIn?: boolean }
 
 /** The closing offer: what you get, what it replaces, what it costs. */
 const VALUE: [string, string][] = [
@@ -20,7 +21,7 @@ const VALUE: [string, string][] = [
 
 /** The public site at /, in the order of the sell: the promise, the problem and its cost, the solution, the method behind it,
     what it is for, the gallery, the comparison, objections, and the free first slide. Two looks, one page. */
-export function Site({ onSignIn }: Props) {
+export function Site({ onSignIn, signedIn = false }: Props) {
   const page = useRef<HTMLDivElement>(null)
   const night = useNightUnderNav(page)
   const [look, setLook] = useLook()
@@ -29,33 +30,30 @@ export function Site({ onSignIn }: Props) {
       {/* Solid, and the colour of the section under it: a translucent bar smears over the dark section. */}
       <nav className={cn('sticky top-0 z-20 transition-colors duration-300', night ? 'bg-night text-[#F3EEE4]' : 'bg-paper')}>
         <div className="site-wrap flex h-16 items-center justify-between gap-4">
-          <a href="/" className="flex items-center gap-2.5 font-display text-[22px] font-extrabold tracking-[-.01em] [font-stretch:78%]">
+          <a href={signedIn ? '/home' : '/'} className="flex items-center gap-2.5 font-display text-[22px] font-extrabold tracking-[-.01em] [font-stretch:78%]">
             <Mark />Occam
           </a>
           <div className="flex items-center gap-2">
             <LookSwitch look={look} onChange={setLook} night={night} />
-            <button type="button" onClick={onSignIn} className={cn('h-10 rounded-full px-4 text-[14px] transition-colors', night ? 'text-[#A39B8E] hover:text-[#F3EEE4]' : 'text-type-2 hover:text-type')}>Sign in</button>
-            <button type="button" onClick={startPrompt} className={cn('h-10 rounded-full px-4 text-[14px] font-medium transition-colors duration-300', night ? 'bg-[#F3EEE4] text-stage' : 'bg-type text-paper')}>Start free</button>
+            {!signedIn && <button type="button" onClick={onSignIn} className={cn('h-10 rounded-full px-4 text-[14px] transition-colors', night ? 'text-[#A39B8E] hover:text-[#F3EEE4]' : 'text-type-2 hover:text-type')}>Sign in</button>}
+            <button type="button" onClick={signedIn ? onSignIn : startPrompt} className={cn('h-10 rounded-full px-4 text-[14px] font-medium transition-colors duration-300', night ? 'bg-[#F3EEE4] text-stage' : 'bg-type text-paper')}>
+              {signedIn ? 'Open app' : 'Start free'}
+            </button>
           </div>
         </div>
       </nav>
 
       <main>
-        {/* Hero: who it is for, the promise and the prompt on the left, the proof on the right, all above the fold. */}
+        {/* Hero: one column, one idea. The promise and the prompt above the fold; the proof, large, rising in under them. */}
         <div className="site-glow">
-          <section className="site-wrap grid grid-cols-2 items-center gap-14 pb-28 pt-14 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-10 max-[700px]:pb-16 max-[700px]:pt-8">
-            <div className="grid justify-items-start gap-6 max-[1100px]:contents">
-              <p className="site-kicker">Nobody reads your docs</p>
-              <h1 className="font-display text-[clamp(44px,4.6vw,60px)] font-extrabold leading-[.94] tracking-[-.025em] [font-stretch:78%] [text-wrap:balance]">
-                Slides,<br /> <Em>scientifically precise.</Em>
-              </h1>
-              <p className="text-[19px] leading-[1.5] text-type-2">Built on the laws of clear writing. Every slide passes 57 checks for design, meaning and logic.</p>
-              <div className="grid w-full gap-3">
-                <PromptBox id="hero-prompt" />
-                <p className="text-[13px] text-type-3">Your first slide is free. No card, no account.</p>
-              </div>
-            </div>
-            <BeforeAfter />
+          {/* Centred by its text blocks only: text-center on the section would reach into the slide below. */}
+          <section className="site-wrap grid justify-items-center gap-6 pb-28 pt-20 max-[700px]:pb-16 max-[700px]:pt-10">
+            <h1 className="text-center font-display text-[clamp(44px,5.4vw,76px)] font-extrabold leading-[.94] tracking-[-.025em] [font-stretch:78%] [text-wrap:balance]">
+              Slides,<br /> <Em>scientifically precise.</Em>
+            </h1>
+            <p className="max-w-[680px] text-center text-[19px] leading-[1.5] text-type-2 [text-wrap:balance]">Laws, not vibes: every slide passes 57 checks for design, meaning and logic.</p>
+            <div className="mt-4 w-full max-w-[640px]"><PromptBox id="hero-prompt" /></div>
+            <div className="mt-14 w-full max-w-[1120px] max-[700px]:mt-8"><BeforeAfter /></div>
           </section>
         </div>
 
@@ -80,7 +78,6 @@ export function Site({ onSignIn }: Props) {
               ))}
             </dl>
             <div className="text-left"><PromptBox id="closing-prompt" /></div>
-            <p className="text-[13px] text-type-3">No card, no account.</p>
           </div>
         </section>
       </main>
