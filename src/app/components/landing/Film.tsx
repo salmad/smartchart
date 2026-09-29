@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Maximize2, Minimize2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { LiveSlide } from './LiveSlide'
 import { Celebrate, CheckOverlay, Doc, Prompt } from './FilmParts'
@@ -54,10 +55,37 @@ const NARRATOR: ReactNode[] = [
 ]
 // The camera: one slow dolly across the loop, each beat a re-framing rather than a cut.
 const DOLLY = ['scale-100', 'scale-[1.015]', 'scale-[1.03]', 'scale-[1.045]', 'scale-[1.06]']
+const CONTROL = 'grid size-[max(32px,3cqw)] place-items-center rounded-full bg-white/10 text-[#F3EEE4] backdrop-blur transition-opacity hover:bg-white/20 focus-visible:opacity-100'
+
+// Safari before 16.4 has only the prefixed Fullscreen API.
+type FullDoc = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => void; webkitFullscreenEnabled?: boolean }
+type FullEl = HTMLElement & { webkitRequestFullscreen?: () => void }
+
+/** Full screen for one element: whether the browser allows it (iPhone Safari does not), whether it is on, and a toggle. */
+function useFullscreen(el: RefObject<HTMLElement | null>) {
+  const doc = document as FullDoc
+  const supported = !!(doc.fullscreenEnabled || doc.webkitFullscreenEnabled)
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    const sync = () => setOn(!!el.current && (doc.fullscreenElement ?? doc.webkitFullscreenElement) === el.current)
+    document.addEventListener('fullscreenchange', sync)
+    document.addEventListener('webkitfullscreenchange', sync)
+    return () => { document.removeEventListener('fullscreenchange', sync); document.removeEventListener('webkitfullscreenchange', sync) }
+  }, [el, doc])
+  const toggle = () => {
+    const target = el.current as FullEl | null
+    if (!target) return
+    if (on) { if (doc.exitFullscreen) void doc.exitFullscreen(); else doc.webkitExitFullscreen?.() }
+    else if (target.requestFullscreen) void target.requestFullscreen()
+    else target.webkitRequestFullscreen?.()
+  }
+  return { supported, on, toggle }
+}
 
 /** The film, looping while on screen. Reduced motion shows the checked slide as a still. */
 export function Film() {
   const box = useRef<HTMLDivElement>(null)
+  const full = useFullscreen(box)
   const still = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const [at, setAt] = useState(still ? STILL : 0), [seen, setSeen] = useState(false), [paused, setPaused] = useState(false)
   const [chars, setChars] = useState(0), [loop, setLoop] = useState(0)
@@ -93,9 +121,10 @@ export function Film() {
   // Off a chapter card, the picture waits for the narrator to start rising before it comes back in.
   const back = STEPS[(at + STEPS.length - 1) % STEPS.length].center && !s.center && 'delay-300'
   return (
-    <div ref={box}>
+    // Full screen: the frame letterboxes on black at 16:9, whatever the screen's shape.
+    <div ref={box} className="group/film grid place-items-center [&:fullscreen]:bg-black">
       <figure aria-label="A film of Occam: a doc, a one-line request, the slide built from it, reviewed, then changed in plain words"
-        className="group relative aspect-video overflow-hidden rounded-[24px] bg-[#0B0A09] text-[#F3EEE4] shadow-[0_0_0_1px_rgba(243,238,228,.08),0_40px_100px_-40px_rgba(0,0,0,.9)] [container-type:inline-size]">
+        className="group relative aspect-video w-full overflow-hidden rounded-[24px] group-[:fullscreen]/film:w-[min(100vw,177.78vh)] group-[:fullscreen]/film:rounded-none bg-[#0B0A09] text-[#F3EEE4] shadow-[0_0_0_1px_rgba(243,238,228,.08),0_40px_100px_-40px_rgba(0,0,0,.9)] [container-type:inline-size]">
         {/* The stage light: warm from the top left, falling off to a vignette. */}
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(70%_60%_at_25%_10%,rgba(232,185,74,.10),transparent_60%)]" />
 
@@ -139,19 +168,27 @@ export function Film() {
           <p key={`c${voice.k}${loop}`} className="motion-safe:animate-rise motion-safe:[animation-delay:.3s]">{NARRATOR[voice.line]}</p>
         </div>
 
-        {/* Progress: one hairline across the loop. Pause shows on hover or focus only. */}
+        {/* Progress: one hairline across the loop. */}
         {!still && (
-          <>
-            <span aria-hidden className="absolute bottom-0 left-0 h-px w-full bg-white/10">
-              <i key={loop} className={cn('block size-full origin-left bg-[#E8B94A]/70', TOTAL, !playing && '[animation-play-state:paused]')} />
-            </span>
+          <span aria-hidden className="absolute bottom-0 left-0 h-px w-full bg-white/10">
+            <i key={loop} className={cn('block size-full origin-left bg-[#E8B94A]/70', TOTAL, !playing && '[animation-play-state:paused]')} />
+          </span>
+        )}
+        {/* Controls, bottom right: pause shows on hover or focus; full screen always shows, where the browser allows it. */}
+        <div className="absolute bottom-[2cqw] right-[2cqw] flex gap-2">
+          {!still && (
             <button type="button" onClick={() => setPaused((p) => !p)} aria-label={paused ? 'Play the film' : 'Pause the film'}
-              className={cn('absolute bottom-[2cqw] right-[2cqw] grid size-[max(32px,3cqw)] place-items-center rounded-full bg-white/10 text-[#F3EEE4] backdrop-blur transition-opacity hover:bg-white/20 focus-visible:opacity-100',
-                paused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}>
+              className={cn(CONTROL, paused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}>
               <svg viewBox="0 0 12 12" className="size-[40%]" aria-hidden fill="currentColor">{paused ? <path d="M3 1.5v9l7-4.5z" /> : <path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" />}</svg>
             </button>
-          </>
-        )}
+          )}
+          {full.supported && (
+            <button type="button" onClick={full.toggle} aria-label={full.on ? 'Exit full screen' : 'Watch full screen'} title={full.on ? 'Exit full screen' : 'Full screen'}
+              className={cn(CONTROL, 'opacity-70 hover:opacity-100')}>
+              {full.on ? <Minimize2 className="size-[45%]" strokeWidth={2} aria-hidden /> : <Maximize2 className="size-[45%]" strokeWidth={2} aria-hidden />}
+            </button>
+          )}
+        </div>
       </figure>
     </div>
   )
