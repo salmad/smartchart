@@ -62,6 +62,7 @@ export function Rigour() {
       </div>
 
       <figure className="site-card grid grid-cols-[minmax(0,1fr)_auto] items-end gap-10 p-12 max-[900px]:grid-cols-1 max-[700px]:p-6">
+        {/* Founder quote hidden for now; restore when the copy is stronger.
         <div className="grid gap-5">
           <blockquote className="max-w-[36ch] font-display text-[clamp(24px,2.3vw,32px)] font-normal leading-[1.15] tracking-[-.01em] [font-stretch:78%]">
             “I trained as a physicist, then spent years making consulting slides. Both taught me the same thing: an idea clicks when it
@@ -69,6 +70,7 @@ export function Rigour() {
           </blockquote>
           <figcaption className="text-[14px] text-type-2">Salim, founder of Occam</figcaption>
         </div>
+        */}
         <Cta />
       </figure>
     </section>
