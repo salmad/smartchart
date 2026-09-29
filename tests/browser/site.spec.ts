@@ -166,7 +166,15 @@ test('signed in, Occam in the bar opens the site at /home, with Open app back to
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('heading', { name: /scientifically precise/ })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Sign in' })).toHaveCount(0)
+  await expect(page.getByText('First slide free.')).toHaveCount(0)
   await page.getByRole('button', { name: 'Open app' }).click()
   await expect(page.getByRole('link', { name: 'Occam' })).toBeVisible()
   await expect(page).not.toHaveURL(/\/home$/)
+})
+
+test('signed out, every call to action is Start free or Make slides, with the offer under each section CTA', async ({ page }) => {
+  await site(page, 1440)
+  const labels = await page.locator('.site').getByRole('button', { name: /slides|free/i }).allTextContents()
+  expect(new Set(labels.map((l) => l.trim()))).toEqual(new Set(['Start free', 'Make slides']))
+  await expect(page.getByText('First slide free.')).toHaveCount(3)
 })

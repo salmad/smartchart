@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Cta } from './Cta'
-import { Em, Head } from './parts'
+import { Head } from './parts'
 
 /** Against the alternative, in its own terms: what AI deck tools do, and what Occam does instead. No names. */
 const ROWS: [string, string][] = [
@@ -14,7 +14,7 @@ const ROWS: [string, string][] = [
 export function Compare() {
   return (
     <section aria-labelledby="compare" className="site-section">
-      <Head id="compare" kicker="Compared" center title={<>Other AI tools add.<br /> <Em>Occam cuts.</Em></>}
+      <Head id="compare" center title={<>Other AI tools add.<br /> Occam cuts.</>}
         lede="Named after Occam’s razor: keep only what the point needs." />
       <div className="site-card mx-auto w-full max-w-[880px] overflow-hidden">
         <table className="w-full border-collapse text-left text-[16px] max-[700px]:text-[15px]">
@@ -28,7 +28,7 @@ export function Compare() {
             {ROWS.map(([them, us]) => (
               <tr key={us} className="border-b border-rule last:border-0">
                 <td className="px-8 py-4 text-type-3 max-[700px]:px-5">{them}</td>
-                <td className="bg-paper-2/60 px-8 py-4 font-medium max-[700px]:px-5">{us}</td>
+                <td className="bg-paper-2/60 px-8 py-4 max-[700px]:px-5">{us}</td>
               </tr>
             ))}
           </tbody>
@@ -39,21 +39,15 @@ export function Compare() {
   )
 }
 
-/** Why not a chatbot: the differentiation, point by point. Each point is true of the engine today. */
-const VERSUS: [lead: string, text: string][] = [
-  ['Designed once, never improvised.', 'A chatbot writes a new layout for every slide, so margins drift and text spills off the edge. Occam’s AI never draws. It fills layouts designed once, to one set of rules, so slide thirty looks like slide one.'],
-  ['Argued like a proof.', 'Every slide is a claim in the title, reasons that don’t overlap, and your numbers as the evidence: the structure consultants are trained to write in.'],
-  ['Checked, not trusted.', '57 checks run on every slide. Code measures what can be measured: text that overflows, an edge a few pixels off, a figure given with false precision. A model judges the rest: a chart that doesn’t back the title, two reasons that say the same thing.'],
-  ['Your numbers, not plausible ones.', 'Charts are drawn from the figures you give, and code checks your headline number made it onto the slide.'],
+/** Why not a chatbot: the differentiation, one paragraph per point, in plain prose. Each point is true of the engine today. */
+const VERSUS = [
+  'A chatbot improvises each slide and hopes. Occam follows laws, and checks every slide against them before you see it. A slide that fails goes back to the agent, not to you.',
+  'A chatbot writes a new layout for every slide, so margins drift and text spills off the edge. Occam’s AI never draws: it fills layouts designed once, to one set of rules, so slide thirty looks like slide one.',
+  'Every slide is argued like a proof: a claim in the title, reasons that don’t overlap, and your numbers as the evidence. It is the structure consultants are trained to write in.',
+  '57 checks run on every slide. Code measures what can be measured: text that overflows, an edge a few pixels off, a figure given with false precision. A model judges the rest: a chart that doesn’t back the title, two reasons that say the same thing.',
+  'Charts are drawn from the figures you give, not plausible ones, and code checks your headline number made it onto the slide.',
 ]
-const Versus = (
-  <>
-    <p>A chatbot improvises each slide and hopes. Occam follows laws, and checks every slide against them before you see it. A slide that fails goes back to the agent, not to you.</p>
-    <ul className="mt-4 grid gap-3">
-      {VERSUS.map(([lead, text]) => <li key={lead}><strong className="font-semibold text-type">{lead}</strong> {text}</li>)}
-    </ul>
-  </>
-)
+const Versus = <div className="grid gap-3">{VERSUS.map((p) => <p key={p}>{p}</p>)}</div>
 
 /* Objections, answered before the close. Claims stay within what the product does today. */
 const FAQ: [string, ReactNode][] = [
@@ -71,7 +65,7 @@ export function Faq() {
   return (
     <section aria-labelledby="faq" className="site-section">
       <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-16 max-[900px]:grid-cols-1 max-[900px]:gap-8">
-        <Head id="faq" kicker="FAQ" title={<>Questions, <Em>answered.</Em></>} />
+        <Head id="faq" title="Questions, answered." />
         <div className="grid">
           {FAQ.map(([q, a]) => (
             <details key={q} className="group border-b border-rule py-5 first:border-t">

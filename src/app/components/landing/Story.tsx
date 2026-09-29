@@ -3,7 +3,7 @@ import type { Style } from '@/engine/types'
 import { Cta } from './Cta'
 import { Film } from './Film'
 import { LiveSlide, MENU } from './LiveSlide'
-import { Em, Head } from './parts'
+import { Head } from './parts'
 
 /** The answer, as an outcome: every slide in the gallery, designed once, so a deck never drifts. */
 export function Answer() {
@@ -22,7 +22,7 @@ export function Answer() {
     <section aria-labelledby="answer" className="site-night" data-night>
       <div className="site-section">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <Head id="answer" kicker="The gallery" title={<>Every slide a case <Em>needs.</Em></>}
+          <Head id="answer" title="Every slide you need."
             lede="Trends, bridges, comparisons, plans, key figures. Each one designed once and reused, so slide thirty looks like slide one." />
           <div className="flex gap-2 max-[700px]:hidden">
             <Paddle label="Previous" disabled={edge.start} onClick={() => page(-1)}>‹</Paddle>
@@ -37,7 +37,6 @@ export function Answer() {
             </li>
           ))}
         </ul>
-        <p className="text-[14px] text-[#A39B8E]">Every slide on this page is drawn live by the same engine you use. None of them is a mockup.</p>
       </div>
     </section>
   )
@@ -56,7 +55,7 @@ function Paddle({ label, disabled, onClick, children }: { label: string; disable
 export function How() {
   return (
     <section aria-labelledby="how" className="site-section">
-      <Head id="how" kicker="The solution" center title={<>Ask in plain words.<br /> <Em>Get a checked slide.</Em></>} />
+      <Head id="how" center title={<>Ask in plain words.<br /> Get a checked slide.</>} />
       <div className="mx-auto w-full max-w-[1200px]"><Film /></div>
     </section>
   )
@@ -73,7 +72,7 @@ const USES: [id: string, ask: string, title: string, text: string, style: Style]
 export function Who() {
   return (
     <section aria-labelledby="who" className="site-section">
-      <Head id="who" kicker="Use cases" center title={<>For decks that <Em>ask for something.</Em></>}
+      <Head id="who" center title="For decks that ask for something."
         lede="Money, a yes, or trust in the numbers. Made for founders, operators and ex-consultants with no slide team." />
       <div className="grid grid-cols-3 gap-6 max-[1000px]:grid-cols-1">
         {USES.map(([id, ask, title, text, style]) => (

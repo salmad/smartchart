@@ -6,13 +6,13 @@ export function Em({ children }: { children: ReactNode }) {
   return <em className="site-em">{children}</em>
 }
 
-/** A section's head: the label, the heading, the lede. `center` for sections whose content runs full width. */
-export function Head({ id, kicker, title, lede, center = false, className }: {
-  id: string; kicker: string; title: ReactNode; lede?: ReactNode; center?: boolean; className?: string
+/** A section's head: the heading and its lede, no label above it (the heading says what the section is). `center` for
+    sections whose content runs full width. */
+export function Head({ id, title, lede, center = false, className }: {
+  id: string; title: ReactNode; lede?: ReactNode; center?: boolean; className?: string
 }) {
   return (
     <div className={cn('site-head', center && 'site-head-c', className)}>
-      <p className="site-kicker">{kicker}</p>
       <h2 id={id} className="site-h2">{title}</h2>
       {lede && <p className="site-lede">{lede}</p>}
     </div>

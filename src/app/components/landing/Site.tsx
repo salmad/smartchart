@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import { cn } from '@/app/lib/utils'
 import { BeforeAfter } from './BeforeAfter'
 import { Compare, Faq } from './Close'
-import { startPrompt } from './Cta'
+import { SignedIn, startPrompt } from './Cta'
 import { Problems } from './Problems'
 import { PromptBox } from './PromptBox'
 import { Rigour } from './Rigour'
@@ -11,13 +11,6 @@ import { Em, Head, LookSwitch, useLook } from './parts'
 
 /** Signed in, the header offers Open app (`onSignIn` then goes to the editor) in place of Sign in and Start free. */
 interface Props { onSignIn: () => void; signedIn?: boolean }
-
-/** The closing offer: what you get, what it replaces, what it costs. */
-const VALUE: [string, string][] = [
-  ['You get', 'Slides with the point in every title, your numbers in the charts, checked before you see them.'],
-  ['It replaces', 'An evening of nudging boxes, or a week waiting on a designer.'],
-  ['It costs', 'Nothing for the first slide. Then $10 for about 30.'],
-]
 
 /** The public site at /, in the order of the sell: the promise, the problem and its cost, the solution, the method behind it,
     what it is for, the gallery, the comparison, objections, and the free first slide. Two looks, one page. */
@@ -44,42 +37,36 @@ export function Site({ onSignIn, signedIn = false }: Props) {
       </nav>
 
       <main>
-        {/* Hero: one column, one idea. The promise and the prompt above the fold; the proof, large, rising in under them. */}
-        <div className="site-glow">
-          {/* Centred by its text blocks only: text-center on the section would reach into the slide below. */}
-          <section className="site-wrap grid justify-items-center gap-6 pb-28 pt-20 max-[700px]:pb-16 max-[700px]:pt-10">
-            <h1 className="text-center font-display text-[clamp(44px,5.4vw,76px)] font-extrabold leading-[.94] tracking-[-.025em] [font-stretch:78%] [text-wrap:balance]">
-              Slides,<br /> <Em>scientifically precise.</Em>
-            </h1>
-            <p className="max-w-[680px] text-center text-[19px] leading-[1.5] text-type-2 [text-wrap:balance]">Laws, not vibes: every slide passes 57 checks for design, meaning and logic.</p>
-            <div className="mt-4 w-full max-w-[640px]"><PromptBox id="hero-prompt" /></div>
-            <div className="mt-14 w-full max-w-[1120px] max-[700px]:mt-8"><BeforeAfter /></div>
-          </section>
-        </div>
-
-        <Problems />
-        <How />
-        <Rigour />
-        <Who />
-        <Answer />
-        <Compare />
-        <Faq />
-
-        <section aria-labelledby="closing" className="site-section">
-          <div className="site-card mx-auto grid w-full max-w-[880px] gap-8 p-14 text-center max-[700px]:p-6">
-            <Head id="closing" kicker="Start" center title={<>Your first slide <Em>is free.</Em></>}
-              lede="Paste your doc and see it in a minute. If it isn’t better than what you’d make in an evening, you’ve lost a minute." />
-            <dl className="grid grid-cols-3 gap-6 border-y border-rule py-8 text-left max-[700px]:grid-cols-1">
-              {VALUE.map(([k, v]) => (
-                <div key={k} className="grid content-start gap-1.5">
-                  <dt className="text-[13px] text-type-3">{k}</dt>
-                  <dd className="text-[16px] font-medium leading-[1.4]">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="text-left"><PromptBox id="closing-prompt" /></div>
+        <SignedIn.Provider value={signedIn}>
+          {/* Hero: one column, one idea. The promise and the prompt above the fold; the proof, large, rising in under them. */}
+          <div className="site-glow">
+            {/* Centred by its text blocks only: text-center on the section would reach into the slide below. */}
+            <section className="site-wrap grid justify-items-center gap-6 pb-20 pt-20 max-[900px]:pb-12 max-[700px]:pt-10">
+              <h1 className="text-center font-display text-[clamp(44px,5.4vw,76px)] font-normal leading-[.94] tracking-[-.025em] [font-stretch:78%] [text-wrap:balance]">
+                Slides,<br /> <Em>scientifically precise.</Em>
+              </h1>
+              <p className="max-w-[680px] text-center text-[19px] leading-[1.5] text-type-2 [text-wrap:balance]">Laws, not vibes: every slide passes 57 checks for design, meaning and logic.</p>
+              <div className="mt-4 w-full max-w-[640px]"><PromptBox id="hero-prompt" /></div>
+              <div className="mt-14 w-full max-w-[1120px] max-[700px]:mt-8"><BeforeAfter /></div>
+            </section>
           </div>
-        </section>
+
+          <Problems />
+          <How />
+          <Rigour />
+          <Who />
+          <Answer />
+          <Compare />
+          <Faq />
+
+          <section aria-labelledby="closing" className="site-section">
+            {/* The close: the offer and the prompt, nothing else. */}
+            <div className="mx-auto grid w-full max-w-[640px] gap-10">
+              <Head id="closing" center title={<>Your first slide <Em>is free.</Em></>} />
+              <PromptBox id="closing-prompt" />
+            </div>
+          </section>
+        </SignedIn.Provider>
       </main>
 
       <footer className="site-wrap flex items-center justify-between border-t border-rule py-8 text-[13px] text-type-3">

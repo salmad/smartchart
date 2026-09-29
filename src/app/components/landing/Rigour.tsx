@@ -14,7 +14,7 @@ export function Rigour() {
   const reasons = (s.notes ?? []).map((n) => ({ title: plain(n.title ?? ''), text: plain(n.text ?? '') }))
   return (
     <section aria-labelledby="rigour" className="site-section">
-      <Head id="rigour" kicker="The method" center title={<>Your point, <Em>argued like a proof.</Em></>}
+      <Head id="rigour" center title={<>Your point, <Em>argued like a proof.</Em></>}
         lede="Each slide is built like a proof: a claim, the reasons that hold it, your numbers as the evidence. The claim becomes the title, the reasons the notes, the numbers the chart." />
 
       {/* One slide as its argument: the pyramid on the left becomes the slide on the right. */}
@@ -46,7 +46,7 @@ export function Rigour() {
       <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-16 border-t border-rule pt-16 max-[1000px]:grid-cols-1 max-[1000px]:gap-10">
         <div className="grid content-start gap-6">
           <p className="font-mono text-[12px] text-type-3">03 · The test</p>
-          <blockquote className="font-display text-[clamp(34px,3.4vw,48px)] font-extrabold leading-[1] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]">
+          <blockquote className="font-display text-[clamp(34px,3.4vw,48px)] font-normal leading-[1] tracking-[-.02em] [font-stretch:78%] [text-wrap:balance]">
             If it isn’t beautiful, <Em>it’s probably wrong.</Em>
           </blockquote>
           <p className="max-w-[46ch] text-[16px] leading-[1.6] text-type-2">
@@ -63,7 +63,7 @@ export function Rigour() {
 
       <figure className="site-card grid grid-cols-[minmax(0,1fr)_auto] items-end gap-10 p-12 max-[900px]:grid-cols-1 max-[700px]:p-6">
         <div className="grid gap-5">
-          <blockquote className="max-w-[36ch] font-display text-[clamp(24px,2.3vw,32px)] font-bold leading-[1.15] tracking-[-.01em] [font-stretch:78%]">
+          <blockquote className="max-w-[36ch] font-display text-[clamp(24px,2.3vw,32px)] font-normal leading-[1.15] tracking-[-.01em] [font-stretch:78%]">
             “I trained as a physicist, then spent years making consulting slides. Both taught me the same thing: an idea clicks when it
             is simple, and simple can be proved. So we wrote the proof down.”
           </blockquote>
