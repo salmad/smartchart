@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { App } from './App'
 import { useSession } from './auth'
+import { Shared } from './components/Shared'
 import { SignIn } from './components/SignIn'
 import { Site } from './components/landing/Site'
 import { devAccount } from './dev-account'
@@ -21,6 +22,8 @@ export function Root() {
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
 
+  // A deck shared by link is for anyone who has it: no session needed, nothing of the viewer's own is shown.
+  if (route.name === 'shared') return <Shared token={route.token} />
   // The first session check is quick; until it answers, a blank page beats a flash of the wrong screen.
   if (session === undefined) return <div className={route.name === 'home' || route.name === 'site' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />
   if (!session) {

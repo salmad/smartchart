@@ -181,6 +181,8 @@ export function App({ route, account, repo, backup }: Props) {
     onAdd: () => { if (!app.getState().busy && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks,
     onSite: () => leaveTo('/home'),
+    // A share link lives on the server copy: the dev account keeps its decks in this browser.
+    shareId: backup ? s.deckId : null,
   }
 
   const onClear = useCallback(() => {

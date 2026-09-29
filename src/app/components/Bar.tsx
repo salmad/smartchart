@@ -2,6 +2,7 @@ import type { Style, Theme } from '@/engine/types'
 import { PanelLeft } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { LookMenu } from './LookMenu'
+import { ShareMenu } from './ShareMenu'
 
 export interface BarProps {
   deckStyle: Style; theme: Theme; accent: string | null; hasSlides: boolean; busy: boolean; live: boolean; title: string
@@ -10,9 +11,11 @@ export interface BarProps {
   decksOpen: boolean; onToggleDecks: () => void
   /** Occam: the site, at /home. */
   onSite: () => void
+  /** The deck a share link can be made for; null when decks live only in this browser, or before the deck exists. */
+  shareId: string | null
 }
 
-/** Top bar: the decks toggle, and the deck's name, which opens its look; Add slide and Present on the right. */
+/** Top bar: the decks toggle, and the deck's name, which opens its look; Add slide, Share and Present on the right. */
 export function Bar(p: BarProps) {
   return (
     <header className="flex h-14 items-center gap-6 border-b border-line pl-3 pr-4 max-[900px]:gap-3 max-[900px]:px-4">
@@ -29,6 +32,7 @@ export function Bar(p: BarProps) {
       <div className="flex items-center gap-2.5 max-[900px]:gap-2">
         {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
         {p.canAdd && <Button variant="outline" onClick={p.onAdd} disabled={p.busy} className="max-[900px]:hidden">Add slide</Button>}
+        {p.hasSlides && p.shareId && <div className="max-[900px]:hidden"><ShareMenu key={p.shareId} deckId={p.shareId} /></div>}
         {p.hasSlides && <Button onClick={p.onPresent}>Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
       </div>
     </header>

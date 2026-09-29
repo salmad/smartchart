@@ -11,6 +11,7 @@ const ROUTES: Record<string, () => Promise<Module>> = {
   '/api/jev': () => import('../api/jev'),
   '/api/health': () => import('../api/health'),
   '/api/decks': () => import('../api/decks'),
+  '/api/share': () => import('../api/share'),
   '/api/auth/*': () => import('../api/auth/[...path]'),
 }
 

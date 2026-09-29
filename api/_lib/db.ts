@@ -12,11 +12,19 @@ export interface Db {
   getDeck(userId: string, id: string): Promise<DeckRow | null>
   putDeck(userId: string, id: string, name: string, data: unknown): Promise<boolean>
   deleteDeck(userId: string, id: string): Promise<boolean>
+  /** The deck's share link token: made with `on` when missing, dropped with `on: false`. Undefined when the deck
+      is not the user's; null when it is not shared. Without `on`, only reads it. */
+  shareDeck(userId: string, id: string, on?: boolean): Promise<string | null | undefined>
+  /** A shared deck by its link token, for anyone who has the link. */
+  sharedDeck(token: string): Promise<{ name: string; data: unknown } | null>
 }
 
 const SCHEMA = [
   `create table if not exists decks (id text primary key, user_id text not null, name text not null, data jsonb not null, updated_at timestamptz not null default now())`,
   `create index if not exists decks_user on decks (user_id, updated_at desc)`,
+  // A share link is a random token on the deck; dropping it ends the link.
+  `alter table decks add column if not exists share_id text`,
+  `create unique index if not exists decks_share on decks (share_id) where share_id is not null`,
 ]
 
 let db: Db | null | undefined
@@ -50,5 +58,20 @@ export function getDb(): Db | null {
        on conflict (id) do update set name = excluded.name, data = excluded.data, updated_at = now() where decks.user_id = excluded.user_id
        returning id`, [id, u, name, JSON.stringify(data)])).length > 0,
     deleteDeck: async (u, id) => (await q<{ id: string }>('delete from decks where user_id = $1 and id = $2 returning id', [u, id])).length > 0,
+    shareDeck: async (u, id, on) => {
+      const r = on === undefined
+        ? await q<{ share: string | null }>('select share_id as share from decks where user_id = $1 and id = $2', [u, id])
+        : await q<{ share: string | null }>(
+            `update decks set share_id = ${on ? 'coalesce(share_id, $3)' : 'null'} where user_id = $1 and id = $2 returning share_id as share`,
+            on ? [u, id, shareToken()] : [u, id])
+      return r[0] ? r[0].share : undefined
+    },
+    sharedDeck: async (t) => (await q<{ name: string; data: unknown }>('select name, data from decks where share_id = $1', [t]))[0] ?? null,
   })
+}
+
+/** 128 random bits, URL-safe: a link nobody can guess. */
+export function shareToken(): string {
+  const b = crypto.getRandomValues(new Uint8Array(16))
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
