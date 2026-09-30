@@ -2,7 +2,11 @@
 // document each, so the deck shape can change without a migration; owner, name and time are columns.
 import { neon } from '@neondatabase/serverless'
 
-export interface DeckRow { id: string; name: string; updated: number; data: unknown }
+/** `rev` counts saves; `chat` is the conversation (agent history, messages), kept apart from the slides in `data`. A deck saved before
+    chats were kept apart has rev 0 and no chat; its conversation is still inside `data`. */
+export interface DeckRow { id: string; name: string; updated: number; data: unknown; chat: unknown; rev: number }
+/** A save is written (with the new revision), refused because the deck moved on since the revision it read, or refused as another user's. */
+export type PutResult = { rev: number } | 'conflict' | 'foreign'
 /** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
 export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown }
 
@@ -10,7 +14,8 @@ export interface DeckSummary { id: string; name: string; updated: number; slides
 export interface Db {
   listDecks(userId: string): Promise<DeckSummary[]>
   getDeck(userId: string, id: string): Promise<DeckRow | null>
-  putDeck(userId: string, id: string, name: string, data: unknown): Promise<boolean>
+  /** `baseRev` is the revision the caller read (0 for a new deck); a save from an older one is a conflict. */
+  putDeck(userId: string, id: string, name: string, data: unknown, chat: object, baseRev: number): Promise<PutResult>
   deleteDeck(userId: string, id: string): Promise<boolean>
   /** The deck's share link token: made with `on` when missing, dropped with `on: false`. Undefined when the deck
       is not the user's; null when it is not shared. Without `on`, only reads it. */
@@ -25,6 +30,9 @@ const SCHEMA = [
   // A share link is a random token on the deck; dropping it ends the link.
   `alter table decks add column if not exists share_id text`,
   `create unique index if not exists decks_share on decks (share_id) where share_id is not null`,
+  // A save carries the revision it read and is refused when the deck moved on. The chat lives apart from the slides.
+  `alter table decks add column if not exists rev integer not null default 0`,
+  `alter table decks add column if not exists chat jsonb`,
 ]
 
 let db: Db | null | undefined
@@ -42,8 +50,8 @@ export function getDb(): Db | null {
     await ready
     return (await sql.query(text, params)) as T[]
   }
-  type Row = { id: string; name: string; updated: string | Date; data: unknown }
-  const row = (r: Row) => ({ id: r.id, name: r.name, updated: new Date(r.updated).getTime(), data: r.data })
+  type Row = { id: string; name: string; updated: string | Date; data: unknown; chat: unknown; rev: number }
+  const row = (r: Row): DeckRow => ({ id: r.id, name: r.name, updated: new Date(r.updated).getTime(), data: r.data, chat: r.chat ?? null, rev: r.rev })
   return (db = {
     // The list carries only what a card draws (the first slide and the look); a deck's chat and agent history
     // can run to megabytes, so the whole deck is read only when it is opened.
@@ -51,12 +59,20 @@ export function getDb(): Db | null {
       `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
          data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first
        from decks where user_id = $1 order by updated_at desc limit 200`, [u])).map((r) => ({ ...r, slides: Number(r.slides), updated: new Date(r.updated).getTime() })),
-    getDeck: async (u, id) => { const r = await q<Row>('select id, name, updated_at as updated, data from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? row(r[0]) : null },
-    // A deck id belongs to whoever saved it first: another user's id is never overwritten.
-    putDeck: async (u, id, name, data) => (await q<{ id: string }>(
-      `insert into decks (id, user_id, name, data, updated_at) values ($1, $2, $3, $4, now())
-       on conflict (id) do update set name = excluded.name, data = excluded.data, updated_at = now() where decks.user_id = excluded.user_id
-       returning id`, [id, u, name, JSON.stringify(data)])).length > 0,
+    getDeck: async (u, id) => { const r = await q<Row>('select id, name, updated_at as updated, data, chat, rev from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? row(r[0]) : null },
+    // A deck id belongs to whoever saved it first: another user's id is never overwritten. An existing deck is
+    // written only when the save carries the revision it holds.
+    putDeck: async (u, id, name, data, chat, baseRev) => {
+      const put = await q<{ rev: number }>(
+        `insert into decks (id, user_id, name, data, chat, rev, updated_at) values ($1, $2, $3, $4, $5, 1, now())
+         on conflict (id) do update set name = excluded.name, data = excluded.data, chat = excluded.chat, rev = decks.rev + 1, updated_at = now()
+         where decks.user_id = excluded.user_id and decks.rev = $6
+         returning rev`, [id, u, name, JSON.stringify(data), JSON.stringify(chat), baseRev])
+      if (put[0]) return { rev: put[0].rev }
+      // No row written: the deck is someone else's, or this save came from an older revision.
+      const owner = await q<{ user_id: string }>('select user_id from decks where id = $1', [id])
+      return owner[0]?.user_id === u ? 'conflict' : 'foreign'
+    },
     deleteDeck: async (u, id) => (await q<{ id: string }>('delete from decks where user_id = $1 and id = $2 returning id', [u, id])).length > 0,
     shareDeck: async (u, id, on) => {
       const r = on === undefined
