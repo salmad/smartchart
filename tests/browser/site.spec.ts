@@ -144,6 +144,25 @@ test('when the session ends, a save asks to sign in again', async ({ page }) => 
   await expect(page.getByRole('dialog')).toContainText('Continue with Google')
 })
 
+test('a save refused as stale stops saving and says so once', async ({ page }) => {
+  let puts = 0
+  await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
+  await page.route('**/api/decks**', (r) => {
+    if (r.request().method() === 'PUT') { puts++; return r.fulfill({ status: 409, json: { error: 'This deck changed somewhere else.' } }) }
+    return r.fulfill({ json: oneDeck })
+  })
+  await page.goto('/d/d_a')
+  await edit(page)
+  await expect(page.getByText('changed in another tab or window')).toHaveCount(1)
+  // A second edit does not save again, and the message is not repeated.
+  await page.getByRole('button', { name: 'deck look' }).click()
+  await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Ink' }).click()
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(800)
+  expect(puts).toBe(1)
+  await expect(page.getByText('changed in another tab or window')).toHaveCount(1)
+})
+
 test('back from Google, the session check passes the one-time verifier on, then drops it from the URL', async ({ page }) => {
   const seen: (string | null)[] = []
   await page.route('**/api/auth/get-session**', (r) => {

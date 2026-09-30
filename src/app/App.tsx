@@ -17,7 +17,7 @@ import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
-import { findDeck } from './remote'
+import { STALE, findDeck } from './remote'
 import type { Attached } from './files'
 import { Decks } from './components/Decks'
 
@@ -40,7 +40,7 @@ export function App({ route, account, repo, backup }: Props) {
   const [s, app] = useAppState()
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const sendRef = useRef<((text: string) => void) | null>(null)
-  const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
+  const turns = useRef<TurnRecord[]>([]), warned = useRef(false), stale = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
   const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks down the left, open unless hidden; the choice is remembered in this browser.
@@ -64,9 +64,9 @@ export function App({ route, account, repo, backup }: Props) {
   const savedKey = useRef<string | null>(null)
   const unsaved = (d: SavedDeck) => editKey(d) !== savedKey.current
   // A new deck asks its question in the chat, so the chat starts empty.
-  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null }, [app])
+  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null; stale.current = false }, [app])
   const openDeck = useCallback((d: SavedDeck) => {
-    turns.current = []
+    turns.current = []; stale.current = false
     app.dispatch({ type: 'open', deck: d })
     // Rule checks re-run with the current code, on slides upgraded to the current schema.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
@@ -107,6 +107,8 @@ export function App({ route, account, repo, backup }: Props) {
   // A failed save keeps a copy in this browser and tries again, waiting longer each time; the copy goes once a
   // save succeeds. One chat warning per run of failures, saying why.
   const persist = useCallback(async (saved: SavedDeck) => {
+    // Once the account's copy has moved on, nothing more is saved from here (leaving the page and timers call this too).
+    if (stale.current) return
     const r = retry.current
     clearTimeout(r.timer)
     const why = await repo.save(saved)
@@ -114,6 +116,13 @@ export function App({ route, account, repo, backup }: Props) {
       savedKey.current = editKey(saved)
       if (r.wait) void backup?.remove(saved.id)
       r.wait = 0; warned.current = false
+      return
+    }
+    // The deck was changed elsewhere: not retried, and not copied to this browser, where the copy would win over the
+    // newer deck the next time this one is opened.
+    if (why === STALE) {
+      stale.current = true
+      app.dispatch({ type: 'message', message: { kind: 'error', text: STALE } })
       return
     }
     if (!warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: backup ? notSaved(why) : `Couldn’t save. ${why}` } }) }
@@ -126,7 +135,7 @@ export function App({ route, account, repo, backup }: Props) {
 
   // Save 250 ms after the last change, never mid-turn.
   useEffect(() => {
-    if (!loaded || s.busy || !s.deckId) return
+    if (!loaded || s.busy || !s.deckId || stale.current) return
     const t = setTimeout(() => {
       const saved = toSaved(app.getState())
       if (!saved) return
