@@ -4,7 +4,7 @@
     { "source": "/proto/journey/:path*", "destination": "/", "permanent": true },
     { "source": "/proto/v5/:path*", "destination": "/", "permanent": true }
   ],
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "rewrites": [{ "source": "/api/auth/:path*", "destination": "/api/auth" }, { "source": "/((?!api/).*)", "destination": "/index.html" }],
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite"
