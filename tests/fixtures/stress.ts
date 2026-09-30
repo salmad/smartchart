@@ -57,6 +57,13 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "chart", name: "Stress · six bars and lines", ...frame("chart"), chart: { categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
       series: [1, 2, 3, 4, 5, 6].map((k) => ({ name: `${W(22)} ${k}`, mark: k <= 3 ? "bar" : "line", color: k === 1 ? "focus" : k === 4 ? "contrast" : "neutral",
         values: [[4, 9, 15, 24, 33, 41], [2, 5, 9, 14, 20, 26], [1, 2, 4, 7, 11, 15], [3, 6, 10, 16, 22, 30], [5, 8, 12, 18, 25, 35], [1, 3, 6, 9, 13, 20]][k - 1] })) } },
+    // Below zero: the scale takes in every negative value, bar or line, and keeps them clear of the category labels.
+    { template: "chart", name: "Stress · bars + line below zero", ...frame("chart"), chart: { categories: ["2027", "2028", "2029"], format: "£{v}m",
+      series: [{ name: "Hub revenue", mark: "bar", color: "neutral", values: [4.2, 11.5, 16.3] }, { name: "Hub EBITDA", mark: "line", color: "focus", values: [-1.9, 0.8, 3.1] }] } },
+    { template: "chart", name: "Stress · bars below zero", ...frame("chart"), chart: { categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
+      series: [{ name: "EBITDA", mark: "bar", color: "focus", values: [-6.5, -3.2, -0.8, 2.4, 7.1, 12.6] }, { name: "Plan", mark: "line", color: "contrast", dashed: true, values: [-5, -2, 1, 4, 8, 12] }] } },
+    { template: "chart", name: "Stress · lines below zero", ...frame("chart"), chart: { categories: TIMES(8).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
+      series: [{ name: "Net cash flow", mark: "line", color: "focus", values: [-8, -6.5, -4, -1.5, 1, 4.5, 8, 12] }, { name: "Plan", mark: "line", color: "neutral", dashed: true, values: [-6, -4, -2, 0, 2, 4, 6, 8] }] } },
     { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...TIMES(5).map(() => ({ cells: [W(40), { value: "(1,234)", note: "8% × £10.5k" }, "12,345", "(34)", "—"] })), { cells: [W(30), "£179", "£10", "£128", "£95"], style: "total" }]
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },

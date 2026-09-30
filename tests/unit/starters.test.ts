@@ -8,9 +8,9 @@ test('count lock: 16 starters, unique ids, known groups', () => {
   expect(new Set(STARTERS.map((s) => s.id)).size).toBe(16)
   for (const s of STARTERS) expect(GROUPS.map((g) => g.id)).toContain(s.group)
 })
-test('stress fixture keeps 21 slides per style', () => {
-  expect(stressFor('consulting')).toHaveLength(21)
-  expect(stressFor('pitch')).toHaveLength(21)
+test('stress fixture keeps 24 slides per style', () => {
+  expect(stressFor('consulting')).toHaveLength(24)
+  expect(stressFor('pitch')).toHaveLength(24)
 })
 test('every starter validates with no errors or warnings, both styles', () => {
   for (const style of ['consulting', 'pitch'] as const) {

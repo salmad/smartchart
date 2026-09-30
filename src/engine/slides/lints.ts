@@ -83,7 +83,7 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
   return { issues: out, warnings };
 }
 
-/* Chart labels (spec 4.2a): none leaves the chart area and no two overlap. */
+/* Chart labels (spec 4.2a): none leaves the chart area, no two overlap, and no mark runs into the category labels. */
 export function chartLabelLints(slide: HTMLElement): string[] {
   const host = slide.querySelector("[data-chart]");
   if (!host) return [];
@@ -91,6 +91,10 @@ export function chartLabelLints(slide: HTMLElement): string[] {
   const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
   const H = box(host), out: string[] = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));
   const what = (el: Element) => `“${(el.textContent ?? "").trim().slice(0, 20)}”`;
+  // A mark never reaches down into the category labels: a value below zero stays inside the plot.
+  const cats = [...host.querySelectorAll(".plot > .cat")].map(box);
+  host.querySelectorAll(".plot :is(.bar, .pt, .ln)").forEach((m) => { const r = box(m), c = cats.find((c) => r.l < c.r && c.l < r.r && r.b > c.t + 1);
+    if (c) out.push(`chart: a ${m.matches(".bar") ? "bar" : m.matches(".pt") ? "point" : "line"} runs into the category labels (C1)`); });
   labels.forEach(({ el, r }) => { if (r.l < H.l - 2 || r.r > H.r + 2 || r.t < H.t - 2 || r.b > H.b + 2) out.push(`chart: label ${what(el)} runs outside the chart area (C1)`); });
   for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) {
     const [a, b] = [labels[i].r, labels[j].r];

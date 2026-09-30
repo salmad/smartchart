@@ -59,6 +59,12 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
   const totals = spec.categories.map((_, i) => B.reduce((sum, s) => sum + Math.max(0, val(s, i)), 0));
   const bMax = Math.max(brk ? brk.cap : stacked ? Math.max(...totals) : Math.max(...B.flatMap((s) => s.values)), ...targets.map((a) => a.value ?? NaN));
   const own = L.filter((s) => (s.format || spec.format) !== unit);
+  // Below zero: the bars' scale reaches down to the lowest value on it (a bar, a line in the bars' unit or a target),
+  // so zero sits inside the plot, with a label's height of room under the lowest point for its value.
+  const bMin = Math.min(0, ...(stacked ? [] : B.flatMap((s) => s.values)), ...L.filter((s) => !own.includes(s)).flatMap((s) => s.values), ...targets.map((a) => a.value ?? 0));
+  // A line's label under a bar below zero moves down past the bar's own label: two labels' room then.
+  const negBars = !stacked && B.some((s) => s.values.some((v) => v < 0)), negLines = L.some((s) => !own.includes(s) && s.values.some((v) => v < 0));
+  const drop = bMin < 0 ? (lp + 28) * (negBars && negLines ? 2 : 1) : 0;
   const lVals = own.flatMap((s) => s.values), lMax = own.length ? Math.max(...lVals) : 1, lMin = own.length ? Math.min(...lVals) : 0;
   // Each arrow level takes headroom from the bars, so annotations never leave the plot.
   const head = roomy ? .86 - .13 * Math.min(arrows.length, 3) : 1;
@@ -67,14 +73,14 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
   // The band is at least 56 px high; below it, a label's height of clear space, then the bars.
   const room = ph * head, lineBand = own.length ? Math.max(room * .28, 56) : 0, gap = own.length ? 52 : 0;
   const bandTop = P.t + ph - room, bandBottom = bandTop + lineBand, barsH = room - lineBand - gap;
-  const yb = (v: number) => P.t + ph - (v / bMax) * barsH;
+  const k = (barsH - drop) / (bMax - bMin), zero = P.t + ph - drop + bMin * k, yb = (v: number) => zero - v * k;
   const yLine = (v: number) => lMax === lMin ? (bandTop + bandBottom) / 2 : bandBottom - ((v - lMin) / (lMax - lMin)) * (bandBottom - bandTop);
   const yOf = (s: Series) => (own.includes(s) ? yLine : yb);
   const gw = band * .56, bw = stacked ? gw : gw / B.length, xc = (i: number) => band * i + band / 2;
   const barX = (s: Series, i: number) => (stacked ? xc(i) - gw / 2 : xc(i) - gw / 2 + B.indexOf(s) * bw) + 4;
   // Target lines go first, so the bars pass in front of them.
   let g = targets.map((a) => `<line class="target" x1="0" x2="${W}" y1="${yb(a.value ?? NaN)}" y2="${yb(a.value ?? NaN)}"/>`).join("")
-    + `<line class="base" x1="0" x2="${W - gutter}" y1="${P.t + ph}" y2="${P.t + ph}"/>`, t = "";
+    + `<line class="base${bMin < 0 ? " zero" : ""}" x1="0" x2="${W - gutter}" y1="${zero}" y2="${zero}"/>`, t = "";
   const pos: [number, number][][] = spec.series.map(() => []), acc = spec.categories.map(() => 0), tops = spec.categories.map(() => Infinity);
   spec.categories.forEach((c, i) => { t += lbl("cat", xc(i), P.t + ph + 16, "tc", esc(c)); });
   spec.series.forEach((s, si) => {
@@ -82,17 +88,19 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
     const j = B.indexOf(s), f = pct ? "{v}%" : s.format || spec.format, top1 = stacked && j === B.length - 1, slot = slots[si];
     s.values.forEach((raw, i) => {
       const v = val(s, i), x = barX(s, i), w = bw - 8, broken = brk && brk.series === si && brk.index === i;
-      const bottom = stacked ? yb(acc[i]) : P.t + ph, top = stacked ? yb(acc[i] + Math.max(0, v)) : broken ? yb(bMax) - ph * .08 : yb(v), h = bottom - top;
+      const bottom = stacked ? yb(acc[i]) : zero, top = stacked ? yb(acc[i] + Math.max(0, v)) : broken ? yb(bMax) - ph * .08 : yb(v), h = bottom - top;
       if (h > .5) g += `<path class="bar c-${slot}" data-series="${si}" d="${stacked && !top1 ? `M${x},${bottom}V${top}H${x + w}V${bottom}Z` : topRounded(x, top, w, h, 6)}"/>`;
+      // A bar below zero hangs from the zero line, rounded at its foot, with its value under it.
+      else if (h < -.5) g += `<path class="bar c-${slot}" data-series="${si}" d="${topRounded(x, -top, w, -h, 6)}" transform="scale(1,-1)"/>`;
       // The axis break: the outlier bar is cut, and its label keeps the true value.
       if (broken) { const yk = yb(bMax * .88); g += `<path class="brk" d="M${x - 8},${yk + 12}L${x + w + 8},${yk - 4}M${x - 8},${yk + 26}L${x + w + 8},${yk + 10}"/>`; }
       // Stacked: a segment's value sits inside it, hidden when the segment is shorter than its label (spec 4.2a).
       const text = pct ? `${Math.round(v)}%` : fmt(f, raw);
       if (stacked) { if (h >= 44) t += lbl(`seg-lbl c-${slot}`, x + w / 2, (top + bottom) / 2, "mc", text); }
-      else if (slot === "focus" || labelled[si] || i === n - 1) t += lbl(`v-lbl c-${slot}${labelled[si] ? " keep" : ""}`, x + w / 2, top - 10, "bc", text);
+      else if (slot === "focus" || labelled[si] || i === n - 1) t += lbl(`v-lbl c-${slot}${labelled[si] ? " keep" : ""}`, x + w / 2, h < 0 ? top + 10 : top - 10, h < 0 ? "tc" : "bc", text);
       acc[i] += Math.max(0, v);
-      tops[i] = Math.min(tops[i], top);
-      pos[si][i] = [x + w / 2, top - 34];
+      tops[i] = Math.min(tops[i], top, bottom);
+      pos[si][i] = [x + w / 2, Math.min(top, bottom) - 34];
     });
   });
   if (stacked && !pct) totals.forEach((v, i) => { t += lbl("v-lbl c-total keep", xc(i), yb(v) - 10, "bc", fmt(unit, v)); });
@@ -102,7 +110,9 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
     g += `<path class="ln c-${slot} ${s.dashed ? "dashed" : ""}" data-series="${si}" d="${pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("")}"/>`;
     // A line keeps its first and last values (the "from 12% to 38%" a title quotes); the ones between may drop.
     pts.forEach(([x, py], i) => { g += `<circle class="pt c-${slot}" cx="${x}" cy="${py}" r="7"/>`;
-      t += lbl(`v-lbl on-line c-${slot}${i === 0 || i === n - 1 ? " keep" : ""}`, x, py - 16, "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, py - 40]; tops[i] = Math.min(tops[i], py); });
+      // A value below zero on the bars' scale takes its label under the point, clear of the bars above zero.
+      const under = s.values[i] < 0 && y === yb;
+      t += lbl(`v-lbl on-line${under ? " under" : ""} c-${slot}${i === 0 || i === n - 1 ? " keep" : ""}`, x, under ? py + 16 : py - 16, under ? "tc" : "bc", fmt(s.format || spec.format, s.values[i])); pos[si][i] = [x, py - 40]; tops[i] = Math.min(tops[i], py); });
   });
   targets.forEach((a) => { const y = yb(a.value ?? NaN), l = annotationLabel(spec, a);
     if (!l) return;
@@ -152,13 +162,19 @@ function lines(box: HTMLElement, chart: Chart, W: number, H: number, _markers: M
   const k = box.getBoundingClientRect().width / box.clientWidth || 1;
   const widest = Math.max(0, ...[...box.querySelectorAll(".end")].map((el) => el.getBoundingClientRect().width / k));
   const P = { t: 40, r: Math.max(200, Math.ceil(widest) + 44), b: labelPx(box) + 26 }, pw = W - P.r, ph = H - P.t - P.b, n = spec.categories.length;
-  const max = Math.max(...spec.series.flatMap((s) => s.values)), step = niceStep(max / 3), top = Math.ceil(max / step) * step;
-  const x = (i: number) => (i / (n - 1)) * pw, y = (v: number) => P.t + ph - (v / top) * ph;
+  // The scale runs from zero, or from a round step below the lowest value when one is negative, to a round step above the highest.
+  const vals = spec.series.flatMap((s) => s.values), max = Math.max(...vals), min = Math.min(0, ...vals);
+  // Tick labels sit on the side of their gridline away from zero, so the lowest one keeps a label's room under it.
+  const step = niceStep((max - min) / 3), top = Math.ceil(max / step) * step, bot = Math.floor(min / step) * step, under = bot < 0 ? labelPx(box) + 12 : 0;
+  const x = (i: number) => (i / (n - 1)) * pw, y = (v: number) => P.t + ph - under - ((v - bot) / (top - bot)) * (ph - under);
   let g = `<defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop class="area-top" offset="0"/><stop class="area-bot" offset="1"/></linearGradient></defs>`, t = "";
-  for (let v = step; v <= top; v += step) { g += `<line class="gridline" x1="0" x2="${pw}" y1="${y(v)}" y2="${y(v)}"/>`; t += lbl("tick", 0, y(v) - 10, "tl", fmt(spec.format, v)); }
-  g += `<line class="base" x1="0" x2="${pw}" y1="${y(0)}" y2="${y(0)}"/>`;
+  // Zero inside the plot is the zero line: drawn stronger than the gridlines and labelled like them.
+  for (let j = Math.round(bot / step); j <= Math.round(top / step); j++) { const v = j * step;
+    if (v || bot < 0) t += v < 0 ? lbl("tick", 0, y(v) + 8, "tc0", fmt(spec.format, v)) : lbl("tick", 0, y(v) - 10, "tl", fmt(spec.format, v));
+    if (v) g += `<line class="gridline" x1="0" x2="${pw}" y1="${y(v)}" y2="${y(v)}"/>`; }
+  g += `<line class="base${bot < 0 ? " zero" : ""}" x1="0" x2="${pw}" y1="${y(0)}" y2="${y(0)}"/>`;
   // The first and last categories align to the plot's edges, so the last never runs into the end labels.
-  spec.categories.forEach((c, i) => { t += lbl("cat", x(i), y(0) + 16, i === 0 ? "tc0" : i === n - 1 ? "tr" : "tc", esc(c)); });
+  spec.categories.forEach((c, i) => { t += lbl("cat", x(i), P.t + ph + 16, i === 0 ? "tc0" : i === n - 1 ? "tr" : "tc", esc(c)); });
   // End labels: stacked apart when two series end at similar values (spec 4.2a).
   // Five or more series use compact labels; all of them stay inside the plot, pushed up from the bottom if needed.
   const compact = spec.series.length >= 5, gap = compact ? 70 : 96, half = compact ? 34 : 46;
@@ -178,7 +194,7 @@ function lines(box: HTMLElement, chart: Chart, W: number, H: number, _markers: M
   thinCategories(box);
 }
 
-/* Value labels, then markers, move up until they clear everything placed before them.
+/* Value labels, then markers, move up (a label under a point below zero, down) until they clear everything placed before them.
    Labels clear points, other bars and earlier labels; markers also clear the line itself.
    A moved marker keeps its leader down to the bar. */
 function declutter(box: HTMLElement) {
@@ -186,13 +202,13 @@ function declutter(box: HTMLElement) {
   const bars = [...box.querySelectorAll(".bar")].map(rect);
   box.querySelectorAll<SVGGeometryElement>(".ln, .arrow").forEach((ln) => { for (let d = 0, L = ln.getTotalLength(); d <= L; d += 12) {
     const p = ln.getPointAtLength(d); line.push({ l: p.x - 3, r: p.x + 3, t: p.y - 3, b: p.y + 3 }); } });
-  const settle = (el: HTMLElement, gap: number, obstacles: Rect[]) => {
+  const settle = (el: HTMLElement, gap: number, obstacles: Rect[], dir = -1) => {
     let r = rect(el), moved = 0;
     for (let n = 0; n < 40; n++) {
       const hit = obstacles.find((o) => hits(r, o, gap));
       if (!hit) break;
-      const d = r.b - hit.t + gap;
-      el.style.top = `${parseFloat(el.style.top) - d}px`; moved += d; r = { ...r, t: r.t - d, b: r.b - d };
+      const d = dir < 0 ? r.b - hit.t + gap : hit.b - r.t + gap;
+      el.style.top = `${parseFloat(el.style.top) + dir * d}px`; moved += d; r = { ...r, t: r.t + dir * d, b: r.b + dir * d };
     }
     placed.push(r);
     return moved;
@@ -204,7 +220,7 @@ function declutter(box: HTMLElement) {
     const obstacles = [...placed, ...bars.filter((b) => !mine(b))];
     // A context value that is not required (spec C4) is dropped rather than floated away from its bar.
     if (!rank(el) && obstacles.some((o) => hits(r, o, 4))) el.remove();
-    else settle(el, 4, obstacles);
+    else settle(el, 4, obstacles, el.classList.contains("under") ? 1 : -1);
   });
   box.querySelectorAll<HTMLElement>(".mk").forEach((mk) => { const moved = settle(mk, 6, [...placed, ...bars, ...line]);
     const ld = box.querySelector(`.leader[data-n="${mk.dataset.n}"]`); if (moved && ld) ld.setAttribute("y1", String(Number(ld.getAttribute("y1")) - moved)); });
