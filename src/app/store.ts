@@ -10,7 +10,8 @@ import type { TraceStep } from '@/engine/agent/agent'
 export const KEY = 'smartchart.journey.decks.v1'
 
 export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors: string[]; warnings: string[]; checks: Check[]; checksPending?: boolean }
-export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[] }
+/** `files`: what the user attached to the message, as its chips show them; their text went to the agent. */
+export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[] }
 /** `thread` is the prototype's chat as HTML; v1 writes `messages` instead and keeps an old `thread` as is. */
 export interface SavedDeck { id: string; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; thread?: string; updated: number }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }

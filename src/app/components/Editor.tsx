@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import type { Pill } from '@/engine/agent/suggest'
 import type { Deck } from '@/engine/types'
 import type { AppState } from '@/app/state'
+import type { Attached } from '@/app/files'
 import { deckName } from '@/app/store'
 import { cn } from '@/app/lib/utils'
 import { phaseLinesOf } from '@/app/phase'
@@ -15,7 +16,7 @@ import { Strip } from './Strip'
 export interface EditorProps {
   state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
   bar: Omit<BarProps, 'deckStyle' | 'theme' | 'accent' | 'hasSlides' | 'busy' | 'live' | 'title' | 'canAdd'>
-  onSend: (text: string) => void; onClear: () => void; onSelect: (index: number) => void
+  onSend: (text: string, files?: Attached[]) => void; onClear: () => void; onSelect: (index: number) => void
   onMove: (id: string, to: number) => void; onRemove: (id: string) => void; onRestore: () => void
   /** Replaces the slide, checks and strip: the starter picker (a new deck, or Add slide). */
   stage?: ReactNode

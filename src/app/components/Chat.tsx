@@ -5,6 +5,7 @@ import { WORKING } from '@/app/turn'
 import { cn } from '@/app/lib/utils'
 import { config } from '@/app/config'
 import { phaseLinesOf } from '@/app/phase'
+import { FileChip } from './FileChip'
 import { Glint, Thinking } from './Working'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
@@ -24,7 +25,7 @@ export function Chat({ messages, legacyThread, offline }: Props) {
       {!messages.length && !legacyThread && (
         <div className="grid gap-1.5">
           <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>
-          <p className="text-ink-2">Paste your numbers, notes or doc and say what the room should take away. Or start from a slide on the right.</p>
+          <p className="text-ink-2">Paste your numbers or notes, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>
         </div>
       )}
       {messages.map((m, k) => <Bubble key={k} m={m} />)}
@@ -35,7 +36,12 @@ export function Chat({ messages, legacyThread, offline }: Props) {
 
 function Bubble({ m }: { m: Message }) {
   if (m.kind === 'user') {
-    return <div className="max-w-[88%] self-end whitespace-pre-wrap rounded-[12px_12px_4px_12px] border border-line bg-raise px-[13px] py-2.5">{m.text}</div>
+    return (
+      <div className="flex max-w-[88%] flex-col items-end gap-1.5 self-end">
+        {m.files?.map((f, k) => <FileChip key={k} name={f.name} about={f.about} />)}
+        {m.text && <div className="whitespace-pre-wrap rounded-[12px_12px_4px_12px] border border-line bg-raise px-[13px] py-2.5">{m.text}</div>}
+      </div>
+    )
   }
   // Traces (which model did what, and how long it took) are for debugging, not for the person writing a deck.
   const working = m.kind === 'bot' && !m.text && m.sub === WORKING, trace = config.debug ? m.trace ?? [] : []

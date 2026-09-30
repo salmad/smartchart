@@ -18,6 +18,7 @@ import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
 import { findDeck } from './remote'
+import type { Attached } from './files'
 import { Decks } from './components/Decks'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
@@ -159,8 +160,8 @@ export function App({ route, account, repo, backup }: Props) {
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])
 
-  const send = useCallback(async (text: string) => {
-    const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState })
+  const send = useCallback(async (text: string, files: Attached[] = []) => {
+    const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }, files)
     turns.current.push(r)
     return r
   }, [app, measurer])
@@ -196,9 +197,9 @@ export function App({ route, account, repo, backup }: Props) {
   const onRemove = useCallback((id: string) => app.dispatch({ type: 'removeSlide', id }), [app])
   const onRestore = useCallback(() => app.dispatch({ type: 'restoreSlide' }), [app])
   // A prompt from the landing (or Add slide) builds the slide in the editor.
-  const onSend = useCallback((text: string) => {
+  const onSend = useCallback((text: string, files?: Attached[]) => {
     if (app.getState().view !== 'editor') app.dispatch({ type: 'set', patch: { view: 'editor' } })
-    void send(text)
+    void send(text, files)
   }, [app, send])
   sendRef.current = onSend
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).

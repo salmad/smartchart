@@ -259,3 +259,18 @@ test("several slides: a reply on the first write does not end the turn while res
   assert.equal(ctx.deck.slides.length, 2);
   assert.equal(r.reply, "Both done.");
 });
+
+test("attached files: the writer reads them in full, Jev routes on the brief, and words in a file are not the user's ask", async () => {
+  const ctx = setup();
+  const doc = "Board report. Revenue by segment, stacked by region. " + "Detail. ".repeat(4000);
+  const full = `Make the revenue slide\n\n<file name="report.pdf">\n${doc}\n</file>`;
+  const jev = fakeJev({ intent: ["new_slide", 0.95], template: ["chart", 0.9] });
+  const agentStep = fakeAgent([(m) => {
+    assert.ok(m.some((x) => x.role === "user" && text(x).includes(doc)), "the writer gets the whole file");
+    const two: Slide = { ...CHART, chart: { ...must(CHART.chart, "chart"), series: [{ name: "UK", mark: "bar", values: [1, 2, 3, 4] }, { name: "EU", mark: "bar", values: [1, 1, 2, 2] }], stacked: "auto" } };
+    return toolCall("edit_slide", { slideId: reservedId(m), slide: two, reply: "Done." });
+  }]);
+  await runTurn({ ...ctx, text: full, ask: "Make the revenue slide", brief: "Make the revenue slide\n\nAttached report.pdf, starting: Board report.", selection: null, models: { agentStep, jev } });
+  assert.ok(jev.calls.every((c) => !c.state.includes("Detail. Detail. Detail.")), "Jev never gets the whole file");
+  assert.ok(jev.calls[0].state.includes("Attached report.pdf"));
+});

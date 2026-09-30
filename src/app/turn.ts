@@ -1,6 +1,7 @@
 /* One agent turn and the checks after it, as plain functions: the UI only dispatches and renders.
    The agent works on its own copy of the deck; every applied write shows at once. Before the reply shows,
    the slides written this turn get their checks, and the reply points the user at what failed. */
+import { briefOf, withFiles, type Attached } from './files'
 import { runTurn, type AgentDeck, type MeasureFn, type TraceStep } from '@/engine/agent/agent'
 import { judgmentChecks, nudge, ruleChecks, withNudge, type Check } from '@/engine/agent/checks'
 import type { Slide } from '@/engine/types'
@@ -25,14 +26,16 @@ function readable(msg: string): string {
 }
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
-export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecord> {
+export async function sendTurn(input: string, deps: TurnDeps, files: Attached[] = []): Promise<TurnRecord> {
   const { measurer, dispatch, getState, models, judge = judgmentChecks } = deps
-  const text = input.trim(), start = getState(), t0 = performance.now(), trace: TraceStep[] = []
+  // Attached files go to the agent in full; the chat shows them as chips, and routing reads only their start.
+  const ask = input.trim(), text = withFiles(ask, files), brief = briefOf(ask, files)
+  const start = getState(), t0 = performance.now(), trace: TraceStep[] = []
   // The agent mutates its history and working set; it gets copies, and the state takes them back at the end.
   const history = structuredClone(start.history), working = new Set(start.working)
 
   dispatch({ type: 'set', patch: { busy: true } })
-  dispatch({ type: 'message', message: { kind: 'user', text } })
+  dispatch({ type: 'message', message: { kind: 'user', text: ask, ...(files.length ? { files: files.map(({ name, about }) => ({ name, about })) } : {}) } })
   dispatch({ type: 'message', message: { kind: 'bot', text: '', sub: WORKING, trace: [] } })
   const botAt = getState().messages.length - 1
   const setBot = (m: Message) => { const messages = getState().messages.slice(); messages[botAt] = m; dispatch({ type: 'set', patch: { messages } }) }
@@ -55,7 +58,7 @@ export async function sendTurn(input: string, deps: TurnDeps): Promise<TurnRecor
   }, { lines: 1, warnings: [] as string[] })
 
   try {
-    const r = await runTurn({ text, deck: adeck, history, working, selection: cur ? { slideId: cur.id } : null, measure, log, onChange: sync, models })
+    const r = await runTurn({ text, ask, brief, deck: adeck, history, working, selection: cur ? { slideId: cur.id } : null, measure, log, onChange: sync, models })
     sync(adeck, r.written.at(-1) || getState().items[getState().current]?.id)
     dispatch({ type: 'items', items: recheckRules(getState(), measurer) })
     // Checks before the reply: what failed on the slides just written becomes a nudge in the reply.

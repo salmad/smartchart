@@ -24,6 +24,10 @@ export interface TurnArgs {
   text: string; deck: AgentDeck; history: ChatMessage[]; working: Set<string>; selection: Selection
   measure: MeasureFn; log: (s: TraceStep) => void; onChange?: (d: AgentDeck, focusId?: string) => void
   models?: { agentStep?: AgentStepFn; jev?: JevFn }
+  /** With attached files, `text` carries them in full for the writer. `ask` is the user's own words (what they asked
+      for: a cover, a stacked chart); `brief` is the ask with the start of each file (what Jev routes on). Both
+      default to `text`. */
+  ask?: string; brief?: string
 }
 
 /* Tool arguments come from the model's JSON; each tool reads the fields it needs. */
@@ -63,7 +67,7 @@ const touches = (issue: string, paths: string[]) => { const r = String(issue).sp
  * history are mutated in place; `working` (a Set of slide ids) is owned by the caller and kept across turns.
  * measure(slide, index) → layout issues, with `.lines` (title lines) and `.warnings` (L5) set on it.
  */
-export async function runTurn({ text, deck, history, working, selection, measure, log, onChange, models = {} }: TurnArgs): Promise<TurnResult> {
+export async function runTurn({ text, deck, history, working, selection, measure, log, onChange, models = {}, ask = text, brief = text }: TurnArgs): Promise<TurnResult> {
   const agentStep = models.agentStep || glmStep, jev = models.jev || jevCall;
   const style = deck.style, reserved = new Map<string, TemplateId>(), written = new Set<string>(), read = new Set<string>();
   const trail = { modelCalls: 0, toolCalls: 0, modelMs: 0 };
@@ -89,7 +93,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
     const first = autofix(input, style), v = validate(first.slide, style);
     const shape = v.errors.filter((e) => !LIMIT.test(e)), limits = v.errors.filter((e) => LIMIT.test(e));
     if (shape.length) return { applied: false, issues: shape, autofixes: first.fixes };
-    const r = await resolveAuto(first.slide, style, jev, text);
+    const r = await resolveAuto(first.slide, style, jev, brief);
     if (Object.keys(r.resolved).length) log({ step: "Resolve", model: "Jev", ms: r.ms, detail: Object.entries(r.resolved).map(([k, x]) => `${k} = ${x.value}`).join(" · ") });
     const done = autofix(r.slide, style), slide = done.slide;
     let measured: string[];
@@ -118,7 +122,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
       // An archived template cannot be named (it is not in the tool's enum); a model that writes it anyway is refused.
       if (isTemplate(asked) && !OFFERED.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${OFFERED.join(", ")}, or leave template out.` };
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
-      if ((template === "cover" || template === "section") && !ASKS_OPENER.test(text)) {
+      if ((template === "cover" || template === "section") && !ASKS_OPENER.test(ask)) {
         return { error: `The user did not ask for a ${template === "cover" ? "cover" : "section divider"}. Start with the content itself: call create_slide again for the first point, without a template.` };
       }
       const current = replace ? find(replace)?.slide?.template : undefined;
@@ -156,8 +160,8 @@ export async function runTurn({ text, deck, history, working, selection, measure
       // Chart choices go to code unless the user named them (spec 9.1): marks and stacking become "auto".
       const chart = draft.chart;
       if (chart && Array.isArray(chart.series)) {
-        if (!NAMED_MARK.test(text)) chart.series.forEach((x) => { if (x && typeof x === "object" && x.mark !== "auto") x.mark = "auto"; });
-        if (!/stack/i.test(text) && chart.stacked !== undefined) chart.stacked = "auto";
+        if (!NAMED_MARK.test(ask)) chart.series.forEach((x) => { if (x && typeof x === "object" && x.mark !== "auto") x.mark = "auto"; });
+        if (!/stack/i.test(ask) && chart.stacked !== undefined) chart.stacked = "auto";
       }
       const res = await write(item, draft), left = unwritten();
       // Several slides reserved in one go: a reply on the first write must not end the turn early.
@@ -174,7 +178,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
       if (patch && typeof patch === "object") patch = Object.fromEntries(Object.entries(patch).map(([k, v]) => [prefixed(current, k), asValue(v)]));
       const p = applyPatch(current, patch);
       if (p.errors) return { applied: false, issues: p.errors };
-      if (!NAMED_MARK.test(text)) matchNewSeries(current, p.slide);
+      if (!NAMED_MARK.test(ask)) matchNewSeries(current, p.slide);
       const res = await write(item, p.slide);
       if (!res.applied) return res;
       return { ...res, changed: p.changed, issues: res.issues.filter((i) => touches(i, p.changed)), elsewhere: res.issues.filter((i) => !touches(i, p.changed)) };
@@ -210,9 +214,9 @@ export async function runTurn({ text, deck, history, working, selection, measure
   working.clear();
   if (selection?.slideId && find(selection.slideId)?.slide) working.add(selection.slideId);
   history.push({ role: "user", content: `${stateBlock({ style, theme: deck.theme, slides: visible(), selection })}\n\n${text}` });
-  const pre = await preStep({ text, deck, selection, jev });
+  const pre = await preStep({ text: brief, deck, selection, jev });
   turnPre = pre;
-  const sure = isSure(pre, deck), first = firstCall(pre, selection, text, deck);
+  const sure = isSure(pre, deck), first = firstCall(pre, selection, brief, deck);
   log({ step: "Pre", model: "Jev", ms: pre.ms, detail: `${pre.intent} · p ${pre.p.toFixed(2)}${sure ? "" : " · agent decides"}` });
   if (first) await callTool({ id: "pre_1", name: first.name, args: first.args }, pre, true);
 
