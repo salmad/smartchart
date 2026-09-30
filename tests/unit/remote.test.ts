@@ -1,5 +1,5 @@
 import { test, expect, vi } from 'vitest'
-import { findDeck, remoteDeckRepo } from '@/app/remote'
+import { findDeck, remoteDeckRepo, STALE } from '@/app/remote'
 import { localDeckRepo, type SavedDeck } from '@/app/store'
 
 const deck = (id: string, updated: number, title = 'Acme'): SavedDeck => ({
@@ -9,16 +9,20 @@ const deck = (id: string, updated: number, title = 'Acme'): SavedDeck => ({
 
 /** /api/decks in memory, as the server answers it; `signedIn` false answers 401 like an ended session. */
 function fakeServer() {
-  const rows = new Map<string, { id: string; name: string; updated: number; data: SavedDeck }>()
-  const state = { signedIn: true, down: false }
+  const rows = new Map<string, { id: string; name: string; updated: number; data: SavedDeck; chat: object | null; rev: number }>()
+  const state = { signedIn: true, down: false, dropNextPutResponse: false }
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (state.down) throw new TypeError('network')
     if (!state.signedIn) return Response.json({ error: 'Sign in to see your decks.' }, { status: 401 })
     const id = new URL(String(input), 'http://x').searchParams.get('id'), method = init?.method ?? 'GET'
     if (method === 'PUT') {
-      const b = JSON.parse(String(init?.body)) as { id: string; name: string; data: SavedDeck }
-      rows.set(b.id, { id: b.id, name: b.name, updated: 42, data: b.data })
-      return Response.json({ ok: true })
+      const b = JSON.parse(String(init?.body)) as { id: string; name: string; data: SavedDeck; chat: object; baseRev: number }
+      const r = rows.get(b.id)
+      if (r && r.rev !== b.baseRev) return Response.json({ error: 'stale' }, { status: 409 })
+      const rev = (r?.rev ?? 0) + 1
+      rows.set(b.id, { id: b.id, name: b.name, updated: 42, data: b.data, chat: b.chat, rev })
+      if (state.dropNextPutResponse) { state.dropNextPutResponse = false; throw new TypeError('network') }
+      return Response.json({ ok: true, rev })
     }
     if (method === 'DELETE') return new Response(null, { status: rows.delete(id ?? '') ? 204 : 404 })
     if (id) { const r = rows.get(id); return r ? Response.json(r) : Response.json({}, { status: 404 }) }
@@ -85,4 +89,47 @@ test('the dev account: decks already in this browser open as they are, with no b
   await local.save(deck('d_v', 1))
   expect((await findDeck('d_v', local, null))?.id).toBe('d_v')
   expect(await local.get('d_v')).not.toBeNull()
+})
+
+test('saves twice in a row without conflicting with itself, and keeps the chat apart from the slides', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
+  const d = { ...deck('d_1', 1), history: [{ role: 'user' as const, content: 'hi' }] }
+  expect(await repo.save(d)).toBeNull()
+  expect(await repo.save({ ...d, updated: 2 })).toBeNull()
+  expect(rows.get('d_1')?.rev).toBe(2)
+  expect(rows.get('d_1')?.data).not.toHaveProperty('history')
+  expect(rows.get('d_1')?.chat).toMatchObject({ history: [{ role: 'user', content: 'hi' }] })
+  expect(await repo.get('d_1')).toMatchObject({ id: 'd_1', history: [{ role: 'user', content: 'hi' }] })
+})
+
+test('two saves of one deck sent together both succeed, in order', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
+  await repo.save(deck('d_1', 1))
+  expect(await Promise.all([repo.save(deck('d_1', 2)), repo.save(deck('d_1', 3))])).toEqual([null, null])
+  expect(rows.get('d_1')?.rev).toBe(3)
+})
+
+test('a save that committed but lost its answer is not reported as another tab', async () => {
+  const { rows, state, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
+  await repo.save(deck('d_1', 1))
+  state.dropNextPutResponse = true // the server takes the save, and the answer never arrives
+  expect(await repo.save(deck('d_1', 2))).toMatch(/offline/)
+  expect(rows.get('d_1')?.rev).toBe(2)
+  expect(await repo.save(deck('d_1', 2))).toBeNull() // the retry: the server already holds exactly this save
+})
+
+test('a second tab that saves from an old revision is told the deck changed, and the newer deck stays', async () => {
+  const { rows, fetcher } = fakeServer(), a = remoteDeckRepo({ fetcher }), b = remoteDeckRepo({ fetcher })
+  await a.save(deck('d_1', 1))
+  await b.get('d_1')
+  await a.save(deck('d_1', 2))
+  expect(await b.save(deck('d_1', 3))).toBe(STALE)
+  expect(rows.get('d_1')?.data.updated).toBe(2)
+})
+
+test('a deck saved before chats were kept apart opens with its history, and saves without a conflict', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
+  rows.set('d_old', { id: 'd_old', name: 'Old', updated: 1, rev: 0, chat: null, data: { ...deck('d_old', 1), history: [{ role: 'user', content: 'old' }] } })
+  expect(await repo.get('d_old')).toMatchObject({ history: [{ role: 'user', content: 'old' }] })
+  expect(await repo.save(deck('d_old', 2))).toBeNull()
 })
