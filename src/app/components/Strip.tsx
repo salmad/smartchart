@@ -1,5 +1,5 @@
 import { useEffect, useState, type DragEvent, type KeyboardEvent } from 'react'
-import { MoreHorizontal } from 'lucide-react'
+import { BookOpenText, MoreHorizontal } from 'lucide-react'
 import { contexts } from '@/engine/slides/render'
 import type { Deck } from '@/engine/types'
 import type { Item } from '@/app/store'
@@ -13,13 +13,15 @@ interface Props {
   onMove: (id: string, to: number) => void; onRemove: (id: string) => void
   /** Set right after a delete: the strip offers Undo for a few seconds. */
   removed: Item | null; onRestore: () => void
+  /** Opens the storyline; shown once the deck has two content slides. */
+  onStory: () => void
 }
 
 const UNDO_MS = 6000
 const MENU_ITEM = 'rounded-md px-2 py-1.5 text-[13px] text-ink-2 focus:bg-panel focus:text-ink'
 
 /** The deck as a row of thumbnails: a click selects, a drag reorders; each slide's menu moves or deletes it. */
-export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onRemove, removed, onRestore }: Props) {
+export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onRemove, removed, onRestore, onStory }: Props) {
   const [dragged, setDragged] = useState<string | null>(null), [gap, setGap] = useState<number | null>(null)
   const [undo, setUndo] = useState(false)
   // Undo stays up a few seconds after each delete; ⌘Z brings the slide back meanwhile.
@@ -36,6 +38,7 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
 
   if (!items.length && !undo) return null
   const ctx = contexts(deck)
+  const story = items.filter((it) => it.slide.template !== 'cover' && it.slide.template !== 'section').length >= 2
 
   // The drop gap is the slot before thumbnail i (items.length: after the last).
   const over = (e: DragEvent<HTMLDivElement>, i: number) => {
@@ -65,6 +68,12 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
             Slide deleted.
             <button type="button" onClick={onRestore} disabled={busy} className="cursor-pointer font-medium text-ink underline-offset-2 hover:underline disabled:opacity-45">Undo</button>
           </span>
+        )}
+        {story && (
+          <button type="button" onClick={onStory} title="Read the deck as its titles, and check the story"
+            className="ml-auto flex cursor-pointer items-center gap-1.5 font-sans text-[12.5px] normal-case tracking-normal text-ink-2 transition-colors hover:text-ink">
+            <BookOpenText className="size-3.5" strokeWidth={1.75} />Storyline
+          </button>
         )}
       </h3>
       <div className="flex gap-3 overflow-x-auto px-0.5 pb-2 pt-0.5" onDragOver={(e) => { if (dragged) e.preventDefault() }} onDrop={drop}>

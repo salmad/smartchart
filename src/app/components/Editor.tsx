@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { Pill } from '@/engine/agent/suggest'
 import type { Deck } from '@/engine/types'
 import type { AppState } from '@/app/state'
@@ -11,6 +11,7 @@ import { Chat } from './Chat'
 import { Checks } from './Checks'
 import { Composer } from './Composer'
 import { SLIDE_W, Stage } from './Stage'
+import { Storyline } from './Storyline'
 import { Strip } from './Strip'
 
 export interface EditorProps {
@@ -27,6 +28,7 @@ export interface EditorProps {
 /** The editor screen: bar, chat, the current slide, its checks and the deck strip. */
 export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks }: EditorProps) {
   const { items, current } = s
+  const [story, setStory] = useState(false)
 
   // F presents; the arrows move through the deck. Typing in a field is left alone.
   useEffect(() => {
@@ -58,11 +60,13 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
               {/* Under the slide and as wide as it: the deck, then the current slide's checks. */}
               <section className={`mx-auto flex max-h-[250px] min-w-0 max-w-[calc(100%-4rem)] flex-col gap-4 pb-5 max-[900px]:contents ${SLIDE_W}`}>
                 <Strip items={items} current={current} deck={deck} busy={s.busy} onSelect={onSelect} onAdd={bar.onAdd}
-                  onMove={onMove} onRemove={onRemove} removed={s.removed?.item ?? null} onRestore={onRestore} />
+                  onMove={onMove} onRemove={onRemove} removed={s.removed?.item ?? null} onRestore={onRestore} onStory={() => setStory(true)} />
                 <Checks item={items[current]} />
               </section>
             </main>}
       </div>
+      <Storyline open={story} onOpenChange={setStory} items={items} deckStyle={s.style} live={s.live} busy={s.busy}
+        onSelect={onSelect} onMove={(id, to) => { onMove(id, to); onSelect(to) }} onAsk={(prompt) => onSend(prompt)} />
     </>
   )
 }
