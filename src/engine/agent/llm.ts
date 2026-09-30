@@ -21,6 +21,9 @@ interface JevResponse { answers?: Record<string, { choice: string; probabilities
 /** A model call that takes longer than this is abandoned (then retried). */
 const TIMEOUT_MS = 60_000;
 
+/** A refusal that retrying cannot change (over the daily limit, signed out): every retry would count as another call. */
+class Final extends Error {}
+
 /** `signal` cancels the call (a background call giving way to a chat turn); a cancelled call is not retried. */
 async function post<T>(path: string, payload: unknown, signal?: AbortSignal): Promise<{ j: T; ms: number }> {
   for (let attempt = 0; ; attempt++) {
@@ -32,10 +35,13 @@ async function post<T>(path: string, payload: unknown, signal?: AbortSignal): Pr
       const text = await r.text();
       let j: T & { error?: unknown };
       try { j = JSON.parse(text); } catch { throw new Error(`The model service is not responding (HTTP ${r.status}).`); }
-      if (!r.ok || j.error) throw new Error(typeof j.error === "string" ? j.error : JSON.stringify(j.error ?? j).slice(0, 300));
+      if (!r.ok || j.error) {
+        const msg = typeof j.error === "string" ? j.error : JSON.stringify(j.error ?? j).slice(0, 300), code = (j as { code?: unknown }).code;
+        throw code === "limit" || code === "signin" ? new Final(msg) : new Error(msg);
+      }
       return { j, ms: Math.round(performance.now() - t0) };
     } catch (e) {
-      if (attempt >= 2 || signal?.aborted) throw e;
+      if (e instanceof Final || attempt >= 2 || signal?.aborted) throw e;
       await new Promise((ok) => setTimeout(ok, 1200 * (attempt + 1)));
     }
   }

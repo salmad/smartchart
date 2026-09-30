@@ -20,3 +20,12 @@ test('model calls carry a timeout signal', async () => {
   const init = fetch.mock.calls[0]?.[1]
   expect(init?.signal).toBeInstanceOf(AbortSignal)
 })
+
+test('a caller over the daily limit, or signed out, is not retried (each retry would count as a call)', async () => {
+  for (const code of ['limit', 'signin']) {
+    const fetch = vi.fn(async (_url: string, _init?: RequestInit) => Response.json({ error: `no (${code})`, code }, { status: code === 'limit' ? 429 : 401 }))
+    vi.stubGlobal('fetch', fetch)
+    await expect(agentStep({ messages: [{ role: 'user', content: 'hi' }] })).rejects.toThrow(`no (${code})`)
+    expect(fetch).toHaveBeenCalledTimes(1)
+  }
+})

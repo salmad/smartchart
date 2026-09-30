@@ -17,6 +17,8 @@ export interface Db {
   /** `baseRev` is the revision the caller read (0 for a new deck); a save from an older one is a conflict. */
   putDeck(userId: string, id: string, name: string, data: unknown, chat: object, baseRev: number): Promise<PutResult>
   deleteDeck(userId: string, id: string): Promise<boolean>
+  /** Counts one model call for the user today (UTC) and returns today's total. */
+  countCall(userId: string): Promise<number>
   /** The deck's share link token: made with `on` when missing, dropped with `on: false`. Undefined when the deck
       is not the user's; null when it is not shared. Without `on`, only reads it. */
   shareDeck(userId: string, id: string, on?: boolean): Promise<string | null | undefined>
@@ -33,6 +35,8 @@ const SCHEMA = [
   // A save carries the revision it read and is refused when the deck moved on. The chat lives apart from the slides.
   `alter table decks add column if not exists rev integer not null default 0`,
   `alter table decks add column if not exists chat jsonb`,
+  // Model calls per user per day, for the daily limit.
+  `create table if not exists model_usage (user_id text not null, day date not null, calls integer not null default 0, primary key (user_id, day))`,
 ]
 
 let db: Db | null | undefined
@@ -74,6 +78,9 @@ export function getDb(): Db | null {
       return owner[0]?.user_id === u ? 'conflict' : 'foreign'
     },
     deleteDeck: async (u, id) => (await q<{ id: string }>('delete from decks where user_id = $1 and id = $2 returning id', [u, id])).length > 0,
+    countCall: async (u) => Number((await q<{ calls: number }>(
+      `insert into model_usage (user_id, day, calls) values ($1, current_date, 1)
+       on conflict (user_id, day) do update set calls = model_usage.calls + 1 returning calls`, [u]))[0].calls),
     shareDeck: async (u, id, on) => {
       const r = on === undefined
         ? await q<{ share: string | null }>('select share_id as share from decks where user_id = $1 and id = $2', [u, id])

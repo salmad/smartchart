@@ -26,6 +26,7 @@ function fakeDb(): Db & { rows: Map<string, FakeRow> } {
       rows.set(id, { id, name, data, chat, rev, updated: Date.now() + rows.size, user: u, share: r?.share })
       return { rev }
     },
+    countCall: async () => 1,
     deleteDeck: async (u, id) => { const r = rows.get(id); return !!r && r.user === u && rows.delete(id) },
     shareDeck: async (u, id, on) => {
       const r = rows.get(id)
