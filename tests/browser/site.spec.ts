@@ -195,5 +195,5 @@ test('signed out, every call to action is Start free or Make slides, with the of
   await site(page, 1440)
   const labels = await page.locator('.site').getByRole('button', { name: /slides|free/i }).allTextContents()
   expect(new Set(labels.map((l) => l.trim()))).toEqual(new Set(['Start free', 'Make slides']))
-  await expect(page.getByText('First slide free.')).toHaveCount(3)
+  await expect(page.getByText('First slide free.')).toHaveCount(2)
 })

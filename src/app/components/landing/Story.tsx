@@ -1,6 +1,4 @@
 import { useRef, useState, type ReactNode } from 'react'
-import type { Style } from '@/engine/types'
-import { Cta } from './Cta'
 import { Film } from './Film'
 import { LiveSlide, MENU } from './LiveSlide'
 import { Head } from './parts'
@@ -57,36 +55,6 @@ export function How() {
     <section aria-labelledby="how" className="site-section">
       <Head id="how" center title={<>Ask in plain words.<br /> Get a checked slide.</>} />
       <div className="mx-auto w-full max-w-[1200px]"><Film /></div>
-    </section>
-  )
-}
-
-/* Use cases, split by what the deck asks the room for: money, a yes, or trust in the numbers. Each with a real slide. */
-const USES: [id: string, ask: string, title: string, text: string, style: Style][] = [
-  ['cards-value', 'Fund it', 'The raise', 'Seed deck or investor update: the market, the model, the ask.', 'pitch'],
-  ['table-notes', 'Approve it', 'The business case', 'The 12-page proposal nobody will read, as ten slides the execs will.', 'consulting'],
-  ['chart-mix', 'Trust it', 'The board or quarterly review', 'What moved, why it moved, and what happens next.', 'consulting'],
-]
-
-/** What it is for: three decks, one per thing the room is asked to do. */
-export function Who() {
-  return (
-    <section aria-labelledby="who" className="site-section">
-      <Head id="who" center title="For decks that ask for something."
-        lede="Money, a yes, or trust in the numbers. Made for founders, operators and ex-consultants with no slide team." />
-      <div className="grid grid-cols-3 gap-6 max-[1000px]:grid-cols-1">
-        {USES.map(([id, ask, title, text, style]) => (
-          <div key={id} className="site-card grid content-start gap-6 p-3 pb-7">
-            <LiveSlide id={id} deckStyle={style} className="rounded-[12px]" />
-            <div className="grid gap-2 px-4">
-              <span className="font-mono text-[12px] text-type-3">{ask}</span>
-              <h3 className="text-[19px] font-semibold tracking-[-.015em]">{title}</h3>
-              <p className="max-w-[40ch] text-[15px] leading-[1.55] text-type-2">{text}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid justify-items-center"><Cta /></div>
     </section>
   )
 }

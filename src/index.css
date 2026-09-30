@@ -39,6 +39,8 @@
   [data-look="ink"] .site-em { @apply font-serif font-normal italic tracking-normal text-focus; font-stretch: 100%; }
   /* A surface: cards, figures and panels share one radius, one hairline and one shadow. */
   .site-card { @apply rounded-[20px] bg-card; box-shadow: 0 0 0 1px rgb(var(--site-rule)), 0 1px 2px rgb(var(--site-shadow) / .04); }
+  /* The film's captions: the voice, set in the site's type on a quiet dark band. */
+  .site-film::cue { font: 500 clamp(13px, 1.6vw, 22px)/1.35 Geist, system-ui, sans-serif; color: #F3EEE4; background: rgb(11 10 9 / .72); }
   .site-lift { box-shadow: 0 0 0 1px rgb(var(--site-rule)), 0 30px 70px -32px rgb(var(--site-shadow) / .45); }
   [data-look="ink"] .site-lift { box-shadow: 0 0 0 1px rgb(var(--site-rule)), 0 30px 80px -30px rgb(0 0 0 / .8); }
   .site-night { @apply bg-night text-[#F3EEE4]; }
