@@ -71,7 +71,7 @@ export function App({ route, account, repo, backup }: Props) {
     // Rule checks re-run with the current code, on slides upgraded to the current schema.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
     app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer()) })
-    if (!d.messages?.length && !d.thread) say(WELCOME)
+    if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)
   }, [app, measurer, say])
@@ -190,7 +190,7 @@ export function App({ route, account, repo, backup }: Props) {
 
   const onClear = useCallback(() => {
     if (app.getState().busy) return
-    app.dispatch({ type: 'set', patch: { history: [], working: new Set(), messages: [{ kind: 'bot', text: '', sub: CLEARED }], legacyThread: null } })
+    app.dispatch({ type: 'set', patch: { history: [], working: new Set(), messages: [{ kind: 'bot', text: '', sub: CLEARED }] } })
   }, [app])
   const onSelect = useCallback((index: number) => app.dispatch({ type: 'select', index }), [app])
   const onMove = useCallback((id: string, to: number) => app.dispatch({ type: 'moveSlide', id, to }), [app])

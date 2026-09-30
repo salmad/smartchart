@@ -57,12 +57,11 @@ test('app icons are solid lines: slide styles never reach the chrome', async ({ 
   expect(new Set(dashes)).toEqual(new Set(['none']))
 })
 
-test('a deck saved by the prototype opens with its slide and chat (Review Focus 1)', async ({ page }) => {
-  const proto = { active: 'd_1', decks: { d_1: { id: 'd_1', style: 'pitch', theme: 'paper', accent: '#2447D1', current: 0, items: [{ id: 's1', slide: { template: 'cover', title: 'Acme', subtitle: 'x' }, status: 'ok', errors: [], warnings: [], checks: [] }], history: [], working: ['s1'], thread: '<div class="msg user"><p>hi from the prototype</p></div>', updated: 1 } } }
+test('a deck saved by the prototype opens with its slide and look', async ({ page }) => {
+  const proto = { active: 'd_1', decks: { d_1: { id: 'd_1', style: 'pitch', theme: 'paper', accent: '#2447D1', current: 0, items: [{ id: 's1', slide: { template: 'cover', title: 'Acme', subtitle: 'x' }, status: 'ok', errors: [], warnings: [], checks: [] }], history: [], working: ['s1'], updated: 1 } } }
   await page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify(proto)] as const)
   await boot(page, '/d/d_1')
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Acme')
-  await expect(page.getByText('hi from the prototype')).toBeVisible()
   await page.getByRole('button', { name: 'Look' }).click()
   await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Paper' })).toHaveAttribute('aria-pressed', 'true')

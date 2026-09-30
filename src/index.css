@@ -60,20 +60,6 @@
      Two gradients stacked with a CSS variable are clearer here than a Tailwind arbitrary value. */
   .sw-wheel { background: conic-gradient(from 200deg, #E8B94A, #14B8A6, #0EA5E9, #2447D1, #7C5CFF, #D946EF, #E8B94A); }
   .sw-wheel.on { background: radial-gradient(circle, var(--sw) 0 42%, transparent 44%), conic-gradient(from 200deg, #E8B94A, #14B8A6, #0EA5E9, #2447D1, #7C5CFF, #D946EF, #E8B94A); }
-
-  /* A chat saved by the prototype is HTML it produced (Chat renders it read-only); these are its classes. */
-  .legacy { @apply flex flex-col gap-[18px]; }
-  .legacy .msg { @apply grid gap-2; }
-  .legacy .msg.user { @apply max-w-[88%] justify-self-end rounded-[12px_12px_4px_12px] border border-line bg-raise px-[13px] py-2.5; }
-  .legacy .msg.bot p.sub { @apply text-[13px] text-ink-2; }
-  .legacy .msg.error p { @apply text-bad; }
-  .legacy .trace { @apply grid list-none gap-0.5 border-l border-line-2 pl-3; }
-  .legacy .trace li { @apply grid grid-cols-[96px_1fr_auto] items-baseline gap-2 text-[12.5px] text-ink-2; }
-  .legacy .trace li b { @apply font-mono text-[11px] font-medium uppercase leading-[1.6] tracking-[.04em] text-ink; }
-  .legacy .trace li em { @apply whitespace-nowrap font-mono text-[11px] not-italic leading-[1.6] text-ink-3; }
-  .legacy .trace li span { overflow-wrap: anywhere; }
-  .legacy .trace li span i { @apply not-italic text-ink-3; }
-  .legacy .spinner, .legacy .trace li.pending { display: none; }
 }
 
 /* Download PDF: every slide mounted offscreen at its own 1920 × 1080 (scale 1: print lays out a scaled slide at its

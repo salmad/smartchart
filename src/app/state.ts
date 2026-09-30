@@ -9,7 +9,7 @@ export type View = 'landing' | 'editor' | 'add'
 export interface AppState {
   deckId: string | null; style: Style; theme: Theme; accent: string | null
   items: Item[]; current: number; history: ChatMessage[]; working: Set<string>
-  messages: Message[]; legacyThread: string | null
+  messages: Message[]
   busy: boolean; live: boolean; view: View
   pills: Record<string, { key: string; pending: boolean; pills: Pill[] }>
   /** The last slide deleted and where it was, so it can come back (Undo). */
@@ -26,7 +26,7 @@ const PICKED = "Here's your slide. Tell me what to change: your numbers, your wo
 export function initialState(): AppState {
   return {
     deckId: null, style: 'consulting', theme: 'ink', accent: null,
-    items: [], current: 0, history: [], working: new Set(), messages: [], legacyThread: null,
+    items: [], current: 0, history: [], working: new Set(), messages: [],
     busy: false, live: false, view: 'landing', pills: {}, removed: null,
   }
 }
@@ -41,7 +41,7 @@ export function reducer(s: AppState, a: Action): AppState {
       return {
         ...s, deckId: d.id, style: d.style, theme: d.theme, accent: d.accent || null,
         items, current: clamp(d.current || 0, items), history: d.history || [], working: new Set(d.working || []),
-        messages: d.messages ?? [], legacyThread: d.thread ?? null,
+        messages: d.messages ?? [],
         view: items.length ? 'editor' : 'landing', pills: {}, removed: null,
       }
     }
@@ -102,8 +102,6 @@ export function toSaved(s: AppState): SavedDeck | null {
     id: s.deckId, style: s.style, theme: s.theme, accent: s.accent, current: s.current,
     items: s.items.map(({ checksPending: _pending, ...it }) => it), history: s.history, working: [...s.working],
     messages: s.messages,
-    // A deck opened from the prototype keeps its old chat, so it still shows the next time.
-    ...(s.legacyThread !== null ? { thread: s.legacyThread } : {}),
     updated: Date.now(),
   }
 }

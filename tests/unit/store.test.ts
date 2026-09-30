@@ -1,14 +1,15 @@
 import { test, expect } from 'vitest'
+import { initialState, reducer, toSaved } from '@/app/state'
 import { loadStore, saveStore, deckName, localDeckRepo, summaryOf, KEY, type SavedDeck } from '@/app/store'
 
 const mem = (init: Record<string, string> = {}) => { const m = { ...init }; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v }, m } }
 
-test('reads a deck saved by the prototype (thread as HTML, working as array)', () => {
+test('a deck saved by the prototype still opens, and its old chat is dropped on the next save', () => {
   const proto = { active: 'd_1', decks: { d_1: { id: 'd_1', style: 'pitch', theme: 'paper', accent: '#2447D1', current: 0, items: [{ id: 's1', slide: { template: 'cover', title: 'Acme', subtitle: 'x' }, status: 'ok', errors: [], warnings: [], checks: [] }], history: [], working: ['s1'], thread: '<div class="msg user"><p>hi</p></div>', updated: 1 } } }
   const s = loadStore(mem({ [KEY]: JSON.stringify(proto) }))
   expect(s.active).toBe('d_1')
-  expect(s.decks.d_1.thread).toContain('msg user')
   expect(deckName(s.decks.d_1)).toBe('Acme')
+  expect(toSaved(reducer(initialState(), { type: 'open', deck: s.decks.d_1 }))).not.toHaveProperty('thread')
 })
 test('missing, blocked or corrupt storage gives an empty store', () => {
   expect(loadStore(mem({ [KEY]: '{bad' }))).toEqual({ active: null, decks: {} })

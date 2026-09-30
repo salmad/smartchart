@@ -10,19 +10,17 @@ import { Glint, Thinking } from './Working'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
 
-interface Props { messages: Message[]; legacyThread: string | null; offline: boolean }
+interface Props { messages: Message[]; offline: boolean }
 
-/** The conversation: an old prototype chat (read-only) first, then the messages, newest at the bottom. */
-export function Chat({ messages, legacyThread, offline }: Props) {
+/** The conversation, newest at the bottom. */
+export function Chat({ messages, offline }: Props) {
   const thread = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, legacyThread, offline])
+  useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, offline])
 
   return (
     <div ref={thread} className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:overflow-visible max-[900px]:px-4">
-      {/* HTML the prototype itself produced and escaped when it saved this deck; shown as it was, never edited. */}
-      {legacyThread && <div className="legacy" dangerouslySetInnerHTML={{ __html: legacyThread }} />}
       {/* A new deck: the question the first message answers. */}
-      {!messages.length && !legacyThread && (
+      {!messages.length && (
         <div className="grid gap-1.5">
           <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>
           <p className="text-ink-2">Paste your numbers or notes, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>

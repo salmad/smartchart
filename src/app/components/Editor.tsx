@@ -49,7 +49,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
         decks ? 'grid-cols-[248px_400px_1fr]' : 'grid-cols-[400px_1fr]')}>
         {decks}
         <aside className="flex min-h-0 flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent">
-          <Chat messages={s.messages} legacyThread={s.legacyThread} offline={booted && !s.live} />
+          <Chat messages={s.messages} offline={booted && !s.live} />
           <Composer chips={chips} canSend={s.live && !s.busy} busy={s.busy} onSend={onSend} onClear={onClear}
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
         </aside>

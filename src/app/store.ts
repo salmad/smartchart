@@ -1,6 +1,5 @@
-/* Decks kept in this browser (localStorage). A deck holds its slides, style and palette, the agent's
-   conversation and the chat, so a reload continues where it stopped. Nothing leaves the browser.
-   Same key and shape as the prototype's decks.js, so decks saved there open here. */
+/* Decks kept in this browser (localStorage): the dev account's decks, and a copy of a deck whose save to the account
+   failed. A deck holds its slides, style and palette, the agent's conversation and the chat. */
 import type { Slide, Style, Theme } from '@/engine/types'
 import type { Check } from '@/engine/agent/checks'
 import { plain } from '@/engine/slides/schema'
@@ -12,8 +11,7 @@ export const KEY = 'smartchart.journey.decks.v1'
 export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors: string[]; warnings: string[]; checks: Check[]; checksPending?: boolean }
 /** `files`: what the user attached to the message, as its chips show them; their text went to the agent. */
 export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[] }
-/** `thread` is the prototype's chat as HTML; v1 writes `messages` instead and keeps an old `thread` as is. */
-export interface SavedDeck { id: string; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; thread?: string; updated: number }
+export interface SavedDeck { id: string; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
@@ -46,7 +44,7 @@ export function saveStore(store: Store, storage?: Pick<Storage, 'setItem'>): boo
   try { (storage ?? localStorage).setItem(KEY, JSON.stringify(store)); return true } catch { return false }
 }
 
-/** Decks in this browser: copies kept while a save to the account fails, and the dev account's decks. Same key and shape as v1. */
+/** Decks in this browser: copies kept while a save to the account fails, and the dev account's decks. */
 export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): DeckRepo {
   const read = () => loadStore(storage), write = (s: Store) => saveStore(s, storage)
   return {
