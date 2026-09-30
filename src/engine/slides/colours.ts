@@ -53,7 +53,6 @@ export const PALETTES: Record<Theme, Palette> = {
     ctx: ["#44423D", "#66635D", "#898680"], quiet: "#CFC6B6", alt: { L: .52, L2: .38, C: .11 } },
 };
 export const MIN_MARK = 3, MIN_HUE_GAP = 30, MAX_HUE_SHIFT = 15, MIN_CHROMA = .06, MIN_DISTANCE = .08, MIN_DEUTAN = .10;
-export const MAX_SERIES = 6;
 const ALT_HUES = [200, 250, 300, 60];
 
 /** The accent as drawn on a background: lightened (dark palette) or darkened (light palette) in OKLCH,

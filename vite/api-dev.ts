@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Plugin } from 'vite'
 import { loadEnv } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -5,18 +7,24 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 type Handler = (r: Request) => Promise<Response> | Response
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 type Module = Partial<Record<Method, Handler>>
-/** Paths ending in `/*` match every path below them, like Vercel's `[...path]` files. */
-const ROUTES: Record<string, () => Promise<Module>> = {
-  '/api/glm': () => import('../api/glm'),
-  '/api/jev': () => import('../api/jev'),
-  '/api/health': () => import('../api/health'),
-  '/api/decks': () => import('../api/decks'),
-  '/api/share': () => import('../api/share'),
-  '/api/auth/*': () => import('../api/auth'),
+
+/** Vercel's rewrites that point into /api: the paths each one matches, and where it sends them.
+    Only `/:name*` sources are translated (all vercel.json has today); another path-to-regexp form needs this extended. */
+function apiRewrites(root: string): { match: RegExp; to: string }[] {
+  const { rewrites = [] } = JSON.parse(readFileSync(path.join(root, 'vercel.json'), 'utf8')) as { rewrites?: { source: string; destination: string }[] }
+  return rewrites.filter((r) => r.destination.startsWith('/api/'))
+    .map((r) => ({ match: new RegExp(`^${r.source.replace(/\/:\w+\*/g, '(?:\\/.*)?')}$`), to: r.destination }))
 }
 
-export function routeFor(path: string): (() => Promise<Module>) | undefined {
-  return ROUTES[path] ?? Object.entries(ROUTES).find(([k]) => k.endsWith('/*') && path.startsWith(k.slice(0, -1)))?.[1]
+/** The api/ file that serves a request path, the way Vercel resolves it: a rewrite first, then api/<path>.ts.
+    Folders and files starting with _ are private, as on Vercel. */
+export function routeFor(pathname: string, root = process.cwd()): string | undefined {
+  const target = apiRewrites(root).find((r) => r.match.test(pathname))?.to ?? pathname
+  if (!target.startsWith('/api/')) return undefined
+  const parts = target.slice('/api/'.length).split('/')
+  if (parts.some((s) => s === '' || s === '..' || s.startsWith('_'))) return undefined
+  const file = path.join(root, 'api', `${parts.join('/')}.ts`)
+  return existsSync(file) ? file : undefined
 }
 
 export function toWebRequest(req: IncomingMessage, body: Buffer): Request {
@@ -50,13 +58,14 @@ export function apiDev(opts: { cap?: number } = {}): Plugin {
       Object.assign(process.env, loadEnv(server.config.mode, process.cwd(), ''))
       const cap = opts.cap ?? (Number(process.env.CALL_CAP) || 2000)
       server.middlewares.use(async (req, res, next) => {
-        const path = (req.url ?? '').split('?')[0]
-        const route = routeFor(path)
-        if (!route) return next()
-        if (path.startsWith('/api/glm') || path.startsWith('/api/jev')) if (++calls > cap) return send(res, Response.json({ error: `call cap of ${cap} reached; restart the dev server` }, { status: 429 }))
+        const pathname = (req.url ?? '').split('?')[0]
+        const file = routeFor(pathname)
+        // An /api path with no function is a 404, as on Vercel, never source code or the app's page.
+        if (!file) return pathname.startsWith('/api/') ? send(res, Response.json({ error: 'not found' }, { status: 404 })) : next()
+        if (pathname.startsWith('/api/glm') || pathname.startsWith('/api/jev')) if (++calls > cap) return send(res, Response.json({ error: `call cap of ${cap} reached; restart the dev server` }, { status: 429 }))
         // A handler that throws (upstream unreachable) answers 502 instead of leaving the request hanging.
         try {
-          const handler = (await route())[(req.method ?? 'GET') as Method]
+          const handler = ((await server.ssrLoadModule(file)) as Module)[(req.method ?? 'GET') as Method]
           if (!handler) return send(res, Response.json({ error: 'method not allowed' }, { status: 405 }))
           await send(res, await handler(toWebRequest(req, await readBody(req))))
         } catch (e) {
