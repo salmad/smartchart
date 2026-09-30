@@ -16,6 +16,8 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.strict,
+  // Node scripts run by hand (npm run film:upload)
+  { files: ['scripts/**/*.mjs'], languageOptions: { globals: globals.node } },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },

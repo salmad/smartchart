@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:browser": "playwright test -c tests/browser/playwright.config.ts"
+    "test:browser": "playwright test -c tests/browser/playwright.config.ts",
+    "film:upload": "node scripts/film-upload.mjs"
   },
   "dependencies": {
     "@neondatabase/auth": "^0.5.0-beta",
@@ -39,6 +40,7 @@
     "@types/node": "^26.6.3",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@vercel/blob": "^2.8.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",

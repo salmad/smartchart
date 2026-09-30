@@ -3,7 +3,6 @@ import { cn } from '@/app/lib/utils'
 import { BeforeAfter } from './BeforeAfter'
 import { Compare, Faq } from './Close'
 import { SignedIn, startPrompt } from './Cta'
-import { Problems } from './Problems'
 import { PromptBox } from './PromptBox'
 import { Rigour } from './Rigour'
 import { Answer, How, Who } from './Story'
@@ -12,8 +11,8 @@ import { Em, Head, LookSwitch, useLook } from './parts'
 /** Signed in, the header offers Open app (`onSignIn` then goes to the editor) in place of Sign in and Start free. */
 interface Props { onSignIn: () => void; signedIn?: boolean }
 
-/** The public site at /, in the order of the sell: the promise, the problem and its cost, the solution, the method behind it,
-    what it is for, the gallery, the comparison, objections, and the free first slide. Two looks, one page. */
+/** The public site at /, in the order of the sell: the promise, the film (the problem and the solution), the method behind it,
+    what it is for, the gallery, the comparison, objections, and the offer to try it free. Two looks, one page. */
 export function Site({ onSignIn, signedIn = false }: Props) {
   const page = useRef<HTMLDivElement>(null)
   const night = useNightUnderNav(page)
@@ -51,7 +50,6 @@ export function Site({ onSignIn, signedIn = false }: Props) {
             </section>
           </div>
 
-          <Problems />
           <How />
           <Rigour />
           <Who />
@@ -62,7 +60,7 @@ export function Site({ onSignIn, signedIn = false }: Props) {
           <section aria-labelledby="closing" className="site-section">
             {/* The close: the offer and the prompt, nothing else. */}
             <div className="mx-auto grid w-full max-w-[640px] gap-10">
-              <Head id="closing" center title={<>Your first slide <Em>is free.</Em></>} />
+              <Head id="closing" center title={<>Try it <Em>for free.</Em></>} />
               <PromptBox id="closing-prompt" />
             </div>
           </section>

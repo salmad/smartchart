@@ -24,6 +24,19 @@
         "noquota"
       ],
       "port": 5198
+    },
+    {
+      "name": "dev-fresh",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5201",
+        "--strictPort"
+      ],
+      "port": 5201
     }
   ]
 }

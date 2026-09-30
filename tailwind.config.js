@@ -31,8 +31,7 @@ export default {
       },
       // Named, never arbitrary: tailwindcss-animate also owns duration-* and ease-*, so duration-[1400ms] or
       // ease-[cubic-bezier(…)] is ambiguous and silently dropped, and the transition snaps at the 150ms default.
-      transitionDuration: { 120: '120ms', 900: '900ms', 1100: '1100ms', 1400: '1400ms', 8000: '8000ms' },
-      transitionTimingFunction: { film: 'cubic-bezier(.2,.8,.2,1)', glide: 'cubic-bezier(.65,0,.25,1)' },
+      transitionDuration: { 120: '120ms' },
       fontFamily: {
         sans: ['Geist', 'system-ui', 'sans-serif'],
         mono: ['"Geist Mono"', 'monospace'],
@@ -44,25 +43,16 @@ export default {
         pop: { from: { opacity: '0', transform: 'translateY(-4px)' } },
         // A new slide arriving: it comes into focus rather than popping in.
         reveal: { from: { opacity: '0', transform: 'scale(.985)', filter: 'blur(8px)' } },
-        // The landing film: a caption rising into place, a chapter bar filling, a bar of a chart growing.
+        // A caption rising into place; a bar of a chart growing.
         rise: { from: { opacity: '0', transform: 'translateY(10px)', filter: 'blur(6px)' } },
-        'film-fill': { from: { transform: 'scaleX(0)' }, to: { transform: 'scaleX(1)' } },
         grow: { from: { transform: 'scaleY(0)' } },
         dash: { to: { strokeDashoffset: '-36' } },
-        // The narrator handing over: the old line drifts up and blurs out as the new one rises in.
-        leave: { to: { opacity: '0', transform: 'translateY(-12px)', filter: 'blur(6px)' } },
-        // Occam reading the doc: a gold line sweeping down the page.
-        scan: { '0%': { top: '0%', opacity: '0' }, '10%': { opacity: '1' }, '90%': { opacity: '1' }, '100%': { top: '100%', opacity: '0' } },
-        // The slide arriving: sparks around it, and light passing across it once.
-        sparkle: { '0%': { opacity: '0', transform: 'scale(0) rotate(0deg)' }, '40%': { opacity: '1', transform: 'scale(1) rotate(90deg)' }, '100%': { opacity: '0', transform: 'scale(.2) rotate(180deg) translateY(-1.5cqw)' } },
         // A turn at work: gold stars fading in and out around the slide, and a star turning in the status line.
         twinkle: { '0%, 100%': { opacity: '0', transform: 'scale(.2) rotate(0deg)' }, '50%': { opacity: '1', transform: 'scale(1) rotate(90deg)' } },
         glint: { '0%, 100%': { opacity: '.7', transform: 'scale(.8) rotate(0deg)' }, '50%': { opacity: '1', transform: 'scale(1.1) rotate(90deg)' } },
         sheen: { from: { transform: 'translateX(-120%) skewX(-20deg)' }, to: { transform: 'translateX(220%) skewX(-20deg)' } },
-        // A sent message leaving the composer, up into the chat.
-        send: { '0%': { opacity: '0', transform: 'scale(.97)' }, '20%': { opacity: '1', transform: 'none' }, '100%': { opacity: '0', transform: 'translateY(-5cqw) scale(.94)' } },
       },
-      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', send: 'send .9s cubic-bezier(.4,0,.2,1) .15s both', leave: 'leave .6s cubic-bezier(.4,0,.2,1) both', scan: 'scan 3.4s cubic-bezier(.4,0,.2,1) both', sparkle: 'sparkle 1.4s cubic-bezier(.2,.8,.2,1) both', sheen: 'sheen 1.4s cubic-bezier(.4,0,.2,1) .2s both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
+      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
     },
   },
   plugins: [animate],
