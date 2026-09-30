@@ -5,6 +5,7 @@ import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
 import { Present } from './components/Present'
+import { PrintDeck, pdfName } from './components/PrintDeck'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
 import { installDebug } from './debug'
@@ -40,7 +41,7 @@ export function App({ route, account, repo, backup }: Props) {
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
-  const [presenting, setPresenting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
+  const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks down the left, open unless hidden; the choice is remembered in this browser.
   const [decksOpen, setDecksOpen] = useState(() => { try { return localStorage.getItem(DECKS_OPEN) !== '0' } catch { return true } })
   const toggleDecks = useCallback(() => setDecksOpen((o) => { try { localStorage.setItem(DECKS_OPEN, o ? '0' : '1') } catch { /* storage blocked */ } return !o }), [])
@@ -183,6 +184,7 @@ export function App({ route, account, repo, backup }: Props) {
     onSite: () => leaveTo('/home'),
     // A share link lives on the server copy: the dev account keeps its decks in this browser.
     shareId: backup ? s.deckId : null,
+    onPdf: () => { if (app.getState().items.length) setPrinting(true) },
   }
 
   const onClear = useCallback(() => {
@@ -219,6 +221,7 @@ export function App({ route, account, repo, backup }: Props) {
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage}
             decks={decksOpen && <Decks repo={repo} account={account} current={{ id: s.deckId, name: deckName({ items: s.items }), hasSlides: s.items.length > 0 }} busy={s.busy}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
+      {printing && <PrintDeck deck={deck} name={pdfName(deckName({ items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>

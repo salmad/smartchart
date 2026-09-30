@@ -36,3 +36,21 @@ test('the shared deck reads on a phone without sideways scrolling', async ({ pag
   await expect(page.getByRole('button', { name: /^Present from slide/ }).first()).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
+
+test('Download PDF prints the deck, one slide per page, under the deck’s name', async ({ page }) => {
+  await page.route('**/api/share?s=tok_1', (r) => r.fulfill({ json: shared }))
+  await page.addInitScript(() => { window.print = () => { (window as unknown as { printedAs: string }).printedAs = document.title } })
+  await page.goto('/s/tok_1')
+  await page.getByRole('button', { name: 'PDF' }).click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { printedAs?: string }).printedAs)).toBe('Acme board update')
+  const pages = page.locator('.print-deck .print-slide')
+  await expect(pages).toHaveCount(slides.length)
+  expect(await pages.first().locator('.slide').evaluate((el) => getComputedStyle(el).getPropertyValue('--s'))).toBe('1')
+  // The real thing: Chromium's PDF from the print styles has one page per slide.
+  const pdf = (await page.pdf({ preferCSSPageSize: true, printBackground: true })).toString('latin1')
+  expect(pdf.match(/\/Type\s*\/Page\b/g)?.length).toBe(slides.length)
+  // After printing the deck leaves the page, and the title is the page's again.
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
+  await expect(pages).toHaveCount(0)
+  await expect(page).toHaveTitle('Acme board update · Occam')
+})

@@ -13,6 +13,7 @@ export interface BarProps {
   onSite: () => void
   /** The deck a share link can be made for; null when decks live only in this browser, or before the deck exists. */
   shareId: string | null
+  onPdf: () => void
 }
 
 /** Top bar: the decks toggle, and the deck's name, which opens its look; Add slide, Share and Present on the right. */
@@ -32,7 +33,7 @@ export function Bar(p: BarProps) {
       <div className="flex items-center gap-2.5 max-[900px]:gap-2">
         {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
         {p.canAdd && <Button variant="outline" onClick={p.onAdd} disabled={p.busy} className="max-[900px]:hidden">Add slide</Button>}
-        {p.hasSlides && p.shareId && <div className="max-[900px]:hidden"><ShareMenu key={p.shareId} deckId={p.shareId} /></div>}
+        {p.hasSlides && <div className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} deckId={p.shareId} onPdf={p.onPdf} /></div>}
         {p.hasSlides && <Button onClick={p.onPresent}>Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
       </div>
     </header>

@@ -75,3 +75,18 @@
   .legacy .trace li span i { @apply not-italic text-ink-3; }
   .legacy .spinner, .legacy .trace li.pending { display: none; }
 }
+
+/* Download PDF: every slide mounted offscreen at its own 1920 × 1080 (scale 1: print lays out a scaled slide at its
+   unscaled size and cuts it across pages), then printed one per page of that size. Offscreen, not hidden: slides
+   measure their text as they mount. While it is there, only it prints. */
+.print-deck { position: fixed; top: 0; left: -20000px; }
+.print-slide { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  body:has(> .print-deck) { background: none; overflow: visible; }
+  body:has(> .print-deck) > :not(.print-deck) { display: none !important; }
+  html:has(.print-deck), body:has(> .print-deck) { height: auto; }
+  .print-deck { position: static; }
+  .print-slide { break-after: page; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-slide:last-child { break-after: auto; }
+}
