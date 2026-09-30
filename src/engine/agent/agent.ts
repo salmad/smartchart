@@ -123,7 +123,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
       if (isTemplate(asked) && !OFFERED.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${OFFERED.join(", ")}, or leave template out.` };
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
       if ((template === "cover" || template === "section") && !ASKS_OPENER.test(ask)) {
-        return { error: `The user did not ask for a ${template === "cover" ? "cover" : "section divider"}. Start with the content itself: call create_slide again for the first point, without a template.` };
+        return { error: `The user did not ask for a ${template === "cover" ? "cover" : "section divider"}. Start with the content itself: call create_slide for each point you planned, without a template.` };
       }
       const current = replace ? find(replace)?.slide?.template : undefined;
       const requested = !!turnPre && turnPre.intent === "change_template" && isSure(turnPre, deck);
