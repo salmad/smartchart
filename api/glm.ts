@@ -1,8 +1,8 @@
 // GLM proxy for the app: only the two GLM 5.3 models are allowed, and the key never reaches the browser.
 // Served by Vercel in production and by vite/api-dev.ts in dev.
-import { userFrom } from './_lib/auth'
-import { getDb } from './_lib/db'
-import { modelGate } from './_lib/quota'
+import { userFrom } from './_lib/auth.js'
+import { getDb } from './_lib/db.js'
+import { modelGate } from './_lib/quota.js'
 
 const GLM_URL = 'https://api.z.ai/api/coding/paas/v4/chat/completions'
 const GLM_MODELS = new Set(['glm-5.3-flash', 'glm-5.3'])

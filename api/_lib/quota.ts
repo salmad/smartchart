@@ -1,7 +1,7 @@
 // Model spend: only a signed-in user may call the models. Without a database (local dev) sign-in is not set up
 // and nothing is gated.
-import type { UserFrom } from './auth'
-import type { Db } from './db'
+import type { UserFrom } from './auth.js'
+import type { Db } from './db.js'
 
 export const SIGN_IN_MESSAGE = 'Sign in to make slides.'
 

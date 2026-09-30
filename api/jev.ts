@@ -1,7 +1,7 @@
 // Jev proxy for the app. OpenRouter only ever receives the Jev decision model.
-import { userFrom } from './_lib/auth'
-import { getDb } from './_lib/db'
-import { modelGate } from './_lib/quota'
+import { userFrom } from './_lib/auth.js'
+import { getDb } from './_lib/db.js'
+import { modelGate } from './_lib/quota.js'
 
 const JEV_URL = 'https://openrouter.ai/api/alpha/decisions'
 const JEV_MODEL = '~typesafe/jev-latest'

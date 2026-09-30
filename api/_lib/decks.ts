@@ -1,6 +1,6 @@
 // The decks API, built from its dependencies so tests can run it against a fake database and user.
-import type { UserFrom } from './auth'
-import type { Db } from './db'
+import type { UserFrom } from './auth.js'
+import type { Db } from './db.js'
 
 const ID = /^[\w-]{1,64}$/
 const MAX_BYTES = 2_000_000

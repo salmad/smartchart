@@ -1,7 +1,7 @@
 // Share links, built from their dependencies so tests can run them against a fake database and user.
 // The owner turns a deck's link on and off (?id=); anyone with the link reads the deck (?s=), and only its slides and look.
-import type { UserFrom } from './auth'
-import type { Db } from './db'
+import type { UserFrom } from './auth.js'
+import type { Db } from './db.js'
 
 const ID = /^[\w-]{1,64}$/
 
