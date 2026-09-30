@@ -12,7 +12,7 @@ const ROUTES: Record<string, () => Promise<Module>> = {
   '/api/health': () => import('../api/health'),
   '/api/decks': () => import('../api/decks'),
   '/api/share': () => import('../api/share'),
-  '/api/auth/*': () => import('../api/auth/[...path]'),
+  '/api/auth/*': () => import('../api/auth'),
 }
 
 export function routeFor(path: string): (() => Promise<Module>) | undefined {
