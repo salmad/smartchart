@@ -23,10 +23,6 @@ export function shareHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
 
     if (token !== null) {
       if (request.method !== 'GET') return Response.json({ error: 'method not allowed' }, { status: 405 })
-      if (ID.test(token) && q.get('rev')) {
-        const r = await db.sharedRev(token)
-        return r ? Response.json({ rev: r.rev }, { headers: { 'Cache-Control': 'no-store' } }) : Response.json({ error: 'This link was turned off, or never existed.' }, { status: 404 })
-      }
       const d = ID.test(token) ? await db.sharedDeck(token) : null
       // The link always shows the latest version, so nothing is cached along the way.
       return d ? Response.json(publicDeck(d.name, d.data, d.rev), { headers: { 'Cache-Control': 'no-store' } })

@@ -141,11 +141,10 @@ describe('session and routes', () => {
     await db.addEvents('u', 'd_1', [{ rev: 2, by: 'Claude Code', slideId: 's_a', what: 'updated', paths: ['title'] }])
     expect(await (await handle(new Request('http://x/api/decks?id=d_1&events=1'))).json()).toMatchObject([{ slideId: 's_a' }])
   })
-  it('share: rev-only read and ids in the public deck', async () => {
+  it('share: rev and slide ids in the public deck', async () => {
     const db = fakeDb(), handle = shareHandler({ userFrom: async () => null, db: () => db })
     await db.putDeck('u', 'd_1', 'x', { items: [{ id: 's_a', slide: { template: 'section', title: 'Plan' } }] }, {}, 0)
     const tok = await db.shareDeck('u', 'd_1', true)
-    expect(await (await handle(new Request(`http://x/api/share?s=${tok}&rev=1`))).json()).toEqual({ rev: 1 })
-    expect(await (await handle(new Request(`http://x/api/share?s=${tok}`))).json()).toMatchObject({ rev: 1, ids: ['s_a'] })
+      expect(await (await handle(new Request(`http://x/api/share?s=${tok}`))).json()).toMatchObject({ rev: 1, ids: ['s_a'] })
   })
 })

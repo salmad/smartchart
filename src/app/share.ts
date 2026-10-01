@@ -17,12 +17,6 @@ export async function share(id: string, on?: boolean, fetcher: typeof fetch = (.
 
 export interface Shared { name: string; deck: Deck; rev: number; ids: string[] }
 
-/** The deck's revision alone, cheap enough to ask every few seconds; null when the link is off. */
-export async function sharedRev(token: string, fetcher: typeof fetch = (...a) => fetch(...a)): Promise<{ rev: number } | null> {
-  const r = await fetcher(`/api/share?s=${encodeURIComponent(token)}&rev=1`)
-  return r.ok ? ((await r.json()) as { rev: number }) : null
-}
-
 /** A deck by its link: null when the link is off or never existed. */
 export async function loadShared(token: string, fetcher: typeof fetch = (...a) => fetch(...a)): Promise<Shared | null> {
   const r = await fetcher(`/api/share?s=${encodeURIComponent(token)}`)

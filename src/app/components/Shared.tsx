@@ -2,7 +2,7 @@
    Open to anyone with the link, signed in or not; it always shows the deck as last saved. */
 import { useEffect, useRef, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
-import { loadShared, sharedRev, type Shared as SharedDeck } from '@/app/share'
+import { loadShared, type Shared as SharedDeck } from '@/app/share'
 import { Button } from './ui/button'
 import { Present } from './Present'
 import { PrintDeck, pdfName } from './PrintDeck'
@@ -20,26 +20,6 @@ export function Shared({ token }: { token: string }) {
     loadShared(token).then((shared) => { if (live) setLoad(shared ? { state: 'ready', shared } : { state: 'off' }) }, () => { if (live) setLoad({ state: 'error' }) })
     return () => { live = false }
   }, [token])
-
-  // The page catches up when the tab gets focus back (no polling): it asks for the revision and reloads when it grew.
-  useEffect(() => {
-    if (load.state !== 'ready') return
-    let live = true
-    const tick = async () => {
-      if (document.visibilityState !== 'visible') return
-      const head = await sharedRev(token).catch(() => null)
-      if (!live || !head || head.rev <= load.shared.rev) return
-      const next = await loadShared(token).catch(() => null)
-      if (!live || !next) return
-      const before = load.shared.deck.slides.map((s) => JSON.stringify(s))
-      const at = next.deck.slides.findIndex((s, i) => JSON.stringify(s) !== before[i])
-      setLoad({ state: 'ready', shared: next })
-      if (at >= 0) requestAnimationFrame(() => slideRefs.current[at]?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-    }
-    window.addEventListener('focus', tick)
-    document.addEventListener('visibilitychange', tick)
-    return () => { live = false; window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick) }
-  }, [load, token])
 
   // ?slide=<id> opens at that slide.
   const wanted = new URLSearchParams(location.search).get('slide')

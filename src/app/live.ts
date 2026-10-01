@@ -1,7 +1,7 @@
-/* The open deck catches up with writes made elsewhere (an agent over MCP, another tab) when the tab gets focus back, with no
-   polling: read the revision; when it moved on, fetch the deck, merge by slide id, and tell the agent which slides changed.
-   A save refused as stale runs the same sync. Never while a turn runs or a slide is being edited by hand. */
-import { useCallback, useEffect, useRef } from 'react'
+/* The open deck merges in writes made elsewhere (an agent over MCP, another tab) when a save of ours is refused as stale:
+   fetch the deck, merge by slide id, and tell the agent which slides changed. Nothing polls and nothing checks on focus; a
+   reload shows the latest. Never while a turn runs or a slide is being edited by hand. */
+import { useCallback, useRef } from 'react'
 import { mergeDecks, type DeckRepo } from './store'
 import { locked, toSaved, type Action, type AppState } from './state'
 
@@ -28,11 +28,5 @@ export function useLiveDeck({ app, repo, onMerged }: { app: AppStore; repo: Deck
     } finally { running.current = false }
   }, [app, repo, onMerged])
 
-  useEffect(() => {
-    const tick = () => { if (document.visibilityState === 'visible') void syncNow() }
-    window.addEventListener('focus', tick)
-    document.addEventListener('visibilitychange', tick)
-    return () => { window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick) }
-  }, [syncNow])
   return syncNow
 }

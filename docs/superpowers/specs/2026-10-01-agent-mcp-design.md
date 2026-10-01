@@ -97,7 +97,7 @@ The service owns the database (`api/_lib/db.ts`).
 ### 2.6 Live view (editor and share page)
 
 - **A cheap revision check:** `GET /api/decks?id=…&rev=1` and `GET /api/share?s=…&rev=1` return only `{ rev, presence }`, with `Cache-Control: no-store`.
-- **Neither page polls.** Both check it when the tab gets focus back (decided 2026-10-01: a steady poll costs a request per open tab for a feature most users never use; a push channel is the later option). When `rev` changes they reload and move to the slide that changed.
+- **Nothing polls and nothing checks on focus** (decided 2026-10-01: the user reloads by hand; a push channel is the later option). A save refused as stale merges the newer deck by slide id.
 - **The editor** merges by slide id (section 8) and never reloads over a hand edit in progress.
 - **Opening at one slide:** both links accept `?slide=<slideId>`. Ids, not positions.
 - **The share data:** `publicDeck()` gains `rev` and `slides[].id`.
@@ -283,7 +283,7 @@ src/engine/agent/      agent-prompt.ts split into sections (shared + in-app)
 api/_lib/              deck-service.ts · models.ts · keys.ts · rate.ts · db.ts (+ events, presence, named, api_keys)
 api/mcp/v1.ts          MCP host
 api/v1/[tool].ts       REST host
-src/app/               remote.ts (merge on 409, rev check on focus, events → edited) · Shared.tsx (check on focus) · account menu (key, connect)
+src/app/               remote.ts (merge on 409, merge on 409, events → edited) · Shared.tsx (?slide=) · account menu (key, connect)
 ```
 
 ## 11. Testing
