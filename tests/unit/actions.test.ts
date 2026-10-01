@@ -60,13 +60,21 @@ test('cellField finds the path that holds a cell\'s words, string or object', ()
   expect(cellField(s, 0, 1)).toBe('table.rows[0].cells[1].value')
 })
 
-test('tonePatch frees the other focus column', () => {
-  const s: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'A' }, { label: 'B', focus: true }, { label: 'C' }], rows: [{ cells: ['a', 'b', 'c'] }] } }
-  expect(tonePatch(s, 2, 'focus')).toEqual({ 'table.columns[2].muted': null, 'table.columns[2].focus': true, 'table.columns[1].focus': null })
+test('tonePatch sets only the chosen columns: another focus column stays highlighted', () => {
+  expect(tonePatch(2, 'focus')).toEqual({ 'table.columns[2].muted': null, 'table.columns[2].focus': true })
 })
 
 test('a selection that includes the header is a column: column format, no text marks', () => {
   const ids = actionsFor({ kind: 'cells', r0: -1, c0: 1, r1: 1, c1: 1 }, TABLE, 'consulting').map((a) => a.id)
   expect(ids).toContain('col-bold')
   expect(ids).not.toContain('bold')
+})
+
+test('rows highlight by hand: Focus row toggles every selected row, and leaves other rows alone', () => {
+  const s: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'A' }, { label: 'B' }], rows: [{ cells: ['a', 'b'], focus: true }, { cells: ['c', 'd'] }, { cells: ['e', 'f'] }] } }
+  const focusRow = (t: Target, slide = s) => actionsFor(t, slide, 'consulting').find((a) => a.id === 'row-focus')
+  expect(focusRow({ kind: 'cells', r0: 1, c0: 0, r1: 2, c1: 1 })?.run().set).toEqual({ 'table.rows[1].focus': true, 'table.rows[2].focus': true })
+  const on = must(focusRow({ kind: 'cells', r0: 0, c0: 0, r1: 0, c1: 0 }))
+  expect(on.checked).toBe(true)
+  expect(on.run().set).toEqual({ 'table.rows[0].focus': null })
 })

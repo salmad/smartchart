@@ -38,13 +38,14 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (request.method === 'PUT') {
       const text = await request.text()
       if (text.length > MAX_BYTES) return Response.json({ error: 'This deck is too large to save.' }, { status: 413 })
-      let body: { id?: unknown; name?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown }
+      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown }
       try { body = JSON.parse(text) as typeof body } catch { return Response.json({ error: 'Bad deck.' }, { status: 400 }) }
-      const { id: deckId, name, data, chat, baseRev } = body
+      const { id: deckId, name, named, data, chat, baseRev } = body
       if (typeof deckId !== 'string' || !ID.test(deckId) || typeof name !== 'string' || !data || typeof data !== 'object'
         || !chat || typeof chat !== 'object' || typeof baseRev !== 'number' || !Number.isInteger(baseRev) || baseRev < 0)
         return Response.json({ error: 'Bad deck.' }, { status: 400 })
-      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev)
+      // named: the maker renamed the deck; from then on its name stays put (as when an agent names it).
+      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true })
       if (put === 'conflict') return Response.json({ error: 'This deck changed somewhere else.' }, { status: 409 })
       // 'foreign': the id is someone else's deck; answer as if it did not exist.
       return put === 'foreign' ? Response.json({ error: 'No such deck.' }, { status: 404 }) : Response.json({ ok: true, rev: put.rev })

@@ -15,3 +15,10 @@ test("ranges and approximations are numbers", () => {
 test("the first column is always text; empty columns count as symbols", () => {
   assert.deepEqual(columnAlign({ columns: [{ label: "Year" }, { label: "X" }], rows: [{ cells: ["2024", "—"] }] }), ["text", "sym"]);
 });
+
+test("a short word is text, not a symbol: owners and initials align left; marks and yes/no centre", () => {
+  const t = (cells: string[]) => ({ columns: [{ label: "Action" }, { label: "Col" }], rows: cells.map((c) => ({ cells: ["a", c] })) });
+  assert.deepEqual(columnAlign(t(["CEO", "CFO"])), ["text", "text"]);
+  assert.deepEqual(columnAlign(t(["✓", "—"])), ["text", "sym"]);
+  assert.deepEqual(columnAlign(t(["Yes", "No"])), ["text", "sym"]);
+});

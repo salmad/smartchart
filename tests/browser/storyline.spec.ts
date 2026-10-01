@@ -30,20 +30,18 @@ test('the storyline reads the titles in order, moves the answer first, and asks 
   await page.goto('/d/d_s')
   await page.getByRole('button', { name: 'Storyline' }).click()
 
-  const dialog = page.getByRole('dialog', { name: 'The storyline' })
-  await expect(dialog.getByRole('list', { name: 'Storyline' }).getByRole('button')).toHaveText([/Revenue grew 4\.5× in three years/, /Option C is the only one/, /Approve option C now/])
-  await expect(dialog).toContainText('2 to look at')
-  await expect(dialog).toContainText('Slide 3 repeats an earlier point')
-  await dialog.getByRole('button', { name: 'Move slide 4 first' }).click()
-  await expect(dialog).toHaveCount(0)
-  // After the cover, the answer leads, and it is the slide shown.
+  const view = page.getByRole('region', { name: 'The storyline' })
+  await expect(view.getByRole('list', { name: 'Storyline' }).getByRole('button')).toHaveText([/Revenue grew 4\.5× in three years/, /Option C is the only one/, /Approve option C now/])
+  await expect(view).toContainText('2 to look at')
+  await expect(view).toContainText('Slide 3 repeats an earlier point')
+  await view.getByRole('button', { name: 'Move slide 4 first' }).click()
+  // After the cover, the answer leads, and it is the current slide.
   await expect.poll(() => page.evaluate(() => window.__journey?.items.map((i) => i.id))).toEqual(['s_0', 's_3', 's_1', 's_2'])
   await expect.poll(() => page.evaluate(() => window.__journey?.current)).toBe(1)
 
-  // The storyline changed, so it is read again; the repeat is sent to Occam as a prompt.
-  await page.getByRole('button', { name: 'Storyline' }).click()
-  await expect(dialog).toContainText('The answer comes first')
+  // The storyline changed, so it is read again at once; the repeat is sent to Occam as a prompt.
+  await expect(view).toContainText('The answer comes first')
   expect(asked).toHaveLength(2)
-  await dialog.getByRole('button', { name: 'Ask Occam' }).click()
-  await expect(page.locator('aside')).toContainText('Slide 4 makes the same point as an earlier slide.')
+  await view.getByRole('button', { name: 'Ask Occam' }).click()
+  await expect(page.locator('aside').first()).toContainText('Slide 4 makes the same point as an earlier slide.')
 })

@@ -23,7 +23,8 @@ async function boot(page: Page, path = '/new') {
 test('the app loads', async ({ page }) => {
   await boot(page)
   await expect(page.getByText('Occam', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Look' }).click()
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Look' }).click()
   await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
 })
 
@@ -67,9 +68,42 @@ test('a deck saved by the prototype opens with its slide and look', async ({ pag
   await page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify(proto)] as const)
   await boot(page, '/d/d_1')
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Acme')
-  await page.getByRole('button', { name: 'Look' }).click()
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Look' }).click()
   await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Paper' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('the deck is renamed in place and keeps its name; Esc keeps the old one', async ({ page }) => {
+  await boot(page)
+  await load(page, [COVER])
+  const bar = page.getByRole('navigation', { name: 'Breadcrumb' })
+  await bar.getByTitle('Rename').click()
+  await page.keyboard.type('Board pack')
+  await page.keyboard.press('Enter')
+  await expect(bar).toContainText('Board pack')
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Rename' }).click()
+  await page.keyboard.type('Something else')
+  await page.keyboard.press('Escape')
+  await expect(bar).toContainText('Board pack')
+})
+
+test('the views: Grid shows every slide and a double click opens one; the look opens beside the slide', async ({ page }) => {
+  await boot(page)
+  await load(page, [COVER, { ...COVER, title: 'Second' }])
+  await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Grid' }).click()
+  await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
+  await expect(page.locator('[title="Present (F)"]')).toHaveCount(0)
+  await page.locator('[data-strip-thumb]').nth(1).dblclick()
+  await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Second')
+  await expect(page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Slide' })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Look' }).click()
+  await expect(page.getByRole('complementary', { name: 'Deck look' })).toBeVisible()
+  await expect(page.locator('[title="Present (F)"]')).toBeVisible()
+  await page.getByRole('button', { name: 'Close look' }).click()
+  await expect(page.getByRole('complementary', { name: 'Deck look' })).toHaveCount(0)
 })
 
 const CARDS = { template: 'cards', title: 'Three reasons to act now', cards: [{ icon: 'zap', title: 'Faster', text: 'Cut the cycle time.' }, { icon: 'wallet', title: 'Cheaper', text: 'Lower unit costs.' }] }

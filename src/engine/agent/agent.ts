@@ -2,7 +2,7 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { OFFERED, describe, isTemplate, plain } from "../slides/schema.js";
+import { OFFERED, describe, headline, isTemplate } from "../slides/schema.js";
 import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm.js";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
 import { checkWrite } from "./write.js";
@@ -55,7 +55,6 @@ export const ASKS_OPENER = /\b(covers?|title (slide|page)|opening slide|dividers
 export const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;
 // Intents where a clean write finishes the request, so code ends the turn without a reply call.
 const DONE_BY: Record<string, boolean> = { new_slide: true, change_template: true, edit_selected: true };
-const plainTitle = (s: unknown) => plain(s ?? "");
 const newId = (taken: Set<string>) => { let id: string; do id = `s_${Math.random().toString(36).slice(2, 6)}`; while (taken.has(id)); return id; };
 // Models sometimes send objects as JSON strings; accept both.
 const asValue = (v: unknown): unknown => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v); } catch { /* keep the string */ } } return v; };
@@ -82,7 +81,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
   const confirmable = askedLastTurn(history);
 
   async function classify(about: string): Promise<{ template: TemplateId; probabilities: Record<string, number>; lead: string | null }> {
-    const titles = visible().map((s, i) => `${i + 1}. [${s.slide.template}] ${plainTitle(s.slide.title)}`).join("\n");
+    const titles = visible().map((s, i) => `${i + 1}. [${s.slide.template}] ${headline(s.slide)}`).join("\n");
     const r = await jev(`Deck style: ${STYLE_STATE[style]}.\n${titles ? `Slides already in the deck:\n${titles}` : "The deck is empty."}\nContent for the slide: ${about}`,
       { template: { instructions: `Which slide template best fits this content?\n${GUIDE}`, options: MENU_OPTIONS }, lead: { instructions: LEAD_Q, options: LEADS } });
     log({ step: "Classify", model: "Jev", ms: r._ms, detail: `${r.template.choice} · p ${r.template.p.toFixed(2)}` });

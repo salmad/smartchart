@@ -9,18 +9,19 @@ const deck = (id: string, updated: number, title = 'Acme'): SavedDeck => ({
 
 /** /api/decks in memory, as the server answers it; `signedIn` false answers 401 like an ended session. */
 function fakeServer() {
-  const rows = new Map<string, { id: string; name: string; updated: number; data: SavedDeck; chat: object | null; rev: number }>()
+  const rows = new Map<string, { id: string; name: string; named?: boolean; updated: number; data: SavedDeck; chat: object | null; rev: number }>()
   const state = { signedIn: true, down: false, dropNextPutResponse: false }
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (state.down) throw new TypeError('network')
     if (!state.signedIn) return Response.json({ error: 'Sign in to see your decks.' }, { status: 401 })
     const id = new URL(String(input), 'http://x').searchParams.get('id'), method = init?.method ?? 'GET'
     if (method === 'PUT') {
-      const b = JSON.parse(String(init?.body)) as { id: string; name: string; data: SavedDeck; chat: object; baseRev: number }
+      const b = JSON.parse(String(init?.body)) as { id: string; name: string; named?: boolean; data: SavedDeck; chat: object; baseRev: number }
       const r = rows.get(b.id)
       if (r && r.rev !== b.baseRev) return Response.json({ error: 'stale' }, { status: 409 })
       const rev = (r?.rev ?? 0) + 1
-      rows.set(b.id, { id: b.id, name: b.name, updated: 42, data: b.data, chat: b.chat, rev })
+      const named = !!r?.named || !!b.named
+      rows.set(b.id, { id: b.id, name: r?.named && !b.named ? r.name : b.name, named, updated: 42, data: b.data, chat: b.chat, rev })
       if (state.dropNextPutResponse) { state.dropNextPutResponse = false; throw new TypeError('network') }
       return Response.json({ ok: true, rev })
     }
@@ -43,6 +44,16 @@ test('the server repo saves, lists, gets and removes a deck, named after its cov
   expect(await repo.get('nope')).toBeNull()
   expect(await repo.remove('d_1')).toBe(true)
   expect(await repo.list()).toEqual([])
+})
+
+test('a deck renamed by its maker saves and opens under that name; an unnamed one follows its cover', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
+  await repo.save(deck('d_1', 5))
+  expect((await repo.get('d_1'))?.name ?? null).toBeNull()
+  await repo.save({ ...deck('d_1', 6), name: 'Board pack' })
+  expect(rows.get('d_1')).toMatchObject({ name: 'Board pack', named: true })
+  expect(rows.get('d_1')?.data).not.toHaveProperty('name')
+  expect((await repo.get('d_1'))?.name).toBe('Board pack')
 })
 
 test('offline, saving and removing resolve false instead of throwing', async () => {

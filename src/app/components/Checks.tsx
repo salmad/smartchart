@@ -1,23 +1,45 @@
 import { useState } from 'react'
+import { CircleAlert, CircleCheck } from 'lucide-react'
 import type { Item } from '@/app/store'
 import { config } from '@/app/config'
 import { cn } from '@/app/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
 interface Row { id: string; ok: boolean; bad?: boolean; msg: string }
 
-/** The current slide's checks, as confidence: what to act on first, the passes folded into one line. */
+const rowsOf = (item: Item): Row[] => [
+  ...(item.errors || []).map((msg) => ({ id: 'fit', ok: false, bad: true, msg })),
+  ...(item.checks || []),
+  ...(item.warnings || []).map((msg) => ({ id: 'rule', ok: false, msg })),
+]
+
+/** Under the slide: one line saying how the current slide's checks stand; a click opens them. */
 export function Checks({ item }: { item: Item | undefined }) {
-  const [open, setOpen] = useState(false)
   if (!item) return null
-  const list: Row[] = [
-    ...(item.errors || []).map((msg) => ({ id: 'fit', ok: false, bad: true, msg })),
-    ...(item.checks || []),
-    ...(item.warnings || []).map((msg) => ({ id: 'rule', ok: false, msg })),
-  ]
-  const todo = list.filter((c) => !c.ok), passed = list.filter((c) => c.ok)
+  const list = rowsOf(item), todo = list.filter((c) => !c.ok)
   if (!list.length && !item.checksPending) return null
+  const bad = todo.some((c) => c.bad)
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto max-[900px]:order-4 max-[900px]:overflow-visible max-[900px]:border-t max-[900px]:border-line max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-5">
+    <Popover>
+      <PopoverTrigger className="-mx-2 flex h-7 cursor-pointer items-center gap-2 rounded-md px-2 text-[12.5px] text-ink-2 outline-none transition-colors hover:bg-panel hover:text-ink focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel data-[state=open]:text-ink">
+        {item.checksPending ? <><i className="spinner" />Checking…</>
+          : todo.length ? <><CircleAlert aria-hidden className={cn('size-4', bad ? 'text-bad' : 'text-warn')} strokeWidth={1.75} />{todo.length} to look at</>
+          : <><CircleCheck aria-hidden className="size-4 text-ok" strokeWidth={1.75} />All {list.length} checks pass</>}
+      </PopoverTrigger>
+      <PopoverContent side="top" align="start" sideOffset={8} aria-label="Slide checks"
+        className="max-h-[min(420px,60vh)] w-[420px] overflow-y-auto rounded-[14px] border-line-2 bg-raise p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
+        <CheckList item={item} />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/** The current slide's checks, as confidence: what to act on first, the passes folded into one line. */
+function CheckList({ item }: { item: Item }) {
+  const [open, setOpen] = useState(false)
+  const list = rowsOf(item), todo = list.filter((c) => !c.ok), passed = list.filter((c) => c.ok)
+  return (
+    <div>
       {(item.checksPending || todo.length > 0) && (
         <h3 className="mb-3 flex items-baseline gap-2 text-[13px] font-medium text-ink">
           {item.checksPending ? <><i className="spinner" />Checking…</> : `${todo.length} to look at`}

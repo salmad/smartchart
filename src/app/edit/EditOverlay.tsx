@@ -15,7 +15,7 @@ const boxIn = (el: Element, host: Element): Box => { const a = el.getBoundingCli
 const place = (el: HTMLElement | null, b: Box) => { if (!el) return; for (const [k, v] of Object.entries(b)) el.style.setProperty(`--${k}`, `${v}px`) }
 const MARK = 'absolute left-[var(--l)] top-[var(--t)] w-[var(--w)] h-[var(--h)]'
 
-export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: () => void }) {
+export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void }) {
   const host = useRef<HTMLDivElement>(null), [hover, setHover] = useState<HTMLElement | null>(null), [, setTick] = useState(0)
   // A press on a grip that does not move selects the thing: a table row is its cells, anything else is the item.
   const select = (t: Thing) => {
@@ -53,7 +53,8 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: 
     })
     // The wrapper around the slide and the overlay: leaving the slide onto an overlay button is not leaving.
     const leave = () => { setHover(null); setCol(null) }, frame = slide.parentElement?.parentElement
-    const click = (e: MouseEvent) => { if (e.target instanceof Element && e.target.closest('[data-chart]')) onChart() }
+    // A pair's charts are numbered (data-chart="0", "1"); a chart slide's one host has no number.
+    const click = (e: MouseEvent) => { const host = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null; if (host) onChart(Number(host.dataset.chart || 0)) }
     const ro = new ResizeObserver(() => setTick((n) => n + 1))
     slide.addEventListener('pointermove', move); slide.addEventListener('pointermove', moveItem); slide.addEventListener('click', click); frame?.addEventListener('pointerleave', leave); ro.observe(slide)
     return () => { slide.removeEventListener('pointermove', move); slide.removeEventListener('pointermove', moveItem); frame?.removeEventListener('pointerleave', leave); slide.removeEventListener('click', click); ro.disconnect() }

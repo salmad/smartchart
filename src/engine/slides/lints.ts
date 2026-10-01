@@ -22,7 +22,7 @@ export function fitIssuesAt(slide: HTMLElement, style: Style): Located[] {
     if (b.b > bottom + 1) { push(`${name(el)} runs ${Math.round(b.b - bottom)}px into the bottom margin; shorten the body or drop the takeaway`, el); break; }
     if (b.r > right + 1) push(`${name(el)} runs ${Math.round(b.r - right)}px into the right margin`, el);
   }
-  slide.querySelectorAll(".notes, .cards.framed .card, .card, .hero > div, .sec-n, .hero-v, .cards .v, .title").forEach((el) => {
+  slide.querySelectorAll(".notes, .cards.framed .card, .card, .sec-n, .big-v, .q-text, .cards .v, .title").forEach((el) => {
     if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflow !== "visible") push(`${name(el)} content is taller than its box`, el);
     if (el.scrollWidth > el.clientWidth + 1) push(`${name(el)} “${(el.textContent ?? "").trim().slice(0, 24)}” is wider than its column`, el);
   });
@@ -92,8 +92,9 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
 
 /* Chart labels (spec 4.2a): none leaves the chart area, no two overlap, and no mark runs into the category labels. */
 export function chartLabelLints(slide: HTMLElement): string[] {
-  const host = slide.querySelector("[data-chart]");
-  if (!host) return [];
+  return [...slide.querySelectorAll("[data-chart]")].flatMap((host) => hostLabelLints(slide, host));
+}
+function hostLabelLints(slide: HTMLElement, host: Element): string[] {
   const R = slide.getBoundingClientRect(), k = R.width / 1920;
   const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
   const H = box(host), out: string[] = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));

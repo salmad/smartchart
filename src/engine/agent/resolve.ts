@@ -23,10 +23,17 @@ function focusItems(s: Slide): FocusItems | null {
       const c = s.chart ?? {};
       if (c.kind === "waterfall") { const items = c.items ?? []; return { names: items.map((x) => x.label), apply: one(items, flag) }; }
       if (c.kind === "timeline") { const rows = c.rows ?? []; return { names: rows.map((x) => x.label), apply: one(rows, flag) }; }
+      if (c.kind === "ranked") { const items = c.ranking ?? []; return { names: items.map((x) => x.label), apply: one(items, flag) }; }
+      if (c.kind === "matrix") { const pts = c.points ?? []; return { names: pts.map((x) => x.label), apply: one(pts, flag) }; }
       const series = c.series ?? [];
       return { names: series.map((x) => x.name), apply: one(series, (x, on) => { x.color = on ? "focus" : x.color === "contrast" ? "contrast" : "neutral"; }) };
     }
-    case "table": { const cols = (s.table?.columns ?? []).slice(1); return { names: cols.map((c) => c.label), apply: one(cols, flag) }; }
+    case "table": {
+      // A column or a row: whichever the title is about.
+      const cols = (s.table?.columns ?? []).slice(1), rows = s.table?.rows ?? [], all: { focus?: boolean }[] = [...cols, ...rows];
+      const first = (r: (typeof rows)[number]) => { const c = r.cells?.[0]; return plain(typeof c === "object" && c ? c.value : c ?? ""); };
+      return { names: [...cols.map((c) => c.label), ...rows.map(first)], apply: one(all, flag) };
+    }
     case "steps": { const steps = s.steps ?? []; return { names: steps.map((x) => x.title), apply: one(steps, flag) }; }
     case "cards": { const cards = s.cards ?? []; return s.framed ? null : { names: cards.map((c) => plain(c.title)), apply: one(cards, (c, on) => { c.tone = on ? "focus" : c.tone === "neg" ? "neg" : "neutral"; }) }; }
     default: return null;

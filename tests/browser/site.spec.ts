@@ -59,7 +59,8 @@ test('after sign-in, the prompt kept from the site opens the editor in the style
   await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, live: false } }))
   await page.addInitScript(() => sessionStorage.setItem('smartchart.pendingPrompt', JSON.stringify({ text: 'Revenue grew from £2.1m to £5.4m', style: 'pitch' })))
   await page.goto('/new')
-  await page.getByRole('button', { name: 'deck look' }).click()
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Look' }).click()
   await expect(page.getByRole('group', { name: 'Deck style' }).getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
 })
 
@@ -99,7 +100,7 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
   expect(fullReads).toEqual(['d_a']) // only the deck being opened is read in full
   const sidebar = page.getByRole('navigation', { name: 'Your decks' })
   await expect(sidebar.getByRole('listitem')).toHaveCount(2)
-  await expect(sidebar).toContainText('Ann')
+  await expect(page.getByRole('button', { name: 'Account: Ann' })).toBeVisible()
   await sidebar.getByText('Plan').click()
   await expect(page).toHaveURL(/\/d\/d_b$/)
   await sidebar.getByRole('listitem').filter({ hasText: 'Acme' }).hover()
@@ -112,7 +113,9 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
 
 /** A real edit, so the deck saves: opening a deck alone does not. */
 async function edit(page: Page) {
-  await page.getByRole('button', { name: 'deck look' }).click()
+  await page.locator('[data-strip-thumb]').first().waitFor()
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Look' }).click()
   await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Paper' }).click()
   await page.keyboard.press('Escape')
 }

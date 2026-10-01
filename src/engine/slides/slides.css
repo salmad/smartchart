@@ -60,7 +60,6 @@
 .nw { white-space: nowrap; }
 .hl-focus { color: var(--focus); } .hl-neg { color: var(--neg); } .hl-pos { color: var(--pos); }
 .slide strong { font-weight: 700; }
-.prose p + p { margin-top: 24px; }
 :where(.slide) :is(p, h4, li) { text-wrap: pretty; } /* no specificity: a block's own text-wrap (the subtitle's balance) wins */
 .spacer { flex: 1 0 40px; }
 .slide:has(.grow) .spacer { flex: 0 0 44px; }
@@ -111,28 +110,17 @@
 .split.has-head { grid-template-rows: auto 1fr; row-gap: 28px; }
 .split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > .notes { grid-column: 2; grid-row: 1 / span 2; }
 
-/* ═════════════ Number: argument left, one number right ═════════════ */
-.hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 96px; align-items: start; }
-.hero.solo { grid-template-columns: 1fr; }
-/* Consulting: the number leads on the left, the argument beside it; both share the space between the title and
-   the takeaway, centred in it, so a short argument never leaves an empty band above the takeaway. */
-.style-consulting .hero { flex: 1; align-content: center; align-items: center; }
-.style-consulting .hero:not(.solo) { grid-template-columns: .95fr 1.05fr; }
-.style-consulting .hero:not(.solo) .hero-n { order: -1; }
-.style-consulting .hero .hero-v { font-size: 300px; line-height: .9; }
-.hero-v { font-size: 250px; color: var(--focus); white-space: nowrap; }
-.hero-v.neg { color: var(--neg); } .hero-v.pos { color: var(--pos); }
-.style-pitch .hero-v { font-size: 290px; }
-/* Pitch: the number is the slide. Like every body it starts right under the head (L3), left; its caption and
-   the argument read beside it from its top. A short value (up to 4 characters) is drawn larger. */
-.style-pitch .hero:not(.solo) { flex: 1; grid-template: "v c" auto "v b" auto "v ." 1fr / auto 1fr; column-gap: 88px; row-gap: 20px; align-items: start; }
-.style-pitch .hero:not(.solo) .hero-n { display: contents; }
-.style-pitch .hero:not(.solo) .hero-v { grid-area: v; font-size: 380px; line-height: .8; }
-.style-pitch .hero:not(.solo) .hero-c { grid-area: c; margin-top: 0; padding-top: 22px; max-width: 820px; font-size: 40px; line-height: 1.25; color: var(--fg); }
-.style-pitch .hero:not(.solo) .prose { grid-area: b; max-width: 820px; color: var(--fg-2); }
-.style-pitch .hero:not(.solo) .hero-v.short { font-size: 540px; }
-.hero-c { margin-top: 22px; font-size: 32px; line-height: 1.35; color: var(--fg-2); max-width: 640px; }
-.style-pitch .hero.solo .hero-c { max-width: 1100px; font-size: 40px; }
+/* ═════════════ Number and quote: no title, the content is the slide ═════════════ */
+.t-number, .t-quote { justify-content: center; padding-bottom: 180px; }
+.big-v { font-size: 420px; line-height: .8; color: var(--focus); white-space: nowrap; }
+.big-v.neg { color: var(--neg); } .big-v.pos { color: var(--pos); }
+.style-consulting .big-v { font-weight: 800; font-stretch: 78%; font-size: 360px; }
+.big-c { margin-top: 56px; max-width: 1300px; font-size: 52px; line-height: 1.2; font-weight: 500; letter-spacing: -.012em; text-wrap: balance; }
+.q-mark { font-family: var(--display); font-weight: 900; font-size: 220px; line-height: .6; height: 96px; color: var(--focus); }
+.q-text { max-width: 1500px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 84px; line-height: 1.04; letter-spacing: -.01em; text-wrap: balance; }
+.style-pitch .q-text { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 104px; line-height: .9; }
+.q-who { margin-top: 56px; display: flex; align-items: center; gap: 24px; font-size: 34px; color: var(--fg-2); }
+.q-who::before { content: ""; flex: none; width: 64px; height: 4px; background: var(--focus); }
 
 /* ═════════════ Cards: icon lead, value lead, or two framed cards ═════════════ */
 .cards { display: grid; }
@@ -195,9 +183,33 @@
 .tbl .bold { font-weight: 700; }
 .tbl .italic { font-style: italic; }
 .tbl td small { display: block; margin-top: 2px; font: 400 17px/1.2 var(--mono); color: var(--muted); }
+/* A note under text (an action and its detail) is a sentence, not a working: set as body text under a headline. */
+.tbl td.al-text:has(small) > span { font-weight: 600; }
+.tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
+.tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
 .tbl tr.total td:first-child { color: var(--fg); }
+/* A highlighted row reads in the focus colour, a total row included; its notes stay quiet. */
+.tbl tr.focus td, .tbl tr.focus.total td:first-child { color: var(--focus); }
+/* Scores: Harvey balls and ticks drawn as one set; a highlighted row or column draws them in the focus colour. */
+.tbl td.score { text-align: center; vertical-align: middle; }
+.tbl tr:has(td.score) td { padding-top: 14px; padding-bottom: 14px; vertical-align: middle; }
+.mk-ball { display: inline-block; width: 36px; height: 36px; vertical-align: middle; }
+.mk-ball circle { fill: none; stroke: var(--fg-2); stroke-width: 2.5; }
+.mk-ball path, .mk-ball .full { fill: var(--fg-2); stroke: none; }
+.mk-tick { font: 600 32px/1 var(--text); }
+.mk-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.mk-tick.no { color: var(--muted); font-weight: 400; }
+.tbl :is(tr.focus, td.focus) .mk-ball circle { stroke: var(--focus); }
+.tbl :is(tr.focus, td.focus) :is(.mk-ball path, .mk-ball .full) { fill: var(--focus); }
+.tbl :is(tr.focus, td.focus) .mk-tick { color: var(--focus); }
+.style-pitch .mk-ball { width: 44px; height: 44px; }
+.mk-key { display: flex; gap: 32px; align-items: center; margin-top: 18px; font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mk-key span { display: inline-flex; align-items: center; gap: 12px; }
+.mk-key .mk-ball { width: 24px; height: 24px; }
+.style-pitch .mk-key { display: none; }
+.split.with-table > .main:has(.mk-key) .tbl { height: calc(100% - 60px); }
 .style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
 .style-pitch .tbl td { font-size: 34px; padding-top: 13px; padding-bottom: 13px; }
 .style-pitch .split .tbl td { font-size: 30px; }
@@ -213,6 +225,22 @@
 .style-pitch .steps .h { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 80px; line-height: .86; }
 .style-pitch .steps .t { font-size: 34px; padding-top: 28px; }
 .style-pitch .steps .d { padding: 20px 0; }
+
+/* ═════════════ Pair: two charts side by side, each with its caption and points ═════════════ */
+.pair { display: grid; grid-template-columns: 1fr 1fr; column-gap: 96px; }
+.pair > .half { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.pair > .half > .chart { flex: 1; min-height: 0; }
+.pair .bullets { margin-top: 24px; font-size: 26px; gap: 10px; }
+.style-pitch .pair .bullets { font-size: 30px; }
+
+/* ═════════════ Summary: the answer in the title, the points that prove it as numbered rows ═════════════ */
+.sum { display: grid; grid-auto-rows: 1fr; }
+.sum .row { display: grid; grid-template-columns: 76px 600px 1fr; column-gap: 48px; align-items: baseline; padding: 20px 0; border-top: 1px solid var(--line); }
+.sum .row:last-child { border-bottom: 1px solid var(--line); }
+.sum .n { font: 600 30px/1.2 var(--mono); color: var(--focus); }
+.sum .lead { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 46px; line-height: 1.02; }
+.sum .why { font-size: 28px; line-height: 1.38; color: var(--fg-2); }
+.style-pitch .sum .lead { font-size: 48px; }
 
 /* ═════════════ Charts (SVG for shapes, HTML for every label) ═════════════ */
 /* Chart text per style: --lbl for values and categories (13 pt consulting), --lbl-s for legend, ticks and captions. */
@@ -285,5 +313,23 @@
 .ms { fill: var(--fg); }
 .ms-line { stroke: var(--fg-2); stroke-width: 1.5; stroke-dasharray: 3 6; }
 .ms-lbl { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
+/* Ranked bars: labels right-aligned in their column, values at the bar ends. */
+.a-ml { transform: translate(0, -50%); }
+.rk-lbl { transform: translate(0, -50%); white-space: normal; text-align: right; font: 500 calc(var(--lbl) + 2px)/1.2 var(--text); color: var(--fg-2); }
+.rk-lbl.focus { color: var(--fg); font-weight: 600; }
+.rk-val.c-focus { font-weight: 600; }
+/* Matrix: a cross at the middle, the focus quadrant tinted, quiet dots, one focus dot with a halo. */
+.mx-axis { fill: none; stroke: var(--line-2); stroke-width: 2; }
+.mx-mid { stroke: var(--line); stroke-width: 1.5; }
+.mx-tint { fill: color-mix(in srgb, var(--focus) 8%, transparent); }
+.mx-dot { fill: var(--muted); }
+.mx-dot.focus { fill: var(--focus); }
+.mx-halo { fill: color-mix(in srgb, var(--focus) 22%, transparent); }
+.mx-q { font: 500 var(--lbl-s)/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.mx-q.focus { color: var(--focus-text, var(--focus)); }
+.mx-ax { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mx-ax.name { font-weight: 600; color: var(--fg-2); }
+.mx-lbl { font: 500 var(--lbl)/1.1 var(--text); color: var(--fg-2); }
+.mx-lbl.focus { font-size: calc(var(--lbl) + 4px); font-weight: 700; color: var(--fg); }
 .area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
 .theme-paper .area-top { stop-opacity: .16; }

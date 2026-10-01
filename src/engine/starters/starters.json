@@ -31,6 +31,58 @@
   }
  },
  {
+  "id": "summary",
+  "group": "open",
+  "label": "Executive summary",
+  "blurb": "The answer, and the points that prove it",
+  "consulting": {
+   "template": "summary",
+   "kicker": "Executive summary",
+   "title": "Acme can build a [[£120m loan book]] by 2030 by bundling SME credit with banking",
+   "points": [
+    {
+     "title": "SMEs fund growth on personal credit",
+     "text": "A third need revolving credit; no provider pairs a real limit with a business account."
+    },
+    {
+     "title": "Bundling fixes adverse selection",
+     "text": "Spend and rewards attract good borrowers; live bank data underwrites them in five minutes."
+    },
+    {
+     "title": "The economics work at scale",
+     "text": "Interchange overtakes interest by year 4; gross margin reaches 38% in year 5."
+    },
+    {
+     "title": "£5m funds the first 18 months",
+     "text": "A £10m book and a drawn warehouse facility prove the model before Series A."
+    }
+   ]
+  },
+  "pitch": {
+   "template": "summary",
+   "title": "In short",
+   "subtitle": "The card that runs the business: [[£120m by 2030.]]",
+   "points": [
+    {
+     "title": "Founders borrow personally",
+     "text": "No one pairs a real limit with a business account."
+    },
+    {
+     "title": "Rewards bring good borrowers",
+     "text": "Live bank data approves them in five minutes."
+    },
+    {
+     "title": "Interchange carries the margin",
+     "text": "Gross margin reaches 38% by year 5."
+    },
+    {
+     "title": "£5m proves it",
+     "text": "A £10m book and a warehouse line in 18 months."
+    }
+   ]
+  }
+ },
+ {
   "id": "chart-notes",
   "group": "trend",
   "label": "Trend with reasons",
@@ -175,6 +227,149 @@
   }
  },
  {
+  "id": "pair",
+  "group": "trend",
+  "label": "Two charts",
+  "blurb": "Two measures, each with its own chart",
+  "consulting": {
+   "template": "pair",
+   "kicker": "Market",
+   "title": "The market grows [[a third]] by 2030 while Acme takes 7% of it",
+   "charts": [
+    {
+     "caption": "UK SME card spend · £bn",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "£{v}bn",
+      "series": [
+       {
+        "name": "Market",
+        "mark": "bar",
+        "color": "neutral",
+        "values": [
+         32,
+         36,
+         41,
+         46,
+         52
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Grows 13% a year as cards replace transfers"
+     ]
+    },
+    {
+     "caption": "Acme share of spend · %",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "{v}%",
+      "series": [
+       {
+        "name": "Acme share",
+        "mark": "bar",
+        "color": "focus",
+        "values": [
+         0.5,
+         1.5,
+         3,
+         5,
+         7
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Base case; the downside reaches 4% by 2030"
+     ]
+    }
+   ],
+   "takeaway": "£52bn × 7% is a **£3.6bn** spend book by 2030.",
+   "source": "Acme market model, base case."
+  },
+  "pitch": {
+   "template": "pair",
+   "title": "Two curves",
+   "subtitle": "A growing market, [[a rising share.]]",
+   "charts": [
+    {
+     "caption": "UK SME card spend · £bn",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "£{v}bn",
+      "series": [
+       {
+        "name": "Market",
+        "mark": "bar",
+        "color": "neutral",
+        "values": [
+         32,
+         36,
+         41,
+         46,
+         52
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Grows 13% a year"
+     ]
+    },
+    {
+     "caption": "Acme share of spend · %",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "{v}%",
+      "series": [
+       {
+        "name": "Acme share",
+        "mark": "bar",
+        "color": "focus",
+        "values": [
+         0.5,
+         1.5,
+         3,
+         5,
+         7
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "7% by 2030"
+     ]
+    }
+   ],
+   "takeaway": "A **£3.6bn** spend book by 2030."
+  }
+ },
+ {
   "id": "cards-icon",
   "group": "case",
   "label": "Three pillars",
@@ -309,6 +504,22 @@
      "text": "Good businesses arrive first. Credit follows."
     }
    ]
+  }
+ },
+ {
+  "id": "quote",
+  "group": "case",
+  "label": "Quote",
+  "blurb": "A customer makes the point in their own words",
+  "consulting": {
+   "template": "quote",
+   "quote": "We put £40k a month on my personal card, because no bank would give the business a real limit.",
+   "who": "Founder, 12-person logistics firm · Acme interviews, 2026"
+  },
+  "pitch": {
+   "template": "quote",
+   "quote": "No bank would give the business a real limit.",
+   "who": "Founder, 12-person logistics firm"
   }
  },
  {
@@ -678,6 +889,375 @@
      "title": "Charge cards: £550 a year"
     }
    ]
+  }
+ },
+ {
+  "id": "ranked",
+  "group": "compare",
+  "label": "Ranking",
+  "blurb": "Many named items, largest first",
+  "consulting": {
+   "template": "chart",
+   "kicker": "Customer research",
+   "title": "[[Low limits]] are the top reason SMEs turn down a business card, ahead of fees",
+   "caption": "Reasons for turning down a card · % of founders",
+   "chart": {
+    "kind": "ranked",
+    "format": "{v}%",
+    "ranking": [
+     {
+      "label": "Limit too low",
+      "value": 46,
+      "focus": true
+     },
+     {
+      "label": "Annual fee",
+      "value": 38
+     },
+     {
+      "label": "Personal guarantee",
+      "value": 31
+     },
+     {
+      "label": "Slow approval",
+      "value": 27
+     },
+     {
+      "label": "Poor rewards",
+      "value": 19
+     },
+     {
+      "label": "Separate from the bank account",
+      "value": 17
+     },
+     {
+      "label": "Other",
+      "value": 6
+     }
+    ]
+   },
+   "takeaway": "A £250k limit answers the top objection; **no annual fee** the second.",
+   "footnote": "Multiple answers allowed.",
+   "source": "Acme founder survey, n = 1,200, August 2026."
+  },
+  "pitch": {
+   "template": "chart",
+   "title": "The objection",
+   "subtitle": "[[Low limits]], not fees, lose the customer.",
+   "chart": {
+    "kind": "ranked",
+    "format": "{v}%",
+    "ranking": [
+     {
+      "label": "Limit too low",
+      "value": 46,
+      "focus": true
+     },
+     {
+      "label": "Annual fee",
+      "value": 38
+     },
+     {
+      "label": "Personal guarantee",
+      "value": 31
+     },
+     {
+      "label": "Slow approval",
+      "value": 27
+     },
+     {
+      "label": "Poor rewards",
+      "value": 19
+     },
+     {
+      "label": "Separate from the bank account",
+      "value": 17
+     },
+     {
+      "label": "Other",
+      "value": 6
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "matrix",
+  "group": "compare",
+  "label": "2×2 matrix",
+  "blurb": "Where each option sits on two dimensions",
+  "consulting": {
+   "template": "chart",
+   "kicker": "Competition",
+   "title": "Acme is the only SME card that pairs [[a high limit with real rewards]]",
+   "caption": "SME business cards · placed on published terms",
+   "chart": {
+    "kind": "matrix",
+    "axes": {
+     "x": "Rewards",
+     "y": "Credit limit"
+    },
+    "quadrants": [
+     "Lenders",
+     "The gap",
+     "Basic cards",
+     "Rewards cards"
+    ],
+    "points": [
+     {
+      "label": "Credit-only lender",
+      "x": 18,
+      "y": 78
+     },
+     {
+      "label": "Charge card",
+      "x": 40,
+      "y": 62
+     },
+     {
+      "label": "High-street bank",
+      "x": 22,
+      "y": 30
+     },
+     {
+      "label": "Neobank (debit)",
+      "x": 78,
+      "y": 16
+     },
+     {
+      "label": "Travel card",
+      "x": 84,
+      "y": 38
+     },
+     {
+      "label": "Acme",
+      "x": 82,
+      "y": 82,
+      "focus": true
+     }
+    ]
+   },
+   "notes": [
+    {
+     "title": "Lenders: limit only",
+     "text": "Credit-only lenders and charge cards offer £50k, no rewards."
+    },
+    {
+     "title": "Cards: rewards only",
+     "text": "Neobanks and travel cards pay back but lend little."
+    },
+    {
+     "title": "Nobody offers both",
+     "text": "Acme’s £250k limit and 1% back sit alone in the top right."
+    }
+   ],
+   "footnote": "Limit: highest published limit. Rewards: cashback or points value per £ spent.",
+   "source": "Provider websites, September 2026."
+  },
+  "pitch": {
+   "template": "chart",
+   "title": "The gap",
+   "subtitle": "High limit and real rewards: [[only Acme.]]",
+   "chart": {
+    "kind": "matrix",
+    "axes": {
+     "x": "Rewards",
+     "y": "Credit limit"
+    },
+    "quadrants": [
+     "Lenders",
+     "The gap",
+     "Basic cards",
+     "Rewards cards"
+    ],
+    "points": [
+     {
+      "label": "Credit-only lender",
+      "x": 18,
+      "y": 78
+     },
+     {
+      "label": "Charge card",
+      "x": 40,
+      "y": 62
+     },
+     {
+      "label": "High-street bank",
+      "x": 22,
+      "y": 30
+     },
+     {
+      "label": "Neobank (debit)",
+      "x": 78,
+      "y": 16
+     },
+     {
+      "label": "Travel card",
+      "x": 84,
+      "y": 38
+     },
+     {
+      "label": "Acme",
+      "x": 82,
+      "y": 82,
+      "focus": true
+     }
+    ]
+   },
+   "takeaway": "The top right is empty: [[Acme enters alone.]]"
+  }
+ },
+ {
+  "id": "scoring",
+  "group": "compare",
+  "label": "Scorecard",
+  "blurb": "Options scored against what matters",
+  "consulting": {
+   "template": "table",
+   "kicker": "Competition",
+   "title": "Only Acme scores well on [[all four things SMEs ask for]]",
+   "caption": "SME business cards · scored on published terms",
+   "table": {
+    "columns": [
+     {
+      "label": "Provider"
+     },
+     {
+      "label": "Credit limit"
+     },
+     {
+      "label": "Rewards"
+     },
+     {
+      "label": "Approval speed"
+     },
+     {
+      "label": "No fees"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "High-street bank",
+       "◑",
+       "○",
+       "◔",
+       "◑"
+      ]
+     },
+     {
+      "cells": [
+       "Charge card",
+       "◕",
+       "◕",
+       "◑",
+       "○"
+      ]
+     },
+     {
+      "cells": [
+       "Neobank",
+       "○",
+       "◑",
+       "●",
+       "●"
+      ]
+     },
+     {
+      "cells": [
+       "Credit-only lender",
+       "◕",
+       "○",
+       "◑",
+       "◔"
+      ]
+     },
+     {
+      "cells": [
+       "Acme",
+       "●",
+       "◕",
+       "●",
+       "●"
+      ],
+      "focus": true
+     }
+    ]
+   },
+   "takeaway": "Each rival is strong on one or two criteria; **none on all four**.",
+   "footnote": "Scores: Acme assessment of published terms, September 2026."
+  },
+  "pitch": {
+   "template": "table",
+   "title": "Scorecard",
+   "subtitle": "Every rival misses one. [[Acme misses none.]]",
+   "table": {
+    "columns": [
+     {
+      "label": "Provider"
+     },
+     {
+      "label": "Credit limit"
+     },
+     {
+      "label": "Rewards"
+     },
+     {
+      "label": "Approval speed"
+     },
+     {
+      "label": "No fees"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "High-street bank",
+       "◑",
+       "○",
+       "◔",
+       "◑"
+      ]
+     },
+     {
+      "cells": [
+       "Charge card",
+       "◕",
+       "◕",
+       "◑",
+       "○"
+      ]
+     },
+     {
+      "cells": [
+       "Neobank",
+       "○",
+       "◑",
+       "●",
+       "●"
+      ]
+     },
+     {
+      "cells": [
+       "Credit-only lender",
+       "◕",
+       "○",
+       "◑",
+       "◔"
+      ]
+     },
+     {
+      "cells": [
+       "Acme",
+       "●",
+       "◕",
+       "●",
+       "●"
+      ],
+      "focus": true
+     }
+    ]
+   }
   }
  },
  {
@@ -1570,6 +2150,158 @@
     }
    ],
    "takeaway": "The ask: [[£5m for 18 months.]]"
+  }
+ },
+ {
+  "id": "next-steps",
+  "group": "plan",
+  "label": "Next steps",
+  "blurb": "Who does what, by when",
+  "consulting": {
+   "template": "table",
+   "kicker": "Next steps",
+   "title": "Four actions this quarter put the [[first 100 cards]] in customers’ hands by Q1 2027",
+   "table": {
+    "columns": [
+     {
+      "label": "Action"
+     },
+     {
+      "label": "Owner"
+     },
+     {
+      "label": "By"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       {
+        "value": "Sign the issuing partner",
+        "note": "Term sheet agreed; legal open"
+       },
+       "CEO",
+       "15 Oct"
+      ],
+      "focus": true
+     },
+     {
+      "cells": [
+       {
+        "value": "Close the £5m seed round",
+        "note": "Lead confirmed; allocations next"
+       },
+       "CFO",
+       "31 Oct"
+      ]
+     },
+     {
+      "cells": [
+       {
+        "value": "Hire the head of credit",
+        "note": "Two finalists; owns underwriting"
+       },
+       "CEO",
+       "15 Nov"
+      ]
+     },
+     {
+      "cells": [
+       {
+        "value": "Open the warehouse process",
+        "note": "Shortlist three lenders"
+       },
+       "CFO",
+       "Dec"
+      ]
+     }
+    ]
+   },
+   "takeaway": "Only the first needs **a board decision**; the rest are in hand.",
+   "footnote": "Dates are target completion; owners are accountable."
+  },
+  "pitch": {
+   "template": "table",
+   "title": "What’s next",
+   "subtitle": "First 100 cards by [[Q1 2027.]]",
+   "table": {
+    "columns": [
+     {
+      "label": "Action"
+     },
+     {
+      "label": "Owner"
+     },
+     {
+      "label": "By"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       {
+        "value": "Sign the issuing partner",
+        "note": "Term sheet agreed; legal open"
+       },
+       "CEO",
+       "15 Oct"
+      ],
+      "focus": true
+     },
+     {
+      "cells": [
+       {
+        "value": "Close the £5m seed round",
+        "note": "Lead confirmed; allocations next"
+       },
+       "CFO",
+       "31 Oct"
+      ]
+     },
+     {
+      "cells": [
+       {
+        "value": "Hire the head of credit",
+        "note": "Two finalists; owns underwriting"
+       },
+       "CEO",
+       "15 Nov"
+      ]
+     },
+     {
+      "cells": [
+       {
+        "value": "Open the warehouse process",
+        "note": "Shortlist three lenders"
+       },
+       "CFO",
+       "Dec"
+      ]
+     }
+    ]
+   },
+   "takeaway": "Only the first needs [[a board decision.]]"
+  }
+ },
+ {
+  "id": "number",
+  "group": "number",
+  "label": "One number",
+  "blurb": "A figure that makes the point on its own",
+  "consulting": {
+   "template": "number",
+   "number": {
+    "value": "£1.4bn",
+    "caption": "of SME spend goes on [[personal cards]] every year, outside any business account."
+   },
+   "source": "Bank of England SME finance survey, 2026."
+  },
+  "pitch": {
+   "template": "number",
+   "number": {
+    "value": "£1.4bn",
+    "caption": "a year on [[personal cards]], outside the business."
+   }
   }
  },
  {

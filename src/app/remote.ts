@@ -11,7 +11,7 @@ const SAVE_FAILED: Record<number, string> = {
 }
 
 /** A deck saved before chats were kept apart has `chat: null` and its conversation inside `data`. */
-interface Row { id: string; name: string; updated: number; rev?: number; data: SavedDeck; chat?: Partial<SavedDeck> | null }
+interface Row { id: string; name: string; named?: boolean; updated: number; rev?: number; data: SavedDeck; chat?: Partial<SavedDeck> | null }
 
 export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: { fetcher?: typeof fetch; onSignedOut?: () => void } = {}): DeckRepo {
   const call = async (query: string, init?: RequestInit) => {
@@ -48,15 +48,16 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
       const row = (await r.json()) as Row
       revs.set(id, row.rev ?? 0)
       // `chat` wins when present; an older deck has the conversation in `data`.
-      const got: SavedDeck = { ...row.data, ...(row.chat ?? {}), id: row.id }
+      // The name lives on the row: set by the maker here, or by an agent, it is `named`; otherwise it follows the cover.
+      const got: SavedDeck = { ...row.data, ...(row.chat ?? {}), id: row.id, name: row.named ? row.name : null }
       bases.set(id, structuredClone(got))
       return got
     }),
     save: (deck) => inOrder(deck.id, async () => {
       try {
-        const { history, messages, working, ...look } = deck
+        const { history, messages, working, name: _name, ...look } = deck
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: deck.id, name: deckName(deck), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0 }) })
+          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0 }) })
         if (r.ok) {
           revs.set(deck.id, ((await r.json().catch(() => null)) as { rev?: number } | null)?.rev ?? (revs.get(deck.id) ?? 0) + 1)
           bases.set(deck.id, structuredClone(deck))

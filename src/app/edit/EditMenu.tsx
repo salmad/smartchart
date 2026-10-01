@@ -10,7 +10,7 @@ import { targetAt } from './selection'
 import type { SlideEdit } from './useSlideEdit'
 
 const GROUPS: { id: Action['group']; label: string }[] = [
-  { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Column format' },
+  { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Format' }, { id: 'mark', label: 'Score' },
 ]
 const SYMBOLS: Record<string, string> = { Mod: '⌘', Shift: '⇧', Alt: '⌥', Up: '↑', Down: '↓', Left: '←', Right: '→', Backspace: '⌫' }
 const keys = (s?: string) => s?.split('+').map((k) => SYMBOLS[k] ?? k).join('')
@@ -25,8 +25,8 @@ function clip(slide: HTMLElement | null, t: Target, what: 'cut' | 'copy' | 'past
   void navigator.clipboard.readText().then((text) => { f.focus(); selectRange(f, t.from, t.to); document.execCommand('insertText', false, text.replace(/\s+/g, ' ')) }).catch(() => { /* clipboard blocked */ })
 }
 
-export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: () => void; children: ReactNode }) {
-  const [target, setTarget] = useState<Target>({ kind: 'slide' })
+export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void; children: ReactNode }) {
+  const [target, setTarget] = useState<Target>({ kind: 'slide' }), [chartAt, setChartAt] = useState(0)
   const actions = actionsFor(target, edit.draft, deckStyle)
   const field = target.kind === 'text'
   return (
@@ -37,6 +37,8 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
           if (e.shiftKey) { e.stopPropagation(); return }
           const t = targetAt(e.target instanceof Element ? e.target : null, edit.target)
           setTarget(t); edit.setTarget(t)
+          // The chart under the pointer: a pair's left or right chart.
+          setChartAt(Number((e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null)?.dataset.chart || 0))
         }}>
         <div className="absolute inset-0">{children}</div>
       </ContextMenuTrigger>
@@ -54,15 +56,15 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
           return (
             <div key={g.id}>
               {before && <ContextMenuSeparator />}
-              {g.id === 'format' && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">{g.label}</ContextMenuLabel>}
+              {(g.id === 'format' || g.id === 'mark') && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">{g.label}</ContextMenuLabel>}
               {items.map((a) => a.checked !== undefined
                 ? <ContextMenuCheckboxItem key={a.id} checked={a.checked} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuCheckboxItem>
                 : <ContextMenuItem key={a.id} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuItem>)}
             </div>
           )
         })}
-        {(edit.draft.chart || edit.draft.table) && <>{actions.length > 0 && <ContextMenuSeparator />}<ContextMenuItem onSelect={() => { setTimeout(onChart, 0) }}>{edit.draft.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
-        {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">Right-click a card, row, column or text</ContextMenuLabel>}
+        {(edit.draft.chart || edit.draft.table || edit.draft.charts) && <>{actions.length > 0 && <ContextMenuSeparator />}<ContextMenuItem onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
+        {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && !edit.draft.charts && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">Right-click a card, row, column or text</ContextMenuLabel>}
       </ContextMenuContent>
     </ContextMenu>
   )

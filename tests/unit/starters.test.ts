@@ -3,14 +3,14 @@ import { STARTERS, GROUPS, starterSlide } from '@/engine/starters'
 import { validateDeck } from '@/engine/slides/schema'
 import { stressFor } from '../fixtures/stress'
 
-test('count lock: 16 starters, unique ids, known groups', () => {
-  expect(STARTERS).toHaveLength(16)
-  expect(new Set(STARTERS.map((s) => s.id)).size).toBe(16)
+test('count lock: 24 starters, unique ids, known groups', () => {
+  expect(STARTERS).toHaveLength(24)
+  expect(new Set(STARTERS.map((s) => s.id)).size).toBe(24)
   for (const s of STARTERS) expect(GROUPS.map((g) => g.id)).toContain(s.group)
 })
-test('stress fixture keeps 24 slides per style', () => {
-  expect(stressFor('consulting')).toHaveLength(24)
-  expect(stressFor('pitch')).toHaveLength(24)
+test('stress fixture keeps 33 slides per style', () => {
+  expect(stressFor('consulting')).toHaveLength(33)
+  expect(stressFor('pitch')).toHaveLength(33)
 })
 test('every starter validates with no errors or warnings, both styles', () => {
   for (const style of ['consulting', 'pitch'] as const) {

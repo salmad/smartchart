@@ -101,9 +101,13 @@ exports[`registry > the three views agree (published contract: only additions al
           "description": "A template id from list_templates.",
           "enum": [
             "chart",
+            "pair",
             "table",
+            "number",
+            "quote",
             "steps",
             "cards",
+            "summary",
             "cover",
             "section",
           ],

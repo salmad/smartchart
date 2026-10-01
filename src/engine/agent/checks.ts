@@ -17,9 +17,12 @@ function focusCount(s: Slide): number | null {
       const kind = s.chart?.kind || "bars";
       if (kind === "waterfall") return (s.chart?.items || []).filter((x) => x?.focus).length;
       if (kind === "timeline") return (s.chart?.rows || []).filter((x) => x?.focus).length;
+      if (kind === "ranked") return (s.chart?.ranking || []).filter((x) => x?.focus).length;
+      if (kind === "matrix") return (s.chart?.points || []).filter((x) => x?.focus).length;
       return (s.chart?.series || []).filter((x) => x.color === "focus").length;
     }
-    case "table": return (s.table?.columns || []).filter((c) => c.focus).length;
+    case "pair": return (s.charts || []).reduce((sum, x) => sum + (focusCount({ template: "chart", title: "", chart: x?.chart }) ?? 0), 0);
+    case "table": return (s.table?.columns || []).filter((c) => c.focus).length + (s.table?.rows || []).filter((r) => r.focus).length;
     case "steps": return (s.steps || []).filter((x) => x.focus).length;
     case "cards": return s.framed ? 1 : (s.cards || []).filter((c) => c.tone === "focus").length;
     default: return null;
@@ -32,8 +35,8 @@ function parallelTexts(s: Slide): string[] {
   return (s.notes || []).map((n) => plain(n.title + " " + (n.text || "")));
 }
 
-// A timeline is a plan, not figures: no unit, source or quantified-title rules.
-const isTimeline = (s: Slide) => s.template === "chart" && s.chart?.kind === "timeline";
+// A timeline is a plan and a matrix a judgement, not figures: no unit, source or quantified-title rules.
+const isTimeline = (s: Slide) => s.template === "chart" && (s.chart?.kind === "timeline" || s.chart?.kind === "matrix");
 const hasFigures = (s: Slide) => (["chart", "table", "number"].includes(s.template) && !isTimeline(s)) || (s.template === "cards" && (s.cards || []).some((c) => c.value));
 
 const YEAR = (n: number, raw: string) => Number.isInteger(n) && n >= 1900 && n <= 2100 && !/[,.]/.test(raw);

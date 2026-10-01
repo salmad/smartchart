@@ -90,6 +90,26 @@ test('the chart flips to its grid and a value edit lands', async ({ page }) => {
   expect((await saved(page, 1)).chart?.series?.[0]?.values).toEqual([10, 16])
 })
 
+test('two charts: clicking the right chart opens its own data, and the edit lands there only', async ({ page }) => {
+  const cats = ['2026', '2027']
+  const pairSlide = { template: 'pair', title: 'The market grows while Acme takes a share of it', charts: [
+    { caption: 'Market · £bn', chart: { categories: cats, format: '£{v}bn', series: [{ name: 'Market', mark: 'bar', color: 'neutral', values: [32, 36] }] } },
+    { caption: 'Share · %', chart: { categories: cats, format: '{v}%', series: [{ name: 'Share', mark: 'bar', color: 'focus', values: [1, 2] }] } }] }
+  await open(page)
+  await page.evaluate((s) => window.__journey?.load([s] as never, 'consulting'), pairSlide)
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart="1"]').click()
+  await expect(sheetCell(page, 1, 1)).toHaveText('2')
+  await sheetCell(page, 1, 1).click()
+  await page.keyboard.type('5')
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  const s = await saved(page)
+  expect(s.charts?.[1].chart.series?.[0]?.values).toEqual([1, 5])
+  expect(s.charts?.[0].chart.series?.[0]?.values).toEqual([32, 36])
+})
+
 test('switching template shows what is kept and what goes', async ({ page }) => {
   await open(page)
   await page.keyboard.press('e')

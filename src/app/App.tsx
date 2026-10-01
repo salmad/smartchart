@@ -22,12 +22,14 @@ import { STALE, findDeck } from './remote'
 import { useLiveDeck } from './live'
 import type { Attached } from './files'
 import { Decks } from './components/Decks'
+import { usePanel } from './panel'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const notSaved = (why: string) => `Couldn’t save. ${why} Retrying; a copy is kept in this browser until it saves.`
 const MISSING = 'That deck isn’t in your account.'
 const DECKS_OPEN = 'smartchart.decksOpen'
+const CHAT_OPEN = 'smartchart.chatOpen'
 
 interface Props {
   route: Route
@@ -45,14 +47,9 @@ export function App({ route, account, repo, backup }: Props) {
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
   const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
-  // Your decks down the left, open unless hidden; the choice is remembered in this browser.
-  const [decksOpen, setDecksOpen] = useState(() => { try { return localStorage.getItem(DECKS_OPEN) !== '0' } catch { return true } })
-  const toggleDecks = useCallback(() => setDecksOpen((o) => { try { localStorage.setItem(DECKS_OPEN, o ? '0' : '1') } catch { /* storage blocked */ } return !o }), [])
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); toggleDecks() } }
-    document.addEventListener('keydown', key)
-    return () => document.removeEventListener('keydown', key)
-  }, [toggleDecks])
+  // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
+  const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
+  const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   const deck = deckOf(s)
 
   const measurer = useCallback((): Measurer => {
@@ -192,6 +189,13 @@ export function App({ route, account, repo, backup }: Props) {
     go(path)
   }, [app, persist])
   const onDeckDeleted = useCallback((id: string) => { if (id === app.getState().deckId) { newDeck(); go('/new') } }, [app, newDeck])
+  // Delete from the deck menu: the open deck goes, and a new one starts in its place.
+  const deleteDeck = useCallback(async () => {
+    const id = app.getState().deckId
+    if (!id || locked(app.getState())) return
+    if (await repo.remove(id)) onDeckDeleted(id)
+    else say('Couldn’t delete the deck. Try again.')
+  }, [app, repo, onDeckDeleted, say])
 
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])
@@ -217,11 +221,15 @@ export function App({ route, account, repo, backup }: Props) {
     onAccent: (accent: string | null) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { accent } }),
     onPresent: present,
     onAdd: () => { if (!locked(app.getState()) && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
-    decksOpen, onToggleDecks: toggleDecks,
+    decksOpen, onToggleDecks: toggleDecks, chatOpen, onToggleChat: toggleChat,
     onSite: () => leaveTo('/home'),
     // A share link lives on the server copy: the dev account keeps its decks in this browser.
     shareId: backup ? s.deckId : null,
     onPdf: () => { if (app.getState().items.length) setPrinting(true) },
+    onRename: (name: string) => { if (!locked(app.getState())) app.dispatch({ type: 'set', patch: { name } }) },
+    // Only a deck that has been saved can be deleted: one with slides.
+    onDelete: s.deckId && s.items.length ? () => void deleteDeck() : null,
+    account,
   }
 
   const onClear = useCallback(() => {
@@ -258,9 +266,9 @@ export function App({ route, account, repo, backup }: Props) {
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
-            decks={decksOpen && <Decks repo={repo} account={account} current={{ id: s.deckId, name: deckName({ items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
+            decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
-      {printing && <PrintDeck deck={deck} name={pdfName(deckName({ items: s.items }))} onDone={() => setPrinting(false)} />}
+      {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>

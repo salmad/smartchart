@@ -1,6 +1,6 @@
 /* The public deck (DeckDoc) and the app's saved data (SavedDeck without the chat). Tools read and write DeckDoc;
    the service turns it back into the app's shape, keeping fields tools don't own (current, updated). */
-import { plain, upgrade } from "../slides/schema.js";
+import { headline, upgrade } from "../slides/schema.js";
 import type { Slide, Style, Theme } from "../types.js";
 import type { Check } from "../agent/checks.js";
 import { ToolError, type DeckDoc, type DocSlide } from "./types.js";
@@ -21,7 +21,7 @@ export function dataFromDoc(doc: DeckDoc, previous: unknown): Record<string, unk
 }
 
 export const storylineRows = (doc: DeckDoc) =>
-  doc.slides.map((s, i) => ({ slideId: s.id, n: i + 1, template: s.slide.template, title: plain(s.slide.title ?? ""), issues: s.issues.length }));
+  doc.slides.map((s, i) => ({ slideId: s.id, n: i + 1, template: s.slide.template, title: headline(s.slide), issues: s.issues.length }));
 
 export function slideAt(doc: DeckDoc, slideId: string): { item: DocSlide; index: number } {
   const index = doc.slides.findIndex((s) => s.id === slideId);

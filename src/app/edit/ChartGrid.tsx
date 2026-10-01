@@ -10,8 +10,8 @@ import { Gantt } from './Gantt'
 import { Sheet } from './Sheet'
 import type { SlideEdit } from './useSlideEdit'
 
-export function ChartGrid({ edit, deckStyle, onClose }: { edit: SlideEdit; deckStyle: Style; onClose: () => void }) {
-  const [note, setNote] = useState(''), model = sheetFor(edit.draft, deckStyle)
+export function ChartGrid({ edit, deckStyle, which = 0, onClose }: { edit: SlideEdit; deckStyle: Style; which?: number; onClose: () => void }) {
+  const [note, setNote] = useState(''), model = sheetFor(edit.draft, deckStyle, which)
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent data-chart-grid
@@ -22,7 +22,7 @@ export function ChartGrid({ edit, deckStyle, onClose }: { edit: SlideEdit; deckS
           <DialogTitle>{edit.draft.table ? 'Table data' : 'Chart data'}</DialogTitle>
           <DialogDescription>Type to replace, Enter to edit, paste from a spreadsheet. The slide redraws when you close this.</DialogDescription>
         </DialogHeader>
-        {edit.draft.chart?.kind === 'timeline' ? <Gantt edit={edit} deckStyle={deckStyle} /> : model ? <Sheet edit={edit} model={model} deckStyle={deckStyle} note={note} onNote={setNote} /> : <p className="text-ink-3">This chart has no table view.</p>}
+        {edit.draft.chart?.kind === 'timeline' ? <Gantt edit={edit} deckStyle={deckStyle} /> : model ? <Sheet edit={edit} model={model} deckStyle={deckStyle} which={which} note={note} onNote={setNote} /> : <p className="text-ink-3">This chart has no table view.</p>}
         <div className="flex"><Button className="ml-auto" onClick={onClose}>Done</Button></div>
       </DialogContent>
     </Dialog>

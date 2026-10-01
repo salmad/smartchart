@@ -4,6 +4,7 @@ import { MENU, NOTE_POINTS, plain } from "./schema.js";
 import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
+import { markKinds, markOf, type Mark } from "./marks.js";
 export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -43,6 +44,16 @@ const splitHTML = (s: Slide, main: string, extra = "") => {
   return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${notesHTML(s.notes ?? [])}</div>`;
 };
 
+const ball = (v: number) => {
+  if (v >= 4) return `<svg class="mk-ball" viewBox="0 0 40 40" aria-hidden="true"><circle class="full" cx="20" cy="20" r="18"/></svg>`;
+  const a = v / 4 * 2 * Math.PI, x = 20 + 18 * Math.sin(a), y = 20 - 18 * Math.cos(a);
+  return `<svg class="mk-ball" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18"/>${v ? `<path d="M20,20V2A18,18 0 ${v > 2 ? 1 : 0},1 ${x},${y}Z"/>` : ""}</svg>`;
+};
+/* The cell keeps its own character as text (hidden under a drawn ball), so the field still reads as what was written. */
+const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<span class="mk-txt">${esc(raw)}</span>` : `<span class="mk-tick${m.kind === "cross" ? " no" : ""}">${esc(raw)}</span>`);
+/** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
+const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
+
 const cellValue = (c: Cell | undefined) => plain(c && typeof c === "object" ? c.value : c ?? "").trim();
 const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
 
@@ -52,7 +63,8 @@ export function columnAlign(t: Table): Align[] {
   return t.columns.map((_, j) => {
     if (j === 0) return "text";
     const vals = t.rows.map((r) => cellValue(r.cells?.[j])).filter((v) => v && v !== "—" && v !== "–" && v !== "-");
-    if (!vals.length || vals.every((v) => v.length <= 3 && !/\d/.test(v))) return "sym";
+    // Symbols are marks (✓, —, ●) or yes/no; a short word such as "CEO" is text.
+    if (!vals.length || vals.every((v) => v.length <= 3 && !/\d/.test(v) && (!/\p{L}/u.test(v) || /^(yes|no|y|n|n\/a)$/i.test(v)))) return "sym";
     return vals.every((v) => NUMERIC.test(v)) ? "num" : "text";
   });
 }
@@ -60,11 +72,13 @@ export function columnAlign(t: Table): Align[] {
 function tableHTML(t: Table) {
   const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const cell = (c: Cell, r: number, j: number) => { const p = `table.rows[${r}].cells[${j}]`;
+    const text = typeof c === "object" && c ? c.value : c ?? "", mark = markOf(String(text));
+    if (mark) return `<td class="${cls(t.columns[j], j)} score"${at(typeof c === "object" && c ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
     if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value)}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
     return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
   return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
     <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
-    <tbody>${t.rows.map((r, i) => `<tr class="${r.style || ""}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>`;
+    <tbody>${t.rows.map((r, i) => `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>${markKinds(t).has("balls") ? ballKey() : ""}`;
 }
 
 function cardHTML(c: Card, variant: string, i: number) {
@@ -79,21 +93,19 @@ function cardHTML(c: Card, variant: string, i: number) {
 
 /* Body per menu entry. The variant (layout) comes from the registry, never from the agent. */
 const table = (s: Slide): Table => s.table ?? { columns: [], rows: [] };
-const BODY: Record<Exclude<TemplateId, "cover" | "section">, (s: Slide, variant: string) => string> = {
+const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">, (s: Slide, variant: string) => string> = {
   chart: (s, v) => v === "split"
     ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
   table: (s, v) => v === "split"
     ? splitHTML(s, tableHTML(table(s)), "with-table")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${tableHTML(table(s))}`,
-  number: (s) => {
-    const n = s.number ?? { value: "", caption: "" };
-    const num = `<div class="hero-n"><p class="shout hero-v ${n.tone || ""} ${n.value.length <= 4 ? "short" : ""}"${at("number.value", "esc")}>${esc(n.value)}</p><p class="hero-c"${at("number.caption", "md")}>${md(n.caption)}</p></div>`;
-    return s.body?.length ? `<div class="hero"><div class="prose">${s.body.map((p, i) => `<p${item(`body[${i}]`)}${at(`body[${i}]`, "md")}>${md(p)}</p>`).join("")}</div>${num}</div>` : `<div class="hero solo">${num}</div>`;
-  },
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
+  pair: (s) => `<div class="pair grow">${(s.charts ?? []).map((c, i) => `<div class="half"${item(`charts[${i}]`)}>${capHTML(c.caption, "", `charts[${i}].caption`)}<div class="chart" data-chart="${i}"></div>${c.bullets?.length ? list(c.bullets, `charts[${i}].bullets`) : ""}</div>`).join("")}</div>`,
+  summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
+    <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
   cards: (s, v) => { const cards = s.cards ?? [];
     return `<div class="cards ${v} ${v === "framed" ? "grow" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
 };
@@ -115,6 +127,12 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
   } else if (s.template === "section") {
     // The subtitle box is always there: it holds its 2 lines, so the number and title sit still across dividers.
     body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title"${at("title", "esc")}>${esc(s.title)}</h2><p class="sec-sub"${at("subtitle", "md")}>${s.subtitle ? md(s.subtitle) : ""}</p>`;
+  } else if (s.template === "number") {
+    // No title: the number and its sentence are the slide (the sentence is its line in the storyline).
+    const n = s.number ?? { value: "", caption: "" };
+    body = `<p class="shout big-v ${n.tone && n.tone !== "focus" ? n.tone : ""}"${at("number.value", "esc")}>${esc(n.value)}</p><p class="big-c"${at("number.caption", "md")}>${md(n.caption)}</p>`;
+  } else if (s.template === "quote") {
+    body = `<p class="q-mark" aria-hidden="true">“</p><p class="q-text"${at("quote", "md")}>${md(s.quote ?? "")}</p><p class="q-who"${at("who", "esc")}>${esc(s.who ?? "")}</p>`;
   } else {
     // The head holds its longest form (L3), so the body starts on one line per style. The consulting
     // kicker line is kept even when empty, so the title does not move up on slides without one.
@@ -122,7 +140,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
       ? `<div class="label"${at("kicker", "esc")}>${esc(s.kicker || ctx.kicker)}</div><h2 class="title"${at("title", "display")}>${display(s.title)}</h2>`
       : `<h2 class="title"${at("title", "display")}>${display(s.title)}</h2>${s.subtitle ? `<p class="subtitle"${at("subtitle", "display")}>${display(s.subtitle)}</p>` : ""}`;
     body = `<header class="head">${head}</header>`
-      + BODY[s.template](s, variant)
+      + BODY[s.template as keyof typeof BODY](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway"${at("takeaway", "md")}>${md(s.takeaway)}</p>` : "");
   }
   const fn = [s.footnote && `<p${at("footnote", "md")}>${md(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${md(s.source)}</span></p>`].filter(Boolean).join("");
@@ -141,8 +159,15 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
   sizeTable(slide); growTable(slide);
-  const host = slide.querySelector<HTMLElement>("[data-chart]");
-  if (host && s.chart) drawChart(host, s.chart, NOTE_POINTS ? (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])) : [], colours);
+  // A chart slide has one host; a pair has two, each its own chart with its own colours.
+  slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
+    const i = host.dataset.chart, spec = i ? s.charts?.[Number(i)]?.chart : s.chart;
+    if (!spec) return;
+    if (!i) return drawChart(host, spec, NOTE_POINTS ? (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])) : [], colours);
+    const own = allocate({ ...s, template: "chart", chart: spec }, deck.theme, deck.accent);
+    for (const [k, v] of Object.entries(own.vars)) host.style.setProperty(`--${k}`, v);
+    drawChart(host, spec, [], own);
+  });
   drawIcons(slide);
   return slide;
 }
@@ -186,7 +211,7 @@ function growTable(slide: HTMLElement) {
 
 /* Big values in a row shrink together (to 75% at most) so the widest fits. */
 function fitValues(slide: HTMLElement) {
-  for (const sel of [".cards.value .v", ".hero-v"]) {
+  for (const sel of [".cards.value .v", ".big-v"]) {
     const els = [...slide.querySelectorAll<HTMLElement>(sel)];
     const k = Math.min(1, ...els.map((e) => e.clientWidth / e.scrollWidth));
     if (k < 1) els.forEach((e) => { e.style.fontSize = `${parseFloat(getComputedStyle(e).fontSize) * Math.max(k, .75)}px`; });

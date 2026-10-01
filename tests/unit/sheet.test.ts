@@ -168,3 +168,23 @@ test('annotations follow their categories and series when rows and columns chang
   expect(ann(apply(withSeries, w.insertCol?.(1)))).toMatchObject({ series: 2 })
   expect(apply(withSeries, w.removeCols?.(2, 2)).chart?.annotations).toEqual([])
 })
+
+const RANKED: Slide = { template: 'chart', title: 'T', chart: { kind: 'ranked', format: '{v}%', ranking: [{ label: 'Limit', value: 46, focus: true }, { label: 'Fee', value: 38 }] } }
+const MATRIX: Slide = { template: 'chart', title: 'T', chart: { kind: 'matrix', axes: { x: 'Rewards', y: 'Limit' }, points: [{ label: 'Acme', x: 82, y: 82, focus: true }, { label: 'Bank', x: 22, y: 30 }] } }
+
+test('ranked bars edit as label and value; a new row starts at 0', () => {
+  const m = sheet(RANKED)
+  expect(m.kind).toBe('ranked')
+  expect(m.cols.map((c) => c.header)).toEqual(['Item', 'Value'])
+  expect(m.get(0, 1)).toBe(46)
+  const edited = apply(RANKED, m.set(1, 1, '41%')), s = apply(edited, sheet(edited).insertRow(2))
+  expect(s.chart?.ranking).toEqual([{ label: 'Limit', value: 46, focus: true }, { label: 'Fee', value: 41 }, { label: '', value: 0 }])
+})
+
+test('matrix points edit as label, across and up; a new point starts in the middle', () => {
+  const m = sheet(MATRIX)
+  expect(m.cols.map((c) => c.header)).toEqual(['Point', 'Across (0–100)', 'Up (0–100)'])
+  expect(m.path(1, 2)).toBe('chart.points[1].y')
+  expect(apply(MATRIX, m.insertRow(2)).chart?.points?.[2]).toEqual({ label: '', x: 50, y: 50 })
+  expect(failed(m.set(0, 1, 'x'))).toBe(true)
+})

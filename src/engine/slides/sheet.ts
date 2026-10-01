@@ -10,7 +10,7 @@ export type Patch = Record<string, unknown>;
 export type Cellv = string | number | boolean | null;
 export interface SheetCol { header: string; headerPath?: string; type: "text" | "number" | "flag" }
 export interface SheetModel {
-  kind: "bars" | "waterfall" | "table";
+  kind: "bars" | "waterfall" | "ranked" | "matrix" | "table";
   cols: SheetCol[]; rows: number;
   get(r: number, c: number): Cellv;
   /** The slide field the cell shows: where its issues are looked up. */
@@ -57,11 +57,11 @@ export const toTsv = (rows: string[][]): string => rows.map((r) => r.map((c) => 
 
 /* ─────────── Models ─────────── */
 
-interface Limits { categories: [number, number]; series: [number, number]; items: [number, number] }
+interface Limits { categories: [number, number]; series: [number, number]; items: [number, number]; ranking: [number, number]; points: [number, number] }
 function limits(style: Style): Limits {
   const f = describe("chart", style).fields.chart.fields as Record<string, FieldView>;
   const lim = (k: string): [number, number] => [f[k].items?.min ?? 0, f[k].items?.max ?? Infinity];
-  return { categories: lim("categories"), series: lim("series"), items: lim("items") };
+  return { categories: lim("categories"), series: lim("series"), items: lim("items"), ranking: lim("ranking"), points: lim("points") };
 }
 const splice = <T,>(xs: T[], at: number, del: number, ...ins: T[]) => { const a = xs.slice(); a.splice(at, del, ...ins); return a; };
 const move = <T,>(xs: T[], from: number, to: number) => { const a = xs.slice(), [x] = a.splice(from, 1); a.splice(to, 0, x); return a; };
@@ -131,6 +131,28 @@ function waterfall(chart: Chart, style: Style): SheetModel {
   };
 }
 
+/** A list of { label, numbers… } rows: ranked bars (label, value) and matrix points (label, x, y). */
+function listSheet(kind: "ranked" | "matrix", list: Record<string, unknown>[], field: string, cols: [string, string][], lim: [number, number]): SheetModel {
+  const blank = Object.fromEntries(cols.map(([k], j) => [k, j ? (kind === "matrix" ? 50 : 0) : ""]));
+  return {
+    kind, rows: list.length,
+    cols: cols.map(([, header], j) => ({ header, type: j ? "number" as const : "text" as const })),
+    get: (r, c) => (list[r]?.[cols[c][0]] as Cellv) ?? (c ? null : ""),
+    path: (r, c) => `chart.${field}[${r}].${cols[c][0]}`,
+    set(r, c, raw) {
+      if (c === 0) return { [`chart.${field}[${r}].label`]: raw };
+      const n = parseNum(raw);
+      return n === null ? NEEDS_NUMBER : { [`chart.${field}[${r}].${cols[c][0]}`]: n };
+    },
+    setHeader: () => null,
+    insertRow: (at) => (inRange(list.length + 1, lim) ? { [`chart.${field}`]: splice(list, at, 0, blank) } : null),
+    removeRows: (r0, r1) => (inRange(list.length - (r1 - r0 + 1), lim) ? { [`chart.${field}`]: splice(list, r0, r1 - r0 + 1) } : null),
+    moveRow: (from, to) => (from === to || [from, to].some((i) => i < 0 || i >= list.length) ? null : { [`chart.${field}`]: move(list, from, to) }),
+  };
+}
+const RANKED_COLS: [string, string][] = [["label", "Item"], ["value", "Value"]];
+const MATRIX_COLS: [string, string][] = [["label", "Point"], ["x", "Across (0–100)"], ["y", "Up (0–100)"]];
+
 function tableSheet(slide: Slide): SheetModel {
   const t = slide.table ?? { columns: [], rows: [] }, cols = t.columns, rows = t.rows;
   const text = (r: number, c: number) => { const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value : x ?? ""; };
@@ -152,29 +174,44 @@ function tableSheet(slide: Slide): SheetModel {
   };
 }
 
-/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). */
-export function sheetFor(slide: Slide, style: Style): SheetModel | null {
+/* A pair's chart is edited as a chart of its own: the model reads the chart alone, and every path it writes is
+   re-rooted under `charts[i]`, so the patches land on the real slide. */
+const alone = (chart: Chart): Slide => ({ template: "chart", title: "", chart });
+const reroot = (pre: string) => <T extends Patch | { error: string } | null>(p: T): T => (!p || failed(p) ? p : Object.fromEntries(Object.entries(p).map(([k, v]) => [`${pre}${k}`, v])) as T);
+function within(m: SheetModel, pre: string): SheetModel {
+  const r = reroot(pre);
+  return { ...m, path: (row, c) => `${pre}${m.path(row, c)}`, set: (row, c, raw) => r(m.set(row, c, raw)), setHeader: (c, raw) => r(m.setHeader(c, raw)),
+    insertRow: (at) => r(m.insertRow(at)), removeRows: (a, b) => r(m.removeRows(a, b)), moveRow: (a, b) => r(m.moveRow(a, b)),
+    ...(m.insertCol ? { insertCol: (at: number) => r(m.insertCol?.(at) ?? null) } : {}), ...(m.removeCols ? { removeCols: (a: number, b: number) => r(m.removeCols?.(a, b) ?? null) } : {}),
+    ...(m.moveCol ? { moveCol: (a: number, b: number) => r(m.moveCol?.(a, b) ?? null) } : {}) };
+}
+
+/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's chart. */
+export function sheetFor(slide: Slide, style: Style, which = 0): SheetModel | null {
+  if (slide.template === "pair") { const c = slide.charts?.[which]?.chart, m = c ? sheetFor(alone(c), style) : null; return m && within(m, `charts[${which}].`); }
   if (slide.template === "table" && slide.table) return tableSheet(slide);
   const c = slide.chart;
   if (!c) return null;
   if (c.kind === "waterfall") return waterfall(c, style);
+  if (c.kind === "ranked") return listSheet("ranked", (c.ranking ?? []) as unknown as Record<string, unknown>[], "ranking", RANKED_COLS, limits(style).ranking);
+  if (c.kind === "matrix") return listSheet("matrix", (c.points ?? []) as unknown as Record<string, unknown>[], "points", MATRIX_COLS, limits(style).points);
   return c.kind === "timeline" ? null : bars(c, style);
 }
 
 /** Pasted cells written from `at`: rows are added up to the schema's limit, numbers are parsed, and what could not be
     kept is said, never dropped silently. One result slide, so one undo step. */
-export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number }, data: string[][]): { slide: Slide; note?: string } {
+export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number }, data: string[][], which = 0): { slide: Slide; note?: string } {
   let cur = slide, kept = 0, bad = 0, wide = 0;
   const run = (p: Patch | { error: string } | null) => { if (!p || failed(p)) return false; const r = applyPatch(cur, p); if (!r.slide) return false; cur = r.slide; return true; };
   for (let i = 0; i < data.length; i++) {
     const r = at.r + i;
-    let m = sheetFor(cur, style);
+    let m = sheetFor(cur, style, which);
     if (!m) break;
-    while (r >= m.rows) { if (!run(m.insertRow(m.rows))) break; m = sheetFor(cur, style); if (!m) break; }
+    while (r >= m.rows) { if (!run(m.insertRow(m.rows))) break; m = sheetFor(cur, style, which); if (!m) break; }
     if (!m || r >= m.rows) break;
     kept++;
     data[i].forEach((raw, j) => {
-      const c = at.c + j, now = sheetFor(cur, style);
+      const c = at.c + j, now = sheetFor(cur, style, which);
       if (!now || c >= now.cols.length) { if (raw !== "") wide++; return; }
       if (now.readOnly?.(r, c)) return;
       const p = now.set(r, c, now.cols[c].type === "flag" ? String(/^(true|yes|1|total)$/i.test(raw)) : raw);
@@ -189,12 +226,29 @@ export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number
 /** A pasted table becomes the chart's data (select all, paste): for bars, a header row names the series and the first column
     names the categories; for a waterfall, label, value and an optional total column. Existing series keep their own look
     by position; what does not fit the schema's limits is dropped and said. */
-export function replaceFromTable(slide: Slide, style: Style, table: string[][]): { slide: Slide; note?: string } {
+export function replaceFromTable(slide: Slide, style: Style, table: string[][], which = 0): { slide: Slide; note?: string } {
   if (slide.template === "table" && slide.table) return replaceTable(slide, table);
+  if (slide.template === "pair") {
+    const c = slide.charts?.[which]?.chart;
+    if (!c) return { slide };
+    const r = replaceFromTable(alone(c), style, table), out = structuredClone(slide);
+    if (out.charts?.[which] && r.slide.chart) out.charts[which].chart = r.slide.chart;
+    return { slide: out, ...(r.note ? { note: r.note } : {}) };
+  }
   const chart = slide.chart;
   if (!chart || chart.kind === "timeline" || !table.length) return { slide };
   const lim = limits(style), notes: string[] = [];
   const out = structuredClone(slide), c = out.chart as Chart;
+  if (chart.kind === "ranked" || chart.kind === "matrix") {
+    const ranked = chart.kind === "ranked", cap = ranked ? lim.ranking[1] : lim.points[1];
+    // A header row is text in its number columns.
+    const body = table[0].slice(1).every((cell) => cell.trim() === "" || parseNum(cell) === null) ? table.slice(1) : table, rows = body.slice(0, cap);
+    if (rows.length < body.length) notes.push(`Kept ${rows.length} of ${body.length} rows; the chart takes ${cap}.`);
+    const num = (v: string | undefined, d: number) => parseNum(v ?? "") ?? d;
+    if (ranked) c.ranking = rows.map((r, i) => ({ label: r[0] ?? "", value: num(r[1], 0), ...(chart.ranking?.[i]?.focus ? { focus: true } : {}) }));
+    else c.points = rows.map((r, i) => ({ label: r[0] ?? "", x: num(r[1], 50), y: num(r[2], 50), ...(chart.points?.[i]?.focus ? { focus: true } : {}) }));
+    return { slide: out, ...(notes.length ? { note: notes.join(" ") } : {}) };
+  }
   if (chart.kind === "waterfall") {
     const rows = table.slice(0, lim.items[1]);
     if (rows.length < table.length) notes.push(`Kept ${rows.length} of ${table.length} rows; the chart takes ${lim.items[1]}.`);
