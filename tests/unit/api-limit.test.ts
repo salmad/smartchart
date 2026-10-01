@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import type { Db } from '../../api/_lib/db'
 import { modelGate } from '../../api/_lib/quota'
 
-const ann = { id: 'u_ann', email: 'a@x.co' }, bob = { id: 'u_bob', email: 'b@x.co' }
+const ann = { id: 'u_ann', email: 'a@x.co', via: 'session' as const }, bob = { id: 'u_bob', email: 'b@x.co', via: 'session' as const }
 const counting = () => {
   const n = new Map<string, number>()
   return { countCall: async (id: string) => { n.set(id, (n.get(id) ?? 0) + 1); return n.get(id) ?? 0 }, n } as unknown as Db & { n: Map<string, number> }
