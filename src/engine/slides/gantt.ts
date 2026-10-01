@@ -15,7 +15,7 @@ export function ganttFor(slide: Slide, style: Style) {
   /** Bars and milestones with their period indices rewritten by `f`, as one patch. */
   const reindex = (f: (n: number) => number, extra: Patch = {}): Patch => ({
     ...extra,
-    "chart.rows": rows.map((r) => ({ ...r, start: f(r.start), end: Math.max(f(r.start), f(r.end)) })),
+    "chart.rows": rows.map((r) => ({ ...r, start: f(r.start ?? 0), end: Math.max(f(r.start ?? 0), f(r.end ?? 0)) })),
     ...(miles.length ? { "chart.milestones": miles.map((m) => ({ ...m, at: f(m.at) })) } : {}),
   });
   return {

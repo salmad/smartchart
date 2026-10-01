@@ -27,7 +27,7 @@ export function timelineChart(box: HTMLElement, spec: Chart, W: number, H: numbe
   for (let i = 0; i <= n; i++) g += `<line class="grid-v" x1="${px(i)}" x2="${px(i)}" y1="${head - 12}" y2="${rowsBottom}"/>`;
   periods.forEach((p, i) => { t += lbl("cat", px(i) + cw / 2, 8, "tc", esc(p)); });
   rows.forEach((r, i) => {
-    const cy = head + rh * i + rh / 2, x = px(r.start) + 6, w = (r.end - r.start + 1) * cw - 12;
+    const cy = head + rh * i + rh / 2, x = px(r.start ?? 0) + 6, w = ((r.end ?? 0) - (r.start ?? 0) + 1) * cw - 12;
     g += `<line class="row-rule" x1="0" x2="${W}" y1="${head + rh * (i + 1)}" y2="${head + rh * (i + 1)}"/>`;
     g += `<rect class="tl-bar c-${r.focus ? "focus" : "quiet"}" x="${x}" y="${cy - bh / 2}" width="${w}" height="${bh}" rx="${bh / 2}"/>`;
     // Many rows in a short chart: the row name shrinks to its row (never below 18px) instead of running into the next.

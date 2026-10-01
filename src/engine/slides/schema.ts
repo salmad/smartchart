@@ -559,7 +559,7 @@ function checkTimeline(c: Chart, path: string, out: Out): void {
   c.rows.forEach((r, i) => {
     if (!r) return;
     if (!ok(r.start) || !ok(r.end)) out.errors.push(`${path}.rows[${i}]: \`start\` and \`end\` must be period indices 0–${n - 1} (got ${r.start}, ${r.end}).`);
-    else if (r.start > r.end) out.errors.push(`${path}.rows[${i}]: \`start\` (${r.start}) is after \`end\` (${r.end}).`);
+    else if ((r.start ?? 0) > (r.end ?? 0)) out.errors.push(`${path}.rows[${i}]: \`start\` (${r.start}) is after \`end\` (${r.end}).`);
   });
   (c.milestones || []).forEach((m, i) => { if (m && !ok(m.at)) out.errors.push(`${path}.milestones[${i}].at: must be a period index 0–${n - 1} (got ${m.at}).`); });
   if (count(c.rows, "focus") > 1) out.errors.push(`${path}.rows: at most one focus row.`);

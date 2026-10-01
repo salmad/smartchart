@@ -24,7 +24,7 @@ export function Gantt({ edit, deckStyle }: { edit: SlideEdit; deckStyle: Style }
   const write = (p: Patch) => { if (p) edit.patch(p) }
   const issue = (path: string) => edit.issues.find((i) => i.path && (i.path === path || path.startsWith(`${i.path}.`) || path.startsWith(`${i.path}[`)))
 
-  const lo = (r: number) => (paint?.row === r ? Math.min(paint.a, paint.b) : g.rows[r].start), hi = (r: number) => (paint?.row === r ? Math.max(paint.a, paint.b) : g.rows[r].end)
+  const lo = (r: number) => (paint?.row === r ? Math.min(paint.a, paint.b) : (g.rows[r].start ?? 0)), hi = (r: number) => (paint?.row === r ? Math.max(paint.a, paint.b) : (g.rows[r].end ?? 0))
   const finish = () => { if (paint) { write(g.setBar(paint.row, paint.a, paint.b)); setPaint(null) } }
 
   const onKey = (e: KeyboardEvent) => {
