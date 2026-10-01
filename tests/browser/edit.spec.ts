@@ -14,6 +14,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript((d) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('smartchart.journey.decks.v1', JSON.stringify(d)); sessionStorage.setItem('seeded', '1') } }, deck)
 })
 const open = async (page: Page) => { await page.goto('/d/d1'); await page.waitForFunction(() => window.__journey?.items.length) ; await page.locator('[data-strip-thumb]').first().waitFor() }
+const must = <T>(v: T | null): T => { if (v === null) throw new Error('missing'); return v }
 const title = (page: Page) => page.locator('[data-editing] [data-path="title"]')
 const saved = (page: Page, i = 0): Promise<Slide> => page.evaluate((k) => window.__journey?.items[k].slide as Slide, i)
 
@@ -227,13 +228,13 @@ test('the × stays reachable: the pointer can travel from a bullet to its button
   await page.keyboard.press('e')
   const bullets = page.locator('[data-editing] [data-item^="cards[1].bullets["]')
   await expect(bullets).toHaveCount(2)
-  const b = await bullets.first().boundingBox()
-  await page.mouse.move(b!.x + 30, b!.y + b!.height / 2)
+  const b = must(await bullets.first().boundingBox())
+  await page.mouse.move(b.x + 30, b.y + b.height / 2)
   const rm = page.getByRole('button', { name: 'Remove' })
   await expect(rm).toBeVisible()
-  const box = await rm.boundingBox()
+  const box = must(await rm.boundingBox())
   // Real pointer travel in small steps from the bullet out to the button.
-  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2, { steps: 25 })
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 25 })
   await expect(rm).toBeVisible()
   await rm.click()
   await expect(bullets).toHaveCount(1)
