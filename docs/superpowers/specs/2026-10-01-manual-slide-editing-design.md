@@ -19,6 +19,7 @@ Let the user edit a slide by hand, on the slide itself, in an edit mode they ent
 |---|---|
 | Every text field: title, kicker or subtitle, takeaway, footnote, source, caption, notesTitle, notes, card fields, bullets, steps, table header and cells (value and note) | Typed in place on the slide |
 | Emphasis in markup fields: `**bold**` and `[[focus]]` | A floating bar on text selection, with **Bold** and **Focus**. It only appears in markup fields. Positive and negative colours aren't offered by hand: existing ones survive, and the agent applies new ones when asked. |
+| Card icons (icon-lead cards) | Click the icon: choose from the curated set, or **Pick from the card text** (the same one Jev question the agent's write asks for an `auto` icon, about that card). It shows on the slide at once |
 | List items: cards, card bullets, steps, notes, table rows | "+" and "×" on hover, hidden at the template's min and max |
 | Chart data, every kind | Click the chart: it flips in place into a data grid (§4.3) |
 | Template | A switcher in the edit bar (§4.4) |

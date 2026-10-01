@@ -171,3 +171,19 @@ test('a chart value typed in the grid is saved by ⌘S straight away, and a non-
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0)
   expect((await saved(page, 1)).chart?.series?.[0]?.values).toEqual([10, -16])
 })
+
+test('an icon is chosen by hand, and the model can pick one from the card text', async ({ page }) => {
+  await open(page)
+  await page.keyboard.press('e')
+  await page.getByRole('button', { name: 'Change icon' }).first().click()
+  await page.getByRole('option', { name: 'rocket' }).click()
+  await expect(page.locator('[data-editing] [data-item="cards[0]"] .ic svg.lucide-rocket')).toBeVisible()
+  await expect(page.getByRole('listbox', { name: 'Icons' })).toHaveCount(0)
+  // With the models unreachable the pick fails out loud and leaves the icon alone.
+  await page.getByRole('button', { name: 'Change icon' }).nth(1).click()
+  await page.getByRole('button', { name: 'Pick from the card text' }).click()
+  await expect(page.getByRole('alert')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Save' }).click()
+  expect((await saved(page)).cards?.map((c) => c.icon)).toEqual(['rocket', 'wallet', 'truck'])
+})
