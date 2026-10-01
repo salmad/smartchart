@@ -56,17 +56,18 @@ Dragging an item's grip (⋮⋮) moves it to another place, and a table row or c
 
 A new item **copies the shape of the item next to it** (icon or value lead, tone, mark), with its text cleared. That keeps it valid with no logic per template. The cursor goes into its first text field. 
 
-### 4.3 Chart grid
+### 4.3 Data sheet
 
-Clicking the chart opens a dialog with the data as a table, wide enough to see every series. The slide redraws behind it as you edit, and again when you close it (Done, Esc or the ×).
+Clicking a chart, or **Edit as sheet…** in a table slide's menu, opens a popup with the data as a spreadsheet (`Sheet.tsx`, built here, no grid library):
 
-| Chart kind | Grid | Can add or remove |
-|---|---|---|
-| bars | rows = categories; one column per series (name in the header, then values) | categories, series |
-| waterfall | rows = items: label, value, a "total" checkbox | items |
-| timeline | rows = workstreams: label, start period, end period (selects from `periods`); a periods row that can be edited; a milestones row | rows, periods, milestones |
+- **Bars:** rows are categories, columns are series (the name is typed in the header). **Waterfall:** step, value, a Total flag (a total's value is read-only). **Table slide:** its own columns and rows.
+- **Keys:** arrows move; typing replaces a cell; Enter, F2 or double-click edits; Enter and Tab commit and move; Shift+arrows and dragging select a range; Delete clears; ⌘A selects all; Esc cancels an edit, then the range, then closes. ⌘S saves the slide even with a cell open.
+- **Clipboard:** copy and paste are tab-separated text, so data moves to and from Excel and Sheets. Numbers read as typed: `1,200`, `(3.1)`, `−5`, `12%`, `£1.2m`. A paste lands from the selected cell and adds rows up to the schema's limit, and what does not fit is reported, never dropped silently.
+- **A pasted table becomes the chart:** with everything selected (⌘A), or with **Paste table**, the pasted data replaces the sheet: the first row names the series and the first column the categories (a waterfall takes label, value, optional total; a table slide takes the first row as its header). Existing series keep their own look by position.
+- **Structure:** right-click for insert and delete of rows and columns; grips drag rows and columns to move them. Series move with their mark and colour.
+- Every edit is a patch on the real slide path (`SheetModel` in `engine/slides/sheet.ts`), the same path the agent writes on; ⌘Z is the slide's own history. An empty or non-number cell is refused with "Enter a number", never written as 0. Limits come from the schema, and an action that would break one is disabled.
 
-Limits come from the schema. A new series copies the shape of the last one (mark, colour).  Chart kind and annotations are not edited here; those stay with the agent. `chartGrid` and `fromGrid(chart, grid)` convert both ways with no loss for every kind, and a test checks it. `fromGrid` takes the chart it came from so it can merge: marks, colours and formats survive, and an annotation that no longer points at a category or series is dropped.
+**Timeline** is a gantt (`Gantt.tsx`, `engine/slides/gantt.ts`): a row per workstream, a column per period. Drag across a row to paint its bar, or use the arrows with Shift and Space; click a period to move a milestone; periods and workstreams are typed in place and inserted or deleted from the menu. Removing a period shifts bars and milestones.
 
 ### 4.4 Template switch
 

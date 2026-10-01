@@ -119,7 +119,7 @@ export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdi
                         {model.moveCol && c >= (model.kind === 'table' ? 0 : 1) && <button type="button" aria-label={`Move column ${c + 1}`} onPointerDown={(e) => dragGrip(e, 'col', c)} className="grid size-5 shrink-0 cursor-grab touch-none place-items-center text-ink-3 hover:text-ink"><GripHorizontal className="size-3.5" /></button>}
                         {col.headerPath
                           ? <input aria-label={`Column ${c} name`} value={col.header} placeholder="Name" onChange={(e) => write(model.setHeader(c, e.target.value))} className="h-7 w-full min-w-20 rounded-sm bg-transparent px-1.5 text-ink outline-none focus:bg-raise" />
-                          : <span className="px-1.5">{col.header}</span>}
+                          : <span className={`block w-full px-2.5 ${col.type === 'number' ? 'text-right' : col.type === 'flag' ? 'text-center' : ''}`}>{col.header}</span>}
                       </div>
                     </th>
                   ))}
