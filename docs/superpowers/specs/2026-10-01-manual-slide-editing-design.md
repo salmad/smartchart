@@ -67,7 +67,7 @@ Clicking a chart, or **Edit as sheet…** in a table slide's menu, opens a popup
 - **Structure:** right-click for insert and delete of rows and columns; grips drag rows and columns to move them. Series move with their mark and colour.
 - Every edit is a patch on the real slide path (`SheetModel` in `engine/slides/sheet.ts`), the same path the agent writes on; ⌘Z is the slide's own history. An empty or non-number cell is refused with "Enter a number", never written as 0. Limits come from the schema, and an action that would break one is disabled.
 
-**Timeline** is a gantt (`Gantt.tsx`, `engine/slides/gantt.ts`): a row per workstream, a column per period. Drag across a row to paint its bar, or use the arrows with Shift and Space; click a period to move a milestone; periods and workstreams are typed in place and inserted or deleted from the menu. Removing a period shifts bars and milestones.
+**Timeline** is a gantt (`Gantt.tsx`, `GanttMenu.tsx`, `engine/slides/gantt.ts`): a row per workstream, a column per period. Drag across a row to paint its bar, or use the arrows with Shift and Space; click a period to move a milestone (up to six); periods and workstreams are typed in place and inserted or deleted from the menu. A workstream can have sub-rows (Add sub-row, Indent, Outdent, or drop a dragged row on the right of another to nest it); a group's bar is its sub-rows' span and is not painted. Colour only tells top-level from sub-rows, and one row can be highlighted. Removing a period shifts bars and milestones. Design: `2026-10-01-gantt-groups-colour-design.md`.
 
 ### 4.4 Template switch
 

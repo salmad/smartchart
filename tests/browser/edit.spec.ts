@@ -450,3 +450,71 @@ test('Esc in a sheet cell cancels the edit and keeps the dialog; a bare Esc clos
   await page.keyboard.press('Escape')
   await expect(page.getByRole('grid', { name: 'Chart data' })).toHaveCount(0)
 })
+
+const gantt = { template: 'chart', title: 'The plan runs four quarters', chart: { kind: 'timeline', periods: ['Q1', 'Q2', 'Q3', 'Q4'], rows: [{ label: 'Platform' }, { label: 'API', level: 1, start: 0, end: 1 }, { label: 'UI', level: 1, start: 1, end: 2 }, { label: 'Launch', start: 3, end: 3 }, { label: 'EU', start: 3, end: 3 }], milestones: [{ label: 'Beta', at: 1 }] } }
+const openGantt = async (page: Page) => {
+  await open(page)
+  await page.evaluate((s) => window.__journey?.load([s] as never, 'consulting'), gantt)
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart]').click()
+}
+const rowCell = (page: Page, r: number) => page.locator(`tr[data-row="${r}"] td`).nth(1)
+const finishGantt = async (page: Page) => { await page.getByRole('button', { name: 'Done' }).click(); await page.getByRole('button', { name: 'Save' }).click() }
+
+test('gantt: a sub-row is added from the menu and a row is indented under a group', async ({ page }) => {
+  await openGantt(page)
+  await rowCell(page, 0).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Add sub-row' }).click()
+  await expect(page.locator('tr[data-row]')).toHaveCount(6)
+  await rowCell(page, 4).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Indent' }).click()
+  await finishGantt(page)
+  const rows = (await saved(page)).chart?.rows
+  expect(rows?.map((r) => r.level ?? 0)).toEqual([0, 1, 1, 1, 1, 0])
+  expect(rows?.[0].start).toBeUndefined()
+})
+
+test('gantt: dragging a row onto the right of another nests it', async ({ page }) => {
+  await openGantt(page)
+  const grip = page.getByRole('button', { name: 'Move workstream 5' })
+  const target = must(await rowCell(page, 3).boundingBox()), g = must(await grip.boundingBox())
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.mouse.down()
+  await page.mouse.move(target.x + target.width * .8, target.y + target.height * .9, { steps: 8 }); await page.mouse.up()
+  await finishGantt(page)
+  expect((await saved(page)).chart?.rows?.map((r) => [r.label, r.level ?? 0])).toEqual([['Platform', 0], ['API', 1], ['UI', 1], ['Launch', 0], ['EU', 1]])
+})
+
+test('gantt: deleting the last child turns the group back into a plain row', async ({ page }) => {
+  await openGantt(page)
+  for (let i = 0; i < 2; i++) { await rowCell(page, 1).click({ button: 'right' }); await page.getByRole('menuitem', { name: 'Delete', exact: true }).click() }
+  await finishGantt(page)
+  expect((await saved(page)).chart?.rows?.[0]).toMatchObject({ label: 'Platform', start: 1, end: 2 })   // the span it had when its last child left
+})
+
+test('gantt: a row is highlighted from the menu, one at a time', async ({ page }) => {
+  await openGantt(page)
+  await rowCell(page, 3).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Highlight' }).click()
+  await rowCell(page, 0).click({ button: 'right' })      // a group can be highlighted too
+  await page.getByRole('menuitem', { name: 'Highlight' }).click()
+  await finishGantt(page)
+  expect((await saved(page)).chart?.rows?.map((r) => !!r.focus)).toEqual([true, false, false, false, false])
+})
+
+test('gantt: ⌘Z undoes an indent', async ({ page }) => {
+  await openGantt(page)
+  await rowCell(page, 3).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Indent' }).click()
+  await page.getByRole('grid', { name: 'Timeline' }).focus()
+  await page.keyboard.press('ControlOrMeta+z')
+  await finishGantt(page)
+  expect((await saved(page)).chart?.rows?.map((r) => r.level ?? 0)).toEqual([0, 1, 1, 0, 0])
+})
+
+test('gantt: a sixth milestone can be added', async ({ page }) => {
+  await openGantt(page)
+  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Milestone' }).click()
+  await expect(page.getByRole('button', { name: 'Milestone' })).toBeDisabled()
+  await finishGantt(page)
+  expect((await saved(page)).chart?.milestones).toHaveLength(6)
+})
