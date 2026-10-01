@@ -155,7 +155,7 @@ test("timeline: valid, ranges checked", () => {
 test("notes limits per kind", () => {
   const notes = [{ title: "One" }, { title: "Two" }];
   assert.match(errs(chart({ ...TL, periods: Array.from({ length: 9 }, (_, i) => `M${i}`) }, { notes })).join(), /with notes at most 8/);
-  assert.match(errs(chart({ ...TL, rows: Array.from({ length: 5 }, (_, i) => ({ label: `R${i}`, start: 0, end: 1 })) }, { notes })).join(), /with notes at most 4/);
+  assert.match(errs(chart({ ...TL, rows: Array.from({ length: 7 }, (_, i) => ({ label: `R${i}`, start: 0, end: 1 })) }, { notes })).join(), /with notes at most 6/);
   assert.match(errs(chart({ ...TL, rows: [{ label: "A workstream label that is long", start: 0, end: 1 }, TL.rows[1]] }, { notes })).join(), /with notes at most 20/);
 });
 
@@ -174,4 +174,26 @@ test("a notes heading does not go with a takeaway", () => {
   const s = chart({ categories: cats, format: "£{v}m", series: [REV] }, { notesTitle: "Notes", takeaway: "So what.", notes: [{ title: "a" }, { title: "b" }, { title: "c" }] });
   assert.ok(errs(s).some((e) => e.startsWith("notesTitle: a notes heading and a takeaway")));
   assert.ok(!errs({ ...s, takeaway: undefined }).some((e) => e.startsWith("notesTitle")));
+});
+
+const GROUPED = { kind: "timeline", periods: ["Q1", "Q2", "Q3", "Q4"], rows: [
+  { label: "Platform" }, { label: "API", level: 1, start: 0, end: 1 }, { label: "UI", level: 1, start: 1, end: 3 },
+  { label: "Launch", start: 3, end: 3, focus: true }], milestones: [{ label: "Beta", at: 1 }] };
+
+test("timeline groups: valid shapes pass, bad ones are named", () => {
+  assert.deepEqual(errs(chart(GROUPED)), []);
+  assert.match(errs(chart({ ...GROUPED, rows: [{ ...GROUPED.rows[0], start: 0, end: 1 }, ...GROUPED.rows.slice(1)] })).join(), /rows\[0\].*group.*start/);
+  assert.match(errs(chart({ ...GROUPED, rows: [{ label: "x", level: 1, start: 0, end: 1 }, GROUPED.rows[3]] })).join(), /rows\[0\].*sub-row/);
+  assert.match(errs(chart({ ...GROUPED, rows: [GROUPED.rows[3], { label: "x", level: 2, start: 0, end: 1 }] })).join(), /rows\[1\]\.level/);
+  assert.match(errs(chart({ ...GROUPED, rows: [GROUPED.rows[3], { ...GROUPED.rows[3] }] })).join(), /at most one focus/);
+  assert.match(errs(chart({ ...GROUPED, rows: [GROUPED.rows[0], { label: "c", level: 1 }] })).join(), /rows\[1\].*start.*end/);
+});
+
+test("timeline limits count lines, not only workstreams", () => {
+  const many = (n: number, extra: object = {}) => Array.from({ length: n }, (_, i) => ({ label: `R${i}`, start: 0, end: 1, ...extra }));
+  assert.match(errs(chart({ ...TL, rows: many(9) })).join(), /at most 8 workstreams/);
+  const twelve = [{ label: "G" }, ...many(8, { level: 1 }), ...many(3)];
+  assert.deepEqual(errs(chart({ ...TL, rows: twelve })), []);
+  assert.match(errs(chart({ ...TL, rows: [...twelve, { label: "x", level: 1, start: 0, end: 1 }] })).join(), /rows/);
+  assert.match(errs(chart({ ...TL, milestones: Array.from({ length: 7 }, (_, i) => ({ label: `M${i}`, at: 0 })) })).join(), /milestones/);
 });
