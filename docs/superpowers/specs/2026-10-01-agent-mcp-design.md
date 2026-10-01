@@ -36,7 +36,7 @@ There is no rendering on the server: the browser is the view.
           └──────────────────────┬───────┴────────────────────────────────────────┘
                                  ▼
                  Tool registry (src/engine/tools/, framework-free)
-     entry: name · title · description · input schema · output schema · annotations · handler
+     entry: name · title · description · input schema · annotations · handler
                                  ▼
                 Deck service (api/_lib/deck-service.ts, server only)
      auth → load deck (Neon) → handler(ctx, input) → save with rev (retry once) → event → result
