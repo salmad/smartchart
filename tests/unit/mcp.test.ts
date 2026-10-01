@@ -42,7 +42,7 @@ describe('MCP host', () => {
     expect(resources.map((r) => r.uri)).toContain('smartchart://guide/consulting')
     expect(resources.map((r) => r.uri)).toContain('smartchart://template/pitch/chart')
     const g = await c.readResource({ uri: 'smartchart://guide/pitch' })
-    expect(String(g.contents[0].text)).toContain('# Hard rules')
+    expect(String((g.contents[0] as { text?: string }).text)).toContain('# Hard rules')
   })
   it('401 without a key, 405 on GET, 403 on a foreign Origin', async () => {
     expect((await handle(new Request('https://app.test/mcp/v1', { method: 'POST', body: '{}' }))).status).toBe(401)

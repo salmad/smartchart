@@ -17,7 +17,7 @@ const STYLES: Style[] = ['consulting', 'pitch']
 interface RpcRequest { jsonrpc: '2.0'; id?: string | number; method: string; params?: Record<string, unknown> }
 
 const rpc = (id: RpcRequest['id'], result: unknown) => Response.json({ jsonrpc: '2.0', id, result })
-const rpcError = (id: RpcRequest['id'], code: number, message: string) => Response.json({ jsonrpc: '2.0', id: id ?? null, error: { code, message } })
+const rpcError = (id: RpcRequest['id'] | null, code: number, message: string) => Response.json({ jsonrpc: '2.0', id: id ?? null, error: { code, message } })
 
 function resources() {
   return [
