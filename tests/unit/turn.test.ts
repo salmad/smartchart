@@ -11,7 +11,7 @@ const reservedId = (m: ChatMessage[]) => JSON.parse(m.filter((x) => x.role === '
 function harness(models: TurnDeps['models']) {
   let state: AppState = { ...initialState(), deckId: 'd_test', live: true }
   const deps: TurnDeps = {
-    measurer: { measure: () => [], lines: 1, warnings: [] },
+    measurer: { measure: () => [], lines: 1, warnings: [], located: [] },
     dispatch: (a: Action) => { state = reducer(state, a) },
     getState: () => state,
     models,

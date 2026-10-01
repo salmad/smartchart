@@ -3,44 +3,51 @@ import { MIN_MARK, contrast } from "./colours";
 import type { Style } from "../types";
 
 /* ═════════════ Fit check (prototype): measures the rendered slide at 1920×1080 ═════════════ */
-export function fitIssues(slide: HTMLElement, style: Style): string[] {
+export interface Located { msg: string; path?: string }
+/** The field an element shows: its own data-path, the nearest one around it, or the first inside it. */
+const fieldOf = (el: Element | null): string | undefined =>
+  el?.closest<HTMLElement>("[data-path]")?.dataset.path ?? el?.querySelector<HTMLElement>("[data-path]")?.dataset.path;
+
+export function fitIssuesAt(slide: HTMLElement, style: Style): Located[] {
   const R = slide.getBoundingClientRect(), k = R.width / 1920, cs = getComputedStyle(slide);
   const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
   // SVG elements have an SVGAnimatedString className: name them by tag.
   const name = (el: Element) => (typeof el.className !== "string" ? el.tagName : (el.className || el.tagName).split(" ")[0]);
   const lines = (el: Element, pad = 0) => Math.round((el.clientHeight - pad) / parseFloat(getComputedStyle(el).lineHeight));
-  const bottom = 1080 - parseFloat(cs.paddingBottom), right = 1920 - parseFloat(cs.paddingRight), out: string[] = [];
+  const bottom = 1080 - parseFloat(cs.paddingBottom), right = 1920 - parseFloat(cs.paddingRight), out: Located[] = [];
+  const push = (msg: string, el?: Element | null) => out.push({ msg, path: fieldOf(el ?? null) });
   for (const el of slide.children) {
     if (el.classList.contains("rail")) continue;
     const b = box(el);
-    if (b.b > bottom + 1) { out.push(`${name(el)} runs ${Math.round(b.b - bottom)}px into the bottom margin; shorten the body or drop the takeaway`); break; }
-    if (b.r > right + 1) out.push(`${name(el)} runs ${Math.round(b.r - right)}px into the right margin`);
+    if (b.b > bottom + 1) { push(`${name(el)} runs ${Math.round(b.b - bottom)}px into the bottom margin; shorten the body or drop the takeaway`, el); break; }
+    if (b.r > right + 1) push(`${name(el)} runs ${Math.round(b.r - right)}px into the right margin`, el);
   }
   slide.querySelectorAll(".notes, .cards.framed .card, .card, .hero > div, .sec-n, .hero-v, .cards .v, .title").forEach((el) => {
-    if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflow !== "visible") out.push(`${name(el)} content is taller than its box`);
-    if (el.scrollWidth > el.clientWidth + 1) out.push(`${name(el)} “${(el.textContent ?? "").trim().slice(0, 24)}” is wider than its column`);
+    if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflow !== "visible") push(`${name(el)} content is taller than its box`, el);
+    if (el.scrollWidth > el.clientWidth + 1) push(`${name(el)} “${(el.textContent ?? "").trim().slice(0, 24)}” is wider than its column`, el);
   });
   slide.querySelectorAll(".notes, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
-    if (last && box(last).b > box(el).b - pb + 1) out.push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`); });
+    if (last && box(last).b > box(el).b - pb + 1) push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`, el); });
   const title = slide.querySelector("h2.title, h1.title");
   // Section titles hold one line so the section number sits still across dividers.
   const maxTitle = slide.matches(".t-section") || (style === "pitch" && !slide.matches(".t-cover")) ? 1 : 2;
-  if (title && lines(title) > maxTitle) out.push(`title wraps to ${lines(title)} lines (max ${maxTitle}); shorten it`);
+  if (title && lines(title) > maxTitle) push(`title wraps to ${lines(title)} lines (max ${maxTitle}); shorten it`, title);
   const sub = slide.querySelector(".subtitle");
   // A pitch content subtitle is one line: the head reserves one, so the body starts right below it.
   const maxSub = style === "pitch" && !slide.matches(".t-cover, .t-section") ? 1 : 2;
-  if (sub && lines(sub) > maxSub) out.push(`subtitle wraps to ${lines(sub)} lines (max ${maxSub}); shorten it`);
+  if (sub && lines(sub) > maxSub) push(`subtitle wraps to ${lines(sub)} lines (max ${maxSub}); shorten it`, sub);
   // The caption and the notes heading hold one line, so both columns keep one header row.
   slide.querySelectorAll(".cap:not(.blank)").forEach((el) => {
     const field = el.classList.contains("notes-h") ? "notesTitle" : "caption", n = lines(el, 16);
-    if (n > 1) out.push(`${field} wraps to ${n} lines (max 1); shorten it`);
+    if (n > 1) push(`${field} wraps to ${n} lines (max 1); shorten it`, el);
   });
   const tk = slide.querySelector(".takeaway");
-  if (tk && lines(tk, 12) > 1) out.push(`takeaway wraps to ${lines(tk, 12)} lines; it must fit on one`);
+  if (tk && lines(tk, 12) > 1) push(`takeaway wraps to ${lines(tk, 12)} lines; it must fit on one`, tk);
   const fn = slide.querySelector(".rail .fn");
-  if (fn && fn.textContent && box(fn).t < 1080 - 48 - 2 * 24 - 2) out.push("footnote + source take more than two lines");
+  if (fn && fn.textContent && box(fn).t < 1080 - 48 - 2 * 24 - 2) push("footnote + source take more than two lines", fn);
   return out;
 }
+export const fitIssues = (slide: HTMLElement, style: Style): string[] => fitIssuesAt(slide, style).map((x) => x.msg);
 
 /* Layout lints (spec 3.6), measured on the rendered slide in slide pixels. Messages start with the
    part of the slide they are about and end with the rule id. L5 (body fill) is a warning: some approved
