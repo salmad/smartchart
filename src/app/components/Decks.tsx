@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { MoreHorizontal, Plus } from 'lucide-react'
+import { MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import type { DeckRepo, DeckSummary } from '@/app/store'
 import { cn } from '@/app/lib/utils'
 import { Button } from './ui/button'
-import type { Account } from '@/app/auth'
-import { AccountMenu } from './AccountMenu'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog'
+import { DeleteDeck } from './DeleteDeck'
+import { MENU_ICON, MENU_ITEM } from './menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
 
 interface Props {
   repo: DeckRepo
-  /** Shown at the foot, with Sign out. */
-  account: Account
   /** The open deck: its name is live (it follows its first title), and it is listed before its first save. */
   current: { id: string | null; name: string; hasSlides: boolean }
   busy: boolean
@@ -21,7 +18,7 @@ interface Props {
 type Row = Pick<DeckSummary, 'id' | 'name' | 'updated' | 'slides'>
 
 /** Your decks down the left of the editor, newest first: open one, start one, or delete one. */
-export function Decks({ repo, account, current, busy, onOpen, onNew, onDeleted }: Props) {
+export function Decks({ repo, current, busy, onOpen, onNew, onDeleted }: Props) {
   const [rows, setRows] = useState<Row[] | null>(null), [error, setError] = useState(false)
   const [doomed, setDoomed] = useState<Row | null>(null)
 
@@ -47,7 +44,7 @@ export function Decks({ repo, account, current, busy, onOpen, onNew, onDeleted }
   }
 
   return (
-    <nav aria-label="Your decks" className="flex min-h-0 flex-col border-r border-line bg-app-bg max-[900px]:hidden">
+    <nav aria-label="Your decks" className="flex w-[248px] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
       <div className="flex items-center justify-between px-3 pb-2 pt-3">
         <h2 className="pl-2 font-mono text-[11px] font-medium uppercase leading-none tracking-[.1em] text-ink-3">Decks</h2>
         <Button variant="ghost" size="sm" onClick={onNew} disabled={busy} aria-label="New deck" className="gap-1.5">
@@ -73,25 +70,15 @@ export function Decks({ repo, account, current, busy, onOpen, onNew, onDeleted }
                   <MoreHorizontal className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-[150px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
-                  <DropdownMenuItem onSelect={() => setDoomed(r)} className="rounded-md px-2 py-1.5 text-[13px] text-ink-2 focus:bg-panel focus:text-ink">Delete deck…</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setDoomed(r)} className={MENU_ITEM}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </li>
           )
         })}
       </ul>
-      <AccountMenu account={account} />
 
-      <Dialog open={!!doomed} onOpenChange={(o) => { if (!o) setDoomed(null) }}>
-        <DialogContent className="max-w-[400px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-          <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Delete “{doomed?.name}”?</DialogTitle>
-          <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Its slides and chat go with it. This can’t be undone.</DialogDescription>
-          <div className="mt-6 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDoomed(null)}>Cancel</Button>
-            <Button onClick={() => void remove()}>Delete deck</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DeleteDeck name={doomed?.name ?? null} onCancel={() => setDoomed(null)} onConfirm={() => void remove()} />
     </nav>
   )
 }

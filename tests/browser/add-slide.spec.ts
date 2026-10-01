@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 test('Add slide shows starters in the deck style and inserts after the current slide', async ({ page }) => {
   await page.goto('/d/d1')
   await page.locator('[data-strip-thumb]').first().click()          // current = cover
-  await page.getByRole('button', { name: 'Add slide' }).click()
+  await page.getByRole('button', { name: 'Add a slide' }).click()
   // Nothing is picked until the user picks: no preview, and the add button waits.
   await expect(page.locator('[data-featured]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Add as slide 2' })).toBeDisabled()
@@ -31,7 +31,7 @@ test('Add slide shows starters in the deck style and inserts after the current s
 })
 test('Esc leaves Add slide without changes', async ({ page }) => {
   await page.goto('/d/d1')
-  await page.getByRole('button', { name: 'Add slide' }).click()
+  await page.getByRole('button', { name: 'Add a slide' }).click()
   await page.keyboard.press('Escape')
   await expect(page.locator('[data-add-preview]')).toHaveCount(0)
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
@@ -59,6 +59,6 @@ test('a slide can be deleted from its menu and brought back with Undo', async ({
 })
 test('a slide can be dragged to a new place', async ({ page }) => {
   await page.goto('/d/d1')
-  await page.locator('[data-strip-item]').first().dragTo(page.locator('[data-strip-item]').nth(1), { targetPosition: { x: 160, y: 40 } })
+  await page.locator('[data-strip-item]').first().dragTo(page.locator('[data-strip-item]').nth(1), { targetPosition: { x: 100, y: 30 } })
   expect(await page.evaluate(() => window.__journey?.items.map((i) => i.id))).toEqual(['b', 'a'])
 })

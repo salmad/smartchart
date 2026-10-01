@@ -7,8 +7,8 @@ import { cn } from '@/app/lib/utils'
 import { SlideView } from './SlideView'
 import { Glint, Stars, Thinking } from './Working'
 
-/** The slide's width: the largest 16:9 that leaves room for the bar and the checks and strip below. The row under it shares it. */
-export const SLIDE_W = 'w-[min(100%,calc((100vh_-_56px_-_44px_-_250px)*16/9))]'
+/** The slide's width: the largest 16:9 that leaves room for the bar, and the checks line and filmstrip below. The row under it shares it. */
+export const SLIDE_W = 'w-[min(100%,calc((100vh_-_56px_-_44px_-_140px)*16/9))]'
 
 /** The framed slide box: the largest 16:9 that fits, with its ring and shadow. Edit mode uses it too. */
 export function SlideFrame({ children, onClick, title, className }: { children: ReactNode; onClick?: (e: React.MouseEvent) => void; title?: string; className?: string }) {

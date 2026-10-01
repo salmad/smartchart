@@ -4,7 +4,7 @@ import { neon } from '@neondatabase/serverless'
 
 /** `rev` counts saves; `chat` is the conversation (agent history, messages), kept apart from the slides in `data`. A deck saved before
     chats were kept apart has rev 0 and no chat; its conversation is still inside `data`. */
-export interface DeckRow { id: string; name: string; updated: number; data: unknown; chat: unknown; rev: number }
+export interface DeckRow { id: string; name: string; updated: number; data: unknown; chat: unknown; rev: number; named: boolean }
 /** A save is written (with the new revision), refused because the deck moved on since the revision it read, or refused as another user's. */
 export type PutResult = { rev: number } | 'conflict' | 'foreign'
 /** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
@@ -80,8 +80,8 @@ export function getDb(): Db | null {
     await ready
     return (await sql.query(text, params)) as T[]
   }
-  type Row = { id: string; name: string; updated: string | Date; data: unknown; chat: unknown; rev: number }
-  const row = (r: Row): DeckRow => ({ id: r.id, name: r.name, updated: new Date(r.updated).getTime(), data: r.data, chat: r.chat ?? null, rev: r.rev })
+  type Row = { id: string; name: string; updated: string | Date; data: unknown; chat: unknown; rev: number; named: boolean }
+  const row = (r: Row): DeckRow => ({ id: r.id, name: r.name, updated: new Date(r.updated).getTime(), data: r.data, chat: r.chat ?? null, rev: r.rev, named: !!r.named })
   return (db = {
     // The list carries only what a card draws (the first slide and the look); a deck's chat and agent history
     // can run to megabytes, so the whole deck is read only when it is opened.
@@ -89,7 +89,7 @@ export function getDb(): Db | null {
       `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
          share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first
        from decks where user_id = $1 order by updated_at desc limit 200`, [u])).map((r) => ({ ...r, slides: Number(r.slides), updated: new Date(r.updated).getTime() })),
-    getDeck: async (u, id) => { const r = await q<Row>('select id, name, updated_at as updated, data, chat, rev from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? row(r[0]) : null },
+    getDeck: async (u, id) => { const r = await q<Row>('select id, name, named, updated_at as updated, data, chat, rev from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? row(r[0]) : null },
     // A deck id belongs to whoever saved it first: another user's id is never overwritten. An existing deck is
     // written only when the save carries the revision it holds.
     putDeck: async (u, id, name, data, chat, baseRev, opts = {}) => {

@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { initialState, reducer, toSaved } from '@/app/state'
+import { editKey, initialState, reducer, toSaved } from '@/app/state'
 import { loadStore, saveStore, deckName, localDeckRepo, summaryOf, KEY, type SavedDeck } from '@/app/store'
 
 const mem = (init: Record<string, string> = {}) => { const m = { ...init }; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v }, m } }
@@ -29,6 +29,21 @@ test('the local repo saves, lists, gets and removes one deck at a time, and reso
   expect(await repo.get('d_1')).toBeNull()
   const full = localDeckRepo({ getItem: () => null, setItem: () => { throw new Error('quota') } })
   expect(await full.save(deck)).toMatch(/storage is full/)
+})
+test('a name the maker gave wins over the cover title; a blank one does not', () => {
+  const items: SavedDeck['items'] = [{ id: 's', slide: { template: 'cover', title: 'Acme', subtitle: 'x' }, status: 'ok', errors: [], warnings: [], checks: [] }]
+  expect(deckName({ name: 'Board pack', items })).toBe('Board pack')
+  expect(deckName({ name: '  ', items })).toBe('Acme')
+  expect(deckName({ name: null, items })).toBe('Acme')
+})
+test('renaming is an edit: it saves and survives open', () => {
+  const opened = reducer(initialState(), { type: 'open', deck: { id: 'd_1', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], updated: 1, name: 'Board pack',
+    items: [{ id: 's', slide: { template: 'cover', title: 'Acme', subtitle: 'x' }, status: 'ok', errors: [], warnings: [], checks: [] }] } })
+  expect(opened.name).toBe('Board pack')
+  const before = toSaved(opened), after = toSaved(reducer(opened, { type: 'set', patch: { name: 'Q3 plan' } }))
+  expect(after?.name).toBe('Q3 plan')
+  expect(before && after && editKey(before) !== editKey(after)).toBe(true)
+  expect(reducer(opened, { type: 'new' }).name).toBeNull()
 })
 test('the deck name reads as the title does on the slide, even with a sign inside a highlight', () => {
   const named = (title: string) => deckName({ items: [{ id: 's', slide: { template: 'chart', title } as SavedDeck['items'][number]['slide'], status: 'ok', errors: [], warnings: [], checks: [] }] })

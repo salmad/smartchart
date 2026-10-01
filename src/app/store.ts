@@ -11,7 +11,8 @@ export const KEY = 'smartchart.journey.decks.v1'
 export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors: string[]; warnings: string[]; checks: Check[]; checksPending?: boolean }
 /** `files`: what the user attached to the message, as its chips show them; their text went to the agent. */
 export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[] }
-export interface SavedDeck { id: string; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number }
+/** `name`: what the maker called the deck; null while it follows its first title. */
+export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
@@ -72,7 +73,8 @@ export const newDeckId = (): string => `d_${Date.now().toString(36)}${Math.rando
 export const deckList = (store: Store): SavedDeck[] => Object.values(store.decks).sort((a, b) => (b.updated || 0) - (a.updated || 0))
 
 /** Named after the cover, else the first slide's title. */
-export function deckName(d: { items?: Item[] }): string {
+export function deckName(d: { name?: string | null; items?: Item[] }): string {
+  if (d.name?.trim()) return d.name.trim()
   const slides = (d.items || []).map((it) => it.slide)
   const t = (slides.find((s) => s.template === 'cover') || slides[0])?.title
   // Markup is stripped in pairs, as the slide draws it, so the name reads exactly as the title on the slide.
@@ -113,6 +115,6 @@ export function mergeDecks(local: SavedDeck, server: SavedDeck, base: SavedDeck 
     items.splice(0, items.length, ...placed)
   }
   // The look follows the same rule as slides: a field changed here since `base` is kept, otherwise the server's is taken.
-  const take = <K extends 'style' | 'theme' | 'accent'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
-  return { deck: { ...local, style: take('style'), theme: take('theme'), accent: take('accent'), items }, changed }
+  const take = <K extends 'name' | 'style' | 'theme' | 'accent'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
+  return { deck: { ...local, name: take('name'), style: take('style'), theme: take('theme'), accent: take('accent'), items }, changed }
 }

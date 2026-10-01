@@ -8,6 +8,8 @@ import { newDeckId, type Item, type Message, type SavedDeck } from './store'
 export type View = 'landing' | 'editor' | 'add'
 export interface AppState {
   deckId: string | null; style: Style; theme: Theme; accent: string | null
+  /** What the maker called the deck; null while it follows its first title. */
+  name: string | null
   items: Item[]; current: number; history: ChatMessage[]; working: Set<string>
   messages: Message[]
   busy: boolean; live: boolean; view: View
@@ -30,7 +32,7 @@ const PICKED = "Here's your slide. Tell me what to change: your numbers, your wo
 
 export function initialState(): AppState {
   return {
-    deckId: null, style: 'consulting', theme: 'ink', accent: null,
+    deckId: null, name: null, style: 'consulting', theme: 'ink', accent: null,
     items: [], current: 0, history: [], working: new Set(), messages: [],
     busy: false, live: false, view: 'landing', pills: {}, removed: null, editing: null, edited: [],
   }
@@ -48,7 +50,7 @@ export function reducer(s: AppState, a: Action): AppState {
       if (s.editing) return s
       const d = a.deck, items = d.items || []
       return {
-        ...s, deckId: d.id, style: d.style, theme: d.theme, accent: d.accent || null,
+        ...s, deckId: d.id, name: d.name ?? null, style: d.style, theme: d.theme, accent: d.accent || null,
         items, current: clamp(d.current || 0, items), history: d.history || [], working: new Set(d.working || []),
         messages: d.messages ?? [],
         view: items.length ? 'editor' : 'landing', pills: {}, removed: null, editing: null, edited: [],
@@ -114,17 +116,17 @@ export function reducer(s: AppState, a: Action): AppState {
 export function toSaved(s: AppState): SavedDeck | null {
   if (!s.deckId || (!s.items.length && !s.history.length)) return null
   return {
-    id: s.deckId, style: s.style, theme: s.theme, accent: s.accent, current: s.current,
+    id: s.deckId, name: s.name, style: s.style, theme: s.theme, accent: s.accent, current: s.current,
     items: s.items.map(({ checksPending: _pending, ...it }) => it), history: s.history, working: [...s.working],
     messages: s.messages,
     updated: Date.now(),
   }
 }
 
-/** What counts as an edit: the slides and their order, the look, and the chat. Opening a deck, selecting a slide or
+/** What counts as an edit: the slides and their order, the name, the look, and the chat. Opening a deck, selecting a slide or
     re-running its checks is not one, so it neither saves the deck nor moves it up the list of decks. */
 export const editKey = (d: SavedDeck): string =>
-  JSON.stringify([d.style, d.theme, d.accent, d.items.map((it) => [it.id, it.slide]), (d.messages ?? []).map((m) => [m.kind, m.text]), d.history.length])
+  JSON.stringify([d.name ?? null, d.style, d.theme, d.accent, d.items.map((it) => [it.id, it.slide]), (d.messages ?? []).map((m) => [m.kind, m.text]), d.history.length])
 
 /** The engine's deck: the footer is the cover title; with no cover, only the page number. */
 export function deckOf(s: AppState): Deck {

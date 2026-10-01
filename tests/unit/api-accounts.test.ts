@@ -141,6 +141,16 @@ describe('session and routes', () => {
     await db.addEvents('u', 'd_1', [{ rev: 2, by: 'Claude Code', slideId: 's_a', what: 'updated', paths: ['title'] }])
     expect(await (await handle(new Request('http://x/api/decks?id=d_1&events=1'))).json()).toMatchObject([{ slideId: 's_a' }])
   })
+  it('a deck renamed in the app keeps its name when later saves send the cover title', async () => {
+    const db = fakeDb(), handle = decksHandler({ userFrom: async () => ({ id: 'u', email: 'a@b.c', via: 'session' }), db: () => db })
+    const put = (name: string, baseRev: number, named?: boolean) => handle(new Request('http://x/api/decks', { method: 'PUT',
+      body: JSON.stringify({ id: 'd_1', name, data: { items: [] }, chat: {}, baseRev, ...(named === undefined ? {} : { named }) }) }))
+    await put('Cover title', 0)
+    expect(await db.getDeck('u', 'd_1')).toMatchObject({ name: 'Cover title', named: false })
+    await put('Board pack', 1, true)
+    await put('Cover title', 2)
+    expect(await db.getDeck('u', 'd_1')).toMatchObject({ name: 'Board pack', named: true })
+  })
   it('share: rev and slide ids in the public deck', async () => {
     const db = fakeDb(), handle = shareHandler({ userFrom: async () => null, db: () => db })
     await db.putDeck('u', 'd_1', 'x', { items: [{ id: 's_a', slide: { template: 'section', title: 'Plan' } }] }, {}, 0)
