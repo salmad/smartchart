@@ -42,7 +42,7 @@ export function Gantt({ edit, deckStyle }: { edit: SlideEdit; deckStyle: Style }
     let to = index
     const boxes = () => [...(grid.current?.querySelectorAll('tbody tr[data-row]') ?? [])].map((el) => el.getBoundingClientRect())
     const mv = (ev: PointerEvent) => { to = dropIndex(boxes(), index, { x: ev.clientX, y: ev.clientY }, 'y'); setDropAt(to) }
-    const up = () => { grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', up); setDropAt(null); if (to !== index) write(g.moveRow(index, to)) }
+    const up = () => { grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', up); setDropAt(null); if (to !== index) write(g.place(index, to > index ? to + 1 : to, g.lines[index].level)) }
     grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', up)
   }
 
