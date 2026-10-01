@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { signOut, type Account } from '@/app/auth'
 import { go } from '@/app/route'
+import { AgentKey } from './AgentKey'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 
 /** The foot of the decks sidebar: who is signed in, with Sign out. */
 export function AccountMenu({ account }: { account: Account }) {
+  const [connecting, setConnecting] = useState(false)
   return (
     <div className="border-t border-line p-2">
       <DropdownMenu modal={false}>
@@ -19,9 +22,11 @@ export function AccountMenu({ account }: { account: Account }) {
             <span className="truncate text-[12.5px] text-ink-3">{account.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-line" />
+          <DropdownMenuItem onSelect={() => setConnecting(true)} className="rounded-md px-2 py-1.5 text-[13px] text-ink-2 focus:bg-panel focus:text-ink">Connect an agent</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void signOut().then(() => go('/'))} className="rounded-md px-2 py-1.5 text-[13px] text-ink-2 focus:bg-panel focus:text-ink">Sign out</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <AgentKey open={connecting} onOpenChange={setConnecting} />
     </div>
   )
 }

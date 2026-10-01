@@ -33,3 +33,18 @@ test('an open editor takes an outside write within 5 s, says who, and shows no s
   await expect(page.getByText('Claude Code updated a slide.')).toBeVisible()
   await expect(page.getByText('changed in another tab')).toHaveCount(0)
 })
+
+test('the account menu makes an agent key, shows the command once, and replaces it', async ({ page }) => {
+  let n = 0
+  await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
+  await page.route('**/api/keys', (r) => r.request().method() === 'POST' ? r.fulfill({ json: { key: `sc_key${++n}abcdefghijklmnopqrstuvwxyz`, prefix: `sc_key${n}` } }) : r.fulfill({ json: { prefix: null } }))
+  await page.route('**/api/decks**', (r) => r.fulfill({ json: [] }))
+  await page.goto('/')
+  await page.getByRole('button', { name: /Ann/ }).click()
+  await page.getByRole('menuitem', { name: 'Connect an agent' }).click()
+  await page.getByRole('button', { name: 'Make a key' }).click()
+  await expect(page.getByText(/claude mcp add --transport http smartchart .*\/mcp\/v1 --header "Authorization: Bearer sc_key1/)).toBeVisible()
+  await expect(page.getByText('You won’t see this key again.')).toBeVisible()
+  await page.getByRole('button', { name: 'Replace key' }).click()
+  await expect(page.getByText(/Bearer sc_key2/)).toBeVisible()
+})
