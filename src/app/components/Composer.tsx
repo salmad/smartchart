@@ -12,6 +12,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/too
 
 interface Props {
   chips: Pill[] | null; canSend: boolean; busy: boolean; onSend: (text: string, files?: Attached[]) => void; onClear: () => void
+  /** Shown instead of the usual placeholder, e.g. why sending is off. */
+  hint?: string
   /** A new deck: the writing style to pick (it is set once the first slide is made) and example prompts to start from. */
   start?: { style: Style; onStyle: (s: Style) => void }
 }
@@ -27,7 +29,7 @@ type Pending = { id: number; name: string } & ({ state: 'reading' } | { state: '
 /** Prompt box with suggestion pills; in a new deck, the style and example prompts instead. Files dropped on it, or
     picked with the paperclip, go with the message. It refuses an empty message and a send while a turn runs or a
     file is still being read: sendTurn does not check. */
-export function Composer({ chips, canSend, busy, onSend, onClear, start }: Props) {
+export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }: Props) {
   const [text, setText] = useState(''), [files, setFiles] = useState<Pending[]>([]), [over, setOver] = useState(false)
   const picker = useRef<HTMLInputElement>(null), nextId = useRef(0)
   const ready = files.flatMap((f) => (f.state === 'ready' ? [f.file] : []))
@@ -98,7 +100,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, start }: Props
         </ul>
       )}
       <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} disabled={!canSend}
-        placeholder={files.length ? 'Say what the room should take away…' : start ? 'Paste your numbers, or drop a doc or sheet, and say what the slide should argue…' : 'Describe a slide, or ask for a change…'}
+        placeholder={hint ?? (files.length ? 'Say what the room should take away…' : start ? 'Paste your numbers, or drop a doc or sheet, and say what the slide should argue…' : 'Describe a slide, or ask for a change…')}
         className="min-h-0 resize-none rounded-[10px] border-line-2 bg-app-bg px-3 py-2.5 text-sm leading-[1.45] shadow-none focus-visible:border-ink-3 focus-visible:ring-0 disabled:opacity-50" />
       <div className="flex items-center gap-2">
         {start

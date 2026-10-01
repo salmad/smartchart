@@ -3,3 +3,5 @@
 /* An empty field shows what it is, so a new card has somewhere to type. */
 [data-editing] [contenteditable]:empty::before { content: attr(data-hint); opacity: .35; }
 [data-editing] [data-sample] { opacity: .45; }
+/* A space typed at the end of a field must stay a space until the next character arrives. */
+[data-editing] [contenteditable] { white-space: pre-wrap; }
