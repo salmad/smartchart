@@ -95,7 +95,7 @@ function tableActions(slide: Slide, style: Style, t: Extract<Target, { kind: "ce
     out.push({ id: `col-${key}`, label, group: "format", checked: flag(key), run: () => ({ set: Object.fromEntries(cols.map((j) => [`table.columns[${j}].${key}`, flag(key) ? null : true])) }) });
   const toneOf = (j: number): Tone => (slide.table?.columns[j]?.focus ? "focus" : slide.table?.columns[j]?.muted ? "muted" : "normal");
   for (const tone of ["normal", "muted", "focus"] as const)
-    out.push({ id: `col-tone-${tone}`, label: tone[0].toUpperCase() + tone.slice(1), group: "format", checked: cols.every((j) => toneOf(j) === tone), run: () => ({ set: tonePatch(slide, cols, tone) }) });
+    out.push({ id: `col-tone-${tone}`, label: `${tone[0].toUpperCase()}${tone.slice(1)} column`, group: "format", checked: cols.every((j) => toneOf(j) === tone), run: () => ({ set: tonePatch(slide, cols, tone) }) });
   return out;
 }
 

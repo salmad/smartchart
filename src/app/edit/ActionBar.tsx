@@ -14,7 +14,7 @@ export function ActionBar({ edit, slide, deckStyle }: { edit: SlideEdit; slide: 
   const box = rectOf(edit.target, slide), actions = actionsFor(edit.target, edit.draft, deckStyle).filter((a) => a.bar)
   const frame = slide.parentElement?.getBoundingClientRect()
   if (!box || !frame || !actions.length) return null
-  const place = (m: HTMLElement | null) => { if (!m) return; m.style.setProperty('--x', `${box.left - frame.left + box.width / 2}px`); m.style.setProperty('--y', `${box.top - frame.top - 8}px`) }
+  const place = (m: HTMLElement | null) => { if (!m) return; m.style.setProperty('--x', `${box.left - frame.left + box.width / 2}px`); m.style.setProperty('--y', `${box.top - frame.top - (edit.target.kind === 'cells' ? 30 : 8)}px`) }
   return (
     <div ref={place} role="toolbar" aria-label="Text emphasis" data-edit-chrome
       className="absolute left-[var(--x)] top-[var(--y)] z-10 flex -translate-x-1/2 -translate-y-full gap-0.5 rounded-lg bg-raise p-1 shadow-[0_0_0_1px_theme(colors.line-2),0_8px_24px_rgba(0,0,0,.4)]">

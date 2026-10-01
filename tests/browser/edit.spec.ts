@@ -207,10 +207,10 @@ test('a table: highlight text inside a cell, and format a whole column', async (
   await head.click({ button: 'right' })
   await page.getByRole('menuitemcheckbox', { name: 'Bold column' }).click()
   await head.click({ button: 'right' })
-  await page.getByRole('menuitemcheckbox', { name: 'Muted' }).click()
+  await page.getByRole('menuitemcheckbox', { name: 'Muted column' }).click()
   await expect(page.locator('[data-editing] th.bold.muted')).toHaveCount(1)
   await head.click({ button: 'right' })
-  await page.getByRole('menuitemcheckbox', { name: 'Focus' }).click()
+  await page.getByRole('menuitemcheckbox', { name: 'Focus column' }).click()
   await expect(page.locator('[data-editing] th.focus')).toHaveCount(1)
   await page.getByRole('button', { name: 'Save' }).click()
   const t = (await saved(page)).table
@@ -266,4 +266,60 @@ test('Escape peels back a selection before it asks about Discard', async ({ page
   await page.keyboard.press('Escape')
   await expect(page.getByRole('toolbar', { name: 'Text emphasis' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+})
+
+test('a card is dragged to another place by its grip, and ⌘Z puts it back', async ({ page }) => {
+  await open(page)
+  await page.keyboard.press('e')
+  const names = () => page.locator('[data-editing] [data-item^="cards["] h3').allTextContents()
+  const first = must(await page.locator('[data-editing] [data-item="cards[0]"]').boundingBox())
+  await page.mouse.move(first.x + first.width / 2, first.y + 20)
+  const grip = page.getByRole('button', { name: /^Move card 1$/ })
+  const g = must(await grip.boundingBox())
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2, { steps: 6 })
+  await page.mouse.down()
+  const last = must(await page.locator('[data-editing] [data-item="cards[2]"]').boundingBox())
+  await page.mouse.move(last.x + last.width - 4, last.y + 20, { steps: 12 })
+  await page.mouse.up()
+  expect(await names()).toEqual(['Mix', 'Cost', 'Price'])
+  await page.keyboard.press('Control+z')
+  expect(await names()).toEqual(['Price', 'Mix', 'Cost'])
+})
+
+const PLANS = { template: 'table', title: 'Plans compared', table: { columns: [{ label: 'Plan' }, { label: 'Price' }, { label: 'Seats' }], rows: [{ cells: ['Starter', '£9 a month', '1'] }, { cells: ['Team', '£29 a month', '5'] }] } }
+const loadPlans = async (page: Page) => { await open(page); await page.evaluate((s) => window.__journey?.load([s] as never, 'consulting'), PLANS); await page.keyboard.press('e') }
+const cellEl = (page: Page, r: number, c: number) => page.locator(`[data-editing] td[data-path="table.rows[${r}].cells[${c}]"]`)
+
+test('cells are selected across the table by dragging, and formatted together', async ({ page }) => {
+  await loadPlans(page)
+  const a = must(await cellEl(page, 0, 1).boundingBox()), b = must(await cellEl(page, 1, 2).boundingBox())
+  await page.mouse.move(a.x + 8, a.y + a.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(b.x + 8, b.y + b.height / 2, { steps: 10 })
+  await page.mouse.up()
+  await page.getByRole('button', { name: 'Bold' }).click()
+  await expect(page.locator('[data-editing] td strong')).toHaveCount(4)
+  await cellEl(page, 1, 1).click({ button: 'right' })
+  await page.getByRole('menuitemcheckbox', { name: /^Focus ⌘/ }).click()
+  await expect(page.locator('[data-editing] td .hl-focus')).toHaveCount(4)
+  await page.getByRole('button', { name: 'Save' }).click()
+  const rows = (await saved(page)).table?.rows
+  expect(rows?.[0].cells).toEqual(['Starter', '**[[£9 a month]]**', '**[[1]]**'])
+})
+
+test('a table column is dragged to another place by its grip', async ({ page }) => {
+  await loadPlans(page)
+  const c0 = must(await cellEl(page, 0, 0).boundingBox())
+  await page.mouse.move(c0.x + 10, c0.y + c0.height / 2)
+  const grip = page.getByRole('button', { name: 'Move column 1' })
+  const g = must(await grip.boundingBox())
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2, { steps: 6 })
+  await page.mouse.down()
+  const c2 = must(await cellEl(page, 0, 2).boundingBox())
+  await page.mouse.move(c2.x + c2.width - 4, c2.y + 10, { steps: 12 })
+  await page.mouse.up()
+  await page.getByRole('button', { name: 'Save' }).click()
+  const t = (await saved(page)).table
+  expect(t?.columns.map((c) => c.label)).toEqual(['Price', 'Seats', 'Plan'])
+  expect(t?.rows[0].cells).toEqual(['£9 a month', '1', 'Starter'])
 })
