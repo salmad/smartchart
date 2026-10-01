@@ -6,15 +6,17 @@ Status: design, 2026-10-01. Reviewed for one-way doors by Fable (notes folded in
 
 An agent such as Claude Code, or OpenClaw driven from Telegram, connects to SmartChart and works on its user's decks. It has two ways to do that:
 
-- **Fine-grained tools:** pick a template, write a slide, edit one component of a slide, run the checks, share the deck, get a link, HTML or PNG.
+- **Fine-grained tools:** pick a template, write a slide, edit one component of a slide, run the checks, share the deck and get its link.
 - **Delegation:** `ask` sends the request to SmartChart's own agent and returns its reply.
 
 The in-app agent and outside agents use **one set of tools**, with the same names and the same code. The post-edit code always runs on our side: autofix → validate → resolve `auto` (Jev) → fit check → rule checks. No writer can skip it.
 
+**How it is used:** open the deck's share link in a browser and talk to Claude Code (connected over MCP) beside it. Every change shows up in the open page within seconds. There is no rendering on the server: the browser is the view.
+
 **Decided:**
 - MCP first, REST second, both generated from the same registry.
 - API keys now; OAuth later. A key acts only for its own user.
-- No browser on the server for writes. The fit check counts characters, and the app re-measures when a deck is opened.
+- No browser on the server at all. The fit check counts characters, and the app re-measures when a deck is opened. No PNG or HTML export: the share link is the view.
 - `ask` shares the deck's chat with the app.
 - Public names have `v1` in them, and tools are added but never renamed.
 
@@ -37,10 +39,10 @@ The in-app agent and outside agents use **one set of tools**, with the same name
 ```
 
 - **Registry** (`src/engine/tools/`): one file per tool group (section 4). An entry is `{ name, group, description, input, output, handler }`. The descriptions and schemas are the contract: the in-app agent sees them as GLM functions, MCP lists them as tools, and REST validates bodies against them. Handlers take a `ToolContext` (`deck`, `user`, `jev`, `measure`, `now`) and never touch HTTP or React.
-- **Hosts** are thin adapters. The MCP host maps `tools/list` and `tools/call` to the registry, and returns image content for PNGs. The REST host maps `POST /api/v1/<tool>` with a JSON body to the same call, and returns JSON. Both authenticate first (section 7) and count model calls (section 9).
+- **Hosts** are thin adapters. The MCP host maps `tools/list` and `tools/call` to the registry. The REST host maps `POST /api/v1/<tool>` with a JSON body to the same call, and returns JSON. Both authenticate first (section 7) and count model calls (section 9).
 - **The in-app agent moves onto the registry** with the same tool names (milestone M4). Until then it keeps its four tools in the browser. Both paths share `checkWrite`, so the slides they produce are equivalent.
 - **Measuring on the server:** `measure` is a character-based estimate. It uses the `validate()` limits (maxChars, item counts, row budgets) and returns `fit: "estimated"`. The app already re-measures every slide in a real browser when a deck opens (`recheckRules`, `App.tsx:74`), so an overflow shows there as an amber issue. Later, the fit-spike predictor (`docs/research/2026-09-27-fit-spike`, 100% agreement with Chrome on text line counts) can replace the estimate for text, with no browser and no change to the contract.
-- **`render_slide` PNG** is the one place a browser runs on the server: `@sparticuz/chromium` in a single Vercel function, used only for screenshots.
+- **Live share view:** the share page (`/s/:token`, `Shared.tsx`) loads once today. It changes to poll a cheap `rev` check every 3 s while the tab is visible (and on focus), reload the deck when `rev` changes, and move to the slide that changed. A share link can open at one slide with `?slide=n`.
 
 ## 3. Context: how an outside agent learns enough
 
@@ -48,7 +50,7 @@ Context arrives in four layers, all generated from the same source as the in-app
 
 | Layer | When it arrives | What's in it |
 |---|---|---|
-| 1. MCP `instructions` (~300 words, always in context) | On connect | What SmartChart is. The two ways in (tools, or `ask`). The workflow: `get_guide` once per style, then `suggest_template` → `get_template` → `create_slide` → fix `issues` → `check_slide` → `render_slide` to look. Address slides by id, never by position. Write `"auto"` for choices code makes. Never set style, layout, colours, page numbers or the footer. When the user's request is unclear, ask them before writing. |
+| 1. MCP `instructions` (~300 words, always in context) | On connect | What SmartChart is. The two ways in (tools, or `ask`). The workflow: `get_guide` once per style, then `suggest_template` → `get_template` → `create_slide` → fix `issues` → `check_slide`. Offer the user the share link (`share_deck`) so they can watch the deck change. Address slides by id, never by position. Write `"auto"` for choices code makes. Never set style, layout, colours, page numbers or the footer. When the user's request is unclear, ask them before writing. |
 | 2. `get_guide(style)` | Once per session and style | Hard rules (every figure exactly as given, no invented data, illustrative figures marked, no made-up source, change only what was asked). Start plain. When to stop and ask (2–4 numbered options, put to your own user). Writing slide JSON (maxChars, plain numbers, markup syntax, `auto` choices, paths and patches). The style block (`STYLES[style]`). |
 | 3. `list_templates(style)` / `get_template(template, style)` | When choosing and before writing | Every offered template with its summary and "use when", the picking guide (`PICKING_GUIDE`, `GUIDE`: chart vs table), and the card: fields with type, required, maxChars, item min/max and description, the template rules (`CHART_GUIDE` for charts), markup, and a worked example from the starters. |
 | 4. Tool results | Every call | Write results name the path, the limit and the fix for each issue. `get_deck` gives the storyline. `read_slide` gives the JSON and what can be added, removed or moved. |
@@ -80,7 +82,7 @@ Seven groups, each with one job. **Reads never change anything. Writes always ru
 | `create_deck` | `name`, `style`, `theme?`, `accent?` | deck (as `get_deck`); the server mints the id |
 | `get_deck` | `deckId` | `{ deckId, name, style, theme, accent, rev, links: { edit, share }, slides: [{ slideId, n, template, title, issues }] }`. The slide list is the storyline. |
 | `update_deck` | `deckId`, `{ name?, theme?, accent? }` | deck. `style` can change only while the deck is empty. `accent` is a hex colour checked by the colour rules. |
-| `share_deck` | `deckId`, `on` | `{ share: url \| null }` |
+| `share_deck` | `deckId`, `on` | `{ share: url \| null }`: the read-only link that updates live (section 2) |
 
 ### 4.4 Templates for a slide (decision help; Jev)
 | Tool | In | Out |
@@ -97,7 +99,7 @@ Seven groups, each with one job. **Reads never change anything. Writes always ru
 | `move_slide` | `deckId`, `slideId`, `after` | `{ slides }` (the storyline) |
 | `delete_slide` | `deckId`, `slideId` | `{ deleted: slide }`. Undo is `create_slide` with it. |
 
-**Write result:** `{ applied, slideId, slide (as stored), issues[], warnings[], autofixes[], resolved{}, changed[], elsewhere[], fit: "estimated", rev }`.
+**Write result:** `{ applied, slideId, slide (as stored), issues[], warnings[], autofixes[], resolved{}, changed[], elsewhere[], fit: "estimated", rev, link }`. `link` opens the deck at this slide: the share link with `?slide=n` when sharing is on, otherwise the owner's `/d/:id?slide=n`.
 - `issues` must be fixed.
 - `warnings` are advice. Act on them only with a small edit.
 - `resolved` lists the `auto` values code picked.
@@ -113,15 +115,10 @@ Shape errors return `applied: false`, and nothing is written.
 | `check_slide` | `deckId`, `slideId`, `judgment?` (default false) | `{ checks: [{ id, ok, msg, p? }] }`: the rule checks, and with `judgment` the Jev checks too |
 | `check_storyline` | `deckId` | `{ storyline, checks: [{ id, ok, msg, slideId?, fix? }] }` (D1–D5, cached by `storyKey`) |
 
-### 4.7 Output
+### 4.7 Delegation
 | Tool | In | Out |
 |---|---|---|
-| `render_slide` | `deckId`, `slideId`, `format`: `link` \| `html` \| `png` | `link`: `/d/:id?slide=n` for the owner, plus the share link if on. `html`: a standalone file (slide JSON, `slides.css`, the fonts and the render script; it draws itself in any browser, identical to the app). `png`: 1920×1080, as MCP image content and as a URL. |
-
-### 4.8 Delegation
-| Tool | In | Out |
-|---|---|---|
-| `ask` | `text`, `deckId?` (omit to start a new deck), `slideId?`, `path?`, `files?: [{ name, text }]`, `style?` (new deck), `format?` (`link` \| `html` \| `png`) | `{ status: "done" \| "question", reply, options?, slides: [{ slideId, n, title, changed }], link, html? \| png?, rev }` |
+| `ask` | `text`, `deckId?` (omit to start a new deck), `slideId?`, `path?`, `files?: [{ name, text }]`, `style?` (new deck) | `{ status: "done" \| "question", reply, options?, slides: [{ slideId, n, title, changed }], link, rev }` |
 
 `ask` runs `runTurn` on the server with the deck's shared chat, so its turns appear in the app's chat marked with the client's name ("via Claude Code"), and the in-app agent knows what "that" refers to. When `status` is `"question"`, the caller relays the options to its user and answers with another `ask` on the same deck.
 
@@ -131,6 +128,7 @@ Shape errors return `applied: false`, and nothing is written.
 - Versions or undo beyond `delete_slide` returning the slide.
 - Uploading binary files: the caller extracts the text.
 - `get_selection` (what the user has selected in an open tab).
+- Rendering (PNG or standalone HTML). The share link is the view. Can be added later as a new tool without changing any other.
 
 ## 5. The public data contract
 
@@ -176,15 +174,15 @@ There's one error shape across hosts: `{ error: { code, message, fix? } }`. Code
 - **Unit (vitest):** each registry handler against a fake database and a fake Jev; contract snapshots of every tool's schema (a change to a published name or field fails the test unless it only adds); `upgrade()` for `stacked` → `stacking`; key auth (another user's deck returns `not_found`).
 - **Host tests:** MCP `tools/list` and `tools/call` round trip with the SDK client; a REST call runs the same handler.
 - **Agent harness:** with Claude Code connected over MCP, run a fixed set of requests (new slide, surgical edit, storyline) and compare with the in-app harness on fit, numbers kept and edit drift. Re-run the in-app harness when the in-app agent moves onto the registry (M4).
-- **Browser (Playwright):** the app merges after an outside write (no stuck saves), and the soft lock warning appears.
+- **Browser (Playwright):** the app merges after an outside write (no stuck saves), the soft lock warning appears, and an open share page shows an outside write within 5 s and moves to that slide.
 
 ## 12. Milestones
 
-1. **M1 Contract.** Schema clean-up (section 5). The registry with deck, slide, template and check handlers over the deck service (server write path with estimated fit). API keys. REST host. The app's 409 merge and the soft lock.
+1. **M1 Contract.** Schema clean-up (section 5). The registry with deck, slide, template and check handlers over the deck service (server write path with estimated fit). API keys. REST host. The app's 409 merge and the soft lock. The live share view with `?slide=n`.
 2. **M2 MCP.** The MCP host on Vercel, `instructions`, `get_guide` from the split prompt sections, and the connect guide (Claude Code `claude mcp add --transport http …`, plus an OpenClaw skill). Trial run with Claude Code.
-3. **M3 Output and delegation.** `render_slide` (link, HTML, PNG through one Chromium function) and `ask` on the server with the shared chat.
+3. **M3 Delegation.** `ask` on the server with the shared chat.
 4. **M4 One agent.** The in-app agent uses the registry with the same names (`suggest_template` + one-call `create_slide` replace reserve + `edit_slide`; `patch_slide` becomes `update_slide`). Harness parity required before merging.
-5. **Later:** the fit predictor on the server (exact text fit), OAuth, file upload, `delete_deck`, Telegram link previews.
+5. **Later:** the fit predictor on the server (exact text fit), OAuth, file upload, `delete_deck`, rendering (PNG or HTML) if an outside client needs images.
 
 ## 13. Risks
 
