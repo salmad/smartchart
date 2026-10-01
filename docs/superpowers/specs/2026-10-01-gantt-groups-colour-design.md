@@ -9,11 +9,11 @@ A timeline today is a flat list of 2–8 bars, one of them optionally the focus.
 Decided with the user (2026-10-01):
 
 1. A sub-row is a **group with a derived span**: the parent's bar is the earliest child start to the latest child end. Two levels.
-2. **Colour only tells top-level from sub-level.** It is derived from the row's level, never stored, never a highlight: no colour field, no colour menu, no colour on milestones.
+2. **Colour only tells top-level from sub-level.** It is derived from the row's level and never stored: no colour field, no colour menu, no colour on milestones. The one exception is the existing **highlight** (`focus`): one row, group or sub-row, can be highlighted because the discussion (and the comments) may be about it. The editor now sets it.
 3. Milestones **stay in the shared foot lane**. The editor gets better; the cap rises to 6.
 4. Groups are stored **flat with a level**, so dragging a row under another is a change of position and level, nothing more.
 
-Out of scope: more than two levels, dependencies between bars, per-row milestones, any colour choice, a legend, bars that skip periods. The existing `focus` flag on a row is left exactly as it is (the starter timeline uses it); whether to remove it is a separate question for the user.
+Out of scope: more than two levels, dependencies between bars, per-row milestones, any colour choice, a legend, bars that skip periods. The `focus` flag keeps its meaning and its data; only the editor gains a control for it.
 
 ## Data
 
@@ -24,7 +24,7 @@ Out of scope: more than two levels, dependencies between bars, per-row milestone
 | `label` | name, max 28 characters |
 | `level` | `0` (default) or `1`. A level-1 row is a child of the nearest level-0 row above it. |
 | `start`, `end` | 0-based period indices, inclusive. **Omitted on a group.** |
-| `focus` | unchanged: the one highlighted row, at most one |
+| `focus` | the one highlighted row, at most one; may be a plain row, a group or a sub-row |
 
 A **group** is a level-0 row that has at least one level-1 row directly after it. A level-0 row with no children after it is a plain row with its own `start` and `end`, identical to today's row.
 
@@ -68,6 +68,8 @@ All writes are patches through `applyPatch`, the agent's path, so ⌘Z is the sl
 Row menu (right-click a row, same menu as today, extended):
 
 - Insert workstream above / below, Add sub-row, Delete.
+- Highlight / Remove highlight: sets `focus` on this row and clears it from any other (one at a time), on a plain row, a group or a sub-row. A highlighted group draws its bracket in the focus colour.
+- Highlight / Remove highlight: sets `focus` on this row and clears it from every other (one at a time); it works on a plain row, a group or a sub-row, and a highlighted group draws its bracket in the focus colour.
 - Indent (becomes the last child of the group above) and Outdent (becomes top-level, after its group). A first row cannot indent.
 - Deleting a group asks nothing: its children move up a level (undo restores), unless the row menu's Delete group and sub-rows is chosen.
 
@@ -87,7 +89,7 @@ Unit (`tests/unit/gantt.test.ts`, a new `timeline-rows.test.ts`, `schema` and `r
 
 - `rowSpans`: group span from children; plain row unchanged; group with no children falls back to plain.
 - Checks: each error above; a row with `focus: true` still validates.
-- Editor operations: add sub-row, indent, outdent, move under another group, delete group (children move up), delete with children, period insert and delete across groups, milestone cap 6.
+- Editor operations: add sub-row, indent, outdent, move under another group, delete group (children move up), delete with children, highlight moves to one row at a time and clears, period insert and delete across groups, milestone cap 6.
 - Render: group bracket and indented child present; top-level and sub-row bars differ in colour only when sub-rows exist, and a chart without sub-rows renders as before; the allocator accepts the slots in every theme.
 - Existing gantt tests pass unchanged.
 

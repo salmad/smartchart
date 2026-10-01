@@ -15,10 +15,10 @@
 - No `any`, no inline styles in app code (`src/app`); split components over ~300 lines.
 - Slides use `slides.css` unchanged by app chrome; slide CSS additions go in `src/engine/slides/slides.css`.
 - Checks warn, they never silently rewrite. The agent and the editor write the same schema path.
-- No colour field, no colour menu, no highlight is added. Colour only tells top-level from sub-level. The allocator throws if two used colours are too close or a mark is below contrast: the slots used are covered by a test across all themes.
+- No colour field and no colour menu are added; the existing `focus` highlight gets an editor control. Colour otherwise only tells top-level from sub-level. The allocator throws if two used colours are too close or a mark is below contrast: the slots used are covered by a test across all themes.
 - Examples and the gallery come only from `src/engine/starters/starters.json`; no new example set. Existing starters must stay valid and render unchanged.
 - Limits: 8 top-level rows, 12 lines in total, 2 minimum; with notes 6 lines and 20 characters per label; 6 milestones; periods unchanged (3–16, 8 with notes).
-- The existing row `focus` flag is left exactly as it is (the starter uses it); do not remove or rename it.
+- The row `focus` flag keeps its name, data and meaning (the starter uses it); only the editor gains a control for it.
 - Delete superseded code outright; no shims.
 
 ## Review Focus
@@ -357,7 +357,7 @@ git add -A src tests && git commit -m "Timeline: groups drawn as brackets, colou
 
 **Interfaces:**
 - Consumes: `timelineLines` (Task 1).
-- Produces on the object `ganttFor(slide, style)` returns (existing members kept, `moveRow` replaced by `place`): `lines: Line[]`; `addSubRow(i)`, `indent(i)`, `outdent(i)`, `place(from: number, before: number, level: 0 | 1)`, `removeRow(i, withChildren?: boolean)`; all `Patch | null` with `Patch = Record<string, unknown>`. `insertRow(at)` inserts at the level of the row currently at `at`. Limits come from the schema plus 8 top-level.
+- Produces on the object `ganttFor(slide, style)` returns (existing members kept, `moveRow` replaced by `place`): `lines: Line[]`; `addSubRow(i)`, `indent(i)`, `outdent(i)`, `place(from: number, before: number, level: 0 | 1)`, `removeRow(i, withChildren?: boolean)`, `setHighlight(i: number, on: boolean)`; all `Patch | null` with `Patch = Record<string, unknown>`. `insertRow(at)` inserts at the level of the row currently at `at`. Limits come from the schema plus 8 top-level.
 
 - [ ] **Step 1: Write the failing tests** (append to `tests/unit/gantt.test.ts`)
 
@@ -409,6 +409,15 @@ test('deleting a group lifts its children, or takes them along', () => {
   expect(labels(lift)).toEqual(['API', 'UI', 'Launch'])
   expect(lift.rows?.[0]).toEqual({ label: 'API', start: 0, end: 1 })
   expect(labels(apply(GR, gg.removeRow(0, true)))).toEqual([])
+})
+
+test('a highlight sits on one row at a time, and clears', () => {
+  const c = apply(GR, gg.setHighlight(1, true))
+  expect(c.rows?.map((r) => r.focus)).toEqual([undefined, true, undefined, undefined])
+  const again = { ...GR, chart: c }
+  const d = apply(again, ganttFor(again, 'consulting').setHighlight(0, true))   // a group can carry it too
+  expect(d.rows?.map((r) => r.focus)).toEqual([true, undefined, undefined, undefined])
+  expect(apply(again, ganttFor(again, 'consulting').setHighlight(1, false)).rows?.some((r) => r.focus)).toBe(false)
 })
 
 test('periods shift children and skip groups', () => {
@@ -493,6 +502,11 @@ Members:
       const next = [...rest.slice(0, at), ...moved, ...rest.slice(at)];
       return JSON.stringify(norm(next)) === JSON.stringify(norm(rows)) ? null : write(next);
     },
+    /** One highlighted row at a time: setting it moves it, clearing removes it. */
+    setHighlight: (i: number, on: boolean): Patch => ({
+      ...Object.fromEntries(lines.filter((l) => l.focus && (!on || l.index !== i)).map((l) => [`chart.rows[${l.index}].focus`, null])),
+      ...(on ? { [`chart.rows[${i}].focus`]: true } : {}),
+    }),
     removeRow: (i: number, withChildren = false): Patch | null => {
       const [a, b] = family(i), kids = b - i - 1;
       return write(withChildren ? [...rows.slice(0, a), ...rows.slice(b)] : [...rows.slice(0, i), ...rows.slice(i + 1).map((r, k) => (k < kids ? { ...r, level: 0 as const } : r))]);
@@ -504,7 +518,7 @@ Delete the old `insertRow`, `removeRow` and `moveRow` members. Rows are always s
 - [ ] **Step 4: Run tests and typecheck**
 
 Run: `npx vitest run tests/unit/gantt.test.ts && npx vitest run && npx tsc --noEmit -p .`
-Expected: PASS. (`Gantt.tsx` still calls `moveRow`/`removeRow(i)`: fix those call sites minimally in this task so the build is green; Task 5 rewrites that file's rows.)
+Expected: PASS. If `applyPatch` rejects `null` for a key that is absent, filter to rows that actually have `focus` (the code above already does). (`Gantt.tsx` still calls `moveRow`/`removeRow(i)`: fix those call sites minimally in this task so the build is green; Task 5 rewrites that file's rows.)
 
 - [ ] **Step 5: Commit**
 
@@ -566,10 +580,11 @@ Run: `npx vitest run tests/unit/drag.test.ts` (PASS).
 
 Row section (when `ctx.row !== null`), each `ContextMenuItem disabled={!patch}`:
 - "Insert workstream above" `g.insertRow(row)`; "Insert workstream below" `g.insertRow(end of that row's family)`; "Add sub-row" `g.addSubRow(row)`.
+- "Highlight" (or "Remove highlight" when this row has it) `g.setHighlight(row, !g.lines[row].focus)`, with a check mark when on.
 - "Indent" `g.indent(row)`; "Outdent" `g.outdent(row)`.
 - "Delete" `g.removeRow(row)`; for a group also "Delete group and sub-rows" `g.removeRow(row, true)`.
 
-Period section as today. Milestone section as today ("Add milestone" and "Delete milestone N"). No colour entries anywhere.
+Period section as today. Milestone section as today ("Add milestone" and "Delete milestone N"). No colour entries, only the highlight.
 
 - [ ] **Step 5: Run unit tests, typecheck, lint, and drive it**
 
@@ -633,6 +648,17 @@ test('gantt: deleting the last child turns the group back into a plain row', asy
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Save' }).click()
   expect((await saved(page)).chart?.rows?.[0]).toMatchObject({ label: 'Platform', start: 0, end: 2 })
+})
+
+test('gantt: a row is highlighted from the menu, one at a time', async ({ page }) => {
+  await openGantt(page)
+  await rowCell(page, 3).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Highlight' }).click()
+  await rowCell(page, 0).click({ button: 'right' })      // a group can be highlighted too
+  await page.getByRole('menuitem', { name: 'Highlight' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  expect((await saved(page)).chart?.rows?.map((r) => !!r.focus)).toEqual([true, false, false, false, false])
 })
 
 test('gantt: ⌘Z undoes an indent', async ({ page }) => {
