@@ -1,6 +1,7 @@
 /* Next-step pills after a turn: GLM Flash reads the slide and the conversation, works out what the slide is
    trying to say, and suggests a few changes that help it say that. Runs in the background; no pills on failure. */
 import { complete, type ChatMessage } from "./llm.js";
+import { MENU, OFFERED } from "../slides/schema.js";
 import type { Check } from "./checks.js";
 import type { Slide, Style } from "../types.js";
 
@@ -8,7 +9,8 @@ export interface Pill { label: string; prompt: string }
 export interface SuggestArgs { slide: Slide; style: Style; history?: ChatMessage[]; checks?: Pick<Check, "ok" | "msg">[] }
 export interface Suggestions { message: string; pills: Pill[] }
 
-const CAN = "Charts: bars and lines (stacked, side by side or 100% shares), waterfall (a bridge between two totals), timeline (workstreams with sub-steps, and milestones), ranked horizontal bars (named items by one measure), a 2×2 matrix (points on two judged axes, named quadrants); computed annotations: CAGR arrow, difference arrow, target line; highlight one series, bar, step, card or column. Any slide: title, takeaway, numbered notes, footnote, source; a chart or table: a caption saying what it shows (measure, scope, period, unit); notes: a one- or two-word heading over them (Notes, What drives it), only as a suggestion; another template (chart, table, steps, cards); a new slide.";
+// What the tools can do. The templates come from the menu, so a new template is suggested as soon as it exists.
+const CAN = `Charts: bars and lines (stacked, side by side or 100% shares), waterfall (a bridge between two totals), timeline (workstreams with sub-steps, and milestones), ranked horizontal bars (named items by one measure), a 2×2 matrix (points on two judged axes, named quadrants); computed annotations: CAGR arrow, difference arrow, target line; highlight one series, bar, step, card, point, column, row or table cell. Tables: scores as Harvey balls or ticks; an action with a detail note, owner and date. Any slide: title, takeaway, numbered notes, footnote, source; a chart or table: a caption saying what it shows (measure, scope, period, unit); notes: a one- or two-word heading over them (Notes, What drives it), only as a suggestion; a new slide. Another template: ${OFFERED.filter((id) => id !== "cover").map((id) => `${id} (${MENU[id].use})`).join("; ")}.`;
 
 export function suggestMessages({ slide, style, history = [], checks = [] }: SuggestArgs): ChatMessage[] {
   const convo = history.filter((m) => m.role === "user" || m.role === "assistant").slice(-6)
