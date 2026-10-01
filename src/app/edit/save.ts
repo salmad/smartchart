@@ -15,6 +15,8 @@ export async function saveEdit(id: string, draft: Slide, deps: TurnDeps & { jev?
     w = await checkWrite(draft, { style: s.style, jev: deps.jev ?? deps.models?.jev ?? jevCall, brief: '', strict: false,
       measure: (slide) => ({ issues: measurer.measure(slide, deckOf(s), i), lines: measurer.lines, warnings: measurer.warnings }) })
   } catch (e) { return `The slide could not be saved: ${e instanceof Error ? e.message : String(e)}` }
+  // Discarded (or the deck changed) while the pipeline ran: nothing is written.
+  if (getState().editing !== id) return null
   if (!w.applied) return w.issues[0] ?? 'The slide could not be saved.'
   const items = getState().items.map((it) => (it.id === id ? { ...it, slide: w.slide, status: w.issues.length ? 'draft' as const : 'ok' as const, errors: w.issues, warnings: w.warnings, checks: [] } : it))
   dispatch({ type: 'items', items, focusId: id })

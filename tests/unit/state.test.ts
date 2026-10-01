@@ -99,5 +99,13 @@ test('edit mode: one writer at a time', () => {
   expect(reducer(s, { type: 'removeSlide', id: 'b' }).items).toHaveLength(2)
   expect(reducer(s, { type: 'moveSlide', id: 'b', to: 0 }).items[0].id).toBe('a')
   expect(reducer(s, { type: 'edit', id: null }).editing).toBeNull()
-  expect(reducer(s, { type: 'open', deck: { id: 'x', style: 'consulting', theme: 'ink', accent: null, current: 0, items, history: [], working: [], updated: 1 } }).editing).toBeNull()
+  expect(reducer(s, { type: 'open', deck: { id: 'x', style: 'consulting', theme: 'ink', accent: null, current: 0, items, history: [], working: [], updated: 1 } }).editing).toBe('a')
+})
+
+test('opening or starting another deck is ignored while a slide is being edited', () => {
+  const it = { id: 'a', slide: { template: 'section' as const, title: 'A' }, status: 'ok' as const, errors: [], warnings: [], checks: [] }
+  const s: AppState = { ...initialState(), deckId: 'd1', items: [it], view: 'editor', editing: 'a', edited: ['a'] }
+  const other: SavedDeck = { id: 'x', style: 'consulting', theme: 'ink', accent: null, current: 0, items: [{ ...it, id: 'z' }], history: [], working: [], updated: 1 }
+  expect(reducer(s, { type: 'open', deck: other })).toBe(s)
+  expect(reducer(s, { type: 'new' })).toBe(s)
 })

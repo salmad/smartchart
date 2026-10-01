@@ -28,3 +28,17 @@ test('a draft that cannot render is not saved and edit mode stays', async () => 
   expect(h.get().items[0].slide.title).toBe('Before')
   expect(h.get().editing).toBe('a')
 })
+
+test('a save overtaken by Discard writes nothing', async () => {
+  const h = harness()
+  // Jev is slow: while it answers, the user discards.
+  let release: () => void = () => {}
+  const slow = new Promise<void>((r) => { release = r })
+  const deps = { ...h.deps, jev: (async () => { await slow; return new Proxy({}, { get: (_t, k) => (k === '_ms' ? 0 : { choice: 'zap', p: 1, probabilities: {} }) }) }) as never }
+  const pending = saveEdit('a', { template: 'cards', title: 'T', cards: [{ icon: 'auto', title: 'x' }, { icon: 'zap', title: 'y' }] } as Slide, deps)
+  h.deps.dispatch({ type: 'edit', id: null })
+  release()
+  await pending
+  expect(h.get().items[0].slide.title).toBe('Before')
+  expect(h.get().edited).toEqual([])
+})

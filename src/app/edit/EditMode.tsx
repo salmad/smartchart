@@ -23,6 +23,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
   // ⌘S / ⌘↵ save, Esc discards; leaving the page with changes asks first.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (e.isComposing || e.keyCode === 229 || edit.saving) return
       if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) { e.preventDefault(); void edit.save() }
       else if (e.key === 'Escape' && !grid) { e.preventDefault(); discard() }
     }

@@ -45,6 +45,7 @@ const starterItem = (id: string, slide: Slide): Item => ({ id, slide, status: 'o
 export function reducer(s: AppState, a: Action): AppState {
   switch (a.type) {
     case 'open': {
+      if (s.editing) return s
       const d = a.deck, items = d.items || []
       return {
         ...s, deckId: d.id, style: d.style, theme: d.theme, accent: d.accent || null,
@@ -54,6 +55,7 @@ export function reducer(s: AppState, a: Action): AppState {
       }
     }
     case 'new':
+      if (s.editing) return s
       return { ...initialState(), deckId: newDeckId(), live: s.live, style: s.style, theme: s.theme, accent: s.accent, view: 'landing' }
     case 'set':
       return { ...s, ...a.patch }

@@ -1,6 +1,6 @@
 /* The chart as a grid of inputs, in the chart's place and at its size (spec 4.3). Every change writes the chart
    through edit.patch; "Show chart" or a click outside flips back. */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
@@ -8,7 +8,23 @@ import { addMilestone, addPeriod, addRow, addSeries, chartGrid, fromGrid, gridLi
 import type { Chart, Style } from '@/engine/types'
 import type { SlideEdit } from './useSlideEdit'
 
-const num = (v: string) => (v.trim() === '' ? 0 : Number(v.replace(/,/g, '')))
+/** A typed number: "1,200", "−5", "(3.1)" and "12%" all read; anything else is not a number (null). */
+function parseNum(v: string): number | null {
+  const t = v.trim().replace(/[,\s%]/g, '').replace(/[−–]/g, '-')
+  if (t === '') return 0
+  const neg = /^\(.*\)$/.test(t), n = Number(neg ? `-${t.slice(1, -1)}` : t)
+  return Number.isFinite(n) ? n : null
+}
+
+/** A number cell: it shows what is typed, writes every value that is a number as it is typed, and flags what isn't. */
+function NumCell({ label, value, disabled, className, onCommit }: { label: string; value: number | null; disabled?: boolean; className: string; onCommit: (n: number) => void }) {
+  const [text, setText] = useState(value === null ? '' : String(value)), seen = useRef(value)
+  // The grid changed under the cell (a row removed): show the value it now holds.
+  useEffect(() => { if (value !== seen.current) { seen.current = value; setText(value === null ? '' : String(value)) } }, [value])
+  const bad = parseNum(text) === null
+  return <Input aria-label={label} aria-invalid={bad} inputMode="decimal" className={`${className} text-right ${bad ? 'text-warn' : ''}`} disabled={disabled} value={text}
+    onChange={(e) => { setText(e.target.value); const n = parseNum(e.target.value); if (n !== null) { seen.current = n; onCommit(n) } }} />
+}
 
 export function ChartGrid({ edit, slide, deckStyle: style, onClose }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onClose: () => void }) {
   const box = useRef<HTMLDivElement>(null), chart = edit.draft.chart as Chart, g = chartGrid(chart), lim = gridLimits(style)
@@ -39,8 +55,8 @@ export function ChartGrid({ edit, slide, deckStyle: style, onClose }: { edit: Sl
             <th>{g.series.length < lim.series[1] && <Button size="sm" variant="ghost" onClick={() => put(addSeries(g, lim))}><Plus className="size-3.5" /> Series</Button>}</th></tr></thead>
           <tbody>{g.categories.map((c, i) => (
             <tr key={i}><td><Input aria-label={`Category ${i + 1}`} className={cell} value={c} onChange={(e) => put({ ...g, categories: g.categories.map((x, k) => (k === i ? e.target.value : x)) })} /></td>
-              {g.series.map((s, j) => <td key={j}><Input aria-label={`${s.name || `Series ${j + 1}`}, ${c}`} inputMode="decimal" className={`${cell} text-right`} defaultValue={String(s.values[i])}
-                onBlur={(e) => put({ ...g, series: g.series.map((x, k) => (k === j ? { ...x, values: x.values.map((v, n) => (n === i ? num(e.target.value) : v)) } : x)) })} /></td>)}
+              {g.series.map((s, j) => <td key={j}><NumCell label={`${s.name || `Series ${j + 1}`}, ${c}`} className={cell} value={s.values[i]}
+                onCommit={(n) => put({ ...g, series: g.series.map((x, k) => (k === j ? { ...x, values: x.values.map((v, m) => (m === i ? n : v)) } : x)) })} /></td>)}
               <td>{g.categories.length > lim.categories[0] && del(() => put(removeRow(g, i, lim)), `Remove ${c || `row ${i + 1}`}`)}</td></tr>))}</tbody>
         </table>
       )}
@@ -48,8 +64,8 @@ export function ChartGrid({ edit, slide, deckStyle: style, onClose }: { edit: Sl
         <table className="w-full border-separate border-spacing-1"><tbody>{g.items.map((it, i) => (
           <tr key={i}>
             <td><Input aria-label={`Step ${i + 1} label`} className={cell} value={it.label} onChange={(e) => put({ ...g, items: g.items.map((x, k) => (k === i ? { ...x, label: e.target.value } : x)) })} /></td>
-            <td><Input aria-label={`${it.label || `Step ${i + 1}`} value`} inputMode="decimal" className={`${cell} text-right`} disabled={it.total} defaultValue={it.value === null ? '' : String(it.value)}
-              onBlur={(e) => put({ ...g, items: g.items.map((x, k) => (k === i ? { ...x, value: num(e.target.value) } : x)) })} /></td>
+            <td><NumCell label={`${it.label || `Step ${i + 1}`} value`} className={cell} disabled={it.total} value={it.value}
+              onCommit={(n) => put({ ...g, items: g.items.map((x, k) => (k === i ? { ...x, value: n } : x)) })} /></td>
             <td><label className="flex items-center gap-1 text-[12px] text-ink-3"><input type="checkbox" checked={it.total} onChange={(e) => put({ ...g, items: g.items.map((x, k) => (k === i ? { ...x, total: e.target.checked } : x)) })} /> Total</label></td>
             <td>{g.items.length > lim.items[0] && del(() => put(removeRow(g, i, lim)), `Remove ${it.label || `step ${i + 1}`}`)}</td></tr>))}</tbody></table>
       )}

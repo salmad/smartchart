@@ -153,6 +153,8 @@ export function App({ route, account, repo, backup }: Props) {
   const shown = useRef(where)
   useEffect(() => {
     if (!booted || shown.current === where) return
+    // A slide is being edited: history navigation (Back, a pasted link) must not drop the draft. The URL goes back.
+    if (app.getState().editing) { const id = app.getState().deckId; if (id) go(`/d/${id}`, { replace: true }); return }
     shown.current = where
     if (route.name === 'new') { if (app.getState().items.length || app.getState().history.length) newDeck(); return }
     if (route.name !== 'deck' || route.id === app.getState().deckId) return

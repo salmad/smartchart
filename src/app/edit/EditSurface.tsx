@@ -41,6 +41,9 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
     // Primitives only: a new ctx object on each render must not remount the slide under the cursor.
   }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, style, theme, accent, onSlide])
 
+  // While a save runs, the fields stop taking text: what is typed now would be lost when edit mode closes.
+  useEffect(() => { frame.current?.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => { f.contentEditable = edit.saving ? 'false' : 'true' }) }, [edit.saving, edit.shown])
+
   useEffect(() => {
     const el = frame.current
     if (!el) return
@@ -67,7 +70,8 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
     }
     const onKey = (e: KeyboardEvent) => {
       const f = fieldOf(e.target)
-      if (!f) return
+      // Enter and Escape while composing confirm or cancel the candidate; they are not ours.
+      if (!f || e.isComposing || e.keyCode === 229) return
       const mod = e.metaKey || e.ctrlKey
       if (mod && ['i', 'u'].includes(e.key)) { e.preventDefault(); return }
       if (mod && e.key === 'b') { e.preventDefault(); if (isMarkup(f)) { const [a, b] = caretRange(f) ?? [0, 0]; write(f, toggle(markupOf(f), a, b, 'b'), b) } return }
