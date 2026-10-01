@@ -99,7 +99,7 @@ Seven groups, each with one job. **Reads never change anything. Writes always ru
 | `move_slide` | `deckId`, `slideId`, `after` | `{ slides }` (the storyline) |
 | `delete_slide` | `deckId`, `slideId` | `{ deleted: slide }`. Undo is `create_slide` with it. |
 
-**Write result:** `{ applied, slideId, slide (as stored), issues[], warnings[], autofixes[], resolved{}, changed[], elsewhere[], fit: "estimated", rev, link }`. `link` opens the deck at this slide: the share link with `?slide=n` when sharing is on, otherwise the owner's `/d/:id?slide=n`.
+**Write result:** `{ applied, slideId, n (its position), slide (as stored), issues[], warnings[], autofixes[], resolved{}, changed[], elsewhere[], fit: "estimated", rev }`. No link: a deck's share link never changes, the agent gets it once from `share_deck` or `get_deck`, and the open page jumps to the changed slide by itself.
 - `issues` must be fixed.
 - `warnings` are advice. Act on them only with a small edit.
 - `resolved` lists the `auto` values code picked.
@@ -118,7 +118,7 @@ Shape errors return `applied: false`, and nothing is written.
 ### 4.7 Delegation
 | Tool | In | Out |
 |---|---|---|
-| `ask` | `text`, `deckId?` (omit to start a new deck), `slideId?`, `path?`, `files?: [{ name, text }]`, `style?` (new deck) | `{ status: "done" \| "question", reply, options?, slides: [{ slideId, n, title, changed }], link, rev }` |
+| `ask` | `text`, `deckId?` (omit to start a new deck), `slideId?`, `path?`, `files?: [{ name, text }]`, `style?` (new deck) | `{ status: "done" \| "question", reply, options?, slides: [{ slideId, n, title, changed }], rev }` |
 
 `ask` runs `runTurn` on the server with the deck's shared chat, so its turns appear in the app's chat marked with the client's name ("via Claude Code"), and the in-app agent knows what "that" refers to. When `status` is `"question"`, the caller relays the options to its user and answers with another `ask` on the same deck.
 
