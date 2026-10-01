@@ -25,10 +25,8 @@ export function ganttFor(slide: Slide, style: Style) {
     /** A period at `at`: later periods move along, and a bar that spans the place grows by one. */
     insertPeriod: (at: number): Patch | null => {
       if (periods.length + 1 > pMax) return null;
-      const p = reindex((n) => (n >= at ? n + 1 : n), { "chart.periods": splice(periods, at, 0, "") });
-      // A bar that ran across the insertion point keeps its far end moved along (reindex did); its near end stays.
-      p["chart.rows"] = rows.map((r) => ({ ...r, start: r.start >= at ? r.start + 1 : r.start, end: r.end >= at && r.start < at ? r.end + 1 : r.end >= at ? r.end + 1 : r.end }));
-      return p;
+      // Later periods move along; a bar that runs across the place keeps its near end and grows by one.
+      return reindex((n) => (n >= at ? n + 1 : n), { "chart.periods": splice(periods, at, 0, "") });
     },
     removePeriod: (i: number): Patch | null => {
       if (periods.length - 1 < pMin) return null;

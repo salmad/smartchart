@@ -29,10 +29,12 @@ export const failed = (p: Patch | { error: string } | null | undefined): p is { 
 
 /** "1,200", "(3.1)", "−5", "12%", "£1.2m" read as numbers; the unit lives in the chart's format. Anything else is null. */
 export function parseNum(raw: string): number | null {
-  const t = raw.trim().replace(/[£$€,%\s]/g, "").replace(/[−–]/g, "-").replace(/(?<=\d)(bn|m|k|x)$/i, "");
-  if (t === "") return null;
-  const neg = /^\(.*\)$/.test(t), n = Number(neg ? `-${t.slice(1, -1)}` : t);
-  return Number.isFinite(n) ? n : null;
+  let t = raw.trim().replace(/[£$€%\s]/g, "").replace(/[−–]/g, "-").replace(/(?<=\d)(bn|m|k|x)$/i, "");
+  const neg = /^\(.*\)$/.test(t);
+  if (neg) t = `-${t.slice(1, -1)}`;
+  // A comma is a thousands separator ("1,200") unless it stands alone before one or two digits ("1,5"), which is a decimal comma.
+  t = /^-?\d+,\d{1,2}$/.test(t) ? t.replace(",", ".") : t.replace(/,/g, "");
+  return /^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(t) ? Number(t) : null;
 }
 
 /** Tab-separated text as spreadsheets copy it: quoted cells, CRLF, a trailing newline. */
