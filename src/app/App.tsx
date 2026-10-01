@@ -73,6 +73,9 @@ export function App({ route, account, repo, backup }: Props) {
     // Rule checks re-run with the current code, on slides upgraded to the current schema.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
     app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer()) })
+    // A link with ?slide=<id> opens on that slide.
+    const want = new URLSearchParams(location.search).get('slide'), at = app.getState().items.findIndex((it) => it.id === want)
+    if (at >= 0) app.dispatch({ type: 'select', index: at })
     if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)

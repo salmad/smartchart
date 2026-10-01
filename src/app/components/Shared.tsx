@@ -1,8 +1,9 @@
 /* A deck shared by link, for the room: every slide full width, top to bottom, and Present for the meeting.
    Open to anyone with the link, signed in or not; it always shows the deck as last saved. */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
-import { loadShared, type Shared as SharedDeck } from '@/app/share'
+import { POLL_MS } from '@/app/live'
+import { loadShared, sharedRev, type Shared as SharedDeck } from '@/app/share'
 import { Button } from './ui/button'
 import { Present } from './Present'
 import { PrintDeck, pdfName } from './PrintDeck'
@@ -13,12 +14,41 @@ type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { sta
 export function Shared({ token }: { token: string }) {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [presenting, setPresenting] = useState<number | null>(null), [printing, setPrinting] = useState(false)
+  const slideRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   useEffect(() => {
     let live = true
     loadShared(token).then((shared) => { if (live) setLoad(shared ? { state: 'ready', shared } : { state: 'off' }) }, () => { if (live) setLoad({ state: 'error' }) })
     return () => { live = false }
   }, [token])
+
+  // The page follows the deck: while visible, and on focus, it asks for the revision and reloads when it grew.
+  useEffect(() => {
+    if (load.state !== 'ready') return
+    let live = true
+    const tick = async () => {
+      if (document.visibilityState !== 'visible') return
+      const head = await sharedRev(token).catch(() => null)
+      if (!live || !head || head.rev <= load.shared.rev) return
+      const next = await loadShared(token).catch(() => null)
+      if (!live || !next) return
+      const before = load.shared.deck.slides.map((s) => JSON.stringify(s))
+      const at = next.deck.slides.findIndex((s, i) => JSON.stringify(s) !== before[i])
+      setLoad({ state: 'ready', shared: next })
+      if (at >= 0) requestAnimationFrame(() => slideRefs.current[at]?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    }
+    const t = window.setInterval(() => void tick(), POLL_MS)
+    window.addEventListener('focus', tick)
+    return () => { live = false; window.clearInterval(t); window.removeEventListener('focus', tick) }
+  }, [load, token])
+
+  // ?slide=<id> opens at that slide.
+  const wanted = new URLSearchParams(location.search).get('slide')
+  useEffect(() => {
+    if (load.state !== 'ready' || !wanted) return
+    const i = load.shared.ids.indexOf(wanted)
+    if (i >= 0) requestAnimationFrame(() => slideRefs.current[i]?.scrollIntoView({ block: 'center' }))
+  }, [load.state, wanted])  // eslint-disable-line react-hooks/exhaustive-deps -- once, when the deck first loads
 
   // A shared deck is for whoever has the link, not for search results.
   useEffect(() => {
@@ -52,7 +82,7 @@ export function Shared({ token }: { token: string }) {
       </header>
       <main className="mx-auto grid w-full max-w-[1200px] gap-8 px-8 pb-16 pt-10 max-[900px]:gap-4 max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-4">
         {deck.slides.map((slide, i) => (
-          <button key={i} type="button" onClick={() => setPresenting(i)} aria-label={`Present from slide ${i + 1}`}
+          <button key={i} ref={(el) => { slideRefs.current[i] = el }} type="button" onClick={() => setPresenting(i)} aria-label={`Present from slide ${i + 1}`}
             className="relative mx-auto block aspect-video w-[min(100%,calc((100vh_-_56px_-_64px)*16/9))] cursor-zoom-in overflow-hidden rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] outline-none focus-visible:shadow-[0_0_0_2px_theme(colors.ink-3)] max-[900px]:w-full max-[900px]:rounded-lg">
             <SlideView slide={slide} deck={deck} ctx={ctx[i]} className="absolute inset-0" />
           </button>

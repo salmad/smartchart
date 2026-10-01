@@ -15,19 +15,26 @@ export async function share(id: string, on?: boolean, fetcher: typeof fetch = (.
   return typeof token === 'string' ? token : null
 }
 
-export interface Shared { name: string; deck: Deck }
+export interface Shared { name: string; deck: Deck; rev: number; ids: string[] }
+
+/** The deck's revision alone, cheap enough to ask every few seconds; null when the link is off. */
+export async function sharedRev(token: string, fetcher: typeof fetch = (...a) => fetch(...a)): Promise<{ rev: number } | null> {
+  const r = await fetcher(`/api/share?s=${encodeURIComponent(token)}&rev=1`)
+  return r.ok ? ((await r.json()) as { rev: number }) : null
+}
 
 /** A deck by its link: null when the link is off or never existed. */
 export async function loadShared(token: string, fetcher: typeof fetch = (...a) => fetch(...a)): Promise<Shared | null> {
   const r = await fetcher(`/api/share?s=${encodeURIComponent(token)}`)
   if (r.status === 404) return null
   if (!r.ok) throw new Error(`share: ${r.status}`)
-  const d = (await r.json()) as { name?: unknown; style?: unknown; theme?: unknown; accent?: unknown; slides?: unknown }
+  const d = (await r.json()) as { name?: unknown; style?: unknown; theme?: unknown; accent?: unknown; slides?: unknown; rev?: unknown; ids?: unknown }
   // Slides saved under an older schema read as the editor would open them.
   const slides = Array.isArray(d.slides) ? (d.slides as Slide[]).map(upgrade) : []
   // The footer is the cover's title, as in the editor.
   const cover = slides.find((s) => s.template === 'cover')
   return {
+    rev: typeof d.rev === 'number' ? d.rev : 0, ids: Array.isArray(d.ids) ? d.ids.filter((x): x is string => typeof x === 'string') : [],
     name: typeof d.name === 'string' && d.name ? d.name : 'Untitled deck',
     deck: {
       style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink',

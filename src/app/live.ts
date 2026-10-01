@@ -17,10 +17,12 @@ export function useLiveDeck({ app, repo, onMerged }: { app: AppStore; repo: Deck
     try {
       const head = await repo.rev(id), known = repo.known(id)
       if (!head || head.rev <= known) return
+      // The common ancestor is read before the fetch: `get` replaces it with the server's copy.
+      const base = repo.base(id)
       const [server, events] = await Promise.all([repo.get(id), repo.events ? repo.events(id, known) : Promise.resolve([])])
       const local = toSaved(app.getState())
       if (!server || !local || locked(app.getState()) || app.getState().deckId !== id) return
-      const { deck, changed } = mergeDecks(local, server, repo.base(id))
+      const { deck, changed } = mergeDecks(local, server, base)
       app.dispatch({ type: 'items', items: deck.items, focusId: changed.at(-1) })
       app.dispatch({ type: 'set', patch: { style: deck.style, theme: deck.theme, accent: deck.accent } })
       onMerged(changed, [...new Set(events.map((e) => e.by))])
