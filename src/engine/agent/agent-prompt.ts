@@ -96,10 +96,10 @@ const FUNCTIONS: ToolDef["function"][] = [
 export const TOOLS: ToolDef[] = FUNCTIONS.map((f) => ({ type: "function", function: f }));
 
 /** State block: rebuilt every user turn and sent as the last message before the user's. */
-export function stateBlock({ style, theme, slides, selection }: { style: Style; theme: Theme; slides: { id: string; slide: Slide | null }[]; selection: Selection }): string {
+export function stateBlock({ style, theme, slides, selection, edited = [] }: { style: Style; theme: Theme; slides: { id: string; slide: Slide | null }[]; selection: Selection; edited?: string[] }): string {
   const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide?.template}] ${plain(s.slide?.title ?? "")}`).join("\n") : "(empty)";
   const sel = selection?.slideId ? `${selection.slideId}${selection.path ? ` · component ${selection.path}` : ""}` : "nothing";
-  return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}`;
+  return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}${edited.length ? `\nEdited by hand since the last turn: ${edited.join(", ")}` : ""}`;
 }
 
 /** Working slides (spec 9.3): rebuilt before every model step, sent last, never stored in the history. */

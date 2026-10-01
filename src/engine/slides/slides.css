@@ -191,6 +191,9 @@
 .tbl .al-sym { text-align: center; }
 .tbl th:last-child, .tbl td:last-child { padding-right: 0; }
 .tbl .focus { color: var(--focus); }
+.tbl th.muted, .tbl td.muted { color: var(--muted); }
+.tbl .bold { font-weight: 700; }
+.tbl .italic { font-style: italic; }
 .tbl td small { display: block; margin-top: 2px; font: 400 17px/1.2 var(--mono); color: var(--muted); }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
@@ -278,6 +281,7 @@
 .tl-bar { fill: var(--c); }
 .row-lbl { transform: translate(0, -50%); white-space: normal; font: 500 26px/1.2 var(--text); color: var(--fg-2); }
 .row-lbl.focus { color: var(--fg); font-weight: 600; }
+.row-lbl.group { color: var(--fg); font-weight: 700; }
 .ms { fill: var(--fg); }
 .ms-line { stroke: var(--fg-2); stroke-width: 1.5; stroke-dasharray: 3 6; }
 .ms-lbl { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }

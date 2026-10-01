@@ -11,8 +11,13 @@ const load = (page: Page, slides: object[], style: Style = 'consulting') =>
   page.evaluate(([s, st]) => window.__journey?.load(s, st), [slides as Slide[], style] as const)
 
 async function boot(page: Page, path = '/new') {
+  // Boot ends when the health check answers, and a deck loaded before then is replaced by the fresh one boot starts.
+  await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
+  const health = page.waitForResponse('**/api/health')
   await page.goto(path)
   await page.waitForFunction(() => window.__journey)
+  await health
+  await page.waitForTimeout(150)
 }
 
 test('the app loads', async ({ page }) => {
@@ -65,4 +70,67 @@ test('a deck saved by the prototype opens with its slide and look', async ({ pag
   await page.getByRole('button', { name: 'Look' }).click()
   await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Paper' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+const CARDS = { template: 'cards', title: 'Three reasons to act now', cards: [{ icon: 'zap', title: 'Faster', text: 'Cut the cycle time.' }, { icon: 'wallet', title: 'Cheaper', text: 'Lower unit costs.' }] }
+
+test('edit mode: E enters, the deck is locked, typing keeps the cursor, Save keeps the words', async ({ page }) => {
+  await boot(page)
+  await load(page, [COVER, CARDS])
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await page.keyboard.press('e')
+  const title = page.locator('main [data-editing] [data-path="title"]')
+  await expect(title).toHaveAttribute('contenteditable', 'true')
+  await expect(page.getByPlaceholder('Save or discard to keep chatting')).toBeDisabled()
+  await expect(page.locator('[data-strip-thumb]')).toHaveCount(0)
+  await title.click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' and more')
+  await expect(title).toContainText('Three reasons to act now and more')
+  await page.keyboard.type('!')
+  await expect(title).toContainText('and more!')
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await expect(page.locator('main .slide [data-path="title"]').first()).toContainText('and more!')
+})
+
+test('edit mode: Discard asks only when something changed', async ({ page }) => {
+  await boot(page)
+  await load(page, [COVER, CARDS])
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await page.keyboard.press('e')
+  await page.getByRole('button', { name: 'Discard' }).click()
+  await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
+})
+
+test('edit mode: + adds a card with the cursor in it, × hides at the minimum, a long title is underlined, Bold toggles', async ({ page }) => {
+  await boot(page)
+  await load(page, [COVER, CARDS])
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await page.keyboard.press('e')
+  const cards = page.locator('main [data-editing] [data-item^="cards["]').filter({ has: page.locator('h3') })
+  await expect(cards).toHaveCount(2)
+  // At the minimum of two cards there is no ×.
+  await cards.first().hover()
+  await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Add after' }).click()
+  await expect(cards).toHaveCount(3)
+  await page.keyboard.type('Safer')
+  await expect(cards.nth(1).locator('h3')).toContainText('Safer')
+  await cards.nth(1).hover()
+  await page.getByRole('button', { name: 'Remove' }).click()
+  await expect(cards).toHaveCount(2)
+  // A title past its limit is kept and underlined, with its reason.
+  const title = page.locator('main [data-editing] [data-path="title"]')
+  await title.click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' and a great many more words that run on and on well past any sensible limit for a slide title')
+  await expect(page.locator('[title*="limit"], [title*="wraps"]').first()).toBeVisible()
+  // Select a word: Bold makes it bold; pressing it again removes it.
+  await title.dblclick()
+  await page.getByRole('button', { name: 'Bold' }).click()
+  await expect(title.locator('strong')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Bold' }).click()
+  await expect(title.locator('strong')).toHaveCount(0)
 })

@@ -87,3 +87,25 @@ test('an edit is a change to the slides, the look or the chat; selecting a slide
   expect(same({ items: s.items.slice().reverse() })).toBe(false)
   expect(same({ messages: [{ kind: 'user', text: 'hi' }] })).toBe(false)
 })
+
+test('edit mode: one writer at a time', () => {
+  const items = [{ id: 'a', slide: { template: 'section' as const, title: 'A' }, status: 'ok' as const, errors: [], warnings: [], checks: [] },
+    { id: 'b', slide: { template: 'section' as const, title: 'B' }, status: 'ok' as const, errors: [], warnings: [], checks: [] }]
+  let s: AppState = { ...initialState(), items, view: 'editor' }
+  expect(reducer({ ...s, busy: true }, { type: 'edit', id: 'a' }).editing).toBeNull()
+  s = reducer(s, { type: 'edit', id: 'a' })
+  expect(s.editing).toBe('a')
+  expect(reducer(s, { type: 'select', index: 1 }).current).toBe(0)
+  expect(reducer(s, { type: 'removeSlide', id: 'b' }).items).toHaveLength(2)
+  expect(reducer(s, { type: 'moveSlide', id: 'b', to: 0 }).items[0].id).toBe('a')
+  expect(reducer(s, { type: 'edit', id: null }).editing).toBeNull()
+  expect(reducer(s, { type: 'open', deck: { id: 'x', style: 'consulting', theme: 'ink', accent: null, current: 0, items, history: [], working: [], updated: 1 } }).editing).toBe('a')
+})
+
+test('opening or starting another deck is ignored while a slide is being edited', () => {
+  const it = { id: 'a', slide: { template: 'section' as const, title: 'A' }, status: 'ok' as const, errors: [], warnings: [], checks: [] }
+  const s: AppState = { ...initialState(), deckId: 'd1', items: [it], view: 'editor', editing: 'a', edited: ['a'] }
+  const other: SavedDeck = { id: 'x', style: 'consulting', theme: 'ink', accent: null, current: 0, items: [{ ...it, id: 'z' }], history: [], working: [], updated: 1 }
+  expect(reducer(s, { type: 'open', deck: other })).toBe(s)
+  expect(reducer(s, { type: 'new' })).toBe(s)
+})

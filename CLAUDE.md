@@ -25,5 +25,6 @@ Dev review page: `/src/dev/review.html` (every example in both styles, validated
 - Slides use `slides.css` unchanged; app chrome never styles slide internals.
 - Examples and the gallery come only from `src/engine/starters/starters.json`; never add another example set.
 - Slide system: the source of truth is `docs/superpowers/specs/2026-09-26-slide-system-architecture-design.md` (start at section 14).
+- Agent design, thin harness: write code only where the job is really hard (rendering, measuring, validation, storage). Everything else goes to the prompt, or to the user to decide. Give the models tools and let them choose; don't build logic that smarter models will make obsolete. A human editor is just another writer on the same path: checks warn, they never silently rewrite.
 - AI: GLM 5.3 Flash is the main model; Jev (via OpenRouter, the only OpenRouter use) handles routing and closed-set decisions.
 - Scratch notes and plans go in `docs/temp/` (gitignored).

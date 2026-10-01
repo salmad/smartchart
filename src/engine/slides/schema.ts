@@ -10,6 +10,7 @@
    or a number. Prototype limits are hand-tuned and proven by the stress deck;
    the product computes them from geometry (spec 4.3).
    ═══════════════════════════════════════════════════════════════════════════ */
+import { timelineLines } from "./charts/timeline-rows";
 import { waterfall } from "./charts/chart-math";
 import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types";
 
@@ -127,7 +128,7 @@ export const CHART_GUIDE: string[] = [
   "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
   "Shares of a whole that change over time (mix, market share) are `stacked: \"100\"`: write the raw values; code converts them to %.",
   "A bridge from one total to another (revenue FY24 → FY25 by driver, a cost walk, an EBITDA bridge) is `kind: \"waterfall\"`. Write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
-  "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead.",
+  "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead. A workstream made of smaller steps is a group (the steps have `level: 1`).",
   "Annotations are computed by code; never write their figure yourself. `cagr` when the title claims a growth rate over a period (\"grows 86% a year\", \"growth rate per year across the period\"; year-on-year rates for each year are a % line instead), `difference` when it claims a gap between two categories, `target` when it compares with a goal. At most 3 (2 with notes); only when the user asked for them.",
 ];
 
@@ -186,17 +187,18 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
       } }),
     }),
     periods: f("list", "Timeline only. Column labels, in order: 'Q1', 'Q2', 'Jan'.", { items: { min: 3, max: 16 }, of: f("text", "Period label.", { max: 8 }) }),
-    rows: f("list", "Timeline only. One bar per workstream.", {
-      items: { min: 2, max: 8 },
-      of: f("object", "One workstream.", { fields: {
+    rows: f("list", "Timeline only. One bar per workstream. A workstream made of smaller steps is a group: give the steps `level: 1` directly after it and leave the group's own `start` and `end` out (it spans its steps).", {
+      items: { min: 2, max: 12 },
+      of: f("object", "One workstream or step.", { fields: {
         label: f("text", "Workstream name.", { required: true, max: 28 }),
-        start: f("number", "0-based index of its first period.", { required: true }),
-        end: f("number", "0-based index of its last period (inclusive).", { required: true }),
+        level: f("number", "`1` makes this a step of the nearest workstream above it. Leave out for a workstream.", { default: 0 }),
+        start: f("number", "0-based index of its first period. Not on a group."),
+        end: f("number", "0-based index of its last period (inclusive). Not on a group."),
         focus: f("boolean", "Highlight the workstream the title is about. At most one.", { default: false }),
       } }),
     }),
     milestones: f("list", "Timeline only. Optional diamonds on the time axis.", {
-      items: { max: 4 },
+      items: { max: 6 },
       of: f("object", "One milestone.", { fields: {
         label: f("text", "What happens.", { required: true, max: 16 }),
         at: f("number", "0-based index of the period it falls at the end of.", { required: true }),
@@ -232,7 +234,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.",
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 4 workstreams of up to 20 characters).", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters).", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
@@ -241,10 +243,13 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       table: f("object", "The table.", { required: true, fields: {
         columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
           label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
-          focus: f("boolean", "Highlight this column. At most one.", { default: false }),
+          focus: f("boolean", "Highlight this column. At most one. Not with `muted`.", { default: false }),
+          muted: f("boolean", "A quieter column, for context. Not with `focus`.", { default: false }),
+          bold: f("boolean", "Set the whole column in bold.", { default: false }),
+          italic: f("boolean", "Set the whole column in italic.", { default: false }),
         } }) }),
         rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
-          cells: f("list", "One cell per column. A string, or { value, note } for a small note under the value.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
+          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]]), or { value, note } for a small note under the value.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
           style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
         } }) }),
       } }),
@@ -445,7 +450,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
     case "cell": {
       const v = cellOf(value);
       if (typeof v.value !== "string" && typeof v.value !== "number") out.errors.push(`${path}: a cell is a string or { "value": "…", "note": "…" }.`);
-      else if (max && String(v.value).length > max) out.errors.push(`${path}: ${String(v.value).length} characters, limit ${max}.`);
+      else if (max && plain(v.value).length > max) out.errors.push(`${path}: ${plain(v.value).length} characters, limit ${max}.`);
       if (v.note !== undefined && String(v.note).length > 32) out.errors.push(`${path}.note: limit is 32 characters.`);
       break;
     }
@@ -553,13 +558,21 @@ function checkTimeline(c: Chart, path: string, out: Out): void {
   if (!Array.isArray(c.rows)) out.errors.push(`${path}.rows: required. One bar per workstream.`);
   if (!Array.isArray(c.periods) || !Array.isArray(c.rows)) return;
   const n = c.periods.length, ok = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) < n;
+  const lines = timelineLines(c.rows.map((r) => r ?? { label: "" }));
   c.rows.forEach((r, i) => {
     if (!r) return;
+    if (r.level !== undefined && r.level !== 0 && r.level !== 1) { out.errors.push(`${path}.rows[${i}].level: 0 or 1 (got ${r.level}).`); return; }
+    if (r.level === 1 && i === 0) { out.errors.push(`${path}.rows[0]: a sub-row needs a workstream above it.`); return; }
+    if (lines[i].group) {
+      if (r.start !== undefined || r.end !== undefined) out.errors.push(`${path}.rows[${i}]: a group spans its sub-rows; leave out \`start\` and \`end\`.`);
+      return;
+    }
     if (!ok(r.start) || !ok(r.end)) out.errors.push(`${path}.rows[${i}]: \`start\` and \`end\` must be period indices 0–${n - 1} (got ${r.start}, ${r.end}).`);
-    else if (r.start > r.end) out.errors.push(`${path}.rows[${i}]: \`start\` (${r.start}) is after \`end\` (${r.end}).`);
+    else if ((r.start as number) > (r.end as number)) out.errors.push(`${path}.rows[${i}]: \`start\` (${r.start}) is after \`end\` (${r.end}).`);
   });
   (c.milestones || []).forEach((m, i) => { if (m && !ok(m.at)) out.errors.push(`${path}.milestones[${i}].at: must be a period index 0–${n - 1} (got ${m.at}).`); });
   if (count(c.rows, "focus") > 1) out.errors.push(`${path}.rows: at most one focus row.`);
+  if (lines.filter((l) => l.level === 0).length > 8) out.errors.push(`${path}.rows: at most 8 workstreams (sub-rows are extra, 12 lines in all).`);
 }
 
 const count = <T extends object>(list: readonly (T | null | undefined)[] | undefined, key: keyof T) => (list || []).filter((x) => x && x[key]).length;
@@ -583,7 +596,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       const items = s.chart?.items || [], periods = s.chart?.periods || [], rows = s.chart?.rows || [], annotations = s.chart?.annotations || [];
       if (kind === "waterfall" && items.length > 7) out.errors.push(`chart.items: ${items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
       if (kind === "timeline" && periods.length > 8) out.errors.push(`chart.periods: ${periods.length} periods; with notes at most 8. Drop notes or use wider periods.`);
-      if (kind === "timeline" && rows.length > 4) out.errors.push(`chart.rows: ${rows.length} workstreams; with notes at most 4. Drop notes or merge workstreams.`);
+      if (kind === "timeline" && rows.length > 6) out.errors.push(`chart.rows: ${rows.length} lines; with notes at most 6. Drop notes or merge workstreams.`);
       if (kind === "timeline") rows.forEach((r, i) => { if (r?.label && r.label.length > 20) out.errors.push(`chart.rows[${i}].label: ${r.label.length} characters; with notes at most 20. Shorten it.`); });
       if (kind === "bars" && cats.length > 6) out.errors.push(`chart.categories: ${cats.length} categories; with notes at most 6. Drop notes or group categories.`);
       if (kind === "bars" && annotations.length > 2) out.errors.push(`chart.annotations: ${annotations.length}; with notes at most 2.`);
@@ -601,6 +614,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         if (Array.isArray(r?.cells) && r.cells.length !== n) out.errors.push(`table.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
       });
       if (count(t.columns, "focus") > 1) out.errors.push("table.columns: at most one focus column.");
+      (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`table.columns[${j}]: muted or focus, not both.`); });
       (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       const noted = (r: (typeof rows)[number]) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);

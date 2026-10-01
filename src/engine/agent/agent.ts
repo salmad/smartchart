@@ -2,13 +2,13 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { OFFERED, describe, isTemplate, plain, validate } from "../slides/schema";
+import { OFFERED, describe, isTemplate, plain } from "../slides/schema";
 import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm";
 import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts";
-import { autofix } from "./autofix";
+import { checkWrite } from "./write";
 import { applyPatch } from "./patch";
-import { resolveAuto, type Resolved } from "./resolve";
-import { ruleChecks, type Check } from "./checks";
+import type { Resolved } from "./resolve";
+import type { Check } from "./checks";
 import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep, type Pre, type Selection } from "./pre";
 import { TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt";
 import { shorten, targets } from "./shorten";
@@ -28,6 +28,8 @@ export interface TurnArgs {
       for: a cover, a stacked chart); `brief` is the ask with the start of each file (what Jev routes on). Both
       default to `text`. */
   ask?: string; brief?: string
+  /** Slides the user saved by hand since the last turn; the deck state names them. */
+  edited?: string[]
 }
 
 /* Tool arguments come from the model's JSON; each tool reads the fields it needs. */
@@ -58,7 +60,6 @@ const newId = (taken: Set<string>) => { let id: string; do id = `s_${Math.random
 // Models sometimes send objects as JSON strings; accept both.
 const asValue = (v: unknown): unknown => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v); } catch { /* keep the string */ } } return v; };
 /* validate() lists limits with shape errors. Limits are fit issues: applied and returned (spec 9.4). */
-const LIMIT = /characters|at most|budget|too many|Cut or merge|Shorten|with notes|with a takeaway/i;
 /** An issue belongs to a patch when its leading path and a patched path share a prefix. */
 const touches = (issue: string, paths: string[]) => { const r = String(issue).split(/[:\s]/)[0]; return paths.some((p) => r.startsWith(p) || p.startsWith(r)); };
 
@@ -67,7 +68,7 @@ const touches = (issue: string, paths: string[]) => { const r = String(issue).sp
  * history are mutated in place; `working` (a Set of slide ids) is owned by the caller and kept across turns.
  * measure(slide, index) → layout issues, with `.lines` (title lines) and `.warnings` (L5) set on it.
  */
-export async function runTurn({ text, deck, history, working, selection, measure, log, onChange, models = {}, ask = text, brief = text }: TurnArgs): Promise<TurnResult> {
+export async function runTurn({ text, deck, history, working, selection, edited = [], measure, log, onChange, models = {}, ask = text, brief = text }: TurnArgs): Promise<TurnResult> {
   const agentStep = models.agentStep || glmStep, jev = models.jev || jevCall;
   const style = deck.style, reserved = new Map<string, TemplateId>(), written = new Set<string>(), read = new Set<string>();
   const trail = { modelCalls: 0, toolCalls: 0, modelMs: 0 };
@@ -90,20 +91,15 @@ export async function runTurn({ text, deck, history, working, selection, measure
   }
 
   async function write(item: AgentSlide, input: unknown, round = 0): Promise<WriteResult> {
-    const first = autofix(input, style), v = validate(first.slide, style);
-    const shape = v.errors.filter((e) => !LIMIT.test(e)), limits = v.errors.filter((e) => LIMIT.test(e));
-    if (shape.length) return { applied: false, issues: shape, autofixes: first.fixes };
-    const r = await resolveAuto(first.slide, style, jev, brief);
-    if (Object.keys(r.resolved).length) log({ step: "Resolve", model: "Jev", ms: r.ms, detail: Object.entries(r.resolved).map(([k, x]) => `${k} = ${x.value}`).join(" · ") });
-    const done = autofix(r.slide, style), slide = done.slide;
-    let measured: string[];
-    try { measured = measure(slide, deck.slides.indexOf(item)); } catch (e) { return { applied: false, issues: [`slide could not be rendered: ${e instanceof Error ? e.message : String(e)}`, ...limits], autofixes: first.fixes }; }
-    const issues = [...limits, ...measured];
-    const rules = ruleChecks(slide, style, measure.lines).filter((c) => !c.ok).map((c) => `${c.id}: ${c.msg}`);
-    Object.assign(item, { slide, pending: false, issues, warnings: [...v.warnings, ...(measure.warnings || []), ...rules], checks: [] });
+    const w = await checkWrite(input, { style, jev, brief, strict: true,
+      measure: (s) => { const issues = measure(s, deck.slides.indexOf(item)); return { issues, lines: measure.lines, warnings: measure.warnings || [] }; } });
+    if (!w.applied) return { applied: false, issues: w.issues, autofixes: w.autofixes };
+    if (Object.keys(w.resolved).length) log({ step: "Resolve", model: "Jev", ms: w.resolveMs, detail: Object.entries(w.resolved).map(([k, x]) => `${k} = ${x.value}`).join(" · ") });
+    const { slide, issues } = w;
+    Object.assign(item, { slide, pending: false, issues, warnings: w.warnings, checks: [] });
     working.add(item.id); written.add(item.id);
     onChange?.(deck, item.id);
-    const result: WriteResult = { applied: true, issues, warnings: item.warnings, autofixes: [...first.fixes, ...done.fixes], resolved: r.resolved };
+    const result: WriteResult = { applied: true, issues, warnings: item.warnings, autofixes: w.autofixes, resolved: w.resolved };
     // Over-long text: one small call per field instead of another agent step.
     const long = round < SHORTEN_ROUNDS ? targets(issues, slide) : [];
     if (!long.length) return result;
@@ -213,7 +209,7 @@ export async function runTurn({ text, deck, history, working, selection, measure
   // The working set starts with the selected slide only; the agent reads others when it needs them.
   working.clear();
   if (selection?.slideId && find(selection.slideId)?.slide) working.add(selection.slideId);
-  history.push({ role: "user", content: `${stateBlock({ style, theme: deck.theme, slides: visible(), selection })}\n\n${text}` });
+  history.push({ role: "user", content: `${stateBlock({ style, theme: deck.theme, slides: visible(), selection, edited })}\n\n${text}` });
   const pre = await preStep({ text: brief, deck, selection, jev });
   turnPre = pre;
   const sure = isSure(pre, deck), first = firstCall(pre, selection, brief, deck);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
@@ -11,7 +11,8 @@ import { config } from './config'
 import { installDebug } from './debug'
 import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
-import { deckOf, editKey, toSaved } from './state'
+import { deckOf, editKey, locked, toSaved } from './state'
+import { saveEdit } from './edit/save'
 import { deckName, newDeckId, type DeckRepo, type Item, type SavedDeck } from './store'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
@@ -152,6 +153,8 @@ export function App({ route, account, repo, backup }: Props) {
   const shown = useRef(where)
   useEffect(() => {
     if (!booted || shown.current === where) return
+    // A slide is being edited: history navigation (Back, a pasted link) must not drop the draft. The URL goes back.
+    if (app.getState().editing) { const id = app.getState().deckId; if (id) go(`/d/${id}`, { replace: true }); return }
     shown.current = where
     if (route.name === 'new') { if (app.getState().items.length || app.getState().history.length) newDeck(); return }
     if (route.name !== 'deck' || route.id === app.getState().deckId) return
@@ -159,7 +162,7 @@ export function App({ route, account, repo, backup }: Props) {
   }, [route, where, booted, app, repo, backup, openDeck, newDeck, say])
   // Leaving a deck saves it now rather than after the usual pause.
   const leaveTo = useCallback((path: string) => {
-    if (app.getState().busy) return
+    if (locked(app.getState())) return
     const saved = toSaved(app.getState())
     if (saved && unsaved(saved)) void persist(saved)
     go(path)
@@ -183,13 +186,13 @@ export function App({ route, account, repo, backup }: Props) {
 
   useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
-  const present = useCallback(() => { if (app.getState().items.length) setPresenting(true) }, [app])
+  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) setPresenting(true) }, [app])
   const bar = {
-    onStyle: setStyle,
-    onTheme: (theme: Theme) => app.dispatch({ type: 'set', patch: { theme } }),
-    onAccent: (accent: string | null) => app.dispatch({ type: 'set', patch: { accent } }),
+    onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
+    onTheme: (theme: Theme) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { theme } }),
+    onAccent: (accent: string | null) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { accent } }),
     onPresent: present,
-    onAdd: () => { if (!app.getState().busy && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
+    onAdd: () => { if (!locked(app.getState()) && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks,
     onSite: () => leaveTo('/home'),
     // A share link lives on the server copy: the dev account keeps its decks in this browser.
@@ -198,9 +201,11 @@ export function App({ route, account, repo, backup }: Props) {
   }
 
   const onClear = useCallback(() => {
-    if (app.getState().busy) return
+    if (locked(app.getState())) return
     app.dispatch({ type: 'set', patch: { history: [], working: new Set(), messages: [{ kind: 'bot', text: '', sub: CLEARED }] } })
   }, [app])
+  const onEdit = useCallback((id: string | null) => app.dispatch({ type: 'edit', id }), [app])
+  const edit = useMemo(() => ({ measurer, save: (id: string, draft: Slide) => saveEdit(id, draft, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }) }), [app, measurer])
   const onSelect = useCallback((index: number) => app.dispatch({ type: 'select', index }), [app])
   const onMove = useCallback((id: string, to: number) => app.dispatch({ type: 'moveSlide', id, to }), [app])
   const onRemove = useCallback((id: string) => app.dispatch({ type: 'removeSlide', id }), [app])
@@ -228,8 +233,8 @@ export function App({ route, account, repo, backup }: Props) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage}
-            decks={decksOpen && <Decks repo={repo} account={account} current={{ id: s.deckId, name: deckName({ items: s.items }), hasSlides: s.items.length > 0 }} busy={s.busy}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
+            decks={decksOpen && <Decks repo={repo} account={account} current={{ id: s.deckId, name: deckName({ items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
