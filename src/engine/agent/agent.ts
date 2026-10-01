@@ -51,8 +51,8 @@ type Draft = Slide & Record<string, unknown>;
 
 const MAX_TOOL_CALLS = 10, SHORTEN_ROUNDS = 2;
 // A deck opens on content: a cover or divider is made only when the user's message asks for one.
-const ASKS_OPENER = /\b(covers?|title (slide|page)|opening slide|dividers?|sections?|chapters?)\b/i;
-const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;
+export const ASKS_OPENER = /\b(covers?|title (slide|page)|opening slide|dividers?|sections?|chapters?)\b/i;
+export const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;
 // Intents where a clean write finishes the request, so code ends the turn without a reply call.
 const DONE_BY: Record<string, boolean> = { new_slide: true, change_template: true, edit_selected: true };
 const plainTitle = (s: unknown) => plain(s ?? "");
@@ -61,7 +61,7 @@ const newId = (taken: Set<string>) => { let id: string; do id = `s_${Math.random
 const asValue = (v: unknown): unknown => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v); } catch { /* keep the string */ } } return v; };
 /* validate() lists limits with shape errors. Limits are fit issues: applied and returned (spec 9.4). */
 /** An issue belongs to a patch when its leading path and a patched path share a prefix. */
-const touches = (issue: string, paths: string[]) => { const r = String(issue).split(/[:\s]/)[0]; return paths.some((p) => r.startsWith(p) || p.startsWith(r)); };
+export const touches = (issue: string, paths: string[]) => { const r = String(issue).split(/[:\s]/)[0]; return paths.some((p) => r.startsWith(p) || p.startsWith(r)); };
 
 /**
  * One user turn. deck = { style, theme, slides: [{ id, slide, pending?, issues, warnings, checks? }] } and
@@ -296,7 +296,7 @@ function codeReply(intent: string, r: CallResult, slide: Slide | null | undefine
 }
 
 /** "rows[0]" → "table.rows[0]" when the head is not a slide field but belongs to exactly one of its objects. */
-function prefixed(slide: Slide, path: string): string {
+export function prefixed(slide: Slide, path: string): string {
   const head = String(path).split(/[.[]/)[0];
   if (head in slide) return path;
   const owners = Object.entries(slide as Draft).filter(([, v]) => v && typeof v === "object" && !Array.isArray(v) && head in v).map(([k]) => k);
@@ -305,7 +305,7 @@ function prefixed(slide: Slide, path: string): string {
 
 /* Chart guide: comparable series share a mark. A series a patch adds takes the mark of an existing series
    in the same unit (unless the user named one); with none, code picks ("auto"). */
-function matchNewSeries(before: Slide, after: Slide) {
+export function matchNewSeries(before: Slide, after: Slide) {
   const old = before.chart?.series || [], all = after.chart?.series;
   if (!Array.isArray(all) || all.length <= old.length) return;
   const unit = (x: Series | undefined) => x?.format || after.chart?.format || "{v}";
