@@ -23,3 +23,10 @@ test("parse: JSON inside prose, at most 4 pills; nothing on bad output", () => {
   assert.deepEqual(parseSuggestions("no json").pills, []);
   assert.deepEqual(parseSuggestions('{"suggestions": [{"label": 3}]}').pills, []);
 });
+
+test("the suggestions know every template and the new table abilities", () => {
+  const [, user] = suggestMessages({ slide: BOOK, style: "consulting" });
+  for (const id of ["pair", "number", "quote", "summary", "section"]) assert.match(String(user.content), new RegExp(`\\b${id} \\(`), id);
+  assert.match(String(user.content), /Harvey balls or ticks/);
+  assert.match(String(user.content), /row or table cell/);
+});
