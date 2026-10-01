@@ -1,11 +1,10 @@
-/* The open deck follows writes made elsewhere (an agent over MCP, another tab): every 3 s while the tab is visible,
-   and on focus, read the revision; when it moved on, fetch the deck, merge by slide id, and tell the agent which
-   slides changed. Never while a turn runs or a slide is being edited by hand. */
+/* The open deck catches up with writes made elsewhere (an agent over MCP, another tab) when the tab gets focus back, with no
+   polling: read the revision; when it moved on, fetch the deck, merge by slide id, and tell the agent which slides changed.
+   A save refused as stale runs the same sync. Never while a turn runs or a slide is being edited by hand. */
 import { useCallback, useEffect, useRef } from 'react'
 import { mergeDecks, type DeckRepo } from './store'
 import { locked, toSaved, type Action, type AppState } from './state'
 
-export const POLL_MS = 3000
 interface AppStore { getState(): AppState; dispatch(a: Action): void }
 
 export function useLiveDeck({ app, repo, onMerged }: { app: AppStore; repo: DeckRepo; onMerged(changed: string[], by: string[]): void }) {
@@ -31,9 +30,9 @@ export function useLiveDeck({ app, repo, onMerged }: { app: AppStore; repo: Deck
 
   useEffect(() => {
     const tick = () => { if (document.visibilityState === 'visible') void syncNow() }
-    const t = window.setInterval(tick, POLL_MS)
     window.addEventListener('focus', tick)
-    return () => { window.clearInterval(t); window.removeEventListener('focus', tick) }
+    document.addEventListener('visibilitychange', tick)
+    return () => { window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick) }
   }, [syncNow])
   return syncNow
 }

@@ -2,7 +2,6 @@
    Open to anyone with the link, signed in or not; it always shows the deck as last saved. */
 import { useEffect, useRef, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
-import { POLL_MS } from '@/app/live'
 import { loadShared, sharedRev, type Shared as SharedDeck } from '@/app/share'
 import { Button } from './ui/button'
 import { Present } from './Present'
@@ -22,7 +21,7 @@ export function Shared({ token }: { token: string }) {
     return () => { live = false }
   }, [token])
 
-  // The page follows the deck: while visible, and on focus, it asks for the revision and reloads when it grew.
+  // The page catches up when the tab gets focus back (no polling): it asks for the revision and reloads when it grew.
   useEffect(() => {
     if (load.state !== 'ready') return
     let live = true
@@ -37,9 +36,9 @@ export function Shared({ token }: { token: string }) {
       setLoad({ state: 'ready', shared: next })
       if (at >= 0) requestAnimationFrame(() => slideRefs.current[at]?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
     }
-    const t = window.setInterval(() => void tick(), POLL_MS)
     window.addEventListener('focus', tick)
-    return () => { live = false; window.clearInterval(t); window.removeEventListener('focus', tick) }
+    document.addEventListener('visibilitychange', tick)
+    return () => { live = false; window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick) }
   }, [load, token])
 
   // ?slide=<id> opens at that slide.

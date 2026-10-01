@@ -5,7 +5,7 @@
 
    claude mcp add --transport http smartchart https://<host>/mcp/v1 --header "Authorization: Bearer <key>"
 
-3. In Claude Code: "What decks do I have in SmartChart?" Open the editor link it gives you and keep it beside the chat; changes appear within seconds.
+3. In Claude Code: "What decks do I have in SmartChart?" Open the editor link it gives you and keep it beside the chat; changes appear when you click back to the browser tab.
 
 Other MCP clients: Streamable HTTP at `https://<host>/mcp/v1`, header `Authorization: Bearer <key>`, and `X-Client: <your agent's name>` so the deck's chat says who changed what.
 

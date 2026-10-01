@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 const slide = (title: string) => ({ template: 'section', title })
 
-test('an open share page shows an outside write within 5 s, at that slide', async ({ page }) => {
+test('an open share page shows an outside write when the tab gets focus back, with no polling', async ({ page }) => {
   let rev = 1
   const body = () => ({ name: 'Live', style: 'consulting', theme: 'ink', accent: null, rev, ids: ['s_a', 's_b'], slides: [slide('Plan'), slide(rev === 1 ? 'Before' : 'After Claude')] })
   await page.route('**/api/share?s=tok&rev=1', (r) => r.fulfill({ json: { rev } }))
@@ -10,10 +10,13 @@ test('an open share page shows an outside write within 5 s, at that slide', asyn
   await page.goto('/s/tok')
   await expect(page.getByText('Before')).toBeVisible()
   rev = 2
-  await expect(page.getByText('After Claude')).toBeVisible({ timeout: 5000 })
+  await page.waitForTimeout(4000)
+  await expect(page.getByText('Before')).toBeVisible() // nothing polls
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect(page.getByText('After Claude')).toBeVisible()
 })
 
-test('an open editor takes an outside write within 5 s, says who, and shows no stale error', async ({ page }) => {
+test('an open editor takes an outside write when the tab gets focus back, says who, and shows no stale error', async ({ page }) => {
   let rev = 1
   const row = () => ({ id: 'd_live', name: 'Live', updated: 1, rev, data: { id: 'd_live', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: 1,
     items: [{ id: 's_a', slide: slide(rev === 1 ? 'Before' : 'After Claude'), status: 'ok', errors: [], warnings: [], checks: [] }] } })
@@ -29,7 +32,10 @@ test('an open editor takes an outside write within 5 s, says who, and shows no s
   await page.goto('/d/d_live')
   await expect(page.getByText('Before').first()).toBeVisible()
   rev = 2
-  await expect(page.getByText('After Claude').first()).toBeVisible({ timeout: 5000 })
+  await page.waitForTimeout(4000)
+  await expect(page.getByText('Before').first()).toBeVisible() // nothing polls
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect(page.getByText('After Claude').first()).toBeVisible()
   await expect(page.getByText('Claude Code updated a slide.')).toBeVisible()
   await expect(page.getByText('changed in another tab')).toHaveCount(0)
 })
