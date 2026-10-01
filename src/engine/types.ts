@@ -1,6 +1,6 @@
 export type Style = 'consulting' | 'pitch'
 export type Theme = 'ink' | 'paper'
-export type TemplateId = 'chart' | 'table' | 'number' | 'steps' | 'cards' | 'summary' | 'cover' | 'section'
+export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'steps' | 'cards' | 'summary' | 'cover' | 'section'
 export type Tone = 'neutral' | 'focus' | 'neg' | 'pos'
 export type SeriesColor = 'focus' | 'neutral' | 'contrast'
 
@@ -26,6 +26,8 @@ export interface Table { columns: { label?: string; focus?: boolean; muted?: boo
 export interface Card { icon?: string; value?: string; label?: string; title: string; bullets?: string[]; text?: string; tone?: Tone; facts?: { label: string; text: string }[] }
 export interface Step { when: string; title: string; text: string; focus?: boolean }
 export interface Point { title: string; text: string }
+/** One half of a two-chart slide: its own caption, chart and bullets. */
+export interface Exhibit { caption?: string; chart: Chart; bullets?: string[] }
 
 export interface Slide {
   template: TemplateId
@@ -38,6 +40,7 @@ export interface Slide {
   steps?: Step[]
   framed?: boolean; cards?: Card[]
   points?: Point[]
+  charts?: Exhibit[]
 }
 
 export interface Deck { style: Style; theme: Theme; accent?: string | null; footer: string; slides: Slide[] }

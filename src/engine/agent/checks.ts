@@ -21,6 +21,7 @@ function focusCount(s: Slide): number | null {
       if (kind === "matrix") return (s.chart?.points || []).filter((x) => x?.focus).length;
       return (s.chart?.series || []).filter((x) => x.color === "focus").length;
     }
+    case "pair": return (s.charts || []).reduce((sum, x) => sum + (focusCount({ template: "chart", title: "", chart: x?.chart }) ?? 0), 0);
     case "table": return (s.table?.columns || []).filter((c) => c.focus).length + (s.table?.rows || []).filter((r) => r.focus).length;
     case "steps": return (s.steps || []).filter((x) => x.focus).length;
     case "cards": return s.framed ? 1 : (s.cards || []).filter((c) => c.tone === "focus").length;

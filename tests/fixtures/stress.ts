@@ -73,6 +73,13 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       points: [[22, 70], [30, 62], [18, 58], [70, 36], [78, 30], [62, 42], [84, 78], [48, 56]].map(([x, y], i) => ({ label: W(20), x, y, focus: i === 6 })) } },
     { template: "chart", name: "Stress · matrix + notes", ...frame("chart"), takeaway: undefined, notes: notes(3, false), chart: { kind: "matrix", axes: { x: W(16), y: W(16) }, quadrants: TIMES(4).map(() => W(16)),
       points: [[20, 72], [30, 64], [84, 80], [72, 34], [80, 26], [46, 56]].map(([x, y], i) => ({ label: W(20), x, y, focus: i === 2 })) } },
+    { template: "pair", name: "Stress · two charts + bullets", ...frame("pair"), takeaway: undefined, charts: TIMES(2).map((_, i) => ({ caption: `${W(30)} · £m`,
+      chart: { categories: TIMES(6).map((_, j) => `Year ${j + 1}`), format: "£{v}m", series: [{ name: W(16), mark: "bar", color: i ? "focus" : "neutral", values: [4, 9, 15, 24, 33, 41] },
+        { name: `${W(14)} 2`, mark: "bar", color: "neutral", values: [2, 5, 9, 14, 20, 26] }] },
+      bullets: TIMES(2).map(() => W(max("pair", st, "charts", "bullets"))) })) },
+    { template: "pair", name: "Stress · two charts + takeaway", ...frame("pair"), charts: [
+      { caption: `${W(30)} · £m`, chart: { kind: "ranked", format: "{v}%", ranking: TIMES(6).map((_, j) => ({ label: W(20), value: 60 - j * 9, focus: j === 0 })) }, bullets: [W(max("pair", st, "charts", "bullets"))] },
+      { caption: `${W(30)} · £m`, chart: { kind: "waterfall", format: "£{v}m", items: [{ label: W(8), value: 120 }, ...TIMES(c ? 4 : 3).map((_, j) => ({ label: W(8), value: j % 2 ? -14.5 : 18.5 })), { label: W(8), total: true }] }, bullets: [W(max("pair", st, "charts", "bullets"))] }] },
     { template: "summary", name: "Stress · summary + takeaway", ...frame("summary"), points: TIMES(3).map(() => ({ title: W(40), text: W(100) })) },
     { template: "summary", name: "Stress · summary ×4", ...frame("summary"), takeaway: undefined, points: TIMES(4).map(() => ({ title: W(40), text: W(100) })) },
     { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), focus: i === 0 }))],

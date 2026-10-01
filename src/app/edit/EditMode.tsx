@@ -20,7 +20,7 @@ interface Props { item: Item; index: number; deck: Deck; deckStyle: Style; measu
 export function EditMode({ item, index, deck, deckStyle: style, measurer, save, onDone }: Props) {
   const saveDraft = useCallback((d: Slide) => save(item.id, d), [save, item.id])
   const edit = useSlideEdit({ item, index, deck, style, measurer, save: saveDraft, onDone })
-  const [slideEl, setSlideEl] = useState<HTMLElement | null>(null), [grid, setGrid] = useState(false)
+  const [slideEl, setSlideEl] = useState<HTMLElement | null>(null), [grid, setGrid] = useState<number | null>(null)
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this slide?')) edit.discard() }, [edit])
 
   // ⌘S / ⌘↵ save; ⌘Z undoes; Bold, Focus, move and delete come from the same actions as the menu. Esc peels back one layer
@@ -32,7 +32,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
       if (mod && (e.key === 's' || e.key === 'Enter')) { e.preventDefault(); void edit.save(); return }
       if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) edit.redo(); else edit.undo(); return }
       if (e.key === 'Escape') {
-        if (e.defaultPrevented || grid) return
+        if (e.defaultPrevented || grid !== null) return
         e.preventDefault()
         if (edit.target.kind === 'cells' || edit.target.kind === 'item' || (edit.target.kind === 'text' && edit.target.from !== edit.target.to)) { edit.setTarget({ kind: 'slide' }); window.getSelection()?.removeAllRanges(); return }
         discard(); return
@@ -61,12 +61,12 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
     <>
       <div className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4">
         <SlideFrame>
-          <EditMenu edit={edit} slide={slideEl} deckStyle={style} onChart={() => setGrid(true)}>
+          <EditMenu edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)}>
             <EditSurface edit={edit} deck={deck} ctx={ctx} onSlide={setSlideEl}>
-              <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={() => setGrid(true)} />
+              <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)} />
               <ActionBar edit={edit} slide={slideEl} deckStyle={style} />
               <IconPicker edit={edit} slide={slideEl} deckStyle={style} />
-              {grid && (edit.draft.chart || edit.draft.table) && <ChartGrid edit={edit} deckStyle={style} onClose={() => setGrid(false)} />}
+              {grid !== null && (edit.draft.chart || edit.draft.table || edit.draft.charts) && <ChartGrid edit={edit} deckStyle={style} which={grid} onClose={() => setGrid(null)} />}
             </EditSurface>
           </EditMenu>
         </SlideFrame>

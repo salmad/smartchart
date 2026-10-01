@@ -174,8 +174,21 @@ function tableSheet(slide: Slide): SheetModel {
   };
 }
 
-/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). */
-export function sheetFor(slide: Slide, style: Style): SheetModel | null {
+/* A pair's chart is edited as a chart of its own: the model reads the chart alone, and every path it writes is
+   re-rooted under `charts[i]`, so the patches land on the real slide. */
+const alone = (chart: Chart): Slide => ({ template: "chart", title: "", chart });
+const reroot = (pre: string) => <T extends Patch | { error: string } | null>(p: T): T => (!p || failed(p) ? p : Object.fromEntries(Object.entries(p).map(([k, v]) => [`${pre}${k}`, v])) as T);
+function within(m: SheetModel, pre: string): SheetModel {
+  const r = reroot(pre);
+  return { ...m, path: (row, c) => `${pre}${m.path(row, c)}`, set: (row, c, raw) => r(m.set(row, c, raw)), setHeader: (c, raw) => r(m.setHeader(c, raw)),
+    insertRow: (at) => r(m.insertRow(at)), removeRows: (a, b) => r(m.removeRows(a, b)), moveRow: (a, b) => r(m.moveRow(a, b)),
+    ...(m.insertCol ? { insertCol: (at: number) => r(m.insertCol?.(at) ?? null) } : {}), ...(m.removeCols ? { removeCols: (a: number, b: number) => r(m.removeCols?.(a, b) ?? null) } : {}),
+    ...(m.moveCol ? { moveCol: (a: number, b: number) => r(m.moveCol?.(a, b) ?? null) } : {}) };
+}
+
+/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's chart. */
+export function sheetFor(slide: Slide, style: Style, which = 0): SheetModel | null {
+  if (slide.template === "pair") { const c = slide.charts?.[which]?.chart, m = c ? sheetFor(alone(c), style) : null; return m && within(m, `charts[${which}].`); }
   if (slide.template === "table" && slide.table) return tableSheet(slide);
   const c = slide.chart;
   if (!c) return null;
@@ -187,18 +200,18 @@ export function sheetFor(slide: Slide, style: Style): SheetModel | null {
 
 /** Pasted cells written from `at`: rows are added up to the schema's limit, numbers are parsed, and what could not be
     kept is said, never dropped silently. One result slide, so one undo step. */
-export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number }, data: string[][]): { slide: Slide; note?: string } {
+export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number }, data: string[][], which = 0): { slide: Slide; note?: string } {
   let cur = slide, kept = 0, bad = 0, wide = 0;
   const run = (p: Patch | { error: string } | null) => { if (!p || failed(p)) return false; const r = applyPatch(cur, p); if (!r.slide) return false; cur = r.slide; return true; };
   for (let i = 0; i < data.length; i++) {
     const r = at.r + i;
-    let m = sheetFor(cur, style);
+    let m = sheetFor(cur, style, which);
     if (!m) break;
-    while (r >= m.rows) { if (!run(m.insertRow(m.rows))) break; m = sheetFor(cur, style); if (!m) break; }
+    while (r >= m.rows) { if (!run(m.insertRow(m.rows))) break; m = sheetFor(cur, style, which); if (!m) break; }
     if (!m || r >= m.rows) break;
     kept++;
     data[i].forEach((raw, j) => {
-      const c = at.c + j, now = sheetFor(cur, style);
+      const c = at.c + j, now = sheetFor(cur, style, which);
       if (!now || c >= now.cols.length) { if (raw !== "") wide++; return; }
       if (now.readOnly?.(r, c)) return;
       const p = now.set(r, c, now.cols[c].type === "flag" ? String(/^(true|yes|1|total)$/i.test(raw)) : raw);
@@ -213,8 +226,15 @@ export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number
 /** A pasted table becomes the chart's data (select all, paste): for bars, a header row names the series and the first column
     names the categories; for a waterfall, label, value and an optional total column. Existing series keep their own look
     by position; what does not fit the schema's limits is dropped and said. */
-export function replaceFromTable(slide: Slide, style: Style, table: string[][]): { slide: Slide; note?: string } {
+export function replaceFromTable(slide: Slide, style: Style, table: string[][], which = 0): { slide: Slide; note?: string } {
   if (slide.template === "table" && slide.table) return replaceTable(slide, table);
+  if (slide.template === "pair") {
+    const c = slide.charts?.[which]?.chart;
+    if (!c) return { slide };
+    const r = replaceFromTable(alone(c), style, table), out = structuredClone(slide);
+    if (out.charts?.[which] && r.slide.chart) out.charts[which].chart = r.slide.chart;
+    return { slide: out, ...(r.note ? { note: r.note } : {}) };
+  }
   const chart = slide.chart;
   if (!chart || chart.kind === "timeline" || !table.length) return { slide };
   const lim = limits(style), notes: string[] = [];

@@ -238,6 +238,13 @@
 .style-pitch .steps .t { font-size: 34px; padding-top: 28px; }
 .style-pitch .steps .d { padding: 20px 0; }
 
+/* ═════════════ Pair: two charts side by side, each with its caption and points ═════════════ */
+.pair { display: grid; grid-template-columns: 1fr 1fr; column-gap: 96px; }
+.pair > .half { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.pair > .half > .chart { flex: 1; min-height: 0; }
+.pair .bullets { margin-top: 24px; font-size: 26px; gap: 10px; }
+.style-pitch .pair .bullets { font-size: 30px; }
+
 /* ═════════════ Summary: the answer in the title, the points that prove it as numbered rows ═════════════ */
 .sum { display: grid; grid-auto-rows: 1fr; }
 .sum .row { display: grid; grid-template-columns: 76px 600px 1fr; column-gap: 48px; align-items: baseline; padding: 20px 0; border-top: 1px solid var(--line); }

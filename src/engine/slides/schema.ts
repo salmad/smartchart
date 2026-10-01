@@ -265,6 +265,20 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
+  pair: {
+    summary: "Two charts side by side, each with a caption and 1–2 points.",
+    use: "Two related measures, each with its own chart: market and share.",
+    fields: {
+      charts: f("list", "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One chart.", { fields: {
+        caption: f("text", "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { required: true, max: 40 }),
+        chart: CHART,
+        bullets: f("list", "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
+      } }) }),
+    },
+    variant: () => "pair",
+    rules: ["Each chart: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters). No timeline or matrix.",
+      "One focus across the slide: the series or item the title is about, in one of the two charts.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
+  },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
     use: "Exact figures the reader needs to compare across rows.",
@@ -354,8 +368,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     ],
   },
   summary: {
-    summary: "The executive summary: the answer in the title, then 2–4 numbered supporting points, each a short claim and one sentence of evidence.",
-    use: "Near the start of a deck: the whole argument on one slide, before the evidence.",
+    summary: "Executive summary: the answer in the title, then 2–4 numbered points, each a claim and its evidence.",
+    use: "The whole argument on one slide, near the start of a deck.",
     fields: {
       points: f("list", "The supporting points, in the order the deck proves them. Together they prove the title; they do not overlap.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One point.", { fields: {
         title: f("markup", "The claim, as a short headline: 'Bundling fixes adverse selection'.", { required: true, max: 40 }),
@@ -395,6 +409,7 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the executive summary: the answer and the 2–4 points that prove it", "summary"],
   ["the start of a new part in a deck of 8+ slides", "section"],
   ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time; named items ranked by one measure; items placed on two dimensions (a 2×2)", "chart"],
+  ["two related measures that each need their own chart, side by side", "pair"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
   ["2–4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast", "cards"],
@@ -701,6 +716,27 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         (t.rows || []).forEach((r, i) => { const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
           if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; with notes at most 24.`); });
       }
+      break;
+    }
+    case "pair": {
+      const charts = s.charts || [];
+      charts.forEach((x, i) => {
+        const c = x?.chart, at = `charts[${i}].chart`;
+        if (!c || typeof c !== "object") return;
+        // One focus across the slide is checked below, so a chart without one is not flagged here.
+        checkChart(c, at, out, true);
+        const kind = c.kind || "bars";
+        if (kind === "timeline" || kind === "matrix") return out.errors.push(`${at}.kind: "${kind}" is too dense for half a slide. Use bars, a waterfall or ranked, or the chart template.`);
+        if (kind === "bars" && (c.categories || []).length > 6) out.errors.push(`${at}.categories: ${c.categories?.length} categories; half a slide takes 6.`);
+        if (kind === "bars" && (c.series || []).length > 2) out.errors.push(`${at}.series: ${c.series?.length} series; half a slide takes 2.`);
+        if (kind === "bars") (c.series || []).forEach((x, j) => { if (x?.name && x.name.length > 16) out.errors.push(`${at}.series[${j}].name: ${x.name.length} characters; half a slide takes 16.`); });
+        if (kind === "waterfall") (c.items || []).forEach((x, j) => { if (x?.label && x.label.length > 8) out.errors.push(`${at}.items[${j}].label: ${x.label.length} characters; half a slide takes 8.`); });
+        const wfMax = style === "pitch" ? 5 : 6;
+        if (kind === "waterfall" && (c.items || []).length > wfMax) out.errors.push(`${at}.items: ${c.items?.length} items; half a slide takes ${wfMax}.`);
+        if (kind === "ranked" && (c.ranking || []).length > 6) out.errors.push(`${at}.ranking: ${c.ranking?.length} items; half a slide takes 6.`);
+        if (kind === "ranked") (c.ranking || []).forEach((r, j) => { if (r?.label && r.label.length > 20) out.errors.push(`${at}.ranking[${j}].label: ${r.label.length} characters; half a slide takes 20.`); });
+        if (s.takeaway && (x.bullets || []).length > 1) out.errors.push(`charts[${i}].bullets: with a takeaway at most 1 per chart.`);
+      });
       break;
     }
     case "summary": {

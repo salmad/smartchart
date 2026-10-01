@@ -16,7 +16,7 @@ const norm = (s: Sel) => ({ r0: Math.min(s.r0, s.r1), r1: Math.max(s.r0, s.r1), 
 const show = (v: string | number | boolean | null) => (v === null ? '' : typeof v === 'number' ? v.toLocaleString('en-GB', { maximumFractionDigits: 6 }) : typeof v === 'boolean' ? (v ? '✓' : '') : v)
 const raw = (v: string | number | boolean | null) => (v === null ? '' : String(v))
 
-export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdit; model: SheetModel; deckStyle: Style; note: string; onNote: (s: string) => void }) {
+export function Sheet({ edit, model, deckStyle, which = 0, note, onNote }: { edit: SlideEdit; model: SheetModel; deckStyle: Style; which?: number; note: string; onNote: (s: string) => void }) {
   void deckStyle
   const [rawAnchor, setAnchor] = useState({ r: 0, c: 0 }), [rawFocus, setFocus] = useState({ r: 0, c: 0 })
   const [editing, setEditing] = useState<{ r: number; c: number; text: string; error?: string } | null>(null)
@@ -82,7 +82,7 @@ export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdi
   /** Pasted text lands in the cells from the selection; with everything selected it replaces the data, so a pasted table becomes a new chart. */
   const pasteText = (text: string, replace = false) => {
     const data = parseTsv(text), all = replace || (sel.r0 === 0 && sel.c0 === 0 && sel.r1 === maxR && sel.c1 === maxC)
-    const r = all ? replaceFromTable(edit.draft, deckStyle, data) : pasteInto(edit.draft, deckStyle, { r: sel.r0, c: sel.c0 }, data)
+    const r = all ? replaceFromTable(edit.draft, deckStyle, data, which) : pasteInto(edit.draft, deckStyle, { r: sel.r0, c: sel.c0 }, data, which)
     const key = model.kind === 'table' ? 'table' : 'chart'
     if (r.slide[key]) edit.patch({ [key]: r.slide[key] })
     onNote(r.note ?? (all ? 'Replaced the chart data.' : ''))

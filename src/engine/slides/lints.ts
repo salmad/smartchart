@@ -92,8 +92,9 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
 
 /* Chart labels (spec 4.2a): none leaves the chart area, no two overlap, and no mark runs into the category labels. */
 export function chartLabelLints(slide: HTMLElement): string[] {
-  const host = slide.querySelector("[data-chart]");
-  if (!host) return [];
+  return [...slide.querySelectorAll("[data-chart]")].flatMap((host) => hostLabelLints(slide, host));
+}
+function hostLabelLints(slide: HTMLElement, host: Element): string[] {
   const R = slide.getBoundingClientRect(), k = R.width / 1920;
   const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
   const H = box(host), out: string[] = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));
