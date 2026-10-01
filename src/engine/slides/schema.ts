@@ -271,14 +271,15 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       table: f("object", "The table.", { required: true, fields: {
         columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
           label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
-          focus: f("boolean", "Highlight this column. At most one. Not with `muted`.", { default: false }),
+          focus: f("boolean", "Highlight this column. Not with `muted`.", { default: false }),
           muted: f("boolean", "A quieter column, for context. Not with `focus`.", { default: false }),
           bold: f("boolean", "Set the whole column in bold.", { default: false }),
           italic: f("boolean", "Set the whole column in italic.", { default: false }),
         } }) }),
         rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
-          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]]), or { value, note } for a small note under the value.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
+          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or { value, note } for a small note under the value.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
           style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
+          focus: f("boolean", "Highlight this row.", { default: false }),
         } }) }),
       } }),
       caption: CAPTION,
@@ -683,7 +684,6 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       (t.rows || []).forEach((r, i) => {
         if (Array.isArray(r?.cells) && r.cells.length !== n) out.errors.push(`table.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
       });
-      if (count(t.columns, "focus") > 1) out.errors.push("table.columns: at most one focus column.");
       (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`table.columns[${j}]: muted or focus, not both.`); });
       (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));

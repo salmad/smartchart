@@ -65,7 +65,7 @@ function tableHTML(t: Table) {
     return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
   return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
     <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
-    <tbody>${t.rows.map((r, i) => `<tr class="${r.style || ""}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>`;
+    <tbody>${t.rows.map((r, i) => `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>`;
 }
 
 function cardHTML(c: Card, variant: string, i: number) {

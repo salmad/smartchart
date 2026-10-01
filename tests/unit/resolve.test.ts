@@ -76,3 +76,21 @@ test("focus auto on a waterfall or a timeline flags one item", async () => {
   const r2 = await resolveAuto(tl, "consulting", fakeJev({ focus: ["item1", 0.9] }));
   assert.deepEqual(must(r2.slide.chart?.rows, "chart.rows").map((x) => !!x.focus), [false, true]);
 });
+
+test("focus auto on a table picks a column or a row", async () => {
+  const t: Slide = { template: "table", title: "[[Acme]] offers the highest limit", focus: "auto", table: { columns: [{ label: "Provider" }, { label: "Limit" }],
+    rows: [{ cells: ["Bank", "£25k"] }, { cells: [{ value: "**Acme**", note: "launch" }, "£250k"] }] } };
+  // Items: the columns after the first (here one), then the rows: item2 is the second row.
+  const r = await resolveAuto(t, "consulting", fakeJev({ focus: ["item2", 0.9] }));
+  assert.deepEqual(must(r.slide.table?.rows, "table.rows").map((x) => !!x.focus), [false, true]);
+  assert.equal(!!r.slide.table?.columns[1].focus, false);
+});
+
+test("table focus names rows by their first cell, as plain text", async () => {
+  const t: Slide = { template: "table", title: "T", focus: "auto", table: { columns: [{ label: "Provider" }, { label: "Limit" }], rows: [{ cells: [{ value: "**Acme**" }, "£250k"] }] } };
+  const jev = fakeJev({ focus: ["item1", 0.9] });
+  await resolveAuto(t, "consulting", jev);
+  const options = JSON.stringify(jev.calls[0].questions.focus);
+  assert.match(options, /Acme/);
+  assert.doesNotMatch(options, /\*\*Acme/);
+});

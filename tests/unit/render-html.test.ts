@@ -34,3 +34,10 @@ test('a summary numbers its points and marks each field for hand editing', () =>
   expect(html).toContain('<span class="lead" data-path="points[0].title" data-kind="md">A <strong>claim</strong></span>')
   expect(html).toContain('<span class="n">02</span>')
 })
+
+test('a highlighted row carries the focus class next to its style', () => {
+  const s: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'A' }, { label: 'B' }], rows: [{ cells: ['a', 'b'], style: 'total', focus: true }, { cells: ['c', 'd'] }] } }
+  const html = slideHTML(s, CTX, { style: 'consulting', theme: 'ink' })
+  expect(html).toContain('<tr class="total focus" data-item="table.rows[0]">')
+  expect(html).toContain('<tr class="" data-item="table.rows[1]">')
+})

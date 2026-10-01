@@ -269,3 +269,10 @@ test("the chart card tells the agent the ranked and matrix limits", () => {
   assert.match(rules, /Matrix: notes or a takeaway, not both/);
   assert.ok(CHART_GUIDE.some((g) => g.includes("`kind: \"ranked\"`")) && CHART_GUIDE.some((g) => g.includes("`kind: \"matrix\"`")));
 });
+
+test("tables highlight what the writer chooses: rows, several columns, cells by markup", () => {
+  const t = { template: "table", title: "Acme offers five times the limit of the nearest SME card", table: { columns: [{ label: "Provider" }, { label: "Limit", focus: true }, { label: "Fee", focus: true }],
+    rows: [{ cells: ["Bank", "£25k", "£120"] }, { cells: ["[[Acme]]", "£250k", "£0"], focus: true }] } };
+  assert.deepEqual(errs(t), []);
+  assert.match(errs({ ...t, table: { ...t.table, rows: [{ cells: ["a", "b", "c"], focus: "yes" }] } }).join(), /table\.rows\[0\]\.focus: must be true or false/);
+});

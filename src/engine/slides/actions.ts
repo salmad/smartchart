@@ -32,11 +32,10 @@ export function cellField(slide: Slide, r: number, c: number): string | null {
   return typeof cell === "object" && cell ? `${base}.value` : base;
 }
 
-/** The patch for one or more columns' tone: muted and focus are exclusive, and only one column is focus. */
-export function tonePatch(slide: Slide, cols: number | number[], tone: Tone): Record<string, unknown> {
+/** The patch for one or more columns' tone: muted and focus are exclusive. Other columns keep their own tone. */
+export function tonePatch(cols: number | number[], tone: Tone): Record<string, unknown> {
   const list = Array.isArray(cols) ? cols : [cols], set: Record<string, unknown> = {};
   for (const j of list) { set[`table.columns[${j}].muted`] = tone === "muted" ? true : null; set[`table.columns[${j}].focus`] = tone === "focus" ? true : null; }
-  if (tone === "focus") (slide.table?.columns ?? []).forEach((c, k) => { if (!list.includes(k) && c.focus) set[`table.columns[${k}].focus`] = null; });
   return set;
 }
 
@@ -78,6 +77,8 @@ function tableActions(slide: Slide, style: Style, t: Extract<Target, { kind: "ce
   const c0 = Math.min(t.c0, t.c1), c1 = Math.max(t.c0, t.c1), cols = range(c0, Math.min(c1, colsN - 1));
   const r = Math.max(0, Math.min(t.r0, t.r1));
   if (rowsN > 0 && Math.max(t.r0, t.r1) >= 0) {
+    const rows = range(r, Math.min(Math.max(t.r0, t.r1), rowsN - 1)), on = rows.every((i) => slide.table?.rows[i]?.focus);
+    out.push({ id: "row-focus", label: "Focus row", group: "format", checked: on, run: () => ({ set: Object.fromEntries(rows.map((i) => [`table.rows[${i}].focus`, on ? null : true])) }) });
     const row = itemActions(slide, style, `table.rows[${r}]`, "row-");
     const rename: Record<string, [string, string]> = { "row-insert-before": ["Insert row above", "row"], "row-insert-after": ["Insert row below", "row"], "row-move-earlier": ["Move row up", "row"], "row-move-later": ["Move row down", "row"], "row-delete": ["Delete row", "row"] };
     for (const a of row) out.push({ ...a, group: "row", label: rename[a.id]?.[0] ?? a.label });
@@ -95,7 +96,7 @@ function tableActions(slide: Slide, style: Style, t: Extract<Target, { kind: "ce
     out.push({ id: `col-${key}`, label, group: "format", checked: flag(key), run: () => ({ set: Object.fromEntries(cols.map((j) => [`table.columns[${j}].${key}`, flag(key) ? null : true])) }) });
   const toneOf = (j: number): Tone => (slide.table?.columns[j]?.focus ? "focus" : slide.table?.columns[j]?.muted ? "muted" : "normal");
   for (const tone of ["normal", "muted", "focus"] as const)
-    out.push({ id: `col-tone-${tone}`, label: `${tone[0].toUpperCase()}${tone.slice(1)} column`, group: "format", checked: cols.every((j) => toneOf(j) === tone), run: () => ({ set: tonePatch(slide, cols, tone) }) });
+    out.push({ id: `col-tone-${tone}`, label: `${tone[0].toUpperCase()}${tone.slice(1)} column`, group: "format", checked: cols.every((j) => toneOf(j) === tone), run: () => ({ set: tonePatch(cols, tone) }) });
   return out;
 }
 

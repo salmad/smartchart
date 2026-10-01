@@ -202,6 +202,8 @@
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
 .tbl tr.total td:first-child { color: var(--fg); }
+/* A highlighted row reads in the focus colour, a total row included; its notes stay quiet. */
+.tbl tr.focus td, .tbl tr.focus.total td:first-child { color: var(--focus); }
 .style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
 .style-pitch .tbl td { font-size: 34px; padding-top: 13px; padding-bottom: 13px; }
 .style-pitch .split .tbl td { font-size: 30px; }
