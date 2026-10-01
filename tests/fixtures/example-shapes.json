@@ -46,6 +46,7 @@
    "template": "summary",
    "variant": "full",
    "keys": [
+    "footnote",
     "kicker",
     "points",
     "template",
@@ -181,6 +182,7 @@
    "keys": [
     "cards",
     "kicker",
+    "source",
     "takeaway",
     "template",
     "title"
@@ -1219,6 +1221,7 @@
    "template": "steps",
    "variant": "full",
    "keys": [
+    "footnote",
     "kicker",
     "steps",
     "takeaway",
