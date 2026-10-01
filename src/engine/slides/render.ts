@@ -1,6 +1,6 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
-import { MENU, NOTE_POINTS } from "./schema";
+import { MENU, NOTE_POINTS, plain } from "./schema";
 import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types";
 import { drawChart } from "./charts/chart";
 import { allocate } from "./colours";
@@ -43,7 +43,7 @@ const splitHTML = (s: Slide, main: string, extra = "") => {
   return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${notesHTML(s.notes ?? [])}</div>`;
 };
 
-const cellValue = (c: Cell | undefined) => String(c && typeof c === "object" ? c.value : c ?? "").trim();
+const cellValue = (c: Cell | undefined) => plain(c && typeof c === "object" ? c.value : c ?? "").trim();
 const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
 
 /** Alignment per column from its content (spec 3.6 L2): label column text, numbers right, short symbols centred. */
@@ -58,10 +58,10 @@ export function columnAlign(t: Table): Align[] {
 }
 
 function tableHTML(t: Table) {
-  const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : ""].join(" ");
+  const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const cell = (c: Cell, r: number, j: number) => { const p = `table.rows[${r}].cells[${j}]`;
-    if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "esc")}>${esc(c.value)}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
-    return `<td class="${cls(t.columns[j], j)}"${at(p, "esc")}>${esc(c ?? "")}</td>`; };
+    if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value)}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
+    return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
   return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
     <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
     <tbody>${t.rows.map((r, i) => `<tr class="${r.style || ""}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>`;

@@ -7,6 +7,7 @@ import type { Measurer } from '../measure'
 import type { Item } from '../store'
 import { EditBar } from './EditBar'
 import { EditOverlay } from './EditOverlay'
+import { ColumnFormat } from './ColumnFormat'
 import { EditSurface } from './EditSurface'
 import { IconPicker } from './IconPicker'
 import { SelectionBar } from './SelectionBar'
@@ -41,6 +42,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
           <EditSurface edit={edit} deck={deck} ctx={ctx} onSlide={setSlideEl}>
             <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={() => setGrid(true)} />
             <SelectionBar edit={edit} slide={slideEl} />
+            <ColumnFormat edit={edit} slide={slideEl} />
             <IconPicker edit={edit} slide={slideEl} deckStyle={style} />
             {grid && edit.draft.chart && <ChartGrid edit={edit} deckStyle={style} onClose={() => setGrid(false)} />}
           </EditSurface>

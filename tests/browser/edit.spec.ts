@@ -187,3 +187,31 @@ test('an icon is chosen by hand, and the model can pick one from the card text',
   await page.getByRole('button', { name: 'Save' }).click()
   expect((await saved(page)).cards?.map((c) => c.icon)).toEqual(['rocket', 'wallet', 'truck'])
 })
+
+test('a table: highlight text inside a cell, and format a whole column', async ({ page }) => {
+  await open(page)
+  await page.evaluate(() => window.__journey?.load([
+    { template: 'table', title: 'Plans compared', table: { columns: [{ label: 'Plan' }, { label: 'Price' }, { label: 'Seats' }], rows: [{ cells: ['Starter', '£9 a month', '1'] }, { cells: ['Team', '£29 a month', '5'] }] } },
+  ] as never, 'consulting'))
+  await page.keyboard.press('e')
+  const cell = page.locator('[data-editing] td[data-path="table.rows[1].cells[1]"]')
+  await cell.click()
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Shift+ArrowRight')
+  await page.keyboard.press('Shift+ArrowRight')
+  await page.keyboard.press('Shift+ArrowRight')
+  await page.getByRole('button', { name: 'Focus' }).click()
+  await expect(cell.locator('.hl-focus')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Format column 3' }).click()
+  await page.getByRole('button', { name: 'Bold column' }).click()
+  await page.getByRole('radio', { name: 'Muted' }).click()
+  await expect(page.locator('[data-editing] th.bold.muted')).toHaveCount(1)
+  await page.getByRole('radio', { name: 'Focus' }).click()
+  await expect(page.locator('[data-editing] th.focus')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Save' }).click()
+  const t = (await saved(page)).table
+  expect(t?.rows[1].cells[1]).toMatch(/\[\[.+\]\]/)
+  expect(t?.columns[2]).toMatchObject({ bold: true, focus: true })
+  expect(t?.columns[2].muted).toBeUndefined()
+})

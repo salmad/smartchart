@@ -191,6 +191,9 @@
 .tbl .al-sym { text-align: center; }
 .tbl th:last-child, .tbl td:last-child { padding-right: 0; }
 .tbl .focus { color: var(--focus); }
+.tbl th.muted, .tbl td.muted { color: var(--muted); }
+.tbl .bold { font-weight: 700; }
+.tbl .italic { font-style: italic; }
 .tbl td small { display: block; margin-top: 2px; font: 400 17px/1.2 var(--mono); color: var(--muted); }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
