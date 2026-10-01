@@ -52,7 +52,8 @@ export function columnAlign(t: Table): Align[] {
   return t.columns.map((_, j) => {
     if (j === 0) return "text";
     const vals = t.rows.map((r) => cellValue(r.cells?.[j])).filter((v) => v && v !== "—" && v !== "–" && v !== "-");
-    if (!vals.length || vals.every((v) => v.length <= 3 && !/\d/.test(v))) return "sym";
+    // Symbols are marks (✓, —, ●) or yes/no; a short word such as "CEO" is text.
+    if (!vals.length || vals.every((v) => v.length <= 3 && !/\d/.test(v) && (!/\p{L}/u.test(v) || /^(yes|no|y|n|n\/a)$/i.test(v)))) return "sym";
     return vals.every((v) => NUMERIC.test(v)) ? "num" : "text";
   });
 }

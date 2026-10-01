@@ -1926,28 +1926,40 @@
     "rows": [
      {
       "cells": [
-       "Sign the issuing partner",
+       {
+        "value": "Sign the issuing partner",
+        "note": "Term sheet agreed; legal open"
+       },
        "CEO",
        "15 Oct"
       ]
      },
      {
       "cells": [
-       "Close the £5m seed round",
+       {
+        "value": "Close the £5m seed round",
+        "note": "Lead confirmed; allocations next"
+       },
        "CFO",
        "31 Oct"
       ]
      },
      {
       "cells": [
-       "Hire the head of credit",
+       {
+        "value": "Hire the head of credit",
+        "note": "Two finalists; owns underwriting"
+       },
        "CEO",
        "15 Nov"
       ]
      },
      {
       "cells": [
-       "Open the warehouse process",
+       {
+        "value": "Open the warehouse process",
+        "note": "Shortlist three lenders"
+       },
        "CFO",
        "Dec"
       ]

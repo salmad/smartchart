@@ -195,6 +195,10 @@
 .tbl .bold { font-weight: 700; }
 .tbl .italic { font-style: italic; }
 .tbl td small { display: block; margin-top: 2px; font: 400 17px/1.2 var(--mono); color: var(--muted); }
+/* A note under text (an action and its detail) is a sentence, not a working: set as body text under a headline. */
+.tbl td.al-text:has(small) > span { font-weight: 600; }
+.tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
+.tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
 .tbl tr.total td:first-child { color: var(--fg); }
