@@ -1,88 +1,101 @@
 # Manual slide editing: design
 
-Date: 2026-10-01 · Status: draft for review · Milestone: M4 "hand editing" in the slide-system spec (§11)
+Date: 2026-10-01 · Status: approved, revised after review · Milestone: M4 "hand editing" in the slide-system spec (§11)
 
 ## 1. Goal
 
-Let the user edit a slide by hand, on the slide itself, in a calm edit mode that they enter on purpose and leave with **Save** or **Discard**. Only the current version is saved. There is no history.
+Let the user edit a slide by hand, on the slide itself, in an edit mode they enter on purpose and leave with **Save** or **Discard**. Only the current version is saved. There is no history.
 
 ## 2. Principles
 
-1. **Thin harness** (CLAUDE.md Rules). Write code only where the job is really hard: rendering, measuring, validation and mapping clicks to fields. Everything else goes to the prompt or the user.
-2. **The human is another writer.** A manual edit is a patch to the slide JSON, the same format as the agent's `patch_slide`. The human can do exactly what the agent can do and nothing more. There is no font, size, colour or free layout control, and no images. Images come later, for the agent and the human together, once the schema has them.
-3. **Human words win.** Saving a manual edit never rewrites the user's text: no autofix and no automatic shortening. Checks run and **warn**. If the user wants a fix, they ask in chat ("fix the warnings").
+1. **Thin harness** (CLAUDE.md Rules). Write code only where the job is really hard: rendering, measuring, validation, mapping a click to a field, and keeping the cursor in place. Everything else goes to the prompt or the user.
+2. **The human is another writer.** A manual edit is a patch to the slide JSON, the same format as the agent's `patch_slide`. The human can do exactly what the agent can do and nothing more: no font, size, colour or free layout control, and no images. Images arrive later, for both writers together, once the schema has them.
+3. **Human words win.** Saving never shortens or rewords the user's text. Checks run and **warn**. To get a fix, the user asks in chat ("fix the warnings"). The structural repairs the agent's writes also get still run (§5).
+4. **The JSON is the truth, not the page.** Each field's text-plus-markup string is the source of truth. The page only displays it.
 
 ## 3. What can be edited
 
 | What | How |
 |---|---|
-| Every text field (title, kicker or subtitle, takeaway, footnote, source, caption, notesTitle, notes, card fields, bullets, steps, table header and cells) | Typed in place on the slide |
-| Emphasis in markup fields: `**bold**`, `[[focus]]`, `[+pos+]`, `[-neg-]` | A floating bar on text selection: **Bold**, **Focus**, with positive and negative behind "…". It only appears in markup fields. |
+| Every text field: title, kicker or subtitle, takeaway, footnote, source, caption, notesTitle, notes, card fields, bullets, steps, table header and cells (value and note) | Typed in place on the slide |
+| Emphasis in markup fields: `**bold**` and `[[focus]]` | A floating bar on text selection, with **Bold** and **Focus**. It only appears in markup fields. Positive and negative colours aren't offered by hand: existing ones survive, and the agent applies new ones when asked. |
 | List items: cards, card bullets, steps, notes, table rows | "+" and "×" on hover, hidden at the template's min and max |
-| Chart data | Click the chart: it flips in place into a data grid |
-| Template | A switcher in the edit bar |
+| Chart data, every kind | Click the chart: it flips in place into a data grid (§4.3) |
+| Template | A switcher in the edit bar (§4.4) |
 
-Not in edit mode: adding, removing and moving slides (the strip does that already), deck look (style, theme, accent), and anything the schema doesn't have.
+Not in edit mode: adding, removing and moving slides (the strip does that), deck look (style, theme, accent), and anything the schema doesn't have.
 
 ## 4. The edit mode
 
-- **Enter** with the Edit button (pencil) in the Stage area, or **E**. You can't enter while the agent is busy. Clicking the slide still presents.
-- **Exclusive.** While editing, the chat input is disabled ("Save or discard to keep chatting"), the strip is dimmed and locked, and Present and the editor shortcuts are off. A single state flag does this, so there is one writer at a time and nothing to merge.
-- **Edit bar.** A thin bar above the slide holds the template switcher, the warning count ("2 warnings"), **Discard** and **Save**.
-- **Keys.** ⌘S or ⌘↵ saves. Esc discards, asking to confirm only when something changed.
-- **Leaving the page** with unsaved edits: the browser's standard "leave site?" prompt. The draft is not autosaved.
+- **Enter** with the Edit button (pencil) under the slide, or **E**. You can't enter while the agent is busy. Clicking the slide still presents.
+- **Exclusive.** While editing, `state.editing` holds the slide id. Everything that changes the deck or starts a turn treats it like `busy`:
+  - the reducer guards (`removeSlide`, `moveSlide`, `insertStarter`, `restoreSlide`, `select`, `open`, `new`)
+  - the Composer's `canSend` ("Save or discard to keep chatting")
+  - the Strip, Add slide, the Decks sidebar, the look menu in the Bar, Present
+  - the Editor shortcuts
+- **Edit bar** above the slide: the template switcher, the warning count ("2 warnings"), **Discard** and **Save**.
+- **Keys:** ⌘S or ⌘↵ saves. Esc discards, asking to confirm only when something changed. The browser's own ⌘B, ⌘I and ⌘U are blocked.
+- **Leaving the page** with unsaved edits brings up the browser's "leave site?" prompt. Drafts are not saved anywhere.
 
-### 4.1 Typing
+### 4.1 Fields and the cursor
 
-Editable elements carry `data-path` (see §6.1) and become contentEditable. Typing updates the **draft** slide JSON at that path, and the slide is **not** re-rendered on each keystroke, so the cursor never moves. A full re-render happens only on:
-- leaving a field
-- +/×
-- a template switch
-- leaving the chart grid
+The renderer tags every editable element with `data-path`, using the path syntax `applyPatch` reads (§6.1). In edit mode each one becomes a contentEditable field, and:
 
-Pasted content is reduced to plain text, and Enter does not add a line break: in a list it adds the next item, and elsewhere it does nothing.
-
-The DOM goes back to the JSON as text plus markup: `<strong>` → `**…**`, `.hl-focus` → `[[…]]` and so on, which is the inverse of `md()`. The `display()` wrapping for no-break compounds is removed when reading back.
+- **The string is the truth.** On each input event the field's plain text is read, and the change is mapped back onto its markup string. The markup marks keep their place around the text that changed.
+- **Only that field is redrawn**, from the string, with the field's own renderer (`md`, `display` or `esc`). The cursor is put back by its offset in the plain text.
+- **Nothing the browser inserts survives**, because the field is redrawn from the string each time. Paste is reduced to plain text. Enter never adds a line break: in a list it adds the next item, elsewhere it does nothing.
+- **Fixed prefixes stay outside the field.** "Source: " and the note numbers sit in their own spans, outside the editable text.
+- **The whole slide re-renders** only when focus leaves a field, on +/×, on a template switch and on leaving the chart grid. That brings the layout up to date: value fitting, table sizing and the chart.
 
 ### 4.2 Lists
 
-On hover, an item shows "×" and the list shows "+" after its last item. Both come from `listOps(slide)`, which reads the limits that already exist in the schema, so they hide exactly at the min and max. A new item starts with empty text and the cursor in it. Removing an item re-renders. Reordering is out for now. If the user asks for it, it would be drag on the same handles.
+On hover, an item shows "×" and the list shows "+" after its last item. Both come from `listOps(slide, style)`, which reads the min and max the schema already has, so they hide exactly at the limits.
+
+A new item **copies the shape of the item next to it** (icon or value lead, tone, mark), with its text cleared. That keeps it valid with no logic per template. The cursor goes into its first text field. Reordering is out.
 
 ### 4.3 Chart grid
 
-Clicking the chart replaces the chart area, in place and at the same size, with a compact grid of inputs. Everything else on the slide stays editable.
+Clicking the chart replaces the chart area with a compact grid of inputs, in place and at the same size. The rest of the slide stays editable.
 
-| Chart kind | Grid |
-|---|---|
-| bars | rows = categories, columns = series (label and values) |
-| waterfall | rows = steps (label and value) |
-| timeline | rows = rows or milestones, columns = periods |
+| Chart kind | Grid | Can add or remove |
+|---|---|---|
+| bars | rows = categories; one column per series (name in the header, then values) | categories, series |
+| waterfall | rows = items: label, value, a "total" checkbox | items |
+| timeline | rows = workstreams: label, start period, end period (selects from `periods`); a periods row that can be edited; a milestones row | rows, periods, milestones |
 
-The grid can add or remove rows and series within the schema limits. "Show chart", or clicking outside the grid, flips it back with a re-render. Chart kind and computed annotations are not edited here. `chartGrid` / `fromGrid` convert between the two forms with no loss for every kind; a test checks the round trip.
+Limits come from the schema. A new series copies the shape of the last one (mark, colour). "Show chart", or clicking outside the grid, flips back with a re-render. Chart kind and annotations are not edited here; those stay with the agent. `chartGrid` and `fromGrid` convert both ways with no loss for every kind, and a test checks it.
 
 ### 4.4 Template switch
 
 1. The user picks a template in the switcher, using the select-then-confirm pattern.
-2. Before confirming, one line names what will be lost, e.g. "Steps keeps the title, subtitle and takeaway. The chart and 3 notes go."
+2. Before confirming, a key diff shows what changes, e.g. "Keeps: title, takeaway · Drops: chart, 3 notes".
 3. Confirming applies `switchTemplate(draft, to, starter)`:
    - **Kept:** the common frame fields (`title`, `kicker`/`subtitle`, `takeaway`, `footnote`, `source`). To and from cover or section, only `title` and `subtitle` are kept.
-   - **Body:** comes from the first gallery starter for that template, in the deck's style (`starters.json`). This is not another example set.
-4. Body text from the starter shows muted until the user types over it. Sample text still there at save is an ordinary warning ("2 steps still have sample text").
+   - **Body:** comes from the first gallery starter for that template, in the deck's style (`starters.json`). It is not a second set of examples.
+4. Starter text shows muted until the user types over it. Starter text left at save is an ordinary warning ("2 fields still have sample text"). This is one predicate over the set of starter paths.
 
 Discard is the undo.
 
 ### 4.5 Warnings
 
-The draft is measured, debounced at about 300 ms, using the existing measurer. Measuring runs `validate()` (limits), the measured fit checks and `ruleChecks`. Each issue that has a path gives a quiet amber underline on that field, and hovering it shows the reason ("Title: 3 lines, aim for 2"). Issues without a path only count towards the total in the edit bar.
+The draft is measured, debounced at about 300 ms, with the existing measurer. Each issue is tied to a field:
+
+- **`validate()`**: its messages already start with the field path (`cards[2].title: 31 characters, limit 24 …`), so the path is read from that prefix.
+- **Measured fit** (`fitIssues`, `layoutLints`): each check names the element it measured. The issue takes its path from that element's closest `[data-path]`. This is a small change to `lints.ts`, which returns `{ msg, path? }` and keeps the text exactly as it is today.
+- **Rule checks and Jev checks** don't belong to a field. They only count.
+
+A field with an issue gets a quiet amber underline, and hovering it shows the reason. The edit bar counts every issue.
 
 Nothing blocks typing or Save. The only hard stops are structural: the +/× limits, and a slide that cannot render at all (Save is disabled with the reason).
 
 ## 5. Save
 
-1. Run the same checks as the agent's `write()` except the parts that change text: **no** `autofix`, no `resolveAuto`, no `shorten`. That is validate, measure, rule checks, then the Jev judgment checks through the existing `runChecks`, exactly as after an agent write.
-2. Replace the item's slide with the draft, through the existing `items` action. A slide with errors gets `status: 'draft'`, as it does today.
-3. Add a **hidden** note to the agent's `history`, not to `messages`, so the user never sees it: `[The user edited slide N by hand.]`. The agent already sees the current slide JSON every turn. This line only tells it who changed it.
-4. Leave edit mode. Autosave picks up the change through `editKey()` with no new save code, and the revision and stale handling are unchanged.
+1. Run the agent's write pipeline **except `shorten`**: `autofix` → `validate` → `resolveAuto` (Jev, only when an `"auto"` value is present) → `autofix` → measure → rule checks, then the judgment checks through the existing `runChecks`.
+   - `autofix` is mostly structural: icons, chart kind, focus placement. Its two fixes to words are house style ("Source:" prefix, the full stop at the end of a consulting title), so they run like the template's typography.
+   - The write pipeline is extracted from `agent.ts` `write()` as a shared function, so both writers call the same code.
+2. Replace the item's slide through the existing `items` action. A slide with errors gets `status: 'draft'`, as it does today.
+3. Add the slide id to `state.edited`. The next turn's Deck state block has one line, "Edited by hand since last turn: s4". The set is cleared when that turn starts. The user never sees it, and no message is added to the history.
+4. Leave edit mode. Autosave picks up the change through `editKey()`. Revision and stale handling are unchanged.
 
 Discard drops the draft and leaves.
 
@@ -90,56 +103,63 @@ Discard drops the draft and leaves.
 
 ### 6.1 Engine (framework-free)
 
-- **`slides/render.ts`** adds `data-path` attributes on editable elements, e.g. `title`, `cards[2].bullets[0]`, `notes[1].text` and `table.rows[3].cells[1]`. These are attributes only: HTML structure and `slides.css` are unchanged, so presenting, thumbnails and the review page look identical. The path format is the same one that `applyPatch` reads.
+- **`slides/render.ts`** adds `data-path` and `data-kind` (`md` | `display` | `esc`) to each editable element. HTML structure and `slides.css` are unchanged. The fixed prefixes ("Source: ", note numbers) are already in their own elements, or move into their own spans. Table cells: `table.rows[r].cells[c]` for a string cell, and `….value` / `….note` for an object cell. Typing a note into a string cell turns it into `{ value, note }`.
 - **`slides/edit.ts`** is new and pure:
-  - `listOps(slide)`: the list paths and their min/max, from `MENU`/schema
-  - `switchTemplate(slide, to, starter)` → `{ slide, lost }`
-  - `chartGrid(chart)` / `fromGrid(kind, grid)`
-  - `toMarkup(el)`: the inverse of `md()` and `display()`
+  - `listOps(slide, style)`: list paths with their min, max and length
+  - `newItem(list)`: a copy of the neighbour's shape with its text cleared
+  - `switchTemplate(slide, to, starter)` → `{ slide, keeps, drops }`
+  - `chartGrid(chart)` and `fromGrid(kind, grid)`
+- **`slides/markup.ts`** is new and pure:
+  - `plainOf(markup)`: the plain text and the map from each plain offset to its markup offset
+  - `applyText(markup, nextPlain)`: puts the changed text into the markup string so the marks stay in place
+  - `toggle(markup, from, to, mark)`: Bold or Focus over a plain-text range, so marks never overlap
+- **`slides/lints.ts`** returns `{ msg, path? }`, and callers that want strings map `msg`.
+- **`agent/write.ts`**: the write pipeline extracted from `agent.ts`, with `shorten` as an option (on for the agent, off for the human).
 
-  All draft changes go through the existing `applyPatch`.
+### 6.2 App (each in its own file, under ~300 lines)
 
-### 6.2 App (each in its own file, each under ~300 lines)
-
-- **`state.ts`** gets `editing: string | null`. Chat, Strip, Present and the shortcuts read it to lock themselves. The `Editor.tsx` shortcut guard also skips contentEditable targets.
-- **`useSlideEdit`** holds `{ draft, dirty, issues }` and provides patch, measure (debounced), `save()` and `discard()`.
-- **`EditSurface`** sits over the mounted slide and handles contentEditable, the +/× buttons, the amber underlines and the muted starter text. Everything is positioned from the slide's own elements, and app chrome never styles slide internals (CLAUDE.md).
-- **`EditBar`**: template switcher, warning count, Discard, Save.
-- **`SelectionBar`**: Bold, Focus, and "…".
-- **`ChartGrid`**: the in-place grid, built from shadcn primitives.
-- **Stage** gets the Edit button and renders the edit parts while editing.
+- **`state.ts`** gets `editing: string | null` and `edited: string[]`, and the guards treat `editing` like `busy`.
+- **`useSlideEdit`**: `{ draft, dirty, issues }`. It patches, measures (debounced), and does `save()` and `discard()`.
+- **`EditSurface`** sits over the mounted slide. It handles the editable fields, cursor restore, +/×, the amber underlines and the muted starter text. Everything is positioned from the slide's own elements, and app chrome never styles slide internals.
+- **`EditBar`**: template switcher, keeps/drops line, warning count, Discard, Save.
+- **`SelectionBar`**: Bold, Focus.
+- **`ChartGrid`**: the grid in place, built from shadcn primitives.
+- **Stage** gets the Edit button and renders the edit parts while editing. `agent-prompt.ts` `stateBlock` gets the "edited by hand" line.
 
 ## 7. Testing
 
-- **Unit (vitest)**:
-  - `toMarkup(md(x)) === x` for every markup form, plus the no-break compounds.
-  - `chartGrid` / `fromGrid` round trip for every chart kind in the starters.
-  - `switchTemplate` for every pair of templates: kept fields, `lost` list, and the result validates once the starter body is in.
-  - `listOps` agrees with the schema limits.
-  - Every rendered `data-path` resolves with `applyPatch`, for every starter in both styles.
-- **Browser (Playwright)**, in the app smoke test:
-  1. Enter edit mode and check that chat and strip are locked.
-  2. Edit the title past its limit, see the amber underline and the count, and check that Save is still possible.
-  3. Add and remove a card.
-  4. Edit one chart value in the grid.
-  5. Switch template and see the "lost" line.
-  6. Save, reload, and check that the edit persisted.
-  7. Discard and check that nothing changed.
-- **Review page**: `data-path` must not change any measured value. Lints are identical before and after.
+- **Unit (vitest):**
+  - `markup.ts`: typing, deleting and pasting inside, before and after each mark keeps the marks in place. `toggle` never makes overlapping marks. The round trip of `plainOf` holds.
+  - Every rendered `data-path` resolves with `applyPatch`, for every starter in both styles, and the rendered text equals the field's plain text.
+  - `chartGrid` / `fromGrid` round trip for every chart kind in the starters, plus adding and removing at the limits.
+  - `switchTemplate` for every pair of templates: `keeps` and `drops` are right, and the result validates.
+  - `listOps` agrees with the schema. `newItem` on every list in the starters gives an item that validates once its text is filled in.
+  - Save path: a card added with "+" saves without errors. An over-long title saves unchanged, with a warning.
+  - Reducer: deck-changing actions are ignored while `editing`.
+- **Browser (Playwright),** in the app smoke test:
+  1. Enter edit mode. Chat, strip and deck switching are locked.
+  2. Type into a title past its limit. The underline and the count appear, and Save still works.
+  3. Bold and Focus on a selection, and the cursor stays put while typing.
+  4. Add and remove a card.
+  5. Edit a value in the chart grid for bars, waterfall and timeline.
+  6. Switch template and see the keeps/drops line.
+  7. Save, reload, and the edit is still there. Discard leaves nothing changed.
+- **Review page:** `data-path` must not change any measured value. Lints are identical before and after. Existing exact-HTML tests in `render-html.test.ts` are updated for the new attributes.
 
 ## 8. Out of scope
 
 - Images.
 - Fonts, sizes, colours and layout.
+- Positive and negative emphasis by hand.
 - Version history and undo beyond Discard.
 - Reordering list items.
-- Editing several slides at once.
-- Chatting while editing.
-- Who-wrote-what tracking or field locks.
-- The deterministic HarfBuzz fit calculator (§4 of the slide-system spec): the warnings use the existing DOM measurer.
+- Editing chart kind and annotations.
+- Editing several slides at once, or chatting while editing.
+- Who-wrote-what tracking and field locks.
+- The deterministic fit calculator. Warnings use the existing DOM measurer.
 
 ## 9. Risks
 
-- **contentEditable drift.** Browsers insert `<div>`, `<br>` and styled spans. Mitigation: plain-text paste, Enter handled by us, and `toMarkup` that drops anything except the four markup forms.
-- **Fields that re-render from content**: `fitValues`, table sizing, notes in split layouts. The re-render on leaving a field keeps the layout honest, and within a field the layout may lag until then.
-- **Table cells with notes (`{value, note}`)**: the value and the note are edited as separate paths.
+- **Mapping text changes onto markup** (`applyText`) is the subtle part. A change that spans a mark boundary must keep the mark, or shrink it, and never break it. Tests cover it thoroughly before any UI is built on it.
+- **Layout lag inside a field.** Value fitting and table sizing update only when focus leaves the field. That is acceptable, because the user is still typing.
+- **IME composition** (accents, CJK). Fields don't redraw between `compositionstart` and `compositionend`.
