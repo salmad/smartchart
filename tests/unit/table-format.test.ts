@@ -34,10 +34,3 @@ test('a cell\'s length counts its words, not its marks', () => {
   const cell = `**${'x'.repeat(38)}**`
   expect(validate(base([{ label: 'A' }, { label: 'B' }], ['a', cell]), 'consulting').errors.filter((e) => /characters/.test(e))).toEqual([])
 })
-
-test('choosing focus for a column frees the other focus column; normal clears both', async () => {
-  const { tonePatch } = await import('@/app/edit/ColumnFormat')
-  const s = base([{ label: 'A' }, { label: 'B', focus: true }, { label: 'C', muted: true }], ['a', 'b', 'c'])
-  expect(tonePatch(s, 2, 'focus')).toEqual({ 'table.columns[2].muted': null, 'table.columns[2].focus': true, 'table.columns[1].focus': null })
-  expect(tonePatch(s, 1, 'normal')).toEqual({ 'table.columns[1].muted': null, 'table.columns[1].focus': null })
-})

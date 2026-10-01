@@ -64,3 +64,9 @@ test('tonePatch frees the other focus column', () => {
   const s: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'A' }, { label: 'B', focus: true }, { label: 'C' }], rows: [{ cells: ['a', 'b', 'c'] }] } }
   expect(tonePatch(s, 2, 'focus')).toEqual({ 'table.columns[2].muted': null, 'table.columns[2].focus': true, 'table.columns[1].focus': null })
 })
+
+test('a selection that includes the header is a column: column format, no text marks', () => {
+  const ids = actionsFor({ kind: 'cells', r0: -1, c0: 1, r1: 1, c1: 1 }, TABLE, 'consulting').map((a) => a.id)
+  expect(ids).toContain('col-bold')
+  expect(ids).not.toContain('bold')
+})

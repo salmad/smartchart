@@ -3,9 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { mountSlide } from '@/engine/slides/render'
 import { getAt, listOf, listOps, newItem } from '@/engine/slides/edit'
-import { toggle } from '@/engine/slides/markup'
 import type { Deck, SlideContext } from '@/engine/types'
-import { caretRange, isMarkup, redraw, setCaret, typed } from './fields'
+import { caretRange, redraw, selectRange, setCaret, typed } from './fields'
 import type { SlideEdit } from './useSlideEdit'
 import './edit.css'
 
@@ -28,6 +27,8 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       if (editRef.current.samples.has(f.dataset.path ?? '')) f.dataset.sample = ''
     })
     // After a structural change, the cursor goes back where it was asked to be (a new item's first field).
+    const keep = editRef.current.takeSelect()
+    if (keep) { const f = s.querySelector<HTMLElement>(`[data-path="${keep.path}"]`); if (f) { f.focus(); selectRange(f, keep.from, keep.to) } }
     const want = editRef.current.takeFocus()
     if (want) {
       const f = s.querySelector<HTMLElement>(`[data-path="${want}"]`) ?? s.querySelector<HTMLElement>(`[data-item="${want}"] [data-path]`)
@@ -74,7 +75,6 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       if (!f || e.isComposing || e.keyCode === 229) return
       const mod = e.metaKey || e.ctrlKey
       if (mod && ['i', 'u'].includes(e.key)) { e.preventDefault(); return }
-      if (mod && e.key === 'b') { e.preventDefault(); if (isMarkup(f)) { const [a, b] = caretRange(f) ?? [0, 0]; write(f, toggle(markupOf(f), a, b, 'b'), b) } return }
       if (e.key !== 'Enter' || mod) return
       e.preventDefault()
       // Enter in a list item adds the next item; anywhere else it does nothing.
@@ -85,12 +85,23 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       const tail = (f.dataset.path ?? '').slice((itemEl.dataset.item ?? '').length)
       cur.patch(set, `${hit.op.path}[${hit.index + 1}]${tail}`)
     }
-    const onLeave = (e: FocusEvent) => { if (fieldOf(e.target) && !fieldOf(e.relatedTarget)) editRef.current.commit() }
+    // A menu or bar taking focus is not leaving: committing would redraw the slide under the selection it acts on.
+    const onLeave = (e: FocusEvent) => { const to = e.relatedTarget; if (fieldOf(e.target) && !fieldOf(to) && !(to instanceof Element && to.closest('[data-edit-chrome]'))) editRef.current.commit() }
+    // What is selected, as the model sees it: a selection inside one field. Menus and bars read it.
+    const onSelect = () => {
+      const sel = window.getSelection(), node = sel?.anchorNode, f = node ? (node instanceof Element ? node : node.parentElement)?.closest<HTMLElement>('[data-path]') : null
+      if (!f || !el.contains(f)) return
+      const r = caretRange(f), cur = editRef.current.target
+      if (!r) return
+      const next = { kind: 'text' as const, path: f.dataset.path ?? '', from: Math.min(...r), to: Math.max(...r) }
+      if (next.from !== next.to || cur.kind === 'text') { if (cur.kind !== 'text' || cur.path !== next.path || cur.from !== next.from || cur.to !== next.to) editRef.current.setTarget(next) }
+    }
+    document.addEventListener('selectionchange', onSelect)
     el.addEventListener('input', onInput); el.addEventListener('compositionend', onComposed)
     el.addEventListener('paste', onPaste); el.addEventListener('keydown', onKey); el.addEventListener('focusout', onLeave)
     return () => {
       el.removeEventListener('input', onInput); el.removeEventListener('compositionend', onComposed)
-      el.removeEventListener('paste', onPaste); el.removeEventListener('keydown', onKey); el.removeEventListener('focusout', onLeave)
+      el.removeEventListener('paste', onPaste); el.removeEventListener('keydown', onKey); el.removeEventListener('focusout', onLeave); document.removeEventListener('selectionchange', onSelect)
     }
   }, [style])
 

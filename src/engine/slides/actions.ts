@@ -103,7 +103,8 @@ export function actionsFor(target: Target, slide: Slide, style: Style): Action[]
   switch (target.kind) {
     case "text": return markActions(slide, target);
     case "item": return itemActions(slide, style, target.item);
-    case "cells": return [...markActions(slide, target), ...tableActions(slide, style, target)];
+    // A selection that includes the header is a column (or more): it takes the column format, not text marks.
+    case "cells": return [...(Math.min(target.r0, target.r1) < 0 ? [] : markActions(slide, target)), ...tableActions(slide, style, target)];
     default: return [];
   }
 }
