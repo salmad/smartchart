@@ -50,7 +50,8 @@ export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdi
   const copy = (): string => toTsv(Array.from({ length: sel.r1 - sel.r0 + 1 }, (_, i) => Array.from({ length: sel.c1 - sel.c0 + 1 }, (_, j) => raw(model.get(sel.r0 + i, sel.c0 + j)))))
 
   const onKey = (e: KeyboardEvent) => {
-    if (editing) return
+    // Typing in a header's name box is the box's own: the grid's type-to-replace must not take it.
+    if (editing || (e.target instanceof HTMLInputElement)) return
     const mod = e.metaKey || e.ctrlKey
     if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); setAnchor({ r: 0, c: 0 }); setFocus({ r: maxR, c: maxC }); return }
     if (mod) return

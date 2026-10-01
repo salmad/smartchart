@@ -393,3 +393,23 @@ test('a table slide opens as a sheet from its menu; a pasted table replaces it',
   expect(t?.columns.map((c) => c.label)).toEqual(['Tier', 'Cost', 'Seats'])
   expect(t?.rows.map((r) => r.cells[0])).toEqual(['Free', 'Pro', 'Max'])
 })
+
+test('a series added in the sheet can be named, and its header typed in place', async ({ page }) => {
+  await open(page)
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart]').click()
+  await page.getByRole('button', { name: 'Series' }).click()
+  const name = page.getByLabel('Column 2 name')
+  await name.click()
+  await page.keyboard.type('Cost')
+  await expect(name).toHaveValue('Cost')
+  await sheetCell(page, 0, 2).click()
+  await page.keyboard.type('7')
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  const s = (await saved(page, 1)).chart?.series
+  expect(s?.map((x) => x.name)).toEqual(['Revenue', 'Cost'])
+  expect(s?.[1].values).toEqual([7, 0])
+})
