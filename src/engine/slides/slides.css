@@ -214,6 +214,15 @@
 .style-pitch .steps .t { font-size: 34px; padding-top: 28px; }
 .style-pitch .steps .d { padding: 20px 0; }
 
+/* ═════════════ Summary: the answer in the title, the points that prove it as numbered rows ═════════════ */
+.sum { display: grid; grid-auto-rows: 1fr; }
+.sum .row { display: grid; grid-template-columns: 76px 600px 1fr; column-gap: 48px; align-items: baseline; padding: 20px 0; border-top: 1px solid var(--line); }
+.sum .row:last-child { border-bottom: 1px solid var(--line); }
+.sum .n { font: 600 30px/1.2 var(--mono); color: var(--focus); }
+.sum .lead { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 46px; line-height: 1.02; }
+.sum .why { font-size: 28px; line-height: 1.38; color: var(--fg-2); }
+.style-pitch .sum .lead { font-size: 48px; }
+
 /* ═════════════ Charts (SVG for shapes, HTML for every label) ═════════════ */
 /* Chart text per style: --lbl for values and categories (13 pt consulting), --lbl-s for legend, ticks and captions. */
 .chart { position: relative; display: flex; flex-direction: column; min-height: 0; }
@@ -285,5 +294,23 @@
 .ms { fill: var(--fg); }
 .ms-line { stroke: var(--fg-2); stroke-width: 1.5; stroke-dasharray: 3 6; }
 .ms-lbl { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
+/* Ranked bars: labels right-aligned in their column, values at the bar ends. */
+.a-ml { transform: translate(0, -50%); }
+.rk-lbl { transform: translate(0, -50%); white-space: normal; text-align: right; font: 500 calc(var(--lbl) + 2px)/1.2 var(--text); color: var(--fg-2); }
+.rk-lbl.focus { color: var(--fg); font-weight: 600; }
+.rk-val.c-focus { font-weight: 600; }
+/* Matrix: a cross at the middle, the focus quadrant tinted, quiet dots, one focus dot with a halo. */
+.mx-axis { fill: none; stroke: var(--line-2); stroke-width: 2; }
+.mx-mid { stroke: var(--line); stroke-width: 1.5; }
+.mx-tint { fill: color-mix(in srgb, var(--focus) 8%, transparent); }
+.mx-dot { fill: var(--muted); }
+.mx-dot.focus { fill: var(--focus); }
+.mx-halo { fill: color-mix(in srgb, var(--focus) 22%, transparent); }
+.mx-q { font: 500 var(--lbl-s)/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.mx-q.focus { color: var(--focus-text, var(--focus)); }
+.mx-ax { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mx-ax.name { font-weight: 600; color: var(--fg-2); }
+.mx-lbl { font: 500 var(--lbl)/1.1 var(--text); color: var(--fg-2); }
+.mx-lbl.focus { font-size: calc(var(--lbl) + 4px); font-weight: 700; color: var(--fg); }
 .area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
 .theme-paper .area-top { stop-opacity: .16; }

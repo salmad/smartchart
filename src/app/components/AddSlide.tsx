@@ -14,7 +14,7 @@ interface Props {
 }
 
 // Add slide opens on the group of the slide you are on: its likeliest neighbour.
-const GROUP_OF: Record<TemplateId, Group> = { chart: 'trend', table: 'compare', cards: 'case', number: 'number', steps: 'plan', cover: 'trend', section: 'trend' }
+const GROUP_OF: Record<TemplateId, Group> = { chart: 'trend', table: 'compare', cards: 'case', number: 'number', steps: 'plan', summary: 'open', cover: 'trend', section: 'trend' }
 const GROUPED = GROUPS.map((g) => ({ ...g, starters: STARTERS.filter((s) => s.group === g.id) })).filter((g) => g.starters.length)
 
 /** Add slide, and a new deck's first screen: pick a starter from the filmstrip (nothing is picked at first), see it

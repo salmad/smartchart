@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Slide system v5: the contract between the agent and the renderer.
 
-   The agent picks ONE entry from a flat menu of 7 templates and writes fields
+   The agent picks ONE entry from a flat menu of templates and writes fields
    named after the content: { "template": "<id>", ...fields }. It never sees
    layouts, areas or block kinds; code picks the layout variant from the
    content (a chart with notes becomes a split). See the spec, sections 3.4–3.5.
@@ -128,6 +128,8 @@ export const CHART_GUIDE: string[] = [
   "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
   "Shares of a whole that change over time (mix, market share) are `stacking: \"percent\"`: write the raw values; code converts them to %.",
   "A bridge from one total to another (revenue FY24 → FY25 by driver, a cost walk, an EBITDA bridge) is `kind: \"waterfall\"`. Write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
+  "Named items ranked by one measure are `kind: \"ranked\"`: largest first, 'Other' last.",
+  "Items placed on two judged dimensions (impact vs effort) are `kind: \"matrix\"`: positions 0–100.",
   "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead. A workstream made of smaller steps is a group (the steps have `level: 1`).",
   "Annotations are computed by code; never write their figure yourself. `cagr` when the title claims a growth rate over a period (\"grows 86% a year\", \"growth rate per year across the period\"; year-on-year rates for each year are a % line instead), `difference` when it claims a gap between two categories, `target` when it compares with a goal. At most 3 (2 with notes); only when the user asked for them.",
 ];
@@ -135,20 +137,22 @@ export const CHART_GUIDE: string[] = [
 /* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
 const FOCUS = f("enum", "A top-level slide field, next to `title` (never inside `chart`). Write \"auto\" to let code pick and highlight the one item the title is about (a series, column, step or card). Leave it out when the user named the focus, and set it on that item yourself.", { values: ["auto"] });
 
-const KINDS = ["bars", "waterfall", "timeline"] as const;
+const KINDS = ["bars", "waterfall", "timeline", "ranked", "matrix"] as const;
 type Kind = (typeof KINDS)[number];
 /* Fields each chart kind uses; any other chart field is an error for that kind. */
 export const KIND_FIELDS: Record<Kind, string[]> = {
   bars: ["kind", "stacking", "categories", "format", "series", "annotations"],
   waterfall: ["kind", "format", "items"],
   timeline: ["kind", "periods", "rows", "milestones"],
+  ranked: ["kind", "format", "ranking"],
+  matrix: ["kind", "axes", "quadrants", "points"],
 };
 const idx = (what: string) => f("number", `0-based index into ${what}.`);
 
 const CHART = f("object", "A chart. Values are written on the data; there is no y-axis to configure. `kind` sets which fields it takes.", {
   required: true,
   fields: {
-    kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt).", { values: KINDS, default: "bars" }),
+    kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt). `ranked`: horizontal bars by named item. `matrix`: a 2×2.", { values: KINDS, default: "bars" }),
     stacking: f("enum", "Bars only. \"stacked\": bar series stacked into one column per category; \"none\": side by side; \"percent\": stacked as shares of 100%. \"auto\": code decides by the chart guide.", { values: ["none", "stacked", "percent", "auto"], default: "none" }),
     categories: f("list", "Bars only. X-axis labels, in order. Short: 'Year 1', 'Q2', 'Q1 ’27'.", { items: { min: 2, max: 12 }, of: f("text", "Category label.", { max: 10 }) }),
     format: f("text", "Value format; `{v}` is replaced by the number. E.g. '£{v}m', '{v}%'.", { default: "{v}" }),
@@ -204,6 +208,30 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
         at: f("number", "0-based index of the period it falls at the end of.", { required: true }),
       } }),
     }),
+    ranking: f("list", "Ranked only. Largest first.", {
+      items: { min: 2, max: 8 },
+      of: f("object", "Item.", { fields: {
+        label: f("text", "Label.", { required: true, max: 30 }),
+        value: f("number", "0 or more.", { required: true }),
+        focus: f("boolean", "The item the title is about. At most one."),
+      } }),
+    }),
+    axes: f("object", "Matrix only. Axis names, low to high.", { fields: {
+      x: f("text", "Horizontal.", { required: true, max: 16 }),
+      y: f("text", "Vertical.", { required: true, max: 16 }),
+    } }),
+    quadrants: f("list", "Matrix only, optional: top left, top right, bottom left, bottom right.", {
+      items: { min: 4, max: 4 }, of: f("text", "Quadrant name.", { max: 16 }),
+    }),
+    points: f("list", "Matrix only.", {
+      items: { min: 2, max: 8 },
+      of: f("object", "Point.", { fields: {
+        label: f("text", "Name.", { required: true, max: 20 }),
+        x: f("number", "0–100, left to right.", { required: true }),
+        y: f("number", "0–100, bottom to top.", { required: true }),
+        focus: f("boolean", "The point the title is about. At most one."),
+      } }),
+    }),
   },
 });
 
@@ -230,11 +258,11 @@ const notes = (withPoint: boolean) => f("list", "Optional numbered observations 
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
-    summary: "A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it.",
-    use: "Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.",
+    summary: "A chart: bars and lines, a waterfall, a timeline, ranked bars or a 2×2; optional notes beside it.",
+    use: "Data over categories or time, a bridge between two totals, workstreams, a ranking, or a 2×2.",
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters).", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   table: {
     summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
@@ -322,6 +350,18 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       "At most one card has tone `focus` unless framed.",
     ],
   },
+  summary: {
+    summary: "The executive summary: the answer in the title, then 2–4 numbered supporting points, each a short claim and one sentence of evidence.",
+    use: "Near the start of a deck: the whole argument on one slide, before the evidence.",
+    fields: {
+      points: f("list", "The supporting points, in the order the deck proves them. Together they prove the title; they do not overlap.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One point.", { fields: {
+        title: f("markup", "The claim, as a short headline: 'Bundling fixes adverse selection'.", { required: true, max: 40 }),
+        text: f("markup", "One sentence of evidence for it, with a figure where there is one.", { required: true, max: 100 }),
+      } }) }),
+    },
+    variant: () => "full",
+    rules: ["With a takeaway: at most 3 points.", "Each claim fits on two lines: at most 40 characters."],
+  },
   cover: {
     summary: "Opening slide: deck title and a one-sentence subtitle.",
     use: "The first slide of a deck, once.",
@@ -349,8 +389,9 @@ export const MENU: Record<TemplateId, MenuEntry> = {
 /* The picking guide (spec 9.2): used by the router prompt and when Jev is unsure. */
 export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the first slide of a deck", "cover"],
+  ["the executive summary: the answer and the 2–4 points that prove it", "summary"],
   ["the start of a new part in a deck of 8+ slides", "section"],
-  ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time", "chart"],
+  ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time; named items ranked by one measure; items placed on two dimensions (a 2×2)", "chart"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
   ["2–4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast", "cards"],
@@ -495,6 +536,8 @@ function checkChart(c: Chart | undefined, path: string, out: Out, focusAuto: boo
   if (c.format && !String(c.format).includes("{v}")) out.errors.push(`${path}.format: must contain {v}, e.g. "£{v}m".`);
   if (kind === "waterfall") return checkWaterfall(c, path, out);
   if (kind === "timeline") return checkTimeline(c, path, out);
+  if (kind === "ranked") return checkRanked(c, path, out);
+  if (kind === "matrix") return checkMatrix(c, path, out);
   if (!Array.isArray(c.categories)) out.errors.push(`${path}.categories: required. X-axis labels, in order.`);
   if (!Array.isArray(c.series)) out.errors.push(`${path}.series: required. Data series.`);
   if (!Array.isArray(c.series) || !Array.isArray(c.categories)) return;
@@ -575,6 +618,26 @@ function checkTimeline(c: Chart, path: string, out: Out): void {
   if (lines.filter((l) => l.level === 0).length > 8) out.errors.push(`${path}.rows: at most 8 workstreams (sub-rows are extra, 12 lines in all).`);
 }
 
+function checkRanked(c: Chart, path: string, out: Out): void {
+  if (!Array.isArray(c.ranking)) { out.errors.push(`${path}.ranking: required. One { label, value } per bar, largest first.`); return; }
+  const items = c.ranking;
+  items.forEach((x, i) => { if (typeof x?.value === "number" && x.value < 0) out.errors.push(`${path}.ranking[${i}].value: ${x.value}; ranked bars are 0 or more. For gains and losses use a waterfall or bars.`); });
+  if (count(items, "focus") > 1) out.errors.push(`${path}.ranking: at most one focus item.`);
+  // Largest first; a catch-all at the end is left where it is.
+  const ranked = items.filter((x, i) => !(i === items.length - 1 && /^other/i.test(x?.label ?? ""))).map((x) => x?.value);
+  if (ranked.some((v, i) => i > 0 && typeof v === "number" && typeof ranked[i - 1] === "number" && v > (ranked[i - 1] as number)))
+    out.warnings.push(`${path}.ranking: not largest first. Order the items by value unless the order itself means something.`);
+}
+
+function checkMatrix(c: Chart, path: string, out: Out): void {
+  if (!c.axes) out.errors.push(`${path}.axes: required. { "x": "…", "y": "…" }, each read low to high.`);
+  if (!Array.isArray(c.points)) { out.errors.push(`${path}.points: required. One { label, x, y } per thing placed.`); return; }
+  c.points.forEach((p, i) => {
+    for (const k of ["x", "y"] as const) if (typeof p?.[k] === "number" && (p[k] < 0 || p[k] > 100)) out.errors.push(`${path}.points[${i}].${k}: ${p[k]}; positions are 0 to 100.`);
+  });
+  if (count(c.points, "focus") > 1) out.errors.push(`${path}.points: at most one focus point.`);
+}
+
 const count = <T extends object>(list: readonly (T | null | undefined)[] | undefined, key: keyof T) => (list || []).filter((x) => x && x[key]).length;
 
 function checkNotes(s: Slide, style: Style, out: Out): void {
@@ -590,6 +653,8 @@ function checkRules(s: Slide, style: Style, out: Out): void {
   switch (s.template) {
     case "chart": {
       checkChart(s.chart, "chart", out, s.focus === "auto");
+      if (style === "pitch" && s.takeaway && s.chart?.kind === "ranked" && (s.chart.ranking || []).length > 6)
+        out.errors.push(`chart.ranking: ${s.chart.ranking?.length} items; pitch with a takeaway takes at most 6. Merge the smallest into 'Other' or drop the takeaway.`);
       if (!s.notes?.length) break;
       checkNotes(s, style, out);
       const kind = s.chart?.kind || "bars", cats = s.chart?.categories || [], series = s.chart?.series || [];
@@ -600,6 +665,11 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       if (kind === "timeline") rows.forEach((r, i) => { if (r?.label && r.label.length > 20) out.errors.push(`chart.rows[${i}].label: ${r.label.length} characters; with notes at most 20. Shorten it.`); });
       if (kind === "bars" && cats.length > 6) out.errors.push(`chart.categories: ${cats.length} categories; with notes at most 6. Drop notes or group categories.`);
       if (kind === "bars" && annotations.length > 2) out.errors.push(`chart.annotations: ${annotations.length}; with notes at most 2.`);
+      const ranking = s.chart?.ranking || [], points = s.chart?.points || [];
+      if (kind === "ranked" && ranking.length > 7) out.errors.push(`chart.ranking: ${ranking.length} items; with notes at most 7. Drop notes or merge the smallest into 'Other'.`);
+      if (kind === "ranked") ranking.forEach((x, i) => { if (x?.label && x.label.length > 24) out.errors.push(`chart.ranking[${i}].label: ${x.label.length} characters; with notes at most 24. Shorten it.`); });
+      if (kind === "matrix" && points.length > 6) out.errors.push(`chart.points: ${points.length} points; with notes at most 6. Drop notes or the least important points.`);
+      if (kind === "matrix" && s.takeaway) out.errors.push("takeaway: a matrix with notes has no room for a takeaway. Drop the takeaway, or the notes.");
       s.notes.forEach((n, i) => {
         if (!n?.point) return;
         if (kind !== "bars" || series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a bars chart with bar series; remove it.`);
@@ -627,6 +697,10 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         (t.rows || []).forEach((r, i) => { const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
           if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; with notes at most 24.`); });
       }
+      break;
+    }
+    case "summary": {
+      if (s.takeaway && (s.points || []).length > 3) out.errors.push(`points: ${s.points?.length} points; with a takeaway at most 3. Merge two points or drop the takeaway.`);
       break;
     }
     case "steps": {

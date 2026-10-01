@@ -23,6 +23,8 @@ function focusItems(s: Slide): FocusItems | null {
       const c = s.chart ?? {};
       if (c.kind === "waterfall") { const items = c.items ?? []; return { names: items.map((x) => x.label), apply: one(items, flag) }; }
       if (c.kind === "timeline") { const rows = c.rows ?? []; return { names: rows.map((x) => x.label), apply: one(rows, flag) }; }
+      if (c.kind === "ranked") { const items = c.ranking ?? []; return { names: items.map((x) => x.label), apply: one(items, flag) }; }
+      if (c.kind === "matrix") { const pts = c.points ?? []; return { names: pts.map((x) => x.label), apply: one(pts, flag) }; }
       const series = c.series ?? [];
       return { names: series.map((x) => x.name), apply: one(series, (x, on) => { x.color = on ? "focus" : x.color === "contrast" ? "contrast" : "neutral"; }) };
     }

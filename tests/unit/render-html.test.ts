@@ -26,3 +26,11 @@ test('with a notes heading, caption and heading share one header row (a missing 
   expect(capOnly).toContain('class="split grow has-head cap-only"><p class="cap " data-path="caption" data-kind="cap">Margin walk</p><div class="main">')
   expect(slideHTML(CHART_NOTES, CTX, { style: 'pitch', theme: 'ink' })).not.toContain('class="cap')
 })
+
+test('a summary numbers its points and marks each field for hand editing', () => {
+  const s: Slide = { template: 'summary', title: 'The answer', points: [{ title: 'A **claim**', text: 'Evidence.' }, { title: 'Another', text: 'More.' }] }
+  const html = slideHTML(s, CTX, { style: 'consulting', theme: 'ink' })
+  expect(html).toContain('<div class="sum grow"><div class="row" data-item="points[0]"><span class="n">01</span>')
+  expect(html).toContain('<span class="lead" data-path="points[0].title" data-kind="md">A <strong>claim</strong></span>')
+  expect(html).toContain('<span class="n">02</span>')
+})

@@ -57,9 +57,11 @@ export function autofix(slide: unknown, style: Style): { slide: Slide; fixes: st
     if (chart[k] === undefined) { chart[k] = out[k]; fixes.push(`${k}: moved into chart`); }
     delete out[k];
   }
-  // `items` belong only to a waterfall and `periods`/`rows` only to a timeline, so a missing kind is certain.
+  // `items` belong only to a waterfall, `periods`/`rows` only to a timeline, `ranking` only to ranked bars and `points`
+  // only to a matrix, so a missing kind is certain.
   if (out.template === "chart" && out.chart && !out.chart.kind && !out.chart.series) {
-    const kind = Array.isArray(out.chart.items) ? "waterfall" : Array.isArray(out.chart.rows) && Array.isArray(out.chart.periods) ? "timeline" : null;
+    const c = out.chart;
+    const kind = Array.isArray(c.items) ? "waterfall" : Array.isArray(c.rows) && Array.isArray(c.periods) ? "timeline" : Array.isArray(c.ranking) ? "ranked" : Array.isArray(c.points) ? "matrix" : null;
     if (kind) { out.chart.kind = kind; fixes.push(`chart.kind: ${kind} (inferred from its fields)`); }
   }
   if (out.template === "chart" && out.chart && Array.isArray(out.chart.series)) fixChart(out, out.chart, out.chart.series, fixes);

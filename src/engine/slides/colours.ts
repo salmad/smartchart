@@ -159,6 +159,7 @@ export function allocate(slide: Slide | null | undefined, theme: Theme, accent?:
     ["ctx2", "ctx3"].forEach((s) => used.add(s));
     for (const t of ["neg", "pos"] as const) if ((chart.items || []).some((x) => x?.tone === t && !x.focus)) used.add(`${t}-fill`);
   }
+  if (chart && kind === "ranked") used.add("quiet");
   if (chart && kind === "timeline") {
     // Sub-rows are told from top-level by the two ends of the grey scale; with none, every bar is the quiet grey it always was.
     if ((chart.rows || []).some((r) => r?.level === 1)) { used.add("ctx1"); used.add("ctx3"); } else used.add("quiet");

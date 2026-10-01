@@ -94,6 +94,8 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section">, (s: Slide, variant:
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
+  summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
+    <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
   cards: (s, v) => { const cards = s.cards ?? [];
     return `<div class="cards ${v} ${v === "framed" ? "grow" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
 };

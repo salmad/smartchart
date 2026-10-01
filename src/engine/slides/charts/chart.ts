@@ -1,5 +1,5 @@
 /* Charts: SVG for shapes, HTML for every label. `chart.kind` picks the drawing: bars (bar and line
-   series, stacked, 100% or side by side, with computed annotations), waterfall or timeline.
+   series, stacked, 100% or side by side, with computed annotations), waterfall, timeline, ranked or matrix.
    Colours come from the allocator (colours.js) as slots; this file never picks a colour. */
 import { annotationLabel, annotationSeries, axisBreak, fmt, shares } from "./chart-math.js";
 import { seriesSlots } from "../colours.js";
@@ -9,6 +9,8 @@ import { esc, hits, labelPx, lbl, plotRects, thinCategories, topRounded } from "
 import type { Rect } from "./chart-parts.js";
 import { waterfallChart } from "./chart-waterfall.js";
 import { timelineChart } from "./chart-timeline.js";
+import { rankedChart } from "./chart-ranked.js";
+import { matrixChart } from "./chart-matrix.js";
 
 /** A note number pinned on a data point. */
 export interface Marker { n: number; series: number; index: number }
@@ -30,6 +32,8 @@ export function drawChart(host: HTMLElement, spec: Chart, markers: Marker[] = []
   const W = box.clientWidth, H = box.clientHeight;
   if (kind === "waterfall") return waterfallChart(box, spec, W, H);
   if (kind === "timeline") return timelineChart(box, spec, W, H);
+  if (kind === "ranked") return rankedChart(box, spec, W, H);
+  if (kind === "matrix") return matrixChart(box, spec, W, H);
   (allLines ? lines : bars)(box, spec, W, H, markers, colours);
 }
 

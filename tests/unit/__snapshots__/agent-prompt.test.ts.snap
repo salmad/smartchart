@@ -55,10 +55,11 @@ Deck style: consulting. McKinsey-like. The argument is carried by full-sentence 
 - Use \`takeaway\` for the implication in one line, only when the body does not already make it obvious.
 
 # Templates
-- chart: A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it. Use when: Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.
+- chart: A chart: bars and lines, a waterfall, a timeline, ranked bars or a 2×2; optional notes beside it. Use when: Data over categories or time, a bridge between two totals, workstreams, a ranking, or a 2×2.
 - table: A typeset table with optional sub-notes under values and a total row; optional notes beside it. Use when: Exact figures the reader needs to compare across rows.
 - steps: Rows of phases: when, a one-word phase name, and what happens. Use when: A sequence in time: a plan, roadmap, process or history in 2–5 steps.
 - cards: 2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast. Use when: Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).
+- summary: The executive summary: the answer in the title, then 2–4 numbered supporting points, each a short claim and one sentence of evidence. Use when: Near the start of a deck: the whole argument on one slide, before the evidence.
 - cover: Opening slide: deck title and a one-sentence subtitle. Use when: The first slide of a deck, once.
 - section: Section divider: big section number and name. Use when: The start of a new part in a deck of 8+ slides.
 
@@ -123,10 +124,11 @@ Deck style: pitch. YC / VC-like. A one-line topic title, the claim as a short su
 - Leave optional detail empty unless it is essential. \`footnote\` and \`source\` are rare.
 
 # Templates
-- chart: A chart with a title: bars and lines, a waterfall (bridge) or a timeline (Gantt); optional numbered notes beside it. Use when: Data over categories or time: a trend, a comparison of sizes, a crossover, a bridge between two totals, or overlapping workstreams.
+- chart: A chart: bars and lines, a waterfall, a timeline, ranked bars or a 2×2; optional notes beside it. Use when: Data over categories or time, a bridge between two totals, workstreams, a ranking, or a 2×2.
 - table: A typeset table with optional sub-notes under values and a total row; optional notes beside it. Use when: Exact figures the reader needs to compare across rows.
 - steps: Rows of phases: when, a one-word phase name, and what happens. Use when: A sequence in time: a plan, roadmap, process or history in 2–5 steps.
 - cards: 2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast. Use when: Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).
+- summary: The executive summary: the answer in the title, then 2–4 numbered supporting points, each a short claim and one sentence of evidence. Use when: Near the start of a deck: the whole argument on one slide, before the evidence.
 - cover: Opening slide: deck title and a one-sentence subtitle. Use when: The first slide of a deck, once.
 - section: Section divider: big section number and name. Use when: The start of a new part in a deck of 8+ slides.
 

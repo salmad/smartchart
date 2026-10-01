@@ -104,6 +104,7 @@ export function axisBreak(c: Chart): AxisBreak | null {
 export function derivedFigures(c: Chart | null | undefined): number[] {
   if (!c) return [];
   if (c.kind === "waterfall") return waterfall(c.items || []).steps.map((s) => Math.abs(s.value));
+  if (c.kind === "ranked") return (c.ranking || []).map((x) => x.value);
   if ((c.kind || "bars") !== "bars") return [];
   const out = (c.annotations || []).map((a) => { try { return annotationLabel(c, a)?.value; } catch { return null; } }).filter((v): v is number => typeof v === "number");
   if (c.stacking === "percent" && c.categories) out.push(...shares(c).flat().map(Math.round));

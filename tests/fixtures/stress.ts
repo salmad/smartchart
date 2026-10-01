@@ -64,6 +64,17 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       series: [{ name: "EBITDA", mark: "bar", color: "focus", values: [-6.5, -3.2, -0.8, 2.4, 7.1, 12.6] }, { name: "Plan", mark: "line", color: "contrast", dashed: true, values: [-5, -2, 1, 4, 8, 12] }] } },
     { template: "chart", name: "Stress · lines below zero", ...frame("chart"), chart: { categories: TIMES(8).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
       series: [{ name: "Net cash flow", mark: "line", color: "focus", values: [-8, -6.5, -4, -1.5, 1, 4.5, 8, 12] }, { name: "Plan", mark: "line", color: "neutral", dashed: true, values: [-6, -4, -2, 0, 2, 4, 6, 8] }] } },
+    { template: "chart", name: "Stress · ranked", ...frame("chart"), chart: { kind: "ranked", format: "{v}%",
+      ranking: TIMES(c ? 8 : 6).map((_, i) => ({ label: W(30), value: 88 - i * 11, focus: i === 1 })) } },
+    { template: "chart", name: "Stress · ranked + notes", ...frame("chart"), notes: notes(3, false), chart: { kind: "ranked", format: "£{v}bn",
+      ranking: TIMES(c ? 7 : 6).map((_, i) => ({ label: W(24), value: 1234 - i * 150, focus: i === 0 })) } },
+    // Crowded on purpose: clusters of points close together, so every label has to find a clear side.
+    { template: "chart", name: "Stress · matrix", ...frame("chart"), chart: { kind: "matrix", axes: { x: W(16), y: W(16) }, quadrants: TIMES(4).map(() => W(16)),
+      points: [[22, 70], [30, 62], [18, 58], [70, 36], [78, 30], [62, 42], [84, 78], [48, 56]].map(([x, y], i) => ({ label: W(20), x, y, focus: i === 6 })) } },
+    { template: "chart", name: "Stress · matrix + notes", ...frame("chart"), takeaway: undefined, notes: notes(3, false), chart: { kind: "matrix", axes: { x: W(16), y: W(16) }, quadrants: TIMES(4).map(() => W(16)),
+      points: [[20, 72], [30, 64], [84, 80], [72, 34], [80, 26], [46, 56]].map(([x, y], i) => ({ label: W(20), x, y, focus: i === 2 })) } },
+    { template: "summary", name: "Stress · summary + takeaway", ...frame("summary"), points: TIMES(3).map(() => ({ title: W(40), text: W(100) })) },
+    { template: "summary", name: "Stress · summary ×4", ...frame("summary"), takeaway: undefined, points: TIMES(4).map(() => ({ title: W(40), text: W(100) })) },
     { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...TIMES(5).map(() => ({ cells: [W(40), { value: "(1,234)", note: "8% × £10.5k" }, "12,345", "(34)", "—"] })), { cells: [W(30), "£179", "£10", "£128", "£95"], style: "total" }]
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },

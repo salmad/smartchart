@@ -96,6 +96,8 @@ test("a chart with items or rows but no kind gets its kind", () => {
   const tl = autofix({ template: "chart", title: "Plan", chart: { periods: ["Q1", "Q2", "Q3"], rows: [{ label: "a", start: 0, end: 1 }, { label: "b", start: 1, end: 2 }] } }, "consulting");
   assert.equal(chartOf(tl.slide).kind, "timeline");
   assert.equal(chartOf(autofix(chart({ series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }] }), "consulting").slide).kind, undefined);
+  assert.equal(chartOf(autofix({ template: "chart", title: "Why", chart: { ranking: [{ label: "a", value: 2 }, { label: "b", value: 1 }] } }, "consulting").slide).kind, "ranked");
+  assert.equal(chartOf(autofix({ template: "chart", title: "Map", chart: { axes: { x: "a", y: "b" }, points: [{ label: "a", x: 1, y: 2 }, { label: "b", x: 3, y: 4 }] } }, "consulting").slide).kind, "matrix");
 });
 
 test("chart fields at the top level move into chart", () => {

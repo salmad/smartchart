@@ -78,7 +78,7 @@ test("upgrade converts old charts and tables", () => {
 });
 
 test("the chart card carries the chart guide", () => {
-  assert.equal(CHART_GUIDE.length, 11);
+  assert.equal(CHART_GUIDE.length, 13);
   const rules = describe("chart", "consulting").rules.join("\n");
   CHART_GUIDE.forEach((g) => assert.ok(rules.includes(g)));
 });
@@ -218,4 +218,54 @@ test("chart.stacking: validates and refuses the old field", () => {
 test("chart.stacking: the card offers the four strings", () => {
   const card = JSON.stringify(describe("chart", "consulting"));
   assert.match(card, /"none","stacked","percent","auto"/);
+});
+
+/* Ranked bars and the matrix: the limits the agent reads on the card are the ones validation enforces. */
+const RANK = (n: number, extra: object = {}) => ({ kind: "ranked", format: "{v}%", ranking: Array.from({ length: n }, (_, i) => ({ label: `Reason ${i + 1}`, value: 50 - i * 5, focus: i === 0 })), ...extra });
+const MX = (n: number) => ({ kind: "matrix", axes: { x: "Rewards", y: "Credit limit" }, quadrants: ["Lenders", "The gap", "Basic", "Rewards"],
+  points: Array.from({ length: n }, (_, i) => ({ label: `Card ${i + 1}`, x: 10 + i * 10, y: 80 - i * 9, focus: i === 0 })) });
+const THREE = [{ title: "One" }, { title: "Two" }, { title: "Three" }];
+
+test("ranked: 2–8 items of 0 or more, largest first, one focus; bars fields refused", () => {
+  assert.deepEqual(errs(chart(RANK(8))), []);
+  assert.match(errs(chart(RANK(9))).join(), /chart\.ranking: at most 8 items/);
+  assert.match(errs(chart(RANK(3, { ranking: [{ label: "a", value: -1 }, { label: "b", value: 2 }] }))).join(), /0 or more/);
+  assert.match(errs(chart(RANK(3, { categories: cats }))).join(), /chart\.categories: not used by kind "ranked"/);
+  assert.match(validate(chart(RANK(3, { ranking: [{ label: "a", value: 1 }, { label: "b", value: 5 }, { label: "Other", value: 9 }] }))).warnings.join(), /not largest first/);
+  assert.deepEqual(validate(chart(RANK(3, { ranking: [{ label: "a", value: 5 }, { label: "b", value: 1 }, { label: "Other", value: 9 }] }))).warnings, []);
+});
+
+test("ranked: with notes at most 7 items of 24 characters; pitch with a takeaway at most 6", () => {
+  assert.match(errs(chart(RANK(8), { notes: THREE })).join(), /with notes at most 7/);
+  assert.match(errs(chart(RANK(3, { ranking: [{ label: "x".repeat(25), value: 2 }, { label: "b", value: 1 }] }), { notes: THREE })).join(), /with notes at most 24/);
+  const pitch = { title: "Objections", subtitle: "Limits lose the customer.", takeaway: "Fix the limit." };
+  assert.match(errs(chart(RANK(7), pitch), "pitch").join(), /pitch with a takeaway takes at most 6/);
+  assert.deepEqual(errs(chart(RANK(6), pitch), "pitch"), []);
+  assert.deepEqual(errs(chart(RANK(8), { takeaway: "Fix the limit." })), []);
+});
+
+test("matrix: axes required, positions 0–100, one focus; with notes at most 6 points and no takeaway", () => {
+  assert.deepEqual(errs(chart(MX(8))), []);
+  assert.match(errs(chart({ ...MX(3), axes: undefined })).join(), /chart\.axes: required/);
+  assert.match(errs(chart({ ...MX(2), points: [{ label: "a", x: 120, y: 5 }, { label: "b", x: 5, y: 5 }] })).join(), /chart\.points\[0\]\.x: 120; positions are 0 to 100/);
+  assert.match(errs(chart({ ...MX(3), quadrants: ["a", "b"] })).join(), /chart\.quadrants: needs at least 4/);
+  assert.match(errs(chart(MX(7), { notes: THREE })).join(), /with notes at most 6/);
+  assert.match(errs(chart(MX(4), { notes: THREE, takeaway: "Alone." })).join(), /no room for a takeaway/);
+  assert.deepEqual(errs(chart(MX(4), { takeaway: "Alone." })), []);
+});
+
+test("summary: 2–4 points of a claim and a sentence; with a takeaway at most 3", () => {
+  const sum = (n: number, extra: object = {}) => ({ template: "summary", title: "Acme can build a £120m book by bundling credit with banking", points: Array.from({ length: n }, () => ({ title: "A claim", text: "Its evidence." })), ...extra });
+  assert.deepEqual(errs(sum(4)), []);
+  assert.match(errs(sum(5)).join(), /points: at most 4 items/);
+  assert.match(errs(sum(4, { takeaway: "So what." })).join(), /with a takeaway at most 3/);
+  assert.match(errs(sum(2, { points: [{ title: "x".repeat(41), text: "y" }, { title: "a", text: "b" }] })).join(), /points\[0\]\.title: 41 characters, limit 40/);
+});
+
+test("the chart card tells the agent the ranked and matrix limits", () => {
+  const rules = describe("chart").rules.join(" ");
+  assert.match(rules, /ranked 7 items/);
+  assert.match(rules, /pitch with a takeaway at most 6 items/);
+  assert.match(rules, /Matrix: notes or a takeaway, not both/);
+  assert.ok(CHART_GUIDE.some((g) => g.includes("`kind: \"ranked\"`")) && CHART_GUIDE.some((g) => g.includes("`kind: \"matrix\"`")));
 });
