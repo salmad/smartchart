@@ -16,7 +16,12 @@ test('two charts: each needs a caption, and the half-width limits hold', () => {
   expect(errs(pair(bars(7), bars(3)))).toMatch(/charts\[0\]\.chart\.categories: 7 categories; half a slide takes 6/)
   const three = bars(3, { series: ['a', 'b', 'c'].map((name) => ({ name, mark: 'bar' as const, values: [1, 2, 3] })) })
   expect(errs(pair(three, bars(3)))).toMatch(/3 series; half a slide takes 2/)
-  expect(errs(pair({ kind: 'timeline', periods: ['Q1', 'Q2', 'Q3'], rows: [{ label: 'a', start: 0, end: 1 }, { label: 'b', start: 1, end: 2 }] }, bars(3)))).toMatch(/too dense for half a slide/)
+  // The half chart's card offers only bars, waterfall and ranked, so a timeline is refused by the field itself.
+  const tl = errs(pair({ kind: 'timeline', periods: ['Q1', 'Q2', 'Q3'], rows: [{ label: 'a', start: 0, end: 1 }, { label: 'b', start: 1, end: 2 }] }, bars(3)))
+  expect(tl).toMatch(/charts\[0\]\.chart\.kind: "timeline" is not allowed. Use one of: bars, waterfall, ranked/)
+  expect(tl).toMatch(/charts\[0\]\.chart\.periods: not a field here/)
+  const half = card('pair').fields.charts.of?.fields?.chart.fields ?? {}
+  expect(Object.keys(half).sort()).toEqual(['categories', 'format', 'items', 'kind', 'ranking', 'series', 'stacking'])
   const wf = (n: number): Chart => ({ kind: 'waterfall', format: '£{v}m', items: [{ label: 'Start', value: 10 }, ...Array.from({ length: n - 2 }, () => ({ label: 'Step', value: 1 })), { label: 'End', total: true }] })
   expect(errs(pair(wf(6), bars(3)), 'consulting')).not.toMatch(/half a slide/)
   expect(errs({ ...pair(wf(6), bars(3)), subtitle: 'A claim.' }, 'pitch')).toMatch(/6 items; half a slide takes 5/)

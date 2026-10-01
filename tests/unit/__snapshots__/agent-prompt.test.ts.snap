@@ -55,16 +55,16 @@ Deck style: consulting. McKinsey-like. The argument is carried by full-sentence 
 - Use \`takeaway\` for the implication in one line, only when the body does not already make it obvious.
 
 # Templates
-- chart: A chart: bars and lines, a waterfall, a timeline, ranked bars or a 2×2; optional notes beside it. Use when: Data over categories or time, a bridge between two totals, workstreams, a ranking, or a 2×2.
-- pair: Two charts side by side, each with a caption and points. Use when: Two related measures, each needing a chart.
-- table: A typeset table with optional sub-notes under values and a total row; optional notes beside it. Use when: Exact figures the reader needs to compare across rows.
-- number: One big number and a sentence saying what it means; no title. Use when: One figure carries the argument.
-- quote: A large quote and who said it; no title. Use when: Someone's own words make the point.
-- steps: Rows of phases: when, a one-word phase name, and what happens. Use when: A sequence in time: a plan, roadmap, process or history in 2–5 steps.
-- cards: 2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast. Use when: Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).
-- summary: The answer in the title, then 2–4 numbered points with evidence. Use when: The whole argument on one slide.
-- cover: Opening slide: deck title and a one-sentence subtitle. Use when: The first slide of a deck, once.
-- section: Section divider: big section number and name. Use when: The start of a new part in a deck of 8+ slides.
+- chart: One chart, with optional notes beside it. Use when: Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.
+- pair: Two charts side by side, each with a caption and points. Use when: Two related measures, each with its own chart (market and share). One measure: chart.
+- table: A table, with optional notes beside it. Use when: Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.
+- number: One big number and a sentence saying what it means; no title. Use when: One figure makes the point alone. Several figures: cards.
+- quote: A large quote and who said it; no title. Use when: A customer's or expert's own words make the point.
+- steps: Phases in rows: when, a name, what happens. Use when: A sequence in time in 2–5 phases: plan, roadmap, process. Overlapping workstreams: chart timeline.
+- cards: 2–4 cards, each led by an icon or a big value, or two framed cards. Use when: 2–4 parallel options, pillars or figures, or a two-way contrast (them vs us).
+- summary: The answer in the title, then 2–4 numbered points with evidence. Use when: The whole argument on one slide, near the start of a consulting deck.
+- cover: The deck title and a one-line subtitle. Use when: The first slide, once.
+- section: A numbered section divider. Use when: Starts each part of a deck of 8+ slides; consulting decks need them.
 
 # Templates are picked for you
 create_slide classifies the content and returns the template with probabilities. If the top two are close and the other fits the user's intent better, call create_slide again with that template.
@@ -127,16 +127,16 @@ Deck style: pitch. YC / VC-like. A one-line topic title, the claim as a short su
 - Leave optional detail empty unless it is essential. \`footnote\` and \`source\` are rare.
 
 # Templates
-- chart: A chart: bars and lines, a waterfall, a timeline, ranked bars or a 2×2; optional notes beside it. Use when: Data over categories or time, a bridge between two totals, workstreams, a ranking, or a 2×2.
-- pair: Two charts side by side, each with a caption and points. Use when: Two related measures, each needing a chart.
-- table: A typeset table with optional sub-notes under values and a total row; optional notes beside it. Use when: Exact figures the reader needs to compare across rows.
-- number: One big number and a sentence saying what it means; no title. Use when: One figure carries the argument.
-- quote: A large quote and who said it; no title. Use when: Someone's own words make the point.
-- steps: Rows of phases: when, a one-word phase name, and what happens. Use when: A sequence in time: a plan, roadmap, process or history in 2–5 steps.
-- cards: 2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast. Use when: Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).
-- summary: The answer in the title, then 2–4 numbered points with evidence. Use when: The whole argument on one slide.
-- cover: Opening slide: deck title and a one-sentence subtitle. Use when: The first slide of a deck, once.
-- section: Section divider: big section number and name. Use when: The start of a new part in a deck of 8+ slides.
+- chart: One chart, with optional notes beside it. Use when: Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.
+- pair: Two charts side by side, each with a caption and points. Use when: Two related measures, each with its own chart (market and share). One measure: chart.
+- table: A table, with optional notes beside it. Use when: Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.
+- number: One big number and a sentence saying what it means; no title. Use when: One figure makes the point alone. Several figures: cards.
+- quote: A large quote and who said it; no title. Use when: A customer's or expert's own words make the point.
+- steps: Phases in rows: when, a name, what happens. Use when: A sequence in time in 2–5 phases: plan, roadmap, process. Overlapping workstreams: chart timeline.
+- cards: 2–4 cards, each led by an icon or a big value, or two framed cards. Use when: 2–4 parallel options, pillars or figures, or a two-way contrast (them vs us).
+- summary: The answer in the title, then 2–4 numbered points with evidence. Use when: The whole argument on one slide, near the start of a consulting deck.
+- cover: The deck title and a one-line subtitle. Use when: The first slide, once.
+- section: A numbered section divider. Use when: Starts each part of a deck of 8+ slides; consulting decks need them.
 
 # Templates are picked for you
 create_slide classifies the content and returns the template with probabilities. If the top two are close and the other fits the user's intent better, call create_slide again with that template.
