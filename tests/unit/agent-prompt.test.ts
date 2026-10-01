@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { TOOLS, agentSystem, workingBlock } from "../../src/engine/agent/agent-prompt";
+import { TOOLS, agentSystem, stateBlock, workingBlock } from "../../src/engine/agent/agent-prompt";
 
 test("four tools; patch_slide takes a set and an optional reply", () => {
   assert.deepEqual(TOOLS.map((t) => t.function.name), ["create_slide", "edit_slide", "patch_slide", "read_slide"]);
@@ -44,4 +44,10 @@ test("an archived template (number) is not offered to the router, the prompt or 
   assert.doesNotMatch(GUIDE, /: number\b/);
   assert.doesNotMatch(catalogue(), /^number:/m);
   for (const style of ["consulting", "pitch"] as const) assert.doesNotMatch(agentSystem(style), /^- number:|One big number/m);
+});
+
+test("the deck state names slides edited by hand since the last turn", () => {
+  const block = stateBlock({ style: "consulting", theme: "ink", slides: [{ id: "s1", slide: { template: "section", title: "A" } }], selection: null, edited: ["s1"] });
+  assert.match(block, /Edited by hand since the last turn: s1/);
+  assert.doesNotMatch(stateBlock({ style: "consulting", theme: "ink", slides: [], selection: null }), /Edited by hand/);
 });

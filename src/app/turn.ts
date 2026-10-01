@@ -34,7 +34,7 @@ export async function sendTurn(input: string, deps: TurnDeps, files: Attached[] 
   // The agent mutates its history and working set; it gets copies, and the state takes them back at the end.
   const history = structuredClone(start.history), working = new Set(start.working)
 
-  dispatch({ type: 'set', patch: { busy: true } })
+  dispatch({ type: 'set', patch: { busy: true, edited: [] } })
   dispatch({ type: 'message', message: { kind: 'user', text: ask, ...(files.length ? { files: files.map(({ name, about }) => ({ name, about })) } : {}) } })
   dispatch({ type: 'message', message: { kind: 'bot', text: '', sub: WORKING, trace: [] } })
   const botAt = getState().messages.length - 1
@@ -58,7 +58,7 @@ export async function sendTurn(input: string, deps: TurnDeps, files: Attached[] 
   }, { lines: 1, warnings: [] as string[] })
 
   try {
-    const r = await runTurn({ text, ask, brief, deck: adeck, history, working, selection: cur ? { slideId: cur.id } : null, measure, log, onChange: sync, models })
+    const r = await runTurn({ text, ask, brief, deck: adeck, history, working, selection: cur ? { slideId: cur.id } : null, edited: start.edited, measure, log, onChange: sync, models })
     sync(adeck, r.written.at(-1) || getState().items[getState().current]?.id)
     dispatch({ type: 'items', items: recheckRules(getState(), measurer) })
     // Checks before the reply: what failed on the slides just written becomes a nudge in the reply.
@@ -92,7 +92,7 @@ export function recheckRules(s: AppState, measurer: TurnDeps['measurer']): Item[
 }
 
 /** Rule checks at once, then judgment checks (one Jev call) for one slide; returns them all. */
-async function runChecks(id: string, { measurer, dispatch, getState }: TurnDeps, judge: typeof judgmentChecks): Promise<Check[]> {
+export async function runChecks(id: string, { measurer, dispatch, getState }: TurnDeps, judge: typeof judgmentChecks): Promise<Check[]> {
   const update = (patch: Partial<Item>) => dispatch({ type: 'items', items: getState().items.map((it) => (it.id === id ? { ...it, ...patch } : it)) })
   const s = getState(), i = s.items.findIndex((it) => it.id === id), item = s.items[i]
   if (!item) return []
