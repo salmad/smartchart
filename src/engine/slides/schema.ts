@@ -12,6 +12,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { timelineLines } from "./charts/timeline-rows.js";
 import { waterfall } from "./charts/chart-math.js";
+import { markKinds } from "./marks.js";
 import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
@@ -277,7 +278,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
           italic: f("boolean", "Set the whole column in italic.", { default: false }),
         } }) }),
         rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
-          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or { value, note } for a small note under the value.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
+          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or { value, note } for a small note under the value. A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
           style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
           focus: f("boolean", "Highlight this row.", { default: false }),
         } }) }),
@@ -289,7 +290,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Row budget: a row costs 1, a row with a cell note 1.5, a takeaway 1.5, a caption 1. Consulting: at most 10.5. Pitch: at most 7 (cell notes and muted rows are hidden in pitch).",
+      "Row budget: a row costs 1, a row with a cell note 1.5, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes and muted rows are hidden in pitch).",
+      "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters.",
     ],
   },
@@ -688,8 +690,10 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       const noted = (r: (typeof rows)[number]) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
-      const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0), budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5, caption = 1). Cut rows, drop cell notes, the takeaway or the caption.`);
+      const marks = markKinds(t), key = style === "consulting" && marks.has("balls") ? 1 : 0;
+      if (marks.size > 1) out.warnings.push("table: mixes Harvey balls and ticks. Score with one kind of mark per table.");
+      const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key, budget = style === "pitch" ? 7 : 10.5;
+      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes, the takeaway or the caption.`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);

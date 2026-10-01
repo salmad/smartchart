@@ -949,6 +949,159 @@
   }
  },
  {
+  "id": "scoring",
+  "group": "compare",
+  "label": "Scorecard",
+  "blurb": "Options scored against what matters",
+  "consulting": {
+   "template": "table",
+   "kicker": "Competition",
+   "title": "Only Acme scores well on [[all four things SMEs ask for]]",
+   "caption": "SME business cards · scored on published terms",
+   "table": {
+    "columns": [
+     {
+      "label": "Provider"
+     },
+     {
+      "label": "Credit limit"
+     },
+     {
+      "label": "Rewards"
+     },
+     {
+      "label": "Approval speed"
+     },
+     {
+      "label": "No fees"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "High-street bank",
+       "◑",
+       "○",
+       "◔",
+       "◑"
+      ]
+     },
+     {
+      "cells": [
+       "Charge card",
+       "◕",
+       "◕",
+       "◑",
+       "○"
+      ]
+     },
+     {
+      "cells": [
+       "Neobank",
+       "○",
+       "◑",
+       "●",
+       "●"
+      ]
+     },
+     {
+      "cells": [
+       "Credit-only lender",
+       "◕",
+       "○",
+       "◑",
+       "◔"
+      ]
+     },
+     {
+      "cells": [
+       "Acme",
+       "●",
+       "◕",
+       "●",
+       "●"
+      ],
+      "focus": true
+     }
+    ]
+   },
+   "takeaway": "Each rival is strong on one or two criteria; **none on all four**.",
+   "footnote": "Scores: Acme assessment of published terms, September 2026."
+  },
+  "pitch": {
+   "template": "table",
+   "title": "Scorecard",
+   "subtitle": "Every rival misses one. [[Acme misses none.]]",
+   "table": {
+    "columns": [
+     {
+      "label": "Provider"
+     },
+     {
+      "label": "Credit limit"
+     },
+     {
+      "label": "Rewards"
+     },
+     {
+      "label": "Approval speed"
+     },
+     {
+      "label": "No fees"
+     }
+    ],
+    "rows": [
+     {
+      "cells": [
+       "High-street bank",
+       "◑",
+       "○",
+       "◔",
+       "◑"
+      ]
+     },
+     {
+      "cells": [
+       "Charge card",
+       "◕",
+       "◕",
+       "◑",
+       "○"
+      ]
+     },
+     {
+      "cells": [
+       "Neobank",
+       "○",
+       "◑",
+       "●",
+       "●"
+      ]
+     },
+     {
+      "cells": [
+       "Credit-only lender",
+       "◕",
+       "○",
+       "◑",
+       "◔"
+      ]
+     },
+     {
+      "cells": [
+       "Acme",
+       "●",
+       "◕",
+       "●",
+       "●"
+      ],
+      "focus": true
+     }
+    ]
+   }
+  }
+ },
+ {
   "id": "chart-lines",
   "group": "trend",
   "label": "Scenarios",

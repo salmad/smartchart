@@ -3,9 +3,9 @@ import { STARTERS, GROUPS, starterSlide } from '@/engine/starters'
 import { validateDeck } from '@/engine/slides/schema'
 import { stressFor } from '../fixtures/stress'
 
-test('count lock: 20 starters, unique ids, known groups', () => {
-  expect(STARTERS).toHaveLength(20)
-  expect(new Set(STARTERS.map((s) => s.id)).size).toBe(20)
+test('count lock: 21 starters, unique ids, known groups', () => {
+  expect(STARTERS).toHaveLength(21)
+  expect(new Set(STARTERS.map((s) => s.id)).size).toBe(21)
   for (const s of STARTERS) expect(GROUPS.map((g) => g.id)).toContain(s.group)
 })
 test('stress fixture keeps 30 slides per style', () => {

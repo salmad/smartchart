@@ -204,6 +204,24 @@
 .tbl tr.total td:first-child { color: var(--fg); }
 /* A highlighted row reads in the focus colour, a total row included; its notes stay quiet. */
 .tbl tr.focus td, .tbl tr.focus.total td:first-child { color: var(--focus); }
+/* Scores: Harvey balls and ticks drawn as one set; a highlighted row or column draws them in the focus colour. */
+.tbl td.score { text-align: center; vertical-align: middle; }
+.tbl tr:has(td.score) td { padding-top: 14px; padding-bottom: 14px; vertical-align: middle; }
+.mk-ball { display: inline-block; width: 36px; height: 36px; vertical-align: middle; }
+.mk-ball circle { fill: none; stroke: var(--fg-2); stroke-width: 2.5; }
+.mk-ball path, .mk-ball .full { fill: var(--fg-2); stroke: none; }
+.mk-tick { font: 600 32px/1 var(--text); }
+.mk-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.mk-tick.no { color: var(--muted); font-weight: 400; }
+.tbl :is(tr.focus, td.focus) .mk-ball circle { stroke: var(--focus); }
+.tbl :is(tr.focus, td.focus) :is(.mk-ball path, .mk-ball .full) { fill: var(--focus); }
+.tbl :is(tr.focus, td.focus) .mk-tick { color: var(--focus); }
+.style-pitch .mk-ball { width: 44px; height: 44px; }
+.mk-key { display: flex; gap: 32px; align-items: center; margin-top: 18px; font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mk-key span { display: inline-flex; align-items: center; gap: 12px; }
+.mk-key .mk-ball { width: 24px; height: 24px; }
+.style-pitch .mk-key { display: none; }
+.split.with-table > .main:has(.mk-key) .tbl { height: calc(100% - 60px); }
 .style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
 .style-pitch .tbl td { font-size: 34px; padding-top: 13px; padding-bottom: 13px; }
 .style-pitch .split .tbl td { font-size: 30px; }

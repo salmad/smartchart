@@ -10,7 +10,7 @@ import { targetAt } from './selection'
 import type { SlideEdit } from './useSlideEdit'
 
 const GROUPS: { id: Action['group']; label: string }[] = [
-  { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Column format' },
+  { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Format' }, { id: 'mark', label: 'Score' },
 ]
 const SYMBOLS: Record<string, string> = { Mod: '⌘', Shift: '⇧', Alt: '⌥', Up: '↑', Down: '↓', Left: '←', Right: '→', Backspace: '⌫' }
 const keys = (s?: string) => s?.split('+').map((k) => SYMBOLS[k] ?? k).join('')
@@ -54,7 +54,7 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
           return (
             <div key={g.id}>
               {before && <ContextMenuSeparator />}
-              {g.id === 'format' && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">{g.label}</ContextMenuLabel>}
+              {(g.id === 'format' || g.id === 'mark') && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">{g.label}</ContextMenuLabel>}
               {items.map((a) => a.checked !== undefined
                 ? <ContextMenuCheckboxItem key={a.id} checked={a.checked} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuCheckboxItem>
                 : <ContextMenuItem key={a.id} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuItem>)}

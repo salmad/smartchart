@@ -559,6 +559,86 @@
  {
   "name": "Chart · waterfall + notes",
   "consulting": {
+   "template": "table",
+   "variant": "full",
+   "keys": [
+    "caption",
+    "footnote",
+    "kicker",
+    "table",
+    "takeaway",
+    "template",
+    "title"
+   ],
+   "body": 0,
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "table",
+   "variant": "full",
+   "keys": [
+    "subtitle",
+    "table",
+    "template",
+    "title"
+   ],
+   "body": 0,
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "Chart · timeline",
+  "consulting": {
    "template": "chart",
    "variant": "full",
    "keys": [
@@ -622,78 +702,6 @@
   }
  },
  {
-  "name": "Chart · timeline",
-  "consulting": {
-   "template": "chart",
-   "variant": "full",
-   "keys": [
-    "caption",
-    "chart",
-    "kicker",
-    "source",
-    "takeaway",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "chart": {
-    "format": "£{v}m",
-    "categories": 5,
-    "series": [
-     {
-      "mark": "bar",
-      "color": "focus",
-      "values": 5
-     }
-    ],
-    "annotations": [
-     {
-      "type": "cagr",
-      "from": 0,
-      "to": 4
-     },
-     {
-      "type": "target",
-      "value": 100
-     }
-    ]
-   }
-  },
-  "pitch": {
-   "template": "chart",
-   "variant": "full",
-   "keys": [
-    "chart",
-    "subtitle",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "chart": {
-    "format": "£{v}m",
-    "categories": 5,
-    "series": [
-     {
-      "mark": "bar",
-      "color": "focus",
-      "values": 5
-     }
-    ],
-    "annotations": [
-     {
-      "type": "cagr",
-      "from": 0,
-      "to": 4
-     },
-     {
-      "type": "target",
-      "value": 100
-     }
-    ]
-   }
-  }
- },
- {
   "name": "Chart · 100% stacked",
   "consulting": {
    "template": "chart",
@@ -709,6 +717,78 @@
    ],
    "body": 0,
    "chart": {
+    "format": "£{v}m",
+    "categories": 5,
+    "series": [
+     {
+      "mark": "bar",
+      "color": "focus",
+      "values": 5
+     }
+    ],
+    "annotations": [
+     {
+      "type": "cagr",
+      "from": 0,
+      "to": 4
+     },
+     {
+      "type": "target",
+      "value": 100
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "chart",
+   "variant": "full",
+   "keys": [
+    "chart",
+    "subtitle",
+    "template",
+    "title"
+   ],
+   "body": 0,
+   "chart": {
+    "format": "£{v}m",
+    "categories": 5,
+    "series": [
+     {
+      "mark": "bar",
+      "color": "focus",
+      "values": 5
+     }
+    ],
+    "annotations": [
+     {
+      "type": "cagr",
+      "from": 0,
+      "to": 4
+     },
+     {
+      "type": "target",
+      "value": 100
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "Chart · six series (second hue)",
+  "consulting": {
+   "template": "chart",
+   "variant": "full",
+   "keys": [
+    "caption",
+    "chart",
+    "kicker",
+    "source",
+    "takeaway",
+    "template",
+    "title"
+   ],
+   "body": 0,
+   "chart": {
     "kind": "waterfall",
     "format": "£{v}m",
     "categories": 0,
@@ -765,91 +845,6 @@
      },
      {
       "sign": 1
-     },
-     {
-      "total": true
-     }
-    ]
-   }
-  }
- },
- {
-  "name": "Chart · six series (second hue)",
-  "consulting": {
-   "template": "chart",
-   "variant": "split",
-   "keys": [
-    "caption",
-    "chart",
-    "kicker",
-    "notes",
-    "source",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "notes": [
-    {},
-    {},
-    {}
-   ],
-   "chart": {
-    "kind": "waterfall",
-    "format": "£{v}m",
-    "categories": 0,
-    "items": [
-     {
-      "sign": 1
-     },
-     {
-      "sign": -1
-     },
-     {
-      "sign": -1
-     },
-     {
-      "focus": true,
-      "sign": -1
-     },
-     {
-      "total": true
-     }
-    ]
-   }
-  },
-  "pitch": {
-   "template": "chart",
-   "variant": "split",
-   "keys": [
-    "chart",
-    "notes",
-    "subtitle",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "notes": [
-    {},
-    {},
-    {}
-   ],
-   "chart": {
-    "kind": "waterfall",
-    "format": "£{v}m",
-    "categories": 0,
-    "items": [
-     {
-      "sign": 1
-     },
-     {
-      "sign": -1
-     },
-     {
-      "sign": -1
-     },
-     {
-      "focus": true,
-      "sign": -1
      },
      {
       "total": true
@@ -862,6 +857,91 @@
   "name": "Steps",
   "consulting": {
    "template": "chart",
+   "variant": "split",
+   "keys": [
+    "caption",
+    "chart",
+    "kicker",
+    "notes",
+    "source",
+    "template",
+    "title"
+   ],
+   "body": 0,
+   "notes": [
+    {},
+    {},
+    {}
+   ],
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "categories": 0,
+    "items": [
+     {
+      "sign": 1
+     },
+     {
+      "sign": -1
+     },
+     {
+      "sign": -1
+     },
+     {
+      "focus": true,
+      "sign": -1
+     },
+     {
+      "total": true
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "chart",
+   "variant": "split",
+   "keys": [
+    "chart",
+    "notes",
+    "subtitle",
+    "template",
+    "title"
+   ],
+   "body": 0,
+   "notes": [
+    {},
+    {},
+    {}
+   ],
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "categories": 0,
+    "items": [
+     {
+      "sign": 1
+     },
+     {
+      "sign": -1
+     },
+     {
+      "sign": -1
+     },
+     {
+      "focus": true,
+      "sign": -1
+     },
+     {
+      "total": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "Cards · value lead",
+  "consulting": {
+   "template": "chart",
    "variant": "full",
    "keys": [
     "caption",
@@ -958,7 +1038,6 @@
   }
  },
  {
-  "name": "Cards · value lead",
   "consulting": {
    "template": "chart",
    "variant": "full",

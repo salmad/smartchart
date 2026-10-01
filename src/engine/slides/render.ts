@@ -4,6 +4,7 @@ import { MENU, NOTE_POINTS, plain } from "./schema.js";
 import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
+import { markKinds, markOf, type Mark } from "./marks.js";
 export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -43,6 +44,16 @@ const splitHTML = (s: Slide, main: string, extra = "") => {
   return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${notesHTML(s.notes ?? [])}</div>`;
 };
 
+const ball = (v: number) => {
+  if (v >= 4) return `<svg class="mk-ball" viewBox="0 0 40 40" aria-hidden="true"><circle class="full" cx="20" cy="20" r="18"/></svg>`;
+  const a = v / 4 * 2 * Math.PI, x = 20 + 18 * Math.sin(a), y = 20 - 18 * Math.cos(a);
+  return `<svg class="mk-ball" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18"/>${v ? `<path d="M20,20V2A18,18 0 ${v > 2 ? 1 : 0},1 ${x},${y}Z"/>` : ""}</svg>`;
+};
+/* The cell keeps its own character as text (hidden under a drawn ball), so the field still reads as what was written. */
+const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<span class="mk-txt">${esc(raw)}</span>` : `<span class="mk-tick${m.kind === "cross" ? " no" : ""}">${esc(raw)}</span>`);
+/** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
+const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
+
 const cellValue = (c: Cell | undefined) => plain(c && typeof c === "object" ? c.value : c ?? "").trim();
 const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
 
@@ -61,11 +72,13 @@ export function columnAlign(t: Table): Align[] {
 function tableHTML(t: Table) {
   const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const cell = (c: Cell, r: number, j: number) => { const p = `table.rows[${r}].cells[${j}]`;
+    const text = typeof c === "object" && c ? c.value : c ?? "", mark = markOf(String(text));
+    if (mark) return `<td class="${cls(t.columns[j], j)} score"${at(typeof c === "object" && c ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
     if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value)}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
     return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
   return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
     <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
-    <tbody>${t.rows.map((r, i) => `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>`;
+    <tbody>${t.rows.map((r, i) => `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>${markKinds(t).has("balls") ? ballKey() : ""}`;
 }
 
 function cardHTML(c: Card, variant: string, i: number) {
