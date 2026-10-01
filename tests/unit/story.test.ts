@@ -53,3 +53,11 @@ describe('deck checks', () => {
     expect((await storyChecks(pitch, 'pitch', fakeJev())).checks.at(-1)?.msg).toBe('The deck ends on the ask')
   })
 })
+
+it('a slide without a title takes its line in the storyline from its number caption or its quote', () => {
+  const lines = storyline([
+    { id: 'n', slide: { template: 'number', number: { value: '£1.4bn', caption: 'of SME spend goes on [[personal cards]].' } } as Slide },
+    { id: 'q', slide: { template: 'quote', quote: 'No bank would give us a **real** limit.', who: 'Founder' } as Slide },
+  ], 'consulting')
+  expect(lines.map((l) => l.title)).toEqual(['of SME spend goes on personal cards.', 'No bank would give us a real limit.'])
+})

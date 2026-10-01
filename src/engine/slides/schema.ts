@@ -266,8 +266,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   pair: {
-    summary: "Two charts side by side, each with a caption and 1–2 points.",
-    use: "Two related measures, each with its own chart: market and share.",
+    summary: "Two charts side by side, each with a caption and points.",
+    use: "Two related measures, each needing a chart.",
     fields: {
       charts: f("list", "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One chart.", { fields: {
         caption: f("text", "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { required: true, max: 40 }),
@@ -310,18 +310,30 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     ],
   },
   number: {
-    summary: "One big number, with the argument beside it.",
-    use: "One number proves the argument: a size, a cost, a gap.",
+    summary: "One big number and a sentence saying what it means; no title.",
+    use: "One figure carries the argument.",
+    frame: false,
     fields: {
-      body: f("list", "Paragraphs of argument.", { items: { min: 1, max: { consulting: 2, pitch: 1 } }, required: { consulting: true, pitch: false },
-        of: f("markup", "Paragraph.", { max: { consulting: 170, pitch: 70 } }) }),
-      number: f("object", "The big number.", { required: true, fields: {
-        value: f("text", "The number with its unit: '£540k', '19%', '5 min'. At most 6 characters.", { required: true, max: 6 }),
-        caption: f("markup", "What the number means, in one phrase.", { required: true, max: { consulting: 90, pitch: 60 } }),
+      number: f("object", "The number.", { required: true, fields: {
+        value: f("text", "The number with its unit: '£1.4bn', '19%', '5 min'.", { required: true, max: 7 }),
+        caption: f("markup", "What it means, as a full sentence: the slide's line in the storyline.", { required: true, max: { consulting: 110, pitch: 80 } }),
         tone: TONE,
       } }),
+      footnote: FRAME.footnote,
+      source: FRAME.source,
     },
-    variant: () => "split",
+    variant: () => "number",
+  },
+  quote: {
+    summary: "A large quote and who said it; no title.",
+    use: "Someone's own words make the point.",
+    frame: false,
+    fields: {
+      quote: f("markup", "The words, without quotation marks.", { required: true, max: { consulting: 150, pitch: 110 } }),
+      who: f("text", "Who said it, and where: 'Founder, 12-person logistics firm · Acme interviews, 2026'.", { required: true, max: 70 }),
+      footnote: FRAME.footnote,
+    },
+    variant: () => "quote",
   },
   steps: {
     summary: "Rows of phases: when, a one-word phase name, and what happens.",
@@ -368,8 +380,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     ],
   },
   summary: {
-    summary: "Executive summary: the answer in the title, then 2–4 numbered points, each a claim and its evidence.",
-    use: "The whole argument on one slide, near the start of a deck.",
+    summary: "The answer in the title, then 2–4 numbered points with evidence.",
+    use: "The whole argument on one slide.",
     fields: {
       points: f("list", "The supporting points, in the order the deck proves them. Together they prove the title; they do not overlap.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One point.", { fields: {
         title: f("markup", "The claim, as a short headline: 'Bundling fixes adverse selection'.", { required: true, max: 40 }),
@@ -412,6 +424,8 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["two related measures that each need their own chart, side by side", "pair"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
+  ["one figure that makes the point on its own", "number"],
+  ["a customer's or expert's own words", "quote"],
   ["2–4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast", "cards"],
 ];
 
@@ -434,8 +448,8 @@ export function fieldsFor(id: string, style: Style): Record<string, FieldDef> {
 }
 
 /** Templates the agent does not create while their layout is being redone. Existing slides still render and
-    validate. `number` waits for its quote-like layout (no title, the number and a line of text). */
-export const ARCHIVED: readonly TemplateId[] = ["number"];
+    validate. None at present. */
+export const ARCHIVED: readonly TemplateId[] = [];
 /** The templates the agent may pick: the menu minus the archived ones. */
 export const OFFERED = (Object.keys(MENU) as TemplateId[]).filter((id) => !ARCHIVED.includes(id));
 
@@ -472,6 +486,9 @@ export function describe(id: TemplateId, style: Style = "consulting"): TemplateC
 /* ─────────────── Validation ───────────────
    validate(slide, style) -> { errors, warnings }. Messages name the exact path,
    what was measured, the limit and the fix (spec 9.4).                        */
+
+/** The slide's line in the storyline: its title, or (no title) the number's caption or the quote. */
+export const headline = (s: Partial<Slide> | null | undefined): string => plain(s?.title || s?.number?.caption || s?.quote || "");
 
 export const plain = (s: unknown): string => String(s).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
 const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;

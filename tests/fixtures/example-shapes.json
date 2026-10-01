@@ -8,8 +8,7 @@
     "subtitle",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   },
   "pitch": {
    "template": "cover",
@@ -18,8 +17,7 @@
     "subtitle",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   }
  },
  {
@@ -31,8 +29,7 @@
     "subtitle",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   },
   "pitch": {
    "template": "section",
@@ -40,8 +37,7 @@
    "keys": [
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   }
  },
  {
@@ -54,8 +50,7 @@
     "points",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   },
   "pitch": {
    "template": "summary",
@@ -65,8 +60,7 @@
     "subtitle",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   }
  },
  {
@@ -85,7 +79,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "notes": [
     {},
     {},
@@ -125,7 +118,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "notes": [
     {},
     {},
@@ -167,8 +159,7 @@
     "takeaway",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   },
   "pitch": {
    "template": "pair",
@@ -179,8 +170,7 @@
     "takeaway",
     "template",
     "title"
-   ],
-   "body": 0
+   ]
   }
  },
  {
@@ -195,7 +185,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "cards": [
     {
      "icon": "zap",
@@ -230,7 +219,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "cards": [
     {
      "hasValue": true,
@@ -267,7 +255,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "cards": [
     {
      "tone": "neutral",
@@ -295,7 +282,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "cards": [
     {
      "tone": "neutral",
@@ -317,6 +303,27 @@
  {
   "name": "Chart · full width",
   "consulting": {
+   "template": "quote",
+   "variant": "quote",
+   "keys": [
+    "quote",
+    "template",
+    "who"
+   ]
+  },
+  "pitch": {
+   "template": "quote",
+   "variant": "quote",
+   "keys": [
+    "quote",
+    "template",
+    "who"
+   ]
+  }
+ },
+ {
+  "name": "Chart · annotations (CAGR, target)",
+  "consulting": {
    "template": "table",
    "variant": "full",
    "keys": [
@@ -328,7 +335,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "table": {
     "columns": [
      {},
@@ -374,7 +380,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "table": {
     "columns": [
      {},
@@ -395,96 +400,6 @@
      {
       "cells": 4
      },
-     {
-      "cells": 4
-     },
-     {
-      "cells": 4
-     },
-     {
-      "cells": 4
-     },
-     {
-      "cells": 4,
-      "style": "total"
-     }
-    ]
-   }
-  }
- },
- {
-  "name": "Chart · annotations (CAGR, target)",
-  "consulting": {
-   "template": "table",
-   "variant": "split",
-   "keys": [
-    "caption",
-    "kicker",
-    "notes",
-    "source",
-    "table",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "notes": [
-    {},
-    {},
-    {}
-   ],
-   "table": {
-    "columns": [
-     {},
-     {},
-     {},
-     {
-      "focus": true
-     }
-    ],
-    "rows": [
-     {
-      "cells": 4
-     },
-     {
-      "cells": 4
-     },
-     {
-      "cells": 4
-     },
-     {
-      "cells": 4,
-      "style": "total"
-     }
-    ]
-   }
-  },
-  "pitch": {
-   "template": "table",
-   "variant": "split",
-   "keys": [
-    "caption",
-    "notes",
-    "subtitle",
-    "table",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "notes": [
-    {},
-    {},
-    {}
-   ],
-   "table": {
-    "columns": [
-     {},
-     {},
-     {},
-     {
-      "focus": true
-     }
-    ],
-    "rows": [
      {
       "cells": 4
      },
@@ -505,6 +420,94 @@
  {
   "name": "Chart · waterfall",
   "consulting": {
+   "template": "table",
+   "variant": "split",
+   "keys": [
+    "caption",
+    "kicker",
+    "notes",
+    "source",
+    "table",
+    "template",
+    "title"
+   ],
+   "notes": [
+    {},
+    {},
+    {}
+   ],
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {
+      "focus": true
+     }
+    ],
+    "rows": [
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4,
+      "style": "total"
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "table",
+   "variant": "split",
+   "keys": [
+    "caption",
+    "notes",
+    "subtitle",
+    "table",
+    "template",
+    "title"
+   ],
+   "notes": [
+    {},
+    {},
+    {}
+   ],
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {
+      "focus": true
+     }
+    ],
+    "rows": [
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4,
+      "style": "total"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "Chart · waterfall + notes",
+  "consulting": {
    "template": "chart",
    "variant": "full",
    "keys": [
@@ -517,7 +520,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "kind": "ranked",
     "format": "{v}%",
@@ -533,7 +535,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "kind": "ranked",
     "format": "{v}%",
@@ -542,7 +543,7 @@
   }
  },
  {
-  "name": "Chart · waterfall + notes",
+  "name": "Chart · timeline",
   "consulting": {
    "template": "chart",
    "variant": "split",
@@ -556,7 +557,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "notes": [
     {},
     {},
@@ -577,7 +577,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "kind": "matrix",
     "categories": 0
@@ -585,145 +584,78 @@
   }
  },
  {
-  "name": "Chart · timeline",
-  "consulting": {
-   "template": "table",
-   "variant": "full",
-   "keys": [
-    "caption",
-    "footnote",
-    "kicker",
-    "table",
-    "takeaway",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "table": {
-    "columns": [
-     {},
-     {},
-     {},
-     {},
-     {}
-    ],
-    "rows": [
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     }
-    ]
-   }
-  },
-  "pitch": {
-   "template": "table",
-   "variant": "full",
-   "keys": [
-    "subtitle",
-    "table",
-    "template",
-    "title"
-   ],
-   "body": 0,
-   "table": {
-    "columns": [
-     {},
-     {},
-     {},
-     {},
-     {}
-    ],
-    "rows": [
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     },
-     {
-      "cells": 5
-     }
-    ]
-   }
-  }
- },
- {
   "name": "Chart · 100% stacked",
   "consulting": {
-   "template": "chart",
+   "template": "table",
    "variant": "full",
    "keys": [
     "caption",
-    "chart",
     "footnote",
     "kicker",
-    "source",
+    "table",
     "takeaway",
     "template",
     "title"
    ],
-   "body": 0,
-   "chart": {
-    "format": "£{v}m",
-    "categories": 8,
-    "series": [
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
      {
-      "mark": "line",
-      "color": "focus",
-      "area": true,
-      "values": 8
+      "cells": 5
      },
      {
-      "mark": "line",
-      "color": "contrast",
-      "dashed": true,
-      "values": 8
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
      }
     ]
    }
   },
   "pitch": {
-   "template": "chart",
+   "template": "table",
    "variant": "full",
    "keys": [
-    "chart",
     "subtitle",
+    "table",
     "template",
     "title"
    ],
-   "body": 0,
-   "chart": {
-    "format": "£{v}m",
-    "categories": 8,
-    "series": [
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
      {
-      "mark": "line",
-      "color": "focus",
-      "area": true,
-      "values": 8
+      "cells": 5
      },
      {
-      "mark": "line",
-      "color": "contrast",
-      "dashed": true,
-      "values": 8
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
+     },
+     {
+      "cells": 5
      }
     ]
    }
@@ -737,32 +669,28 @@
    "keys": [
     "caption",
     "chart",
+    "footnote",
     "kicker",
     "source",
     "takeaway",
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "format": "£{v}m",
-    "categories": 5,
+    "categories": 8,
     "series": [
      {
-      "mark": "bar",
+      "mark": "line",
       "color": "focus",
-      "values": 5
-     }
-    ],
-    "annotations": [
-     {
-      "type": "cagr",
-      "from": 0,
-      "to": 4
+      "area": true,
+      "values": 8
      },
      {
-      "type": "target",
-      "value": 100
+      "mark": "line",
+      "color": "contrast",
+      "dashed": true,
+      "values": 8
      }
     ]
    }
@@ -776,26 +704,21 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "format": "£{v}m",
-    "categories": 5,
+    "categories": 8,
     "series": [
      {
-      "mark": "bar",
+      "mark": "line",
       "color": "focus",
-      "values": 5
-     }
-    ],
-    "annotations": [
-     {
-      "type": "cagr",
-      "from": 0,
-      "to": 4
+      "area": true,
+      "values": 8
      },
      {
-      "type": "target",
-      "value": 100
+      "mark": "line",
+      "color": "contrast",
+      "dashed": true,
+      "values": 8
      }
     ]
    }
@@ -815,30 +738,25 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
-    "kind": "waterfall",
     "format": "£{v}m",
-    "categories": 0,
-    "items": [
+    "categories": 5,
+    "series": [
      {
-      "sign": 1
+      "mark": "bar",
+      "color": "focus",
+      "values": 5
+     }
+    ],
+    "annotations": [
+     {
+      "type": "cagr",
+      "from": 0,
+      "to": 4
      },
      {
-      "focus": true,
-      "sign": 1
-     },
-     {
-      "sign": 1
-     },
-     {
-      "sign": -1
-     },
-     {
-      "sign": 1
-     },
-     {
-      "total": true
+      "type": "target",
+      "value": 100
      }
     ]
    }
@@ -852,30 +770,25 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
-    "kind": "waterfall",
     "format": "£{v}m",
-    "categories": 0,
-    "items": [
+    "categories": 5,
+    "series": [
      {
-      "sign": 1
+      "mark": "bar",
+      "color": "focus",
+      "values": 5
+     }
+    ],
+    "annotations": [
+     {
+      "type": "cagr",
+      "from": 0,
+      "to": 4
      },
      {
-      "focus": true,
-      "sign": 1
-     },
-     {
-      "sign": 1
-     },
-     {
-      "sign": -1
-     },
-     {
-      "sign": 1
-     },
-     {
-      "total": true
+      "type": "target",
+      "value": 100
      }
     ]
    }
@@ -885,6 +798,83 @@
   "name": "Cards · value lead",
   "consulting": {
    "template": "chart",
+   "variant": "full",
+   "keys": [
+    "caption",
+    "chart",
+    "kicker",
+    "source",
+    "takeaway",
+    "template",
+    "title"
+   ],
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "categories": 0,
+    "items": [
+     {
+      "sign": 1
+     },
+     {
+      "focus": true,
+      "sign": 1
+     },
+     {
+      "sign": 1
+     },
+     {
+      "sign": -1
+     },
+     {
+      "sign": 1
+     },
+     {
+      "total": true
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "chart",
+   "variant": "full",
+   "keys": [
+    "chart",
+    "subtitle",
+    "template",
+    "title"
+   ],
+   "chart": {
+    "kind": "waterfall",
+    "format": "£{v}m",
+    "categories": 0,
+    "items": [
+     {
+      "sign": 1
+     },
+     {
+      "focus": true,
+      "sign": 1
+     },
+     {
+      "sign": 1
+     },
+     {
+      "sign": -1
+     },
+     {
+      "sign": 1
+     },
+     {
+      "total": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "consulting": {
+   "template": "chart",
    "variant": "split",
    "keys": [
     "caption",
@@ -895,7 +885,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "notes": [
     {},
     {},
@@ -935,7 +924,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "notes": [
     {},
     {},
@@ -978,7 +966,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "kind": "timeline",
     "categories": 0,
@@ -1025,7 +1012,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "kind": "timeline",
     "categories": 0,
@@ -1076,7 +1062,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "stacking": "percent",
     "format": "£{v}m",
@@ -1109,7 +1094,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "stacking": "percent",
     "format": "£{v}m",
@@ -1146,7 +1130,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "format": "£{v}bn",
     "categories": 7,
@@ -1193,7 +1176,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "chart": {
     "format": "£{v}bn",
     "categories": 7,
@@ -1243,7 +1225,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "steps": [
     {},
     {
@@ -1263,7 +1244,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "steps": [
     {},
     {
@@ -1285,7 +1265,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "table": {
     "columns": [
      {},
@@ -1318,7 +1297,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "table": {
     "columns": [
      {},
@@ -1344,6 +1322,27 @@
  },
  {
   "consulting": {
+   "template": "number",
+   "variant": "number",
+   "keys": [
+    "number",
+    "source",
+    "template"
+   ],
+   "number": {}
+  },
+  "pitch": {
+   "template": "number",
+   "variant": "number",
+   "keys": [
+    "number",
+    "template"
+   ],
+   "number": {}
+  }
+ },
+ {
+  "consulting": {
    "template": "cards",
    "variant": "value",
    "keys": [
@@ -1354,7 +1353,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "cards": [
     {
      "hasValue": true,
@@ -1393,7 +1391,6 @@
     "template",
     "title"
    ],
-   "body": 0,
    "cards": [
     {
      "hasValue": true,

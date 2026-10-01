@@ -103,6 +103,8 @@ exports[`registry > the three views agree (published contract: only additions al
             "chart",
             "pair",
             "table",
+            "number",
+            "quote",
             "steps",
             "cards",
             "summary",

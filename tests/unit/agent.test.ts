@@ -214,16 +214,10 @@ test("after the agent asked, the user's answer lets the template change through 
   assert.equal(out.template, "table");
 });
 
-test("the model cannot name an archived template: create_slide refuses it and reserves nothing", async () => {
-  const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
-  const agentStep = fakeAgent([toolCall("create_slide", { about: "x", template: "number" }), say("A big-number slide is not available.")]);
-  await runTurn({ ...ctx, text: "x", selection: null, models: { agentStep, jev: fakeJev({ intent: ["new_slide", 0.5] }) } });
-  const toolOut = agentStep.calls[1].map((m) => String(m.content)).join("\n");
-  assert.match(toolOut, /template: \\?"number\\?" is not available/);
-  assert.equal(ctx.deck.slides.length, 1);
+test("create_slide offers every template, the big number and the quote included", async () => {
   const { TOOLS } = await import("../../src/engine/agent/agent-prompt");
-  const create = TOOLS.find((t) => t.function.name === "create_slide");
-  assert.ok(!JSON.stringify(create).includes('"number"'), "not in the tool enum");
+  const create = JSON.stringify(TOOLS.find((t) => t.function.name === "create_slide"));
+  for (const id of ["number", "quote", "pair", "summary"]) assert.ok(create.includes(`"${id}"`), id);
 });
 
 test("a cover or section the user did not ask for is refused: decks open on content", async () => {

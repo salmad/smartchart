@@ -1,6 +1,6 @@
 export type Style = 'consulting' | 'pitch'
 export type Theme = 'ink' | 'paper'
-export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'steps' | 'cards' | 'summary' | 'cover' | 'section'
+export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'quote' | 'steps' | 'cards' | 'summary' | 'cover' | 'section'
 export type Tone = 'neutral' | 'focus' | 'neg' | 'pos'
 export type SeriesColor = 'focus' | 'neutral' | 'contrast'
 
@@ -36,7 +36,8 @@ export interface Slide {
   focus?: 'auto'
   chart?: Chart; notes?: Note[]
   table?: Table; caption?: string; notesTitle?: string
-  body?: string[]; number?: { value: string; caption: string; tone?: Tone }
+  number?: { value: string; caption: string; tone?: Tone }
+  quote?: string; who?: string
   steps?: Step[]
   framed?: boolean; cards?: Card[]
   points?: Point[]

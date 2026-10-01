@@ -507,6 +507,22 @@
   }
  },
  {
+  "id": "quote",
+  "group": "case",
+  "label": "Quote",
+  "blurb": "A customer makes the point in their own words",
+  "consulting": {
+   "template": "quote",
+   "quote": "We put £40k a month on my personal card, because no bank would give the business a real limit.",
+   "who": "Founder, 12-person logistics firm · Acme interviews, 2026"
+  },
+  "pitch": {
+   "template": "quote",
+   "quote": "No bank would give the business a real limit.",
+   "who": "Founder, 12-person logistics firm"
+  }
+ },
+ {
   "id": "table",
   "group": "compare",
   "label": "Comparison table",
@@ -2265,6 +2281,27 @@
     ]
    },
    "takeaway": "Only the first needs [[a board decision.]]"
+  }
+ },
+ {
+  "id": "number",
+  "group": "number",
+  "label": "One number",
+  "blurb": "A figure that makes the point on its own",
+  "consulting": {
+   "template": "number",
+   "number": {
+    "value": "£1.4bn",
+    "caption": "of SME spend goes on [[personal cards]] every year, outside any business account."
+   },
+   "source": "Bank of England SME finance survey, 2026."
+  },
+  "pitch": {
+   "template": "number",
+   "number": {
+    "value": "£1.4bn",
+    "caption": "a year on [[personal cards]], outside the business."
+   }
   }
  },
  {

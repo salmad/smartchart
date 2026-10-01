@@ -14,7 +14,7 @@ const columnsOf = (s: Slide) => must(s.table?.columns, "table.columns");
 const chart = (c: object, extra: object = {}) => ({ template: "chart", title: "Revenue grew four times", chart: { categories: ["a", "b", "c"], format: "£{v}m", ...c }, ...extra });
 
 test("trivia: Source prefix, consulting full stop, percent", () => {
-  const { slide, fixes } = autofix({ template: "number", title: "Costs fell 20 percent.", source: "Source: ONS", number: { value: "20%", caption: "x" }, body: ["y"] }, "consulting");
+  const { slide, fixes } = autofix({ template: "table", title: "Costs fell 20 percent.", source: "Source: ONS", table: { columns: [{ label: "A" }, { label: "B" }], rows: [{ cells: ["a", "1"] }] } }, "consulting");
   assert.equal(slide.title, "Costs fell 20%");
   assert.equal(slide.source, "ONS");
   assert.equal(fixes.length, 2);

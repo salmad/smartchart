@@ -27,23 +27,20 @@ test("working block: current JSON, open issues, failed checks", () => {
 
 test("the example the agent copies is plain: no takeaway, notes, kicker, footnote, source or annotations", async () => {
   const { exampleFor } = await import("../../src/engine/agent/prompts");
-  // "number" has no starter while its slide is archived: the agent gets no example for it.
-  assert.equal(exampleFor("number", "pitch"), "(none)");
-  for (const id of ["chart", "table", "steps", "cards"] as const) for (const style of ["consulting", "pitch"] as const) {
+  for (const id of ["chart", "pair", "table", "steps", "cards", "summary", "number", "quote"] as const) for (const style of ["consulting", "pitch"] as const) {
     const ex = JSON.parse(exampleFor(id, style));
     for (const k of ["takeaway", "notes", "kicker", "footnote", "source"]) assert.equal(ex[k], undefined, `${id} ${style} ${k}`);
     assert.equal(ex.chart?.annotations, undefined);
   }
 });
 
-test("an archived template (number) is not offered to the router, the prompt or create_slide", async () => {
-  const { OFFERED, catalogue } = await import("../../src/engine/slides/schema");
-  const { MENU_OPTIONS, GUIDE } = await import("../../src/engine/agent/prompts");
-  assert.ok(!OFFERED.includes("number"));
-  assert.ok(!("number" in MENU_OPTIONS));
-  assert.doesNotMatch(GUIDE, /: number\b/);
-  assert.doesNotMatch(catalogue(), /^number:/m);
-  for (const style of ["consulting", "pitch"] as const) assert.doesNotMatch(agentSystem(style), /^- number:|One big number/m);
+test("nothing is archived: the big number and the quote reach the router, the prompt and create_slide", async () => {
+  const { OFFERED, MENU, ARCHIVED, catalogue } = await import("../../src/engine/slides/schema");
+  const { MENU_OPTIONS } = await import("../../src/engine/agent/prompts");
+  assert.deepEqual(ARCHIVED, []);
+  assert.deepEqual([...OFFERED].sort(), Object.keys(MENU).sort());
+  for (const id of ["number", "quote"]) { assert.ok(id in MENU_OPTIONS); assert.match(catalogue(), new RegExp(`^${id}:`, "m")); }
+  for (const style of ["consulting", "pitch"] as const) assert.match(agentSystem(style), /^- quote:/m);
 });
 
 test("the deck state names slides edited by hand since the last turn", () => {

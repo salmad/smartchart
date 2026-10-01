@@ -10,7 +10,6 @@ export function shapeOf(s: Slide): unknown {
     template: s.template,
     variant: MENU[s.template].variant(s),
     keys: Object.keys(s).sort(),
-    body: len(s.body),
     number: s.number ? { tone: s.number.tone } : undefined,
     notes: s.notes?.map((n) => ({ point: n.point })),
     steps: s.steps?.map((st) => ({ focus: st.focus })),

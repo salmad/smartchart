@@ -93,18 +93,13 @@ function cardHTML(c: Card, variant: string, i: number) {
 
 /* Body per menu entry. The variant (layout) comes from the registry, never from the agent. */
 const table = (s: Slide): Table => s.table ?? { columns: [], rows: [] };
-const BODY: Record<Exclude<TemplateId, "cover" | "section">, (s: Slide, variant: string) => string> = {
+const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">, (s: Slide, variant: string) => string> = {
   chart: (s, v) => v === "split"
     ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
   table: (s, v) => v === "split"
     ? splitHTML(s, tableHTML(table(s)), "with-table")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${tableHTML(table(s))}`,
-  number: (s) => {
-    const n = s.number ?? { value: "", caption: "" };
-    const num = `<div class="hero-n"><p class="shout hero-v ${n.tone || ""} ${n.value.length <= 4 ? "short" : ""}"${at("number.value", "esc")}>${esc(n.value)}</p><p class="hero-c"${at("number.caption", "md")}>${md(n.caption)}</p></div>`;
-    return s.body?.length ? `<div class="hero"><div class="prose">${s.body.map((p, i) => `<p${item(`body[${i}]`)}${at(`body[${i}]`, "md")}>${md(p)}</p>`).join("")}</div>${num}</div>` : `<div class="hero solo">${num}</div>`;
-  },
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
@@ -132,6 +127,12 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
   } else if (s.template === "section") {
     // The subtitle box is always there: it holds its 2 lines, so the number and title sit still across dividers.
     body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title"${at("title", "esc")}>${esc(s.title)}</h2><p class="sec-sub"${at("subtitle", "md")}>${s.subtitle ? md(s.subtitle) : ""}</p>`;
+  } else if (s.template === "number") {
+    // No title: the number and its sentence are the slide (the sentence is its line in the storyline).
+    const n = s.number ?? { value: "", caption: "" };
+    body = `<p class="shout big-v ${n.tone && n.tone !== "focus" ? n.tone : ""}"${at("number.value", "esc")}>${esc(n.value)}</p><p class="big-c"${at("number.caption", "md")}>${md(n.caption)}</p>`;
+  } else if (s.template === "quote") {
+    body = `<p class="q-mark" aria-hidden="true">“</p><p class="q-text"${at("quote", "md")}>${md(s.quote ?? "")}</p><p class="q-who"${at("who", "esc")}>${esc(s.who ?? "")}</p>`;
   } else {
     // The head holds its longest form (L3), so the body starts on one line per style. The consulting
     // kicker line is kept even when empty, so the title does not move up on slides without one.
@@ -139,7 +140,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
       ? `<div class="label"${at("kicker", "esc")}>${esc(s.kicker || ctx.kicker)}</div><h2 class="title"${at("title", "display")}>${display(s.title)}</h2>`
       : `<h2 class="title"${at("title", "display")}>${display(s.title)}</h2>${s.subtitle ? `<p class="subtitle"${at("subtitle", "display")}>${display(s.subtitle)}</p>` : ""}`;
     body = `<header class="head">${head}</header>`
-      + BODY[s.template](s, variant)
+      + BODY[s.template as keyof typeof BODY](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway"${at("takeaway", "md")}>${md(s.takeaway)}</p>` : "");
   }
   const fn = [s.footnote && `<p${at("footnote", "md")}>${md(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${md(s.source)}</span></p>`].filter(Boolean).join("");
@@ -210,7 +211,7 @@ function growTable(slide: HTMLElement) {
 
 /* Big values in a row shrink together (to 75% at most) so the widest fits. */
 function fitValues(slide: HTMLElement) {
-  for (const sel of [".cards.value .v", ".hero-v"]) {
+  for (const sel of [".cards.value .v", ".big-v"]) {
     const els = [...slide.querySelectorAll<HTMLElement>(sel)];
     const k = Math.min(1, ...els.map((e) => e.clientWidth / e.scrollWidth));
     if (k < 1) els.forEach((e) => { e.style.fontSize = `${parseFloat(getComputedStyle(e).fontSize) * Math.max(k, .75)}px`; });

@@ -2,7 +2,7 @@
    When the intent is sure, code makes the agent's first tool call itself. */
 import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts.js";
 import type { JevFn, JevQuestion } from "./llm.js";
-import { plain } from "../slides/schema.js";
+import { headline } from "../slides/schema.js";
 import type { Slide, Style } from "../types.js";
 
 /** What PRE reads of the deck: the slides in order (a pending slide has no content yet). */
@@ -15,7 +15,6 @@ export type PreChoice = Pick<Pre, "intent" | "p" | "template" | "after">;
 export interface FirstCall { name: "create_slide" | "read_slide"; args: Record<string, string> }
 
 export const P_ACT = 0.7, P_LEAD = 0.6;
-const plainTitle = (s: unknown) => plain(s ?? "");
 
 const INTENTS: Record<string, string> = {
   new_slide: "Add one new slide with this content.",
@@ -34,7 +33,7 @@ export const LEAD_Q = "If the slide were cards, how should they lead? Value when
 
 export async function preStep({ text, deck, selection, jev }: { text: string; deck: PreDeck; selection: Selection; jev: JevFn }): Promise<Pre> {
   const slides = deck.slides.filter((s): s is { id: string; slide: Slide } => !!s.slide);
-  const list = slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide.template}] ${plainTitle(s.slide.title)}`).join("\n");
+  const list = slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide.template}] ${headline(s.slide)}`).join("\n");
   const state = [`Deck style: ${STYLE_STATE[deck.style]}.`, list ? `Slides:\n${list}` : "The deck is empty.",
     selection?.slideId ? `Selected slide: ${selection.slideId}.` : "No slide is selected.", `User message: ${text}`].join("\n");
   const qs: Record<string, JevQuestion> = {
@@ -43,7 +42,7 @@ export async function preStep({ text, deck, selection, jev }: { text: string; de
     lead: { instructions: LEAD_Q, options: LEADS },
   };
   if (slides.length) qs.after = { instructions: "If a new slide is added, after which slide should it go? The end, unless the message says where or clearly continues a particular slide.",
-    options: { end: "At the end of the deck.", ...Object.fromEntries(slides.map((s) => [s.id, `After ${s.id}: ${plainTitle(s.slide.title)}`])) } };
+    options: { end: "At the end of the deck.", ...Object.fromEntries(slides.map((s) => [s.id, `After ${s.id}: ${headline(s.slide)}`])) } };
   const r = await jev(state, qs);
   return { intent: r.intent.choice, p: r.intent.p, template: r.template.choice, probabilities: r.template.probabilities,
     lead: r.lead.p >= P_LEAD ? r.lead.choice : null, after: r.after?.choice || "end", ms: r._ms };

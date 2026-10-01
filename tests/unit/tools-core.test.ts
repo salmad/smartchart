@@ -50,9 +50,9 @@ describe('estimate and write', () => {
     expect(w.slide.template).toBe(STARTERS[0].consulting.template)
     expect(w.warnings.every((x) => !/^R\d+:/.test(x))).toBe(true)
   })
-  it('writeSlide refuses archived templates and bad shapes with the fix', async () => {
+  it('writeSlide refuses unknown templates and bad shapes with the fix', async () => {
     const ctx = ctxFor({ jev: fakeJev() })
-    await expect(writeSlide(ctx, { template: 'number', title: 'x' }, '')).rejects.toMatchObject({ code: 'refused' })
+    await expect(writeSlide(ctx, { template: 'gauge', title: 'x' }, '')).rejects.toMatchObject({ code: 'bad_input' })
     await expect(writeSlide(ctx, { template: 'chart' }, '')).rejects.toMatchObject({ code: 'bad_input' })
   })
 })

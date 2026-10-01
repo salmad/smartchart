@@ -1,6 +1,6 @@
 /* Deck checks D1–D5: the storyline as the room skims it (the titles alone, in order), judged the way a partner reads a
    deck. One Jev call; a check fails only when a failing value has p ≥ 0.7, as for the slide checks. */
-import { plain } from "../slides/schema.js";
+import { headline, plain } from "../slides/schema.js";
 import type { Slide, Style } from "../types.js";
 import { jev as jevCall, type JevFn } from "./llm.js";
 
@@ -16,7 +16,7 @@ export function storyline(slides: { id: string; slide: Slide }[], style: Style):
   return slides.map(({ id, slide }, i) => {
     const kind = slide.template === "cover" ? "cover" : slide.template === "section" ? "section" : "content";
     // Pitch titles name the topic; the subtitle carries the claim.
-    return { id, page: i + 1, kind, title: plain(slide.title), ...(style === "pitch" && slide.subtitle ? { claim: plain(slide.subtitle) } : {}) };
+    return { id, page: i + 1, kind, title: headline(slide), ...(style === "pitch" && slide.subtitle ? { claim: plain(slide.subtitle) } : {}) };
   });
 }
 
@@ -79,5 +79,5 @@ function failed(id: string, choice: string, page: number, slideId: string | unde
 
 /** The storyline's identity: checks are kept while it is unchanged. */
 export const storyKey = (slides: { id: string; slide: Slide }[], style: Style) =>
-  JSON.stringify([style, slides.map(({ id, slide }) => [id, slide.template, slide.title, slide.subtitle ?? ""])]);
+  JSON.stringify([style, slides.map(({ id, slide }) => [id, slide.template, headline(slide), slide.subtitle ?? ""])]);
 
