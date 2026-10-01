@@ -486,6 +486,7 @@ test('gantt: a sub-row is added from the menu and a row is indented under a grou
   await rowCell(page, 0).click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Add sub-row' }).click()
   await expect(page.locator('tr[data-row]')).toHaveCount(6)
+  await expect(page.getByRole('menu')).toHaveCount(0)   // the next right-click must not land on the fading menu
   await rowCell(page, 4).click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Indent' }).click()
   await finishGantt(page)
@@ -519,6 +520,7 @@ test('gantt: a row is highlighted from the menu, one at a time', async ({ page }
   await openGantt(page)
   await rowCell(page, 3).click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Highlight' }).click()
+  await expect(page.getByRole('menu')).toHaveCount(0)
   await rowCell(page, 0).click({ button: 'right' })      // a group can be highlighted too
   await page.getByRole('menuitem', { name: 'Highlight' }).click()
   await finishGantt(page)
