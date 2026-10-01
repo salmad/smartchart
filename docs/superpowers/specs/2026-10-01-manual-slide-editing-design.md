@@ -33,7 +33,7 @@ Not in edit mode: adding, removing and moving slides (the strip does that), deck
   - the Composer's `canSend` ("Save or discard to keep chatting")
   - the Strip, Add slide, the Decks sidebar, the look menu in the Bar, Present
   - the Editor shortcuts
-- **Edit bar** above the slide: the template switcher, the warning count ("2 warnings"), **Discard** and **Save**.
+- **Edit bar** under the slide, where the strip and checks sit (the strip is locked while editing anyway, which keeps the layout still): the template switcher, the warning count ("2 warnings"), **Discard** and **Save**.
 - **Keys:** ⌘S or ⌘↵ saves. Esc discards, asking to confirm only when something changed. The browser's own ⌘B, ⌘I and ⌘U are blocked.
 - **Leaving the page** with unsaved edits brings up the browser's "leave site?" prompt. Drafts are not saved anywhere.
 
@@ -63,7 +63,7 @@ Clicking the chart replaces the chart area with a compact grid of inputs, in pla
 | waterfall | rows = items: label, value, a "total" checkbox | items |
 | timeline | rows = workstreams: label, start period, end period (selects from `periods`); a periods row that can be edited; a milestones row | rows, periods, milestones |
 
-Limits come from the schema. A new series copies the shape of the last one (mark, colour). "Show chart", or clicking outside the grid, flips back with a re-render. Chart kind and annotations are not edited here; those stay with the agent. `chartGrid` and `fromGrid` convert both ways with no loss for every kind, and a test checks it.
+Limits come from the schema. A new series copies the shape of the last one (mark, colour). "Show chart", or clicking outside the grid, flips back with a re-render. Chart kind and annotations are not edited here; those stay with the agent. `chartGrid` and `fromGrid(chart, grid)` convert both ways with no loss for every kind, and a test checks it. `fromGrid` takes the chart it came from so it can merge: marks, colours and formats survive, and an annotation that no longer points at a category or series is dropped.
 
 ### 4.4 Template switch
 
@@ -148,6 +148,7 @@ Discard drops the draft and leaves.
 
 ## 8. Out of scope
 
+- Adding an optional field that isn't on the slide (a missing takeaway, footnote or caption) by hand. Deleting all the text of one removes it. Adding a note to a plain table cell: the agent does that; a note that exists can be edited.
 - Images.
 - Fonts, sizes, colours and layout.
 - Positive and negative emphasis by hand.
