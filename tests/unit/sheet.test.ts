@@ -144,3 +144,21 @@ test('a pasted table replaces a table slide: the first row is the header', () =>
   expect(big.slide.table?.rows.length).toBe(8)
   expect(big.note).toMatch(/of 20 rows/)
 })
+
+test('annotations follow their categories and series when rows and columns change', () => {
+  const ann = (s: Slide) => s.chart?.annotations?.[0]
+  const m = sheet(BARS)
+  expect(ann(apply(BARS, m.insertRow(0)))).toMatchObject({ from: 1, to: 3 })
+  expect(ann(apply(BARS, m.insertRow(1)))).toMatchObject({ from: 0, to: 3 })
+  expect(ann(apply(BARS, m.moveRow(2, 0)))).toMatchObject({ from: 1, to: 0 })
+  expect(ann(apply(BARS, m.moveRow(0, 2)))).toMatchObject({ from: 2, to: 1 })
+  expect(apply(BARS, m.removeRows(2, 2)).chart?.annotations).toEqual([])
+  expect(ann(apply(BARS, m.removeRows(0, 0)))).toBeUndefined()
+  const three = apply(BARS, { 'chart.annotations': [{ type: 'cagr', from: 1, to: 2 }] })
+  expect(ann(apply(three, sheet(three).removeRows(0, 0)))).toMatchObject({ from: 0, to: 1 })
+  const withSeries = apply(BARS, { 'chart.annotations': [{ type: 'cagr', from: 0, to: 2, series: 1 }] })
+  const w = sheet(withSeries)
+  expect(ann(apply(withSeries, w.moveCol?.(2, 1)))).toMatchObject({ series: 0 })
+  expect(ann(apply(withSeries, w.insertCol?.(1)))).toMatchObject({ series: 2 })
+  expect(apply(withSeries, w.removeCols?.(2, 2)).chart?.annotations).toEqual([])
+})

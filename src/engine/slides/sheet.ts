@@ -68,9 +68,22 @@ const NEEDS_NUMBER = { error: "Enter a number" };
 
 function bars(chart: Chart, style: Style): SheetModel {
   const cats = chart.categories ?? [], series = chart.series ?? [], lim = limits(style);
-  /** Annotations point at category and series indices; one that no longer points at anything is dropped. */
-  const keep = (n: number, m: number): Patch => (chart.annotations ? { "chart.annotations": chart.annotations.filter((a) => (a.from ?? 0) < n && (a.to ?? 0) < n && (a.series ?? 0) < m) } : {});
-  const rowsWrite = (f: <T>(xs: T[]) => T[], n: number): Patch => ({ "chart.categories": f(cats), ...Object.fromEntries(series.map((s, j) => [`chart.series[${j}].values`, f(s.values)])), ...keep(n, series.length) });
+  /** Annotations point at category and series indices: a row or series that moves takes them along, and one whose row or series is gone is dropped. */
+  type Map = (i: number) => number | null;
+  const same: Map = (i) => i;
+  const remap = (cat: Map, ser: Map = same): Patch => {
+    if (!chart.annotations) return {};
+    const out = chart.annotations.flatMap((a) => {
+      const f = cat(a.from ?? 0), t = cat(a.to ?? 0), k = ser(a.series ?? 0);
+      if (f === null || t === null || k === null) return [];
+      return [{ ...a, ...(f !== (a.from ?? 0) ? { from: f } : {}), ...(t !== (a.to ?? 0) ? { to: t } : {}), ...(k !== (a.series ?? 0) ? { series: k } : {}) }];
+    });
+    return { "chart.annotations": out };
+  };
+  const ins = (at: number): Map => (i) => (i >= at ? i + 1 : i);
+  const del = (lo: number, hi: number): Map => (i) => (i < lo ? i : i <= hi ? null : i - (hi - lo + 1));
+  const perm = (from: number, to: number): Map => (i) => (i === from ? to : from < to ? (i > from && i <= to ? i - 1 : i) : i >= to && i < from ? i + 1 : i);
+  const rowsWrite = (f: <T>(xs: T[]) => T[], cat: Map): Patch => ({ "chart.categories": f(cats), ...Object.fromEntries(series.map((s, j) => [`chart.series[${j}].values`, f(s.values)])), ...remap(cat) });
   return {
     kind: "bars", rows: cats.length,
     cols: [{ header: "", type: "text" }, ...series.map((s, j) => ({ header: s.name, headerPath: `chart.series[${j}].name`, type: "number" as const }))],
@@ -82,16 +95,16 @@ function bars(chart: Chart, style: Style): SheetModel {
       return n === null ? NEEDS_NUMBER : { [`chart.series[${c - 1}].values[${r}]`]: n };
     },
     setHeader: (c, raw) => (c >= 1 ? { [`chart.series[${c - 1}].name`]: raw } : null),
-    insertRow: (at) => (inRange(cats.length + 1, lim.categories) ? rowsWrite((xs) => splice(xs as unknown[], at, 0, xs === cats ? "" : 0) as typeof xs, cats.length + 1) : null),
-    removeRows: (r0, r1) => (inRange(cats.length - (r1 - r0 + 1), lim.categories) ? rowsWrite((xs) => splice(xs, r0, r1 - r0 + 1), cats.length - (r1 - r0 + 1)) : null),
-    moveRow: (from, to) => (from === to || [from, to].some((i) => i < 0 || i >= cats.length) ? null : rowsWrite((xs) => move(xs, from, to), cats.length)),
+    insertRow: (at) => (inRange(cats.length + 1, lim.categories) ? rowsWrite((xs) => splice(xs as unknown[], at, 0, xs === cats ? "" : 0) as typeof xs, ins(at)) : null),
+    removeRows: (r0, r1) => (inRange(cats.length - (r1 - r0 + 1), lim.categories) ? rowsWrite((xs) => splice(xs, r0, r1 - r0 + 1), del(r0, r1)) : null),
+    moveRow: (from, to) => (from === to || [from, to].some((i) => i < 0 || i >= cats.length) ? null : rowsWrite((xs) => move(xs, from, to), perm(from, to))),
     insertCol: (at) => {
       if (at < 1 || !inRange(series.length + 1, lim.series)) return null;
       const like = series.at(-1);
-      return { "chart.series": splice(series, at - 1, 0, { name: "", values: cats.map(() => 0), mark: like?.mark ?? "bar", ...(like?.color ? { color: "neutral" as const } : {}), ...(like?.format ? { format: like.format } : {}) }), ...keep(cats.length, series.length + 1) };
+      return { "chart.series": splice(series, at - 1, 0, { name: "", values: cats.map(() => 0), mark: like?.mark ?? "bar", ...(like?.color ? { color: "neutral" as const } : {}), ...(like?.format ? { format: like.format } : {}) }), ...remap(same, ins(at - 1)) };
     },
-    removeCols: (c0, c1) => (c0 < 1 || !inRange(series.length - (c1 - c0 + 1), lim.series) ? null : { "chart.series": splice(series, c0 - 1, c1 - c0 + 1), ...keep(cats.length, series.length - (c1 - c0 + 1)) }),
-    moveCol: (from, to) => (from < 1 || to < 1 || from === to || from > series.length || to > series.length ? null : { "chart.series": move(series, from - 1, to - 1) }),
+    removeCols: (c0, c1) => (c0 < 1 || !inRange(series.length - (c1 - c0 + 1), lim.series) ? null : { "chart.series": splice(series, c0 - 1, c1 - c0 + 1), ...remap(same, del(c0 - 1, c1 - 1)) }),
+    moveCol: (from, to) => (from < 1 || to < 1 || from === to || from > series.length || to > series.length ? null : { "chart.series": move(series, from - 1, to - 1), ...remap(same, perm(from - 1, to - 1)) }),
   };
 }
 

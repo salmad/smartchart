@@ -413,3 +413,40 @@ test('a series added in the sheet can be named, and its header typed in place', 
   expect(s?.map((x) => x.name)).toEqual(['Revenue', 'Cost'])
   expect(s?.[1].values).toEqual([7, 0])
 })
+
+test('deleting the last column leaves the cursor on the grid, not past it', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await open(page)
+  await page.evaluate(() => window.__journey?.load([
+    { template: 'chart', title: 'Revenue grows', caption: 'Revenue', chart: { categories: ['A', 'B', 'C'], series: [{ name: 'S1', values: [1, 2, 3], mark: 'bar' }, { name: 'S2', values: [4, 5, 6], mark: 'bar' }] } },
+  ] as never, 'consulting'))
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart]').click()
+  await sheetCell(page, 0, 2).click()
+  await sheetCell(page, 0, 2).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Delete column' }).click()
+  await page.keyboard.type('7')
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  expect(errors).toEqual([])
+  expect((await saved(page)).chart?.series?.map((s) => s.values)).toEqual([[7, 2, 3]])
+})
+
+test('Esc in a sheet cell cancels the edit and keeps the dialog; a bare Esc closes it', async ({ page }) => {
+  await open(page)
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart]').click()
+  await sheetCell(page, 0, 1).click()
+  await page.keyboard.type('99')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('grid', { name: 'Chart data' })).toBeVisible()
+  await expect(sheetCell(page, 0, 1)).toHaveText('10')
+  await page.keyboard.press('Shift+ArrowDown')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('grid', { name: 'Chart data' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('grid', { name: 'Chart data' })).toHaveCount(0)
+})

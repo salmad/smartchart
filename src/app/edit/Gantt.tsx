@@ -16,9 +16,11 @@ type Patch = Record<string, unknown> | null
 export function Gantt({ edit, deckStyle }: { edit: SlideEdit; deckStyle: Style }) {
   const g = ganttFor(edit.draft, deckStyle), n = g.periods.length
   const [paint, setPaint] = useState<{ row: number; a: number; b: number } | null>(null)
-  const [at, setAt] = useState({ r: 0, p: 0, a: 0 }), [dropAt, setDropAt] = useState<number | null>(null)
+  const [rawAt, setAt] = useState({ r: 0, p: 0, a: 0 }), [dropAt, setDropAt] = useState<number | null>(null)
   const [ctx, setCtx] = useState<{ row: number | null; period: number | null }>({ row: null, period: null })
   const grid = useRef<HTMLDivElement>(null)
+  // Rows and periods can go (delete, undo): the cursor is read through the grid as it is now.
+  const top = (x: number, len: number) => Math.max(0, Math.min(x, len - 1)), at = { r: top(rawAt.r, g.rows.length), p: top(rawAt.p, n), a: top(rawAt.a, n) }
   const write = (p: Patch) => { if (p) edit.patch(p) }
   const issue = (path: string) => edit.issues.find((i) => i.path && (i.path === path || path.startsWith(`${i.path}.`) || path.startsWith(`${i.path}[`)))
 

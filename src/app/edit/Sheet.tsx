@@ -18,12 +18,17 @@ const raw = (v: string | number | boolean | null) => (v === null ? '' : String(v
 
 export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdit; model: SheetModel; deckStyle: Style; note: string; onNote: (s: string) => void }) {
   void deckStyle
-  const [anchor, setAnchor] = useState({ r: 0, c: 0 }), [focus, setFocus] = useState({ r: 0, c: 0 })
+  const [rawAnchor, setAnchor] = useState({ r: 0, c: 0 }), [rawFocus, setFocus] = useState({ r: 0, c: 0 })
   const [editing, setEditing] = useState<{ r: number; c: number; text: string; error?: string } | null>(null)
   const [dropAt, setDropAt] = useState<{ kind: 'row' | 'col'; index: number } | null>(null)
-  const grid = useRef<HTMLDivElement>(null), dragging = useRef(false)
-  const sel = norm({ r0: anchor.r, c0: anchor.c, r1: focus.r, c1: focus.c }), maxR = model.rows - 1, maxC = model.cols.length - 1
+  const grid = useRef<HTMLDivElement>(null), dragging = useRef(false), settled = useRef(false)
+  /** Hand focus back to the grid after a cell is settled (written or cancelled): the blur that follows must not write it again. */
+  const leaveCell = () => { settled.current = true; grid.current?.focus(); settled.current = false }
+  const maxR = model.rows - 1, maxC = model.cols.length - 1
   const clamp = (p: { r: number; c: number }) => ({ r: Math.max(0, Math.min(p.r, maxR)), c: Math.max(0, Math.min(p.c, maxC)) })
+  // Rows and columns can go (delete, undo): the cursor is read through the grid as it is now.
+  const anchor = clamp(rawAnchor), focus = clamp(rawFocus)
+  const sel = norm({ r0: anchor.r, c0: anchor.c, r1: focus.r, c1: focus.c })
   const inSel = (r: number, c: number) => r >= sel.r0 && r <= sel.r1 && c >= sel.c0 && c <= sel.c1
   const issueAt = (path: string) => edit.issues.find((i) => i.path && (i.path === path || path.startsWith(`${i.path}.`) || path.startsWith(`${i.path}[`)))
 
@@ -68,10 +73,10 @@ export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdi
     if (!editing) return
     // ⌘S or ⌘Enter while a cell is open: write the cell first, then let the slide save.
     if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 's' || e.key === 'Enter')) { const p = model.set(editing.r, editing.c, editing.text); if (!failed(p)) edit.patch(p); setEditing(null); return }
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setEditing(null); grid.current?.focus(); return }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setEditing(null); leaveCell(); return }
     if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault()
-      if (commit(editing.r, editing.c, editing.text)) { move(e.key === 'Enter' ? (e.shiftKey ? -1 : 1) : 0, e.key === 'Tab' ? (e.shiftKey ? -1 : 1) : 0, false); grid.current?.focus() }
+      if (commit(editing.r, editing.c, editing.text)) { move(e.key === 'Enter' ? (e.shiftKey ? -1 : 1) : 0, e.key === 'Tab' ? (e.shiftKey ? -1 : 1) : 0, false); leaveCell() }
     }
   }
   /** Pasted text lands in the cells from the selection; with everything selected it replaces the data, so a pasted table becomes a new chart. */
@@ -109,7 +114,7 @@ export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdi
     <div className="flex min-h-0 flex-col gap-3">
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div ref={grid} role="grid" aria-label={model.kind === 'table' ? 'Table data' : 'Chart data'} tabIndex={0} onKeyDown={onKey} onPaste={onPaste} onCopy={(e) => onCopy(e, false)} onCut={(e) => onCopy(e, true)}
+          <div ref={grid} role="grid" data-range={sel.r0 !== sel.r1 || sel.c0 !== sel.c1 ? true : undefined} aria-label={model.kind === 'table' ? 'Table data' : 'Chart data'} tabIndex={0} onKeyDown={onKey} onPaste={onPaste} onCopy={(e) => onCopy(e, false)} onCut={(e) => onCopy(e, true)}
             onPointerUp={() => { dragging.current = false }} className="min-h-0 overflow-auto rounded-lg outline-none ring-1 ring-line focus-visible:ring-ink-3">
             <table className="w-full border-separate border-spacing-0 text-[13px]">
               <thead className="sticky top-0 z-10 bg-panel">
@@ -141,7 +146,7 @@ export function Sheet({ edit, model, deckStyle, note, onNote }: { edit: SlideEdi
                           className={`h-9 border-b border-line px-0 ${active ? 'bg-ink/10' : ''} ${here ? 'shadow-[inset_0_0_0_1.5px_theme(colors.ink)]' : ''} ${issue ? 'underline decoration-warn decoration-2 underline-offset-4' : ''} ${ro ? 'text-ink-3' : ''}`}>
                           {isEditing
                             ? <input autoFocus aria-label={`Row ${r + 1}, column ${c + 1}`} value={editing.text} onChange={(e) => setEditing({ ...editing, text: e.target.value, error: undefined })} onKeyDown={onEditKey}
-                                onBlur={() => { if (editing) { const p = model.set(r, c, editing.text); if (!failed(p)) edit.patch(p); setEditing(null) } }}
+                                onBlur={() => { if (editing && !settled.current) { const p = model.set(r, c, editing.text); if (!failed(p)) edit.patch(p); setEditing(null) } }}
                                 inputMode={col.type === 'number' ? 'decimal' : 'text'} className={`h-9 w-full bg-raise px-2.5 outline-none ${col.type === 'number' ? 'text-right' : ''} ${editing.error ? 'text-warn' : ''}`} />
                             : col.type === 'flag'
                               ? <button type="button" tabIndex={-1} aria-label={`Total, row ${r + 1}`} aria-pressed={!!model.get(r, c)} onClick={() => write(model.set(r, c, String(!model.get(r, c))))} className="grid h-9 w-full place-items-center">{model.get(r, c) ? '✓' : <span className="text-ink-3">–</span>}</button>
