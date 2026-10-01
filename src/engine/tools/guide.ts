@@ -1,5 +1,5 @@
 import { describe as card, MENU, OFFERED } from "../slides/schema";
-import { exampleFor, GUIDE } from "../agent/prompts";
+import { exampleFor } from "../agent/prompts";
 import type { Style, TemplateId } from "../types";
 import { guideText } from "./guide-text";
 import { READ, tool } from "./types";
@@ -13,9 +13,9 @@ export const guideTools = [
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },
     run: async (_ctx, { style }) => ({ result: { style, guide: guideText(style) } }) }),
   tool<{ style: Style }>({ name: "list_templates", title: "List templates", group: "guide", scope: "account", annotations: READ,
-    description: "Every slide template you can use, with what it is for, plus the order to pick one in. Use it to choose a template yourself, or call suggest_template to have SmartChart choose.",
+    description: "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have SmartChart choose from the content.",
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },
-    run: async () => ({ result: { templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), guide: GUIDE } }) }),
+    run: async () => ({ result: { templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: "get_template for the one you pick; suggest_template to have SmartChart choose from the content." } }) }),
   tool<{ template: TemplateId; style: Style }>({ name: "get_template", title: "Template card", group: "guide", scope: "account", annotations: READ,
     description: "One template's card (every field with its type, limits and description, and the template's rules) and a worked example. Fetch it once per template before writing that kind of slide; cards don't change within a session.",
     input: { type: "object", additionalProperties: false, required: ["template", "style"], properties: { template: TEMPLATE, style: STYLE } },

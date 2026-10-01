@@ -23,9 +23,9 @@ const run = (tools: AnyTool[], name: string, input: unknown) => must(tools.find(
 describe('guide and account tools', () => {
   it('whoami', async () => expect((await run(accountTools, 'whoami', {})).result).toEqual({ email: 'a@b.c', callsLeftToday: 1990, contract: '2026-10-01' }))
   it('list_templates offers no archived template', async () => {
-    const r = (await run(guideTools, 'list_templates', { style: 'consulting' })).result as { templates: { template: string }[]; guide: string }
+    const r = (await run(guideTools, 'list_templates', { style: 'consulting' })).result as { templates: { template: string }[]; next: string }
     expect(r.templates.map((t) => t.template)).not.toContain('number')
-    expect(r.guide).toContain('stop at the first match')
+    expect(r.next).toContain('suggest_template')
   })
   it('get_template gives the card and a parsed example', async () => {
     const r = (await run(guideTools, 'get_template', { template: 'chart', style: 'pitch' })).result as { card: { template: string }; example: { template: string } }

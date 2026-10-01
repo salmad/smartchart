@@ -56,7 +56,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List templates",
     },
-    "description": "Every slide template you can use, with what it is for, plus the order to pick one in. Use it to choose a template yourself, or call suggest_template to have SmartChart choose.",
+    "description": "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have SmartChart choose from the content.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
