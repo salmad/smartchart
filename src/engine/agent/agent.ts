@@ -50,8 +50,6 @@ interface CallResult { clean: boolean; name: string; out: ToolOut; args: ToolArg
 type Draft = Slide & Record<string, unknown>;
 
 const MAX_TOOL_CALLS = 10, SHORTEN_ROUNDS = 2;
-// A deck opens on content: a cover or divider is made only when the user's message asks for one.
-export const ASKS_OPENER = /\b(covers?|title (slide|page)|opening slide|dividers?|sections?|chapters?)\b/i;
 export const NAMED_MARK = /\b(bars?|columns?|lines?|line chart|area|histogram)\b/i;
 // Intents where a clean write finishes the request, so code ends the turn without a reply call.
 const DONE_BY: Record<string, boolean> = { new_slide: true, change_template: true, edit_selected: true };
@@ -117,9 +115,6 @@ export async function runTurn({ text, deck, history, working, selection, edited 
       // An archived template cannot be named (it is not in the tool's enum); a model that writes it anyway is refused.
       if (isTemplate(asked) && !OFFERED.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${OFFERED.join(", ")}, or leave template out.` };
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
-      if ((template === "cover" || template === "section") && !ASKS_OPENER.test(ask)) {
-        return { error: `The user did not ask for a ${template === "cover" ? "cover" : "section divider"}. Start with the content itself: call create_slide for each point you planned, without a template.` };
-      }
       const current = replace ? find(replace)?.slide?.template : undefined;
       const requested = !!turnPre && turnPre.intent === "change_template" && isSure(turnPre, deck);
       if (replace && current && current !== template && !requested && !confirmable.has(replace)) {
@@ -280,7 +275,6 @@ const FIELD: Record<string, string> = { title: "title", subtitle: "subtitle", ta
 const NEXT = "What would you like to change next?";
 function codeReply(intent: string, r: CallResult, slide: Slide | null | undefined): string {
   const extra: string[] = [];
-  if (/illustrative/i.test(slide?.footnote || "")) extra.push("The figures are illustrative and marked in the footnote.");
   // Marks code picked, named by series: "Revenue as bars, Margin as a line".
   const marks = Object.entries(r.out.resolved || {}).map(([k, x]) => [k.match(/series\[(\d+)\]\.mark$/)?.[1], x.value]).filter(([i]) => i !== undefined)
     .map(([i, v]) => `${slide?.chart?.series?.[Number(i)]?.name || `series ${Number(i) + 1}`} as ${v === "line" ? "a line" : "bars"}`);

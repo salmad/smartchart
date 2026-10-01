@@ -50,10 +50,12 @@ function sourceCheck(s: Slide): Check | null {
   return { id: "R8", ok, msg: ok ? "Figures say where they come from" : "Figures with no source or footnote: say where they come from" };
 }
 
+// "2019–20" and "2019–2020" name a period: only the year counts, not the shorthand end.
+const YEAR_RANGE = /\b((?:19|20)\d{2})\s*[–-]\s*(?:\d{2}|\d{4})\b/g;
 const YEAR = (n: number, raw: string) => Number.isInteger(n) && n >= 1900 && n <= 2100 && !/[,.]/.test(raw);
 /** Figures in a text: "£9,400k" → 9400, "4.5×" → 4.5; four-digit years are left out. */
 // Thousands separators only between digit groups: "2030," at the end of a clause is the year 2030.
-export const numbersIn = (text: unknown): number[] => [...String(text).matchAll(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g)].map((m): [number, string] => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
+export const numbersIn = (text: unknown): number[] => [...String(text).replace(YEAR_RANGE, "$1").matchAll(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g)].map((m): [number, string] => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
 const close = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
 
 function bodyText(s: Slide): string {

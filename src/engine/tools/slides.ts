@@ -1,5 +1,5 @@
 import { applyPatch } from "../agent/patch.js";
-import { ASKS_OPENER, NAMED_MARK, matchNewSeries, prefixed, touches } from "../agent/agent.js";
+import { NAMED_MARK, matchNewSeries, prefixed, touches } from "../agent/agent.js";
 import { getAt, listOps } from "../slides/edit.js";
 import type { Slide } from "../types.js";
 import { insertIndex, newSlideId, slideAt, storylineRows } from "./doc.js";
@@ -20,11 +20,6 @@ function choicesToCode(input: unknown, request: string): unknown {
   if (chart && chart.stacking !== undefined && !/stack|percent|share/i.test(request)) chart.stacking = "auto";
   return input;
 }
-function openerAllowed(input: unknown, request: string) {
-  const t = (input as { template?: string } | null)?.template;
-  if ((t === "cover" || t === "section") && !ASKS_OPENER.test(request))
-    throw new ToolError("refused", `A ${t === "cover" ? "cover" : "section divider"} only when the user asks for one.`, "Pass the user's words in request, or write the content slide instead.");
-}
 const parsed = (v: unknown) => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v) as unknown; } catch { /* keep */ } } return v; };
 const docOf = (ctx: ToolContext) => structuredClone(ctx.deck as DeckDoc);
 
@@ -34,7 +29,6 @@ export const slideTools = [
     input: { type: "object", additionalProperties: false, required: ["deckId", "slide"], properties: { deckId: DECK, slide: SLIDE, after: AFTER, request: REQUEST, slideId: SLIDE_ID } },
     run: async (ctx, { slide, after, request = "", slideId }) => {
       const doc = docOf(ctx), input = choicesToCode(parsed(slide), request);
-      openerAllowed(input, request);
       if (slideId && (!/^s_[\w-]{1,32}$/.test(slideId) || doc.slides.some((s) => s.id === slideId)))
         throw new ToolError("bad_input", `slideId: ${slideId} is taken or malformed.`, "Leave slideId out; it is only for restoring a deleted slide.");
       const at = insertIndex(doc, after), w = await writeSlide(ctx, input, request), id = slideId ?? newSlideId(doc);
@@ -75,7 +69,6 @@ export const slideTools = [
     input: { type: "object", additionalProperties: false, required: ["deckId", "slideId", "slide"], properties: { deckId: DECK, slideId: SLIDE_ID, slide: SLIDE, request: REQUEST } },
     run: async (ctx, { slideId, slide, request = "" }) => {
       const doc = docOf(ctx), { item, index } = slideAt(doc, slideId), input = choicesToCode(parsed(slide), request);
-      openerAllowed(input, request);
       const w = await writeSlide(ctx, input, request);
       doc.slides[index] = { ...item, slide: w.slide, issues: w.issues, warnings: w.warnings, checks: [] };
       return { result: writeResult(ctx, doc, slideId, w), deck: doc, events: [{ slideId, what: "template", paths: [] }] };

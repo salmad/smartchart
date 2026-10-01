@@ -43,6 +43,13 @@ test("R11: title figures on the slide or derived", () => {
   assert.equal(get(s, "R11")?.ok, false);
 });
 
+test("R11: a year range's shorthand end is not a headline figure", () => {
+  const s = chart([REV]); s.title = "Revenue grew 4.5× across the 2019–20 rules and the 2021–2023 period";
+  assert.equal(get(s, "R11")?.ok, true);
+  s.title = "Revenue reached £20m across the 2019–20 rules";
+  assert.equal(get(s, "R11")?.ok, false);
+});
+
 test("R12: consulting title with figures on the slide carries a figure", () => {
   const s = chart([REV]); s.title = "Revenue grew strongly as churn fell";
   assert.equal(get(s, "R12")?.ok, false);

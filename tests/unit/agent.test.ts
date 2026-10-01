@@ -99,10 +99,10 @@ test("a shortened text that drops a figure is rejected; the agent fixes it", asy
 
 test("a sure new slide that ends on a clean write needs no reply call", async () => {
   const ctx = setup();
-  const agentStep = fakeAgent([(m) => toolCall("edit_slide", { slideId: reservedId(m), slide: { ...CHART, footnote: "Illustrative figures" } })]);
+  const agentStep = fakeAgent([(m) => toolCall("edit_slide", { slideId: reservedId(m), slide: CHART })]);
   const r = await runTurn({ ...ctx, text: "x", selection: null, models: { agentStep, jev: fakeJev({ intent: ["new_slide", 0.9], template: ["chart", 0.9] }) } });
   assert.equal(r.modelCalls, 1);
-  assert.equal(r.reply, "Added a chart slide. The figures are illustrative and marked in the footnote. Showing Revenue as bars; ask if you want it the other way. What would you like to change next?");
+  assert.equal(r.reply, "Added a chart slide. Showing Revenue as bars; ask if you want it the other way. What would you like to change next?");
 });
 
 test("an unsure request still ends with the agent's own reply", async () => {
@@ -220,14 +220,13 @@ test("create_slide offers every template, the big number and the quote included"
   for (const id of ["number", "quote", "pair", "summary"]) assert.ok(create.includes(`"${id}"`), id);
 });
 
-test("a cover or section the user did not ask for is refused: decks open on content", async () => {
+test("a cover the agent chooses to write is not blocked", async () => {
   const ctx = setup();
   const agentStep = fakeAgent([toolCall("create_slide", { about: "Q3 review", template: "cover" }), say("Ok.")]);
   await runTurn({ ...ctx, text: "Turn this into slides for the exec team. Revenue grew from £4.2m to £5.1m.", selection: null,
     models: { agentStep, jev: fakeJev({ intent: ["several_slides", 0.9] }) } });
   const out = JSON.parse(text(ctx.history.find((m) => m.role === "tool")));
-  assert.match(out.error, /did not ask for a cover/);
-  assert.equal(ctx.deck.slides.length, 0);
+  assert.equal(out.error, undefined);
 });
 
 test("a cover the user asked for is made", async () => {

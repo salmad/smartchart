@@ -24,9 +24,10 @@ describe('slide tools', () => {
     const out = await t('create_slide').run(ctxFor({ deck: emptyDeck() }), { deckId: 'd_1', slide: JSON.stringify(cardSlide) })
     expect(out.result).toMatchObject({ applied: true, n: 1 })
   })
-  it('create_slide refuses a cover the request did not ask for', async () => {
-    const cover = { template: 'cover', title: 'Acme' }
-    await expect(t('create_slide').run(ctxFor(), { deckId: 'd_1', slide: cover, request: 'revenue by year' })).rejects.toMatchObject({ code: 'refused' })
+  it('create_slide accepts a cover without the request asking for one', async () => {
+    const cover = { template: 'cover', title: 'Acme', subtitle: 'A revolving credit card for UK small businesses.' }
+    const out = await t('create_slide').run(ctxFor({ deck: emptyDeck() }), { deckId: 'd_1', slide: cover, request: 'revenue by year' })
+    expect(out.result).toMatchObject({ applied: true, n: 1 })
   })
   it('create_slide restores a deleted slide under its own id, refuses a taken one', async () => {
     const out = await t('create_slide').run(ctxFor({ deck: emptyDeck() }), { deckId: 'd_1', slide: cardSlide, slideId: 's_old' })
