@@ -84,7 +84,7 @@ The service owns the database (`api/_lib/db.ts`).
 - Streamable HTTP, **stateless**: one POST endpoint, no `Mcp-Session-Id`, JSON responses (no SSE). GET returns 405.
 - It validates `Origin`, honours `MCP-Protocol-Version`, and sets `maxDuration: 300` (for `ask`).
 - `serverInfo.version` carries the contract date.
-- Built with the official TypeScript SDK in stateless mode.
+- A small JSON-RPC handler, conformance-tested with the official SDK client.
 
 **REST** (`api/v1/[tool].ts`): `POST /api/v1/<tool>` with the input as the JSON body. It returns the same result object.
 

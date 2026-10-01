@@ -13,4 +13,5 @@ test('turns a node request into a web Request with body and headers', async () =
 
 test('the agent REST route resolves to api/v1.ts', () => {
   expect(routeFor('/api/v1/whoami')).toMatch(/api\/v1\.ts$/)
+  expect(routeFor('/mcp/v1')).toMatch(/api\/mcp\.ts$/)
 })
