@@ -51,8 +51,8 @@ There is no rendering on the server: the browser is the view.
 ```ts
 interface ToolEntry<I, O> {
   name: string; title: string; group: Group
-  description: string                 // written for a model: what, when, what comes back
-  input: JSONSchema; output: JSONSchema
+  description: string                 // written for a model: what, when, what comes back (the output shape too)
+  input: JSONSchema                   // outputSchema comes later, as an addition
   annotations: { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
   handler(ctx: ToolContext, input: I): Promise<{ result: O; deck?: DeckDoc; event?: DeckEvent }>
 }
@@ -211,7 +211,7 @@ Annotations: **R** = readOnly, **D** = destructive, **I** = idempotent. `openWor
 
 ### 4.8 Results and errors (all tools)
 
-- **Results:** every result returns `structuredContent` matching the output schema, plus one text line for clients that read text, e.g. "Applied s_a1b2 at 3 · 2 issues: title over 90 characters; …".
+- **Results:** every result returns `structuredContent` (its shape is described in the tool's description; a formal `outputSchema` is a later addition), plus one text line for clients that read text, e.g. "Applied s_a1b2 at 3 · 2 issues: title over 90 characters; …".
 - **Errors** have one shape: `{ error: { code, message, fix? } }`.
   - Tool-level errors (`not_found`, `bad_input` with the path, `refused`, `conflict`, `busy`, `quota`) come back as tool results with `isError: true`, so the model reads them and retries.
   - JSON-RPC errors are reserved for an unknown tool or arguments that fail the schema.
