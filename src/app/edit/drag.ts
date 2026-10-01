@@ -23,3 +23,9 @@ export function dropLine(boxes: Box[], from: number, to: number, axis: Axis): Bo
   const x = to >= rest.length ? b.right : b.left, y = to >= rest.length ? b.bottom : b.top
   return axis === 'x' ? { left: x - 1, right: x + 1, top: Math.min(first.top, last.top), bottom: Math.max(first.bottom, last.bottom) } : { left: Math.min(first.left, last.left), right: Math.max(first.right, last.right), top: y - 1, bottom: y + 1 }
 }
+
+/** Where a dragged gantt row lands: before which row (by the pointer's row half) and whether it nests (pointer over the right half of the label). */
+export function dropPlace(boxes: { top: number; bottom: number }[], p: { x: number; y: number }, label: { left: number; width: number }): { before: number; level: 0 | 1 } {
+  const before = boxes.findIndex((b) => p.y < (b.top + b.bottom) / 2)
+  return { before: before < 0 ? boxes.length : before, level: p.x > label.left + label.width / 2 ? 1 : 0 }
+}
