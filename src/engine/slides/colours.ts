@@ -159,7 +159,10 @@ export function allocate(slide: Slide | null | undefined, theme: Theme, accent?:
     ["ctx2", "ctx3"].forEach((s) => used.add(s));
     for (const t of ["neg", "pos"] as const) if ((chart.items || []).some((x) => x?.tone === t && !x.focus)) used.add(`${t}-fill`);
   }
-  if (chart && kind === "timeline") used.add("quiet");
+  if (chart && kind === "timeline") {
+    // Sub-rows are told from top-level by the two ends of the grey scale; with none, every bar is the quiet grey it always was.
+    if ((chart.rows || []).some((r) => r?.level === 1)) { used.add("ctx1"); used.add("ctx3"); } else used.add("quiet");
+  }
   const list = [...used];
   for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
     if (distance(vars[list[i]], vars[list[j]]) < MIN_DISTANCE) throw new Error(`colours: ${list[i]} and ${list[j]} are too close (${vars[list[i]]}, ${vars[list[j]]})`);

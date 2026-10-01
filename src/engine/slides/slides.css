@@ -281,6 +281,7 @@
 .tl-bar { fill: var(--c); }
 .row-lbl { transform: translate(0, -50%); white-space: normal; font: 500 26px/1.2 var(--text); color: var(--fg-2); }
 .row-lbl.focus { color: var(--fg); font-weight: 600; }
+.row-lbl.group { color: var(--fg); font-weight: 700; }
 .ms { fill: var(--fg); }
 .ms-line { stroke: var(--fg-2); stroke-width: 1.5; stroke-dasharray: 3 6; }
 .ms-lbl { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
