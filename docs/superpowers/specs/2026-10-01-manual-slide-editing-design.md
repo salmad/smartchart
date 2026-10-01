@@ -21,7 +21,7 @@ Let the user edit a slide by hand, on the slide itself, in an edit mode they ent
 | Emphasis in markup fields: `**bold**` and `[[focus]]` | A floating bar on text selection, with **Bold** and **Focus**. It only appears in markup fields. Positive and negative colours aren't offered by hand: existing ones survive, and the agent applies new ones when asked. |
 | Card icons (icon-lead cards) | Click the icon: choose from the curated set, or **Pick from the card text** (the same one Jev question the agent's write asks for an `auto` icon, about that card). It shows on the slide at once |
 | List items: cards, card bullets, steps, notes, table rows | "+" and "×" on hover, hidden at the template's min and max |
-| Chart data, every kind | Click the chart: it flips in place into a data grid (§4.3) |
+| Chart data, every kind | Click the chart: a data table opens in a dialog (§4.3) |
 | Template | A switcher in the edit bar (§4.4) |
 
 Not in edit mode: adding, removing and moving slides (the strip does that), deck look (style, theme, accent), and anything the schema doesn't have.
@@ -56,7 +56,7 @@ A new item **copies the shape of the item next to it** (icon or value lead, tone
 
 ### 4.3 Chart grid
 
-Clicking the chart replaces the chart area with a compact grid of inputs, in place and at the same size. The rest of the slide stays editable.
+Clicking the chart opens a dialog with the data as a table, wide enough to see every series. The slide redraws behind it as you edit, and again when you close it (Done, Esc or the ×).
 
 | Chart kind | Grid | Can add or remove |
 |---|---|---|
@@ -64,7 +64,7 @@ Clicking the chart replaces the chart area with a compact grid of inputs, in pla
 | waterfall | rows = items: label, value, a "total" checkbox | items |
 | timeline | rows = workstreams: label, start period, end period (selects from `periods`); a periods row that can be edited; a milestones row | rows, periods, milestones |
 
-Limits come from the schema. A new series copies the shape of the last one (mark, colour). "Show chart", or clicking outside the grid, flips back with a re-render. Chart kind and annotations are not edited here; those stay with the agent. `chartGrid` and `fromGrid(chart, grid)` convert both ways with no loss for every kind, and a test checks it. `fromGrid` takes the chart it came from so it can merge: marks, colours and formats survive, and an annotation that no longer points at a category or series is dropped.
+Limits come from the schema. A new series copies the shape of the last one (mark, colour).  Chart kind and annotations are not edited here; those stay with the agent. `chartGrid` and `fromGrid(chart, grid)` convert both ways with no loss for every kind, and a test checks it. `fromGrid` takes the chart it came from so it can merge: marks, colours and formats survive, and an annotation that no longer points at a category or series is dropped.
 
 ### 4.4 Template switch
 

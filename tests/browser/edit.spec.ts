@@ -83,7 +83,7 @@ test('the chart flips to its grid and a value edit lands', async ({ page }) => {
   const cell = page.getByLabel('Revenue, FY25')
   await cell.fill('16')
   await cell.blur()
-  await page.getByRole('button', { name: 'Show chart' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Save' }).click()
   expect((await saved(page, 1)).chart?.series?.[0]?.values).toEqual([10, 16])
 })
@@ -113,7 +113,7 @@ test('waterfall and timeline grids write their edits back', async ({ page }) => 
     const el = page.getByLabel(field)
     await el.fill(i === 0 ? '-12' : 'Q9')
     await el.blur()
-    await page.getByRole('button', { name: 'Show chart' }).click()
+    await page.getByRole('button', { name: 'Done' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0)
   }
