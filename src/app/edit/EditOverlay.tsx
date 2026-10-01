@@ -38,7 +38,7 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: 
       ))}
       {hit && hover && (
         <span ref={(m) => place(m, boxIn(hover, frame))} className={`${MARK} pointer-events-none rounded-md ring-1 ring-line-2`}>
-          <span className="pointer-events-auto absolute -right-3 -top-3 flex gap-1">
+          <span className="pointer-events-auto absolute left-full top-1/2 ml-1.5 flex -translate-y-1/2 flex-col gap-1">
             {hit.op.length < hit.op.max && <button type="button" aria-label="Add after" onMouseDown={keep} onClick={() => edit.patch(newItem(edit.draft, style, hit.op, hit.index + 1), `${hit.op.path}[${hit.index + 1}]`)}
               className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><Plus className="size-3.5" /></button>}
             {(hit.op.length > hit.op.min || !hit.op.required) && <button type="button" aria-label="Remove" onMouseDown={keep} onClick={() => { setHover(null); edit.patch(removeItem(hit.op, hit.index)) }}
