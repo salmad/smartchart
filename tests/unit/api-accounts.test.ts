@@ -89,7 +89,7 @@ describe('share API', () => {
     const seen = await anyone(sreq('GET', `?s=${share}`))
     expect(seen.headers.get('cache-control')).toBe('no-store')
     const body = await seen.json()
-    expect(body).toEqual({ name: 'Board update', style: 'pitch', theme: 'ink', accent: null, slides: [{ template: 'cover', title: 'Q3' }] })
+    expect(body).toEqual({ name: 'Board update', style: 'pitch', theme: 'ink', accent: null, slides: [{ template: 'cover', title: 'Q3' }], rev: 1, ids: ['s1'] })
     expect(JSON.stringify(body)).not.toContain('secret') // never the chat or the agent's history
     expect(await (await h(sreq('DELETE', '?id=d_1'))).json()).toEqual({ share: null })
     expect((await anyone(sreq('GET', `?s=${share}`))).status).toBe(404)
@@ -129,5 +129,23 @@ describe('session and routes', () => {
     expect(routeFor('/api/decks')).toBeDefined()
     expect(routeFor('/api/share')).toBeDefined()
     expect(routeFor('/api/nope')).toBeUndefined()
+  })
+
+  it('rev-only read, presence, events', async () => {
+    const db = fakeDb(), handle = decksHandler({ userFrom: async () => ({ id: 'u', email: 'a@b.c', via: 'session' }), db: () => db })
+    await db.putDeck('u', 'd_1', 'x', { items: [] }, {}, 0)
+    expect(await (await handle(new Request('http://x/api/decks?id=d_1&rev=1'))).json()).toEqual({ rev: 1, presence: {} })
+    await handle(new Request('http://x/api/decks?id=d_1&presence=1', { method: 'PUT', body: JSON.stringify({ editing: 's_a' }) }))
+    const p = (await (await handle(new Request('http://x/api/decks?id=d_1&rev=1'))).json()) as { rev: number; presence: { editing: { slideId: string } } }
+    expect(p).toMatchObject({ rev: 1, presence: { editing: { slideId: 's_a' } } })
+    await db.addEvents('u', 'd_1', [{ rev: 2, by: 'Claude Code', slideId: 's_a', what: 'updated', paths: ['title'] }])
+    expect(await (await handle(new Request('http://x/api/decks?id=d_1&events=1'))).json()).toMatchObject([{ slideId: 's_a' }])
+  })
+  it('share: rev-only read and ids in the public deck', async () => {
+    const db = fakeDb(), handle = shareHandler({ userFrom: async () => null, db: () => db })
+    await db.putDeck('u', 'd_1', 'x', { items: [{ id: 's_a', slide: { template: 'section', title: 'Plan' } }] }, {}, 0)
+    const tok = await db.shareDeck('u', 'd_1', true)
+    expect(await (await handle(new Request(`http://x/api/share?s=${tok}&rev=1`))).json()).toEqual({ rev: 1 })
+    expect(await (await handle(new Request(`http://x/api/share?s=${tok}`))).json()).toMatchObject({ rev: 1, ids: ['s_a'] })
   })
 })

@@ -6,12 +6,13 @@ import type { Db } from './db.js'
 const ID = /^[\w-]{1,64}$/
 
 /** What the room sees: the deck's name, look and slides. Never the chat, the agent's history or who made it. */
-export interface SharedDeck { name: string; style: unknown; theme: unknown; accent: unknown; slides: unknown[] }
+export interface SharedDeck { name: string; style: unknown; theme: unknown; accent: unknown; slides: unknown[]; rev: number; ids: string[] }
 
-export function publicDeck(name: string, data: unknown): SharedDeck {
+export function publicDeck(name: string, data: unknown, rev: number): SharedDeck {
   const d = (data && typeof data === 'object' ? data : {}) as { style?: unknown; theme?: unknown; accent?: unknown; items?: unknown }
-  const items = Array.isArray(d.items) ? d.items as { slide?: unknown }[] : []
-  return { name, style: d.style ?? null, theme: d.theme ?? null, accent: d.accent ?? null, slides: items.map((i) => i?.slide).filter(Boolean) }
+  const items = Array.isArray(d.items) ? d.items as { id?: string; slide?: unknown }[] : []
+  return { name, style: d.style ?? null, theme: d.theme ?? null, accent: d.accent ?? null, slides: items.map((i) => i?.slide).filter(Boolean), rev,
+    ids: items.filter((i) => i?.slide).map((i) => i.id).filter((x): x is string => !!x) }
 }
 
 export function shareHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
@@ -22,9 +23,13 @@ export function shareHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
 
     if (token !== null) {
       if (request.method !== 'GET') return Response.json({ error: 'method not allowed' }, { status: 405 })
+      if (ID.test(token) && q.get('rev')) {
+        const r = await db.sharedRev(token)
+        return r ? Response.json({ rev: r.rev }, { headers: { 'Cache-Control': 'no-store' } }) : Response.json({ error: 'This link was turned off, or never existed.' }, { status: 404 })
+      }
       const d = ID.test(token) ? await db.sharedDeck(token) : null
       // The link always shows the latest version, so nothing is cached along the way.
-      return d ? Response.json(publicDeck(d.name, d.data), { headers: { 'Cache-Control': 'no-store' } })
+      return d ? Response.json(publicDeck(d.name, d.data, d.rev), { headers: { 'Cache-Control': 'no-store' } })
         : Response.json({ error: 'This link was turned off, or never existed.' }, { status: 404 })
     }
 
