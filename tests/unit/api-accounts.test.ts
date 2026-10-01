@@ -1,42 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { sessionUser, type User } from '../../api/_lib/auth'
-import type { Db, DeckRow } from '../../api/_lib/db'
+import { fakeDb } from './fake-db'
 import { decksHandler } from '../../api/_lib/decks'
 import { shareHandler } from '../../api/_lib/share'
 import { modelGate } from '../../api/_lib/quota'
 import { routeFor } from '../../vite/api-dev'
-
-/** An in-memory Db with the same ownership rules as the SQL one. */
-type FakeRow = DeckRow & { user: string; share?: string | null }
-function fakeDb(): Db & { rows: Map<string, FakeRow> } {
-  const rows = new Map<string, FakeRow>()
-  let n = 0
-  return {
-    rows,
-    listDecks: async (u) => [...rows.values()].filter((r) => r.user === u).sort((a, b) => b.updated - a.updated).map(({ id, name, updated, data }) => {
-      const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
-      return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null }
-    }),
-    getDeck: async (u, id) => { const r = rows.get(id); return r && r.user === u ? r : null },
-    putDeck: async (u, id, name, data, chat, baseRev) => {
-      const r = rows.get(id)
-      if (r && r.user !== u) return 'foreign'
-      if (r && r.rev !== baseRev) return 'conflict'
-      const rev = (r?.rev ?? 0) + 1
-      rows.set(id, { id, name, data, chat, rev, updated: Date.now() + rows.size, user: u, share: r?.share })
-      return { rev }
-    },
-    countCall: async () => 1,
-    deleteDeck: async (u, id) => { const r = rows.get(id); return !!r && r.user === u && rows.delete(id) },
-    shareDeck: async (u, id, on) => {
-      const r = rows.get(id)
-      if (!r || r.user !== u) return undefined
-      if (on !== undefined) r.share = on ? r.share ?? `tok_${++n}` : null
-      return r.share ?? null
-    },
-    sharedDeck: async (t) => { const r = [...rows.values()].find((x) => x.share === t); return r ? { name: r.name, data: r.data } : null },
-  }
-}
 
 const as = (who: User | null) => async () => who
 const ann: User = { id: 'u_ann', email: 'ann@example.com' }, bob: User = { id: 'u_bob', email: 'bob@example.com' }
