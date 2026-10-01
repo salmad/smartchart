@@ -15,7 +15,7 @@ const hint = (path: string) => { const k = path.replace(/\[\d+\]/g, '').split('.
 const fieldOf = (t: EventTarget | null) => (t instanceof Element ? t.closest<HTMLElement>('[data-path]') : null)
 
 export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
-  const frame = useRef<HTMLDivElement>(null), editRef = useRef(edit), focus = useRef<{ path: string; at: number } | null>(null)
+  const frame = useRef<HTMLDivElement>(null), editRef = useRef(edit)
   editRef.current = edit
   const { style, theme, accent } = deck
 
@@ -28,7 +28,11 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       if (editRef.current.samples.has(f.dataset.path ?? '')) f.dataset.sample = ''
     })
     // After a structural change, the cursor goes back where it was asked to be (a new item's first field).
-    if (focus.current) { const f = s.querySelector<HTMLElement>(`[data-path="${focus.current.path}"]`); if (f) { f.focus(); setCaret(f, focus.current.at) } focus.current = null }
+    const want = editRef.current.takeFocus()
+    if (want) {
+      const f = s.querySelector<HTMLElement>(`[data-path="${want}"]`) ?? s.querySelector<HTMLElement>(`[data-item="${want}"] [data-path]`)
+      if (f) { f.focus(); setCaret(f, 0) }
+    }
     const fit = () => s.style.setProperty('--s', String(el.clientWidth / 1920))
     const ro = new ResizeObserver(fit)
     ro.observe(el)
@@ -75,8 +79,7 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       if (!hit || hit.op.length >= hit.op.max) return
       const set = newItem(cur.draft, style, hit.op, hit.index + 1)
       const tail = (f.dataset.path ?? '').slice((itemEl.dataset.item ?? '').length)
-      focus.current = { path: `${hit.op.path}[${hit.index + 1}]${tail}`, at: 0 }
-      cur.patch(set)
+      cur.patch(set, `${hit.op.path}[${hit.index + 1}]${tail}`)
     }
     const onLeave = (e: FocusEvent) => { if (fieldOf(e.target) && !fieldOf(e.relatedTarget)) editRef.current.commit() }
     el.addEventListener('input', onInput); el.addEventListener('compositionend', onComposed)

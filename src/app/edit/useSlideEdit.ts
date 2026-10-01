@@ -13,7 +13,10 @@ export interface Issue { msg: string; path?: string }
 export interface SlideEdit {
   draft: Slide; shown: Slide; dirty: boolean; issues: Issue[]; samples: Set<string>; saving: boolean; error: string | null
   set(path: string, value: string): void
-  patch(set: Record<string, unknown>): void
+  /** Writes a patch and re-renders. `focus` is where the cursor goes after: a field's path, or an item's (its first field). */
+  patch(set: Record<string, unknown>, focus?: string): void
+  /** The cursor request left by the last patch, once. */
+  takeFocus(): string | null
   replace(slide: Slide, samples: string[]): void
   commit(): void
   save(): Promise<void>
@@ -24,7 +27,7 @@ interface Options { item: Item; index: number; deck: Deck; style: Style; measure
 const MEASURE_MS = 300
 
 export function useSlideEdit({ item, index, deck, style, measurer, save, onDone }: Options): SlideEdit {
-  const draft = useRef(item.slide)
+  const draft = useRef(item.slide), focus = useRef<string | null>(null)
   const [version, setVersion] = useState(0), [shown, setShown] = useState(item.slide)
   const [issues, setIssues] = useState<Issue[]>([]), [samples, setSamples] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null)
@@ -59,7 +62,8 @@ export function useSlideEdit({ item, index, deck, style, measurer, save, onDone 
     // Read through, not copied: two keystrokes before React re-renders must both see the latest draft.
     get draft() { return draft.current }, shown, dirty, issues, samples, saving, error,
     set: (path, value) => { write({ [path]: value }) },
-    patch: (set) => { if (write(set)) setShown(draft.current) },
+    patch: (set, at) => { if (write(set)) { focus.current = at ?? null; setShown(draft.current) } },
+    takeFocus: () => { const f = focus.current; focus.current = null; return f },
     replace: (slide, next) => { draft.current = slide; setSamples(new Set(next)); setVersion((v) => v + 1); setShown(slide) },
     commit: () => setShown(draft.current),
     save: async () => {
