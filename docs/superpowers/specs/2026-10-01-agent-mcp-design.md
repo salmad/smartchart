@@ -36,7 +36,7 @@ There is no rendering on the server: the browser is the view.
           └──────────────────────┬───────┴────────────────────────────────────────┘
                                  ▼
                  Tool registry (src/engine/tools/, framework-free)
-     entry: name · title · description · input schema · output schema · annotations · handler
+     entry: name · title · description · input schema · annotations · handler
                                  ▼
                 Deck service (api/_lib/deck-service.ts, server only)
      auth → load deck (Neon) → handler(ctx, input) → save with rev (retry once) → event → result
@@ -51,8 +51,8 @@ There is no rendering on the server: the browser is the view.
 ```ts
 interface ToolEntry<I, O> {
   name: string; title: string; group: Group
-  description: string                 // written for a model: what, when, what comes back
-  input: JSONSchema; output: JSONSchema
+  description: string                 // written for a model: what, when, what comes back (the output shape too)
+  input: JSONSchema                   // outputSchema comes later, as an addition
   annotations: { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
   handler(ctx: ToolContext, input: I): Promise<{ result: O; deck?: DeckDoc; event?: DeckEvent }>
 }
@@ -84,7 +84,7 @@ The service owns the database (`api/_lib/db.ts`).
 - Streamable HTTP, **stateless**: one POST endpoint, no `Mcp-Session-Id`, JSON responses (no SSE). GET returns 405.
 - It validates `Origin`, honours `MCP-Protocol-Version`, and sets `maxDuration: 300` (for `ask`).
 - `serverInfo.version` carries the contract date.
-- Built with the official TypeScript SDK in stateless mode.
+- A small JSON-RPC handler, conformance-tested with the official SDK client.
 
 **REST** (`api/v1/[tool].ts`): `POST /api/v1/<tool>` with the input as the JSON body. It returns the same result object.
 
@@ -97,7 +97,7 @@ The service owns the database (`api/_lib/db.ts`).
 ### 2.6 Live view (editor and share page)
 
 - **A cheap revision check:** `GET /api/decks?id=…&rev=1` and `GET /api/share?s=…&rev=1` return only `{ rev, presence }`, with `Cache-Control: no-store`.
-- **Both pages poll it** every 3 s while the tab is visible, and on focus. When `rev` changes they reload and move to the slide that changed.
+- **Nothing polls and nothing checks on focus** (decided 2026-10-01: the user reloads by hand; a push channel is the later option). A save refused as stale merges the newer deck by slide id.
 - **The editor** merges by slide id (section 8) and never reloads over a hand edit in progress.
 - **Opening at one slide:** both links accept `?slide=<slideId>`. Ids, not positions.
 - **The share data:** `publicDeck()` gains `rev` and `slides[].id`.
@@ -211,7 +211,7 @@ Annotations: **R** = readOnly, **D** = destructive, **I** = idempotent. `openWor
 
 ### 4.8 Results and errors (all tools)
 
-- **Results:** every result returns `structuredContent` matching the output schema, plus one text line for clients that read text, e.g. "Applied s_a1b2 at 3 · 2 issues: title over 90 characters; …".
+- **Results:** every result returns `structuredContent` (its shape is described in the tool's description; a formal `outputSchema` is a later addition), plus one text line for clients that read text, e.g. "Applied s_a1b2 at 3 · 2 issues: title over 90 characters; …".
 - **Errors** have one shape: `{ error: { code, message, fix? } }`.
   - Tool-level errors (`not_found`, `bad_input` with the path, `refused`, `conflict`, `busy`, `quota`) come back as tool results with `isError: true`, so the model reads them and retries.
   - JSON-RPC errors are reserved for an unknown tool or arguments that fail the schema.
@@ -283,7 +283,7 @@ src/engine/agent/      agent-prompt.ts split into sections (shared + in-app)
 api/_lib/              deck-service.ts · models.ts · keys.ts · rate.ts · db.ts (+ events, presence, named, api_keys)
 api/mcp/v1.ts          MCP host
 api/v1/[tool].ts       REST host
-src/app/               remote.ts (merge on 409, rev polling, events → edited) · Shared.tsx (polling) · account menu (key, connect)
+src/app/               remote.ts (merge on 409, merge on 409, events → edited) · Shared.tsx (?slide=) · account menu (key, connect)
 ```
 
 ## 11. Testing

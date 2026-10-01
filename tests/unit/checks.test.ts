@@ -75,7 +75,7 @@ test("R11 accepts figures code computed: a CAGR, a waterfall total, a 100% share
   const wf: Slide = { template: "chart", title: "ARR reaches £17.5m; [[new]] adds £6.2m", source: "Model", chart: { kind: "waterfall", format: "£{v}m",
     items: [{ label: "FY25", value: 9.8 }, { label: "New", value: 6.2, focus: true }, { label: "Churn", value: -1.4 }, { label: "Price", value: 2.9 }, { label: "FY26", total: true }] } };
   assert.equal(get(wf, "R11")?.ok, true);
-  const mix = { ...chart([{ ...REV, color: "neutral", values: [7, 12, 20, 30] }, { ...REV, name: "Card", values: [3, 8, 18, 34] }], { stacked: "100" }), title: "[[Card]] rises from 30% to 53%" };
+  const mix = { ...chart([{ ...REV, color: "neutral", values: [7, 12, 20, 30] }, { ...REV, name: "Card", values: [3, 8, 18, 34] }], { stacking: "percent" }), title: "[[Card]] rises from 30% to 53%" };
   assert.equal(get(mix, "R11")?.ok, true);
 });
 

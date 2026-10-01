@@ -1,4 +1,4 @@
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import assert from "node:assert/strict";
 import { TOOLS, agentSystem, stateBlock, workingBlock } from "../../src/engine/agent/agent-prompt";
 
@@ -50,4 +50,9 @@ test("the deck state names slides edited by hand since the last turn", () => {
   const block = stateBlock({ style: "consulting", theme: "ink", slides: [{ id: "s1", slide: { template: "section", title: "A" } }], selection: null, edited: ["s1"] });
   assert.match(block, /Edited by hand since the last turn: s1/);
   assert.doesNotMatch(stateBlock({ style: "consulting", theme: "ink", slides: [], selection: null }), /Edited by hand/);
+});
+
+test("agentSystem is unchanged by the split into sections", () => {
+  expect(agentSystem("consulting")).toMatchSnapshot();
+  expect(agentSystem("pitch")).toMatchSnapshot();
 });

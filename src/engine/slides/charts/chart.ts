@@ -44,7 +44,7 @@ const asBars = (c: Chart): BarsChart => ({ ...c, series: c.series ?? [], categor
 function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Marker[], { slots, labelled }: SeriesColours) {
   const spec = asBars(chart);
   const B = spec.series.filter((s) => s.mark !== "line"), L = spec.series.filter((s) => s.mark === "line");
-  const pct = spec.stacked === "100" && B.length > 1, stacked = (spec.stacked === true || pct) && B.length > 1;
+  const pct = spec.stacking === "percent" && B.length > 1, stacked = (spec.stacking === "stacked" || pct) && B.length > 1;
   const sh = pct ? shares(spec) : null, val = (s: Series, i: number) => (sh ? sh[B.indexOf(s)][i] : s.values[i]);
   const unit = pct ? "{v}%" : B[0].format || spec.format;
   const anns = pct ? [] : spec.annotations || [], arrows = anns.filter((a) => a.type !== "target"), targets = anns.filter((a) => a.type === "target");

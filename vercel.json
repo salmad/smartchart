@@ -4,7 +4,12 @@
     { "source": "/proto/journey/:path*", "destination": "/", "permanent": true },
     { "source": "/proto/v5/:path*", "destination": "/", "permanent": true }
   ],
-  "rewrites": [{ "source": "/api/auth/:path*", "destination": "/api/auth" }, { "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "/api/auth" },
+    { "source": "/api/v1/:tool*", "destination": "/api/v1?tool=:tool*" },
+    { "source": "/mcp/v1", "destination": "/api/mcp" },
+    { "source": "/((?!api/|mcp/).*)", "destination": "/index.html" }
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite"

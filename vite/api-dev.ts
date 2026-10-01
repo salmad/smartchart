@@ -19,7 +19,7 @@ function apiRewrites(root: string): { match: RegExp; to: string }[] {
 /** The api/ file that serves a request path, the way Vercel resolves it: a rewrite first, then api/<path>.ts.
     Folders and files starting with _ are private, as on Vercel. */
 export function routeFor(pathname: string, root = process.cwd()): string | undefined {
-  const target = apiRewrites(root).find((r) => r.match.test(pathname))?.to ?? pathname
+  const target = (apiRewrites(root).find((r) => r.match.test(pathname))?.to ?? pathname).split('?')[0]
   if (!target.startsWith('/api/')) return undefined
   const parts = target.slice('/api/'.length).split('/')
   if (parts.some((s) => s === '' || s === '..' || s.startsWith('_'))) return undefined

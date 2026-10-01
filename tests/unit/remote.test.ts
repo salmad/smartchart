@@ -133,3 +133,11 @@ test('a deck saved before chats were kept apart opens with its history, and save
   expect(await repo.get('d_old')).toMatchObject({ history: [{ role: 'user', content: 'old' }] })
   expect(await repo.save(deck('d_old', 2))).toBeNull()
 })
+
+test('after a get, the repo knows the deck it read and the revision it holds', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
+  await repo.save(deck('d_1', 5))
+  const got = await repo.get('d_1')
+  expect(repo.base?.('d_1')).toEqual(got)
+  expect(repo.known?.('d_1')).toBe(rows.get('d_1')?.rev)
+})

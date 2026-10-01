@@ -45,10 +45,10 @@ function collect(s: Slide): Question[] {
         options: { bar: "Bars: sizes compared across categories or a few periods.", line: "A line: a trend over many periods, a forecast or scenario, a rate in another unit over bars, or a reference such as a target." },
         apply: (v) => { x.mark = v as Series["mark"]; } });
     });
-    if (c.stacked === "auto") qs.push({ id: "stacked", path: "chart.stacked", min: P_AUTO, fallback: "side_by_side",
+    if (c.stacking === "auto") qs.push({ id: "stacking", path: "chart.stacking", min: P_AUTO, fallback: "side_by_side",
       instructions: `Should the bar series be stacked or side by side?\nChart guide:\n${GUIDE}`,
       options: { stacked: "Stacked: the series are parts of one whole whose total matters (revenue by segment).", side_by_side: "Side by side: the point is comparing the series with each other (us vs them), or they do not add up." },
-      apply: (v) => { c.stacked = v === "stacked"; } });
+      apply: (v) => { c.stacking = v === "stacked" ? "stacked" : "none"; } });
   }
   if (s.focus === "auto") {
     const f = focusItems(s);

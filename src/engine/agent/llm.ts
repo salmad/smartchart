@@ -16,7 +16,7 @@ export type JevFn = (state: string, questions: Record<string, JevQuestion>) => P
 
 interface Usage { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number; cost?: number }
 interface GlmResponse { choices?: { message?: { content?: string | null; tool_calls?: ToolCall[] } }[]; usage?: Usage }
-interface JevResponse { answers?: Record<string, { choice: string; probabilities: Record<string, number> }>; usage?: Usage }
+export interface JevResponse { answers?: Record<string, { choice: string; probabilities: Record<string, number> }>; usage?: Usage }
 
 /** A model call that takes longer than this is abandoned (then retried). */
 const TIMEOUT_MS = 60_000;
@@ -64,22 +64,32 @@ export async function complete({ messages, model = FLASH, temperature = 0.3, max
 /* Jev option keys must be plain identifiers; map anything else and back. */
 const keyOf = (s: string) => s.replace(/[^A-Za-z0-9_]/g, "_");
 
+/** Jev's wire format: option keys must be plain identifiers. */
+export function jevRequest(questions: Record<string, JevQuestion>): { qs: Record<string, unknown>; back: Record<string, Record<string, string>> } {
+  const back: Record<string, Record<string, string>> = {};
+  const qs = Object.fromEntries(Object.entries(questions).map(([id, q]) => {
+    back[id] = Object.fromEntries(Object.keys(q.options).map((v) => [keyOf(v), v]));
+    return [id, { type: "choice", instructions: q.instructions, criteria: Object.fromEntries(Object.entries(q.options).map(([v, d]) => [keyOf(v), d])) }];
+  }));
+  return { qs, back };
+}
+export function jevAnswers(j: JevResponse, back: Record<string, Record<string, string>>): Record<string, JevAnswer> {
+  const answers: Record<string, JevAnswer> = {};
+  for (const [id, a] of Object.entries(j.answers || {})) {
+    const probabilities = Object.fromEntries(Object.entries(a.probabilities).map(([k, v]) => [back[id]?.[k] ?? k, v]));
+    const choice = back[id]?.[a.choice] ?? a.choice;
+    answers[id] = { choice, p: probabilities[choice] ?? 0, probabilities };
+  }
+  return answers;
+}
+
 /**
  * Jev: several closed-set decisions in one call.
  * questions: { id: { instructions, options: { value: description } } }
  * returns   { id: { choice, p, probabilities } } with the original option values.
  */
 export const jev: JevFn = async (state, questions) => {
-  const back: Record<string, Record<string, string>> = {};
-  const qs = Object.fromEntries(Object.entries(questions).map(([id, q]) => {
-    back[id] = Object.fromEntries(Object.keys(q.options).map((v) => [keyOf(v), v]));
-    return [id, { type: "choice", instructions: q.instructions, criteria: Object.fromEntries(Object.entries(q.options).map(([v, d]) => [keyOf(v), d])) }];
-  }));
+  const { qs, back } = jevRequest(questions);
   const { j, ms } = await post<JevResponse>("/api/jev", { state, questions: qs });
-  const answers: Record<string, JevAnswer> = {};
-  for (const [id, a] of Object.entries(j.answers || {})) {
-    const probabilities = Object.fromEntries(Object.entries(a.probabilities).map(([k, v]) => [back[id][k] ?? k, v]));
-    answers[id] = { choice: back[id][a.choice] ?? a.choice, p: probabilities[back[id][a.choice] ?? a.choice] ?? 0, probabilities };
-  }
-  return Object.assign(answers, { _ms: ms, _cost: j.usage?.cost ?? 0 });
+  return Object.assign(jevAnswers(j, back), { _ms: ms, _cost: j.usage?.cost ?? 0 });
 };

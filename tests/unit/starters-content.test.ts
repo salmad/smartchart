@@ -8,11 +8,11 @@ test('no real brands in any starter string', () => {
   const hits = [...strings(STARTERS), FOOTER].filter((s) => DENY.test(s))
   expect(hits).toEqual([])
 })
-// The mix chart holds money; with stacked "100" the engine draws the shares, which must add to 100.
+// The mix chart holds money; with stacking "percent" the engine draws the shares, which must add to 100.
 test('100% stacked shares sum to 100 in every category', () => {
   const mix = STARTERS.find((s) => s.id === 'chart-mix')?.consulting.chart
   if (!mix) throw new Error('chart-mix missing')
-  expect(mix.stacked).toBe('100')
+  expect(mix.stacking).toBe('percent')
   const rows = shares(mix), n = mix.categories?.length ?? 0
   for (let i = 0; i < n; i++) expect(rows.reduce((t, r) => t + r[i], 0)).toBeCloseTo(100, 9)
 })

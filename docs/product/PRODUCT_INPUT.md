@@ -123,6 +123,12 @@ The key idea is **"LLM as configurator, not designer."** The agent emits a small
 10. **Edit slide by hand.** Let the user edit a slide directly (text, numbers, maybe highlights) without going through the chat. Edits go through the same schema limits and fit check as agent edits, so a hand edit can't break the design. Open: inline editing on the slide or a side panel, and which fields can be edited.
 11. **Big number as a quote-like slide.** The `number` starter (the £540k problem slide) is archived from the gallery since 2026-09-28: next to a title and subtitle, one number left most of the slide empty. Next layout: no title, just the number and a line of text, like a pull quote. Until then the agent cannot pick or name `number` (`ARCHIVED` in `schema.ts`: out of the router, the picking guide and the create_slide enum); existing slides still render.
 
+12. **Decks as files an agent edits (git-like storage).** Do we make the deck config a set of text files (for example one markdown or JSON file per slide, Slidev-style, plus a small deck file for style, theme and order) that agents edit directly? The files could be git-tracked and diffed easily. At scale, many users would cost far less: a change stores a small diff instead of the whole deck saved again each time. Today a deck is one JSON blob that is rewritten in full on every save, with one `rev` counter per deck as the conflict guard. Raised 2026-10-01 while building the agent MCP (`docs/superpowers/plans/2026-10-01-agent-mcp-m1-m2.md`).
+   - Per-slide versions would end whole-deck conflicts (Claude on slide 3 against you on slide 7) and make `mergeDecks` mostly unnecessary.
+   - It would give undo, "what did Claude change?" and restore for free; `deck_events` is only a log today.
+   - The tool contract (slides addressed by id, a `rev` in every write result) does not block this, so it can arrive later without breaking connected agents.
+   - Open: the file format for a slide; whether storage is real git, a versions table or content-addressed blobs; how the app edits files without the chat; how checks warn on a file edited outside the app (checks warn, never rewrite).
+
 ### Design proposals
 - `docs/design/proposals/slides-v4.html` (**chosen for the MVP**, "Ink"): v1 rebuilt with the vocabulary of the marketing-heavy example deck:
   - Archivo condensed display type: 900 uppercase for Pitch, 800 sentence case for Consulting

@@ -1,6 +1,6 @@
 // The decks API, built from its dependencies so tests can run it against a fake database and user.
 import type { UserFrom } from './auth.js'
-import type { Db } from './db.js'
+import type { Db, Presence } from './db.js'
 
 const ID = /^[\w-]{1,64}$/
 const MAX_BYTES = 2_000_000
@@ -11,7 +11,21 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (!db) return Response.json({ error: 'Saving is not set up on this server.' }, { status: 503 })
     const user = await deps.userFrom(request)
     if (!user) return Response.json({ error: 'Sign in to see your decks.' }, { status: 401 })
-    const id = new URL(request.url).searchParams.get('id')
+    const q = new URL(request.url).searchParams, id = q.get('id')
+
+    // Live view: the app asks for the revision (and who is working) every few seconds, and for what changed since.
+    if (request.method === 'GET' && id && q.get('rev')) {
+      const m = ID.test(id) ? await db.getDeckMeta(user.id, id) : null
+      return m ? Response.json({ rev: m.rev, presence: m.presence }, { headers: { 'Cache-Control': 'no-store' } }) : Response.json({ error: 'No such deck.' }, { status: 404 })
+    }
+    if (request.method === 'GET' && id && q.get('events') !== null)
+      return Response.json(ID.test(id) ? await db.eventsSince(user.id, id, Number(q.get('events')) || 0) : [], { headers: { 'Cache-Control': 'no-store' } })
+    if (request.method === 'PUT' && id && q.get('presence')) {
+      const b = (await request.json().catch(() => ({}))) as { busy?: unknown; editing?: unknown }, now = Date.now(), p: Presence = {}
+      if (b.busy === true) p.busy = { by: 'SmartChart', until: now + 90_000 }
+      if (typeof b.editing === 'string') p.editing = { slideId: b.editing, until: now + 60_000 }
+      return (ID.test(id) && await db.setPresence(user.id, id, p)) ? Response.json({ ok: true }) : Response.json({ error: 'No such deck.' }, { status: 404 })
+    }
 
     if (request.method === 'GET' && !id) return Response.json(await db.listDecks(user.id))
     if (request.method === 'GET') {

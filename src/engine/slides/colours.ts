@@ -121,7 +121,7 @@ export function seriesSlots(chart: Chart): { slots: (Slot | null)[]; labelled: b
   if (focus >= 0) slots[focus] = "focus";
   const ctx = series.map((_s, i) => i).filter((i) => i !== focus);
   const ctxBars = ctx.filter((i) => series[i].mark !== "line");
-  if (!chart.stacked && ctxBars.length === 1) { slots[ctxBars[0]] = "quiet"; labelled[ctxBars[0]] = true; }
+  if (chart.stacking !== "stacked" && chart.stacking !== "percent" && ctxBars.length === 1) { slots[ctxBars[0]] = "quiet"; labelled[ctxBars[0]] = true; }
   // Context recedes: `neutral` series take the quietest grey that still has 3:1, then louder ones; a `contrast`
   // series (one that must read clearly) takes the strongest. Series 5–6 take the second hue.
   // Names are unique within a chart (validation), so one name is one colour in the bars, legend and end labels (C8).

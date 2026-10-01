@@ -1,6 +1,6 @@
 /* Decks on the server for a signed-in user (/api/decks). The session cookie authenticates each call;
    a 401 means the session ended, and `onSignedOut` hears about it. */
-import { deckName, localDeckRepo, type DeckRepo, type DeckSummary, type SavedDeck } from './store'
+import { deckName, localDeckRepo, type DeckEvent, type DeckRepo, type DeckSummary, type Presence, type SavedDeck } from './store'
 
 /** What the chat says when the server refuses a save because the deck moved on since this tab read it. */
 export const STALE = 'This deck was changed in another tab or window. Reload to see the latest.'
@@ -21,6 +21,8 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
   }
   // The revision last read or written per deck: a save from an older one is refused.
   const revs = new Map<string, number>()
+  // The deck as last read or written: the common ancestor when this tab's copy is merged with the server's.
+  const bases = new Map<string, SavedDeck>()
   // One request per deck at a time: autosave, leaving the page and the retry timer can overlap, and a second save
   // sent before the first one answers would carry the old revision and be refused as stale.
   const lines = new Map<string, Promise<unknown>>()
@@ -46,7 +48,9 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
       const row = (await r.json()) as Row
       revs.set(id, row.rev ?? 0)
       // `chat` wins when present; an older deck has the conversation in `data`.
-      return { ...row.data, ...(row.chat ?? {}), id: row.id }
+      const got: SavedDeck = { ...row.data, ...(row.chat ?? {}), id: row.id }
+      bases.set(id, structuredClone(got))
+      return got
     }),
     save: (deck) => inOrder(deck.id, async () => {
       try {
@@ -55,6 +59,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
           body: JSON.stringify({ id: deck.id, name: deckName(deck), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0 }) })
         if (r.ok) {
           revs.set(deck.id, ((await r.json().catch(() => null)) as { rev?: number } | null)?.rev ?? (revs.get(deck.id) ?? 0) + 1)
+          bases.set(deck.id, structuredClone(deck))
           return null
         }
         if (r.status === 409) {
@@ -62,7 +67,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
           // exactly the one sent (same `updated`), it is this tab's own save: take its revision and call it saved.
           const now = await call(`?id=${encodeURIComponent(deck.id)}`)
           const row = now.ok ? ((await now.json()) as Row) : null
-          if (row && row.data?.updated === deck.updated) { revs.set(deck.id, row.rev ?? 0); return null }
+          if (row && row.data?.updated === deck.updated) { revs.set(deck.id, row.rev ?? 0); bases.set(deck.id, structuredClone(deck)); return null }
         }
         const said = ((await r.json().catch(() => null)) as { error?: unknown } | null)?.error
         console.warn('deck save failed', r.status, said)
@@ -72,10 +77,15 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     remove: (id) => inOrder(id, async () => {
       try {
         const ok = (await call(`?id=${encodeURIComponent(id)}`, { method: 'DELETE' })).ok
-        if (ok) revs.delete(id)
+        if (ok) { revs.delete(id); bases.delete(id) }
         return ok
       } catch { return false }
     }),
+    rev: async (id) => { const r = await call(`?id=${encodeURIComponent(id)}&rev=1`); return r.ok ? ((await r.json()) as { rev: number; presence: Presence }) : null },
+    events: async (id, since) => { const r = await call(`?id=${encodeURIComponent(id)}&events=${since}`); return r.ok ? ((await r.json()) as DeckEvent[]) : [] },
+    presence: async (id, p) => { await call(`?id=${encodeURIComponent(id)}&presence=1`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).catch(() => undefined) },
+    base: (id) => bases.get(id) ?? null,
+    known: (id) => revs.get(id) ?? 0,
   }
 }
 

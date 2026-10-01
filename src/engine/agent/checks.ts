@@ -2,7 +2,7 @@
    They are advisory: shown on the slide, never blocking. */
 import { MENU, plain } from "../slides/schema";
 import { derivedFigures } from "../slides/charts/chart-math";
-import { jev } from "./llm";
+import { jev as jevCall, type JevFn } from "./llm";
 import type { Slide, Style } from "../types";
 
 export interface Check { id: string; ok: boolean; msg: string; p?: number }
@@ -96,7 +96,7 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const c = s.chart, series = s.chart.series, fmt = (x: { format?: string }) => x.format || c.format || "{v}", byFmt: Record<string, Set<string>> = {};
     series.forEach((x) => { if (!x.dashed) (byFmt[fmt(x)] ||= new Set()).add(x.mark); });
     const mixed = Object.entries(byFmt).find(([, marks]) => marks.size > 1), units = new Set(series.map(fmt)).size;
-    const bars = series.filter((x) => x.mark === "bar"), badStack = c.stacked === true && (bars.length < 2 || new Set(bars.map(fmt)).size > 1);
+    const bars = series.filter((x) => x.mark === "bar"), badStack = c.stacking === "stacked" && (bars.length < 2 || new Set(bars.map(fmt)).size > 1);
     // Bars share one scale, so bars in a second unit would be drawn against the first unit's values.
     const barUnits = new Set(bars.map(fmt)).size;
     add("R9", !mixed && units <= 2 && !badStack && barUnits <= 1, mixed ? `Series in ${mixed[0]} mix bars and lines; comparable series share one mark` : units > 2 ? `${units} units on one chart; at most 2` : badStack ? "Stacked bars need 2 or more bar series in one unit" : barUnits > 1 ? "Bars in 2 units share one scale; draw the second unit as a line" : "Chart follows the chart guide");
@@ -143,7 +143,7 @@ const slideText = (s: Slide) => JSON.stringify(s, (_k, v) => (typeof v === "stri
 /** Judgment checks J1–J8: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }
 
-export async function judgmentChecks(s: Slide, style: Style): Promise<{ checks: Check[]; ms: number }> {
+export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall): Promise<{ checks: Check[]; ms: number }> {
   if (MENU[s.template].frame === false) return { checks: [], ms: 0 };
   const qs: Record<string, Judgment> = {}, add = (id: string, styles: Style[], instructions: string, options: Record<string, string>, pass: string, label: Record<string, string>) => { if (styles.includes(style)) qs[id] = { instructions, options, pass, label }; };
   add("J1", ["consulting"], "Is the title an action title that states a so-what, or a topic label?", { action: "States a conclusion or so-what.", topic: "Names a topic without a claim." }, "action", { action: "Title states a so-what", topic: "Title reads like a topic label" });

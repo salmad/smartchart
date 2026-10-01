@@ -1191,7 +1191,7 @@
   "consulting": {
    "template": "chart",
    "chart": {
-    "stacked": "100",
+    "stacking": "percent",
     "categories": [
      "Year 1",
      "Year 2",
@@ -1247,7 +1247,7 @@
   "pitch": {
    "template": "chart",
    "chart": {
-    "stacked": "100",
+    "stacking": "percent",
     "categories": [
      "Year 1",
      "Year 2",

@@ -35,7 +35,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "chart", name: "Stress · chart + notes", ...frame("chart"), chart: bars, notes: notes(3, false) },
     { template: "chart", name: "Stress · chart full", ...frame("chart"), chart: { categories: TIMES(12).map((_, i) => `Q${i % 4 + 1} ’${27 + (i >> 2)}`), format: "£{v}m",
       series: [{ name: "Base case", mark: "line", color: "focus", area: true, values: TIMES(12).map((_, i) => (i + 1) ** 2) }, { name: "Downside", mark: "line", color: "contrast", dashed: true, values: TIMES(12).map((_, i) => (i + 1) ** 2 * .6) }, { name: "Market", mark: "line", color: "neutral", values: TIMES(12).map((_, i) => 20 + i * 5) }] } },
-    { template: "chart", name: "Stress · chart stacked", ...frame("chart"), chart: { stacked: true, categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
+    { template: "chart", name: "Stress · chart stacked", ...frame("chart"), chart: { stacking: "stacked", categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",
       series: [{ name: `${W(22)} 1`, mark: "bar", color: "focus", values: [4, 9, 15, 24, 33, 41] }, { name: `${W(22)} 2`, mark: "bar", color: "neutral", values: [2, 5, 9, 14, 20, 26] },
         { name: `${W(22)} 3`, mark: "bar", color: "contrast", values: [1, 2, 4, 7, 11, 15] }, { name: "Margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 18, 24, 29, 33, 36] }] } },
     { template: "chart", name: "Stress · bars + 3 annotations", ...frame("chart"), chart: { categories: TIMES(6).map((_, i) => `Year ${i + 1}`), format: "£{v}m",

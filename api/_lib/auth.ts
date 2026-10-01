@@ -1,8 +1,11 @@
 // Accounts: Neon Auth (managed Better Auth), reached through /api/auth on our own origin so its cookies
 // are first-party. The functions here read the signed-in user from those cookies.
 import { handleAuthProxyRequest } from '@neondatabase/auth/server'
+import { getDb } from './db.js'
+import { bearerUser } from './keys.js'
 
-export interface User { id: string; email: string }
+/** `via` is how they signed in: a browser session, or an agent key (which can act on decks but not manage keys). */
+export interface User { id: string; email: string; via: 'session' | 'key' }
 
 /** Null when accounts are not configured (no Neon Auth URL or cookie secret). */
 export function authConfig(): { baseUrl: string; cookieSecret: string; sameSite: 'lax' } | null {
@@ -20,8 +23,12 @@ export async function proxyAuth(request: Request): Promise<Response> {
 
 export type UserFrom = (request: Request) => Promise<User | null>
 
-/** The signed-in user, from the session cookies; null when signed out or the session has ended. */
+/** The signed-in user: an agent key (Bearer) first, then the session cookies; null when neither holds. */
 export const userFrom: UserFrom = async (request) => {
+  if (request.headers.get('authorization')?.startsWith('Bearer ')) {
+    const db = getDb()
+    return db ? bearerUser(request, db) : null
+  }
   const cfg = authConfig(), cookie = request.headers.get('cookie')
   if (!cfg || !cookie) return null
   const headers = new Headers({ cookie })
@@ -38,5 +45,5 @@ export function sessionUser(body: unknown): User | null {
   const u = (body as { user: unknown }).user
   if (!u || typeof u !== 'object') return null
   const { id, email } = u as { id?: unknown; email?: unknown }
-  return typeof id === 'string' && id ? { id, email: typeof email === 'string' ? email : '' } : null
+  return typeof id === 'string' && id ? { id, email: typeof email === 'string' ? email : '', via: 'session' } : null
 }
