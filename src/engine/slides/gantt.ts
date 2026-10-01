@@ -26,6 +26,8 @@ export function ganttFor(slide: Slide, style: Style) {
   };
   const fits = (next: readonly TimelineRow[]) => next.length >= rMin && next.length <= rMax && next.filter((r) => r.level !== 1).length <= TOP;
   const write = (next: TimelineRow[]): Patch | null => { const n = norm(next); return fits(n) ? { "chart.rows": n } : null; };
+  /** The span a new sub-row of row `i` (or of `i`'s group) starts on, so the parent's bar does not move. */
+  const parentSpan = (i: number): { start: number; end: number } => { let k = i; while (k > 0 && lines[k].level === 1) k--; return { start: lines[k]?.start ?? 0, end: lines[k]?.end ?? 0 }; };
   /** A row and the children under it, as [from, to). */
   const family = (i: number): [number, number] => { let e = i + 1; if (lines[i]?.group) while (rows[e]?.level === 1) e++; return [i, e]; };
   /** Bars and milestones with their period indices rewritten by `f`, as one patch. */
@@ -50,8 +52,8 @@ export function ganttFor(slide: Slide, style: Style) {
       return reindex((n) => Math.max(0, Math.min(n > i ? n - 1 : n, hi)), { "chart.periods": splice(periods, i, 1) });
     },
     lines,
-    insertRow: (at: number): Patch | null => write(splice(rows, at, 0, { label: "", start: 0, end: 0, ...(rows[at]?.level === 1 ? { level: 1 as const } : {}) })),
-    addSubRow: (i: number): Patch | null => write(splice(rows, family(i)[1], 0, { label: "", level: 1, start: 0, end: 0 })),
+    insertRow: (at: number): Patch | null => write(splice(rows, at, 0, rows[at]?.level === 1 ? { label: "", level: 1 as const, ...parentSpan(at) } : { label: "", start: 0, end: 0 })),
+    addSubRow: (i: number): Patch | null => write(splice(rows, family(i)[1], 0, { label: "", level: 1 as const, ...parentSpan(i) })),
     indent: (i: number): Patch | null => (i < 1 || rows[i].level === 1 || lines[i].group ? null : write(rows.map((r, k) => (k === i ? { ...r, level: 1 as const } : r)))),
     outdent: (i: number): Patch | null => {
       if (rows[i]?.level !== 1) return null;
@@ -64,7 +66,10 @@ export function ganttFor(slide: Slide, style: Style) {
     place: (from: number, before: number, level: 0 | 1): Patch | null => {
       const [a, b] = family(from), len = b - a;
       if (before > a && before < b) return null;
-      const at = before >= b ? before - len : before, rest = [...rows.slice(0, a), ...rows.slice(b)];
+      let at = before >= b ? before - len : before;
+      const rest = [...rows.slice(0, a), ...rows.slice(b)];
+      // A top-level drop that lands inside a group goes after the group, not into the middle of its sub-rows.
+      if (level === 0 || len > 1) while (rest[at]?.level === 1) at++;
       const lv = len > 1 || at === 0 ? 0 : level;
       const moved = rows.slice(a, b).map((r, k) => (k === 0 ? { ...r, level: lv } : r));
       const next = [...rest.slice(0, at), ...moved, ...rest.slice(at)];

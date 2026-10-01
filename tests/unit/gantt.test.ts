@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest'
 import { applyPatch } from '@/engine/agent/patch'
 import { ganttFor } from '@/engine/slides/gantt'
+import { timelineLines } from '@/engine/slides/charts/timeline-rows'
 import type { Slide } from '@/engine/types'
 
 const must = <T>(v: T | null | undefined): T => { if (v === null || v === undefined) throw new Error('missing'); return v }
@@ -122,4 +123,23 @@ test('limits: eight workstreams, twelve lines, six milestones', () => {
   expect(ganttFor(twelve, 'consulting').addSubRow(0)).toBeNull()
   const six = { ...GR, chart: { ...chartOf(GR), milestones: Array.from({ length: 6 }, (_, i) => ({ label: `m${i}`, at: 0 })) } }
   expect(ganttFor(six, 'consulting').insertMilestone()).toBeNull()
+})
+
+test('a top-level drop inside a group lands after the group, with its own dates', () => {
+  const s: Slide = { ...GR, chart: { ...chartOf(GR), rows: [{ label: 'P', start: 1, end: 3 }, { label: 'G' }, { label: 'c1', level: 1, start: 0, end: 1 }, { label: 'c2', level: 1, start: 2, end: 3 }] } }
+  const c = apply(s, ganttFor(s, 'consulting').place(0, 3, 0))   // before c2, at the top level
+  expect(labels(c)).toEqual(['G', '  c1', '  c2', 'P'])
+  expect(c.rows?.[3]).toEqual({ label: 'P', start: 1, end: 3 })
+})
+
+test('a new sub-row starts on its parent, so the bar does not jump', () => {
+  const plain: Slide = { ...GR, chart: { ...chartOf(GR), rows: [{ label: 'P', start: 1, end: 3 }, { label: 'Q', start: 0, end: 0 }] } }
+  const c = apply(plain, ganttFor(plain, 'consulting').addSubRow(0))
+  expect(c.rows?.[1]).toMatchObject({ level: 1, start: 1, end: 3 })
+  expect(timelineLines(c.rows ?? [])[0]).toMatchObject({ group: true, start: 1, end: 3 })
+  const grouped: Slide = { ...GR, chart: { ...chartOf(GR), rows: [{ label: 'G' }, { label: 'a', level: 1, start: 2, end: 4 }, { label: 'Q', start: 0, end: 0 }] } }
+  const d = apply(grouped, ganttFor(grouped, 'consulting').insertRow(1))          // above the first sub-row: a sub-row
+  expect(timelineLines(d.rows ?? [])[0]).toMatchObject({ start: 2, end: 4 })
+  const e = apply(grouped, ganttFor(grouped, 'consulting').addSubRow(1))          // from a sub-row: the same parent's span
+  expect(e.rows?.[2]).toMatchObject({ level: 1, start: 2, end: 4 })
 })
