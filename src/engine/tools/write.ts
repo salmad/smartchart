@@ -27,7 +27,7 @@ export async function writeSlide(ctx: ToolContext, input: unknown, request: stri
 export function writeResult(ctx: ToolContext, doc: DeckDoc, slideId: string, w: Awaited<ReturnType<typeof writeSlide>>, extra: Record<string, unknown> = {}): Record<string, unknown> {
   const n = doc.slides.findIndex((s) => s.id === slideId) + 1, editing = ctx.presence.editing;
   const notice = editing && editing.until > ctx.now() && editing.slideId === slideId ? `The user is editing ${slideId} by hand right now; your change is applied and they will see it.` : undefined;
-  const out: Record<string, unknown> = { applied: true, slideId, n, slide: w.slide, ...extra, fit: "estimated" };
+  const out: Record<string, unknown> = { applied: true, slideId, n, slide: w.slide, ...extra, rev: ctx.rev, fit: "estimated" };
   for (const [k, v] of Object.entries({ issues: w.issues, warnings: w.warnings, checks: w.checks, autofixes: w.autofixes })) if (v.length) out[k] = v;
   if (Object.keys(w.resolved).length) out.resolved = w.resolved;
   if (notice) out.notice = notice;

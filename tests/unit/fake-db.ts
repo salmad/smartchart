@@ -23,7 +23,7 @@ export function fakeDb(): FakeDb {
       const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
       return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null, shared: !!share }
     }),
-    getDeck: async (u, id) => { const r = rows.get(id); return r && r.user === u ? r : null },
+    getDeck: async (u, id) => { const r = rows.get(id); return r && r.user === u ? structuredClone(r) : null },
     putDeck: async (u, id, name, data, chat, baseRev, opts = {}) => {
       const r = rows.get(id)
       if (r && r.user !== u) return 'foreign'
