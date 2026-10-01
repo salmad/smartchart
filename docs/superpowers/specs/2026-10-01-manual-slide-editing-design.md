@@ -52,7 +52,9 @@ The renderer tags every editable element with `data-path`, using the path syntax
 
 On hover, an item shows "×" and the list shows "+" after its last item. Both come from `listOps(slide, style)`, which reads the min and max the schema already has, so they hide exactly at the limits.
 
-A new item **copies the shape of the item next to it** (icon or value lead, tone, mark), with its text cleared. That keeps it valid with no logic per template. The cursor goes into its first text field. Reordering is out.
+Dragging an item's grip (⋮⋮) moves it to another place, and a table row or column moves the same way (a column's header, format and cells move together). The menu and Alt+Shift+arrows move it too, so dragging is never the only way.
+
+A new item **copies the shape of the item next to it** (icon or value lead, tone, mark), with its text cleared. That keeps it valid with no logic per template. The cursor goes into its first text field. 
 
 ### 4.3 Chart grid
 
@@ -153,8 +155,7 @@ Discard drops the draft and leaves.
 - Images.
 - Fonts, sizes, colours and layout.
 - Positive and negative emphasis by hand.
-- Version history and undo beyond Discard.
-- Reordering list items.
+- Version history. Undo and redo (⌘Z, ⌘⇧Z) cover the current edit only; Discard still drops everything.
 - Editing chart kind and annotations.
 - Editing several slides at once, or chatting while editing.
 - Who-wrote-what tracking and field locks.
@@ -165,3 +166,13 @@ Discard drops the draft and leaves.
 - **Mapping text changes onto markup** (`applyText`) is the subtle part. A change that spans a mark boundary must keep the mark, or shrink it, and never break it. Tests cover it thoroughly before any UI is built on it.
 - **Layout lag inside a field.** Value fitting and table sizing update only when focus leaves the field. That is acceptable, because the user is still typing.
 - **IME composition** (accents, CJK). Fields don't redraw between `compositionstart` and `compositionend`.
+
+
+## 10. Selection, menu and keys (added after the first build)
+
+- **One target.** What is selected is held in model coordinates (a text range in a field, an item path, or a rectangle of table cells; the header row is -1), never as DOM nodes, because the slide is redrawn under it (`selection.ts`).
+- **One list of actions.** `actionsFor(target, slide, style)` (`engine/slides/actions.ts`, pure) returns what can be done: Bold and Focus, insert, move, delete, row and column operations, and per-column bold / italic / normal-muted-focus. The right-click menu, the floating bar and the keyboard all read it, so they never differ. Limits come from the schema.
+- **Right-click** opens the app's menu on the slide (Shift + right-click still opens the browser's, for spellcheck). It includes Cut, Copy and Paste.
+- **Table cells** are selected as whole cells: press in one cell and drag into another, or shift-click. The browser cannot select text across cells, so the range is ours. A range gets Bold and Focus on every cell's words; a selection that includes the header is a column and gets the column format instead.
+- **Table cell text** accepts Bold and Focus marks; a column can be bold, italic, and quiet / normal / focus, as separate choices.
+- **Keys.** ⌘B bold, ⌘⇧H focus, Alt+Shift+arrows move, Backspace deletes a selected item, ⌘Z / ⌘⇧Z undo and redo (one step per field while typing). Esc peels back one layer: a selection or item first, then it asks about Discard.
