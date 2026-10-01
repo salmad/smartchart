@@ -1,8 +1,8 @@
 /* Next-step pills after a turn: GLM Flash reads the slide and the conversation, works out what the slide is
    trying to say, and suggests a few changes that help it say that. Runs in the background; no pills on failure. */
-import { complete, type ChatMessage } from "./llm";
-import type { Check } from "./checks";
-import type { Slide, Style } from "../types";
+import { complete, type ChatMessage } from "./llm.js";
+import type { Check } from "./checks.js";
+import type { Slide, Style } from "../types.js";
 
 export interface Pill { label: string; prompt: string }
 export interface SuggestArgs { slide: Slide; style: Style; history?: ChatMessage[]; checks?: Pick<Check, "ok" | "msg">[] }

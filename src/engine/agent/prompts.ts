@@ -1,7 +1,7 @@
 /* Prompt pieces shared by the agent and Jev (spec 9.3): the style block, worked examples, the picking guide. */
-import { MENU, OFFERED, PICKING_GUIDE, STYLES } from "../slides/schema";
-import { STARTERS, starterSlide } from "../starters";
-import type { Slide, Style, TemplateId } from "../types";
+import { MENU, OFFERED, PICKING_GUIDE, STYLES } from "../slides/schema.js";
+import { STARTERS, starterSlide } from "../starters/index.js";
+import type { Slide, Style, TemplateId } from "../types.js";
 
 /* A new slide starts plain (agent prompt, "Start plain"), so the example shows the plain version: the model
    copies the shape it is shown. The extras stay in the starters. */

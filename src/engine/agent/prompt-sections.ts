@@ -1,5 +1,5 @@
 /* The agent's rules, shared by the in-app system prompt and get_guide for outside agents: one source. */
-import { MARKUP } from "../slides/schema";
+import { MARKUP } from "../slides/schema.js";
 
 export const HARD_RULES = `- Use every figure the user gave, exactly as given.
 - Never invent a value for a series the user gave only in part. Example: churn for 2021 and 2025 only means no churn values for 2022–2024: do not interpolate, estimate or smooth. Plot only complete series; when the gap changes what the slide means (years missing between the ones given), ask first (see When to stop and ask).

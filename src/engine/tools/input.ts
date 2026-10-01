@@ -1,6 +1,6 @@
 /* A small JSON Schema check for tool inputs: type, required, enum, properties, additionalProperties, items, oneOf.
    Messages name the path and the fix, like the write path's. */
-import type { JsonSchema } from "./types";
+import type { JsonSchema } from "./types.js";
 
 const typeOf = (v: unknown) => (Array.isArray(v) ? "array" : v === null ? "null" : Number.isInteger(v) ? "integer" : typeof v);
 const fits = (t: string, v: unknown) => t === typeOf(v) || (t === "number" && typeof v === "number");

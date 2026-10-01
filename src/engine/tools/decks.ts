@@ -1,7 +1,7 @@
-import { resolveAccent } from "../slides/colours";
-import type { Style, Theme } from "../types";
-import { storylineRows } from "./doc";
-import { IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types";
+import { resolveAccent } from "../slides/colours.js";
+import type { Style, Theme } from "../types.js";
+import { storylineRows } from "./doc.js";
+import { IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types.js";
 
 const DECK_ID = { type: "string", description: "The deck id from list_decks or create_deck." } as const;
 const STYLE = { type: "string", enum: ["consulting", "pitch"] } as const;

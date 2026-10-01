@@ -1,8 +1,8 @@
-import { describe as card, MENU, OFFERED } from "../slides/schema";
-import { exampleFor } from "../agent/prompts";
-import type { Style, TemplateId } from "../types";
-import { guideText } from "./guide-text";
-import { READ, tool } from "./types";
+import { describe as card, MENU, OFFERED } from "../slides/schema.js";
+import { exampleFor } from "../agent/prompts.js";
+import type { Style, TemplateId } from "../types.js";
+import { guideText } from "./guide-text.js";
+import { READ, tool } from "./types.js";
 
 const STYLE = { type: "string", enum: ["consulting", "pitch"], description: "The deck's style (get_deck shows it)." } as const;
 const TEMPLATE = { type: "string", enum: [...OFFERED], description: "A template id from list_templates." } as const;

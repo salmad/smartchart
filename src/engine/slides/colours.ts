@@ -2,7 +2,7 @@
    The agent writes roles (focus / contrast / neutral, [[…]] [-…-] [+…+]); code picks every colour,
    so no two different things on a slide share one and every mark stays legible. */
 
-import type { Chart, Slide, Theme } from "../types";
+import type { Chart, Slide, Theme } from "../types.js";
 
 /* ═════════════ Colour maths: sRGB, WCAG contrast, OKLab/OKLCH ═════════════ */
 export type Vec3 = readonly [number, number, number];

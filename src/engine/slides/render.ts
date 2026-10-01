@@ -1,9 +1,9 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
-import { MENU, NOTE_POINTS, plain } from "./schema";
-import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types";
-import { drawChart } from "./charts/chart";
-import { allocate } from "./colours";
+import { MENU, NOTE_POINTS, plain } from "./schema.js";
+import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import { drawChart } from "./charts/chart.js";
+import { allocate } from "./colours.js";
 export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };

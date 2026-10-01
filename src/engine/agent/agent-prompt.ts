@@ -1,10 +1,10 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
-import { MENU, OFFERED, plain } from "../slides/schema";
-import { ASK_IN_APP, HARD_RULES, START_PLAIN, START_PLAIN_IN_APP, WRITING_JSON } from "./prompt-sections";
-import { styleBlock } from "./prompts";
-import type { Check } from "./checks";
-import type { Selection } from "./pre";
-import type { Slide, Style, Theme } from "../types";
+import { MENU, OFFERED, plain } from "../slides/schema.js";
+import { ASK_IN_APP, HARD_RULES, START_PLAIN, START_PLAIN_IN_APP, WRITING_JSON } from "./prompt-sections.js";
+import { styleBlock } from "./prompts.js";
+import type { Check } from "./checks.js";
+import type { Selection } from "./pre.js";
+import type { Slide, Style, Theme } from "../types.js";
 
 /** A tool in OpenAI function format; parameters are JSON Schema. */
 export interface ToolDef { type: "function"; function: { name: string; description: string; parameters: { type: "object"; required: string[]; properties: Record<string, Record<string, unknown>> } } }

@@ -1,6 +1,6 @@
 /* The timeline's rows as drawn lines: a level-1 row is a child of the level-0 row above, and a level-0 row with children
    is a group whose span is derived from them. One reading, shared by the checks, the renderer and the editor. */
-import type { TimelineRow } from "../../types";
+import type { TimelineRow } from "../../types.js";
 
 export interface Line { row: TimelineRow; index: number; level: 0 | 1; group: boolean; start: number; end: number; focus: boolean }
 

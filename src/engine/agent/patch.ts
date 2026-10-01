@@ -1,6 +1,6 @@
 /* Path patches (spec 9.5): { "cards[2].title": "…", "notes[1]": null } applied to a slide, all or nothing.
    Paths refer to the slide before the patch; removals run last, highest index first. */
-import type { Slide } from "../types";
+import type { Slide } from "../types.js";
 
 type Key = string | number;
 type Container = Record<Key, unknown>;

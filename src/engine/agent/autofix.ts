@@ -1,7 +1,7 @@
 /* Code fixes what has one right answer and reports it (spec 9.4); it never shortens text or changes meaning.
    Idempotent: the write path runs it before and after `auto` choices are resolved. */
-import { ICONS, KIND_FIELDS, MENU, NOTE_POINTS } from "../slides/schema";
-import type { Cell, Chart, Series, Slide, Style, Table } from "../types";
+import { ICONS, KIND_FIELDS, MENU, NOTE_POINTS } from "../slides/schema.js";
+import type { Cell, Chart, Series, Slide, Style, Table } from "../types.js";
 
 /* Autofix reads model output before validation, so any field may hold anything; the slide types describe
    what it expects, and every access is guarded as in a raw object. Extra keys are reached by name. */

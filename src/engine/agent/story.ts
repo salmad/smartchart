@@ -1,8 +1,8 @@
 /* Deck checks D1–D5: the storyline as the room skims it (the titles alone, in order), judged the way a partner reads a
    deck. One Jev call; a check fails only when a failing value has p ≥ 0.7, as for the slide checks. */
-import { plain } from "../slides/schema";
-import type { Slide, Style } from "../types";
-import { jev as jevCall, type JevFn } from "./llm";
+import { plain } from "../slides/schema.js";
+import type { Slide, Style } from "../types.js";
+import { jev as jevCall, type JevFn } from "./llm.js";
 
 /** One line of the storyline: a content slide's headline, or a cover or section as a heading. */
 export interface StoryLine { id: string; page: number; kind: "cover" | "section" | "content"; title: string; claim?: string }

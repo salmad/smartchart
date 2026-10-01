@@ -1,7 +1,7 @@
 /* The starters: the one approved gallery. The landing, Add slide, the agent's worked examples, the review
    page and the tests all read this file; there is no other example set. */
-import { validateDeck } from '../slides/schema'
-import type { Slide, Style } from '../types'
+import { validateDeck } from '../slides/schema.js'
+import type { Slide, Style } from '../types.js'
 import data from './starters.json' with { type: 'json' }
 
 /** Starters are grouped by what the slide has to do for the person making it, not by what it is drawn with. */

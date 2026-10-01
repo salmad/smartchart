@@ -1,5 +1,5 @@
 /* Shared drawing helpers for every chart kind: SVG shapes, HTML labels, plot-pixel geometry. */
-export { esc } from "../render";
+export { esc } from "../render.js";
 
 /** The chart text size of the slide's style (slides.css --lbl, or --lbl-s for the small one), in slide pixels:
     space for labels follows it. */

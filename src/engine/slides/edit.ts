@@ -1,9 +1,9 @@
 /* Editing by hand (spec 4.2, 4.4): the operations the user's buttons make, as patch sets for applyPatch, so the
    human writes through the same path as the agent. Limits come from the schema; nothing here is per template. */
-import { parsePath } from "../agent/patch";
-import { STARTERS, starterSlide } from "../starters";
-import { MENU, describe, fieldsFor, plain, type FieldView } from "./schema";
-import type { Slide, Style, TemplateId } from "../types";
+import { parsePath } from "../agent/patch.js";
+import { STARTERS, starterSlide } from "../starters/index.js";
+import { MENU, describe, fieldsFor, plain, type FieldView } from "./schema.js";
+import type { Slide, Style, TemplateId } from "../types.js";
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === "object" && !Array.isArray(v);

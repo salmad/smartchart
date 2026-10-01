@@ -1,9 +1,9 @@
 /* What can be done to the thing under the pointer or the selection (hand editing). One pure function: the context
    menu, the floating bar and the keyboard all read it, so they cannot disagree. Every action is a patch for
    applyPatch, which is how the agent writes too. Limits (min, max) come from the schema through listOps. */
-import { addColumn, getAt, listOf, listOps, moveColumn, moveItem, newItem, removeColumn, removeItem } from "./edit";
-import { hasMark, plainOf, toggleSpans, type Mark } from "./markup";
-import type { Slide, Style } from "../types";
+import { addColumn, getAt, listOf, listOps, moveColumn, moveItem, newItem, removeColumn, removeItem } from "./edit.js";
+import { hasMark, plainOf, toggleSpans, type Mark } from "./markup.js";
+import type { Slide, Style } from "../types.js";
 
 /** What is selected, in model coordinates (never DOM nodes: the slide is redrawn under it). A table's header row is -1. */
 export type Target =

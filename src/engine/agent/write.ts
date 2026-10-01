@@ -1,12 +1,12 @@
 /* The write pipeline every writer goes through (spec 9.4): autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The agent adds automatic shortening on top; a human's words are never shortened.
    strict: shape errors refuse the write (the agent rewrites); otherwise they come back as issues (a human saves). */
-import { validate } from "../slides/schema";
-import { autofix } from "./autofix";
-import { resolveAuto, type Resolved } from "./resolve";
-import { ruleChecks } from "./checks";
-import type { JevFn } from "./llm";
-import type { Slide, Style } from "../types";
+import { validate } from "../slides/schema.js";
+import { autofix } from "./autofix.js";
+import { resolveAuto, type Resolved } from "./resolve.js";
+import { ruleChecks } from "./checks.js";
+import type { JevFn } from "./llm.js";
+import type { Slide, Style } from "../types.js";
 
 export interface Measured { issues: string[]; lines: number; warnings: string[] }
 export type Written =

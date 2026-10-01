@@ -1,8 +1,8 @@
-import { judgmentChecks, ruleChecks } from "../agent/checks";
-import { storyChecks } from "../agent/story";
-import { slideAt } from "./doc";
-import { estimate } from "./estimate";
-import { READ, tool, type DeckDoc } from "./types";
+import { judgmentChecks, ruleChecks } from "../agent/checks.js";
+import { storyChecks } from "../agent/story.js";
+import { slideAt } from "./doc.js";
+import { estimate } from "./estimate.js";
+import { READ, tool, type DeckDoc } from "./types.js";
 
 export const checkTools = [
   tool<{ deckId: string; slideId: string }>({ name: "check_slide", title: "Check a slide", group: "checks", scope: "deck", annotations: READ,

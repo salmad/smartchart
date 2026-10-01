@@ -1,7 +1,7 @@
 /* Chart arithmetic (spec: 2026-09-27-chart-capabilities-design.md). Pure: shared by the renderer,
    the validator and the checks, so a figure on the slide is always the figure code computed. */
 
-import type { Annotation, Chart, Series, WaterfallItem } from "../../types";
+import type { Annotation, Chart, Series, WaterfallItem } from "../../types.js";
 
 const MINUS = "−";
 /** A value in its format: "£{v}m" + 2.1 → "£2.1m", −5 → "−£5m" (the sign before the currency). Whole numbers stay whole, others take one decimal. */
