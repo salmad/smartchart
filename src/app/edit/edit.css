@@ -1,0 +1,5 @@
+/* Edit mode only (spec 4.1). The slide's own styles stay in slides.css; these two rules exist while editing. */
+[data-editing] [contenteditable]:focus { outline: none; }
+/* An empty field shows what it is, so a new card has somewhere to type. */
+[data-editing] [contenteditable]:empty::before { content: attr(data-hint); opacity: .35; }
+[data-editing] [data-sample] { opacity: .45; }
