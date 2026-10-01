@@ -46,7 +46,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
           </EditSurface>
         </SlideFrame>
       </div>
-      <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 ${SLIDE_W}`}>
+      <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 max-[900px]:order-2 max-[900px]:max-w-full max-[900px]:px-4 ${SLIDE_W}`}>
         <EditBar edit={edit} deckStyle={style} onDiscard={discard} />
       </section>
     </>
