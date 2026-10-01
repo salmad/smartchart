@@ -27,13 +27,13 @@ test("bar series lose area and dashed", () => {
 });
 
 test("stacking switches off without two bar series in one unit", () => {
-  const { slide } = autofix(chart({ stacked: true, series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }, { name: "B", mark: "line", format: "{v}%", values: [1, 2, 3] }] }), "consulting");
-  assert.equal(chartOf(slide).stacked, false);
+  const { slide } = autofix(chart({ stacking: "stacked", series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }, { name: "B", mark: "line", format: "{v}%", values: [1, 2, 3] }] }), "consulting");
+  assert.equal(chartOf(slide).stacking, "none");
 });
 
 test("stacked auto is left for Jev", () => {
-  const { slide } = autofix(chart({ stacked: "auto", series: [{ name: "A", mark: "auto", values: [1, 2, 3] }] }), "consulting");
-  assert.equal(chartOf(slide).stacked, "auto");
+  const { slide } = autofix(chart({ stacking: "auto", series: [{ name: "A", mark: "auto", values: [1, 2, 3] }] }), "consulting");
+  assert.equal(chartOf(slide).stacking, "auto");
 });
 
 test("note points are removed while note numbers on the chart are off", () => {
@@ -66,7 +66,7 @@ test("legacy num flags are removed", () => {
 });
 
 test("idempotent", () => {
-  const once = autofix(chart({ stacked: true, series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }] }), "consulting").slide;
+  const once = autofix(chart({ stacking: "stacked", series: [{ name: "A", mark: "bar", color: "focus", values: [1, 2, 3] }] }), "consulting").slide;
   const twice = autofix(once, "consulting");
   assert.deepEqual(twice.slide, once);
   assert.deepEqual(twice.fixes, []);

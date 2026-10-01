@@ -96,7 +96,7 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const c = s.chart, series = s.chart.series, fmt = (x: { format?: string }) => x.format || c.format || "{v}", byFmt: Record<string, Set<string>> = {};
     series.forEach((x) => { if (!x.dashed) (byFmt[fmt(x)] ||= new Set()).add(x.mark); });
     const mixed = Object.entries(byFmt).find(([, marks]) => marks.size > 1), units = new Set(series.map(fmt)).size;
-    const bars = series.filter((x) => x.mark === "bar"), badStack = c.stacked === true && (bars.length < 2 || new Set(bars.map(fmt)).size > 1);
+    const bars = series.filter((x) => x.mark === "bar"), badStack = c.stacking === "stacked" && (bars.length < 2 || new Set(bars.map(fmt)).size > 1);
     // Bars share one scale, so bars in a second unit would be drawn against the first unit's values.
     const barUnits = new Set(bars.map(fmt)).size;
     add("R9", !mixed && units <= 2 && !badStack && barUnits <= 1, mixed ? `Series in ${mixed[0]} mix bars and lines; comparable series share one mark` : units > 2 ? `${units} units on one chart; at most 2` : badStack ? "Stacked bars need 2 or more bar series in one unit" : barUnits > 1 ? "Bars in 2 units share one scale; draw the second unit as a line" : "Chart follows the chart guide");

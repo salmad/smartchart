@@ -21,7 +21,7 @@ export function annotationSeries(c: Chart, a: Annotation): AnnotationSeries | nu
   if (a.series !== undefined) { const s = c.series?.[a.series]; return s ? { values: s.values, format: fmtOf(c, s) } : null; }
   const B = bars(c);
   if (!B.length) return null;
-  if (c.stacked === true) return { values: (c.categories ?? []).map((_, i) => B.reduce((sum, s) => sum + Math.max(0, s.values[i] || 0), 0)), format: fmtOf(c, B[0]) };
+  if (c.stacking === "stacked") return { values: (c.categories ?? []).map((_, i) => B.reduce((sum, s) => sum + Math.max(0, s.values[i] || 0), 0)), format: fmtOf(c, B[0]) };
   const s = B.find((x) => x.color === "focus") || B[0];
   return { values: s.values, format: fmtOf(c, s) };
 }
@@ -88,7 +88,7 @@ export const shares = (c: Chart): number[][] => {
  */
 export interface AxisBreak { cap: number; series: number; index: number }
 export function axisBreak(c: Chart): AxisBreak | null {
-  if (c.stacked) return null;
+  if (c.stacking === "stacked" || c.stacking === "percent") return null;
   const B = bars(c);
   if (!B.length) return null;
   const all = B.flatMap((s) => s.values.map((v, i) => ({ v, series: (c.series ?? []).indexOf(s), index: i }))).sort((a, b) => b.v - a.v);
@@ -106,6 +106,6 @@ export function derivedFigures(c: Chart | null | undefined): number[] {
   if (c.kind === "waterfall") return waterfall(c.items || []).steps.map((s) => Math.abs(s.value));
   if ((c.kind || "bars") !== "bars") return [];
   const out = (c.annotations || []).map((a) => { try { return annotationLabel(c, a)?.value; } catch { return null; } }).filter((v): v is number => typeof v === "number");
-  if (c.stacked === "100" && c.categories) out.push(...shares(c).flat().map(Math.round));
+  if (c.stacking === "percent" && c.categories) out.push(...shares(c).flat().map(Math.round));
   return out;
 }

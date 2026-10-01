@@ -267,7 +267,7 @@ test("attached files: the writer reads them in full, Jev routes on the brief, an
   const jev = fakeJev({ intent: ["new_slide", 0.95], template: ["chart", 0.9] });
   const agentStep = fakeAgent([(m) => {
     assert.ok(m.some((x) => x.role === "user" && text(x).includes(doc)), "the writer gets the whole file");
-    const two: Slide = { ...CHART, chart: { ...must(CHART.chart, "chart"), series: [{ name: "UK", mark: "bar", values: [1, 2, 3, 4] }, { name: "EU", mark: "bar", values: [1, 1, 2, 2] }], stacked: "auto" } };
+    const two: Slide = { ...CHART, chart: { ...must(CHART.chart, "chart"), series: [{ name: "UK", mark: "bar", values: [1, 2, 3, 4] }, { name: "EU", mark: "bar", values: [1, 1, 2, 2] }], stacking: "auto" } };
     return toolCall("edit_slide", { slideId: reservedId(m), slide: two, reply: "Done." });
   }]);
   await runTurn({ ...ctx, text: full, ask: "Make the revenue slide", brief: "Make the revenue slide\n\nAttached report.pdf, starting: Board report.", selection: null, models: { agentStep, jev } });

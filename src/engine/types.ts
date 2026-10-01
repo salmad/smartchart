@@ -11,7 +11,7 @@ export interface TimelineRow { label: string; start?: number; end?: number; leve
 export interface Milestone { label: string; at: number }
 export interface Chart {
   kind?: 'bars' | 'waterfall' | 'timeline'
-  stacked?: boolean | '100' | 'auto'
+  stacking?: 'none' | 'stacked' | 'percent' | 'auto'
   categories?: string[]; format?: string; series?: Series[]; annotations?: Annotation[]
   items?: WaterfallItem[]
   periods?: string[]; rows?: TimelineRow[]; milestones?: Milestone[]

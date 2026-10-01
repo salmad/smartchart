@@ -126,7 +126,7 @@ export const CHART_GUIDE: string[] = [
   "Stack only parts of a whole: stack bar series that add up to a total that matters (revenue by segment); keep them side by side when the point is comparing them (us vs them). Never stack rates or percentages that do not sum to a whole; lines never stack.",
   "Pitch: one series, two at most.",
   "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
-  "Shares of a whole that change over time (mix, market share) are `stacked: \"100\"`: write the raw values; code converts them to %.",
+  "Shares of a whole that change over time (mix, market share) are `stacking: \"percent\"`: write the raw values; code converts them to %.",
   "A bridge from one total to another (revenue FY24 → FY25 by driver, a cost walk, an EBITDA bridge) is `kind: \"waterfall\"`. Write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
   "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead. A workstream made of smaller steps is a group (the steps have `level: 1`).",
   "Annotations are computed by code; never write their figure yourself. `cagr` when the title claims a growth rate over a period (\"grows 86% a year\", \"growth rate per year across the period\"; year-on-year rates for each year are a % line instead), `difference` when it claims a gap between two categories, `target` when it compares with a goal. At most 3 (2 with notes); only when the user asked for them.",
@@ -139,7 +139,7 @@ const KINDS = ["bars", "waterfall", "timeline"] as const;
 type Kind = (typeof KINDS)[number];
 /* Fields each chart kind uses; any other chart field is an error for that kind. */
 export const KIND_FIELDS: Record<Kind, string[]> = {
-  bars: ["kind", "stacked", "categories", "format", "series", "annotations"],
+  bars: ["kind", "stacking", "categories", "format", "series", "annotations"],
   waterfall: ["kind", "format", "items"],
   timeline: ["kind", "periods", "rows", "milestones"],
 };
@@ -149,7 +149,7 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
   required: true,
   fields: {
     kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt).", { values: KINDS, default: "bars" }),
-    stacked: f("enum", "Bars only. Bar series stacked into one column per category (true), side by side (false), or stacked as shares of 100% (\"100\"). \"auto\": code decides by the chart guide.", { values: [true, false, "100", "auto"], default: false }),
+    stacking: f("enum", "Bars only. \"stacked\": bar series stacked into one column per category; \"none\": side by side; \"percent\": stacked as shares of 100%. \"auto\": code decides by the chart guide.", { values: ["none", "stacked", "percent", "auto"], default: "none" }),
     categories: f("list", "Bars only. X-axis labels, in order. Short: 'Year 1', 'Q2', 'Q1 ’27'.", { items: { min: 2, max: 12 }, of: f("text", "Category label.", { max: 10 }) }),
     format: f("text", "Value format; `{v}` is replaced by the number. E.g. '£{v}m', '{v}%'.", { default: "{v}" }),
     series: f("list", "Bars only. Data series. One series is the focus: the one the title is about.", {
@@ -513,8 +513,8 @@ function checkChart(c: Chart | undefined, path: string, out: Out, focusAuto: boo
   if (formats.size > 2) out.errors.push(`${path}.series: ${formats.size} units (${[...formats].join(", ")}); a chart shows at most 2. Move the third to another slide.`);
   if (series.length && series.every((s) => s?.mark === "line") && formats.size > 1)
     out.errors.push(`${path}.series: a chart of only lines shares one scale, so every series uses one format. Make one unit bars, or plot it on another slide.`);
-  if ((c.stacked === true || c.stacked === "100") && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
-    out.errors.push(`${path}.stacked: stacking needs 2 or more bar series in one unit. Set it to false.`);
+  if ((c.stacking === "stacked" || c.stacking === "percent") && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
+    out.errors.push(`${path}.stacking: stacking needs 2 or more bar series in one unit. Set it to "none".`);
   const focus = series.filter((s) => s?.color === "focus").length;
   if (!focusAuto && focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
   checkAnnotations(c, categories, series, series.filter((s) => s?.mark !== "line"), path, out);
@@ -538,12 +538,12 @@ function checkAnnotations(c: Chart, categories: string[], series: Series[], bars
     if (a.series !== undefined && (!series[a.series] || series[a.series].mark === "line")) out.errors.push(`${at}.series: ${a.series} is not a bar series. Point at a bar series or leave it out.`);
     if (a.relative && a.type !== "difference") out.errors.push(`${at}.relative: only for a difference; remove it.`);
     if (a.type === "cagr") {
-      const s = a.series !== undefined ? series[a.series] : c.stacked === true ? null : bars.find((x) => x.color === "focus") || bars[0];
+      const s = a.series !== undefined ? series[a.series] : c.stacking === "stacked" ? null : bars.find((x) => x.color === "focus") || bars[0];
       const v = s ? [s.values?.[from], s.values?.[to]] : [from, to].map((j) => bars.reduce((sum, x) => sum + (x.values?.[j] || 0), 0));
       if (!(Number(v[0]) > 0 && Number(v[1]) > 0)) out.errors.push(`${at}: a CAGR needs positive values at both ends (got ${v.join(" and ")}). Use a difference instead.`);
     }
   });
-  if (c.stacked === "100" && (c.annotations || []).some((a) => a?.type !== undefined)) out.errors.push(`${path}.annotations: not on a 100% stacked chart (the bars are shares, not values).`);
+  if (c.stacking === "percent" && (c.annotations || []).some((a) => a?.type !== undefined)) out.errors.push(`${path}.annotations: not on a 100% stacked chart (the bars are shares, not values).`);
 }
 
 function checkWaterfall(c: Chart, path: string, out: Out): void {
@@ -710,7 +710,7 @@ export function validateDeck(deck: { style: Style; slides?: readonly Slide[] }):
 }
 
 /* Shapes saved before the 2026-09-27 chart change. */
-type LegacyChart = Omit<Chart, "series"> & { type?: string; series?: (Series & { line?: boolean })[] };
+type LegacyChart = Omit<Chart, "series"> & { type?: string; stacked?: boolean | "100" | "auto"; series?: (Series & { line?: boolean })[] };
 type LegacyColumn = { label?: string; focus?: boolean; num?: unknown };
 
 /** Slides saved before the 2026-09-27 chart change: chart.type and series.line become marks; table columns lose `num`. */
@@ -718,8 +718,12 @@ export function upgrade(slide: Slide): Slide {
   const s = structuredClone(slide), c: LegacyChart | undefined = s.chart;
   if (c?.type) {
     (c.series || []).forEach((x) => { x.mark = c.type === "lines" || x.line ? "line" : "bar"; delete x.line; });
-    if (c.type === "bars") c.stacked = false;
+    if (c.type === "bars") c.stacking = "none";
     delete c.type;
+  }
+  if (c && c.stacked !== undefined) {
+    c.stacking = c.stacked === true ? "stacked" : c.stacked === "100" ? "percent" : c.stacked === "auto" ? "auto" : "none";
+    delete c.stacked;
   }
   (s.table?.columns || []).forEach((col: LegacyColumn) => delete col.num);
   if (!NOTE_POINTS) (s.notes || []).forEach((n) => { if (n) delete n.point; });

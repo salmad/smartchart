@@ -34,7 +34,7 @@ test("difference: absolute in the series format, pp for %, % change when relativ
 });
 
 test("annotations read the stack totals when stacked and no series is named", () => {
-  const c: Chart = { categories: ["a", "b"], format: "£{v}m", stacked: true, series: [{ name: "x", mark: "bar", values: [1, 2] }, { name: "y", mark: "bar", color: "focus", values: [1, 4] }] };
+  const c: Chart = { categories: ["a", "b"], format: "£{v}m", stacking: "stacked", series: [{ name: "x", mark: "bar", values: [1, 2] }, { name: "y", mark: "bar", color: "focus", values: [1, 4] }] };
   assert.equal(label(c, { type: "difference", from: 0, to: 1 }), "+£4m");
   assert.equal(label(c, { type: "difference", from: 0, to: 1, series: 1 }), "+£3m");
 });
@@ -67,7 +67,7 @@ test("axis break only for one outlier bar with nothing above the cap", () => {
   const c = (v: number[], extra: Partial<Chart> = {}): Chart => ({ categories: v.map(String), format: "{v}", series: [{ name: "x", mark: "bar", values: v }], ...extra });
   assert.deepEqual(axisBreak(c([10, 12, 90])), { cap: 18, series: 0, index: 2 });
   assert.equal(axisBreak(c([10, 12, 25])), null);
-  assert.equal(axisBreak(c([10, 12, 90], { stacked: true })), null);
+  assert.equal(axisBreak(c([10, 12, 90], { stacking: "stacked" })), null);
   assert.equal(axisBreak(c([10, 12, 90], { annotations: [{ type: "target", value: 50 }] })), null);
   // Two bars are the comparison itself: cutting one would hide the ratio the slide is about.
   assert.equal(axisBreak(c([2.1, 5.4])), null);

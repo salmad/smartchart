@@ -74,7 +74,7 @@ function fixChart(s: Slide, c: Chart, series: Series[], fixes: string[]) {
     if (x && !x.color && s.focus !== "auto") x.color = "neutral";
   });
   const bars = series.filter((x) => x?.mark === "bar");
-  if (c.stacked === true && (bars.length < 2 || new Set(bars.map(fmt)).size > 1)) { c.stacked = false; fixes.push("chart.stacked: off (needs 2 or more bar series in one unit)"); }
+  if (c.stacking === "stacked" && (bars.length < 2 || new Set(bars.map(fmt)).size > 1)) { c.stacking = "none"; fixes.push("chart.stacking: none (needs 2 or more bar series in one unit)"); }
   if (s.focus !== "auto") {
     const focus = series.map((x, i) => (x?.color === "focus" ? i : -1)).filter((i) => i >= 0);
     focus.slice(1).forEach((i) => { series[i].color = "neutral"; fixes.push(`chart.series[${i}].color: neutral (only one series is the focus)`); });

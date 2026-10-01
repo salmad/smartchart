@@ -18,13 +18,13 @@ test("no auto, no call", async () => {
 });
 
 test("marks, stacking, focus and icons in one call", async () => {
-  const jev = fakeJev({ mark0: ["bar", 0.9], mark1: ["line", 0.8], stacked: ["side_by_side", 0.9], focus: ["item1", 0.8] });
+  const jev = fakeJev({ mark0: ["bar", 0.9], mark1: ["line", 0.8], stacking: ["side_by_side", 0.9], focus: ["item1", 0.8] });
   const s = chart([{ name: "Revenue", mark: "auto", values: [1, 2, 3, 4, 5] }, { name: "Margin", mark: "auto", format: "{v}%", values: [5, 6, 7, 8, 9] }],
-    { chart: { stacked: "auto" }, slide: { focus: "auto" } });
+    { chart: { stacking: "auto" }, slide: { focus: "auto" } });
   const r = await resolveAuto(s, "consulting", jev);
   assert.equal(jev.calls.length, 1);
   assert.deepEqual(seriesOf(r.slide).map((x) => x.mark), ["bar", "line"]);
-  assert.equal(r.slide.chart?.stacked, false);
+  assert.equal(r.slide.chart?.stacking, "none");
   assert.deepEqual(seriesOf(r.slide).map((x) => x.color), ["neutral", "focus"]);
   assert.equal(r.slide.focus, undefined);
   assert.deepEqual(r.resolved["chart.series[1].mark"], { value: "line", p: 0.8 });

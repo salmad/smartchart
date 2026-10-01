@@ -157,7 +157,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
       const chart = draft.chart;
       if (chart && Array.isArray(chart.series)) {
         if (!NAMED_MARK.test(ask)) chart.series.forEach((x) => { if (x && typeof x === "object" && x.mark !== "auto") x.mark = "auto"; });
-        if (!/stack/i.test(ask) && chart.stacked !== undefined) chart.stacked = "auto";
+        if (!/stack/i.test(ask) && chart.stacking !== undefined) chart.stacking = "auto";
       }
       const res = await write(item, draft), left = unwritten();
       // Several slides reserved in one go: a reply on the first write must not end the turn early.

@@ -65,7 +65,7 @@ test("one context bar in unstacked bars is quiet and labelled; lines and stacks 
   const two = seriesSlots({ series: series(2) });
   assert.deepEqual(two.slots, ["focus", "quiet"]);
   assert.deepEqual(two.labelled, [false, true]);
-  assert.deepEqual(seriesSlots({ stacked: true, series: series(2) }).slots, ["focus", "ctx3"]);
+  assert.deepEqual(seriesSlots({ stacking: "stacked", series: series(2) }).slots, ["focus", "ctx3"]);
   assert.deepEqual(seriesSlots({ series: [...series(2), { name: "M", mark: "line", color: "contrast", values: [1, 2] }] }).slots, ["focus", "quiet", "ctx1"]);
   assert.deepEqual(seriesSlots({ series: series(2, { mark: "line" }) }).slots, ["focus", "ctx3"]);
 });
@@ -120,7 +120,7 @@ test("every series has its own text colour: 4.5:1, and grey labels a clear step 
 });
 
 test("two grey series take the ends of the grey scale, so they never read as one grey (revenue mix)", () => {
-  const mix: Chart = { stacked: "100", categories: ["A", "B"], series: [
+  const mix: Chart = { stacking: "percent", categories: ["A", "B"], series: [
     { name: "Interest", mark: "bar", color: "neutral", values: [7, 12] },
     { name: "Interchange", mark: "bar", color: "focus", values: [3, 8] },
     { name: "Fees", mark: "bar", color: "neutral", values: [1, 2] }] };

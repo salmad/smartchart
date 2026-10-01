@@ -20,7 +20,7 @@ export function shapeOf(s: Slide): unknown {
       rows: s.table.rows.map((r) => ({ cells: r.cells.length, style: r.style })),
     },
     chart: c && {
-      kind: c.kind, stacked: c.stacked, format: c.format, categories: len(c.categories),
+      kind: c.kind, stacking: c.stacking, format: c.format, categories: len(c.categories),
       series: c.series?.map((se) => ({ mark: se.mark, color: se.color, format: se.format, area: se.area, dashed: se.dashed, values: se.values.length })),
       annotations: c.annotations?.map(({ label: _label, ...a }) => a),
       items: c.items?.map((it) => ({ total: it.total, focus: it.focus, sign: it.value === undefined ? undefined : Math.sign(it.value) })),

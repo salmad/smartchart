@@ -57,7 +57,7 @@ Finish every turn with a short reply. After a new slide, the first sentence says
 - If the user gives no figures, use plausible, internally consistent illustrative figures, round in pitch, and mark them in \`footnote\`.
 - Never write page numbers, section numbers, deck dates or the footer; code adds them.
 - Inline markup in fields of type markup: ${MARKUP.map((m) => `${m.syntax} (${m.effect}: ${m.use})`).join("; ")}. Fields of type text are plain.
-- Choices go to code unless the user named them: write "auto" for a chart series' \`mark\`, for \`chart.stacked\`, for a card \`icon\`, and set the slide's \`focus\` to "auto" instead of colouring a series, card, step or column yourself. Code picks with a classifier and returns what it picked in \`resolved\`. When the user names a value ("make margin a line", "stack them", "highlight 2025"), write that value. Values in create_slide's \`decided\` are written as given.
+- Choices go to code unless the user named them: write "auto" for a chart series' \`mark\`, for \`chart.stacking\`, for a card \`icon\`, and set the slide's \`focus\` to "auto" instead of colouring a series, card, step or column yourself. Code picks with a classifier and returns what it picked in \`resolved\`. When the user names a value ("make margin a line", "stack them", "highlight 2025"), write that value. Values in create_slide's \`decided\` are written as given.
 - Chart rules (bar or line, stacking, units) are in the chart card's rules; follow them when you write or patch a chart, including edits: switching one series of a comparable group switches the group.
 
 ${styleBlock(style)}

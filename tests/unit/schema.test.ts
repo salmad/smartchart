@@ -30,7 +30,7 @@ test("mark is required and takes bar, line or auto", () => {
   const { mark, ...noMark } = REV;
   assert.ok(errs(chart({ categories: cats, series: [noMark] })).some((x) => x.startsWith("chart.series[0].mark: required")));
   assert.ok(errs(chart({ categories: cats, series: [{ ...REV, mark: "pie" }] })).some((x) => x.includes("Use one of: bar, line, auto")));
-  assert.deepEqual(errs(chart({ categories: cats, stacked: "auto", series: [{ ...REV, mark: "auto" }] }, { focus: "auto" })), []);
+  assert.deepEqual(errs(chart({ categories: cats, stacking: "auto", series: [{ ...REV, mark: "auto" }] }, { focus: "auto" })), []);
 });
 
 test("a third unit is an error", () => {
@@ -39,9 +39,9 @@ test("a third unit is an error", () => {
 });
 
 test("stacking needs two bar series in one unit", () => {
-  assert.ok(errs(chart({ categories: cats, stacked: true, series: [REV, MARGIN] })).some((x) => x.startsWith("chart.stacked:")));
+  assert.ok(errs(chart({ categories: cats, stacking: "stacked", series: [REV, MARGIN] })).some((x) => x.startsWith("chart.stacking:")));
   const b2 = { ...REV, name: "Services", color: "neutral" };
-  assert.deepEqual(errs(chart({ categories: cats, stacked: true, format: "£{v}m", series: [REV, b2] })), []);
+  assert.deepEqual(errs(chart({ categories: cats, stacking: "stacked", format: "£{v}m", series: [REV, b2] })), []);
 });
 
 test("area and dashed are line-only", () => {
@@ -112,9 +112,9 @@ test("annotations: indices, order, bar series, target fields, CAGR sign", () => 
 });
 
 test("100% stacked needs 2 bar series and takes no annotations", () => {
-  const two = { ...REV5, stacked: "100", series: [REV5.series[0], { name: "Other", mark: "bar", color: "neutral", values: [1, 2, 3, 4, 5] }] };
+  const two = { ...REV5, stacking: "percent", series: [REV5.series[0], { name: "Other", mark: "bar", color: "neutral", values: [1, 2, 3, 4, 5] }] };
   assert.deepEqual(errs(chart(two)), []);
-  assert.match(errs(chart({ ...REV5, stacked: "100" })).join(), /stacking needs 2/);
+  assert.match(errs(chart({ ...REV5, stacking: "percent" })).join(), /stacking needs 2/);
   assert.match(errs(chart({ ...two, annotations: [{ type: "target", value: 50 }] })).join(), /100% stacked/);
 });
 
@@ -196,4 +196,26 @@ test("timeline limits count lines, not only workstreams", () => {
   assert.deepEqual(errs(chart({ ...TL, rows: twelve })), []);
   assert.match(errs(chart({ ...TL, rows: [...twelve, { label: "x", level: 1, start: 0, end: 1 }] })).join(), /rows/);
   assert.match(errs(chart({ ...TL, milestones: Array.from({ length: 7 }, (_, i) => ({ label: `M${i}`, at: 0 })) })).join(), /milestones/);
+});
+
+const barsSlide = (extra: Record<string, unknown>) => legacy({ template: "chart", title: "Revenue grew in every segment over three years", chart: {
+  kind: "bars", categories: ["2023", "2024", "2025"], series: [{ name: "A", values: [1, 2, 3], mark: "bar" }, { name: "B", values: [2, 3, 4], mark: "bar" }], ...extra } });
+
+test("chart.stacking: old stacked values upgrade", () => {
+  const st = (v: unknown) => (upgrade(barsSlide({ stacked: v })).chart as { stacking?: string }).stacking;
+  assert.equal(st(false), "none");
+  assert.equal(st(true), "stacked");
+  assert.equal(st("100"), "percent");
+  assert.equal(st("auto"), "auto");
+  assert.ok(!("stacked" in (upgrade(barsSlide({ stacked: true })).chart as object)));
+});
+
+test("chart.stacking: validates and refuses the old field", () => {
+  assert.deepEqual(validate(barsSlide({ stacking: "percent" }), "consulting").errors, []);
+  assert.match(validate(barsSlide({ stacked: true }), "consulting").errors.join(" "), /stacked/);
+});
+
+test("chart.stacking: the card offers the four strings", () => {
+  const card = JSON.stringify(describe("chart", "consulting"));
+  assert.match(card, /"none","stacked","percent","auto"/);
 });
