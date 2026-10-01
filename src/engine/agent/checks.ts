@@ -37,7 +37,18 @@ function parallelTexts(s: Slide): string[] {
 
 // A timeline is a plan and a matrix a judgement, not figures: no unit, source or quantified-title rules.
 const isTimeline = (s: Slide) => s.template === "chart" && (s.chart?.kind === "timeline" || s.chart?.kind === "matrix");
-const hasFigures = (s: Slide) => (["chart", "table", "number"].includes(s.template) && !isTimeline(s)) || (s.template === "cards" && (s.cards || []).some((c) => c.value));
+const hasFigures = (s: Slide) => (["chart", "pair", "table", "number"].includes(s.template) && !isTimeline(s)) || (s.template === "cards" && (s.cards || []).some((c) => c.value));
+/** The words a slide claims with: its headline and body text (not chart positions, step times or page furniture). */
+const claimText = (s: Slide) => [s.title, s.subtitle, s.takeaway, s.number?.caption, ...(s.points || []).flatMap((p) => [p.title, p.text]),
+  ...(s.cards || []).flatMap((c) => [c.title, c.text, ...(c.bullets || [])]), ...(s.notes || []).flatMap((n) => [n.title, n.text]),
+  ...(s.steps || []).map((x) => x.text), ...(s.charts || []).flatMap((c) => c.bullets || [])].filter(Boolean).map((t) => plain(t)).join(" ");
+/** R8: in consulting, a slide that claims figures says where they come from, in its source or a footnote. A quote names its speaker. */
+function sourceCheck(s: Slide): Check | null {
+  if (s.template === "quote" || s.template === "cover" || s.template === "section") return null;
+  if (!hasFigures(s) && !numbersIn(claimText(s)).length) return null;
+  const ok = !!(s.source || s.footnote);
+  return { id: "R8", ok, msg: ok ? "Figures say where they come from" : "Figures with no source or footnote: say where they come from" };
+}
 
 const YEAR = (n: number, raw: string) => Number.isInteger(n) && n >= 1900 && n <= 2100 && !/[,.]/.test(raw);
 /** Figures in a text: "£9,400k" → 9400, "4.5×" → 4.5; four-digit years are left out. */
@@ -72,7 +83,8 @@ function timeKey(label: string): number | null {
 
 /** Rule checks R1–R14. `lines` is the measured title line count. */
 export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
-  if (MENU[s.template].frame === false) return [];
+  // A slide without a title (the big number) still owes its figures a source.
+  if (MENU[s.template].frame === false) { const r8 = style === "consulting" ? sourceCheck(s) : null; return r8 ? [r8] : []; }
   const out: Check[] = [], add = (id: string, ok: boolean, msg: string) => out.push({ id, ok, msg });
   const maxLines = style === "pitch" ? 1 : 2;
   add("R1", lines <= maxLines, lines <= maxLines ? `Title fits on ${lines} line${lines > 1 ? "s" : ""}` : `Title runs to ${lines} lines (max ${maxLines})`);
@@ -94,7 +106,8 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
   }
   const lens = parallelTexts(s).map((x) => x.length).filter(Boolean);
   if (lens.length >= 2) { const r = Math.max(...lens) / Math.min(...lens); add("R7", r <= 2.5, r <= 2.5 ? "Parallel items are balanced" : `Parallel items are unbalanced (${r.toFixed(1)}× longest vs shortest)`); }
-  if (style === "consulting" && hasFigures(s)) add("R8", !!s.source, s.source ? "Figures have a source" : "Figures have no source");
+  const r8 = style === "consulting" ? sourceCheck(s) : null;
+  if (r8) out.push(r8);
   if (s.template === "chart" && s.chart && Array.isArray(s.chart.series)) {
     const c = s.chart, series = s.chart.series, fmt = (x: { format?: string }) => x.format || c.format || "{v}", byFmt: Record<string, Set<string>> = {};
     series.forEach((x) => { if (!x.dashed) (byFmt[fmt(x)] ||= new Set()).add(x.mark); });

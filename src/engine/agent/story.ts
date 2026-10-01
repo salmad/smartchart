@@ -52,7 +52,17 @@ export async function storyChecks(slides: { id: string; slide: Slide }[], style:
     const slideId = content.some((l) => l.id === fail) ? fail : undefined, page = slideId ? n(slideId) : 0;
     return { id, ok, p, ...(slideId ? { slideId } : {}), ...failed(id, fail, page, slideId, style, lines) };
   }).filter((c): c is StoryCheck => c !== null);
-  return { checks, ms: r._ms };
+  const d6 = sectionCheck(lines, style);
+  return { checks: d6 ? [...checks, d6] : checks, ms: r._ms };
+}
+
+/** D6, in code: a consulting deck of 8+ slides is read in parts, so it has section dividers (the picking guide's rule). */
+export const SECTION_FROM = 8;
+function sectionCheck(lines: StoryLine[], style: Style): StoryCheck | null {
+  if (style !== "consulting" || lines.length < SECTION_FROM) return null;
+  if (lines.some((l) => l.kind === "section")) return { id: "D6", ok: true, msg: "The deck is in parts", p: 1 };
+  return { id: "D6", ok: false, p: 1, msg: `${lines.length} slides and no section dividers`,
+    fix: { kind: "ask", label: "Ask Occam", prompt: "This deck has no section dividers. Group its slides into 2–4 parts and start each part with a section slide whose title names the part. Do not change the other slides." } };
 }
 
 const PASS: Record<string, string> = {

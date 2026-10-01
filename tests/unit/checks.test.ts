@@ -97,3 +97,25 @@ test("withNudge: before the closing question, else at the end", () => {
   assert.equal(withNudge("Added it.", "Worth a look: x."), "Added it. Worth a look: x.");
   assert.equal(withNudge("Added it.", ""), "Added it.");
 });
+
+test("R8: in consulting, any figure claim says where it comes from, in a source or a footnote", () => {
+  const steps = (extra: Partial<Slide>): Slide => ({ template: "steps", title: "The book reaches £10m in 18 months and a warehouse line by month 12", steps: [{ when: "0–6 mo", title: "Build", text: "Cards live." }, { when: "6–18 mo", title: "Prove", text: "Book to £10m." }], ...extra });
+  assert.equal(get(steps({}), "R8")?.ok, false);
+  assert.match(get(steps({}), "R8")?.msg ?? "", /no source or footnote/);
+  assert.equal(get(steps({ footnote: "Base case." }), "R8")?.ok, true);
+  assert.equal(get(steps({ source: "Acme model." }), "R8")?.ok, true);
+  // No figure, no claim to source; step times are not figures.
+  assert.equal(get({ ...steps({}), title: "The plan builds, proves, then scales the book", steps: [{ when: "0–6 mo", title: "Build", text: "Cards live." }, { when: "Year 2", title: "Scale", text: "Direct mail." }] }, "R8"), undefined);
+  assert.equal(get(steps({}), "R8", "pitch"), undefined);
+});
+
+test("R8 reaches the slides without a title and the two-chart slide; a quote names its speaker", () => {
+  const num: Slide = { template: "number", number: { value: "£1.4bn", caption: "of SME spend goes on personal cards." } } as Slide;
+  assert.equal(get(num, "R8")?.ok, false);
+  assert.equal(get({ ...num, source: "BoE survey." }, "R8")?.ok, true);
+  assert.equal(get({ template: "quote", quote: "We spent £40k a month.", who: "Founder" } as Slide, "R8"), undefined);
+  const pair: Slide = { template: "pair", title: "The market grows a third while Acme takes a share of it", charts: [
+    { caption: "Market · £bn", chart: { categories: ["a", "b"], series: [{ name: "M", mark: "bar", values: [1, 2] }] } },
+    { caption: "Share · %", chart: { categories: ["a", "b"], series: [{ name: "S", mark: "bar", values: [1, 2] }] } }] };
+  assert.equal(get(pair, "R8")?.ok, false);
+});

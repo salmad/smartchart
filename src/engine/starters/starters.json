@@ -56,7 +56,8 @@
      "title": "£5m funds the first 18 months",
      "text": "A £10m book and a drawn warehouse facility prove the model before Series A."
     }
-   ]
+   ],
+   "footnote": "Base case of the Acme financial model; each point is proven on the pages that follow."
   },
   "pitch": {
    "template": "summary",
@@ -404,7 +405,8 @@
      ]
     }
    ],
-   "takeaway": "Three providers today. **Acme replaces all of them.**"
+   "takeaway": "Three providers today. **Acme replaces all of them.**",
+   "source": "Acme product terms, 2026."
   },
   "pitch": {
    "template": "cards",
@@ -2125,7 +2127,8 @@
      "text": "£250m+ book; gross margin covers opex and CAC; EU entry."
     }
    ],
-   "takeaway": "The ask: **£5m for 18 months** to reach a funded book."
+   "takeaway": "The ask: **£5m for 18 months** to reach a funded book.",
+   "footnote": "Base case of the Acme financial model."
   },
   "pitch": {
    "template": "steps",

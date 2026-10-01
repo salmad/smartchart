@@ -236,6 +236,13 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
   },
 });
 
+/* Half a slide's chart (the pair): only the kinds that read at half width, so the card offers nothing it refuses. */
+const HALF = ["kind", "stacking", "categories", "format", "series", "items", "ranking"];
+const HALF_CHART = f("object", "A chart for half the slide.", { required: true, fields: {
+  ...Object.fromEntries(HALF.map((k) => [k, CHART.fields?.[k] as FieldDef])),
+  kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge between two totals. `ranked`: horizontal bars by named item.", { values: ["bars", "waterfall", "ranked"], default: "bars" }),
+} });
+
 /* An exhibit caption over a chart or table, and an optional heading over its notes. */
 const CAPTION = f("text", "What the chart or table shows, stated plainly: the measure, its scope and period, then ' · ' and the unit. 'Annual recurring revenue, FY25–FY26 · £m', 'SME cards compared'. One line. Consulting: always write one. Pitch: leave it out unless the user asks.", { max: 48 });
 const NOTES_TITLE = f("text", "A one- or two-word heading over the notes: 'Notes', 'What drives it'. Only when the user asks for it; never by default. Not with a takeaway.", { max: 20 });
@@ -259,29 +266,29 @@ const notes = (withPoint: boolean) => f("list", "Optional numbered observations 
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
-    summary: "A chart: bars and lines, a waterfall, a timeline, ranked bars or a 2×2; optional notes beside it.",
-    use: "Data over categories or time, a bridge between two totals, workstreams, a ranking, or a 2×2.",
+    summary: "One chart, with optional notes beside it.",
+    use: "Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.",
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   pair: {
     summary: "Two charts side by side, each with a caption and points.",
-    use: "Two related measures, each needing a chart.",
+    use: "Two related measures, each with its own chart (market and share). One measure: chart.",
     fields: {
       charts: f("list", "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One chart.", { fields: {
         caption: f("text", "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { required: true, max: 40 }),
-        chart: CHART,
+        chart: HALF_CHART,
         bullets: f("list", "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
       } }) }),
     },
     variant: () => "pair",
-    rules: ["Each chart: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters). No timeline or matrix.",
+    rules: ["Each chart: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
       "One focus across the slide: the series or item the title is about, in one of the two charts.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
   },
   table: {
-    summary: "A typeset table with optional sub-notes under values and a total row; optional notes beside it.",
-    use: "Exact figures the reader needs to compare across rows.",
+    summary: "A table, with optional notes beside it.",
+    use: "Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.",
     fields: {
       table: f("object", "The table.", { required: true, fields: {
         columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
@@ -311,7 +318,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
   },
   number: {
     summary: "One big number and a sentence saying what it means; no title.",
-    use: "One figure carries the argument.",
+    use: "One figure makes the point alone. Several figures: cards.",
     frame: false,
     fields: {
       number: f("object", "The number.", { required: true, fields: {
@@ -326,7 +333,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
   },
   quote: {
     summary: "A large quote and who said it; no title.",
-    use: "Someone's own words make the point.",
+    use: "A customer's or expert's own words make the point.",
     frame: false,
     fields: {
       quote: f("markup", "The words, without quotation marks.", { required: true, max: { consulting: 150, pitch: 110 } }),
@@ -336,8 +343,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: () => "quote",
   },
   steps: {
-    summary: "Rows of phases: when, a one-word phase name, and what happens.",
-    use: "A sequence in time: a plan, roadmap, process or history in 2–5 steps.",
+    summary: "Phases in rows: when, a name, what happens.",
+    use: "A sequence in time in 2–5 phases: plan, roadmap, process. Overlapping workstreams: chart timeline.",
     fields: {
       steps: f("list", "Steps in time order.", { required: true, items: { min: 2, max: { consulting: 5, pitch: 4 } }, of: f("object", "Step.", { fields: {
         when: f("text", "Time span: '0–6 mo', 'Year 2', 'Q3 2027'.", { required: true, max: 10 }),
@@ -351,8 +358,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["Pitch: at most 3 steps with a takeaway."],
   },
   cards: {
-    summary: "2–4 parallel cards. Each leads with an icon or a big value; or two framed cards as a contrast.",
-    use: "Parallel options, pillars or features; several independent numbers; or a two-way contrast (them vs us).",
+    summary: "2–4 cards, each led by an icon or a big value, or two framed cards.",
+    use: "2–4 parallel options, pillars or figures, or a two-way contrast (them vs us).",
     fields: {
       framed: f("boolean", "Two framed cards side by side, for a contrast: the losing case left (tone `neutral`), the winning case right (tone `focus`). Red (`neg`) only when the user asks for it.", { default: false }),
       cards: f("list", "The cards, left to right.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One card.", { fields: {
@@ -381,7 +388,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
   },
   summary: {
     summary: "The answer in the title, then 2–4 numbered points with evidence.",
-    use: "The whole argument on one slide.",
+    use: "The whole argument on one slide, near the start of a consulting deck.",
     fields: {
       points: f("list", "The supporting points, in the order the deck proves them. Together they prove the title; they do not overlap.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One point.", { fields: {
         title: f("markup", "The claim, as a short headline: 'Bundling fixes adverse selection'.", { required: true, max: 40 }),
@@ -392,8 +399,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["With a takeaway: at most 3 points.", "Each claim fits on two lines: at most 40 characters."],
   },
   cover: {
-    summary: "Opening slide: deck title and a one-sentence subtitle.",
-    use: "The first slide of a deck, once.",
+    summary: "The deck title and a one-line subtitle.",
+    use: "The first slide, once.",
     frame: false,
     fields: {
       title: f("markup", "Company, product or report name, or (pitch) a short bold claim.", { required: true, max: { consulting: 24, pitch: 32 } }),
@@ -403,8 +410,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["The cover never carries numbers, dates or bylines."],
   },
   section: {
-    summary: "Section divider: big section number and name.",
-    use: "The start of a new part in a deck of 8+ slides.",
+    summary: "A numbered section divider.",
+    use: "Starts each part of a deck of 8+ slides; consulting decks need them.",
     frame: false,
     fields: {
       title: f("text", "Section name, 1–3 words: 'The problem', 'Business model'. Exactly 1 line.", { required: true, max: { consulting: 24, pitch: 14 } }),

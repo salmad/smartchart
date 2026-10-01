@@ -61,3 +61,16 @@ it('a slide without a title takes its line in the storyline from its number capt
   ], 'consulting')
   expect(lines.map((l) => l.title)).toEqual(['of SME spend goes on personal cards.', 'No bank would give us a real limit.'])
 })
+
+it('D6: a consulting deck of 8+ slides with no section dividers is flagged, with a fix to ask for', async () => {
+  const many = (n: number, withSection = false) => [s('c', 'cover', 'Acme'), ...(withSection ? [s('x', 'section', 'The problem')] : []),
+    ...Array.from({ length: n - (withSection ? 2 : 1) }, (_, i) => s(`k${i}`, 'cards', `Point number ${i + 1} makes its own case`))]
+  const d6 = async (slides: ReturnType<typeof many>, style: 'consulting' | 'pitch' = 'consulting') => (await storyChecks(slides, style, fakeJev({}))).checks.find((c) => c.id === 'D6')
+  const bad = await d6(many(8))
+  expect(bad?.ok).toBe(false)
+  expect(bad?.msg).toBe('8 slides and no section dividers')
+  expect(bad?.fix?.kind).toBe('ask')
+  expect((await d6(many(8, true)))?.ok).toBe(true)
+  expect(await d6(many(7))).toBeUndefined()
+  expect(await d6(many(9), 'pitch')).toBeUndefined()
+})
