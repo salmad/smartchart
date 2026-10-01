@@ -1,8 +1,8 @@
-import { plain } from "../slides/schema";
-import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "../agent/prompts";
-import { LEADS, LEAD_Q, P_LEAD } from "../agent/pre";
-import { insertIndex } from "./doc";
-import { READ, tool, type DeckDoc } from "./types";
+import { plain } from "../slides/schema.js";
+import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "../agent/prompts.js";
+import { LEADS, LEAD_Q, P_LEAD } from "../agent/pre.js";
+import { insertIndex } from "./doc.js";
+import { READ, tool, type DeckDoc } from "./types.js";
 
 export const choiceTools = [
   tool<{ deckId: string; about: string; after?: string }>({ name: "suggest_template", title: "Suggest a template", group: "choice", scope: "deck", annotations: READ,

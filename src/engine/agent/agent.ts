@@ -2,17 +2,17 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { OFFERED, describe, isTemplate, plain } from "../slides/schema";
-import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm";
-import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts";
-import { checkWrite } from "./write";
-import { applyPatch } from "./patch";
-import type { Resolved } from "./resolve";
-import type { Check } from "./checks";
-import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep, type Pre, type Selection } from "./pre";
-import { TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt";
-import { shorten, targets } from "./shorten";
-import type { Series, Slide, Style, TemplateId, Theme } from "../types";
+import { OFFERED, describe, isTemplate, plain } from "../slides/schema.js";
+import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm.js";
+import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
+import { checkWrite } from "./write.js";
+import { applyPatch } from "./patch.js";
+import type { Resolved } from "./resolve.js";
+import type { Check } from "./checks.js";
+import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep, type Pre, type Selection } from "./pre.js";
+import { TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt.js";
+import { shorten, targets } from "./shorten.js";
+import type { Series, Slide, Style, TemplateId, Theme } from "../types.js";
 
 export interface AgentSlide { id: string; slide: Slide | null; pending?: boolean; issues: string[]; warnings: string[]; checks?: Check[] }
 export interface AgentDeck { style: Style; theme: Theme; slides: AgentSlide[] }

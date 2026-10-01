@@ -1,10 +1,10 @@
 /* One write for every tool that changes a slide: checkWrite with the server estimate, archived templates refused,
    rule checks split out of the warnings, and the result in the shape every write tool returns. */
-import { checkWrite } from "../agent/write";
-import { isTemplate, OFFERED } from "../slides/schema";
-import type { Slide } from "../types";
-import { estimate } from "./estimate";
-import { ToolError, type DeckDoc, type ToolContext } from "./types";
+import { checkWrite } from "../agent/write.js";
+import { isTemplate, OFFERED } from "../slides/schema.js";
+import type { Slide } from "../types.js";
+import { estimate } from "./estimate.js";
+import { ToolError, type DeckDoc, type ToolContext } from "./types.js";
 
 const asValue = (v: unknown): unknown => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v); } catch { /* keep */ } } return v; };
 const RULE = /^R\d+:/;

@@ -2,9 +2,9 @@
    One colour carries the point: totals are a steady grey, steps the quietest grey, and the one focus item takes
    the focus colour. Direction is already in the float and the signed label, so steps are not coloured by sign;
    a step takes the toned red or green only when the user asked for it (item `tone`). */
-import { fmt, signed, waterfall } from "./chart-math";
-import { esc, labelPx, lbl, plotRects, settle } from "./chart-parts";
-import type { Chart } from "../../types";
+import { fmt, signed, waterfall } from "./chart-math.js";
+import { esc, labelPx, lbl, plotRects, settle } from "./chart-parts.js";
+import type { Chart } from "../../types.js";
 
 /** `extra`: more room on top, when labels moved apart ran above the chart on the first draw. */
 export function waterfallChart(box: HTMLElement, spec: Chart, W: number, H: number, extra = 0): void {

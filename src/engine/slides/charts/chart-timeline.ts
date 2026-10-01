@@ -1,8 +1,8 @@
 /* Timeline (Gantt): one bar per workstream over period columns, milestones as diamonds.
    Rows are labelled, so they share the quiet grey (colour spec C4); the focus row takes the focus colour. */
-import { esc, labelPx, lbl, thinCategories } from "./chart-parts";
-import { timelineLines, type Line } from "./timeline-rows";
-import type { Chart, Milestone } from "../../types";
+import { esc, labelPx, lbl, thinCategories } from "./chart-parts.js";
+import { timelineLines, type Line } from "./timeline-rows.js";
+import type { Chart, Milestone } from "../../types.js";
 
 /** A bar's colour slot: focus keeps the focus colour; with sub-rows the top level is the strong grey and sub-rows the quiet one; otherwise the quiet grey. */
 export const barTone = (ln: Line, hasSub: boolean): "focus" | "ctx1" | "ctx3" | "quiet" => (ln.focus ? "focus" : hasSub ? (ln.level === 0 ? "ctx1" : "ctx3") : "quiet");

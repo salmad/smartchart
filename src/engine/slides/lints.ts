@@ -1,6 +1,6 @@
 /* Measurements on a rendered slide: fit issues and layout lints. */
-import { MIN_MARK, contrast } from "./colours";
-import type { Style } from "../types";
+import { MIN_MARK, contrast } from "./colours.js";
+import type { Style } from "../types.js";
 
 /* ═════════════ Fit check (prototype): measures the rendered slide at 1920×1080 ═════════════ */
 export interface Located { msg: string; path?: string }

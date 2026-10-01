@@ -1,8 +1,8 @@
 /* The timeline as a gantt (spec 4.3): bars painted across period columns, milestones placed on a period. Pure patches for
    applyPatch, the same path the agent writes on; limits come from the schema. Period indices shift with the periods. */
-import { timelineLines } from "./charts/timeline-rows";
-import { describe, type FieldView } from "./schema";
-import type { Chart, Slide, Style, TimelineRow } from "../types";
+import { timelineLines } from "./charts/timeline-rows.js";
+import { describe, type FieldView } from "./schema.js";
+import type { Chart, Slide, Style, TimelineRow } from "../types.js";
 
 type Patch = Record<string, unknown>;
 const splice = <T,>(xs: T[], at: number, del: number, ...ins: T[]) => { const a = xs.slice(); a.splice(at, del, ...ins); return a; };

@@ -1,9 +1,9 @@
 /* PRE (spec 9.0): one Jev call before the agent runs: intent, template, card lead, position.
    When the intent is sure, code makes the agent's first tool call itself. */
-import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts";
-import type { JevFn, JevQuestion } from "./llm";
-import { plain } from "../slides/schema";
-import type { Slide, Style } from "../types";
+import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts.js";
+import type { JevFn, JevQuestion } from "./llm.js";
+import { plain } from "../slides/schema.js";
+import type { Slide, Style } from "../types.js";
 
 /** What PRE reads of the deck: the slides in order (a pending slide has no content yet). */
 export interface PreDeck { style: Style; slides: { id: string; slide: Slide | null }[] }

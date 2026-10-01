@@ -1,4 +1,4 @@
-import { READ, tool } from "./types";
+import { READ, tool } from "./types.js";
 
 export const CONTRACT = "2026-10-01";
 

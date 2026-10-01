@@ -1,8 +1,8 @@
 /* Every "auto" choice on a slide, resolved with ONE Jev call (spec 9.1). A concrete value is never
    touched. Below P_AUTO the default stands; icons always take Jev's top pick. */
-import { CHART_GUIDE, ICONS, plain } from "../slides/schema";
-import type { JevFn } from "./llm";
-import type { Chart, Series, Slide, Style } from "../types";
+import { CHART_GUIDE, ICONS, plain } from "../slides/schema.js";
+import type { JevFn } from "./llm.js";
+import type { Chart, Series, Slide, Style } from "../types.js";
 
 export type Resolved = Record<string, { value: string; p: number }>;
 interface Question { id: string; path: string; instructions: string; options: Record<string, string>; min: number; fallback: string; apply: (choice: string) => void }

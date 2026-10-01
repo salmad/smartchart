@@ -1,10 +1,10 @@
-import { applyPatch } from "../agent/patch";
-import { ASKS_OPENER, NAMED_MARK, matchNewSeries, prefixed, touches } from "../agent/agent";
-import { getAt, listOps } from "../slides/edit";
-import type { Slide } from "../types";
-import { insertIndex, newSlideId, slideAt, storylineRows } from "./doc";
-import { writeResult, writeSlide } from "./write";
-import { DESTRUCTIVE, IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types";
+import { applyPatch } from "../agent/patch.js";
+import { ASKS_OPENER, NAMED_MARK, matchNewSeries, prefixed, touches } from "../agent/agent.js";
+import { getAt, listOps } from "../slides/edit.js";
+import type { Slide } from "../types.js";
+import { insertIndex, newSlideId, slideAt, storylineRows } from "./doc.js";
+import { writeResult, writeSlide } from "./write.js";
+import { DESTRUCTIVE, IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types.js";
 
 const DECK = { type: "string", description: "The deck id." } as const;
 const SLIDE_ID = { type: "string", description: "A slide id from get_deck, e.g. s_a1b2." } as const;

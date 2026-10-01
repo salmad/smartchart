@@ -1,10 +1,10 @@
 /* A chart as a sheet (spec 4.3): rows and columns a person edits like a spreadsheet. A SheetModel reads and writes the real
    slide paths through patches for applyPatch, the same path the agent writes on, so reordering a series moves the series
    itself (its mark and colour with it). Limits come from the schema; an action that would break one returns null. */
-import { applyPatch } from "../agent/patch";
-import { addColumn, moveColumn, removeColumn } from "./edit";
-import { describe, type FieldView } from "./schema";
-import type { Chart, Slide, Style } from "../types";
+import { applyPatch } from "../agent/patch.js";
+import { addColumn, moveColumn, removeColumn } from "./edit.js";
+import { describe, type FieldView } from "./schema.js";
+import type { Chart, Slide, Style } from "../types.js";
 
 export type Patch = Record<string, unknown>;
 export type Cellv = string | number | boolean | null;

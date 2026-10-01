@@ -1,7 +1,7 @@
 /* The tool registry's shared types. Framework-free: the same tools run behind REST, MCP and (later) the in-app agent. */
-import type { Slide, Style, Theme } from "../types";
-import type { Check } from "../agent/checks";
-import type { JevFn } from "../agent/llm";
+import type { Slide, Style, Theme } from "../types.js";
+import type { Check } from "../agent/checks.js";
+import type { JevFn } from "../agent/llm.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };

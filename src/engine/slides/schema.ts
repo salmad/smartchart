@@ -10,9 +10,9 @@
    or a number. Prototype limits are hand-tuned and proven by the stress deck;
    the product computes them from geometry (spec 4.3).
    ═══════════════════════════════════════════════════════════════════════════ */
-import { timelineLines } from "./charts/timeline-rows";
-import { waterfall } from "./charts/chart-math";
-import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types";
+import { timelineLines } from "./charts/timeline-rows.js";
+import { waterfall } from "./charts/chart-math.js";
+import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell";
