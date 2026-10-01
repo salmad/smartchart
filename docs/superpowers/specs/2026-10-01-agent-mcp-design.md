@@ -11,7 +11,7 @@ An agent such as Claude Code, or OpenClaw driven from Telegram, connects to Smar
 
 The in-app agent and outside agents use **one set of tools**, with the same names and the same code. The post-edit code always runs on our side: autofix → validate → resolve `auto` (Jev) → fit check → rule checks. No writer can skip it.
 
-**How it is used:** open the deck's share link in a browser and talk to Claude Code (connected over MCP) beside it. Every change shows up in the open page within seconds. There is no rendering on the server: the browser is the view.
+**How it is used:** talk to Claude Code (connected over MCP) with the deck open in a browser beside it. Ask what decks you have and pick one (`list_decks` → `get_deck`), or start a new one. Claude gives you the deck's link: your own editor link (`/d/:id`, signed in) or, for others to watch, the share link. Every change shows up in the open page within seconds. There is no rendering on the server: the browser is the view.
 
 **Decided:**
 - MCP first, REST second, both generated from the same registry.
@@ -42,7 +42,7 @@ The in-app agent and outside agents use **one set of tools**, with the same name
 - **Hosts** are thin adapters. The MCP host maps `tools/list` and `tools/call` to the registry. The REST host maps `POST /api/v1/<tool>` with a JSON body to the same call, and returns JSON. Both authenticate first (section 7) and count model calls (section 9).
 - **The in-app agent moves onto the registry** with the same tool names (milestone M4). Until then it keeps its four tools in the browser. Both paths share `checkWrite`, so the slides they produce are equivalent.
 - **Measuring on the server:** `measure` is a character-based estimate. It uses the `validate()` limits (maxChars, item counts, row budgets) and returns `fit: "estimated"`. The app already re-measures every slide in a real browser when a deck opens (`recheckRules`, `App.tsx:74`), so an overflow shows there as an amber issue. Later, the fit-spike predictor (`docs/research/2026-09-27-fit-spike`, 100% agreement with Chrome on text line counts) can replace the estimate for text, with no browser and no change to the contract.
-- **Live share view:** the share page (`/s/:token`, `Shared.tsx`) loads once today. It changes to poll a cheap `rev` check every 3 s while the tab is visible (and on focus), reload the deck when `rev` changes, and move to the slide that changed. A share link can open at one slide with `?slide=n`.
+- **Live view, editor and share page:** both load once today. Both change to poll a cheap `rev` check every 3 s while the tab is visible (and on focus), reload when `rev` changes, and move to the slide that changed. The editor merges by slide id (section 8) and never polls over a hand edit in progress. Either link can open at one slide with `?slide=n`. Watching your own deck needs no sharing.
 
 ## 3. Context: how an outside agent learns enough
 
@@ -50,7 +50,7 @@ Context arrives in four layers, all generated from the same source as the in-app
 
 | Layer | When it arrives | What's in it |
 |---|---|---|
-| 1. MCP `instructions` (~300 words, always in context) | On connect | What SmartChart is. The two ways in (tools, or `ask`). The workflow: `get_guide` once per style, then `suggest_template` → `get_template` → `create_slide` → fix `issues` → `check_slide`. Offer the user the share link (`share_deck`) so they can watch the deck change. Address slides by id, never by position. Write `"auto"` for choices code makes. Never set style, layout, colours, page numbers or the footer. When the user's request is unclear, ask them before writing. |
+| 1. MCP `instructions` (~300 words, always in context) | On connect | What SmartChart is. The two ways in (tools, or `ask`). The workflow: `get_guide` once per style, then `suggest_template` → `get_template` → `create_slide` → fix `issues` → `check_slide`. Offer the user the deck's editor link (from `get_deck`) so they can watch it change; the share link only when they want others to see it. Address slides by id, never by position. Write `"auto"` for choices code makes. Never set style, layout, colours, page numbers or the footer. When the user's request is unclear, ask them before writing. |
 | 2. `get_guide(style)` | Once per session and style | Hard rules (every figure exactly as given, no invented data, illustrative figures marked, no made-up source, change only what was asked). Start plain. When to stop and ask (2–4 numbered options, put to your own user). Writing slide JSON (maxChars, plain numbers, markup syntax, `auto` choices, paths and patches). The style block (`STYLES[style]`). |
 | 3. `list_templates(style)` / `get_template(template, style)` | When choosing and before writing | Every offered template with its summary and "use when", the picking guide (`PICKING_GUIDE`, `GUIDE`: chart vs table), and the card: fields with type, required, maxChars, item min/max and description, the template rules (`CHART_GUIDE` for charts), markup, and a worked example from the starters. |
 | 4. Tool results | Every call | Write results name the path, the limit and the fix for each issue. `get_deck` gives the storyline. `read_slide` gives the JSON and what can be added, removed or moved. |
@@ -174,11 +174,11 @@ There's one error shape across hosts: `{ error: { code, message, fix? } }`. Code
 - **Unit (vitest):** each registry handler against a fake database and a fake Jev; contract snapshots of every tool's schema (a change to a published name or field fails the test unless it only adds); `upgrade()` for `stacked` → `stacking`; key auth (another user's deck returns `not_found`).
 - **Host tests:** MCP `tools/list` and `tools/call` round trip with the SDK client; a REST call runs the same handler.
 - **Agent harness:** with Claude Code connected over MCP, run a fixed set of requests (new slide, surgical edit, storyline) and compare with the in-app harness on fit, numbers kept and edit drift. Re-run the in-app harness when the in-app agent moves onto the registry (M4).
-- **Browser (Playwright):** the app merges after an outside write (no stuck saves), the soft lock warning appears, and an open share page shows an outside write within 5 s and moves to that slide.
+- **Browser (Playwright):** the app merges after an outside write (no stuck saves), the soft lock warning appears, and an open editor and share page each show an outside write within 5 s and move to that slide.
 
 ## 12. Milestones
 
-1. **M1 Contract.** Schema clean-up (section 5). The registry with deck, slide, template and check handlers over the deck service (server write path with estimated fit). API keys. REST host. The app's 409 merge and the soft lock. The live share view with `?slide=n`.
+1. **M1 Contract.** Schema clean-up (section 5). The registry with deck, slide, template and check handlers over the deck service (server write path with estimated fit). API keys. REST host. The app's 409 merge and the soft lock. The live editor and share page with `?slide=n`.
 2. **M2 MCP.** The MCP host on Vercel, `instructions`, `get_guide` from the split prompt sections, and the connect guide (Claude Code `claude mcp add --transport http …`, plus an OpenClaw skill). Trial run with Claude Code.
 3. **M3 Delegation.** `ask` on the server with the shared chat.
 4. **M4 One agent.** The in-app agent uses the registry with the same names (`suggest_template` + one-call `create_slide` replace reserve + `edit_slide`; `patch_slide` becomes `update_slide`). Harness parity required before merging.
