@@ -89,6 +89,8 @@ export function mergeDecks(local: SavedDeck, server: SavedDeck, base: SavedDeck 
   const items: Item[] = [], changed: string[] = []
   for (const s of server.items) {
     if (mine(s.id)) { items.push(L.get(s.id) as Item); continue }
+    // Deleted here and untouched on the server: it stays deleted.
+    if (base && B.has(s.id) && !L.has(s.id) && same(s, B.get(s.id))) continue
     items.push(s)
     if (!same(s, B.get(s.id))) changed.push(s.id)
   }
@@ -98,6 +100,18 @@ export function mergeDecks(local: SavedDeck, server: SavedDeck, base: SavedDeck 
     const prev = local.items.slice(0, i).reverse().find((p) => items.some((x) => x.id === p.id))
     items.splice(prev ? items.findIndex((x) => x.id === prev.id) + 1 : 0, 0, it)
   })
+  // A move made here is kept when the server did not reorder; slides new on the server stay after their server neighbour.
+  const order = (d: SavedDeck | null, only: Map<string, Item>) => (d?.items ?? []).map((x) => x.id).filter((id) => only.has(id)).join()
+  if (base && order(local, B) !== order(base, L) && order(server, B) === order(base, S)) {
+    const rank = new Map(local.items.map((x, i) => [x.id, i]))
+    const placed = items.filter((x) => rank.has(x.id)).sort((a, b) => (rank.get(a.id) as number) - (rank.get(b.id) as number))
+    items.forEach((x, i) => {
+      if (rank.has(x.id)) return
+      const prev = items.slice(0, i).reverse().find((p) => rank.has(p.id))
+      placed.splice(prev ? placed.findIndex((p) => p.id === prev.id) + 1 : 0, 0, x)
+    })
+    items.splice(0, items.length, ...placed)
+  }
   // The look follows the same rule as slides: a field changed here since `base` is kept, otherwise the server's is taken.
   const take = <K extends 'style' | 'theme' | 'accent'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
   return { deck: { ...local, style: take('style'), theme: take('theme'), accent: take('accent'), items }, changed }

@@ -27,4 +27,14 @@ describe('mergeDecks', () => {
     const m = mergeDecks({ ...base, theme: 'paper' }, { ...base, theme: 'ink', accent: '#3366ff' }, base)
     expect(m.deck).toMatchObject({ theme: 'paper', accent: '#3366ff' })
   })
+  it('a slide deleted here stays deleted when the server did not change it, and comes back when it did', () => {
+    const local = deck([item('a', 'A')])
+    expect(mergeDecks(local, deck([item('a', 'A'), item('b', 'B')]), base).deck.items.map((i) => i.id)).toEqual(['a'])
+    expect(mergeDecks(local, deck([item('a', 'A'), item('b', 'B by Claude')]), base).deck.items.map((i) => i.id)).toEqual(['a', 'b'])
+  })
+  it('a move made here is kept when the server did not reorder, and a slide new on the server lands after its neighbour', () => {
+    const local = deck([item('b', 'B'), item('a', 'A')])
+    expect(mergeDecks(local, deck([item('a', 'A'), item('b', 'B')]), base).deck.items.map((i) => i.id)).toEqual(['b', 'a'])
+    expect(mergeDecks(local, deck([item('a', 'A'), item('b', 'B'), item('c', 'C')]), base).deck.items.map((i) => i.id)).toEqual(['b', 'c', 'a'])
+  })
 })
