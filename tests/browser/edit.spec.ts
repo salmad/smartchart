@@ -486,7 +486,11 @@ test('gantt: dragging a row onto the right of another nests it', async ({ page }
 
 test('gantt: deleting the last child turns the group back into a plain row', async ({ page }) => {
   await openGantt(page)
-  for (let i = 0; i < 2; i++) { await rowCell(page, 1).click({ button: 'right' }); await page.getByRole('menuitem', { name: 'Delete', exact: true }).click() }
+  for (let i = 0; i < 2; i++) {
+    await rowCell(page, 1).click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Delete', exact: true }).click()
+    await expect(page.getByRole('menu')).toHaveCount(0)   // the next right-click must not land on the fading menu
+  }
   await finishGantt(page)
   expect((await saved(page)).chart?.rows?.[0]).toMatchObject({ label: 'Platform', start: 1, end: 2 })   // the span it had when its last child left
 })
