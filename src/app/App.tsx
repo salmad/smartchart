@@ -19,6 +19,7 @@ import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
 import { STALE, findDeck } from './remote'
+import { useLiveDeck } from './live'
 import type { Attached } from './files'
 import { Decks } from './components/Decks'
 
@@ -41,7 +42,7 @@ export function App({ route, account, repo, backup }: Props) {
   const [s, app] = useAppState()
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const sendRef = useRef<((text: string) => void) | null>(null)
-  const turns = useRef<TurnRecord[]>([]), warned = useRef(false), stale = useRef(false), bootStarted = useRef(false)
+  const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
   const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks down the left, open unless hidden; the choice is remembered in this browser.
@@ -65,9 +66,9 @@ export function App({ route, account, repo, backup }: Props) {
   const savedKey = useRef<string | null>(null)
   const unsaved = (d: SavedDeck) => editKey(d) !== savedKey.current
   // A new deck asks its question in the chat, so the chat starts empty.
-  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null; stale.current = false }, [app])
+  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null }, [app])
   const openDeck = useCallback((d: SavedDeck) => {
-    turns.current = []; stale.current = false
+    turns.current = []
     app.dispatch({ type: 'open', deck: d })
     // Rule checks re-run with the current code, on slides upgraded to the current schema.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
@@ -105,11 +106,18 @@ export function App({ route, account, repo, backup }: Props) {
     })()
   }, [app, repo, backup, openDeck, newDeck, route, say])
 
+  // Writes made elsewhere (an agent, another tab) are merged in by slide id; the agent hears which slides changed.
+  const onMerged = useCallback((changed: string[], by: string[]) => {
+    app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) })
+    if (!changed.length) return
+    app.dispatch({ type: 'set', patch: { edited: [...new Set([...app.getState().edited, ...changed])] } })
+    if (by.length) say(`${by.join(', ')} updated ${changed.length === 1 ? 'a slide' : `${changed.length} slides`}.`)
+  }, [app, measurer, say])
+  const syncNow = useLiveDeck({ app, repo, onMerged })
+
   // A failed save keeps a copy in this browser and tries again, waiting longer each time; the copy goes once a
   // save succeeds. One chat warning per run of failures, saying why.
   const persist = useCallback(async (saved: SavedDeck) => {
-    // Once the account's copy has moved on, nothing more is saved from here (leaving the page and timers call this too).
-    if (stale.current) return
     const r = retry.current
     clearTimeout(r.timer)
     const why = await repo.save(saved)
@@ -119,24 +127,20 @@ export function App({ route, account, repo, backup }: Props) {
       r.wait = 0; warned.current = false
       return
     }
-    // The deck was changed elsewhere: not retried, and not copied to this browser, where the copy would win over the
-    // newer deck the next time this one is opened.
-    if (why === STALE) {
-      stale.current = true
-      app.dispatch({ type: 'message', message: { kind: 'error', text: STALE } })
-      return
-    }
+    // The deck was changed elsewhere: read it, merge by slide id and save the merge (the autosave does that once the
+    // state changes). Not copied to this browser, where the copy would win over the newer deck the next time this one is opened.
+    if (why === STALE) { void syncNow(); return }
     if (!warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: backup ? notSaved(why) : `Couldn’t save. ${why}` } }) }
     if (!backup) return
     void backup.save(saved)
     r.wait = Math.min(config.saveRetryMaxMs, r.wait ? r.wait * 2 : config.saveRetryMs)
     r.timer = window.setTimeout(() => { const now = toSaved(app.getState()); if (now) void persist(now) }, r.wait)
-  }, [app, repo, backup])
+  }, [app, repo, backup, syncNow])
   useEffect(() => () => clearTimeout(retry.current.timer), [])
 
   // Save 250 ms after the last change, never mid-turn.
   useEffect(() => {
-    if (!loaded || s.busy || !s.deckId || stale.current) return
+    if (!loaded || s.busy || !s.deckId) return
     const t = setTimeout(() => {
       const saved = toSaved(app.getState())
       if (!saved) return
@@ -145,6 +149,23 @@ export function App({ route, account, repo, backup }: Props) {
     }, config.saveDelayMs)
     return () => clearTimeout(t)
   }, [s, loaded, app, persist])
+
+  // Who is working on the deck, for a writer elsewhere to see: a turn running, or a slide open for hand editing.
+  // Entries expire on the server, so both are renewed while they last and cleared when they end.
+  const sent = useRef<{ id: string; active: boolean } | null>(null)
+  useEffect(() => {
+    const id = s.deckId
+    if (!id || !repo.presence) return
+    if (sent.current && sent.current.id !== id && sent.current.active) void repo.presence(sent.current.id, {})
+    const active = s.busy || s.editing !== null
+    if (!active && !(sent.current?.id === id && sent.current.active)) { sent.current = { id, active }; return }
+    const send = () => void repo.presence?.(id, { ...(s.busy ? { busy: true } : {}), ...(s.editing ? { editing: s.editing } : {}) })
+    sent.current = { id, active }
+    send()
+    if (!active) return
+    const t = window.setInterval(send, 30_000)
+    return () => window.clearInterval(t)
+  }, [s.deckId, s.busy, s.editing, repo])
 
   // Another deck picked in the sidebar (or Back/Forward): open it, or start a new one at /new. Boot handles the
   // route the page opened on; a pick made while it runs is acted on as soon as boot is done, never dropped.
