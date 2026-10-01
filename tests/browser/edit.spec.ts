@@ -375,3 +375,21 @@ test('the gantt: a bar is painted by dragging across periods, and by keys', asyn
   expect(c?.rows?.[1]).toMatchObject({ start: 1, end: 2 })
   expect(c?.milestones?.[0].at).toBe(2)
 })
+
+test('a table slide opens as a sheet from its menu; a pasted table replaces it', async ({ page }) => {
+  await loadPlans(page)
+  await cellEl(page, 0, 0).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Edit as sheet…' }).click()
+  await expect(page.getByRole('grid', { name: 'Table data' })).toBeVisible()
+  await sheetCell(page, 1, 0).click()
+  await page.keyboard.type('Team plus')
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('ControlOrMeta+a')
+  await paste(page, 'Tier\tCost\tSeats\nFree\t£0\t1\nPro\t£12\t5\nMax\t£40\t50\n')
+  await expect(page.getByRole('status')).toContainText('Replaced')
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  const t = (await saved(page)).table
+  expect(t?.columns.map((c) => c.label)).toEqual(['Tier', 'Cost', 'Seats'])
+  expect(t?.rows.map((r) => r.cells[0])).toEqual(['Free', 'Pro', 'Max'])
+})

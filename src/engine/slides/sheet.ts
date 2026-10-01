@@ -2,6 +2,7 @@
    slide paths through patches for applyPatch, the same path the agent writes on, so reordering a series moves the series
    itself (its mark and colour with it). Limits come from the schema; an action that would break one returns null. */
 import { applyPatch } from "../agent/patch";
+import { addColumn, moveColumn, removeColumn } from "./edit";
 import { describe, type FieldView } from "./schema";
 import type { Chart, Slide, Style } from "../types";
 
@@ -9,7 +10,7 @@ export type Patch = Record<string, unknown>;
 export type Cellv = string | number | boolean | null;
 export interface SheetCol { header: string; headerPath?: string; type: "text" | "number" | "flag" }
 export interface SheetModel {
-  kind: "bars" | "waterfall";
+  kind: "bars" | "waterfall" | "table";
   cols: SheetCol[]; rows: number;
   get(r: number, c: number): Cellv;
   /** The slide field the cell shows: where its issues are looked up. */
@@ -115,8 +116,30 @@ function waterfall(chart: Chart, style: Style): SheetModel {
   };
 }
 
-/** The sheet for a slide's chart, or null where a chart has no table shape here (the timeline has its own gantt). */
+function tableSheet(slide: Slide): SheetModel {
+  const t = slide.table ?? { columns: [], rows: [] }, cols = t.columns, rows = t.rows;
+  const text = (r: number, c: number) => { const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value : x ?? ""; };
+  const pathOf = (r: number, c: number) => { const x = rows[r]?.cells[c], base = `table.rows[${r}].cells[${c}]`; return typeof x === "object" && x ? `${base}.value` : base; };
+  const ROWS: [number, number] = [1, 8];
+  const colWrite = (f: (s: Slide) => { table?: unknown }): Patch | null => { const p = f(slide); return p.table ? (p as Patch) : null; };
+  return {
+    kind: "table", rows: rows.length,
+    cols: cols.map((c, j) => ({ header: c.label ?? "", headerPath: `table.columns[${j}].label`, type: "text" as const })),
+    get: text, path: pathOf,
+    set: (r, c, raw) => ({ [pathOf(r, c)]: raw }),
+    setHeader: (c, raw) => ({ [`table.columns[${c}].label`]: raw }),
+    insertRow: (at) => (inRange(rows.length + 1, ROWS) ? { "table.rows": splice(rows, at, 0, { cells: cols.map(() => "") }) } : null),
+    removeRows: (r0, r1) => (inRange(rows.length - (r1 - r0 + 1), ROWS) ? { "table.rows": splice(rows, r0, r1 - r0 + 1) } : null),
+    moveRow: (from, to) => (from === to || [from, to].some((i) => i < 0 || i >= rows.length) ? null : { "table.rows": move(rows, from, to) }),
+    insertCol: (at) => colWrite((s) => addColumn(s, at)),
+    removeCols: (c0, c1) => { let s = slide; for (let i = c0; i <= c1; i++) { const p = removeColumn(s, c0); if (!p.table) return null; s = { ...s, table: p.table }; } return s.table ? { table: s.table } : null; },
+    moveCol: (from, to) => colWrite((s) => moveColumn(s, from, to)),
+  };
+}
+
+/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). */
 export function sheetFor(slide: Slide, style: Style): SheetModel | null {
+  if (slide.template === "table" && slide.table) return tableSheet(slide);
   const c = slide.chart;
   if (!c) return null;
   if (c.kind === "waterfall") return waterfall(c, style);
@@ -152,6 +175,7 @@ export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number
     names the categories; for a waterfall, label, value and an optional total column. Existing series keep their own look
     by position; what does not fit the schema's limits is dropped and said. */
 export function replaceFromTable(slide: Slide, style: Style, table: string[][]): { slide: Slide; note?: string } {
+  if (slide.template === "table" && slide.table) return replaceTable(slide, table);
   const chart = slide.chart;
   if (!chart || chart.kind === "timeline" || !table.length) return { slide };
   const lim = limits(style), notes: string[] = [];
@@ -181,5 +205,20 @@ export function replaceFromTable(slide: Slide, style: Style, table: string[][]):
   });
   if (bad) notes.push(`${bad} cell${bad === 1 ? " was" : "s were"} not a number and became 0.`);
   c.annotations = (chart.annotations ?? []).filter((a) => (a.from ?? 0) < rows.length && (a.to ?? 0) < rows.length && (a.series ?? 0) < cols);
+  return { slide: out, ...(notes.length ? { note: notes.join(" ") } : {}) };
+}
+
+/** A pasted table replaces a table slide's: the first row is the header, the rest are rows (up to the schema's 5 columns and 8 rows). */
+function replaceTable(slide: Slide, table: string[][]): { slide: Slide; note?: string } {
+  const old = slide.table, notes: string[] = [];
+  if (!old || table.length < 2) return { slide };
+  const width = Math.max(...table.map((r) => r.length)), cols = Math.min(width, 5), body = table.slice(1), rows = body.slice(0, 8);
+  if (cols < width) notes.push(`Kept ${cols} of ${width} columns; a table takes 5.`);
+  if (rows.length < body.length) notes.push(`Kept ${rows.length} of ${body.length} rows; a table takes 8.`);
+  const out = structuredClone(slide);
+  out.table = {
+    columns: Array.from({ length: Math.max(2, cols) }, (_, j) => ({ ...(old.columns[j] ?? {}), label: (table[0][j] ?? "").trim() })),
+    rows: rows.map((r) => ({ cells: Array.from({ length: Math.max(2, cols) }, (_, j) => r[j] ?? "") })),
+  };
   return { slide: out, ...(notes.length ? { note: notes.join(" ") } : {}) };
 }

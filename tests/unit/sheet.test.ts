@@ -118,3 +118,29 @@ test('a waterfall takes label, value and an optional total column', () => {
   const r = replaceFromTable(WATER, 'consulting', [['Revenue', '100', ''], ['Cost', '-30', ''], ['Margin', '', 'total']])
   expect(r.slide.chart?.items).toEqual([{ label: 'Revenue', value: 100 }, { label: 'Cost', value: -30 }, { label: 'Margin', total: true }])
 })
+
+const TBL: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'Plan' }, { label: 'Price', bold: true }, { label: 'Seats' }], rows: [{ cells: ['Starter', '£9', '1'] }, { cells: ['Team', { value: '£29', note: 'per seat' }, '5'], style: 'total' }] } }
+
+test('table: cells, headers, rows and columns through the same model', () => {
+  const m = sheet(TBL)
+  expect([m.kind, m.rows, m.cols.map((c) => c.header)]).toEqual(['table', 2, ['Plan', 'Price', 'Seats']])
+  expect(m.get(1, 1)).toBe('£29')
+  expect(m.path(1, 1)).toBe('table.rows[1].cells[1].value')        // an object cell is edited on its value, its note stays
+  expect(m.path(0, 1)).toBe('table.rows[0].cells[1]')
+  expect(apply(TBL, m.set(1, 1, '£31')).table?.rows[1].cells[1]).toEqual({ value: '£31', note: 'per seat' })
+  expect(apply(TBL, m.setHeader(0, 'Tier')).table?.columns[0].label).toBe('Tier')
+  expect(apply(TBL, m.insertRow(1)).table?.rows.map((r) => r.cells[0])).toEqual(['Starter', '', 'Team'])
+  expect(apply(TBL, m.moveRow(0, 1)).table?.rows[0].style).toBe('total')
+  expect(apply(TBL, m.moveCol?.(1, 2)).table?.columns.map((c) => [c.label, c.bold])).toEqual([['Plan', undefined], ['Seats', undefined], ['Price', true]])
+  expect(apply(TBL, m.insertCol?.(0)).table?.columns).toHaveLength(4)
+  expect(sheet(apply(TBL, m.removeCols?.(2, 2))).removeCols?.(1, 1)).toBeNull()     // 2 columns is the minimum
+})
+
+test('a pasted table replaces a table slide: the first row is the header', () => {
+  const r = replaceFromTable(TBL, 'consulting', [['Tier', 'Cost'], ['Free', '£0'], ['Pro', '£12'], ['Max', '£40']])
+  expect(r.slide.table?.columns.map((c) => c.label)).toEqual(['Tier', 'Cost'])
+  expect(r.slide.table?.rows.map((x) => x.cells)).toEqual([['Free', '£0'], ['Pro', '£12'], ['Max', '£40']])
+  const big = replaceFromTable(TBL, 'consulting', [['a', 'b'], ...Array.from({ length: 20 }, (_, i) => [`r${i}`, 'x'])])
+  expect(big.slide.table?.rows.length).toBe(8)
+  expect(big.note).toMatch(/of 20 rows/)
+})

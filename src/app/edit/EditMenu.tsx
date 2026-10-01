@@ -61,8 +61,8 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
             </div>
           )
         })}
-        {(target.kind === 'slide' || !actions.length) && edit.draft.chart && <ContextMenuItem onSelect={onChart}>Edit chart data</ContextMenuItem>}
-        {target.kind === 'slide' && !edit.draft.chart && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">Right-click a card, row, column or text</ContextMenuLabel>}
+        {(edit.draft.chart || edit.draft.table) && <>{actions.length > 0 && <ContextMenuSeparator />}<ContextMenuItem onSelect={() => { setTimeout(onChart, 0) }}>{edit.draft.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
+        {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">Right-click a card, row, column or text</ContextMenuLabel>}
       </ContextMenuContent>
     </ContextMenu>
   )
