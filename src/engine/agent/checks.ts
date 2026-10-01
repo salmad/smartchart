@@ -2,7 +2,7 @@
    They are advisory: shown on the slide, never blocking. */
 import { MENU, plain } from "../slides/schema";
 import { derivedFigures } from "../slides/charts/chart-math";
-import { jev } from "./llm";
+import { jev as jevCall, type JevFn } from "./llm";
 import type { Slide, Style } from "../types";
 
 export interface Check { id: string; ok: boolean; msg: string; p?: number }
@@ -143,7 +143,7 @@ const slideText = (s: Slide) => JSON.stringify(s, (_k, v) => (typeof v === "stri
 /** Judgment checks J1–J8: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }
 
-export async function judgmentChecks(s: Slide, style: Style): Promise<{ checks: Check[]; ms: number }> {
+export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall): Promise<{ checks: Check[]; ms: number }> {
   if (MENU[s.template].frame === false) return { checks: [], ms: 0 };
   const qs: Record<string, Judgment> = {}, add = (id: string, styles: Style[], instructions: string, options: Record<string, string>, pass: string, label: Record<string, string>) => { if (styles.includes(style)) qs[id] = { instructions, options, pass, label }; };
   add("J1", ["consulting"], "Is the title an action title that states a so-what, or a topic label?", { action: "States a conclusion or so-what.", topic: "Names a topic without a claim." }, "action", { action: "Title states a so-what", topic: "Title reads like a topic label" });
