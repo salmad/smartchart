@@ -84,3 +84,34 @@ test('issuePath reads the leading path of a validate message', () => {
   expect(issuePath('cards[2].title: 31 characters, limit 24 (7 too many). Shorten this field only.')).toBe('cards[2].title')
   expect(issuePath('title wraps to 3 lines (max 2); shorten it')).toBeUndefined()
 })
+
+import { addColumn, moveColumn, moveItem, removeColumn } from '@/engine/slides/edit'
+
+test('moveItem reorders a list as one whole-list write, in range only', () => {
+  const s = starter('cards-icon'), titles = (set: Record<string, unknown>) => (set.cards as { title: string }[]).map((c) => c.title)
+  const before = must(s.cards).map((c) => c.title)
+  expect(titles(moveItem(s, 'cards', 0, 1))).toEqual([before[1], before[0], ...before.slice(2)])
+  expect(moveItem(s, 'cards', 0, -1)).toEqual({})
+  expect(moveItem(s, 'cards', 0, before.length)).toEqual({})
+})
+
+const T: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'A' }, { label: 'B', bold: true }, { label: 'C' }], rows: [{ cells: ['a1', 'b1', 'c1'] }, { cells: [{ value: 'a2', note: 'n' }, 'b2', 'c2'] }] } }
+
+test('moveColumn moves the header, its format and every row\'s cell together', () => {
+  const t = (moveColumn(T, 1, 2).table) as NonNullable<Slide['table']>
+  expect(t.columns.map((c) => c.label)).toEqual(['A', 'C', 'B'])
+  expect(t.columns[2]).toMatchObject({ bold: true })
+  expect(t.rows[0].cells).toEqual(['a1', 'c1', 'b1'])
+})
+
+test('addColumn adds a blank header and blank cells; removeColumn drops one; both respect 2–5', () => {
+  const added = addColumn(T, 1).table as NonNullable<Slide['table']>
+  expect(added.columns).toHaveLength(4)
+  expect(added.columns[1].label).toBe('')
+  expect(added.rows.every((r) => r.cells[1] === '' && r.cells.length === 4)).toBe(true)
+  expect(removeColumn(T, 0).table?.columns.map((c) => c.label)).toEqual(['B', 'C'])
+  const two: Slide = { ...T, table: { columns: [{ label: 'A' }, { label: 'B' }], rows: [{ cells: ['a', 'b'] }] } }
+  expect(removeColumn(two, 0)).toEqual({})
+  const five: Slide = { ...T, table: { columns: ['A', 'B', 'C', 'D', 'E'].map((label) => ({ label })), rows: [{ cells: ['1', '2', '3', '4', '5'] }] } }
+  expect(addColumn(five, 0)).toEqual({})
+})

@@ -215,3 +215,26 @@ test('a table: highlight text inside a cell, and format a whole column', async (
   expect(t?.columns[2]).toMatchObject({ bold: true, focus: true })
   expect(t?.columns[2].muted).toBeUndefined()
 })
+
+test('the × stays reachable: the pointer can travel from a bullet to its button and click it', async ({ page }) => {
+  await open(page)
+  await page.evaluate(() => window.__journey?.load([
+    { template: 'cards', title: 'Three levers', cards: [
+      { icon: 'zap', title: 'Price', bullets: ['Raise list price', 'Drop the discount'] },
+      { icon: 'wallet', title: 'Mix', bullets: ['Sell premium', 'Bundle services'] },
+      { icon: 'truck', title: 'Cost', bullets: ['Cut freight', 'Renegotiate'] }] },
+  ] as never, 'consulting'))
+  await page.keyboard.press('e')
+  const bullets = page.locator('[data-editing] [data-item^="cards[1].bullets["]')
+  await expect(bullets).toHaveCount(2)
+  const b = await bullets.first().boundingBox()
+  await page.mouse.move(b!.x + 30, b!.y + b!.height / 2)
+  const rm = page.getByRole('button', { name: 'Remove' })
+  await expect(rm).toBeVisible()
+  const box = await rm.boundingBox()
+  // Real pointer travel in small steps from the bullet out to the button.
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2, { steps: 25 })
+  await expect(rm).toBeVisible()
+  await rm.click()
+  await expect(bullets).toHaveCount(1)
+})

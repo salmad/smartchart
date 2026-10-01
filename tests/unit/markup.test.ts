@@ -68,3 +68,13 @@ test('hasMark is true only when every character has it', () => {
   expect(hasMark('a **bc** d', 2, 4, 'b')).toBe(true)
   expect(hasMark('a **bc** d', 1, 4, 'b')).toBe(false)
 })
+
+import { toggleSpans } from '@/engine/slides/markup'
+
+test('toggleSpans: one mark over many fields, on unless every span already has it', () => {
+  expect(toggleSpans([{ markup: 'one', from: 0, to: 3 }, { markup: 'two words', from: 0, to: 3 }], 'f')).toEqual(['[[one]]', '[[two]] words'])
+  expect(toggleSpans([{ markup: '[[one]]', from: 0, to: 3 }, { markup: '[[two]] words', from: 0, to: 3 }], 'f')).toEqual(['one', 'two words'])
+  // One span without it turns it on for all.
+  expect(toggleSpans([{ markup: '[[one]]', from: 0, to: 3 }, { markup: 'two', from: 0, to: 3 }], 'f')).toEqual(['[[one]]', '[[two]]'])
+  expect(toggleSpans([{ markup: 'a', from: 0, to: 0 }], 'b')).toEqual(['a'])
+})

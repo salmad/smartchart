@@ -113,3 +113,40 @@ export function issuePath(msg: string): string | undefined {
   const head = msg.split(":")[0];
   return head !== msg && parsePath(head) ? head : undefined;
 }
+
+/** Move one list item to another place: the whole list written back in its new order. Out of range changes nothing. */
+export function moveItem(slide: Slide, listPath: string, from: number, to: number): Obj {
+  const list = getAt(slide, listPath)
+  if (!Array.isArray(list) || from === to || [from, to].some((i) => i < 0 || i >= list.length)) return {}
+  const next = list.slice(), [it] = next.splice(from, 1)
+  next.splice(to, 0, it)
+  return { [listPath]: next }
+}
+
+/* Table columns: a header, its format and one cell per row move together, so a column is never half-moved.
+   The schema's 2–5 columns bound add and remove. */
+type Tbl = NonNullable<Slide["table"]>;
+const COLS = [2, 5];
+const rewrite = (slide: Slide, f: (t: Tbl) => Tbl): { table?: Tbl } => (slide.table ? { table: f(structuredClone(slide.table)) } : {});
+
+export function moveColumn(slide: Slide, from: number, to: number): { table?: Tbl } {
+  const n = slide.table?.columns.length ?? 0;
+  if (from === to || [from, to].some((i) => i < 0 || i >= n)) return {};
+  const mv = <T,>(xs: T[]) => { const a = xs.slice(), [x] = a.splice(from, 1); a.splice(to, 0, x); return a; };
+  return rewrite(slide, (t) => ({ ...t, columns: mv(t.columns), rows: t.rows.map((r) => ({ ...r, cells: mv(r.cells) })) }));
+}
+
+/** A blank column at index `at` (a new header with no label, empty cells). */
+export function addColumn(slide: Slide, at: number): { table?: Tbl } {
+  const n = slide.table?.columns.length ?? 0;
+  if (n >= COLS[1]) return {};
+  const put = <T,>(xs: T[], x: T) => [...xs.slice(0, at), x, ...xs.slice(at)];
+  return rewrite(slide, (t) => ({ ...t, columns: put(t.columns, { label: "" }), rows: t.rows.map((r) => ({ ...r, cells: put(r.cells, "") })) }));
+}
+
+export function removeColumn(slide: Slide, at: number): { table?: Tbl } {
+  const n = slide.table?.columns.length ?? 0;
+  if (n <= COLS[0] || at < 0 || at >= n) return {};
+  const drop = <T,>(xs: T[]) => xs.filter((_, i) => i !== at);
+  return rewrite(slide, (t) => ({ ...t, columns: drop(t.columns), rows: t.rows.map((r) => ({ ...r, cells: drop(r.cells) })) }));
+}

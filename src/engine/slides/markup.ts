@@ -66,3 +66,14 @@ export function toggle(markup: string, from: number, to: number, mark: Mark): st
   const on = !hasMark(markup, a, b, mark);
   return serialize(parse(markup).map((c, i) => (i < a || i >= b ? c : { ch: c.ch, marks: ORDER.filter((m) => (m === mark ? on : c.marks.includes(m))) })));
 }
+
+/** One mark over a span in each of several fields (text selected across table cells): on unless every span has it. */
+export function toggleSpans(spans: { markup: string; from: number; to: number }[], mark: Mark): string[] {
+  const live = spans.filter((s) => s.from !== s.to);
+  const on = !live.length || !live.every((s) => hasMark(s.markup, s.from, s.to, mark));
+  return spans.map((s) => {
+    if (s.from === s.to) return s.markup;
+    const has = hasMark(s.markup, s.from, s.to, mark);
+    return has === on ? s.markup : toggle(s.markup, s.from, s.to, mark);
+  });
+}
