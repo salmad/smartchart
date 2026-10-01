@@ -15,6 +15,7 @@ test.beforeEach(async ({ page }) => {
 })
 const open = async (page: Page) => { await page.goto('/d/d1'); await page.waitForFunction(() => window.__journey?.items.length) ; await page.locator('[data-strip-thumb]').first().waitFor() }
 const must = <T>(v: T | null): T => { if (v === null) throw new Error('missing'); return v }
+const sheetCell = (page: Page, r: number, c: number) => page.locator(`[role=gridcell][data-r="${r}"][data-c="${c}"]`)
 const title = (page: Page) => page.locator('[data-editing] [data-path="title"]')
 const saved = (page: Page, i = 0): Promise<Slide> => page.evaluate((k) => window.__journey?.items[k].slide as Slide, i)
 
@@ -81,9 +82,9 @@ test('the chart flips to its grid and a value edit lands', async ({ page }) => {
   await page.locator('[data-strip-thumb]').nth(1).click()
   await page.keyboard.press('e')
   await page.locator('[data-editing] [data-chart]').click()
-  const cell = page.getByLabel('Revenue, FY25')
-  await cell.fill('16')
-  await cell.blur()
+  await sheetCell(page, 1, 1).click()
+  await page.keyboard.type('16')
+  await page.keyboard.press('Enter')
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Save' }).click()
   expect((await saved(page, 1)).chart?.series?.[0]?.values).toEqual([10, 16])
@@ -111,9 +112,8 @@ test('waterfall and timeline grids write their edits back', async ({ page }) => 
     await page.locator('[data-strip-thumb]').nth(i).click()
     await page.keyboard.press('e')
     await page.locator('[data-editing] [data-chart]').click()
-    const el = page.getByLabel(field)
-    await el.fill(i === 0 ? '-12' : 'Q9')
-    await el.blur()
+    if (i === 0) { await sheetCell(page, 1, 1).click(); await page.keyboard.type('-12'); await page.keyboard.press('Enter') }
+    else { const el = page.getByLabel(field); await el.fill('Q9'); await el.blur() }
     await page.getByRole('button', { name: 'Done' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0)
@@ -165,9 +165,12 @@ test('a chart value typed in the grid is saved by ⌘S straight away, and a non-
   await page.locator('[data-strip-thumb]').nth(1).click()
   await page.keyboard.press('e')
   await page.locator('[data-editing] [data-chart]').click()
-  const cell = page.getByLabel('Revenue, FY25')
-  await cell.fill('1x')
-  await cell.fill('−16')
+  await sheetCell(page, 1, 1).click()
+  await page.keyboard.type('abc')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('status')).toContainText('Enter a number')
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.type('−16')
   await page.keyboard.press('Control+s')
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0)
   expect((await saved(page, 1)).chart?.series?.[0]?.values).toEqual([10, -16])
@@ -322,4 +325,53 @@ test('a table column is dragged to another place by its grip', async ({ page }) 
   const t = (await saved(page)).table
   expect(t?.columns.map((c) => c.label)).toEqual(['Price', 'Seats', 'Plan'])
   expect(t?.rows[0].cells).toEqual(['£9 a month', '1', 'Starter'])
+})
+
+
+const paste = (page: Page, text: string) => page.locator('[role=grid]').evaluate((el, t) => {
+  const dt = new DataTransfer(); dt.setData('text/plain', t)
+  el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
+}, text)
+
+test('a pasted table becomes the chart: select all, paste, and the data is new', async ({ page }) => {
+  await open(page)
+  await page.locator('[data-strip-thumb]').nth(1).click()
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart]').click()
+  await sheetCell(page, 0, 0).click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await paste(page, '\tNorth\tSouth\r\nQ1\t10\t12\r\nQ2\t11\t13\r\nQ3\t1,200\t(3)\r\n')
+  await expect(page.getByRole('status')).toContainText('Replaced')
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  const c = (await saved(page, 1)).chart
+  expect(c?.categories).toEqual(['Q1', 'Q2', 'Q3'])
+  expect(c?.series?.map((x) => x.name)).toEqual(['North', 'South'])
+  expect(c?.series?.[1].values).toEqual([12, 13, -3])
+})
+
+test('the gantt: a bar is painted by dragging across periods, and by keys', async ({ page }) => {
+  await open(page)
+  await page.evaluate(() => window.__journey?.load([
+    { template: 'chart', title: 'The plan runs four quarters', chart: { kind: 'timeline', periods: ['Q1', 'Q2', 'Q3', 'Q4'], rows: [{ label: 'Build', start: 0, end: 0 }, { label: 'Launch', start: 1, end: 1 }], milestones: [{ label: 'Go', at: 0 }] } },
+  ] as never, 'consulting'))
+  await page.keyboard.press('e')
+  await page.locator('[data-editing] [data-chart]').click()
+  const cell = (r: number, p: number) => page.locator(`[role=gridcell][data-r="${r}"][data-p="${p}"]`)
+  const a = must(await cell(0, 1).boundingBox()), b = must(await cell(0, 3).boundingBox())
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down()
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 }); await page.mouse.up()
+  // Keys: move to Launch / Q2, extend to Q3, press Space.
+  await page.locator('[role=grid]').focus()
+  await cell(1, 1).click()
+  await page.keyboard.press('Shift+ArrowRight')
+  await page.keyboard.press(' ')
+  // A milestone moves with a click.
+  await page.locator('[role=gridcell][data-p="2"]:not([data-r])').click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  const c = (await saved(page)).chart
+  expect(c?.rows?.[0]).toMatchObject({ start: 1, end: 3 })
+  expect(c?.rows?.[1]).toMatchObject({ start: 1, end: 2 })
+  expect(c?.milestones?.[0].at).toBe(2)
 })
