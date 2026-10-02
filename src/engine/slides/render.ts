@@ -1,10 +1,11 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
 import { MENU, NOTE_POINTS, plain } from "./schema.js";
-import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import type { Card, Cell, Deck, Half, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
+import { columnAlign } from "./align.js";
 export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -54,31 +55,31 @@ const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<sp
 /** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
 const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
 
-const cellValue = (c: Cell | undefined) => plain(c && typeof c === "object" ? c.value : c ?? "").trim();
-const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
-
-/** Alignment per column from its content (spec 3.6 L2): label column text, numbers right, short symbols centred. */
-export type Align = "text" | "num" | "sym";
-export function columnAlign(t: Table): Align[] {
-  return t.columns.map((_, j) => {
-    if (j === 0) return "text";
-    const vals = t.rows.map((r) => cellValue(r.cells?.[j])).filter((v) => v && v !== "—" && v !== "–" && v !== "-");
-    // Symbols are marks (✓, —, ●) or yes/no; a short word such as "CEO" is text.
-    if (!vals.length || vals.every((v) => v.length <= 3 && !/\d/.test(v) && (!/\p{L}/u.test(v) || /^(yes|no|y|n|n\/a)$/i.test(v)))) return "sym";
-    return vals.every((v) => NUMERIC.test(v)) ? "num" : "text";
-  });
-}
-
-function tableHTML(t: Table) {
-  const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
-  const cell = (c: Cell, r: number, j: number) => { const p = `table.rows[${r}].cells[${j}]`;
-    const text = typeof c === "object" && c ? c.value : c ?? "", mark = markOf(String(text));
-    if (mark) return `<td class="${cls(t.columns[j], j)} score"${at(typeof c === "object" && c ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
-    if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value)}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
-    return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
-  return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
-    <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
-    <tbody>${t.rows.map((r, i) => `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>${markKinds(t).has("balls") ? ballKey() : ""}`;
+function tableHTML(t: Table, base = "table", key = true) {
+  const al = columnAlign(t), n = t.columns.length;
+  const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
+  const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
+  const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
+  const cell = (c: Cell, r: number, j: number) => {
+    const p = P(r, j), o = typeof c === "object" && c ? c : null, text = o ? o.value ?? "" : c ?? "", mark = markOf(String(text)), k = cls(t.columns[j], j);
+    if (mark && o?.note) return `<td class="${k} score has-note"><span${at(`${p}.value`, "md")}>${markHTML(mark, plain(String(text)))}</span>${note(o, p)}</td>`;
+    if (mark) return `<td class="${k} score"${at(o ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
+    if (o?.status) return `<td class="${k} status"><span class="pill"${at(`${p}.value`, "esc")}>${esc(o.value ?? "")}</span>${note(o, p)}</td>`;
+    if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
+    if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;
+    return `<td class="${k}"${at(p, "md")}>${md(c ?? "")}</td>`;
+  };
+  const head = (c: Table["columns"][number], j: number) => c.icon
+    ? `<th class="${cls(c, j)} has-ic"><i data-lucide="${esc(c.icon)}"></i><span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span></th>`
+    : `<th class="${cls(c, j)}"${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`;
+  const row = (r: Table["rows"][number], i: number) => {
+    if (r.style === "group") { const g = r.cells[0], o = typeof g === "object" && g ? g : null;
+      return `<tr class="group"${item(`${base}.rows[${i}]`)}><td colspan="${n}"${at(o ? `${P(i, 0)}.value` : P(i, 0), "md")}>${md(o ? o.value ?? "" : g ?? "")}</td></tr>`; }
+    return `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`${base}.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`;
+  };
+  return `<table class="tbl${n <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
+    <thead><tr>${t.columns.map(head).join("")}</tr></thead>
+    <tbody>${t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
 }
 
 function cardHTML(c: Card, variant: string, i: number) {
@@ -103,7 +104,21 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
-  pair: (s) => `<div class="pair grow">${(s.charts ?? []).map((c, i) => `<div class="half"${item(`charts[${i}]`)}>${capHTML(c.caption, "", `charts[${i}].caption`)}<div class="chart" data-chart="${i}"></div>${c.bullets?.length ? list(c.bullets, `charts[${i}].bullets`) : ""}</div>`).join("")}</div>`,
+  pair: (s) => {
+    const halves = s.halves ?? [];
+    const half = (h: Half | undefined, i: number) => {
+      if (!h) return "";
+      const p = `halves[${i}]`;
+      const body = h.chart ? `<div class="chart" data-chart="${i}"></div>${h.bullets?.length ? list(h.bullets, `${p}.bullets`) : ""}`
+        : h.table ? tableHTML(h.table, `${p}.table`, false)
+        : h.number ? `<div class="half-num"><div class="shout big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
+        : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
+        : "";
+      return `<div class="half"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
+    };
+    const balls = halves.some((h) => h?.table && markKinds(h.table).has("balls"));
+    return `<div class="pair grow">${halves.map(half).join("")}</div>${balls ? ballKey() : ""}`;
+  },
   summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
     <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
   cards: (s, v) => { const cards = s.cards ?? [];
@@ -158,10 +173,10 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   const colours = allocate(s, deck.theme, deck.accent);
   for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
-  sizeTable(slide); growTable(slide);
+  sizeTable(slide); growTable(slide); growHalfTables(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
-    const i = host.dataset.chart, spec = i ? s.charts?.[Number(i)]?.chart : s.chart;
+    const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
     if (!spec) return;
     if (!i) return drawChart(host, spec, NOTE_POINTS ? (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])) : [], colours);
     const own = allocate({ ...s, template: "chart", chart: spec }, deck.theme, deck.accent);
@@ -184,16 +199,37 @@ function drawIcons(root: HTMLElement) {
   });
 }
 
-/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. */
+/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. Every table on the
+   slide (a pair can have two). Group rows span the table, so they are not measured. */
 function sizeTable(slide: HTMLElement) {
-  const tbl = slide.querySelector<HTMLElement>(".tbl"), col = tbl?.querySelector<HTMLElement>("col");
-  if (!tbl || !col) return;
-  tbl.classList.add("measuring");
-  const natural = Math.max(...[...tbl.querySelectorAll("tr > :first-child")].map((c) => c.scrollWidth));
-  tbl.classList.remove("measuring");
-  // +2px: at exactly its natural width, subpixel rounding can wrap the label.
-  const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
-  col.style.width = `${(share * 100).toFixed(2)}%`;
+  slide.querySelectorAll<HTMLElement>(".tbl").forEach((tbl) => {
+    const col = tbl.querySelector<HTMLElement>("col");
+    if (!col) return;
+    tbl.classList.add("measuring");
+    const natural = Math.max(...[...tbl.querySelectorAll("tr:not(.group) > :first-child")].map((c) => c.scrollWidth));
+    tbl.classList.remove("measuring");
+    // +2px: at exactly its natural width, subpixel rounding can wrap the label.
+    const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
+    col.style.width = `${(share * 100).toFixed(2)}%`;
+    // A column of bullets explains positions: it takes a double share of the rest, so its bullets keep to a line or two.
+    const cols = [...tbl.querySelectorAll<HTMLElement>("col")], bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex));
+    // Pitch hides bullets, so its columns stay equal.
+    if (!bul.size || slide.classList.contains("style-pitch")) return;
+    const shares = cols.slice(1).map((_, j) => (bul.has(j + 1) ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
+    cols.slice(1).forEach((c, j) => { c.style.width = `${((1 - share) * shares[j] / total * 100).toFixed(2)}%`; });
+  });
+}
+
+/* L5 in a pair: a half table grows its rows towards the bottom of its half, up to 1.5× its natural height, so it
+   ends level with the chart beside it rather than stopping halfway down. */
+function growHalfTables(slide: HTMLElement) {
+  const R = slide.getBoundingClientRect(), k = R.width / 1920;
+  slide.querySelectorAll<HTMLElement>(".pair > .half > .tbl").forEach((tbl) => {
+    const half = tbl.parentElement;
+    if (!half) return;
+    const area = (half.getBoundingClientRect().bottom - tbl.getBoundingClientRect().top) / k, natural = tbl.getBoundingClientRect().height / k;
+    if (natural < area) tbl.style.height = `${Math.min(area, natural * 1.5)}px`;
+  });
 }
 
 /* L5: a table under 60% of the body grows its rows, up to 1.5× its natural height; beside notes too, so the

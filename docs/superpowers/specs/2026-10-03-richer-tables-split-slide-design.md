@@ -98,6 +98,8 @@ On the card the first four points are one entry, "Scoring", which gives seven en
 
 ## 4. Split slide (`pair` generalised)
 
+**Status (2026-10-03):** built, but mixed halves are switched off for agents (`MIXED_HALVES = false` in `schema.ts`). The user judged a chart beside a table or a number unbalanced, so agents see only two-chart pairs until the layout is fixed. The renderer and editor keep table, number and points halves.
+
 ### 4.1 Schema
 
 - The template id stays `pair` (no churn in routing, picker or MCP; `split` is already the chart-with-notes variant name).

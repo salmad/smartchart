@@ -90,9 +90,9 @@ test('the chart flips to its grid and a value edit lands', async ({ page }) => {
   expect((await saved(page, 1)).chart?.series?.[0]?.values).toEqual([10, 16])
 })
 
-test('two charts: clicking the right chart opens its own data, and the edit lands there only', async ({ page }) => {
+test('two halves: clicking the right chart opens its own data, and the edit lands there only', async ({ page }) => {
   const cats = ['2026', '2027']
-  const pairSlide = { template: 'pair', title: 'The market grows while Acme takes a share of it', charts: [
+  const pairSlide = { template: 'pair', title: 'The market grows while Acme takes a share of it', halves: [
     { caption: 'Market · £bn', chart: { categories: cats, format: '£{v}bn', series: [{ name: 'Market', mark: 'bar', color: 'neutral', values: [32, 36] }] } },
     { caption: 'Share · %', chart: { categories: cats, format: '{v}%', series: [{ name: 'Share', mark: 'bar', color: 'focus', values: [1, 2] }] } }] }
   await open(page)
@@ -106,8 +106,8 @@ test('two charts: clicking the right chart opens its own data, and the edit land
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Save' }).click()
   const s = await saved(page)
-  expect(s.charts?.[1].chart.series?.[0]?.values).toEqual([1, 5])
-  expect(s.charts?.[0].chart.series?.[0]?.values).toEqual([32, 36])
+  expect(s.halves?.[1].chart?.series?.[0]?.values).toEqual([1, 5])
+  expect(s.halves?.[0].chart?.series?.[0]?.values).toEqual([32, 36])
 })
 
 test('switching template shows what is kept and what goes', async ({ page }) => {

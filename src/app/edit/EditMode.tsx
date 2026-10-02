@@ -66,7 +66,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
               <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)} />
               <ActionBar edit={edit} slide={slideEl} deckStyle={style} />
               <IconPicker edit={edit} slide={slideEl} deckStyle={style} />
-              {grid !== null && (edit.draft.chart || edit.draft.table || edit.draft.charts) && <ChartGrid edit={edit} deckStyle={style} which={grid} onClose={() => setGrid(null)} />}
+              {grid !== null && (edit.draft.chart || edit.draft.table || edit.draft.halves) && <ChartGrid edit={edit} deckStyle={style} which={grid} onClose={() => setGrid(null)} />}
             </EditSurface>
           </EditMenu>
         </SlideFrame>

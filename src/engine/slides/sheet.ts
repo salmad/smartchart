@@ -155,18 +155,22 @@ const MATRIX_COLS: [string, string][] = [["label", "Point"], ["x", "Across (0–
 
 function tableSheet(slide: Slide): SheetModel {
   const t = slide.table ?? { columns: [], rows: [] }, cols = t.columns, rows = t.rows;
-  const text = (r: number, c: number) => { const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value : x ?? ""; };
+  const isGroup = (r: number) => rows[r]?.style === "group";
+  const text = (r: number, c: number) => { if (isGroup(r) && c > 0) return ""; const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value ?? "" : x ?? ""; };
   const pathOf = (r: number, c: number) => { const x = rows[r]?.cells[c], base = `table.rows[${r}].cells[${c}]`; return typeof x === "object" && x ? `${base}.value` : base; };
   const ROWS: [number, number] = [1, 8];
+  // Group headings are not data rows: only the others count against the limit.
+  const dataIn = (a: number, b: number) => rows.filter((r, i) => r.style !== "group" && (i < a || i > b)).length;
   const colWrite = (f: (s: Slide) => { table?: unknown }): Patch | null => { const p = f(slide); return p.table ? (p as Patch) : null; };
   return {
     kind: "table", rows: rows.length,
     cols: cols.map((c, j) => ({ header: c.label ?? "", headerPath: `table.columns[${j}].label`, type: "text" as const })),
     get: text, path: pathOf,
-    set: (r, c, raw) => ({ [pathOf(r, c)]: raw }),
+    readOnly: (r, c) => isGroup(r) && c > 0,
+    set: (r, c, raw) => (isGroup(r) && c > 0 ? { error: "A group heading has one cell." } : { [pathOf(r, c)]: raw }),
     setHeader: (c, raw) => ({ [`table.columns[${c}].label`]: raw }),
-    insertRow: (at) => (inRange(rows.length + 1, ROWS) ? { "table.rows": splice(rows, at, 0, { cells: cols.map(() => "") }) } : null),
-    removeRows: (r0, r1) => (inRange(rows.length - (r1 - r0 + 1), ROWS) ? { "table.rows": splice(rows, r0, r1 - r0 + 1) } : null),
+    insertRow: (at) => (inRange(dataIn(-1, -1) + 1, ROWS) ? { "table.rows": splice(rows, at, 0, { cells: cols.map(() => "") }) } : null),
+    removeRows: (r0, r1) => (inRange(dataIn(r0, r1), ROWS) ? { "table.rows": splice(rows, r0, r1 - r0 + 1) } : null),
     moveRow: (from, to) => (from === to || [from, to].some((i) => i < 0 || i >= rows.length) ? null : { "table.rows": move(rows, from, to) }),
     insertCol: (at) => colWrite((s) => addColumn(s, at)),
     removeCols: (c0, c1) => { let s = slide; for (let i = c0; i <= c1; i++) { const p = removeColumn(s, c0); if (!p.table) return null; s = { ...s, table: p.table }; } return s.table ? { table: s.table } : null; },
@@ -174,8 +178,8 @@ function tableSheet(slide: Slide): SheetModel {
   };
 }
 
-/* A pair's chart is edited as a chart of its own: the model reads the chart alone, and every path it writes is
-   re-rooted under `charts[i]`, so the patches land on the real slide. */
+/* A pair's half is edited as a chart or table of its own: the model reads the chart alone, and every path it writes is
+   re-rooted under `halves[i]`, so the patches land on the real slide. */
 const alone = (chart: Chart): Slide => ({ template: "chart", title: "", chart });
 const reroot = (pre: string) => <T extends Patch | { error: string } | null>(p: T): T => (!p || failed(p) ? p : Object.fromEntries(Object.entries(p).map(([k, v]) => [`${pre}${k}`, v])) as T);
 function within(m: SheetModel, pre: string): SheetModel {
@@ -186,9 +190,14 @@ function within(m: SheetModel, pre: string): SheetModel {
     ...(m.moveCol ? { moveCol: (a: number, b: number) => r(m.moveCol?.(a, b) ?? null) } : {}) };
 }
 
-/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's chart. */
+/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's half. */
 export function sheetFor(slide: Slide, style: Style, which = 0): SheetModel | null {
-  if (slide.template === "pair") { const c = slide.charts?.[which]?.chart, m = c ? sheetFor(alone(c), style) : null; return m && within(m, `charts[${which}].`); }
+  if (slide.template === "pair") {
+    const h = slide.halves?.[which], pre = `halves[${which}].`;
+    if (h?.chart) { const m = sheetFor(alone(h.chart), style); return m && within(m, pre); }
+    if (h?.table) return within(tableSheet({ template: "table", title: "", table: h.table }), pre);
+    return null;
+  }
   if (slide.template === "table" && slide.table) return tableSheet(slide);
   const c = slide.chart;
   if (!c) return null;
@@ -229,10 +238,12 @@ export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number
 export function replaceFromTable(slide: Slide, style: Style, table: string[][], which = 0): { slide: Slide; note?: string } {
   if (slide.template === "table" && slide.table) return replaceTable(slide, table);
   if (slide.template === "pair") {
-    const c = slide.charts?.[which]?.chart;
-    if (!c) return { slide };
-    const r = replaceFromTable(alone(c), style, table), out = structuredClone(slide);
-    if (out.charts?.[which] && r.slide.chart) out.charts[which].chart = r.slide.chart;
+    const h = slide.halves?.[which];
+    if (!h?.chart && !h?.table) return { slide };
+    const inner: Slide = h.chart ? alone(h.chart) : { template: "table", title: "", table: h.table };
+    const r = replaceFromTable(inner, style, table), out = structuredClone(slide), dst = out.halves?.[which];
+    if (dst && h.chart && r.slide.chart) dst.chart = r.slide.chart;
+    if (dst && h.table && r.slide.table) dst.table = r.slide.table;
     return { slide: out, ...(r.note ? { note: r.note } : {}) };
   }
   const chart = slide.chart;

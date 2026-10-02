@@ -13,7 +13,9 @@ describe('context budgets (tokens ≈ chars / 4)', () => {
   // 450 for ten templates (it was 400 for seven): about 45 tokens each, down from 57.
   it('list_templates ≤ 450', () => expect(tokens(list)).toBeLessThanOrEqual(450))
   for (const s of ['consulting', 'pitch'] as const) for (const t of OFFERED) {
-    it(`${t} card (${s}) ≤ 3000`, () => expect(tokens(JSON.stringify(card(t, s)))).toBeLessThanOrEqual(3000))
+    // Cards with capability guidance may add ~600 tokens (spec 2026-10-03 §2).
+    const cap = MENU[t].capabilities?.length ? 3600 : 3000
+    it(`${t} card (${s}) ≤ ${cap}`, () => expect(tokens(JSON.stringify(card(t, s)))).toBeLessThanOrEqual(cap))
     it(`${t} example (${s}) ≤ 1000`, () => expect(tokens(exampleFor(t, s))).toBeLessThanOrEqual(1000))
   }
 })

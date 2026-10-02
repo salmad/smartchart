@@ -13,7 +13,10 @@
 import { timelineLines } from "./charts/timeline-rows.js";
 import { waterfall } from "./charts/chart-math.js";
 import { markKinds } from "./marks.js";
-import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types.js";
+import { columnAlign } from "./align.js";
+import { CAPABILITIES, SHAPES } from "./capabilities.js";
+import type { Capability, Shape } from "./capabilities.js";
+import type { Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell";
@@ -48,9 +51,12 @@ export interface MenuEntry {
   fields: Record<string, FieldDef>;
   variant: (s: Slide) => string;
   rules?: string[];
+  capabilities?: Capability[];
+  shapes?: Shape[];
 }
+export type { Capability, Shape } from "./capabilities.js";
 export interface StyleGuide { summary: string; rules: string[] }
-export interface TemplateCard { template: TemplateId; summary: string; use: string; fields: Record<string, FieldView>; rules: string[] }
+export interface TemplateCard { template: TemplateId; summary: string; use: string; fields: Record<string, FieldView>; rules: string[]; capabilities?: Omit<Capability, "styles">[]; shapes?: Shape[] }
 
 export const STYLES: Record<Style, StyleGuide> = {
   consulting: {
@@ -128,11 +134,6 @@ export const CHART_GUIDE: string[] = [
   "Pitch: one series, two at most.",
   "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
   "Shares of a whole that change over time (mix, market share) are `stacking: \"percent\"`: write the raw values; code converts them to %.",
-  "A bridge from one total to another (revenue FY24 → FY25 by driver, a cost walk, an EBITDA bridge) is `kind: \"waterfall\"`. Write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
-  "Named items ranked by one measure are `kind: \"ranked\"`: largest first, 'Other' last.",
-  "Items placed on two judged dimensions (impact vs effort) are `kind: \"matrix\"`: positions 0–100.",
-  "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead. A workstream made of smaller steps is a group (the steps have `level: 1`).",
-  "Annotations are computed by code; never write their figure yourself. `cagr` when the title claims a growth rate over a period (\"grows 86% a year\", \"growth rate per year across the period\"; year-on-year rates for each year are a % line instead), `difference` when it claims a gap between two categories, `target` when it compares with a goal. At most 3 (2 with notes); only when the user asked for them.",
 ];
 
 /* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
@@ -238,7 +239,7 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
 
 /* Half a slide's chart (the pair): only the kinds that read at half width, so the card offers nothing it refuses. */
 const HALF = ["kind", "stacking", "categories", "format", "series", "items", "ranking"];
-const HALF_CHART = f("object", "A chart for half the slide.", { required: true, fields: {
+const HALF_CHART = f("object", "A chart for half the slide.", { fields: {
   ...Object.fromEntries(HALF.map((k) => [k, CHART.fields?.[k] as FieldDef])),
   kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge between two totals. `ranked`: horizontal bars by named item.", { values: ["bars", "waterfall", "ranked"], default: "bars" }),
 } });
@@ -250,17 +251,61 @@ const NOTES_TITLE = f("text", "A one- or two-word heading over the notes: 'Notes
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
 export const NOTE_POINTS = false;
-const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table: 3, or none. Add them only if each says something the body does not already show; in pitch, prefer none. Two notes only restate the title and takeaway: write a third or leave them out. Numbers are added automatically.", {
+const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table: 3, or none. Numbered automatically.", {
   items: { min: 2, max: 4 },
   of: f("object", "One observation.", { fields: {
     title: f("markup", "The observation as a short headline.", { required: true, max: 28 }),
-    text: f("markup", "Optional supporting sentence.", { max: 80, styles: CONSULTING }),
+    text: f("markup", "Optional supporting sentence.", { max: 120, styles: CONSULTING }),
     ...(withPoint ? { point: f("object", "Optional: pin this note's number onto a data point (charts with bars only).", { fields: {
       series: f("number", "0-based index into chart.series.", { required: true }),
       index: f("number", "0-based index into chart.categories.", { required: true }),
     } }) } : {}),
   } }),
 });
+
+/* Table pieces, shared by the table template and a half table in the pair. */
+const COLUMN_FIELDS = {
+  label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
+  focus: f("boolean", "Highlight this column. Not with `muted`.", { default: false }),
+  muted: f("boolean", "A quieter column, for context. Not with `focus`.", { default: false }),
+};
+const TABLE_COLUMN = f("object", "Column.", { fields: {
+  ...COLUMN_FIELDS,
+  icon: f("enum", "Optional icon over the header, from the curated set: on every column after the first, or none.", { values: ICONS }),
+  bold: f("boolean", "Set the whole column in bold.", { default: false }),
+  italic: f("boolean", "Set the whole column in italic.", { default: false }),
+} });
+const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
+
+/* A small table for half a slide: no icons, no group headings, no bullets in cells (checked in checkGrid). */
+const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns, at most 5 rows. Marks, cell notes and status labels work; bullets, icons and group headings do not.", { fields: {
+  columns: f("list", "Column headers, left to right.", { required: true, items: { min: 2, max: 3 }, of: f("object", "Column.", { fields: COLUMN_FIELDS }) }),
+  rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 5 }, of: f("object", "Row.", { fields: {
+    cells: TABLE_CELLS,
+    style: f("enum", "`muted`: context, hidden in pitch. `total`: the bottom line.", { values: ["muted", "total"] }),
+    focus: f("boolean", "Highlight this row.", { default: false }),
+  } }) }),
+} });
+/** Halves other than charts (a table, a number, points). Off for now: a chart beside a table or a number reads
+    unbalanced, so agents see only two-chart pairs until the layout is fixed. The renderer and editor keep them. */
+export const MIXED_HALVES = false;
+type HalfBody = "chart" | "table" | "number" | "points";
+export const HALF_BODIES: readonly HalfBody[] = MIXED_HALVES ? ["chart", "table", "number", "points"] : ["chart"];
+const MIXED_NUMBER = f("object", "A big figure and what it means.", { fields: {
+  value: f("text", "The number with its unit: '£3.6bn', '7%'.", { required: true, max: 7 }),
+  caption: f("markup", "What it means, as one sentence.", { required: true, max: 80 }),
+  tone: TONE,
+} });
+const MIXED_POINTS = f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: 70 }) });
+
+/* How to write each chart kind: enforced or mechanical, so rules. When to choose one is in the chart's capabilities. */
+const CHART_KINDS = [
+  "Waterfall: write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
+  "Ranked: largest first, 'Other' last.",
+  "Matrix: positions 0–100 on both axes.",
+  "Timeline: a workstream made of smaller steps is a group (the steps have `level: 1`).",
+  "Annotations are computed by code; never write their figure yourself. At most 3 (2 with notes); only when the user asked for them.",
+];
 
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
@@ -270,39 +315,35 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.",
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", "Note text: 300 characters in total, 200 with a takeaway.", ...CHART_GUIDE, ...CHART_KINDS],
   },
   pair: {
-    summary: "Two charts side by side, each with a caption and points.",
-    use: "Two related measures, each with its own chart (market and share). One measure: chart.",
+    summary: MIXED_HALVES ? "Two halves, each a chart, a table, a number or points." : "Two charts side by side, each with a caption and points.",
+    use: MIXED_HALVES ? "Two related things, an exhibit each: market and share. One exhibit: chart or table." : "Two related measures, each with its own chart (market and share). One measure: chart.",
     fields: {
-      charts: f("list", "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One chart.", { fields: {
-        caption: f("text", "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { required: true, max: 40 }),
-        chart: HALF_CHART,
-        bullets: f("list", "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
+      halves: f("list", MIXED_HALVES ? "The two halves, left then right. Each has exactly one of chart, table, number or points." : "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One half.", { fields: {
+        caption: f("text", MIXED_HALVES ? "What this half shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required with a chart or table; optional with a number or points." : "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { max: 40 }),
+        chart: MIXED_HALVES ? HALF_CHART : { ...HALF_CHART, required: true },
+        bullets: f("list", MIXED_HALVES ? "Chart halves only: 1–2 points under the chart, one line each." : "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
+        ...(MIXED_HALVES ? { table: HALF_TABLE, number: MIXED_NUMBER, points: MIXED_POINTS } : {}),
       } }) }),
     },
     variant: () => "pair",
-    rules: ["Each chart: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
-      "One focus across the slide: the series or item the title is about, in one of the two charts.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
+    rules: [...(MIXED_HALVES ? ["Each half has exactly one body: chart, table, number or points."] : []),
+      "Chart half: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
+      MIXED_HALVES ? "One focus across the slide: the series, item or row the title is about, in one of the two halves." : "One focus across the slide: the series or item the title is about, in one of the two charts.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
   },
   table: {
     summary: "A table, with optional notes beside it.",
     use: "Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.",
     fields: {
       table: f("object", "The table.", { required: true, fields: {
-        columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
-          label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
-          focus: f("boolean", "Highlight this column. Not with `muted`.", { default: false }),
-          muted: f("boolean", "A quieter column, for context. Not with `focus`.", { default: false }),
-          bold: f("boolean", "Set the whole column in bold.", { default: false }),
-          italic: f("boolean", "Set the whole column in italic.", { default: false }),
-        } }) }),
-        rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
-          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or { value, note } for a small note under the value. A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
-          style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
-          focus: f("boolean", "Highlight this row.", { default: false }),
-        } }) }),
+  columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: TABLE_COLUMN }),
+  rows: f("list", "Rows, top to bottom: at most 8, plus group headings.", { required: true, items: { min: 1, max: 10 }, of: f("object", "Row.", { fields: {
+    cells: TABLE_CELLS,
+    style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above. `group`: a heading over the rows below it (one cell).", { values: ["muted", "total", "group"] }),
+    focus: f("boolean", "Highlight this row.", { default: false }),
+  } }) }),
       } }),
       caption: CAPTION,
       focus: FOCUS,
@@ -311,9 +352,11 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Row budget: a row costs 1, a row with a cell note 1.5, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes and muted rows are hidden in pitch).",
+      "Budget: a row costs 1, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1, header icons 1, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
-      "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters.",
+      "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
+      "Header icons: on every column after the first, or none.",
+      "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters. Note text: 300 characters in total, 200 with a takeaway.",
     ],
   },
   number: {
@@ -428,7 +471,7 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the executive summary: the answer and the 2–4 points that prove it", "summary"],
   ["the start of a new part in a deck of 8+ slides", "section"],
   ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time; named items ranked by one measure; items placed on two dimensions (a 2×2)", "chart"],
-  ["two related measures that each need their own chart, side by side", "pair"],
+  [MIXED_HALVES ? "two related things that each need their own exhibit, side by side" : "two related measures that each need their own chart, side by side", "pair"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
   ["one figure that makes the point on its own", "number"],
@@ -483,10 +526,13 @@ function view(def: FieldDef, style: Style): FieldView {
 /** The template card body for one entry and style: resolved fields and rules. */
 export function describe(id: TemplateId, style: Style = "consulting"): TemplateCard {
   const t = MENU[id];
+  const caps = (t.capabilities ?? []).filter((c) => !c.styles || c.styles.includes(style)).map(({ name, use, avoid, sample }) => ({ name, use, avoid, sample }));
   return {
     template: id, summary: t.summary, use: t.use,
     fields: Object.fromEntries(Object.entries(fieldsFor(id, style)).map(([k, v]) => [k, view(v, style)])),
     rules: [...(t.rules || []), `Markup: ${MARKUP.map((m) => `${m.syntax} = ${m.effect}`).join("; ")}. ${MARKUP_NOTE}`],
+    ...(caps.length ? { capabilities: caps } : {}),
+    ...(t.shapes ? { shapes: t.shapes } : {}),
   };
 }
 
@@ -503,7 +549,7 @@ const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 type Out = Validation;
 /** Fields of an object value the validator walks; the value is unvalidated input. */
 const fieldsOf = (v: object) => v as Record<string, unknown>;
-const cellOf = (v: unknown) => (typeof v === "object" && v !== null ? v : { value: v }) as { value?: unknown; note?: unknown };
+const CELL_KEYS = ["value", "note", "bullets", "status"];
 
 function check(def: FieldDef, value: unknown, path: string, style: Style, out: Out): void {
   if (value === undefined || value === null || value === "") {
@@ -531,10 +577,27 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       if (!def.values?.includes(value)) out.errors.push(`${path}: "${String(value)}" is not allowed. Use one of: ${def.values?.join(", ")}.`);
       break;
     case "cell": {
-      const v = cellOf(value);
-      if (typeof v.value !== "string" && typeof v.value !== "number") out.errors.push(`${path}: a cell is a string or { "value": "…", "note": "…" }.`);
-      else if (max && plain(v.value).length > max) out.errors.push(`${path}: ${plain(v.value).length} characters, limit ${max}.`);
+      if (typeof value === "string" || typeof value === "number") {
+        const len = plain(String(value)).length;
+        if (max && len > max) out.errors.push(`${path}: ${len} characters, limit ${max}.`);
+        break;
+      }
+      if (typeof value !== "object" || Array.isArray(value)) { out.errors.push(`${path}: a cell is a string, or an object with value, note, bullets or status.`); break; }
+      const v = fieldsOf(value);
+      for (const k of Object.keys(v)) if (!CELL_KEYS.includes(k)) out.errors.push(`${path}.${k}: not a cell field. Allowed: ${CELL_KEYS.join(", ")}.`);
+      if (v.value === undefined && !Array.isArray(v.bullets)) out.errors.push(`${path}.value: required (a cell with bullets may leave it out).`);
+      else if (v.value !== undefined && typeof v.value !== "string" && typeof v.value !== "number") out.errors.push(`${path}.value: must be text.`);
+      else if (v.value !== undefined && max && plain(String(v.value)).length > max) out.errors.push(`${path}: ${plain(String(v.value)).length} characters, limit ${max}.`);
       if (v.note !== undefined && String(v.note).length > 32) out.errors.push(`${path}.note: limit is 32 characters.`);
+      if (v.bullets !== undefined) {
+        if (!Array.isArray(v.bullets) || v.bullets.length < 1 || v.bullets.length > 3) out.errors.push(`${path}.bullets: 1–3 bullets.`);
+        else v.bullets.forEach((b: unknown, k: number) => {
+          if (typeof b !== "string") out.errors.push(`${path}.bullets[${k}]: must be text.`);
+          else if (plain(b).length > 50) out.errors.push(`${path}.bullets[${k}]: ${plain(b).length} characters, limit 50.`);
+        });
+      }
+      if (v.status !== undefined && typeof v.status !== "boolean") out.errors.push(`${path}.status: must be true or false.`);
+      if (v.status && v.bullets) out.errors.push(`${path}: a status label has no bullets.`);
       break;
     }
     case "list": {
@@ -686,9 +749,67 @@ function checkNotes(s: Slide, style: Style, out: Out): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
   const textLen = list.reduce((sum, n) => sum + (n?.text ? plain(n.text).length : 0), 0);
-  if (s.takeaway && textLen > 200) out.errors.push(`notes[].text: ${textLen} characters in total; with a takeaway the limit is 200. Shorten the notes or drop the takeaway.`);
+  // Measured on the review page: the notes column holds about 300 characters of note text, 200 beside a takeaway.
+  const total = s.takeaway ? 200 : 300;
+  if (textLen > total) out.errors.push(`notes[].text: ${textLen} characters in total; ${s.takeaway ? "with a takeaway " : ""}the limit is ${total}. Shorten the notes${s.takeaway ? " or drop the takeaway" : ""}.`);
   // The heading takes a header row from the notes column; with a takeaway there is no room for both.
   if (s.notesTitle && s.takeaway) out.errors.push("notesTitle: a notes heading and a takeaway do not fit together. Drop the notes heading, or the takeaway.");
+}
+
+/* Rules every table shares, the table template's and a half table's: cells per column, column flags, marks,
+   header icons, bullets, status labels and group headings. `half`: no bullets at half width. */
+function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half = false): void {
+  const cols = Array.isArray(t.columns) ? t.columns : [], rows = Array.isArray(t.rows) ? t.rows : [], n = cols.length;
+  const obj = (c: Cell | undefined) => (c && typeof c === "object" ? c : null);
+  rows.forEach((r, i) => {
+    if (!r || !Array.isArray(r.cells)) return;
+    if (r.style === "group") {
+      const extra = Object.keys(obj(r.cells[0]) ?? {}).filter((k) => k !== "value");
+      if (extra.length) out.errors.push(`${base}.rows[${i}].cells[0]: a group heading is text only; remove ${extra.join(", ")}.`);
+      if (r.cells.length !== 1) out.errors.push(`${base}.rows[${i}].cells: a group row has one cell, its heading (got ${r.cells.length}).`);
+      return;
+    }
+    if (r.cells.length !== n) out.errors.push(`${base}.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
+  });
+  cols.forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`${base}.columns[${j}]: muted or focus, not both.`); });
+  cols.forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`${base}.columns[${j}].label: required. Header text.`); });
+  const data = rows.filter((r) => r?.style !== "group").length;
+  if (data > 8) out.errors.push(`${base}.rows: ${data} rows; at most 8 (group headings not counted). Cut or merge rows.`);
+  if (markKinds(t).size > 1) out.warnings.push(`${base}: mixes Harvey balls and ticks. Score with one kind of mark per table.`);
+  // Header icons: all columns after the first, or none.
+  if (cols[0]?.icon) out.errors.push(`${base}.columns[0].icon: the label column has no icon.`);
+  const iconed = cols.slice(1).filter((c) => c?.icon).length;
+  if (iconed && iconed !== n - 1) out.errors.push(`${base}.columns: ${iconed} of ${n - 1} columns have an icon; give every column after the first an icon, or none.`);
+  if (iconed && cols.every(Boolean) && rows.every((r) => r && Array.isArray(r.cells))) {
+    const al = columnAlign({ columns: cols, rows: rows as Table["rows"] });
+    cols.forEach((c, j) => { if (c?.icon && al[j] === "num") out.warnings.push(`${base}.columns[${j}].icon: an icon on a column of numbers adds nothing; remove it.`); });
+  }
+  // Bullets in cells.
+  const bulletCols = new Set<number>();
+  rows.forEach((r, i) => (r?.cells || []).forEach((c, j) => { const o = obj(c); if (o?.bullets) { bulletCols.add(j); if (o.note) out.errors.push(`${base}.rows[${i}].cells[${j}]: bullets or a note, not both.`); } }));
+  if (bulletCols.size && half) out.errors.push(`${base}: bullets in cells do not fit half a slide. Use a phrase, or the table template.`);
+  else if (bulletCols.size) {
+    if (bulletCols.size > 1) out.errors.push(`${base}: bullets in ${bulletCols.size} columns; at most one column of bullets. More than that is cards or notes.`);
+    if (n > 4) out.errors.push(`${base}.columns: ${n} columns; a table with bullets in cells takes at most 4.`);
+    if (style === "pitch") {
+      const bare = rows.flatMap((r, i) => (r?.cells || []).flatMap((c, j) => { const o = obj(c); return o?.bullets && !o.value ? [`rows[${i}].cells[${j}]`] : []; }));
+      out.warnings.push(`${base}: pitch hides bullets in cells; say it in the cell or the subtitle${bare.length ? `, and give each such cell a value (${bare.join(", ")} ${bare.length === 1 ? "has" : "have"} none)` : ""}.`);
+    }
+  }
+  // Status labels: a few distinct values per column, so they can be told apart.
+  cols.forEach((_, j) => {
+    const vals = new Set(rows.flatMap((r) => { const o = obj(r?.cells?.[j]); return o?.status ? [plain(String(o.value ?? ""))] : []; }));
+    if (vals.size > 4) out.warnings.push(`${base}.columns[${j}]: ${vals.size} different status labels; use at most 4 so they can be told apart.`);
+  });
+  // Group headings.
+  const groups = rows.map((r, i) => (r?.style === "group" ? i : -1)).filter((i) => i >= 0);
+  if (groups.length) {
+    if (data < 6) out.warnings.push(`${base}: group headings with ${data} rows; use them only with 6 or more.`);
+    groups.forEach((g, k) => {
+      const size = (k + 1 < groups.length ? groups[k + 1] : rows.length) - g - 1;
+      if (size < 2) out.warnings.push(`${base}.rows[${g}]: a group of ${size} row${size === 1 ? "" : "s"}; a group needs at least 2.`);
+    });
+  }
 }
 
 function checkRules(s: Slide, style: Style, out: Out): void {
@@ -721,33 +842,46 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       break;
     }
     case "table": {
-      const t: Partial<NonNullable<Slide["table"]>> = s.table || {}, n = (t.columns || []).length;
-      (t.rows || []).forEach((r, i) => {
-        if (Array.isArray(r?.cells) && r.cells.length !== n) out.errors.push(`table.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
-      });
-      (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`table.columns[${j}]: muted or focus, not both.`); });
-      (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
+      const t: Partial<Table> = s.table || {}, n = (t.columns || []).length;
+      checkGrid(t, "table", style, out);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
-      const noted = (r: (typeof rows)[number]) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
-      const marks = markKinds(t), key = style === "consulting" && marks.has("balls") ? 1 : 0;
-      if (marks.size > 1) out.warnings.push("table: mixes Harvey balls and ticks. Score with one kind of mark per table.");
-      const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key, budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes, the takeaway or the caption.`);
+      const rowCost = (r: Table["rows"][number]) => {
+        if (r.style === "group") return 1;
+        if (style === "pitch") return 1;
+        const cells = r.cells || [];
+        // Bullets are costed by line (measured: a bullet line is 0.75 of a row; a bullet wraps past ~48 characters in a
+        // column of a 3-column table, ~34 in a 4-column one).
+        const perLine = n <= 3 ? 48 : 34;
+        const lines = Math.max(0, ...cells.map((c) => (c && typeof c === "object" && Array.isArray(c.bullets) ? c.bullets.reduce((k, b) => k + Math.max(1, Math.ceil(plain(String(b)).length / perLine)), 0) : 0)));
+        if (lines) return 1.2 + 0.75 * lines;
+        return cells.some((c) => c && typeof c === "object" && c.note) ? 1.5 : 1;
+      };
+      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = (t.columns || []).some((c) => c?.icon) ? 1 : 0;
+      const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
+      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1, header icons = 1, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
         if (n > 4) out.errors.push(`table.columns: ${n} columns; with notes at most 4. Drop a column or the notes.`);
-        (t.rows || []).forEach((r, i) => { const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
+        (t.rows || []).forEach((r, i) => { if (r?.style === "group") return; const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
           if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; with notes at most 24.`); });
       }
       break;
     }
     case "pair": {
-      const charts = s.charts || [];
-      charts.forEach((x, i) => {
-        const c = x?.chart, at = `charts[${i}].chart`;
+      const bodies = HALF_BODIES.join(", ");
+      if ((s as { charts?: unknown }).charts !== undefined) out.errors.push(MIXED_HALVES ? `charts: \`charts\` is now \`halves\`; each half has one of ${bodies}.` : "charts: `charts` is now `halves`; each half has a caption and a chart.");
+      (s.halves || []).forEach((h, i) => {
+        if (!h || typeof h !== "object") return;
+        const p = `halves[${i}]`, found = HALF_BODIES.filter((k) => h[k] !== undefined);
+        // Without mixed halves the chart field itself is required, so its own message covers a missing chart.
+        if (MIXED_HALVES && found.length !== 1) out.errors.push(`${p}: ${found.length ? `has ${found.join(" and ")}` : "has no body"}; give exactly one of ${bodies}.`);
+        if ((h.chart || h.table) && !h.caption) out.errors.push(`${p}.caption: required${MIXED_HALVES ? " with a chart or table" : ""}. What it shows, then ' · ' and the unit.`);
+        if (MIXED_HALVES && h.bullets && !h.chart) out.errors.push(`${p}.bullets: only under a chart. A list on its own is points.`);
+        if (MIXED_HALVES && h.table && typeof h.table === "object") checkGrid(h.table, `${p}.table`, style, out, true);
+        const c = h.chart, at = `${p}.chart`;
         if (!c || typeof c !== "object") return;
-        // One focus across the slide is checked below, so a chart without one is not flagged here.
+        // One focus across the slide is checked by the agent checks, so a chart without one is not flagged here.
         checkChart(c, at, out, true);
         const kind = c.kind || "bars";
         if (kind === "timeline" || kind === "matrix") return out.errors.push(`${at}.kind: "${kind}" is too dense for half a slide. Use bars, a waterfall or ranked, or the chart template.`);
@@ -759,7 +893,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         if (kind === "waterfall" && (c.items || []).length > wfMax) out.errors.push(`${at}.items: ${c.items?.length} items; half a slide takes ${wfMax}.`);
         if (kind === "ranked" && (c.ranking || []).length > 6) out.errors.push(`${at}.ranking: ${c.ranking?.length} items; half a slide takes 6.`);
         if (kind === "ranked") (c.ranking || []).forEach((r, j) => { if (r?.label && r.label.length > 20) out.errors.push(`${at}.ranking[${j}].label: ${r.label.length} characters; half a slide takes 20.`); });
-        if (s.takeaway && (x.bullets || []).length > 1) out.errors.push(`charts[${i}].bullets: with a takeaway at most 1 per chart.`);
+        if (s.takeaway && (h.bullets || []).length > 1) out.errors.push(`${p}.bullets: with a takeaway at most 1 per chart.`);
       });
       break;
     }
@@ -854,6 +988,8 @@ type LegacyColumn = { label?: string; focus?: boolean; num?: unknown };
 /** Slides saved before the 2026-09-27 chart change: chart.type and series.line become marks; table columns lose `num`. */
 export function upgrade(slide: Slide): Slide {
   const s = structuredClone(slide), c: LegacyChart | undefined = s.chart;
+  const old = s as Slide & { charts?: Half[] };
+  if (old.charts && !s.halves) { s.halves = old.charts; delete old.charts; }
   if (c?.type) {
     (c.series || []).forEach((x) => { x.mark = c.type === "lines" || x.line ? "line" : "bar"; delete x.line; });
     if (c.type === "bars") c.stacking = "none";
@@ -866,4 +1002,12 @@ export function upgrade(slide: Slide): Slide {
   (s.table?.columns || []).forEach((col: LegacyColumn) => delete col.num);
   if (!NOTE_POINTS) (s.notes || []).forEach((n) => { if (n) delete n.point; });
   return s;
+}
+
+/* Judgement guidance (capabilities.ts) is wired in after MENU so that file stays a leaf. */
+for (const id of Object.keys(MENU) as TemplateId[]) { MENU[id].capabilities = CAPABILITIES[id]; MENU[id].shapes = SHAPES[id]; }
+// Without mixed halves the pair offers only charts: its card keeps the chart guidance and the chart + chart shape.
+if (!MIXED_HALVES) {
+  MENU.pair.capabilities = MENU.pair.capabilities?.filter((c) => (c.sample.halves as Half[] | undefined)?.every((h) => h.chart));
+  MENU.pair.shapes = MENU.pair.shapes?.filter((x) => x.shape === "chart + chart");
 }

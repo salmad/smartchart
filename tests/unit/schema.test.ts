@@ -78,7 +78,7 @@ test("upgrade converts old charts and tables", () => {
 });
 
 test("the chart card carries the chart guide", () => {
-  assert.equal(CHART_GUIDE.length, 13);
+  assert.equal(CHART_GUIDE.length, 8);
   const rules = describe("chart", "consulting").rules.join("\n");
   CHART_GUIDE.forEach((g) => assert.ok(rules.includes(g)));
 });
@@ -267,7 +267,7 @@ test("the chart card tells the agent the ranked and matrix limits", () => {
   assert.match(rules, /ranked 7 items/);
   assert.match(rules, /pitch with a takeaway at most 6 items/);
   assert.match(rules, /Matrix: notes or a takeaway, not both/);
-  assert.ok(CHART_GUIDE.some((g) => g.includes("`kind: \"ranked\"`")) && CHART_GUIDE.some((g) => g.includes("`kind: \"matrix\"`")));
+  assert.ok(describe("chart").capabilities?.some((c) => c.name === "Ranked") && describe("chart").capabilities?.some((c) => c.name === "Matrix"));
 });
 
 test("tables highlight what the writer chooses: rows, several columns, cells by markup", () => {
@@ -275,4 +275,22 @@ test("tables highlight what the writer chooses: rows, several columns, cells by 
     rows: [{ cells: ["Bank", "£25k", "£120"] }, { cells: ["[[Acme]]", "£250k", "£0"], focus: true }] } };
   assert.deepEqual(errs(t), []);
   assert.match(errs({ ...t, table: { ...t.table, rows: [{ cells: ["a", "b", "c"], focus: "yes" }] } }).join(), /table\.rows\[0\]\.focus: must be true or false/);
+});
+
+test("consulting notes take 120 characters each; 300 in total, 200 beside a takeaway (measured on the review page)", () => {
+  const chart = { categories: ["A", "B", "C"], series: [{ name: "S", mark: "bar", color: "focus", values: [1, 2, 3] }] };
+  const n = (len: number) => ({ title: "Note", text: "x".repeat(len) });
+  const base = { template: "chart", title: "T", chart };
+  assert.deepEqual(validate({ ...base, notes: [n(120), n(120), n(60)] } as never, "consulting").errors, []);
+  assert.match(validate({ ...base, notes: [n(120), n(120), n(61)] } as never, "consulting").errors.join("\n"), /301 characters in total; the limit is 300/);
+  assert.match(validate({ ...base, notes: [n(121), n(10), n(10)] } as never, "consulting").errors.join("\n"), /notes\[0\]\.text: 121 characters, limit 120/);
+  assert.deepEqual(validate({ ...base, takeaway: "So what.", notes: [n(50), n(75), n(75)] } as never, "consulting").errors, []);
+  assert.match(validate({ ...base, takeaway: "So what.", notes: [n(80), n(80), n(41)] } as never, "consulting").errors.join("\n"), /201 characters in total; with a takeaway the limit is 200/);
+});
+
+test("upgrade turns an old pair's charts into halves", () => {
+  const old = { template: "pair", title: "t", charts: [{ caption: "A", chart: { categories: cats, series: [{ name: "A", values: [1, 2, 3] }] } }, { caption: "B", chart: { categories: cats, series: [{ name: "B", values: [1, 2, 3] }] } }] };
+  const u = upgrade(legacy(old)) as unknown as { halves?: unknown[]; charts?: unknown };
+  assert.equal(u.halves?.length, 2);
+  assert.equal(u.charts, undefined);
 });

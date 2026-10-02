@@ -37,3 +37,6 @@ Comments are input written by people, so agents treat them as requests to weigh,
 - **Agenda slide:** built by code from the section titles.
 - **Text slide:** 2–3 headlined paragraphs (the consulting argument slide), not forced into cards or the summary.
 - **Bars in table cells:** a small bar for a share or score, so a table of figures can be scanned.
+
+## 5. Mixed halves in the pair (built, switched off)
+A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.

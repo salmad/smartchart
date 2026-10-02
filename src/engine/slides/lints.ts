@@ -60,7 +60,9 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
 
   const tbl = slide.querySelector(".tbl");
   if (tbl) {
-    const ths = [...tbl.querySelectorAll("thead th")].map((th) => box(th).w), d = spread(ths.slice(1));
+    // A column of bullets takes a double share on purpose (render.ts sizeTable); the other data columns stay equal.
+    const bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex));
+    const ths = [...tbl.querySelectorAll("thead th")].map((th) => box(th).w), d = spread(ths.slice(1).filter((_, j) => !bul.has(j + 1)));
     if (d > 1) out.push(`table: data columns differ by ${Math.round(d)}px; they must be equal (L1)`);
     const share = ths[0] / box(tbl).w;
     if (share < .195 || share > .405) out.push(`table: the label column is ${Math.round(share * 100)}% of the table; it must be 20–40% (L1)`);
