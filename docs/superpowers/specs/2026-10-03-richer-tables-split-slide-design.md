@@ -151,18 +151,20 @@ Every other reader of `charts` moves to `halves`: `checks.ts:24,44`, `edit.ts:18
 
 The manual-editing spec (2026-10-01, §4.3) models a table as a plain grid. Changes:
 
-- **Sheet (`sheet.ts:158–168`):** a cell with `bullets` or `status` keeps its shape on edit (today `text()` returns `x.value`, which would flatten a bullets cell). Bullet cells edit as one line per bullet; status cells show and edit the value, with a toggle for status.
-- **Group rows:** shown as a spanning label row, editable as one text field, not as cells; `insertRow` (fills one cell per column) never creates a group row; a "group heading" row action adds one.
+- **Sheet (`sheet.ts:158–168`):** a cell edit writes only `.value` (the sheet already writes object cells at `cells[j].value`), so a cell's note, bullets and status are kept. Bullets, notes and status labels are edited on the slide itself (each has its own `data-path`), not in the grid.
+- **Group rows:** the heading shows in the first column; the other cells are read-only. Column operations (add, remove, move) leave group rows untouched. Adding a group row is done by asking the agent.
 - **Halves:** the sheet's `which` selects a half; a half table edits like a table; number and points edit as fields. Changing a half's body type is not in the editor (ask the agent).
 
 ## 7. Gallery (rewrite content, no new example set)
 
 In `src/engine/starters/starters.json`:
 
-- **Competition** table → options vs criteria: ✓ / ✗, one ✓ with a note, header icons, focus column on Acme.
-- **Business model** table → explaining positions: a bullets column (it has 4 columns).
-- **What's next** table → actions with status labels, and group headings with enough rows to need them, within the budget.
-- **The two pair slides** → chart + table, and number + points.
+- **Scorecard** (`scoring`) → header icons on the four criteria columns (Harvey balls stay).
+- **Table with notes** (`table-notes`) → the Fee column becomes "No annual fee": ✓ / ✗, with the fee as a note under each ✗ (a mark with a note, without turning a figure into a mark).
+- **Next steps** (`next-steps`) → a Status column of status labels.
+- **The pair starter** → consulting: chart + table; pitch: number + chart.
+- Bullets in cells and group headings are not forced into a gallery table that does not need them; the capability samples and the stress deck cover them.
+- The structure locks (`tests/fixtures/example-shapes.json`, "never -u") and the line-count lock (`example-lines.json`) will fail for the changed starters; re-recording them is the user's decision.
 
 ## 8. Testing
 
