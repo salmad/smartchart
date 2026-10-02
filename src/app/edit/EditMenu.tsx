@@ -27,6 +27,7 @@ function clip(slide: HTMLElement | null, t: Target, what: 'cut' | 'copy' | 'past
 
 export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void; children: ReactNode }) {
   const [target, setTarget] = useState<Target>({ kind: 'slide' }), [chartAt, setChartAt] = useState(0)
+  const half = edit.draft.halves?.[chartAt]
   const actions = actionsFor(target, edit.draft, deckStyle)
   const field = target.kind === 'text'
   return (
@@ -37,8 +38,9 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
           if (e.shiftKey) { e.stopPropagation(); return }
           const t = targetAt(e.target instanceof Element ? e.target : null, edit.target)
           setTarget(t); edit.setTarget(t)
-          // The chart under the pointer: a pair's left or right chart.
-          setChartAt(Number((e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null)?.dataset.chart || 0))
+          // The half under the pointer: a pair's left or right.
+          const host = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart], [data-grid]') : null
+          setChartAt(Number(host?.dataset.chart || host?.dataset.grid || 0))
         }}>
         <div className="absolute inset-0">{children}</div>
       </ContextMenuTrigger>
@@ -63,7 +65,7 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
             </div>
           )
         })}
-        {(edit.draft.chart || edit.draft.table || edit.draft.halves) && <>{actions.length > 0 && <ContextMenuSeparator />}<ContextMenuItem onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
+        {(edit.draft.chart || edit.draft.table || (half && (half.chart || half.table))) && <>{actions.length > 0 && <ContextMenuSeparator />}<ContextMenuItem onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table || half?.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
         {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && !edit.draft.halves && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">Right-click a card, row, column or text</ContextMenuLabel>}
       </ContextMenuContent>
     </ContextMenu>

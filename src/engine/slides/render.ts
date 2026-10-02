@@ -106,14 +106,15 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
   pair: (s) => {
     const halves = s.halves ?? [];
-    const half = (h: Half, i: number) => {
+    const half = (h: Half | undefined, i: number) => {
+      if (!h) return "";
       const p = `halves[${i}]`;
       const body = h.chart ? `<div class="chart" data-chart="${i}"></div>${h.bullets?.length ? list(h.bullets, `${p}.bullets`) : ""}`
         : h.table ? tableHTML(h.table, `${p}.table`, false)
         : h.number ? `<div class="half-num"><div class="big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
         : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
         : "";
-      return `<div class="half${h.table ? " has-table" : ""}"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
+      return `<div class="half"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
     };
     const balls = halves.some((h) => h?.table && markKinds(h.table).has("balls"));
     return `<div class="pair grow">${halves.map(half).join("")}</div>${balls ? ballKey() : ""}`;

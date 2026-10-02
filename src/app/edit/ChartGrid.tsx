@@ -19,7 +19,7 @@ export function ChartGrid({ edit, deckStyle, which = 0, onClose }: { edit: Slide
         onEscapeKeyDown={(e) => { if (e.target instanceof Element && e.target.closest('input[aria-label^="Row "], [data-range]')) e.preventDefault() }}
         className="flex max-h-[85vh] w-[min(56rem,calc(100vw-2rem))] max-w-none flex-col gap-4 p-6">
         <DialogHeader>
-          <DialogTitle>{edit.draft.table ? 'Table data' : 'Chart data'}</DialogTitle>
+          <DialogTitle>{model?.kind === 'table' ? 'Table data' : 'Chart data'}</DialogTitle>
           <DialogDescription>Type to replace, Enter to edit, paste from a spreadsheet. The slide redraws when you close this.</DialogDescription>
         </DialogHeader>
         {edit.draft.chart?.kind === 'timeline' ? <Gantt edit={edit} deckStyle={deckStyle} /> : model ? <Sheet edit={edit} model={model} deckStyle={deckStyle} which={which} note={note} onNote={setNote} /> : <p className="text-ink-3">This part has no table view.</p>}

@@ -188,7 +188,7 @@ function within(m: SheetModel, pre: string): SheetModel {
     ...(m.moveCol ? { moveCol: (a: number, b: number) => r(m.moveCol?.(a, b) ?? null) } : {}) };
 }
 
-/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's chart. */
+/** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's half. */
 export function sheetFor(slide: Slide, style: Style, which = 0): SheetModel | null {
   if (slide.template === "pair") {
     const h = slide.halves?.[which], pre = `halves[${which}].`;
