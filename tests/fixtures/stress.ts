@@ -26,7 +26,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
   const bars: Chart = { categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6"], format: "£{v}m", series: [
     { name: "Interest income", mark: "bar", color: "neutral", values: [1, 3, 14, 42, 85, 99] }, { name: "Interchange", mark: "bar", color: "focus", values: [1, 2, 11, 36, 80, 95] },
     { name: "Gross margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 24, 31, 36, 38, 40] }] };
-  const notes = (n: number, withPoint: boolean) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(i ? 75 : 50) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
+  const notes = (n: number, withPoint: boolean) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(i ? 120 : 60) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
   const rows = (n: number, noted: boolean) => TIMES(n).map(() => ({ cells: [W(noted ? 40 : 24), noted ? { value: "(1,234)", note: "8% × £10.5k" } : "(1,234)", "12,345", "(34)"] }));
   return [
     { template: "cover", name: "Stress · cover", title: W(max("cover", st, "title")), subtitle: W(max("cover", st, "subtitle")) },

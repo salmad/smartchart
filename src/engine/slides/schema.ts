@@ -251,11 +251,11 @@ const NOTES_TITLE = f("text", "A one- or two-word heading over the notes: 'Notes
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
 export const NOTE_POINTS = false;
-const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table: 3, or none. Add them only if each says something the body does not already show; in pitch, prefer none. Two notes only restate the title and takeaway: write a third or leave them out. Numbers are added automatically.", {
+const notes = (withPoint: boolean) => f("list", "Optional numbered notes beside the body: 3, or none. Each says what the body does not show: a cause, a caveat, an implication. Never restate the title, takeaway or a visible value. Pitch: prefer none. Two notes restate: write a third or none. Numbered automatically.", {
   items: { min: 2, max: 4 },
   of: f("object", "One observation.", { fields: {
     title: f("markup", "The observation as a short headline.", { required: true, max: 28 }),
-    text: f("markup", "Optional supporting sentence.", { max: 80, styles: CONSULTING }),
+    text: f("markup", "Optional supporting sentence.", { max: 120, styles: CONSULTING }),
     ...(withPoint ? { point: f("object", "Optional: pin this note's number onto a data point (charts with bars only).", { fields: {
       series: f("number", "0-based index into chart.series.", { required: true }),
       index: f("number", "0-based index into chart.categories.", { required: true }),
@@ -733,7 +733,7 @@ function checkNotes(s: Slide, style: Style, out: Out): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
   const textLen = list.reduce((sum, n) => sum + (n?.text ? plain(n.text).length : 0), 0);
-  if (s.takeaway && textLen > 200) out.errors.push(`notes[].text: ${textLen} characters in total; with a takeaway the limit is 200. Shorten the notes or drop the takeaway.`);
+  if (s.takeaway && textLen > 300) out.errors.push(`notes[].text: ${textLen} characters in total; with a takeaway the limit is 300. Shorten the notes or drop the takeaway.`);
   // The heading takes a header row from the notes column; with a takeaway there is no room for both.
   if (s.notesTitle && s.takeaway) out.errors.push("notesTitle: a notes heading and a takeaway do not fit together. Drop the notes heading, or the takeaway.");
 }

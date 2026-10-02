@@ -276,3 +276,13 @@ test("tables highlight what the writer chooses: rows, several columns, cells by 
   assert.deepEqual(errs(t), []);
   assert.match(errs({ ...t, table: { ...t.table, rows: [{ cells: ["a", "b", "c"], focus: "yes" }] } }).join(), /table\.rows\[0\]\.focus: must be true or false/);
 });
+
+test("consulting notes take 120 characters each; with a takeaway, 300 in total", () => {
+  const chart = { categories: ["A", "B", "C"], series: [{ name: "S", mark: "bar", color: "focus", values: [1, 2, 3] }] };
+  const n = (len: number) => ({ title: "Note", text: "x".repeat(len) });
+  const base = { template: "chart", title: "T", chart };
+  assert.deepEqual(validate({ ...base, notes: [n(120), n(120), n(60)] } as never, "consulting").errors, []);
+  assert.match(validate({ ...base, notes: [n(121), n(10), n(10)] } as never, "consulting").errors.join("\n"), /notes\[0\]\.text: 121 characters, limit 120/);
+  assert.deepEqual(validate({ ...base, takeaway: "So what.", notes: [n(100), n(100), n(100)] } as never, "consulting").errors, []);
+  assert.match(validate({ ...base, takeaway: "So what.", notes: [n(120), n(120), n(61)] } as never, "consulting").errors.join("\n"), /301 characters in total; with a takeaway the limit is 300/);
+});
