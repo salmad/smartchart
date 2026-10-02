@@ -31,3 +31,9 @@ Open questions for the brainstorm:
 Pairs well with #1: a resolved comment can link to the revision that fixed it.
 
 Comments are input written by people, so agents treat them as requests to weigh, not commands. A shared viewer's comment never acts with the owner's authority.
+
+## 4. Slide gaps found while designing richer tables (2026-10-03)
+- **Images:** logos (competition), product screenshots, team photos. Biggest gap for pitch decks; needs upload, storage and layout.
+- **Agenda slide:** built by code from the section titles.
+- **Text slide:** 2–3 headlined paragraphs (the consulting argument slide), not forced into cards or the summary.
+- **Bars in table cells:** a small bar for a share or score, so a table of figures can be scanned.
