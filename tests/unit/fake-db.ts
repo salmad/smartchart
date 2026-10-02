@@ -1,11 +1,11 @@
-import type { Db, DeckEventRow, DeckRow, KeyRow, Presence } from '../../api/_lib/db'
+import { keyId, MAX_KEYS, type Db, type DeckEventRow, type DeckRow, type KeyRow, type Presence } from '../../api/_lib/db'
 
 /** An in-memory Db with the same ownership rules as the SQL one. */
 export type FakeRow = DeckRow & { user: string; share?: string | null; named: boolean; presence: Presence }
 export type FakeDb = Db & {
   rows: Map<string, FakeRow>
   events: (DeckEventRow & { user: string; deck: string })[]
-  keys: Map<string, KeyRow & { hash: string }>
+  keys: Map<string, KeyRow & { hash: string; created: number }>
   rate: Map<string, number>
   calls: Map<string, number>
 }
@@ -41,13 +41,14 @@ export function fakeDb(): FakeDb {
       .map(({ user: _u, deck: _d, ...e }) => e),
     countCall: async (u) => { const c = (calls.get(u) ?? 0) + 1; calls.set(u, c); return c },
     callsToday: async (u) => calls.get(u) ?? 0,
-    putKey: async (userId, email, hash, prefix) => {
-      for (const [h, k] of keys) if (k.userId === userId) keys.delete(h)
-      keys.set(hash, { userId, email, prefix, hash })
+    addKey: async (userId, email, hash, prefix) => {
+      if ([...keys.values()].filter((k) => k.userId === userId).length >= MAX_KEYS) return false
+      keys.set(hash, { userId, email, prefix, hash, created: Date.now() })
+      return true
     },
     keyUser: async (hash) => { const k = keys.get(hash); return k ? { userId: k.userId, email: k.email, prefix: k.prefix } : null },
-    keyPrefix: async (u) => [...keys.values()].find((k) => k.userId === u)?.prefix ?? null,
-    deleteKey: async (u) => { const k = [...keys.values()].find((x) => x.userId === u); return !!k && keys.delete(k.hash) },
+    listKeys: async (u) => [...keys.values()].filter((k) => k.userId === u).map((k) => ({ id: keyId(k.hash), prefix: k.prefix, created: k.created, lastUsed: null })),
+    deleteKey: async (u, id) => { const k = [...keys.values()].find((x) => x.userId === u && keyId(x.hash) === id); return !!k && keys.delete(k.hash) },
     bumpRate: async (key, minute) => { const k = `${key}:${minute}`, c = (rate.get(k) ?? 0) + 1; rate.set(k, c); return c },
     deleteDeck: async (u, id) => { const r = rows.get(id); return !!r && r.user === u && rows.delete(id) },
     shareDeck: async (u, id, on) => {
