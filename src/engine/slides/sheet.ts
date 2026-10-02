@@ -155,7 +155,7 @@ const MATRIX_COLS: [string, string][] = [["label", "Point"], ["x", "Across (0–
 
 function tableSheet(slide: Slide): SheetModel {
   const t = slide.table ?? { columns: [], rows: [] }, cols = t.columns, rows = t.rows;
-  const text = (r: number, c: number) => { const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value : x ?? ""; };
+  const text = (r: number, c: number) => { const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value ?? "" : x ?? ""; };
   const pathOf = (r: number, c: number) => { const x = rows[r]?.cells[c], base = `table.rows[${r}].cells[${c}]`; return typeof x === "object" && x ? `${base}.value` : base; };
   const ROWS: [number, number] = [1, 8];
   const colWrite = (f: (s: Slide) => { table?: unknown }): Patch | null => { const p = f(slide); return p.table ? (p as Patch) : null; };

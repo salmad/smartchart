@@ -5,6 +5,7 @@ import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } f
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
+import { columnAlign } from "./align.js";
 export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -54,27 +55,12 @@ const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<sp
 /** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
 const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
 
-const cellValue = (c: Cell | undefined) => plain(c && typeof c === "object" ? c.value : c ?? "").trim();
-const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
-
-/** Alignment per column from its content (spec 3.6 L2): label column text, numbers right, short symbols centred. */
-export type Align = "text" | "num" | "sym";
-export function columnAlign(t: Table): Align[] {
-  return t.columns.map((_, j) => {
-    if (j === 0) return "text";
-    const vals = t.rows.map((r) => cellValue(r.cells?.[j])).filter((v) => v && v !== "—" && v !== "–" && v !== "-");
-    // Symbols are marks (✓, —, ●) or yes/no; a short word such as "CEO" is text.
-    if (!vals.length || vals.every((v) => v.length <= 3 && !/\d/.test(v) && (!/\p{L}/u.test(v) || /^(yes|no|y|n|n\/a)$/i.test(v)))) return "sym";
-    return vals.every((v) => NUMERIC.test(v)) ? "num" : "text";
-  });
-}
-
 function tableHTML(t: Table) {
   const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const cell = (c: Cell, r: number, j: number) => { const p = `table.rows[${r}].cells[${j}]`;
-    const text = typeof c === "object" && c ? c.value : c ?? "", mark = markOf(String(text));
+    const text = typeof c === "object" && c ? c.value ?? "" : c ?? "", mark = markOf(String(text));
     if (mark) return `<td class="${cls(t.columns[j], j)} score"${at(typeof c === "object" && c ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
-    if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value)}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
+    if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value ?? "")}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
     return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
   return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
     <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>

@@ -13,7 +13,8 @@
 import { timelineLines } from "./charts/timeline-rows.js";
 import { waterfall } from "./charts/chart-math.js";
 import { markKinds } from "./marks.js";
-import type { Chart, Series, Slide, Style, TemplateId, Validation } from "../types.js";
+import { columnAlign } from "./align.js";
+import type { Cell, Chart, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell";
@@ -262,6 +263,20 @@ const notes = (withPoint: boolean) => f("list", "Optional numbered observations 
   } }),
 });
 
+/* Table pieces, shared by the table template and a half table in the pair. */
+const COLUMN_FIELDS = {
+  label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
+  focus: f("boolean", "Highlight this column. Not with `muted`.", { default: false }),
+  muted: f("boolean", "A quieter column, for context. Not with `focus`.", { default: false }),
+};
+const TABLE_COLUMN = f("object", "Column.", { fields: {
+  ...COLUMN_FIELDS,
+  icon: f("enum", "Optional icon over the header, from the curated set: on every column after the first, or none.", { values: ICONS }),
+  bold: f("boolean", "Set the whole column in bold.", { default: false }),
+  italic: f("boolean", "Set the whole column in italic.", { default: false }),
+} });
+const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
+
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
@@ -291,18 +306,12 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.",
     fields: {
       table: f("object", "The table.", { required: true, fields: {
-        columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: f("object", "Column.", { fields: {
-          label: f("text", "Header text. The first (label) column's header may be left out.", { max: 26 }),
-          focus: f("boolean", "Highlight this column. Not with `muted`.", { default: false }),
-          muted: f("boolean", "A quieter column, for context. Not with `focus`.", { default: false }),
-          bold: f("boolean", "Set the whole column in bold.", { default: false }),
-          italic: f("boolean", "Set the whole column in italic.", { default: false }),
-        } }) }),
-        rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 8 }, of: f("object", "Row.", { fields: {
-          cells: f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or { value, note } for a small note under the value. A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗.", { required: true, of: f("cell", "Cell.", { max: 40 }) }),
-          style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above.", { values: ["muted", "total"] }),
-          focus: f("boolean", "Highlight this row.", { default: false }),
-        } }) }),
+  columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: TABLE_COLUMN }),
+  rows: f("list", "Rows, top to bottom: at most 8, plus group headings.", { required: true, items: { min: 1, max: 10 }, of: f("object", "Row.", { fields: {
+    cells: TABLE_CELLS,
+    style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above. `group`: a heading over the rows below it (one cell).", { values: ["muted", "total", "group"] }),
+    focus: f("boolean", "Highlight this row.", { default: false }),
+  } }) }),
       } }),
       caption: CAPTION,
       focus: FOCUS,
@@ -311,8 +320,10 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Row budget: a row costs 1, a row with a cell note 1.5, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes and muted rows are hidden in pitch).",
+      "Budget: a row costs 1, a row with a cell note 1.5, a row with bullets 1 + 0.75 per bullet after the first, a group heading 0.75, header icons 0.5, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
+      "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
+      "Header icons: on every column after the first, or none.",
       "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters.",
     ],
   },
@@ -503,7 +514,7 @@ const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 type Out = Validation;
 /** Fields of an object value the validator walks; the value is unvalidated input. */
 const fieldsOf = (v: object) => v as Record<string, unknown>;
-const cellOf = (v: unknown) => (typeof v === "object" && v !== null ? v : { value: v }) as { value?: unknown; note?: unknown };
+const CELL_KEYS = ["value", "note", "bullets", "status"];
 
 function check(def: FieldDef, value: unknown, path: string, style: Style, out: Out): void {
   if (value === undefined || value === null || value === "") {
@@ -531,10 +542,27 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       if (!def.values?.includes(value)) out.errors.push(`${path}: "${String(value)}" is not allowed. Use one of: ${def.values?.join(", ")}.`);
       break;
     case "cell": {
-      const v = cellOf(value);
-      if (typeof v.value !== "string" && typeof v.value !== "number") out.errors.push(`${path}: a cell is a string or { "value": "…", "note": "…" }.`);
-      else if (max && plain(v.value).length > max) out.errors.push(`${path}: ${plain(v.value).length} characters, limit ${max}.`);
+      if (typeof value === "string" || typeof value === "number") {
+        const len = plain(String(value)).length;
+        if (max && len > max) out.errors.push(`${path}: ${len} characters, limit ${max}.`);
+        break;
+      }
+      if (typeof value !== "object" || Array.isArray(value)) { out.errors.push(`${path}: a cell is a string, or an object with value, note, bullets or status.`); break; }
+      const v = fieldsOf(value);
+      for (const k of Object.keys(v)) if (!CELL_KEYS.includes(k)) out.errors.push(`${path}.${k}: not a cell field. Allowed: ${CELL_KEYS.join(", ")}.`);
+      if (v.value === undefined && !Array.isArray(v.bullets)) out.errors.push(`${path}.value: required (a cell with bullets may leave it out).`);
+      else if (v.value !== undefined && typeof v.value !== "string" && typeof v.value !== "number") out.errors.push(`${path}.value: must be text.`);
+      else if (v.value !== undefined && max && plain(String(v.value)).length > max) out.errors.push(`${path}: ${plain(String(v.value)).length} characters, limit ${max}.`);
       if (v.note !== undefined && String(v.note).length > 32) out.errors.push(`${path}.note: limit is 32 characters.`);
+      if (v.bullets !== undefined) {
+        if (!Array.isArray(v.bullets) || v.bullets.length < 1 || v.bullets.length > 3) out.errors.push(`${path}.bullets: 1–3 bullets.`);
+        else v.bullets.forEach((b: unknown, k: number) => {
+          if (typeof b !== "string") out.errors.push(`${path}.bullets[${k}]: must be text.`);
+          else if (plain(b).length > 50) out.errors.push(`${path}.bullets[${k}]: ${plain(b).length} characters, limit 50.`);
+        });
+      }
+      if (v.status !== undefined && typeof v.status !== "boolean") out.errors.push(`${path}.status: must be true or false.`);
+      if (v.status && v.bullets) out.errors.push(`${path}: a status label has no bullets.`);
       break;
     }
     case "list": {
@@ -691,6 +719,54 @@ function checkNotes(s: Slide, style: Style, out: Out): void {
   if (s.notesTitle && s.takeaway) out.errors.push("notesTitle: a notes heading and a takeaway do not fit together. Drop the notes heading, or the takeaway.");
 }
 
+/* Rules every table shares, the table template's and a half table's: cells per column, column flags, marks,
+   header icons, bullets, status labels and group headings. `half`: no bullets at half width. */
+function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half = false): void {
+  const cols = Array.isArray(t.columns) ? t.columns : [], rows = Array.isArray(t.rows) ? t.rows : [], n = cols.length;
+  const obj = (c: Cell | undefined) => (c && typeof c === "object" ? c : null);
+  rows.forEach((r, i) => {
+    if (!r || !Array.isArray(r.cells)) return;
+    if (r.style === "group") { if (r.cells.length !== 1) out.errors.push(`${base}.rows[${i}].cells: a group row has one cell, its heading (got ${r.cells.length}).`); return; }
+    if (r.cells.length !== n) out.errors.push(`${base}.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
+  });
+  cols.forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`${base}.columns[${j}]: muted or focus, not both.`); });
+  cols.forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`${base}.columns[${j}].label: required. Header text.`); });
+  const data = rows.filter((r) => r?.style !== "group").length;
+  if (data > 8) out.errors.push(`${base}.rows: ${data} rows; at most 8 (group headings not counted). Cut or merge rows.`);
+  if (markKinds(t).size > 1) out.warnings.push(`${base}: mixes Harvey balls and ticks. Score with one kind of mark per table.`);
+  // Header icons: all columns after the first, or none.
+  if (cols[0]?.icon) out.errors.push(`${base}.columns[0].icon: the label column has no icon.`);
+  const iconed = cols.slice(1).filter((c) => c?.icon).length;
+  if (iconed && iconed !== n - 1) out.errors.push(`${base}.columns: ${iconed} of ${n - 1} columns have an icon; give every column after the first an icon, or none.`);
+  if (iconed && cols.every(Boolean) && rows.every((r) => r && Array.isArray(r.cells))) {
+    const al = columnAlign({ columns: cols, rows: rows as Table["rows"] });
+    cols.forEach((c, j) => { if (c?.icon && al[j] === "num") out.warnings.push(`${base}.columns[${j}].icon: an icon on a column of numbers adds nothing; remove it.`); });
+  }
+  // Bullets in cells.
+  const bulletCols = new Set<number>();
+  rows.forEach((r, i) => (r?.cells || []).forEach((c, j) => { const o = obj(c); if (o?.bullets) { bulletCols.add(j); if (o.note) out.errors.push(`${base}.rows[${i}].cells[${j}]: bullets or a note, not both.`); } }));
+  if (bulletCols.size && half) out.errors.push(`${base}: bullets in cells do not fit half a slide. Use a phrase, or the table template.`);
+  else if (bulletCols.size) {
+    if (bulletCols.size > 1) out.errors.push(`${base}: bullets in ${bulletCols.size} columns; at most one column of bullets. More than that is cards or notes.`);
+    if (n > 4) out.errors.push(`${base}.columns: ${n} columns; a table with bullets in cells takes at most 4.`);
+    if (style === "pitch") out.warnings.push(`${base}: pitch hides bullets in cells; say it in the cell or the subtitle.`);
+  }
+  // Status labels: a few distinct values per column, so they can be told apart.
+  cols.forEach((_, j) => {
+    const vals = new Set(rows.flatMap((r) => { const o = obj(r?.cells?.[j]); return o?.status ? [plain(String(o.value ?? ""))] : []; }));
+    if (vals.size > 4) out.warnings.push(`${base}.columns[${j}]: ${vals.size} different status labels; use at most 4 so they can be told apart.`);
+  });
+  // Group headings.
+  const groups = rows.map((r, i) => (r?.style === "group" ? i : -1)).filter((i) => i >= 0);
+  if (groups.length) {
+    if (data < 6) out.warnings.push(`${base}: group headings with ${data} rows; use them only with 6 or more.`);
+    groups.forEach((g, k) => {
+      const size = (k + 1 < groups.length ? groups[k + 1] : rows.length) - g - 1;
+      if (size < 2) out.warnings.push(`${base}.rows[${g}]: a group of ${size} row${size === 1 ? "" : "s"}; a group needs at least 2.`);
+    });
+  }
+}
+
 function checkRules(s: Slide, style: Style, out: Out): void {
   switch (s.template) {
     case "chart": {
@@ -721,23 +797,25 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       break;
     }
     case "table": {
-      const t: Partial<NonNullable<Slide["table"]>> = s.table || {}, n = (t.columns || []).length;
-      (t.rows || []).forEach((r, i) => {
-        if (Array.isArray(r?.cells) && r.cells.length !== n) out.errors.push(`table.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
-      });
-      (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`table.columns[${j}]: muted or focus, not both.`); });
-      (Array.isArray(t.columns) ? t.columns : []).forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`table.columns[${j}].label: required. Header text.`); });
+      const t: Partial<Table> = s.table || {}, n = (t.columns || []).length;
+      checkGrid(t, "table", style, out);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
-      const noted = (r: (typeof rows)[number]) => style === "consulting" && (r.cells || []).some((c) => c && typeof c === "object" && c.note);
-      const marks = markKinds(t), key = style === "consulting" && marks.has("balls") ? 1 : 0;
-      if (marks.size > 1) out.warnings.push("table: mixes Harvey balls and ticks. Score with one kind of mark per table.");
-      const cost = rows.reduce((sum, r) => sum + (noted(r) ? 1.5 : 1), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key, budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes, the takeaway or the caption.`);
+      const rowCost = (r: Table["rows"][number]) => {
+        if (r.style === "group") return 0.75;
+        if (style === "pitch") return 1;
+        const cells = r.cells || [];
+        const b = Math.max(0, ...cells.map((c) => (c && typeof c === "object" && Array.isArray(c.bullets) ? c.bullets.length : 0)));
+        if (b) return 1 + 0.75 * (b - 1);
+        return cells.some((c) => c && typeof c === "object" && c.note) ? 1.5 : 1;
+      };
+      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = (t.columns || []).some((c) => c?.icon) ? 0.5 : 0;
+      const cost = rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons, budget = style === "pitch" ? 7 : 10.5;
+      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, row with bullets = 1 + 0.75 per extra bullet, group heading = 0.75, header icons = 0.5, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
         if (n > 4) out.errors.push(`table.columns: ${n} columns; with notes at most 4. Drop a column or the notes.`);
-        (t.rows || []).forEach((r, i) => { const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
+        (t.rows || []).forEach((r, i) => { if (r?.style === "group") return; const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
           if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; with notes at most 24.`); });
       }
       break;
