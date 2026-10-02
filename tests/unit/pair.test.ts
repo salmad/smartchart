@@ -54,7 +54,7 @@ test('an old `charts` field names `halves`', () => {
   expect(errs({ template: 'pair', title: 'T', charts: [] } as unknown as Slide)).toMatch(/charts: `charts` is now `halves`/)
 })
 
-test.skip('two halves render as two numbered hosts, each with its caption and bullets', () => {
+test('two halves render as two numbered hosts, each with its caption and bullets', () => {
   const s = pair(bars(3), bars(3))
   s.halves?.forEach((c, i) => { c.bullets = [`Point ${i}`] })
   const html = slideHTML(s, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })
@@ -64,7 +64,7 @@ test.skip('two halves render as two numbered hosts, each with its caption and bu
   expect(html).toContain('data-path="halves[1].bullets[0]"')
 })
 
-test.skip('the data grid edits the chart that was picked, writing under halves[i]', () => {
+test('the data grid edits the chart that was picked, writing under halves[i]', () => {
   const s = pair(bars(3), bars(3)), m = sheetFor(s, 'consulting', 1)
   expect(m?.path(0, 1)).toBe('halves[1].chart.series[0].values[0]')
   const p = m?.set(0, 1, '9')
@@ -79,4 +79,33 @@ test.skip('the data grid edits the chart that was picked, writing under halves[i
   const replaced = replaceFromTable(s, 'consulting', [['', 'Share'], ['2026', '1'], ['2027', '3']], 0).slide
   expect(replaced.halves?.[0].chart?.categories).toEqual(['2026', '2027'])
   expect(replaced.halves?.[1].chart?.categories).toEqual(['Y1', 'Y2', 'Y3'])
+})
+
+test('halves render by body: chart host, table, number, points; the caption row stays for alignment', () => {
+  const s: Slide = { template: 'pair', title: 'T', halves: [
+    { number: { value: '7%', caption: 'Acme’s share by 2030.' } },
+    { caption: 'Share · %', table: { columns: [{ label: 'Year' }, { label: 'Share' }], rows: [{ cells: ['2026', '◑'] }] } },
+  ] }
+  const html = slideHTML(s, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })
+  expect(html).toContain('<div class="half" data-item="halves[0]" data-grid="0"><p class="cap blank "></p><div class="half-num"><div class="big-v" data-path="halves[0].number.value" data-kind="esc">7%</div>')
+  expect(html).toContain('data-path="halves[1].table.rows[0].cells[0]"')
+  // The Harvey-ball key appears once, under the pair, not inside the half.
+  expect(html.match(/class="mk-key"/g)).toHaveLength(1)
+  expect(html.indexOf('class="mk-key"')).toBeGreaterThan(html.lastIndexOf('class="half'))
+  const pts = slideHTML({ template: 'pair', title: 'T', halves: [{ caption: 'A', points: ['One', 'Two'] }, { caption: 'B', points: ['Three', 'Four'] }] }, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })
+  expect(pts).toContain('<ul class="bullets points"><li data-item="halves[0].points[0]" data-path="halves[0].points[0]" data-kind="md">One</li>')
+})
+
+test('an old `charts` slide renders empty halves, never throws', () => {
+  expect(() => slideHTML({ template: 'pair', title: 'T', charts: [{ caption: 'A', chart: bars(3) }] } as unknown as Slide, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })).not.toThrow()
+})
+
+test('the sheet edits a half table under halves[i].table; number and points halves have no sheet', () => {
+  const s: Slide = { template: 'pair', title: 'T', halves: [{ caption: 'A', chart: bars(3) }, { caption: 'B', table: { columns: [{ label: 'Year' }, { label: 'Share' }], rows: [{ cells: ['2026', '1%'] }] } }] }
+  const m = sheetFor(s, 'consulting', 1)
+  expect(m?.path(0, 1)).toBe('halves[1].table.rows[0].cells[1]')
+  expect(m?.set(0, 1, '2%')).toEqual({ 'halves[1].table.rows[0].cells[1]': '2%' })
+  expect(sheetFor({ ...s, halves: [{ points: ['a b', 'c d'] }, s.halves![1]] }, 'consulting', 0)).toBeNull()
+  const replaced = replaceFromTable(s, 'consulting', [['Year', 'Share'], ['2030', '7%']], 1).slide
+  expect(replaced.halves?.[1].table?.rows[0].cells).toEqual(['2030', '7%'])
 })

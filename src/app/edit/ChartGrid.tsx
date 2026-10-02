@@ -22,7 +22,7 @@ export function ChartGrid({ edit, deckStyle, which = 0, onClose }: { edit: Slide
           <DialogTitle>{edit.draft.table ? 'Table data' : 'Chart data'}</DialogTitle>
           <DialogDescription>Type to replace, Enter to edit, paste from a spreadsheet. The slide redraws when you close this.</DialogDescription>
         </DialogHeader>
-        {edit.draft.chart?.kind === 'timeline' ? <Gantt edit={edit} deckStyle={deckStyle} /> : model ? <Sheet edit={edit} model={model} deckStyle={deckStyle} which={which} note={note} onNote={setNote} /> : <p className="text-ink-3">This chart has no table view.</p>}
+        {edit.draft.chart?.kind === 'timeline' ? <Gantt edit={edit} deckStyle={deckStyle} /> : model ? <Sheet edit={edit} model={model} deckStyle={deckStyle} which={which} note={note} onNote={setNote} /> : <p className="text-ink-3">This part has no table view.</p>}
         <div className="flex"><Button className="ml-auto" onClick={onClose}>Done</Button></div>
       </DialogContent>
     </Dialog>

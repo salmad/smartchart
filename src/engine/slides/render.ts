@@ -1,7 +1,7 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
 import { MENU, NOTE_POINTS, plain } from "./schema.js";
-import type { Card, Cell, Deck, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import type { Card, Cell, Deck, Half, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
@@ -104,7 +104,20 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
-  pair: (s) => `<div class="pair grow">${(s.halves ?? []).map((c, i) => `<div class="half"${item(`halves[${i}]`)}>${capHTML(c.caption, "", `halves[${i}].caption`)}<div class="chart" data-chart="${i}"></div>${c.bullets?.length ? list(c.bullets, `halves[${i}].bullets`) : ""}</div>`).join("")}</div>`,
+  pair: (s) => {
+    const halves = s.halves ?? [];
+    const half = (h: Half, i: number) => {
+      const p = `halves[${i}]`;
+      const body = h.chart ? `<div class="chart" data-chart="${i}"></div>${h.bullets?.length ? list(h.bullets, `${p}.bullets`) : ""}`
+        : h.table ? tableHTML(h.table, `${p}.table`, false)
+        : h.number ? `<div class="half-num"><div class="big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
+        : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
+        : "";
+      return `<div class="half${h.table ? " has-table" : ""}"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
+    };
+    const balls = halves.some((h) => h?.table && markKinds(h.table).has("balls"));
+    return `<div class="pair grow">${halves.map(half).join("")}</div>${balls ? ballKey() : ""}`;
+  },
   summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
     <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
   cards: (s, v) => { const cards = s.cards ?? [];

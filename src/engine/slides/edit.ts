@@ -13,9 +13,9 @@ export function getAt(slide: Slide, path: string): unknown {
 }
 
 export interface ListOp { path: string; min: number; max: number; length: number; required: boolean }
-// Chart data has its own grid (a pair's two charts too; the pair itself can swap); table columns change every row,
+// Chart and table data have their own grid (a pair's halves too; the pair itself can swap); table columns change every row,
 // and cells follow the columns.
-const SKIP = /^chart\b|^halves\[\d+\]\.chart\b|^table\.columns$|\.cells$/;
+const SKIP = /^chart\b|^halves\[\d+\]\.chart\b|^halves\[\d+\]\.table\.columns$|^table\.columns$|\.cells$/;
 
 export function listOps(slide: Slide, style: Style): ListOp[] {
   const out: ListOp[] = [];

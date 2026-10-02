@@ -55,7 +55,7 @@ Deck style: consulting. McKinsey-like. The argument is carried by full-sentence 
 
 # Templates
 - chart: One chart, with optional notes beside it. Use when: Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.
-- pair: Two halves: chart, table, number or points each. Use when: Two related things, an exhibit each: market and share, a number and its cause. One: chart or table.
+- pair: Two halves, each a chart, a table, a number or points. Use when: Two related things, an exhibit each: market and share. One exhibit: chart or table.
 - table: A table, with optional notes beside it. Use when: Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.
 - number: One big number and a sentence saying what it means; no title. Use when: One figure makes the point alone. Several figures: cards.
 - quote: A large quote and who said it; no title. Use when: A customer's or expert's own words make the point.
@@ -126,7 +126,7 @@ Deck style: pitch. YC / VC-like. A one-line topic title, the claim as a short su
 
 # Templates
 - chart: One chart, with optional notes beside it. Use when: Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.
-- pair: Two halves: chart, table, number or points each. Use when: Two related things, an exhibit each: market and share, a number and its cause. One: chart or table.
+- pair: Two halves, each a chart, a table, a number or points. Use when: Two related things, an exhibit each: market and share. One exhibit: chart or table.
 - table: A table, with optional notes beside it. Use when: Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.
 - number: One big number and a sentence saying what it means; no title. Use when: One figure makes the point alone. Several figures: cards.
 - quote: A large quote and who said it; no title. Use when: A customer's or expert's own words make the point.
