@@ -82,7 +82,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       { caption: `${W(30)} · £m`, chart: { kind: "ranked", format: "{v}%", ranking: TIMES(6).map((_, j) => ({ label: W(20), value: 60 - j * 9, focus: j === 0 })) }, bullets: [W(max("pair", st, "halves", "bullets"))] },
       { caption: `${W(30)} · £m`, chart: { kind: "waterfall", format: "£{v}m", items: [{ label: W(8), value: 120 }, ...TIMES(c ? 4 : 3).map((_, j) => ({ label: W(8), value: j % 2 ? -14.5 : 18.5 })), { label: W(8), total: true }] }, bullets: [W(max("pair", st, "halves", "bullets"))] }] },
     { template: "pair", name: "Stress · chart + table", ...frame("pair"), takeaway: undefined, halves: [
-      { caption: `${W(30)} · £m`, chart: { categories: TIMES(6).map((_, i) => `Y${i + 1}`), format: "£{v}m", series: [{ name: W(16), mark: "bar", color: "focus", values: [3, 5, 8, 12, 17, 23] }] }, bullets: TIMES(2).map(() => W(max("pair", st, "halves", "bullets"))) },
+      { caption: `${W(30)} · £m`, chart: { categories: TIMES(6).map((_, i) => `Y${i + 1}`), format: "£{v}m", series: [{ name: W(16), mark: "bar", color: "neutral", values: [3, 5, 8, 12, 17, 23] }] }, bullets: TIMES(2).map(() => W(max("pair", st, "halves", "bullets"))) },
       { caption: `${W(30)} · £m`, table: { columns: [{ label: W(12) }, { label: W(10) }, { label: W(10) }], rows: TIMES(5).map((_, i) => ({ cells: [W(14), { value: "(1,234)", note: "8% × £10.5k" }, "12,345"], focus: i === 4 })) } }] },
     { template: "pair", name: "Stress · number + points", ...frame("pair"), halves: [
       { number: { value: "€4,000b", caption: W(80) } },

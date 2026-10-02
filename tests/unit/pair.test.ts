@@ -66,10 +66,10 @@ test.skip('two halves render as two numbered hosts, each with its caption and bu
 
 test.skip('the data grid edits the chart that was picked, writing under halves[i]', () => {
   const s = pair(bars(3), bars(3)), m = sheetFor(s, 'consulting', 1)
-  expect(m?.path(0, 1)).toBe('halves[1].chart?.series[0].values[0]')
+  expect(m?.path(0, 1)).toBe('halves[1].chart.series[0].values[0]')
   const p = m?.set(0, 1, '9')
   if (!p || failed(p)) throw new Error('no patch')
-  expect(p).toEqual({ 'halves[1].chart?.series[0].values[0]': 9 })
+  expect(p).toEqual({ 'halves[1].chart.series[0].values[0]': 9 })
   expect(applyPatch(s, p).slide?.halves?.[1].chart?.series?.[0].values[0]).toBe(9)
   expect(applyPatch(s, p).slide?.halves?.[0].chart?.series?.[0].values[0]).toBe(1)
   // Pasting rows past the end adds categories to that chart only.

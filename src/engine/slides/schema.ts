@@ -299,8 +299,8 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   pair: {
-    summary: "Two halves side by side, each a chart, a table, a number or points.",
-    use: "Two related things that each need their own exhibit: a trend and the figures behind it, market and share, a number and its cause. One exhibit: chart or table.",
+    summary: "Two halves: chart, table, number or points each.",
+    use: "Two related things, an exhibit each: market and share, a number and its cause. One: chart or table.",
     fields: {
       halves: f("list", "The two halves, left then right. Each has exactly one of chart, table, number or points.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One half.", { fields: {
         caption: f("text", "What this half shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required with a chart or table; optional with a number or points.", { max: 40 }),
