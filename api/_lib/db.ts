@@ -14,6 +14,9 @@ export interface Presence { busy?: { by: string; until: number }; editing?: { sl
 /** One change an outside writer made, so the open app can tell the user what happened. */
 export interface DeckEventRow { rev: number; by: string; slideId: string | null; what: string; paths: string[]; at: number }
 export interface KeyRow { userId: string; email: string; prefix: string }
+export interface KeyInfo { id: string; prefix: string; created: number; lastUsed: number | null }
+export const MAX_KEYS = 5
+export const keyId = (hash: string) => hash.slice(0, 12)
 
 /** Everything the API does with the database, so tests can swap in a fake. Every call is scoped to a user. */
 export interface Db {
@@ -29,11 +32,11 @@ export interface Db {
   eventsSince(userId: string, id: string, rev: number): Promise<DeckEventRow[]>
   /** Model calls counted for the user today (UTC). */
   callsToday(userId: string): Promise<number>
-  /** One agent key per user: a new key replaces the old one. Only the hash is stored. */
-  putKey(userId: string, email: string, hash: string, prefix: string): Promise<void>
+  /** Up to MAX_KEYS agent keys per user. Only the hash is stored. False when the user already has them all. */
+  addKey(userId: string, email: string, hash: string, prefix: string): Promise<boolean>
   keyUser(hash: string): Promise<KeyRow | null>
-  keyPrefix(userId: string): Promise<string | null>
-  deleteKey(userId: string): Promise<boolean>
+  listKeys(userId: string): Promise<KeyInfo[]>
+  deleteKey(userId: string, id: string): Promise<boolean>
   /** Counts a call in a one-minute bucket and returns the bucket's total. */
   bumpRate(key: string, minute: number): Promise<number>
   deleteDeck(userId: string, id: string): Promise<boolean>
@@ -61,7 +64,9 @@ const SCHEMA = [
   `alter table decks add column if not exists presence jsonb not null default '{}'::jsonb`,
   `create table if not exists deck_events (deck_id text not null, user_id text not null, rev integer not null, by_client text not null, slide_id text, what text not null, paths jsonb not null default '[]'::jsonb, at timestamptz not null default now())`,
   `create index if not exists deck_events_deck on deck_events (deck_id, rev)`,
-  `create table if not exists api_keys (hash text primary key, user_id text not null unique, email text not null, prefix text not null, created timestamptz not null default now(), last_used timestamptz)`,
+  `create table if not exists api_keys (hash text primary key, user_id text not null, email text not null, prefix text not null, created timestamptz not null default now(), last_used timestamptz)`,
+  `alter table api_keys drop constraint if exists api_keys_user_id_key`,
+  `create index if not exists api_keys_user on api_keys (user_id)`,
   `create table if not exists api_rate (key text not null, minute bigint not null, calls integer not null default 0, primary key (key, minute))`,
 ]
 
@@ -128,10 +133,11 @@ export function getDb(): Db | null {
       `select rev, by_client as by, slide_id as "slideId", what, paths, at from deck_events where user_id = $1 and deck_id = $2 and rev > $3 order by rev limit 200`, [u, id, rev]))
       .map((e) => ({ ...e, at: new Date(e.at).getTime() })),
     callsToday: async (u) => Number((await q<{ calls: number }>('select calls from model_usage where user_id = $1 and day = current_date', [u]))[0]?.calls ?? 0),
-    putKey: async (u, email, hash, prefix) => { await q('delete from api_keys where user_id = $1', [u]); await q('insert into api_keys (hash, user_id, email, prefix) values ($1, $2, $3, $4)', [hash, u, email, prefix]) },
+    addKey: async (u, email, hash, prefix) => (await q('insert into api_keys (hash, user_id, email, prefix) select $1::text, $2::text, $3::text, $4::text where (select count(*) from api_keys where user_id = $2::text) < $5 returning hash', [hash, u, email, prefix, MAX_KEYS])).length > 0,
     keyUser: async (hash) => { const r = await q<KeyRow>(`update api_keys set last_used = now() where hash = $1 returning user_id as "userId", email, prefix`, [hash]); return r[0] ?? null },
-    keyPrefix: async (u) => (await q<{ prefix: string }>('select prefix from api_keys where user_id = $1', [u]))[0]?.prefix ?? null,
-    deleteKey: async (u) => (await q<{ hash: string }>('delete from api_keys where user_id = $1 returning hash', [u])).length > 0,
+    listKeys: async (u) => (await q<{ id: string; prefix: string; created: Date; lastUsed: Date | null }>(`select left(hash, 12) as id, prefix, created, last_used as "lastUsed" from api_keys where user_id = $1 order by created`, [u]))
+      .map((r) => ({ id: r.id, prefix: r.prefix, created: +new Date(r.created), lastUsed: r.lastUsed ? +new Date(r.lastUsed) : null })),
+    deleteKey: async (u, id) => (await q('delete from api_keys where user_id = $1 and left(hash, 12) = $2 returning hash', [u, id])).length > 0,
     bumpRate: async (key, minute) => Number((await q<{ calls: number }>(
       `insert into api_rate (key, minute, calls) values ($1, $2, 1) on conflict (key, minute) do update set calls = api_rate.calls + 1 returning calls`, [key, minute]))[0].calls),
   })

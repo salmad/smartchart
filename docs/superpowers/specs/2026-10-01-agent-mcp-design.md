@@ -248,7 +248,7 @@ Annotations: **R** = readOnly, **D** = destructive, **I** = idempotent. `openWor
 
 ## 7. Auth and onboarding
 
-- **API keys:** each user has one key, created, copied once and replaced from the account menu. It's stored hashed (`api_keys`: `hash`, `user_id`, `prefix`, `created`, `last_used`).
+- **API keys:** each user has up to five keys, each created and copied once, and removed one by one from the account menu. It's stored hashed (`api_keys`: `hash`, `user_id`, `prefix`, `created`, `last_used`).
 - **The account menu also shows the connect command:**
   `claude mcp add --transport http smartchart https://<host>/mcp/v1 --header "Authorization: Bearer sc_…"`
 - `userFrom` accepts `Authorization: Bearer sc_…` as well as cookies. Every query is filtered by user id, so a key reaches only its own user's decks. Another user's deck is reachable only through a share link, which is read-only and separate from keys.
