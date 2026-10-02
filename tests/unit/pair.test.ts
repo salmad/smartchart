@@ -105,7 +105,7 @@ test('the sheet edits a half table under halves[i].table; number and points halv
   const m = sheetFor(s, 'consulting', 1)
   expect(m?.path(0, 1)).toBe('halves[1].table.rows[0].cells[1]')
   expect(m?.set(0, 1, '2%')).toEqual({ 'halves[1].table.rows[0].cells[1]': '2%' })
-  expect(sheetFor({ ...s, halves: [{ points: ['a b', 'c d'] }, s.halves![1]] }, 'consulting', 0)).toBeNull()
+  expect(sheetFor({ ...s, halves: [{ points: ['a b', 'c d'] }, s.halves?.[1] ?? {}] }, 'consulting', 0)).toBeNull()
   const replaced = replaceFromTable(s, 'consulting', [['Year', 'Share'], ['2030', '7%']], 1).slide
   expect(replaced.halves?.[1].table?.rows[0].cells).toEqual(['2030', '7%'])
 })

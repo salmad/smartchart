@@ -20,7 +20,7 @@ test('guidance only where there is a choice; at most 7 entries; use and avoid on
   for (const id of withCaps) {
     const caps = MENU[id].capabilities ?? []
     expect(caps.length, id).toBeLessThanOrEqual(7)
-    for (const c of caps) { expect(c.use.split(/\.\s/).length, `${id}/${c.name} use`).toBeLessThanOrEqual(2); expect(c.avoid.length).toBeGreaterThan(0) }
+    for (const c of caps) { expect(c.use.split(/\.\s/).length, `${id}/${c.name} use`).toBeLessThanOrEqual(2); expect(c.avoid.split(/\.\s/).length, `${id}/${c.name} avoid`).toBeLessThanOrEqual(2); expect(c.avoid.length).toBeGreaterThan(0) }
   }
 })
 
@@ -31,4 +31,5 @@ test('the card carries capabilities and shapes, filtered by style', () => {
   expect(describe('pair', 'pitch').shapes?.length).toBe(6)
   expect(describe('cover', 'consulting').capabilities).toBeUndefined()
   expect(describe('chart', 'consulting').capabilities?.map((c) => c.name)).toEqual(expect.arrayContaining(['Waterfall', 'Ranked', 'Matrix', 'Timeline']))
+  expect(describe('table', 'pitch').capabilities?.map((c) => c.name)).not.toContain('Bullets in a cell')
 })
