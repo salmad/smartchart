@@ -1,5 +1,6 @@
 import { test, expect } from 'vitest'
 import { applyPatch } from '@/engine/agent/patch'
+import { addColumn, moveColumn, removeColumn } from '@/engine/slides/edit'
 import { failed, parseNum, parseTsv, pasteInto, sheetFor, toTsv, type Patch } from '@/engine/slides/sheet'
 import type { Slide } from '@/engine/types'
 
@@ -187,4 +188,31 @@ test('matrix points edit as label, across and up; a new point starts in the midd
   expect(m.path(1, 2)).toBe('chart.points[1].y')
   expect(apply(MATRIX, m.insertRow(2)).chart?.points?.[2]).toEqual({ label: '', x: 50, y: 50 })
   expect(failed(m.set(0, 1, 'x'))).toBe(true)
+})
+
+test('table sheet: a group row shows its heading in the first cell, the rest read-only; edits keep bullets, notes and status', () => {
+  const s: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'P' }, { label: 'Stage' }, { label: 'Why' }], rows: [
+    { cells: ['Launch'], style: 'group' },
+    { cells: ['Bank', { value: 'Live', status: true }, { value: 'Slow', bullets: ['a', 'b'] }] },
+  ] } }
+  const m = sheetFor(s, 'consulting')
+  if (!m) throw new Error('no sheet')
+  expect(m.get(0, 0)).toBe('Launch'); expect(m.get(0, 1)).toBe(''); expect(m.readOnly?.(0, 1)).toBe(true)
+  expect(m.set(0, 1, 'x')).toEqual({ error: 'A group heading has one cell.' })
+  const p = m.set(1, 2, 'Slower')
+  if (!p || failed(p)) throw new Error('no patch')
+  const out = applyPatch(s, p).slide?.table?.rows[1].cells[2]
+  expect(out).toEqual({ value: 'Slower', bullets: ['a', 'b'] })
+  const st = m.set(1, 1, 'Pilot')
+  if (!st || failed(st)) throw new Error('no patch')
+  expect(applyPatch(s, st).slide?.table?.rows[1].cells[1]).toEqual({ value: 'Pilot', status: true })
+})
+
+test('column operations leave a group row alone', () => {
+  const s: Slide = { template: 'table', title: 'T', table: { columns: [{ label: 'P' }, { label: 'A' }, { label: 'B' }], rows: [
+    { cells: ['Fees'], style: 'group' }, { cells: ['Bank', '1', '2'] } ] } }
+  expect(addColumn(s, 1).table?.rows[0].cells).toEqual(['Fees'])
+  expect(removeColumn(s, 0).table?.rows[0].cells).toEqual(['Fees'])
+  expect(moveColumn(s, 0, 2).table?.rows[0].cells).toEqual(['Fees'])
+  expect(addColumn(s, 1).table?.rows[1].cells).toEqual(['Bank', '', '1', '2'])
 })

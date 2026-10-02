@@ -155,7 +155,8 @@ const MATRIX_COLS: [string, string][] = [["label", "Point"], ["x", "Across (0–
 
 function tableSheet(slide: Slide): SheetModel {
   const t = slide.table ?? { columns: [], rows: [] }, cols = t.columns, rows = t.rows;
-  const text = (r: number, c: number) => { const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value ?? "" : x ?? ""; };
+  const isGroup = (r: number) => rows[r]?.style === "group";
+  const text = (r: number, c: number) => { if (isGroup(r) && c > 0) return ""; const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value ?? "" : x ?? ""; };
   const pathOf = (r: number, c: number) => { const x = rows[r]?.cells[c], base = `table.rows[${r}].cells[${c}]`; return typeof x === "object" && x ? `${base}.value` : base; };
   const ROWS: [number, number] = [1, 8];
   const colWrite = (f: (s: Slide) => { table?: unknown }): Patch | null => { const p = f(slide); return p.table ? (p as Patch) : null; };
@@ -163,7 +164,8 @@ function tableSheet(slide: Slide): SheetModel {
     kind: "table", rows: rows.length,
     cols: cols.map((c, j) => ({ header: c.label ?? "", headerPath: `table.columns[${j}].label`, type: "text" as const })),
     get: text, path: pathOf,
-    set: (r, c, raw) => ({ [pathOf(r, c)]: raw }),
+    readOnly: (r, c) => isGroup(r) && c > 0,
+    set: (r, c, raw) => (isGroup(r) && c > 0 ? { error: "A group heading has one cell." } : { [pathOf(r, c)]: raw }),
     setHeader: (c, raw) => ({ [`table.columns[${c}].label`]: raw }),
     insertRow: (at) => (inRange(rows.length + 1, ROWS) ? { "table.rows": splice(rows, at, 0, { cells: cols.map(() => "") }) } : null),
     removeRows: (r0, r1) => (inRange(rows.length - (r1 - r0 + 1), ROWS) ? { "table.rows": splice(rows, r0, r1 - r0 + 1) } : null),

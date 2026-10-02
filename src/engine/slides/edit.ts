@@ -134,7 +134,7 @@ export function moveColumn(slide: Slide, from: number, to: number): { table?: Tb
   const n = slide.table?.columns.length ?? 0;
   if (from === to || [from, to].some((i) => i < 0 || i >= n)) return {};
   const mv = <T,>(xs: T[]) => { const a = xs.slice(), [x] = a.splice(from, 1); a.splice(to, 0, x); return a; };
-  return rewrite(slide, (t) => ({ ...t, columns: mv(t.columns), rows: t.rows.map((r) => ({ ...r, cells: mv(r.cells) })) }));
+  return rewrite(slide, (t) => ({ ...t, columns: mv(t.columns), rows: t.rows.map((r) => (r.style === "group" ? r : { ...r, cells: mv(r.cells) })) }));
 }
 
 /** A blank column at index `at` (a new header with no label, empty cells). */
@@ -142,12 +142,12 @@ export function addColumn(slide: Slide, at: number): { table?: Tbl } {
   const n = slide.table?.columns.length ?? 0;
   if (n >= COLS[1]) return {};
   const put = <T,>(xs: T[], x: T) => [...xs.slice(0, at), x, ...xs.slice(at)];
-  return rewrite(slide, (t) => ({ ...t, columns: put(t.columns, { label: "" }), rows: t.rows.map((r) => ({ ...r, cells: put(r.cells, "") })) }));
+  return rewrite(slide, (t) => ({ ...t, columns: put(t.columns, { label: "" }), rows: t.rows.map((r) => (r.style === "group" ? r : { ...r, cells: put(r.cells, "") })) }));
 }
 
 export function removeColumn(slide: Slide, at: number): { table?: Tbl } {
   const n = slide.table?.columns.length ?? 0;
   if (n <= COLS[0] || at < 0 || at >= n) return {};
   const drop = <T,>(xs: T[]) => xs.filter((_, i) => i !== at);
-  return rewrite(slide, (t) => ({ ...t, columns: drop(t.columns), rows: t.rows.map((r) => ({ ...r, cells: drop(r.cells) })) }));
+  return rewrite(slide, (t) => ({ ...t, columns: drop(t.columns), rows: t.rows.map((r) => (r.style === "group" ? r : { ...r, cells: drop(r.cells) })) }));
 }
