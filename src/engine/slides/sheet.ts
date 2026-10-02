@@ -159,6 +159,8 @@ function tableSheet(slide: Slide): SheetModel {
   const text = (r: number, c: number) => { if (isGroup(r) && c > 0) return ""; const x = rows[r]?.cells[c]; return typeof x === "object" && x ? x.value ?? "" : x ?? ""; };
   const pathOf = (r: number, c: number) => { const x = rows[r]?.cells[c], base = `table.rows[${r}].cells[${c}]`; return typeof x === "object" && x ? `${base}.value` : base; };
   const ROWS: [number, number] = [1, 8];
+  // Group headings are not data rows: only the others count against the limit.
+  const dataIn = (a: number, b: number) => rows.filter((r, i) => r.style !== "group" && (i < a || i > b)).length;
   const colWrite = (f: (s: Slide) => { table?: unknown }): Patch | null => { const p = f(slide); return p.table ? (p as Patch) : null; };
   return {
     kind: "table", rows: rows.length,
@@ -167,8 +169,8 @@ function tableSheet(slide: Slide): SheetModel {
     readOnly: (r, c) => isGroup(r) && c > 0,
     set: (r, c, raw) => (isGroup(r) && c > 0 ? { error: "A group heading has one cell." } : { [pathOf(r, c)]: raw }),
     setHeader: (c, raw) => ({ [`table.columns[${c}].label`]: raw }),
-    insertRow: (at) => (inRange(rows.length + 1, ROWS) ? { "table.rows": splice(rows, at, 0, { cells: cols.map(() => "") }) } : null),
-    removeRows: (r0, r1) => (inRange(rows.length - (r1 - r0 + 1), ROWS) ? { "table.rows": splice(rows, r0, r1 - r0 + 1) } : null),
+    insertRow: (at) => (inRange(dataIn(-1, -1) + 1, ROWS) ? { "table.rows": splice(rows, at, 0, { cells: cols.map(() => "") }) } : null),
+    removeRows: (r0, r1) => (inRange(dataIn(r0, r1), ROWS) ? { "table.rows": splice(rows, r0, r1 - r0 + 1) } : null),
     moveRow: (from, to) => (from === to || [from, to].some((i) => i < 0 || i >= rows.length) ? null : { "table.rows": move(rows, from, to) }),
     insertCol: (at) => colWrite((s) => addColumn(s, at)),
     removeCols: (c0, c1) => { let s = slide; for (let i = c0; i <= c1; i++) { const p = removeColumn(s, c0); if (!p.table) return null; s = { ...s, table: p.table }; } return s.table ? { table: s.table } : null; },

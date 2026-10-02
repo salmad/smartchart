@@ -16,7 +16,7 @@ import { markKinds } from "./marks.js";
 import { columnAlign } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
 import type { Capability, Shape } from "./capabilities.js";
-import type { Cell, Chart, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
+import type { Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell";
@@ -251,7 +251,7 @@ const NOTES_TITLE = f("text", "A one- or two-word heading over the notes: 'Notes
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
 export const NOTE_POINTS = false;
-const notes = (withPoint: boolean) => f("list", "Optional numbered notes beside the body: 3, or none. Each says what the body does not show: a cause, a caveat, an implication. Never restate the title, takeaway or a visible value. Pitch: prefer none. Two notes restate: write a third or none. Numbered automatically.", {
+const notes = (withPoint: boolean) => f("list", "Optional numbered observations beside the chart or table: 3, or none. Numbered automatically.", {
   items: { min: 2, max: 4 },
   of: f("object", "One observation.", { fields: {
     title: f("markup", "The observation as a short headline.", { required: true, max: 28 }),
@@ -315,7 +315,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.",
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE, ...CHART_KINDS],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", "Note text: 300 characters in total, 200 with a takeaway.", ...CHART_GUIDE, ...CHART_KINDS],
   },
   pair: {
     summary: MIXED_HALVES ? "Two halves, each a chart, a table, a number or points." : "Two charts side by side, each with a caption and points.",
@@ -331,7 +331,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: () => "pair",
     rules: [...(MIXED_HALVES ? ["Each half has exactly one body: chart, table, number or points."] : []),
       "Chart half: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
-      "One focus across the slide: the series, item or row the title is about, in one of the two halves.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
+      MIXED_HALVES ? "One focus across the slide: the series, item or row the title is about, in one of the two halves." : "One focus across the slide: the series or item the title is about, in one of the two charts.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
   },
   table: {
     summary: "A table, with optional notes beside it.",
@@ -356,7 +356,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
       "Header icons: on every column after the first, or none.",
-      "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters.",
+      "With notes: at most 4 columns, 3 notes, and first-column text of at most 24 characters. Note text: 300 characters in total, 200 with a takeaway.",
     ],
   },
   number: {
@@ -763,7 +763,12 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
   const obj = (c: Cell | undefined) => (c && typeof c === "object" ? c : null);
   rows.forEach((r, i) => {
     if (!r || !Array.isArray(r.cells)) return;
-    if (r.style === "group") { if (r.cells.length !== 1) out.errors.push(`${base}.rows[${i}].cells: a group row has one cell, its heading (got ${r.cells.length}).`); return; }
+    if (r.style === "group") {
+      const extra = Object.keys(obj(r.cells[0]) ?? {}).filter((k) => k !== "value");
+      if (extra.length) out.errors.push(`${base}.rows[${i}].cells[0]: a group heading is text only; remove ${extra.join(", ")}.`);
+      if (r.cells.length !== 1) out.errors.push(`${base}.rows[${i}].cells: a group row has one cell, its heading (got ${r.cells.length}).`);
+      return;
+    }
     if (r.cells.length !== n) out.errors.push(`${base}.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
   });
   cols.forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`${base}.columns[${j}]: muted or focus, not both.`); });
@@ -786,7 +791,10 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
   else if (bulletCols.size) {
     if (bulletCols.size > 1) out.errors.push(`${base}: bullets in ${bulletCols.size} columns; at most one column of bullets. More than that is cards or notes.`);
     if (n > 4) out.errors.push(`${base}.columns: ${n} columns; a table with bullets in cells takes at most 4.`);
-    if (style === "pitch") out.warnings.push(`${base}: pitch hides bullets in cells; say it in the cell or the subtitle.`);
+    if (style === "pitch") {
+      const bare = rows.flatMap((r, i) => (r?.cells || []).flatMap((c, j) => { const o = obj(c); return o?.bullets && !o.value ? [`rows[${i}].cells[${j}]`] : []; }));
+      out.warnings.push(`${base}: pitch hides bullets in cells; say it in the cell or the subtitle${bare.length ? `, and give each such cell a value (${bare.join(", ")} ${bare.length === 1 ? "has" : "have"} none)` : ""}.`);
+    }
   }
   // Status labels: a few distinct values per column, so they can be told apart.
   cols.forEach((_, j) => {
@@ -870,7 +878,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         if (MIXED_HALVES && found.length !== 1) out.errors.push(`${p}: ${found.length ? `has ${found.join(" and ")}` : "has no body"}; give exactly one of ${bodies}.`);
         if ((h.chart || h.table) && !h.caption) out.errors.push(`${p}.caption: required${MIXED_HALVES ? " with a chart or table" : ""}. What it shows, then ' · ' and the unit.`);
         if (MIXED_HALVES && h.bullets && !h.chart) out.errors.push(`${p}.bullets: only under a chart. A list on its own is points.`);
-        if (h.table && typeof h.table === "object") checkGrid(h.table, `${p}.table`, style, out, true);
+        if (MIXED_HALVES && h.table && typeof h.table === "object") checkGrid(h.table, `${p}.table`, style, out, true);
         const c = h.chart, at = `${p}.chart`;
         if (!c || typeof c !== "object") return;
         // One focus across the slide is checked by the agent checks, so a chart without one is not flagged here.
@@ -980,6 +988,8 @@ type LegacyColumn = { label?: string; focus?: boolean; num?: unknown };
 /** Slides saved before the 2026-09-27 chart change: chart.type and series.line become marks; table columns lose `num`. */
 export function upgrade(slide: Slide): Slide {
   const s = structuredClone(slide), c: LegacyChart | undefined = s.chart;
+  const old = s as Slide & { charts?: Half[] };
+  if (old.charts && !s.halves) { s.halves = old.charts; delete old.charts; }
   if (c?.type) {
     (c.series || []).forEach((x) => { x.mark = c.type === "lines" || x.line ? "line" : "bar"; delete x.line; });
     if (c.type === "bars") c.stacking = "none";
@@ -998,6 +1008,6 @@ export function upgrade(slide: Slide): Slide {
 for (const id of Object.keys(MENU) as TemplateId[]) { MENU[id].capabilities = CAPABILITIES[id]; MENU[id].shapes = SHAPES[id]; }
 // Without mixed halves the pair offers only charts: its card keeps the chart guidance and the chart + chart shape.
 if (!MIXED_HALVES) {
-  MENU.pair.capabilities = MENU.pair.capabilities?.filter((c) => c.name === "Chart half");
+  MENU.pair.capabilities = MENU.pair.capabilities?.filter((c) => (c.sample.halves as Half[] | undefined)?.every((h) => h.chart));
   MENU.pair.shapes = MENU.pair.shapes?.filter((x) => x.shape === "chart + chart");
 }

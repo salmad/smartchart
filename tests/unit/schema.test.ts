@@ -287,3 +287,10 @@ test("consulting notes take 120 characters each; 300 in total, 200 beside a take
   assert.deepEqual(validate({ ...base, takeaway: "So what.", notes: [n(50), n(75), n(75)] } as never, "consulting").errors, []);
   assert.match(validate({ ...base, takeaway: "So what.", notes: [n(80), n(80), n(41)] } as never, "consulting").errors.join("\n"), /201 characters in total; with a takeaway the limit is 200/);
 });
+
+test("upgrade turns an old pair's charts into halves", () => {
+  const old = { template: "pair", title: "t", charts: [{ caption: "A", chart: { categories: cats, series: [{ name: "A", values: [1, 2, 3] }] } }, { caption: "B", chart: { categories: cats, series: [{ name: "B", values: [1, 2, 3] }] } }] };
+  const u = upgrade(legacy(old)) as unknown as { halves?: unknown[]; charts?: unknown };
+  assert.equal(u.halves?.length, 2);
+  assert.equal(u.charts, undefined);
+});

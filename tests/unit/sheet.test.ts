@@ -216,3 +216,20 @@ test('column operations leave a group row alone', () => {
   expect(moveColumn(s, 0, 2).table?.rows[0].cells).toEqual(['Fees'])
   expect(addColumn(s, 1).table?.rows[1].cells).toEqual(['Bank', '', '1', '2'])
 })
+
+const grouped = (data: number): Slide => ({ template: 'table', title: 'T', table: { columns: [{ label: 'P' }, { label: 'A' }], rows: [
+  { cells: ['G1'], style: 'group' }, ...Array.from({ length: Math.ceil(data / 2) }, (_, i) => ({ cells: [`a${i}`, '1'] })),
+  { cells: ['G2'], style: 'group' }, ...Array.from({ length: Math.floor(data / 2) }, (_, i) => ({ cells: [`b${i}`, '2'] }))] } })
+
+test('table sheet: group rows do not count against the 1–8 row limit', () => {
+  const full = grouped(8), m = sheet(full)
+  expect(m.rows).toBe(10)
+  expect(m.insertRow(3)).toBeNull()
+  expect(apply(full, m.removeRows(1, 1)).table?.rows).toHaveLength(9)
+  expect(sheet(grouped(6)).insertRow(3)).not.toBeNull()
+})
+
+test('table sheet: a group row moves as a whole', () => {
+  const s = grouped(4), moved = apply(s, sheet(s).moveRow(0, 1))
+  expect(moved.table?.rows[1]).toEqual({ cells: ['G1'], style: 'group' })
+})

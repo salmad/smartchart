@@ -75,3 +75,13 @@ test('columnAlign: group rows are skipped; status and bullet cells make a text c
   const t: Table = { columns: cols(3), rows: [{ cells: ['Fees'], style: 'group' }, row('A', '£5', { value: 'Live', status: true }), row('B', '£7', { value: 'Pilot', status: true })] }
   expect(columnAlign(t)).toEqual(['text', 'num', 'text'])
 })
+
+test('a group heading is text only', () => {
+  const g = (cell: Cell) => T(cols(2), [{ cells: [cell], style: 'group' }, row('A', '1'), row('B', '2')])
+  expect(errs(g({ value: 'Fees', note: 'n', status: true }))).toMatch(/cells\[0\]: a group heading is text only; remove note, status\./)
+  expect(errs(g({ value: 'Fees' }))).not.toMatch(/group heading is text only/)
+})
+
+test('pitch names bullet cells that have no value, which render empty', () => {
+  expect(warns(T(cols(3), [row('Bank', 'x', { bullets: ['a'] })], { subtitle: 'A claim.' }), 'pitch')).toMatch(/give each such cell a value \(rows\[0\]\.cells\[2\] has none\)/)
+})
