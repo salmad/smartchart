@@ -88,6 +88,14 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
     { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
+    { template: "table", name: "Stress · table rich", ...frame("table"), takeaway: undefined, table: {
+      columns: [{ label: W(20) }, { label: W(12), icon: "zap" }, { label: W(12), icon: "clock" }, { label: W(12), icon: "users" }],
+      rows: [
+        { cells: [W(18)], style: "group" },
+        ...TIMES(c ? 3 : 2).map((_, i) => ({ cells: [W(20), c ? { value: "✓", note: W(20) } : "✓", { value: "Live", status: true }, { value: W(16), bullets: c ? [W(50), W(50)] : [W(50)] }], focus: i === 0 })),
+        { cells: [W(18)], style: "group" },
+        ...TIMES(c ? 3 : 2).map(() => ({ cells: [W(20), "✗", { value: "Pilot", status: true }, { value: W(16), bullets: [W(50)] }] })),
+      ] } },
     { template: "steps", name: "Stress · steps", ...frame("steps"), steps: TIMES(c ? 5 : 3).map((_, i) => ({ when: "Q3 2027+", title: W(max("steps", st, "steps", "title")), text: W(max("steps", st, "steps", "text")), focus: i === 1 })) },
     { template: "cards", name: "Stress · cards icon ×3", ...frame("cards"), cards: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { icon: "zap", title: W(22), text: W(50) }) },
     { template: "cards", name: "Stress · cards icon ×4", ...frame("cards"), cards: TIMES(4).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(2).map(() => W(48)) } : { icon: "zap", title: W(22), text: W(30) }) },

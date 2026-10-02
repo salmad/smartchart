@@ -187,6 +187,23 @@
 .tbl td.al-text:has(small) > span { font-weight: 600; }
 .tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
 .tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
+/* Header icons: above the label, quiet, aligned with the column. */
+.tbl th.has-ic svg { display: block; width: 30px; height: 30px; margin-bottom: 14px; color: var(--muted); }
+.tbl th.al-sym.has-ic svg { margin-inline: auto; }
+.tbl th.al-num.has-ic svg { margin-left: auto; }
+/* A mark with a note: the mark centred, the note under it. */
+.tbl td.score.has-note small { text-align: center; margin-top: 6px; }
+/* Status: a neutral outline label. The value is the information, never a colour. */
+.tbl td .pill { display: inline-block; padding: 7px 14px 6px; border: 1.5px solid var(--line); border-radius: 999px; font: 500 18px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); white-space: nowrap; }
+.tbl .focus .pill, .tbl tr.focus .pill { color: var(--focus); border-color: currentColor; }
+.tbl td.status small { margin-top: 8px; }
+/* Bullets in a cell: the position's lead in semibold, the reasons as small bullets under it. */
+.tbl td.has-bul > span { font-weight: 600; }
+.tbl td.has-bul .bullets { margin-top: 8px; font-size: 23px; line-height: 1.35; gap: 6px; color: var(--fg-2); }
+.tbl td.has-bul > .bullets:first-child { margin-top: 0; }
+/* Group heading: a spanning label in the header's voice, a hairline above, no fill. */
+.tbl tr.group td { padding: 26px 0 10px; border-bottom: 1px solid var(--line); font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.tbl tbody tr.group:first-child td { padding-top: 14px; }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
 .tbl tr.total td:first-child { color: var(--fg); }
@@ -211,6 +228,7 @@
 .style-pitch .mk-key { display: none; }
 .split.with-table > .main:has(.mk-key) .tbl { height: calc(100% - 60px); }
 .style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
+.style-pitch .tbl td.has-bul .bullets { display: none; }
 .style-pitch .tbl td { font-size: 34px; padding-top: 13px; padding-bottom: 13px; }
 .style-pitch .split .tbl td { font-size: 30px; }
 .style-pitch .tbl td.al-num { font-size: 32px; }

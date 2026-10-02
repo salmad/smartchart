@@ -55,16 +55,31 @@ const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<sp
 /** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
 const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
 
-function tableHTML(t: Table) {
-  const al = columnAlign(t), cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
-  const cell = (c: Cell, r: number, j: number) => { const p = `table.rows[${r}].cells[${j}]`;
-    const text = typeof c === "object" && c ? c.value ?? "" : c ?? "", mark = markOf(String(text));
-    if (mark) return `<td class="${cls(t.columns[j], j)} score"${at(typeof c === "object" && c ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
-    if (typeof c === "object" && c) return `<td class="${cls(t.columns[j], j)}"><span${at(`${p}.value`, "md")}>${md(c.value ?? "")}</span>${c.note ? `<small${at(`${p}.note`, "esc")}>${esc(c.note)}</small>` : ""}</td>`;
-    return `<td class="${cls(t.columns[j], j)}"${at(p, "md")}>${md(c ?? "")}</td>`; };
-  return `<table class="tbl${t.columns.length <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
-    <thead><tr>${t.columns.map((c, j) => `<th class="${cls(c, j)}"${at(`table.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`).join("")}</tr></thead>
-    <tbody>${t.rows.map((r, i) => `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`table.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`).join("")}</tbody></table>${markKinds(t).has("balls") ? ballKey() : ""}`;
+function tableHTML(t: Table, base = "table", key = true) {
+  const al = columnAlign(t), n = t.columns.length;
+  const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
+  const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
+  const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
+  const cell = (c: Cell, r: number, j: number) => {
+    const p = P(r, j), o = typeof c === "object" && c ? c : null, text = o ? o.value ?? "" : c ?? "", mark = markOf(String(text)), k = cls(t.columns[j], j);
+    if (mark && o?.note) return `<td class="${k} score has-note"><span${at(`${p}.value`, "md")}>${markHTML(mark, plain(String(text)))}</span>${note(o, p)}</td>`;
+    if (mark) return `<td class="${k} score"${at(o ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
+    if (o?.status) return `<td class="${k} status"><span class="pill"${at(`${p}.value`, "esc")}>${esc(o.value ?? "")}</span>${note(o, p)}</td>`;
+    if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
+    if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;
+    return `<td class="${k}"${at(p, "md")}>${md(c ?? "")}</td>`;
+  };
+  const head = (c: Table["columns"][number], j: number) => c.icon
+    ? `<th class="${cls(c, j)} has-ic"><i data-lucide="${esc(c.icon)}"></i><span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span></th>`
+    : `<th class="${cls(c, j)}"${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`;
+  const row = (r: Table["rows"][number], i: number) => {
+    if (r.style === "group") { const g = r.cells[0], o = typeof g === "object" && g ? g : null;
+      return `<tr class="group"${item(`${base}.rows[${i}]`)}><td colspan="${n}"${at(o ? `${P(i, 0)}.value` : P(i, 0), "md")}>${md(o ? o.value ?? "" : g ?? "")}</td></tr>`; }
+    return `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`${base}.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`;
+  };
+  return `<table class="tbl${n <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
+    <thead><tr>${t.columns.map(head).join("")}</tr></thead>
+    <tbody>${t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
 }
 
 function cardHTML(c: Card, variant: string, i: number) {
@@ -170,16 +185,19 @@ function drawIcons(root: HTMLElement) {
   });
 }
 
-/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. */
+/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. Every table on the
+   slide (a pair can have two). Group rows span the table, so they are not measured. */
 function sizeTable(slide: HTMLElement) {
-  const tbl = slide.querySelector<HTMLElement>(".tbl"), col = tbl?.querySelector<HTMLElement>("col");
-  if (!tbl || !col) return;
-  tbl.classList.add("measuring");
-  const natural = Math.max(...[...tbl.querySelectorAll("tr > :first-child")].map((c) => c.scrollWidth));
-  tbl.classList.remove("measuring");
-  // +2px: at exactly its natural width, subpixel rounding can wrap the label.
-  const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
-  col.style.width = `${(share * 100).toFixed(2)}%`;
+  slide.querySelectorAll<HTMLElement>(".tbl").forEach((tbl) => {
+    const col = tbl.querySelector<HTMLElement>("col");
+    if (!col) return;
+    tbl.classList.add("measuring");
+    const natural = Math.max(...[...tbl.querySelectorAll("tr:not(.group) > :first-child")].map((c) => c.scrollWidth));
+    tbl.classList.remove("measuring");
+    // +2px: at exactly its natural width, subpixel rounding can wrap the label.
+    const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
+    col.style.width = `${(share * 100).toFixed(2)}%`;
+  });
 }
 
 /* L5: a table under 60% of the body grows its rows, up to 1.5× its natural height; beside notes too, so the
