@@ -78,7 +78,7 @@ test("upgrade converts old charts and tables", () => {
 });
 
 test("the chart card carries the chart guide", () => {
-  assert.equal(CHART_GUIDE.length, 13);
+  assert.equal(CHART_GUIDE.length, 8);
   const rules = describe("chart", "consulting").rules.join("\n");
   CHART_GUIDE.forEach((g) => assert.ok(rules.includes(g)));
 });
@@ -267,7 +267,7 @@ test("the chart card tells the agent the ranked and matrix limits", () => {
   assert.match(rules, /ranked 7 items/);
   assert.match(rules, /pitch with a takeaway at most 6 items/);
   assert.match(rules, /Matrix: notes or a takeaway, not both/);
-  assert.ok(CHART_GUIDE.some((g) => g.includes("`kind: \"ranked\"`")) && CHART_GUIDE.some((g) => g.includes("`kind: \"matrix\"`")));
+  assert.ok(describe("chart").capabilities?.some((c) => c.name === "Ranked") && describe("chart").capabilities?.some((c) => c.name === "Matrix"));
 });
 
 test("tables highlight what the writer chooses: rows, several columns, cells by markup", () => {

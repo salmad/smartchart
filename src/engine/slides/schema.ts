@@ -14,6 +14,8 @@ import { timelineLines } from "./charts/timeline-rows.js";
 import { waterfall } from "./charts/chart-math.js";
 import { markKinds } from "./marks.js";
 import { columnAlign } from "./align.js";
+import { CAPABILITIES, SHAPES } from "./capabilities.js";
+import type { Capability, Shape } from "./capabilities.js";
 import type { Cell, Chart, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
@@ -49,9 +51,12 @@ export interface MenuEntry {
   fields: Record<string, FieldDef>;
   variant: (s: Slide) => string;
   rules?: string[];
+  capabilities?: Capability[];
+  shapes?: Shape[];
 }
+export type { Capability, Shape } from "./capabilities.js";
 export interface StyleGuide { summary: string; rules: string[] }
-export interface TemplateCard { template: TemplateId; summary: string; use: string; fields: Record<string, FieldView>; rules: string[] }
+export interface TemplateCard { template: TemplateId; summary: string; use: string; fields: Record<string, FieldView>; rules: string[]; capabilities?: Omit<Capability, "styles">[]; shapes?: Shape[] }
 
 export const STYLES: Record<Style, StyleGuide> = {
   consulting: {
@@ -129,11 +134,6 @@ export const CHART_GUIDE: string[] = [
   "Pitch: one series, two at most.",
   "Edits keep the rules: when the user switches one series of a comparable group, switch the whole group and say so, unless the user said only that series. A new series in another unit on a bar chart is a line.",
   "Shares of a whole that change over time (mix, market share) are `stacking: \"percent\"`: write the raw values; code converts them to %.",
-  "A bridge from one total to another (revenue FY24 → FY25 by driver, a cost walk, an EBITDA bridge) is `kind: \"waterfall\"`. Write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
-  "Named items ranked by one measure are `kind: \"ranked\"`: largest first, 'Other' last.",
-  "Items placed on two judged dimensions (impact vs effort) are `kind: \"matrix\"`: positions 0–100.",
-  "Parallel or overlapping workstreams on a time axis are `kind: \"timeline\"`. A simple sequence of 2–5 phases is the `steps` template instead. A workstream made of smaller steps is a group (the steps have `level: 1`).",
-  "Annotations are computed by code; never write their figure yourself. `cagr` when the title claims a growth rate over a period (\"grows 86% a year\", \"growth rate per year across the period\"; year-on-year rates for each year are a % line instead), `difference` when it claims a gap between two categories, `target` when it compares with a goal. At most 3 (2 with notes); only when the user asked for them.",
 ];
 
 /* `auto` hands a choice to code (spec 9.1): Jev picks, and the pick comes back in `resolved`. */
@@ -288,6 +288,15 @@ const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns,
 } });
 export const HALF_BODIES = ["chart", "table", "number", "points"] as const;
 
+/* How to write each chart kind: enforced or mechanical, so rules. When to choose one is in the chart's capabilities. */
+const CHART_KINDS = [
+  "Waterfall: write the start total, then each driver as a signed change, and end with `{ \"label\": \"FY25\", \"total\": true }`: code computes the total. Never write a total you have not checked.",
+  "Ranked: largest first, 'Other' last.",
+  "Matrix: positions 0–100 on both axes.",
+  "Timeline: a workstream made of smaller steps is a group (the steps have `level: 1`).",
+  "Annotations are computed by code; never write their figure yourself. At most 3 (2 with notes); only when the user asked for them.",
+];
+
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
@@ -296,7 +305,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.",
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
     variant: (s) => (s.notes?.length ? "split" : "full"),
-    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
+    rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE, ...CHART_KINDS],
   },
   pair: {
     summary: "Two halves, each a chart, a table, a number or points.",
@@ -513,10 +522,13 @@ function view(def: FieldDef, style: Style): FieldView {
 /** The template card body for one entry and style: resolved fields and rules. */
 export function describe(id: TemplateId, style: Style = "consulting"): TemplateCard {
   const t = MENU[id];
+  const caps = (t.capabilities ?? []).filter((c) => !c.styles || c.styles.includes(style)).map(({ name, use, avoid, sample }) => ({ name, use, avoid, sample }));
   return {
     template: id, summary: t.summary, use: t.use,
     fields: Object.fromEntries(Object.entries(fieldsFor(id, style)).map(([k, v]) => [k, view(v, style)])),
     rules: [...(t.rules || []), `Markup: ${MARKUP.map((m) => `${m.syntax} = ${m.effect}`).join("; ")}. ${MARKUP_NOTE}`],
+    ...(caps.length ? { capabilities: caps } : {}),
+    ...(t.shapes ? { shapes: t.shapes } : {}),
   };
 }
 
@@ -970,3 +982,6 @@ export function upgrade(slide: Slide): Slide {
   if (!NOTE_POINTS) (s.notes || []).forEach((n) => { if (n) delete n.point; });
   return s;
 }
+
+/* Judgement guidance (capabilities.ts) is wired in after MENU so that file stays a leaf. */
+for (const id of Object.keys(MENU) as TemplateId[]) { MENU[id].capabilities = CAPABILITIES[id]; MENU[id].shapes = SHAPES[id]; }
