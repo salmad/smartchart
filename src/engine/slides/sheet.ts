@@ -177,7 +177,7 @@ function tableSheet(slide: Slide): SheetModel {
 }
 
 /* A pair's chart is edited as a chart of its own: the model reads the chart alone, and every path it writes is
-   re-rooted under `charts[i]`, so the patches land on the real slide. */
+   re-rooted under `halves[i]`, so the patches land on the real slide. */
 const alone = (chart: Chart): Slide => ({ template: "chart", title: "", chart });
 const reroot = (pre: string) => <T extends Patch | { error: string } | null>(p: T): T => (!p || failed(p) ? p : Object.fromEntries(Object.entries(p).map(([k, v]) => [`${pre}${k}`, v])) as T);
 function within(m: SheetModel, pre: string): SheetModel {
@@ -190,7 +190,7 @@ function within(m: SheetModel, pre: string): SheetModel {
 
 /** The sheet for a slide's data, or null where there is none (the timeline has its own gantt). `which` picks a pair's chart. */
 export function sheetFor(slide: Slide, style: Style, which = 0): SheetModel | null {
-  if (slide.template === "pair") { const c = slide.charts?.[which]?.chart, m = c ? sheetFor(alone(c), style) : null; return m && within(m, `charts[${which}].`); }
+  if (slide.template === "pair") { const c = slide.halves?.[which]?.chart, m = c ? sheetFor(alone(c), style) : null; return m && within(m, `halves[${which}].`); }
   if (slide.template === "table" && slide.table) return tableSheet(slide);
   const c = slide.chart;
   if (!c) return null;
@@ -231,10 +231,10 @@ export function pasteInto(slide: Slide, style: Style, at: { r: number; c: number
 export function replaceFromTable(slide: Slide, style: Style, table: string[][], which = 0): { slide: Slide; note?: string } {
   if (slide.template === "table" && slide.table) return replaceTable(slide, table);
   if (slide.template === "pair") {
-    const c = slide.charts?.[which]?.chart;
+    const c = slide.halves?.[which]?.chart;
     if (!c) return { slide };
     const r = replaceFromTable(alone(c), style, table), out = structuredClone(slide);
-    if (out.charts?.[which] && r.slide.chart) out.charts[which].chart = r.slide.chart;
+    if (out.halves?.[which] && r.slide.chart) out.halves[which].chart = r.slide.chart;
     return { slide: out, ...(r.note ? { note: r.note } : {}) };
   }
   const chart = slide.chart;

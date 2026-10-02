@@ -21,7 +21,8 @@ function focusCount(s: Slide): number | null {
       if (kind === "matrix") return (s.chart?.points || []).filter((x) => x?.focus).length;
       return (s.chart?.series || []).filter((x) => x.color === "focus").length;
     }
-    case "pair": return (s.charts || []).reduce((sum, x) => sum + (focusCount({ template: "chart", title: "", chart: x?.chart }) ?? 0), 0);
+    case "pair": return (s.halves || []).reduce((sum, h) => sum + (h?.chart ? focusCount({ template: "chart", title: "", chart: h.chart }) ?? 0 : 0)
+      + (h?.table ? focusCount({ template: "table", title: "", table: h.table }) ?? 0 : 0), 0);
     case "table": return (s.table?.columns || []).filter((c) => c.focus).length + (s.table?.rows || []).filter((r) => r.focus).length;
     case "steps": return (s.steps || []).filter((x) => x.focus).length;
     case "cards": return s.framed ? 1 : (s.cards || []).filter((c) => c.tone === "focus").length;
@@ -41,7 +42,7 @@ const hasFigures = (s: Slide) => (["chart", "pair", "table", "number"].includes(
 /** The words a slide claims with: its headline and body text (not chart positions, step times or page furniture). */
 const claimText = (s: Slide) => [s.title, s.subtitle, s.takeaway, s.number?.caption, ...(s.points || []).flatMap((p) => [p.title, p.text]),
   ...(s.cards || []).flatMap((c) => [c.title, c.text, ...(c.bullets || [])]), ...(s.notes || []).flatMap((n) => [n.title, n.text]),
-  ...(s.steps || []).map((x) => x.text), ...(s.charts || []).flatMap((c) => c.bullets || [])].filter(Boolean).map((t) => plain(t)).join(" ");
+  ...(s.steps || []).map((x) => x.text), ...(s.halves || []).flatMap((h) => [...(h.bullets || []), ...(h.points || []), h.number?.caption])].filter(Boolean).map((t) => plain(t)).join(" ");
 /** R8: in consulting, a slide that claims figures says where they come from, in its source or a footnote. A quote names its speaker. */
 function sourceCheck(s: Slide): Check | null {
   if (s.template === "quote" || s.template === "cover" || s.template === "section") return null;

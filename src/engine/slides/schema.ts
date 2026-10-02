@@ -239,7 +239,7 @@ const CHART = f("object", "A chart. Values are written on the data; there is no 
 
 /* Half a slide's chart (the pair): only the kinds that read at half width, so the card offers nothing it refuses. */
 const HALF = ["kind", "stacking", "categories", "format", "series", "items", "ranking"];
-const HALF_CHART = f("object", "A chart for half the slide.", { required: true, fields: {
+const HALF_CHART = f("object", "A chart for half the slide.", { fields: {
   ...Object.fromEntries(HALF.map((k) => [k, CHART.fields?.[k] as FieldDef])),
   kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge between two totals. `ranked`: horizontal bars by named item.", { values: ["bars", "waterfall", "ranked"], default: "bars" }),
 } });
@@ -277,6 +277,17 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
 } });
 const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
 
+/* A small table for half a slide: no icons, no group headings, no bullets in cells (checked in checkGrid). */
+const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns, at most 5 rows. Marks, cell notes and status labels work; bullets, icons and group headings do not.", { fields: {
+  columns: f("list", "Column headers, left to right.", { required: true, items: { min: 2, max: 3 }, of: f("object", "Column.", { fields: COLUMN_FIELDS }) }),
+  rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 5 }, of: f("object", "Row.", { fields: {
+    cells: TABLE_CELLS,
+    style: f("enum", "`muted`: context, hidden in pitch. `total`: the bottom line.", { values: ["muted", "total"] }),
+    focus: f("boolean", "Highlight this row.", { default: false }),
+  } }) }),
+} });
+export const HALF_BODIES = ["chart", "table", "number", "points"] as const;
+
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
@@ -288,18 +299,26 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE],
   },
   pair: {
-    summary: "Two charts side by side, each with a caption and points.",
-    use: "Two related measures, each with its own chart (market and share). One measure: chart.",
+    summary: "Two halves side by side, each a chart, a table, a number or points.",
+    use: "Two related things that each need their own exhibit: a trend and the figures behind it, market and share, a number and its cause. One exhibit: chart or table.",
     fields: {
-      charts: f("list", "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One chart.", { fields: {
-        caption: f("text", "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { required: true, max: 40 }),
+      halves: f("list", "The two halves, left then right. Each has exactly one of chart, table, number or points.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One half.", { fields: {
+        caption: f("text", "What this half shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required with a chart or table; optional with a number or points.", { max: 40 }),
         chart: HALF_CHART,
-        bullets: f("list", "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
+        bullets: f("list", "Chart halves only: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
+        table: HALF_TABLE,
+        number: f("object", "A big figure and what it means.", { fields: {
+          value: f("text", "The number with its unit: '£3.6bn', '7%'.", { required: true, max: 7 }),
+          caption: f("markup", "What it means, as one sentence.", { required: true, max: 80 }),
+          tone: TONE,
+        } }),
+        points: f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: 70 }) }),
       } }) }),
     },
     variant: () => "pair",
-    rules: ["Each chart: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
-      "One focus across the slide: the series or item the title is about, in one of the two charts.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
+    rules: ["Each half has exactly one body: chart, table, number or points.",
+      "Chart half: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
+      "One focus across the slide: the series, item or row the title is about, in one of the two halves.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
   },
   table: {
     summary: "A table, with optional notes beside it.",
@@ -439,7 +458,7 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the executive summary: the answer and the 2–4 points that prove it", "summary"],
   ["the start of a new part in a deck of 8+ slides", "section"],
   ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time; named items ranked by one measure; items placed on two dimensions (a 2×2)", "chart"],
-  ["two related measures that each need their own chart, side by side", "pair"],
+  ["two related things that each need their own exhibit, side by side", "pair"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
   ["one figure that makes the point on its own", "number"],
@@ -821,11 +840,17 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       break;
     }
     case "pair": {
-      const charts = s.charts || [];
-      charts.forEach((x, i) => {
-        const c = x?.chart, at = `charts[${i}].chart`;
+      if ((s as { charts?: unknown }).charts !== undefined) out.errors.push("charts: `charts` is now `halves`; each half has one of chart, table, number, points.");
+      (s.halves || []).forEach((h, i) => {
+        if (!h || typeof h !== "object") return;
+        const p = `halves[${i}]`, found = HALF_BODIES.filter((k) => h[k] !== undefined);
+        if (found.length !== 1) out.errors.push(`${p}: ${found.length ? `has ${found.join(" and ")}` : "has no body"}; give exactly one of chart, table, number, points.`);
+        if ((h.chart || h.table) && !h.caption) out.errors.push(`${p}.caption: required with a chart or table. What it shows, then ' · ' and the unit.`);
+        if (h.bullets && !h.chart) out.errors.push(`${p}.bullets: only under a chart. A list on its own is points.`);
+        if (h.table && typeof h.table === "object") checkGrid(h.table, `${p}.table`, style, out, true);
+        const c = h.chart, at = `${p}.chart`;
         if (!c || typeof c !== "object") return;
-        // One focus across the slide is checked below, so a chart without one is not flagged here.
+        // One focus across the slide is checked by the agent checks, so a chart without one is not flagged here.
         checkChart(c, at, out, true);
         const kind = c.kind || "bars";
         if (kind === "timeline" || kind === "matrix") return out.errors.push(`${at}.kind: "${kind}" is too dense for half a slide. Use bars, a waterfall or ranked, or the chart template.`);
@@ -837,7 +862,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         if (kind === "waterfall" && (c.items || []).length > wfMax) out.errors.push(`${at}.items: ${c.items?.length} items; half a slide takes ${wfMax}.`);
         if (kind === "ranked" && (c.ranking || []).length > 6) out.errors.push(`${at}.ranking: ${c.ranking?.length} items; half a slide takes 6.`);
         if (kind === "ranked") (c.ranking || []).forEach((r, j) => { if (r?.label && r.label.length > 20) out.errors.push(`${at}.ranking[${j}].label: ${r.label.length} characters; half a slide takes 20.`); });
-        if (s.takeaway && (x.bullets || []).length > 1) out.errors.push(`charts[${i}].bullets: with a takeaway at most 1 per chart.`);
+        if (s.takeaway && (h.bullets || []).length > 1) out.errors.push(`${p}.bullets: with a takeaway at most 1 per chart.`);
       });
       break;
     }

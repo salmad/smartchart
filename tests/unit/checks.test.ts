@@ -121,7 +121,7 @@ test("R8 reaches the slides without a title and the two-chart slide; a quote nam
   assert.equal(get(num, "R8")?.ok, false);
   assert.equal(get({ ...num, source: "BoE survey." }, "R8")?.ok, true);
   assert.equal(get({ template: "quote", quote: "We spent £40k a month.", who: "Founder" } as Slide, "R8"), undefined);
-  const pair: Slide = { template: "pair", title: "The market grows a third while Acme takes a share of it", charts: [
+  const pair: Slide = { template: "pair", title: "The market grows a third while Acme takes a share of it", halves: [
     { caption: "Market · £bn", chart: { categories: ["a", "b"], series: [{ name: "M", mark: "bar", values: [1, 2] }] } },
     { caption: "Share · %", chart: { categories: ["a", "b"], series: [{ name: "S", mark: "bar", values: [1, 2] }] } }] };
   assert.equal(get(pair, "R8")?.ok, false);

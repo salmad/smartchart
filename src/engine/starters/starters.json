@@ -230,13 +230,13 @@
  {
   "id": "pair",
   "group": "trend",
-  "label": "Two charts",
-  "blurb": "Two measures, each with its own chart",
+  "label": "Two halves",
+  "blurb": "Two exhibits side by side",
   "consulting": {
    "template": "pair",
    "kicker": "Market",
    "title": "The market grows [[a third]] by 2030 while Acme takes 7% of it",
-   "charts": [
+   "halves": [
     {
      "caption": "UK SME card spend · £bn",
      "chart": {
@@ -268,34 +268,44 @@
      ]
     },
     {
-     "caption": "Acme share of spend · %",
-     "chart": {
-      "categories": [
-       "2026",
-       "2027",
-       "2028",
-       "2029",
-       "2030"
-      ],
-      "format": "{v}%",
-      "series": [
+     "caption": "Acme share and spend book · £bn",
+     "table": {
+      "columns": [
        {
-        "name": "Acme share",
-        "mark": "bar",
-        "color": "focus",
-        "values": [
-         0.5,
-         1.5,
-         3,
-         5,
-         7
+        "label": "Year"
+       },
+       {
+        "label": "Share"
+       },
+       {
+        "label": "Spend book"
+       }
+      ],
+      "rows": [
+       {
+        "cells": [
+         "2026",
+         "0.5%",
+         "£0.2bn"
         ]
+       },
+       {
+        "cells": [
+         "2028",
+         "3%",
+         "£1.2bn"
+        ]
+       },
+       {
+        "cells": [
+         "2030",
+         "7%",
+         "£3.6bn"
+        ],
+        "focus": true
        }
       ]
-     },
-     "bullets": [
-      "Base case; the downside reaches 4% by 2030"
-     ]
+     }
     }
    ],
    "takeaway": "£52bn × 7% is a **£3.6bn** spend book by 2030.",
@@ -303,9 +313,15 @@
   },
   "pitch": {
    "template": "pair",
-   "title": "Two curves",
+   "title": "Market and share",
    "subtitle": "A growing market, [[a rising share.]]",
-   "charts": [
+   "halves": [
+    {
+     "number": {
+      "value": "7%",
+      "caption": "Acme’s share of UK SME card spend by 2030."
+     }
+    },
     {
      "caption": "UK SME card spend · £bn",
      "chart": {
@@ -331,40 +347,7 @@
         ]
        }
       ]
-     },
-     "bullets": [
-      "Grows 13% a year"
-     ]
-    },
-    {
-     "caption": "Acme share of spend · %",
-     "chart": {
-      "categories": [
-       "2026",
-       "2027",
-       "2028",
-       "2029",
-       "2030"
-      ],
-      "format": "{v}%",
-      "series": [
-       {
-        "name": "Acme share",
-        "mark": "bar",
-        "color": "focus",
-        "values": [
-         0.5,
-         1.5,
-         3,
-         5,
-         7
-        ]
-       }
-      ]
-     },
-     "bullets": [
-      "7% by 2030"
-     ]
+     }
     }
    ],
    "takeaway": "A **£3.6bn** spend book by 2030."

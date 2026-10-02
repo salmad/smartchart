@@ -104,7 +104,7 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
-  pair: (s) => `<div class="pair grow">${(s.charts ?? []).map((c, i) => `<div class="half"${item(`charts[${i}]`)}>${capHTML(c.caption, "", `charts[${i}].caption`)}<div class="chart" data-chart="${i}"></div>${c.bullets?.length ? list(c.bullets, `charts[${i}].bullets`) : ""}</div>`).join("")}</div>`,
+  pair: (s) => `<div class="pair grow">${(s.halves ?? []).map((c, i) => `<div class="half"${item(`halves[${i}]`)}>${capHTML(c.caption, "", `halves[${i}].caption`)}<div class="chart" data-chart="${i}"></div>${c.bullets?.length ? list(c.bullets, `halves[${i}].bullets`) : ""}</div>`).join("")}</div>`,
   summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
     <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
   cards: (s, v) => { const cards = s.cards ?? [];
@@ -162,7 +162,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   sizeTable(slide); growTable(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
-    const i = host.dataset.chart, spec = i ? s.charts?.[Number(i)]?.chart : s.chart;
+    const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
     if (!spec) return;
     if (!i) return drawChart(host, spec, NOTE_POINTS ? (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])) : [], colours);
     const own = allocate({ ...s, template: "chart", chart: spec }, deck.theme, deck.accent);

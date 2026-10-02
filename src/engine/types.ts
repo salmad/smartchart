@@ -26,8 +26,8 @@ export interface Table { columns: { label?: string; icon?: string; focus?: boole
 export interface Card { icon?: string; value?: string; label?: string; title: string; bullets?: string[]; text?: string; tone?: Tone; facts?: { label: string; text: string }[] }
 export interface Step { when: string; title: string; text: string; focus?: boolean }
 export interface Point { title: string; text: string }
-/** One half of a two-chart slide: its own caption, chart and bullets. */
-export interface Exhibit { caption?: string; chart: Chart; bullets?: string[] }
+/** One half of a pair: a caption and exactly one body (a chart with optional bullets, a table, a number or points). */
+export interface Half { caption?: string; chart?: Chart; bullets?: string[]; table?: Table; number?: { value: string; caption: string; tone?: Tone }; points?: string[] }
 
 export interface Slide {
   template: TemplateId
@@ -41,7 +41,7 @@ export interface Slide {
   steps?: Step[]
   framed?: boolean; cards?: Card[]
   points?: Point[]
-  charts?: Exhibit[]
+  halves?: Half[]
 }
 
 export interface Deck { style: Style; theme: Theme; accent?: string | null; footer: string; slides: Slide[] }
