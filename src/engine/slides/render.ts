@@ -111,7 +111,7 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
       const p = `halves[${i}]`;
       const body = h.chart ? `<div class="chart" data-chart="${i}"></div>${h.bullets?.length ? list(h.bullets, `${p}.bullets`) : ""}`
         : h.table ? tableHTML(h.table, `${p}.table`, false)
-        : h.number ? `<div class="half-num"><div class="big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
+        : h.number ? `<div class="half-num"><div class="shout big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
         : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
         : "";
       return `<div class="half"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
@@ -173,7 +173,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   const colours = allocate(s, deck.theme, deck.accent);
   for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
-  sizeTable(slide); growTable(slide);
+  sizeTable(slide); growTable(slide); growHalfTables(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
     const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
@@ -211,6 +211,24 @@ function sizeTable(slide: HTMLElement) {
     // +2px: at exactly its natural width, subpixel rounding can wrap the label.
     const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
     col.style.width = `${(share * 100).toFixed(2)}%`;
+    // A column of bullets explains positions: it takes a double share of the rest, so its bullets keep to a line or two.
+    const cols = [...tbl.querySelectorAll<HTMLElement>("col")], bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex));
+    // Pitch hides bullets, so its columns stay equal.
+    if (!bul.size || slide.classList.contains("style-pitch")) return;
+    const shares = cols.slice(1).map((_, j) => (bul.has(j + 1) ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
+    cols.slice(1).forEach((c, j) => { c.style.width = `${((1 - share) * shares[j] / total * 100).toFixed(2)}%`; });
+  });
+}
+
+/* L5 in a pair: a half table grows its rows towards the bottom of its half, up to 1.5× its natural height, so it
+   ends level with the chart beside it rather than stopping halfway down. */
+function growHalfTables(slide: HTMLElement) {
+  const R = slide.getBoundingClientRect(), k = R.width / 1920;
+  slide.querySelectorAll<HTMLElement>(".pair > .half > .tbl").forEach((tbl) => {
+    const half = tbl.parentElement;
+    if (!half) return;
+    const area = (half.getBoundingClientRect().bottom - tbl.getBoundingClientRect().top) / k, natural = tbl.getBoundingClientRect().height / k;
+    if (natural < area) tbl.style.height = `${Math.min(area, natural * 1.5)}px`;
   });
 }
 

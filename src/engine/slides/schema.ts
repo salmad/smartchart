@@ -286,7 +286,17 @@ const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns,
     focus: f("boolean", "Highlight this row.", { default: false }),
   } }) }),
 } });
-export const HALF_BODIES = ["chart", "table", "number", "points"] as const;
+/** Halves other than charts (a table, a number, points). Off for now: a chart beside a table or a number reads
+    unbalanced, so agents see only two-chart pairs until the layout is fixed. The renderer and editor keep them. */
+export const MIXED_HALVES = false;
+type HalfBody = "chart" | "table" | "number" | "points";
+export const HALF_BODIES: readonly HalfBody[] = MIXED_HALVES ? ["chart", "table", "number", "points"] : ["chart"];
+const MIXED_NUMBER = f("object", "A big figure and what it means.", { fields: {
+  value: f("text", "The number with its unit: '£3.6bn', '7%'.", { required: true, max: 7 }),
+  caption: f("markup", "What it means, as one sentence.", { required: true, max: 80 }),
+  tone: TONE,
+} });
+const MIXED_POINTS = f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: 70 }) });
 
 /* How to write each chart kind: enforced or mechanical, so rules. When to choose one is in the chart's capabilities. */
 const CHART_KINDS = [
@@ -308,24 +318,18 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", ...CHART_GUIDE, ...CHART_KINDS],
   },
   pair: {
-    summary: "Two halves, each a chart, a table, a number or points.",
-    use: "Two related things, an exhibit each: market and share. One exhibit: chart or table.",
+    summary: MIXED_HALVES ? "Two halves, each a chart, a table, a number or points." : "Two charts side by side, each with a caption and points.",
+    use: MIXED_HALVES ? "Two related things, an exhibit each: market and share. One exhibit: chart or table." : "Two related measures, each with its own chart (market and share). One measure: chart.",
     fields: {
-      halves: f("list", "The two halves, left then right. Each has exactly one of chart, table, number or points.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One half.", { fields: {
-        caption: f("text", "What this half shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required with a chart or table; optional with a number or points.", { max: 40 }),
-        chart: HALF_CHART,
-        bullets: f("list", "Chart halves only: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
-        table: HALF_TABLE,
-        number: f("object", "A big figure and what it means.", { fields: {
-          value: f("text", "The number with its unit: '£3.6bn', '7%'.", { required: true, max: 7 }),
-          caption: f("markup", "What it means, as one sentence.", { required: true, max: 80 }),
-          tone: TONE,
-        } }),
-        points: f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: 70 }) }),
+      halves: f("list", MIXED_HALVES ? "The two halves, left then right. Each has exactly one of chart, table, number or points." : "The two charts, left then right.", { required: true, items: { min: 2, max: 2 }, of: f("object", "One half.", { fields: {
+        caption: f("text", MIXED_HALVES ? "What this half shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required with a chart or table; optional with a number or points." : "What this chart shows, then ' · ' and the unit: 'UK SME card spend · £bn'. Required in both styles: two charts need telling apart.", { max: 40 }),
+        chart: MIXED_HALVES ? HALF_CHART : { ...HALF_CHART, required: true },
+        bullets: f("list", MIXED_HALVES ? "Chart halves only: 1–2 points under the chart, one line each." : "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
+        ...(MIXED_HALVES ? { table: HALF_TABLE, number: MIXED_NUMBER, points: MIXED_POINTS } : {}),
       } }) }),
     },
     variant: () => "pair",
-    rules: ["Each half has exactly one body: chart, table, number or points.",
+    rules: [...(MIXED_HALVES ? ["Each half has exactly one body: chart, table, number or points."] : []),
       "Chart half: bars (at most 6 categories and 2 series, names of up to 16 characters), a waterfall (at most 6 items, pitch 5, labels of up to 8 characters) or ranked (at most 6 items of up to 20 characters).",
       "One focus across the slide: the series, item or row the title is about, in one of the two halves.", "With a takeaway: at most 1 bullet per chart.", ...CHART_GUIDE.slice(0, 3)],
   },
@@ -348,7 +352,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Budget: a row costs 1, a row with a cell note 1.5, a row with bullets 1 + 0.75 per bullet after the first, a group heading 0.75, header icons 0.5, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
+      "Budget: a row costs 1, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1, header icons 1, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
       "Header icons: on every column after the first, or none.",
@@ -467,7 +471,7 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the executive summary: the answer and the 2–4 points that prove it", "summary"],
   ["the start of a new part in a deck of 8+ slides", "section"],
   ["data over categories or time (a series): a trend, a comparison of sizes, a crossover; a bridge between two totals; workstreams overlapping in time; named items ranked by one measure; items placed on two dimensions (a 2×2)", "chart"],
-  ["two related things that each need their own exhibit, side by side", "pair"],
+  [MIXED_HALVES ? "two related things that each need their own exhibit, side by side" : "two related measures that each need their own chart, side by side", "pair"],
   ["exact figures the reader needs to compare", "table"],
   ["a sequence in time: plan, roadmap, process, history (2–5 steps)", "steps"],
   ["one figure that makes the point on its own", "number"],
@@ -745,7 +749,9 @@ function checkNotes(s: Slide, style: Style, out: Out): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
   const textLen = list.reduce((sum, n) => sum + (n?.text ? plain(n.text).length : 0), 0);
-  if (s.takeaway && textLen > 300) out.errors.push(`notes[].text: ${textLen} characters in total; with a takeaway the limit is 300. Shorten the notes or drop the takeaway.`);
+  // Measured on the review page: the notes column holds about 300 characters of note text, 200 beside a takeaway.
+  const total = s.takeaway ? 200 : 300;
+  if (textLen > total) out.errors.push(`notes[].text: ${textLen} characters in total; ${s.takeaway ? "with a takeaway " : ""}the limit is ${total}. Shorten the notes${s.takeaway ? " or drop the takeaway" : ""}.`);
   // The heading takes a header row from the notes column; with a takeaway there is no room for both.
   if (s.notesTitle && s.takeaway) out.errors.push("notesTitle: a notes heading and a takeaway do not fit together. Drop the notes heading, or the takeaway.");
 }
@@ -832,16 +838,19 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       checkGrid(t, "table", style, out);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       const rowCost = (r: Table["rows"][number]) => {
-        if (r.style === "group") return 0.75;
+        if (r.style === "group") return 1;
         if (style === "pitch") return 1;
         const cells = r.cells || [];
-        const b = Math.max(0, ...cells.map((c) => (c && typeof c === "object" && Array.isArray(c.bullets) ? c.bullets.length : 0)));
-        if (b) return 1 + 0.75 * (b - 1);
+        // Bullets are costed by line (measured: a bullet line is 0.75 of a row; a bullet wraps past ~48 characters in a
+        // column of a 3-column table, ~34 in a 4-column one).
+        const perLine = n <= 3 ? 48 : 34;
+        const lines = Math.max(0, ...cells.map((c) => (c && typeof c === "object" && Array.isArray(c.bullets) ? c.bullets.reduce((k, b) => k + Math.max(1, Math.ceil(plain(String(b)).length / perLine)), 0) : 0)));
+        if (lines) return 1.2 + 0.75 * lines;
         return cells.some((c) => c && typeof c === "object" && c.note) ? 1.5 : 1;
       };
-      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = (t.columns || []).some((c) => c?.icon) ? 0.5 : 0;
-      const cost = rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons, budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, row with bullets = 1 + 0.75 per extra bullet, group heading = 0.75, header icons = 0.5, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.`);
+      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = (t.columns || []).some((c) => c?.icon) ? 1 : 0;
+      const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
+      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1, header icons = 1, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
@@ -852,13 +861,15 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       break;
     }
     case "pair": {
-      if ((s as { charts?: unknown }).charts !== undefined) out.errors.push("charts: `charts` is now `halves`; each half has one of chart, table, number, points.");
+      const bodies = HALF_BODIES.join(", ");
+      if ((s as { charts?: unknown }).charts !== undefined) out.errors.push(MIXED_HALVES ? `charts: \`charts\` is now \`halves\`; each half has one of ${bodies}.` : "charts: `charts` is now `halves`; each half has a caption and a chart.");
       (s.halves || []).forEach((h, i) => {
         if (!h || typeof h !== "object") return;
         const p = `halves[${i}]`, found = HALF_BODIES.filter((k) => h[k] !== undefined);
-        if (found.length !== 1) out.errors.push(`${p}: ${found.length ? `has ${found.join(" and ")}` : "has no body"}; give exactly one of chart, table, number, points.`);
-        if ((h.chart || h.table) && !h.caption) out.errors.push(`${p}.caption: required with a chart or table. What it shows, then ' · ' and the unit.`);
-        if (h.bullets && !h.chart) out.errors.push(`${p}.bullets: only under a chart. A list on its own is points.`);
+        // Without mixed halves the chart field itself is required, so its own message covers a missing chart.
+        if (MIXED_HALVES && found.length !== 1) out.errors.push(`${p}: ${found.length ? `has ${found.join(" and ")}` : "has no body"}; give exactly one of ${bodies}.`);
+        if ((h.chart || h.table) && !h.caption) out.errors.push(`${p}.caption: required${MIXED_HALVES ? " with a chart or table" : ""}. What it shows, then ' · ' and the unit.`);
+        if (MIXED_HALVES && h.bullets && !h.chart) out.errors.push(`${p}.bullets: only under a chart. A list on its own is points.`);
         if (h.table && typeof h.table === "object") checkGrid(h.table, `${p}.table`, style, out, true);
         const c = h.chart, at = `${p}.chart`;
         if (!c || typeof c !== "object") return;
@@ -985,3 +996,8 @@ export function upgrade(slide: Slide): Slide {
 
 /* Judgement guidance (capabilities.ts) is wired in after MENU so that file stays a leaf. */
 for (const id of Object.keys(MENU) as TemplateId[]) { MENU[id].capabilities = CAPABILITIES[id]; MENU[id].shapes = SHAPES[id]; }
+// Without mixed halves the pair offers only charts: its card keeps the chart guidance and the chart + chart shape.
+if (!MIXED_HALVES) {
+  MENU.pair.capabilities = MENU.pair.capabilities?.filter((c) => c.name === "Chart half");
+  MENU.pair.shapes = MENU.pair.shapes?.filter((x) => x.shape === "chart + chart");
+}

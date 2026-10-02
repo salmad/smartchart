@@ -60,9 +60,14 @@ test('group rows: one cell, exempt from the column count, warn below 6 rows or w
 })
 
 test('budget: bullets rows, group rows and header icons cost lines', () => {
-  // 7 rows with 3 bullets each = 7 × 2.5 = 17.5 > 10.5
+  // 7 rows with 3 one-line bullets each = 7 × (1.2 + 3 × 0.75) = 24.15 > 10.5
   const heavy = Array.from({ length: 7 }, (_, i) => row(`R${i}`, 'x', { value: 'y', bullets: ['a', 'b', 'c'] }))
-  expect(errs(T(cols(3), heavy))).toMatch(/costs 17\.5 rows, budget 10\.5/)
+  expect(errs(T(cols(3), heavy))).toMatch(/costs 24\.15 rows, budget 10\.5/)
+  // A 50-character bullet wraps to 2 lines in a 4-column table: 4 such rows = 4 × 2.7 = 10.8 > 10.5
+  const wide = Array.from({ length: 4 }, (_, i) => row(`R${i}`, 'x', 'y', { value: 'z', bullets: ['x'.repeat(50)] }))
+  expect(errs(T(cols(4), wide))).toMatch(/costs 10\.8 rows/)
+  // The same 45-character bullet stays on one line in a 3-column table: 4 × 1.95 = 7.8
+  expect(errs(T(cols(3), Array.from({ length: 4 }, (_, i) => row(`R${i}`, 'x', { value: 'z', bullets: ['x'.repeat(45)] }))))).not.toMatch(/costs/)
   expect(errs(T(cols(3), heavy, { subtitle: 'A claim.' }), 'pitch')).not.toMatch(/costs/)
 })
 

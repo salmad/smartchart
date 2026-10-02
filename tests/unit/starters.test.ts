@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import { STARTERS, GROUPS, starterSlide } from '@/engine/starters'
-import { validateDeck } from '@/engine/slides/schema'
+import { validateDeck, MIXED_HALVES } from '@/engine/slides/schema'
 import { stressFor } from '../fixtures/stress'
 
 test('count lock: 24 starters, unique ids, known groups', () => {
@@ -8,9 +8,11 @@ test('count lock: 24 starters, unique ids, known groups', () => {
   expect(new Set(STARTERS.map((s) => s.id)).size).toBe(24)
   for (const s of STARTERS) expect(GROUPS.map((g) => g.id)).toContain(s.group)
 })
-test('stress fixture keeps 36 slides per style', () => {
-  expect(stressFor('consulting')).toHaveLength(36)
-  expect(stressFor('pitch')).toHaveLength(36)
+// Two more with mixed halves on (a chart beside a table, a number beside points).
+const STRESS = 34 + (MIXED_HALVES ? 2 : 0)
+test('stress fixture keeps its slides per style', () => {
+  expect(stressFor('consulting')).toHaveLength(STRESS)
+  expect(stressFor('pitch')).toHaveLength(STRESS)
 })
 test('every starter validates with no errors or warnings, both styles', () => {
   for (const style of ['consulting', 'pitch'] as const) {

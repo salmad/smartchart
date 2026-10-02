@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { describe, validate, MENU } from '@/engine/slides/schema'
+import { describe, validate, MENU, MIXED_HALVES } from '@/engine/slides/schema'
 import type { Slide, Style, TemplateId } from '@/engine/types'
 
 const frame = (id: TemplateId, style: Style) => ({ template: id, title: 'Title', ...(style === 'pitch' ? { subtitle: 'A claim.' } : {}) })
@@ -28,7 +28,7 @@ test('the card carries capabilities and shapes, filtered by style', () => {
   const t = describe('table', 'consulting')
   expect(t.capabilities?.map((c) => c.name)).toContain('Scoring')
   expect(t.shapes?.length).toBe(4)
-  expect(describe('pair', 'pitch').shapes?.length).toBe(6)
+  expect(describe('pair', 'pitch').shapes?.length).toBe(MIXED_HALVES ? 6 : 1)
   expect(describe('cover', 'consulting').capabilities).toBeUndefined()
   expect(describe('chart', 'consulting').capabilities?.map((c) => c.name)).toEqual(expect.arrayContaining(['Waterfall', 'Ranked', 'Matrix', 'Timeline']))
   expect(describe('table', 'pitch').capabilities?.map((c) => c.name)).not.toContain('Bullets in a cell')

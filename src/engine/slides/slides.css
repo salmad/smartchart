@@ -188,14 +188,14 @@
 .tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
 .tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
 /* Header icons: above the label, quiet, aligned with the column. */
-.tbl th.has-ic svg { display: block; width: 30px; height: 30px; margin-bottom: 14px; color: var(--muted); }
+.tbl th.has-ic svg { display: block; width: 28px; height: 28px; margin-bottom: 10px; color: var(--muted); }
 .tbl th.al-sym.has-ic svg { margin-inline: auto; }
 .tbl th.al-num.has-ic svg { margin-left: auto; }
 /* A mark with a note: the mark centred, the note under it. */
 .tbl td.score.has-note small { text-align: center; margin-top: 6px; }
 /* Status: a neutral outline label. The value is the information, never a colour. */
-.tbl td .pill { display: inline-block; padding: 7px 14px 6px; border: 1.5px solid var(--line); border-radius: 999px; font: 500 18px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); white-space: nowrap; }
-.tbl .focus .pill, .tbl tr.focus .pill { color: var(--focus); border-color: currentColor; }
+.tbl td.status > .pill { display: inline-block; padding: 7px 14px 6px; border: 1.5px solid var(--line); border-radius: 999px; font: 500 18px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); white-space: nowrap; }
+.tbl td.focus.status > .pill, .tbl tr.focus td.status > .pill { color: var(--focus); border-color: currentColor; }
 .tbl td.status small { margin-top: 8px; }
 /* Bullets in a cell: the position's lead in semibold, the reasons as small bullets under it. */
 .tbl td.has-bul > span { font-weight: 600; }
@@ -211,8 +211,10 @@
 .tbl tr.focus td, .tbl tr.focus.total td:first-child { color: var(--focus); }
 /* Scores: Harvey balls and ticks drawn as one set; a highlighted row or column draws them in the focus colour. */
 .tbl td.score { text-align: center; vertical-align: middle; }
-.tbl tr:has(td.score) td { padding-top: 14px; padding-bottom: 14px; vertical-align: middle; }
-.mk-ball { display: inline-block; width: 36px; height: 36px; vertical-align: middle; }
+.tbl tr:has(td.score) td { padding-top: 12px; padding-bottom: 12px; vertical-align: middle; }
+/* A row that explains a position reads from the top: its lead, marks and labels line up with the first bullet's line. */
+.tbl tr:has(td.has-bul) td { vertical-align: top; }
+.mk-ball { display: inline-block; width: 32px; height: 32px; vertical-align: middle; }
 .mk-ball circle { fill: none; stroke: var(--fg-2); stroke-width: 2.5; }
 .mk-ball path, .mk-ball .full { fill: var(--fg-2); stroke: none; }
 .mk-tick { font: 600 32px/1 var(--text); }
@@ -254,9 +256,10 @@
 .pair .tbl, .pair .tbl.narrow { width: 100%; }
 /* A number half: the value at half size, its sentence under it, both from the top like a chart. */
 .half-num { display: flex; flex-direction: column; gap: 28px; }
-.half-num .big-v { font-size: 220px; }
-.style-consulting .half-num .big-v { font-size: 190px; }
+.half-num .big-v { font-size: 300px; }
+.style-consulting .half-num .big-v { font-size: 200px; }
 .half-num p { font-size: 34px; line-height: 1.3; color: var(--fg-2); max-width: 24ch; }
+.style-pitch .half-num p { font-size: 40px; }
 /* Points: the half's own list, larger than the bullets under a chart. */
 .pair .bullets.points { margin-top: 0; font-size: 32px; line-height: 1.35; gap: 22px; }
 .style-pitch .pair .bullets.points { font-size: 36px; }

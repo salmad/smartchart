@@ -1,6 +1,6 @@
 /* Stress deck (?stress=1 on the review page): every field filled to its limit, within the rules.
    Moved out of the engine's examples unchanged; only tests and the dev review page use it. */
-import { fieldsFor, type FieldDef } from "@/engine/slides/schema";
+import { fieldsFor, MIXED_HALVES, type FieldDef } from "@/engine/slides/schema";
 import type { Chart, Slide, Style, TemplateId } from "@/engine/types";
 
 /* The claim under test: if a slide passes validate(), it fits. */
@@ -26,7 +26,8 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
   const bars: Chart = { categories: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6"], format: "£{v}m", series: [
     { name: "Interest income", mark: "bar", color: "neutral", values: [1, 3, 14, 42, 85, 99] }, { name: "Interchange", mark: "bar", color: "focus", values: [1, 2, 11, 36, 80, 95] },
     { name: "Gross margin", mark: "line", color: "contrast", format: "{v}%", values: [12, 24, 31, 36, 38, 40] }] };
-  const notes = (n: number, withPoint: boolean) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(i ? 120 : 60) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
+  // The notes share 300 characters (60 + 120 + 120), or 200 beside a takeaway (50 + 75 + 75).
+  const notes = (n: number, withPoint: boolean, full = false) => TIMES(n).map((_, i) => ({ title: W(28), ...(c ? { text: W(full ? (i ? 120 : 60) : i ? 75 : 50) } : {}), ...(withPoint ? { point: { series: 1, index: i + 2 } } : {}) }));
   const rows = (n: number, noted: boolean) => TIMES(n).map(() => ({ cells: [W(noted ? 40 : 24), noted ? { value: "(1,234)", note: "8% × £10.5k" } : "(1,234)", "12,345", "(34)"] }));
   return [
     { template: "cover", name: "Stress · cover", title: W(max("cover", st, "title")), subtitle: W(max("cover", st, "subtitle")) },
@@ -72,7 +73,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     // Crowded on purpose: clusters of points close together, so every label has to find a clear side.
     { template: "chart", name: "Stress · matrix", ...frame("chart"), chart: { kind: "matrix", axes: { x: W(16), y: W(16) }, quadrants: TIMES(4).map(() => W(16)),
       points: [[22, 70], [30, 62], [18, 58], [70, 36], [78, 30], [62, 42], [84, 78], [48, 56]].map(([x, y], i) => ({ label: W(20), x, y, focus: i === 6 })) } },
-    { template: "chart", name: "Stress · matrix + notes", ...frame("chart"), takeaway: undefined, notes: notes(3, false), chart: { kind: "matrix", axes: { x: W(16), y: W(16) }, quadrants: TIMES(4).map(() => W(16)),
+    { template: "chart", name: "Stress · matrix + notes", ...frame("chart"), takeaway: undefined, notes: notes(3, false, true), chart: { kind: "matrix", axes: { x: W(16), y: W(16) }, quadrants: TIMES(4).map(() => W(16)),
       points: [[20, 72], [30, 64], [84, 80], [72, 34], [80, 26], [46, 56]].map(([x, y], i) => ({ label: W(20), x, y, focus: i === 2 })) } },
     { template: "pair", name: "Stress · two charts + bullets", ...frame("pair"), takeaway: undefined, halves: TIMES(2).map((_, i) => ({ caption: `${W(30)} · £m`,
       chart: { categories: TIMES(6).map((_, j) => `Year ${j + 1}`), format: "£{v}m", series: [{ name: W(16), mark: "bar", color: i ? "focus" : "neutral", values: [4, 9, 15, 24, 33, 41] },
@@ -81,12 +82,15 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "pair", name: "Stress · two charts + takeaway", ...frame("pair"), halves: [
       { caption: `${W(30)} · £m`, chart: { kind: "ranked", format: "{v}%", ranking: TIMES(6).map((_, j) => ({ label: W(20), value: 60 - j * 9, focus: j === 0 })) }, bullets: [W(max("pair", st, "halves", "bullets"))] },
       { caption: `${W(30)} · £m`, chart: { kind: "waterfall", format: "£{v}m", items: [{ label: W(8), value: 120 }, ...TIMES(c ? 4 : 3).map((_, j) => ({ label: W(8), value: j % 2 ? -14.5 : 18.5 })), { label: W(8), total: true }] }, bullets: [W(max("pair", st, "halves", "bullets"))] }] },
-    { template: "pair", name: "Stress · chart + table", ...frame("pair"), takeaway: undefined, halves: [
+    // Mixed halves, while they are off for agents (schema MIXED_HALVES), stay out of the stress deck.
+    ...(MIXED_HALVES ? ([
+      { template: "pair", name: "Stress · chart + table", ...frame("pair"), takeaway: undefined, halves: [
       { caption: `${W(30)} · £m`, chart: { categories: TIMES(6).map((_, i) => `Y${i + 1}`), format: "£{v}m", series: [{ name: W(16), mark: "bar", color: "neutral", values: [3, 5, 8, 12, 17, 23] }] }, bullets: TIMES(2).map(() => W(max("pair", st, "halves", "bullets"))) },
       { caption: `${W(30)} · £m`, table: { columns: [{ label: W(12) }, { label: W(10) }, { label: W(10) }], rows: TIMES(5).map((_, i) => ({ cells: [W(14), { value: "(1,234)", note: "8% × £10.5k" }, "12,345"], focus: i === 4 })) } }] },
-    { template: "pair", name: "Stress · number + points", ...frame("pair"), halves: [
+      { template: "pair", name: "Stress · number + points", ...frame("pair"), halves: [
       { number: { value: "€4,000b", caption: W(80) } },
       { caption: W(36), points: TIMES(4).map(() => W(70)) }] },
+    ] as (Slide & { name: string })[]) : []),
     { template: "summary", name: "Stress · summary + takeaway", ...frame("summary"), points: TIMES(3).map(() => ({ title: W(40), text: W(100) })) },
     { template: "summary", name: "Stress · summary ×4", ...frame("summary"), takeaway: undefined, points: TIMES(4).map(() => ({ title: W(40), text: W(100) })) },
     { template: "table", name: "Stress · table full", ...frame("table"), table: { columns: [{ label: W(26) }, ...TIMES(4).map((_, i) => ({ label: W(12), focus: i === 0 }))],
@@ -94,13 +98,14 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
     { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
+    // At the budget: 2 rows of two one-line bullets (2.7 each) and 2 plain rows under two group headings, with icons (10.4).
     { template: "table", name: "Stress · table rich", ...frame("table"), takeaway: undefined, table: {
       columns: [{ label: W(20) }, { label: W(12), icon: "zap" }, { label: W(12), icon: "clock" }, { label: W(12), icon: "users" }],
       rows: [
         { cells: [W(18)], style: "group" },
-        ...TIMES(c ? 3 : 2).map((_, i) => ({ cells: [W(20), c ? { value: "✓", note: W(20) } : "✓", { value: "Live", status: true }, { value: W(16), bullets: c ? [W(50), W(50)] : [W(50)] }], focus: i === 0 })),
+        ...TIMES(2).map((_, i) => ({ cells: [W(20), { value: "✓", note: W(20) }, { value: "Live", status: true }, { value: W(16), bullets: [W(34), W(34)] }], focus: i === 0 })),
         { cells: [W(18)], style: "group" },
-        ...TIMES(c ? 3 : 2).map(() => ({ cells: [W(20), "✗", { value: "Pilot", status: true }, { value: W(16), bullets: [W(50)] }] })),
+        ...TIMES(2).map(() => ({ cells: [W(20), "✗", { value: "Pilot", status: true }, W(30)] })),
       ] } },
     { template: "steps", name: "Stress · steps", ...frame("steps"), steps: TIMES(c ? 5 : 3).map((_, i) => ({ when: "Q3 2027+", title: W(max("steps", st, "steps", "title")), text: W(max("steps", st, "steps", "text")), focus: i === 1 })) },
     { template: "cards", name: "Stress · cards icon ×3", ...frame("cards"), cards: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { icon: "zap", title: W(22), text: W(50) }) },

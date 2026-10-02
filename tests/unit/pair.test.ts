@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { validate, describe as card } from '@/engine/slides/schema'
+import { validate, describe as card, MIXED_HALVES } from '@/engine/slides/schema'
 import { slideHTML } from '@/engine/slides/render'
 import { applyPatch } from '@/engine/agent/patch'
 import { failed, pasteInto, replaceFromTable, sheetFor } from '@/engine/slides/sheet'
@@ -12,7 +12,7 @@ const errs = (s: Slide, style: 'consulting' | 'pitch' = 'consulting') => validat
 
 test('two chart halves: each needs a caption, and the half-width limits hold', () => {
   expect(validate(pair(bars(6), bars(5))).errors).toEqual([])
-  expect(errs({ ...pair(bars(3), bars(3)), halves: [{ chart: bars(3) }, { caption: 'B', chart: bars(3) }] } as Slide)).toMatch(/halves\[0\]\.caption: required with a chart or table/)
+  expect(errs({ ...pair(bars(3), bars(3)), halves: [{ chart: bars(3) }, { caption: 'B', chart: bars(3) }] } as Slide)).toMatch(/halves\[0\]\.caption: required/)
   expect(errs(pair(bars(7), bars(3)))).toMatch(/halves\[0\]\.chart\.categories: 7 categories; half a slide takes 6/)
   const three = bars(3, { series: ['a', 'b', 'c'].map((name) => ({ name, mark: 'bar' as const, values: [1, 2, 3] })) })
   expect(errs(pair(three, bars(3)))).toMatch(/3 series; half a slide takes 2/)
@@ -29,10 +29,11 @@ test('chart halves: bullets are one line, at most 1 each with a takeaway; only u
   s.halves?.forEach((h) => { h.bullets = ['One', 'Two'] })
   expect(errs(s)).toMatch(/halves\[0\]\.bullets: with a takeaway at most 1 per chart/)
   expect(card('pair').fields.halves.of?.fields?.bullets.of?.maxChars).toBe(55)
-  expect(errs({ ...pair(bars(3), bars(3)), halves: [{ caption: 'A', chart: bars(3) }, { points: ['One point here', 'Another one'], bullets: ['x'] }] } as Slide)).toMatch(/halves\[1\]\.bullets: only under a chart/)
+  if (MIXED_HALVES) expect(errs({ ...pair(bars(3), bars(3)), halves: [{ caption: 'A', chart: bars(3) }, { points: ['One point here', 'Another one'], bullets: ['x'] }] } as Slide)).toMatch(/halves\[1\]\.bullets: only under a chart/)
 })
 
-test('a half has exactly one body: chart, table, number or points', () => {
+// Mixed halves are off for agents (schema MIXED_HALVES); their validation is tested when they are on.
+test.skipIf(!MIXED_HALVES)('a half has exactly one body: chart, table, number or points', () => {
   const tbl = { columns: [{ label: 'Year' }, { label: 'Share' }], rows: [{ cells: ['2026', '0.5%'] }, { cells: ['2030', '7%'], focus: true }] }
   const ok: Slide = { template: 'pair', title: 'T', halves: [{ caption: 'Market · £bn', chart: bars(3) }, { caption: 'Share · %', table: tbl }] }
   expect(validate(ok).errors).toEqual([])
@@ -41,7 +42,7 @@ test('a half has exactly one body: chart, table, number or points', () => {
   expect(errs({ template: 'pair', title: 'T', halves: [{ caption: 'A' }, { points: ['a b', 'c d'] }] })).toMatch(/halves\[0\]: has no body; give exactly one of chart, table, number, points/)
 })
 
-test('a half table: at most 3 columns and 5 rows, no bullets, no group rows, no icons', () => {
+test.skipIf(!MIXED_HALVES)('a half table: at most 3 columns and 5 rows, no bullets, no group rows, no icons', () => {
   const t = (cols: number, rows: number, cell: Cell = '1') => ({ columns: Array.from({ length: cols }, (_, i) => ({ label: `C${i}` })), rows: Array.from({ length: rows }, () => ({ cells: Array.from({ length: cols }, () => cell) })) })
   const s = (table: unknown) => ({ template: 'pair', title: 'T', halves: [{ caption: 'A', chart: bars(3) }, { caption: 'B', table }] }) as Slide
   expect(errs(s(t(4, 2)))).toMatch(/halves\[1\]\.table\.columns: at most 3 items/)
@@ -50,7 +51,13 @@ test('a half table: at most 3 columns and 5 rows, no bullets, no group rows, no 
   expect(errs(s({ ...t(2, 2), columns: [{ label: 'A' }, { label: 'B', icon: 'zap' }] }))).toMatch(/halves\[1\]\.table\.columns\[1\]\.icon: not a field here/)
 })
 
-test('an old `charts` field names `halves`', () => {
+test('an old `charts` field names `halves`; with mixed halves off, a table half is refused and never named', () => {
+  if (!MIXED_HALVES) {
+    const e = errs({ template: 'pair', title: 'T', halves: [{ caption: 'A', chart: bars(3) }, { caption: 'B', table: { columns: [{ label: 'A' }, { label: 'B' }], rows: [{ cells: ['1', '2'] }] } }] } as Slide)
+    expect(e).toMatch(/halves\[1\]\.table: not a field here/)
+    expect(e).toMatch(/halves\[1\]\.chart: required/)
+    expect(card('pair').summary).not.toMatch(/table|number/)
+  }
   expect(errs({ template: 'pair', title: 'T', charts: [] } as unknown as Slide)).toMatch(/charts: `charts` is now `halves`/)
 })
 
@@ -87,7 +94,7 @@ test('halves render by body: chart host, table, number, points; the caption row 
     { caption: 'Share · %', table: { columns: [{ label: 'Year' }, { label: 'Share' }], rows: [{ cells: ['2026', '◑'] }] } },
   ] }
   const html = slideHTML(s, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })
-  expect(html).toContain('<div class="half" data-item="halves[0]" data-grid="0"><p class="cap blank "></p><div class="half-num"><div class="big-v" data-path="halves[0].number.value" data-kind="esc">7%</div>')
+  expect(html).toContain('<div class="half" data-item="halves[0]" data-grid="0"><p class="cap blank "></p><div class="half-num"><div class="shout big-v" data-path="halves[0].number.value" data-kind="esc">7%</div>')
   expect(html).toContain('data-path="halves[1].table.rows[0].cells[0]"')
   // The Harvey-ball key appears once, under the pair, not inside the half.
   expect(html.match(/class="mk-key"/g)).toHaveLength(1)
