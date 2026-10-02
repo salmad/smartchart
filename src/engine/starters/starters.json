@@ -744,7 +744,7 @@
       "label": "Credit limit"
      },
      {
-      "label": "Fee"
+      "label": "No annual fee"
      },
      {
       "label": "Cashback",
@@ -756,7 +756,10 @@
       "cells": [
        "High-street bank",
        "£25k",
-       "£120/yr",
+       {
+        "value": "✗",
+        "note": "£120 a year"
+       },
        "0%"
       ]
      },
@@ -764,7 +767,7 @@
       "cells": [
        "Neobank (debit)",
        "—",
-       "£0",
+       "✓",
        "0.5%"
       ]
      },
@@ -772,7 +775,10 @@
       "cells": [
        "Corporate charge card",
        "£50k",
-       "£550/yr",
+       {
+        "value": "✗",
+        "note": "£550 a year"
+       },
        "1%"
       ]
      },
@@ -780,7 +786,7 @@
       "cells": [
        "Acme",
        "£250k",
-       "£0",
+       "✓",
        "1%"
       ],
       "style": "total"
@@ -817,7 +823,7 @@
       "label": "Credit limit"
      },
      {
-      "label": "Fee"
+      "label": "No annual fee"
      },
      {
       "label": "Cashback",
@@ -829,7 +835,10 @@
       "cells": [
        "High-street bank",
        "£25k",
-       "£120/yr",
+       {
+        "value": "✗",
+        "note": "£120 a year"
+       },
        "0%"
       ]
      },
@@ -837,7 +846,7 @@
       "cells": [
        "Neobank (debit)",
        "—",
-       "£0",
+       "✓",
        "0.5%"
       ]
      },
@@ -845,7 +854,10 @@
       "cells": [
        "Corporate charge card",
        "£50k",
-       "£550/yr",
+       {
+        "value": "✗",
+        "note": "£550 a year"
+       },
        "1%"
       ]
      },
@@ -853,7 +865,7 @@
       "cells": [
        "Acme",
        "£250k",
-       "£0",
+       "✓",
        "1%"
       ],
       "style": "total"
@@ -1108,16 +1120,20 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit"
+      "label": "Credit limit",
+      "icon": "wallet"
      },
      {
-      "label": "Rewards"
+      "label": "Rewards",
+      "icon": "sparkles"
      },
      {
-      "label": "Approval speed"
+      "label": "Approval speed",
+      "icon": "zap"
      },
      {
-      "label": "No fees"
+      "label": "No fees",
+      "icon": "banknote"
      }
     ],
     "rows": [
@@ -1182,16 +1198,20 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit"
+      "label": "Credit limit",
+      "icon": "wallet"
      },
      {
-      "label": "Rewards"
+      "label": "Rewards",
+      "icon": "sparkles"
      },
      {
-      "label": "Approval speed"
+      "label": "Approval speed",
+      "icon": "zap"
      },
      {
-      "label": "No fees"
+      "label": "No fees",
+      "icon": "banknote"
      }
     ],
     "rows": [
@@ -2157,6 +2177,9 @@
      },
      {
       "label": "By"
+     },
+     {
+      "label": "Status"
      }
     ],
     "rows": [
@@ -2167,7 +2190,11 @@
         "note": "Term sheet agreed; legal open"
        },
        "CEO",
-       "15 Oct"
+       "15 Oct",
+       {
+        "value": "Under way",
+        "status": true
+       }
       ],
       "focus": true
      },
@@ -2178,7 +2205,11 @@
         "note": "Lead confirmed; allocations next"
        },
        "CFO",
-       "31 Oct"
+       "31 Oct",
+       {
+        "value": "Under way",
+        "status": true
+       }
       ]
      },
      {
@@ -2188,7 +2219,11 @@
         "note": "Two finalists; owns underwriting"
        },
        "CEO",
-       "15 Nov"
+       "15 Nov",
+       {
+        "value": "Final round",
+        "status": true
+       }
       ]
      },
      {
@@ -2198,7 +2233,11 @@
         "note": "Shortlist three lenders"
        },
        "CFO",
-       "Dec"
+       "Dec",
+       {
+        "value": "Not started",
+        "status": true
+       }
       ]
      }
     ]
@@ -2220,6 +2259,9 @@
      },
      {
       "label": "By"
+     },
+     {
+      "label": "Status"
      }
     ],
     "rows": [
@@ -2230,7 +2272,11 @@
         "note": "Term sheet agreed; legal open"
        },
        "CEO",
-       "15 Oct"
+       "15 Oct",
+       {
+        "value": "Under way",
+        "status": true
+       }
       ],
       "focus": true
      },
@@ -2241,7 +2287,11 @@
         "note": "Lead confirmed; allocations next"
        },
        "CFO",
-       "31 Oct"
+       "31 Oct",
+       {
+        "value": "Under way",
+        "status": true
+       }
       ]
      },
      {
@@ -2251,7 +2301,11 @@
         "note": "Two finalists; owns underwriting"
        },
        "CEO",
-       "15 Nov"
+       "15 Nov",
+       {
+        "value": "Final round",
+        "status": true
+       }
       ]
      },
      {
@@ -2261,7 +2315,11 @@
         "note": "Shortlist three lenders"
        },
        "CFO",
-       "Dec"
+       "Dec",
+       {
+        "value": "Not started",
+        "status": true
+       }
       ]
      }
     ]
