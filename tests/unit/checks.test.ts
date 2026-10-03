@@ -154,3 +154,15 @@ test("J9: fails at p ≥ 0.7 toward marks", async () => {
 test("nudge picks a failed J9 like any judgment check", () => {
   assert.equal(nudge([{ id: "J9", ok: false, msg: "Judgements in words may read faster as marks (✓ ✗ or Harvey balls)" }]), "Worth a look: judgements in words may read faster as marks (✓ ✗ or Harvey balls).");
 });
+
+test("J10: asked only when the table has header icons; fails at p ≥ 0.7 toward decorative", async () => {
+  assert.equal((await judge(marks, "consulting")).asked.J10, undefined);
+  const icons: Slide = { template: "table", title: marks.title, table: { columns: [{ label: "Provider" }, { label: "Fast", icon: "zap" }], rows: [{ cells: ["Acme", "✓"] }] } };
+  assert.deepEqual(Object.keys((await judge(icons, "consulting")).asked.J10.options), ["help", "decorative"]);
+  let asked: Record<string, JevQuestion> = {};
+  const jev: JevFn = async (_s, qs) => { asked = qs; return { _ms: 0, J10: { choice: "", p: 0, probabilities: { help: 0.2, decorative: 0.8 } } } as unknown as JevResult; };
+  const j10 = (await judgmentChecks(icons, "consulting", jev)).checks.find((c) => c.id === "J10");
+  assert.ok(asked.J10);
+  assert.equal(j10?.ok, false);
+  assert.match(j10?.msg ?? "", /decorative/);
+});

@@ -74,10 +74,10 @@ function tableHTML(t: Table, base = "table", key = true) {
     : `<th class="${cls(c, j)}"${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`;
   const row = (r: Table["rows"][number], i: number) => {
     if (r.style === "group") { const g = r.cells[0], o = typeof g === "object" && g ? g : null;
-      return `<tr class="group"${item(`${base}.rows[${i}]`)}><td colspan="${n}"${at(o ? `${P(i, 0)}.value` : P(i, 0), "md")}>${md(o ? o.value ?? "" : g ?? "")}</td></tr>`; }
+      return `<tr class="group"${item(`${base}.rows[${i}]`)}><td${at(o ? `${P(i, 0)}.value` : P(i, 0), "md")}>${md(o ? o.value ?? "" : g ?? "")}</td>${"<td></td>".repeat(n - 1)}</tr>`; }
     return `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`${base}.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`;
   };
-  return `<table class="tbl${n <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map(() => "<col>").join("")}</colgroup>
+  return `<table class="tbl${n <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
     <thead><tr>${t.columns.map(head).join("")}</tr></thead>
     <tbody>${t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
 }
@@ -232,17 +232,19 @@ function growHalfTables(slide: HTMLElement) {
   });
 }
 
-/* L5: a table under 60% of the body grows its rows, up to 1.5× its natural height; beside notes too, so the
+/* L5: a table or a list of steps grows its rows towards the bottom of the body (or the takeaway), up to 1.5× its natural
+   height, so a short body ends on the same line as a full one instead of leaving a band empty; beside notes too, so the
    notes' bands (which share the split's height) grow with it. */
 function growTable(slide: HTMLElement) {
-  const tbl = slide.matches(".t-table.v-full") ? slide.querySelector<HTMLElement>(":scope > .tbl")
-    : slide.matches(".t-table.v-split") ? slide.querySelector<HTMLElement>(".split.with-table > .main > .tbl") : null;
-  if (!tbl) return;
+  const body = slide.matches(".t-table.v-full") ? slide.querySelector<HTMLElement>(":scope > .tbl")
+    : slide.matches(".t-table.v-split") ? slide.querySelector<HTMLElement>(".split.with-table > .main > .tbl")
+    : slide.querySelector<HTMLElement>(":scope > .steps");
+  if (!body) return;
   // The slide is scaled with a transform: measure in slide pixels.
   const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
-  const area = (tk ? top(tk) - 40 : bottom) - top(tbl), natural = tbl.getBoundingClientRect().height / k;
-  if (natural < area * .6) tbl.style.height = `${Math.min(area * .6, natural * 1.5)}px`;
+  const area = (tk ? top(tk) - 40 : bottom) - top(body), natural = body.getBoundingClientRect().height / k;
+  if (natural < area) body.style.height = `${Math.min(area, natural * 1.5)}px`;
 }
 
 /* Big values in a row shrink together (to 75% at most) so the widest fits. */

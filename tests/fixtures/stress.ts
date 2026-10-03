@@ -98,7 +98,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
     { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
-    // At the budget: 2 rows of two one-line bullets (2.7 each) and 2 plain rows under two group headings, with icons (10.4).
+    // At the budget: 2 rows of two one-line bullets (2.7 each) and 2 scored rows (1.05 each) under two group headings, with icons (10.5).
     { template: "table", name: "Stress · table rich", ...frame("table"), takeaway: undefined, table: {
       columns: [{ label: W(20) }, { label: W(12), icon: "zap" }, { label: W(12), icon: "clock" }, { label: W(12), icon: "users" }],
       rows: [

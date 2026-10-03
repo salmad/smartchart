@@ -178,7 +178,13 @@
 .tbl td.al-num { font-family: var(--mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tbl .al-sym { text-align: center; }
 .tbl th:last-child, .tbl td:last-child { padding-right: 0; }
-.tbl .focus { color: var(--focus); }
+/* A highlighted column is a quiet band (on the column, so it runs unbroken through group headings), with its header in the
+   focus colour; its body stays in ink, so the one cell the title is about ([[…]]) still stands out. Cells in the band are
+   inset so text never touches its edge; the band reaches above the header label without growing the row. */
+.tbl col.focus { background: color-mix(in srgb, var(--focus) 5%, transparent); }
+.tbl :is(th, td).focus { padding-left: 20px; }
+.tbl :is(th, td).focus:last-child { padding-right: 20px; }
+.tbl th.focus { color: var(--focus); box-shadow: 0 -16px 0 color-mix(in srgb, var(--focus) 5%, var(--bg)); }
 .tbl th.muted, .tbl td.muted { color: var(--muted); }
 .tbl .bold { font-weight: 700; }
 .tbl .italic { font-style: italic; }
@@ -202,6 +208,9 @@
 .tbl td.has-bul .bullets { margin-top: 8px; font-size: 23px; line-height: 1.35; gap: 6px; color: var(--fg-2); }
 .tbl td.has-bul > .bullets:first-child { margin-top: 0; }
 /* Group heading: a spanning label in the header's voice, a hairline above, no fill. */
+/* One cell per column (not a spanning cell), so a highlighted column's band runs through it; the label runs on over
+   the empty cells beside it. */
+.tbl tr.group td:first-child { white-space: nowrap; overflow: visible; }
 .tbl tr.group td { padding: 26px 0 10px; border-bottom: 1px solid var(--line); font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .tbl tbody tr.group:first-child td { padding-top: 14px; }
 .tbl tr.muted td { color: var(--muted); }

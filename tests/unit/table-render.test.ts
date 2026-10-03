@@ -26,7 +26,7 @@ test('bullets, status labels and group rows', () => {
     { cells: ['Launch'], style: 'group' },
     { cells: ['Bank', { value: 'Live', status: true }, { value: 'Slow', bullets: ['Filed accounts', 'Caps at £25k'] }] },
   ] })
-  expect(h).toContain('<tr class="group" data-item="table.rows[0]"><td colspan="3" data-path="table.rows[0].cells[0]" data-kind="md">Launch</td></tr>')
+  expect(h).toContain('<tr class="group" data-item="table.rows[0]"><td data-path="table.rows[0].cells[0]" data-kind="md">Launch</td><td></td><td></td></tr>')
   expect(h).toContain('status"><span class="pill" data-path="table.rows[1].cells[1].value" data-kind="esc">Live</span></td>')
   expect(h).toContain('has-bul"><span data-path="table.rows[1].cells[2].value" data-kind="md">Slow</span><ul class="bullets"><li data-item="table.rows[1].cells[2].bullets[0]" data-path="table.rows[1].cells[2].bullets[0]" data-kind="md">Filed accounts</li>')
 })
