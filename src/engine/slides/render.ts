@@ -166,7 +166,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
     body = `<p class="q-mark" aria-hidden="true">“</p><p class="q-text"${at("quote", "md")}>${md(s.quote ?? "")}</p><p class="q-who"${at("who", "esc")}>${esc(s.who ?? "")}</p>`;
   } else {
     // The head holds its longest form (L3), so the body starts on one line per style. The consulting
-    // kicker line is kept even when empty, so the title does not move up on slides without one.
+    // kicker sits in the top margin (slides.css), so the title starts at the margin with or without one.
     const head = deck.style === "consulting"
       ? `<div class="label"${at("kicker", "esc")}>${esc(s.kicker || ctx.kicker)}</div><h2 class="title"${at("title", "display")}>${display(s.title)}</h2>`
       : `<h2 class="title"${at("title", "display")}>${display(s.title)}</h2>${s.subtitle ? `<p class="subtitle"${at("subtitle", "display")}>${display(s.subtitle)}</p>` : ""}`;
