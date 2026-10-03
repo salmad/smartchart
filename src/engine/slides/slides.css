@@ -194,9 +194,14 @@
 .tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
 .tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
 /* Header icons: above the label, quiet, aligned with the column. */
-.tbl th.has-ic svg { display: block; width: 28px; height: 28px; margin-bottom: 10px; color: var(--muted); }
-.tbl th.al-sym.has-ic svg { margin-inline: auto; }
-.tbl th.al-num.has-ic svg { margin-left: auto; }
+/* Header icons: inline, left of the label, so the header keeps one line. When an icon and its label would not fit across
+   a column (render.ts measures), every icon in the table goes above its label instead. */
+.tbl th.has-ic svg { display: inline-block; width: 22px; height: 22px; margin: 0 10px 0 0; vertical-align: -5px; color: var(--muted); }
+.tbl th.has-ic > span { white-space: nowrap; }
+.tbl.ic-above th.has-ic > span { white-space: normal; }
+.tbl.ic-above th.has-ic svg { display: block; width: 28px; height: 28px; margin: 0 0 10px; vertical-align: 0; }
+.tbl.ic-above th.al-sym.has-ic svg { margin-inline: auto; }
+.tbl.ic-above th.al-num.has-ic svg { margin-left: auto; }
 /* A mark with a note: the mark centred, the note under it. */
 .tbl td.score.has-note small { text-align: center; margin-top: 6px; }
 /* Status: a neutral outline label. The value is the information, never a colour. */
