@@ -33,10 +33,37 @@ Pairs well with #1: a resolved comment can link to the revision that fixed it.
 Comments are input written by people, so agents treat them as requests to weigh, not commands. A shared viewer's comment never acts with the owner's authority.
 
 ## 4. Slide gaps found while designing richer tables (2026-10-03)
-- **Images:** logos (competition), product screenshots, team photos. Biggest gap for pitch decks; needs upload, storage and layout.
+- **Images:** see #6.
 - **Agenda slide:** built by code from the section titles.
 - **Text slide:** 2–3 headlined paragraphs (the consulting argument slide), not forced into cards or the summary.
 - **Bars in table cells:** a small bar for a share or score, so a table of figures can be scanned.
 
 ## 5. Mixed halves in the pair (built, switched off)
 A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.
+
+## 6. Images and screenshots in slides
+Logos (competition), product screenshots, team photos. The biggest gap for pitch decks.
+Open questions for the brainstorm:
+- Which templates take an image: a new image template, an image half in the pair, logos in table cells, or all three.
+- Upload and storage (Postgres row vs blob storage), size limits, and how MCP agents add one (upload tool, or a URL that SmartChart copies).
+- Layout stays code's job: fixed frames and crops per template, never free placement. Screenshots get a device-free frame that fits the style.
+- Alt text, required so the slide still reads in checks and to agents that cannot see the image.
+
+## 7. Bug hunt: how MCP works in practice (2026-10-04)
+Recent MCP testing turned up rough edges. Go through it on purpose: replay real sessions (Claude, Cursor, other clients) against the MCP tools, and list every wrong error, confusing result, wasted call and missing guidance. Fix at the tool or instruction level, then add each case to `tests/agent-harness` so it stays fixed.
+
+## 8. Checks that reach the MCP agent unasked
+Today `check_slide` and `check_storyline` run only when the agent calls them, so many agents never do. Instead, the write tools return the relevant warnings and a suggested next step: after a slide is written, its rule checks; once the deck has 2+ content slides, a hint that the storyline is worth checking, or its open warnings.
+- Warnings stay advice (thin harness): the agent weighs them, nothing is rewritten.
+- Open question: what runs on every write (cheap rule checks) vs what costs a model call and stays on request.
+
+## 9. Softer checks that make a slide great, not just valid
+Non-blocking suggestions on top of today's checks: things a partner would say in review. For example: a capability the slide doesn't use yet (marks, icons, a highlight, notes), a title that states a topic instead of a finding, a number with no comparison, a missing source on a figure.
+- Shown as suggestions, ranked below real problems, in the app and over MCP (#8).
+- Open question: how many to show at once so they help rather than nag.
+
+## 10. Linked sources, so a slide can be verified
+`source` is plain text today. Let it carry links: the source line and footnote markers point to the page, report or dataset behind a number. Optional but recommended: a soft check (#9) suggests a link when a slide shows figures without one.
+- Clickable in the app, in present mode and in shared links; shown as plain text in PDF/print, or as a short URL.
+- Open question: one source per slide, or one per figure (footnote markers ¹ ² tied to specific numbers).
+
