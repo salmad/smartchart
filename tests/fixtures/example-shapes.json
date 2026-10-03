@@ -154,7 +154,7 @@
    "template": "pair",
    "variant": "pair",
    "keys": [
-    "charts",
+    "halves",
     "kicker",
     "source",
     "takeaway",
@@ -166,7 +166,7 @@
    "template": "pair",
    "variant": "pair",
    "keys": [
-    "charts",
+    "halves",
     "subtitle",
     "takeaway",
     "template",
@@ -1272,20 +1272,21 @@
     "columns": [
      {},
      {},
+     {},
      {}
     ],
     "rows": [
      {
-      "cells": 3
+      "cells": 4
      },
      {
-      "cells": 3
+      "cells": 4
      },
      {
-      "cells": 3
+      "cells": 4
      },
      {
-      "cells": 3
+      "cells": 4
      }
     ]
    }
@@ -1304,20 +1305,21 @@
     "columns": [
      {},
      {},
+     {},
      {}
     ],
     "rows": [
      {
-      "cells": 3
+      "cells": 4
      },
      {
-      "cells": 3
+      "cells": 4
      },
      {
-      "cells": 3
+      "cells": 4
      },
      {
-      "cells": 3
+      "cells": 4
      }
     ]
    }

@@ -52,10 +52,19 @@ export function Present({ deck, start, onExit }: Props) {
       e.preventDefault()
     }
     const onFullscreenChange = () => { if (!document.fullscreenElement) exit() }
+    // On a notched MacBook, full screen keeps the strip beside the camera black and centres the slide below it.
+    // Keynote centres on the whole screen: lift the slide by half that strip, within its letterbox room.
+    const lift = () => {
+      const inset = document.fullscreenElement ? screen.height - innerHeight : 0
+      const room = (innerHeight - Math.min(innerWidth * 9 / 16, innerHeight)) / 2
+      root.style.setProperty('--lift', `${inset > 0 && inset < 100 ? Math.min(inset / 2, room) : 0}px`)
+    }
     window.addEventListener('keydown', onKey)
-    root.requestFullscreen?.().then(() => document.addEventListener('fullscreenchange', onFullscreenChange)).catch(() => {})
+    window.addEventListener('resize', lift)
+    root.requestFullscreen?.().then(() => { lift(); document.addEventListener('fullscreenchange', onFullscreenChange) }).catch(() => {})
     return () => {
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('resize', lift)
       document.removeEventListener('fullscreenchange', onFullscreenChange)
     }
   }, [n])
@@ -68,9 +77,8 @@ export function Present({ deck, start, onExit }: Props) {
         slide={deck.slides[index]}
         deck={deck}
         ctx={ctx[index]}
-        className="relative overflow-hidden aspect-video w-[min(100vw,calc(100vh*16/9))]"
+        className="relative overflow-hidden aspect-video w-[min(100vw,calc(100vh*16/9))] -translate-y-[var(--lift,0px)]"
       />
-      <div className="fixed right-5 bottom-4 font-mono text-xs text-white/35">{index + 1} / {n}</div>
     </div>
   )
 }

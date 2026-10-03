@@ -114,6 +114,11 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       rows: [{ cells: [W(30)], style: "group" }, ...TIMES(c ? 4 : 3).map(() => ({ cells: [W(24), "(1,234)", "12,345"] })), { cells: [W(30)], style: "group" }, ...TIMES(c ? 3 : 2).map(() => ({ cells: [W(24), "(1,234)", "12,345"] }))] } },
     { template: "table", name: "Stress · table groups as a column", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: { columns: [{ label: W(20) }, { label: W(12) }, { label: W(12) }, { label: W(12) }],
       rows: [{ cells: [W(18)], style: "group" }, ...TIMES(c ? 4 : 3).map(() => ({ cells: [W(24), "✓", "✗", "12,345"] })), { cells: [W(18)], style: "group" }, ...TIMES(3).map(() => ({ cells: [W(24), "✗", "✓", "12,345"] }))] } },
+    // Header icons over labels too long to sit beside them: every icon goes above, and the budget costs it (1). Consulting
+    // 8 rows + 1 + takeaway 1.5 = 10.5; pitch 6 + 1 = 7, no takeaway.
+    { template: "table", name: "Stress · table icons above", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: {
+      columns: [{ label: W(20) }, ...["zap", "clock", "users", "wallet"].map((icon) => ({ label: W(20), icon }))],
+      rows: TIMES(c ? 8 : 6).map(() => ({ cells: [W(24), "(1,234)", "12,345", "(34)", "£95"] })) } },
     { template: "steps", name: "Stress · steps", ...frame("steps"), steps: TIMES(c ? 5 : 3).map((_, i) => ({ when: "Q3 2027+", title: W(max("steps", st, "steps", "title")), text: W(max("steps", st, "steps", "text")), focus: i === 1 })) },
     { template: "cards", name: "Stress · cards icon ×3", ...frame("cards"), cards: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { icon: "zap", title: W(22), text: W(50) }) },
     { template: "cards", name: "Stress · cards icon ×4", ...frame("cards"), cards: TIMES(4).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(2).map(() => W(48)) } : { icon: "zap", title: W(22), text: W(30) }) },

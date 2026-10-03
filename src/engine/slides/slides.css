@@ -27,13 +27,13 @@
   -webkit-text-size-adjust: none; text-size-adjust: none; /* iOS must not inflate text in the 1920px canvas */
   text-align: left; /* the host page's alignment never reaches in: a slide looks the same wherever it is shown */
 }
-/* L3: the body starts on one line per style. The head reserves its longest form (consulting: kicker +
-   2 title lines; pitch: 1 title line + 1 subtitle line) and the body follows it after one gap, so a
+/* L3: the body starts on one line per style. The head reserves its longest form (consulting: 2 title
+   lines; pitch: 1 title line + 1 subtitle line) and the body follows it after one gap, so a
    shorter title or subtitle leaves room below it instead of moving the body. */
 .slide { --body-gap: 56px; }
 .slide.style-pitch { --body-gap: 72px; }
 .head { flex: none; }
-.style-consulting .head { min-height: calc(20px + 26px + 2 * 1.02 * var(--t-size)); }
+.style-consulting .head { min-height: calc(2 * 1.02 * var(--t-size)); }
 .style-pitch .head { min-height: calc(.86 * var(--t-size) + 30px + 1.2 * 48px); }
 .head + :not(.spacer) { margin-top: var(--body-gap); }
 .rail {
@@ -43,7 +43,9 @@
 .rail .fn { flex: 1; min-width: 0; }
 .rail .pg { margin-left: auto; white-space: nowrap; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
 .rail .pg b { margin-left: 28px; font-weight: 500; color: var(--fg); }
-.label { font: 500 20px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--focus); margin-bottom: 26px; min-height: 20px; }
+/* The kicker sits in the top margin, mirroring the rail in the bottom one, so every title starts at the margin with or
+   without it. */
+.label { position: absolute; top: 48px; left: 128px; right: 128px; font: 500 20px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--focus); }
 .title { font-size: var(--t-size); }
 .style-consulting .title {
   font-family: var(--display); font-weight: 800; font-stretch: 78%; line-height: 1.02; letter-spacing: -.012em;
@@ -194,9 +196,14 @@
 .tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
 .tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
 /* Header icons: above the label, quiet, aligned with the column. */
-.tbl th.has-ic svg { display: block; width: 28px; height: 28px; margin-bottom: 10px; color: var(--muted); }
-.tbl th.al-sym.has-ic svg { margin-inline: auto; }
-.tbl th.al-num.has-ic svg { margin-left: auto; }
+/* Header icons: inline, left of the label, so the header keeps one line. When an icon and its label would not fit across
+   a column (render.ts measures), every icon in the table goes above its label instead. */
+.tbl th.has-ic svg { display: inline-block; width: 22px; height: 22px; margin: 0 10px 0 0; vertical-align: -5px; color: var(--muted); }
+.tbl th.has-ic > span { white-space: nowrap; }
+.tbl.ic-above th.has-ic > span { white-space: normal; }
+.tbl.ic-above th.has-ic svg { display: block; width: 28px; height: 28px; margin: 0 0 10px; vertical-align: 0; }
+.tbl.ic-above th.al-sym.has-ic svg { margin-inline: auto; }
+.tbl.ic-above th.al-num.has-ic svg { margin-left: auto; }
 /* A mark with a note: the mark centred, the note under it. */
 .tbl td.score.has-note small { text-align: center; margin-top: 6px; }
 /* Status: a neutral outline label. The value is the information, never a colour. */

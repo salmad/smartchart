@@ -166,7 +166,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
     body = `<p class="q-mark" aria-hidden="true">“</p><p class="q-text"${at("quote", "md")}>${md(s.quote ?? "")}</p><p class="q-who"${at("who", "esc")}>${esc(s.who ?? "")}</p>`;
   } else {
     // The head holds its longest form (L3), so the body starts on one line per style. The consulting
-    // kicker line is kept even when empty, so the title does not move up on slides without one.
+    // kicker sits in the top margin (slides.css), so the title starts at the margin with or without one.
     const head = deck.style === "consulting"
       ? `<div class="label"${at("kicker", "esc")}>${esc(s.kicker || ctx.kicker)}</div><h2 class="title"${at("title", "display")}>${display(s.title)}</h2>`
       : `<h2 class="title"${at("title", "display")}>${display(s.title)}</h2>${s.subtitle ? `<p class="subtitle"${at("subtitle", "display")}>${display(s.subtitle)}</p>` : ""}`;
@@ -189,7 +189,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   const colours = allocate(s, deck.theme, deck.accent);
   for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
-  sizeTable(slide); growTable(slide); growHalfTables(slide);
+  sizeTable(slide); stackIcons(slide); growTable(slide); growHalfTables(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
     const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
@@ -237,6 +237,18 @@ function sizeTable(slide: HTMLElement) {
     const shares = data.map((_, j) => (bul.has(j) && !slide.classList.contains("style-pitch") ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
     if (!grp && total === data.length) return;
     data.forEach((c, j) => { c.style.width = `${((1 - g - share) * shares[j] / total * 100).toFixed(2)}%`; });
+  });
+}
+
+/* Header icons sit inline; if any icon and its label do not fit across their column, every icon in that table goes
+   above its label (one look per table). */
+function stackIcons(slide: HTMLElement) {
+  slide.querySelectorAll<HTMLElement>(".tbl").forEach((tbl) => {
+    // Icons are drawn later (drawIcons), so an icon counts as its fixed 22px and 10px gap; the label is measured.
+    const k = slide.getBoundingClientRect().width / 1920;
+    const over = (th: HTMLElement) => { const cs = getComputedStyle(th), room = th.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      return (th.querySelector(":scope > span")?.getBoundingClientRect().width ?? 0) / k + 32 > room + 1; };
+    if ([...tbl.querySelectorAll<HTMLElement>("thead th.has-ic")].some(over)) tbl.classList.add("ic-above");
   });
 }
 
