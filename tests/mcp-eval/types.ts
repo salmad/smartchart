@@ -16,11 +16,14 @@ export interface Outcome { isError: boolean; numTurns: number; durationMs: numbe
 export interface Transcript { init: Init | null; calls: ToolCall[]; finalText: string; outcome: Outcome | null }
 export interface Deck { id: string; style: Style; edit: string; slides: { id: string; slide: Slide }[] }
 export interface Measured { slideId: string; fit: string[]; issues: string[]; warnings: string[]; png: string }
+/** Where the text that misled the agent lives, so the report says what to fix. */
+export const SOURCES = ['server instructions', 'tool description', 'template card', 'guide', 'tool result', 'none'] as const
 export interface Verdict {
-  generic: Record<string, { answer: string; why: string }>
+  generic: { id: string; yes: boolean; why: string }[]
   case: { q: string; yes: boolean; why: string }[]
   numbers: { value: string; kind: 'derived' | 'invented'; why: string }[]
   magic: { presentAsIs: boolean; fix: string }
+  confusedBy: { mismatch: string; quote: string; source: (typeof SOURCES)[number]; why: string; fix: string }[]
 }
 export interface Run {
   id: string; caseId: string; n: number; status: 'done' | 'limited' | 'error'; error?: string
