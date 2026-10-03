@@ -36,27 +36,32 @@ So the eval speaks real Streamable HTTP JSON-RPC to the real handler and deck se
 
 **No paid model keys.** The agent and the judge both run on this machine's Claude subscription, through the `claude` CLI in headless mode. Nothing calls the Anthropic or OpenAI API with a key. The runner deletes `ANTHROPIC_API_KEY` (and `ANTHROPIC_AUTH_TOKEN`) from the child process's environment, so the CLI always falls back to the subscription login. It reads the CLI's `system/init` event and aborts the run unless `apiKeySource` is `"none"` (the subscription login; checked with CLI 2.1.283) and `mcp_servers` is exactly `smartchart`. The `total_cost_usd` in the `result` event is the CLI's estimate of the API price; it is recorded for comparison, not billed. Do not use `--bare`: it reads keys only, never the subscription.
 
-**Agent.** The real Claude Code, run as a subprocess for each run:
+**Agent: the user's experience, unchanged.** Sonnet must get exactly what a user gets who installed Claude Code, added the SmartChart connector and asked for a slide. The rule for every flag: isolate the run from *this machine* (its settings, plugins, projects and accounts), never change what Claude Code or the connector does. So the eval keeps:
+- Claude Code's default system prompt and **full default tool set**, including ToolSearch. Claude Code loads MCP tools through it when deferring them, so removing tools would change how Sonnet finds SmartChart at all.
+- The server's `initialize` instructions, the tool descriptions, the guide and card resources, and Claude Code's own MCP output limits (no env overrides).
+- An **empty account**: no decks (§2, Start).
+- One user message, in the user's words, with nothing added by the eval.
+
+One subprocess per run:
 
 ```bash
 claude -p "<case prompt>" --model sonnet \
   --mcp-config <run>/mcp.json --strict-mcp-config \
-  --tools "" --allowedTools "mcp__smartchart__*" \
+  --allowedTools "mcp__smartchart__*" \
   --setting-sources local --no-session-persistence \
   --output-format stream-json --verbose --max-turns 40
 ```
 
-- `cwd` is an empty temp folder for the run, so no `CLAUDE.md`, project settings, skills or memory leak in.
-- `--setting-sources local` drops user settings (hooks, plugins, the user's own MCP servers).
-- `--strict-mcp-config` stops the CLI loading any other MCP server, so it cannot write to the production SmartChart connector.
-- `--tools ""` removes the built-in tools: no file system, shell or web, only SmartChart.
-- `mcp.json` points `smartchart` at the local server (`type: "http"`, a dummy bearer).
-- The default Claude Code system prompt is kept, so it behaves as it would for a real user.
+- `cwd` is a fresh temp folder for the run: a user's working folder with no `CLAUDE.md`, project settings, skills or memory from this repo. It holds only the case's `files` (§3), if any.
+- `--setting-sources local` drops this machine's user settings (hooks, plugins, other MCP servers). The run is a clean install of Claude Code.
+- `--strict-mcp-config` loads only `smartchart`, so the run cannot write to the production connector configured on this machine.
+- `--allowedTools "mcp__smartchart__*"` is the user who clicked "always allow" on the connector. Other tools keep Claude Code's defaults: those that run without asking (reading files in the folder) work as for a user, and those that would prompt are denied in headless mode and recorded (`P7`).
+- `mcp.json` points `smartchart` at the local server (`type: "http"`, a dummy bearer). In `--live` mode it points at the deployed endpoint with the eval key, as the connector setup page tells users.
 - The `stream-json` output is the transcript: every tool call, tool result and assistant message, plus `usage` and `duration_ms` from the final `result` event.
 - Timeout: 10 minutes per run.
 - The model alias (`sonnet`) and the CLI version are recorded in the report (`claude --version`, and the model from `system/init`).
 
-Each run gets a fresh `MemoryDb` holding one empty deck called "Board pack", in the case's style. The user's request does not say "deck", "template" or "style", so the agent has to find that deck through `list_decks`, as a user with a deck open would expect.
+**Start.** Each run gets a fresh, empty `MemoryDb`: a new user with no decks. Following the server instructions, the agent calls `list_decks`, finds nothing and calls `create_deck`, choosing the style from the request (or asking). The case's `style` is the style a good agent would pick. It is checked (`S4`), and every style-dependent check (caption, budget, J-checks) uses the style the agent actually chose. In `--live` mode the eval account must also start empty: the runner refuses to start if `list_decks` returns any deck, and deletes the decks it made when it finishes.
 
 **Should-ask cases.** When the agent's final message is a question and nothing was written, the run ends there and is scored. The eval never answers questions back: a follow-up turn would measure the eval's answers, not the agent.
 
@@ -71,7 +76,7 @@ Each run gets a fresh `MemoryDb` holding one empty deck called "Board pack", in 
 
 ## 3. Cases
 
-`cases.json`, about 24 cases. Requests are written the way an inexperienced user writes them: no template names, sometimes messy pasted data, sometimes too much of it, and British English, as in `requests.json`.
+`cases.json`, about 25 cases. Requests are written the way an inexperienced user writes them: no template names, sometimes messy pasted data, sometimes too much of it, and British English, as in `requests.json`.
 
 | Group | Count | Covers |
 |---|---|---|
@@ -79,7 +84,7 @@ Each run gets a fresh `MemoryDb` holding one empty deck called "Board pack", in 
 | Exact figures | 4 | P&L with a total row, unit economics, store comparison, mixed £k/£m |
 | Explaining positions | 2 | competitors with a "how they play" column |
 | Actions | 2 | owner, date, status |
-| Stress | 4 | pasted 12-column CSV, 15 rows (cut or group, and say so), Yes/No/Partly in words, a request mixing a table and a trend |
+| Stress | 5 | pasted 12-column CSV, 15 rows (cut or group, and say so), Yes/No/Partly in words, a request mixing a table and a trend, data in a file in the folder ("the numbers are in pilot-stores.csv") |
 | Near-miss | 6 | sounds like a table but isn't: trend over time → chart, one figure → number, plan → steps, two-way contrast → cards, ranking → chart, market and share → pair |
 | Should ask | 2 | too vague to act on ("make a slide comparing us to competitors", with no data or names) |
 
@@ -94,6 +99,7 @@ Case shape:
   "gold": "table",
   "acceptable": [],
   "ask": false,                       // true: the pass is a question and no slide
+  "files": [],                        // fixtures copied into the run's cwd, e.g. ["pilot-stores.csv"]
   "facts": {                          // must appear on the slide (normalised text match)
     "numbers": ["£250k", "1%", "£0"],
     "names": ["Amex", "Barclaycard", "Revolut", "Acme"]
@@ -128,6 +134,7 @@ Each check produces `{ id, ok, msg }`. **Fatal** checks are marked ●. A fatal 
 - `S1` The template is `gold` or in `acceptable`. A near-miss written as a table fails.
 - `S2` Exactly one new slide (zero for should-ask).
 - `S3` Should-ask: the final message is a question and nothing was written. Clear cases: no question asked before writing.
+- `S4` The deck's style is the case's `style`. A board or client request goes to consulting; an investor or fundraising request goes to pitch. Reported, not in the magic rate: a user can switch style in one click, and the slide is judged in the style that was chosen.
 
 ### 4.2 Faithful to the request (code + judge)
 - `F1` ● Every `facts.numbers` value is on the slide. Matching is normalised: thousands separators, £/€/$, %, "m"/"bn", and a minus sign or brackets for negatives.
@@ -177,6 +184,7 @@ The judge's `why` is kept for the report, so every failure can be audited.
 - `P4` Every write passed `request`, and it contains words from the user's prompt.
 - `P5` No write set style, layout, colours, page numbers or the footer.
 - `P6` The final reply is short (at most 120 words), has no JSON, and contains the deck's `links.edit`.
+- `P7` No tool call was denied. A denied call (a shell command, a web fetch) is one a real user would have been asked to approve: friction in the magic moment, and listed in the report.
 - Recorded, not checked: tool calls by name, turns, wall time, input and output tokens, cost.
 
 ## 5. Scores
@@ -218,7 +226,7 @@ node judge.mjs && node report.mjs
 
 ## 8. Cost and time
 
-No paid Anthropic or OpenAI keys: 72 Sonnet runs (about 24 cases × 3) and 72 Opus judge calls come out of the subscription's usage limits. Opus is the heavier draw, so `judge.mjs` can run later and separately, and `--judge-model=sonnet` is available when limits are tight. That choice is recorded in the report, because the judge's results are then not comparable with Opus runs. Jev (OpenRouter, the app's own model and key, as the in-app harness uses) is called once per `check_slide`, cents per full run. Expect one to two hours with 2 workers. Reruns skip finished and `limited` runs and retry the rest.
+No paid Anthropic or OpenAI keys: 75 Sonnet runs (about 25 cases × 3) and 75 Opus judge calls come out of the subscription's usage limits. Opus is the heavier draw, so `judge.mjs` can run later and separately, and `--judge-model=sonnet` is available when limits are tight. That choice is recorded in the report, because the judge's results are then not comparable with Opus runs. Jev (OpenRouter, the app's own model and key, as the in-app harness uses) is called once per `check_slide`, cents per full run. Expect one to two hours with 2 workers. Reruns skip finished and `limited` runs and retry the rest.
 
 ## 9. Risks
 
