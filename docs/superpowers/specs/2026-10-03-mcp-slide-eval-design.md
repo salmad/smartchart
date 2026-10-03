@@ -15,13 +15,13 @@ Non-goals: edits and storylines (later case sets on the same runner), latency ta
 ## 2. Architecture
 
 ```
-cases.json ──► run.mjs ──► Agent SDK (Sonnet 5.5) ──HTTP──► local MCP server ──► mcpHandler + runTool (real)
+cases.json ──► run.mjs ──► claude -p (Sonnet) ──HTTP──► local MCP server ──► mcpHandler + runTool (real)
                                  │                                │                    │
                                  │ transcript                     │ in-memory Db        └─ Jev (real, OpenRouter)
                                  ▼                                ▼
                          results.json ◄── measure (Playwright: fixture.html lint + screenshot)
                                  │
-                                 ├── judge.mjs (Opus: slide JSON + screenshot + request + case questions)
+                                 ├── judge.mjs (claude -p, Opus: slide JSON + screenshot + request + case questions)
                                  └── report.mjs ──► report.md, gallery.html
 ```
 
@@ -34,12 +34,27 @@ So the eval speaks real Streamable HTTP JSON-RPC to the real handler and deck se
 
 **Live mode.** `--live=<url>` points the agent at a deployed endpoint (key from `SMARTCHART_EVAL_KEY`) instead of the local server, as a smoke test. The eval decks are created in that account and deleted afterwards. Measuring and judging are the same.
 
-**Agent.** `@anthropic-ai/claude-agent-sdk` with:
-- model `claude-sonnet-5-5`
-- the Claude Code system prompt preset (it should behave as it would for a real user)
-- `mcpServers: { smartchart: { type: "http", url, headers } }`
-- `allowedTools` limited to `mcp__smartchart__*` (no file system, no web)
-- one user turn, at most 40 turns, a 10-minute timeout
+**No paid model keys.** The agent and the judge both run on this machine's Claude subscription, through the `claude` CLI in headless mode. Nothing calls the Anthropic or OpenAI API with a key. The runner deletes `ANTHROPIC_API_KEY` (and `ANTHROPIC_AUTH_TOKEN`) from the child process's environment, so the CLI always falls back to the subscription login. It reads the CLI's `system/init` event and aborts the run unless `apiKeySource` is `"none"` (the subscription login; checked with CLI 2.1.283) and `mcp_servers` is exactly `smartchart`. The `total_cost_usd` in the `result` event is the CLI's estimate of the API price; it is recorded for comparison, not billed. Do not use `--bare`: it reads keys only, never the subscription.
+
+**Agent.** The real Claude Code, run as a subprocess for each run:
+
+```bash
+claude -p "<case prompt>" --model sonnet \
+  --mcp-config <run>/mcp.json --strict-mcp-config \
+  --tools "" --allowedTools "mcp__smartchart__*" \
+  --setting-sources local --no-session-persistence \
+  --output-format stream-json --verbose --max-turns 40
+```
+
+- `cwd` is an empty temp folder for the run, so no `CLAUDE.md`, project settings, skills or memory leak in.
+- `--setting-sources local` drops user settings (hooks, plugins, the user's own MCP servers).
+- `--strict-mcp-config` stops the CLI loading any other MCP server, so it cannot write to the production SmartChart connector.
+- `--tools ""` removes the built-in tools: no file system, shell or web, only SmartChart.
+- `mcp.json` points `smartchart` at the local server (`type: "http"`, a dummy bearer).
+- The default Claude Code system prompt is kept, so it behaves as it would for a real user.
+- The `stream-json` output is the transcript: every tool call, tool result and assistant message, plus `usage` and `duration_ms` from the final `result` event.
+- Timeout: 10 minutes per run.
+- The model alias (`sonnet`) and the CLI version are recorded in the report (`claude --version`, and the model from `system/init`).
 
 Each run gets a fresh `MemoryDb` holding one empty deck called "Board pack", in the case's style. The user's request does not say "deck", "template" or "style", so the agent has to find that deck through `list_decks`, as a user with a deck open would expect.
 
@@ -50,9 +65,9 @@ Each run gets a fresh `MemoryDb` holding one empty deck called "Board pack", in 
 - A full-size PNG is taken of the slide.
 - `validate()` (`src/engine/slides/schema.ts`) runs on the final JSON.
 
-**Judging.** `judge.mjs` calls `claude-opus-5-5` once per run with the request, the final slide JSON, the screenshot and the case's questions. It answers in a fixed JSON schema (§4.5). Opus judges, not Jev, because the agent already saw Jev's verdicts through `check_slide`, and scoring with the same judge rewards passing a test it was shown. Jev's own `check_slide` results are still recorded, so the two judges' agreement can be compared.
+**Judging.** `judge.mjs` runs `claude -p --model opus --json-schema <judge schema> --tools Read --allowedTools Read --setting-sources local --strict-mcp-config --no-session-persistence --output-format json` once per run, with the same environment scrubbing and an empty temp `cwd` that holds only the run's PNG. The prompt carries the request, the final slide JSON and the case's questions, and tells the judge to Read `slide.png`. The answer arrives as structured output in the fixed schema (§4.5). Opus judges, not Jev, because the agent already saw Jev's verdicts through `check_slide`, and scoring with the same judge rewards passing a test it was shown. Jev's own `check_slide` results are still recorded, so the two judges' agreement can be compared.
 
-**Repeats.** Each case runs 3 times (`--n=3`) to see variance; workers default to 4. `results.json` is keyed `caseId#n`, and finished runs are skipped on a rerun, as in the in-app harness.
+**Repeats.** Each case runs 3 times (`--n=3`) to see variance. Workers default to 2: the runs share one subscription's usage limits. A run that ends with a usage-limit error is recorded as `limited`, not failed. It is left out of the scores and retried on the next invocation. `results.json` is keyed `caseId#n`, and finished runs are skipped on a rerun, as in the in-app harness.
 
 ## 3. Cases
 
@@ -177,7 +192,7 @@ No pass bars in v1: the first run sets the baseline, and bars are agreed after i
 ## 6. Output
 
 `tests/mcp-eval/`:
-- `cases.json`, `server.ts`, `memory-db.ts`, `run.mjs` (agent + measure), `judge.mjs`, `report.mjs`, `README.md`, `package.json` (its own dependencies: Agent SDK, Anthropic SDK, Playwright, tsx, as `tests/agent-harness` does)
+- `cases.json`, `server.ts`, `memory-db.ts`, `claude.mjs` (spawns `claude -p` with the scrubbed environment and parses stream-json), `run.mjs` (agent + measure), `judge.mjs`, `report.mjs`, `README.md`, `package.json` (its own dependencies: Playwright and tsx only, as `tests/agent-harness` does; no model SDKs)
 - Written per run, gitignored except a dated baseline:
   - `results.json`: the transcript summary, final slide, lints, checks and judge output for every run
   - `report.md`: in the in-app harness's format; the headline table, then "For review" listing each failure with its check, message and judge `why`
@@ -185,9 +200,10 @@ No pass bars in v1: the first run sets the baseline, and bars are agreed after i
   - `shots/`: the PNGs
 
 ```bash
-npm run dev                                   # repo root; .env with OPENROUTER_API_KEY (Jev) and ANTHROPIC_API_KEY
+npm run dev                                   # repo root, for fixture.html; .env with OPENROUTER_API_KEY (Jev, the app's own model)
+claude                                        # once, if not logged in: sign in with the subscription
 cd tests/mcp-eval && npm i
-node run.mjs --n=3 --workers=4 [--only=t03,t07] [--group=near-miss] [--live=https://www.occamslides.com/mcp/v1]
+node run.mjs --n=3 --workers=2 [--only=t03,t07] [--group=near-miss] [--live=https://www.occamslides.com/mcp/v1]
 node judge.mjs && node report.mjs
 ```
 
@@ -197,15 +213,18 @@ node judge.mjs && node report.mjs
   - `MemoryDb` round-trips decks and revs, and reports conflicts the way `runTool` expects.
   - The fact matcher's normalisation (`£1,200k` against `£1.2m` is *not* a match; `(53)` against `-53` is).
   - The T-checks on the four gallery tables in `starters.json` with hand-written `expect`s: all pass, and each fails when its `expect` is flipped.
+- `claude.mjs`: the spawn arguments and the scrubbed environment (no `ANTHROPIC_API_KEY`, no `--bare`), and stream-json parsing on a recorded transcript.
 - **Smoke:** one scripted run with a stub "agent" that sends a fixed `create_slide` from a gallery table. It must reach the magic bar end to end: server, measure, judge and report. This proves the pipe before spending tokens on Sonnet.
 
 ## 8. Cost and time
 
-At about 24 cases × 3 runs = 72 runs: Sonnet spends roughly 15–30k input tokens a run (cached tool list and cards) and one Opus judge call with an image. Jev is called once per `check_slide`. Expect well under an hour with 4 workers. Reruns skip finished runs.
+No paid Anthropic or OpenAI keys: 72 Sonnet runs (about 24 cases × 3) and 72 Opus judge calls come out of the subscription's usage limits. Opus is the heavier draw, so `judge.mjs` can run later and separately, and `--judge-model=sonnet` is available when limits are tight. That choice is recorded in the report, because the judge's results are then not comparable with Opus runs. Jev (OpenRouter, the app's own model and key, as the in-app harness uses) is called once per `check_slide`, cents per full run. Expect one to two hours with 2 workers. Reruns skip finished and `limited` runs and retry the rest.
 
 ## 9. Risks
 
 - **The judge's taste is not the user's.** Mitigations: case questions are concrete yes/no, `why` is kept, and the gallery lets a human overrule the judge. Run-to-run disagreement on the same slide is a sign to rewrite the question.
 - **Facts lists that are too strict** (the request says "about £11k", the slide says "£11.4k"). The case author lists only figures the request states exactly, and the normaliser handles format only, never rounding.
-- **The Claude Code preset changes between SDK versions.** The SDK version is pinned, and the report records the version and model ids.
+- **Claude Code changes between CLI versions** (system prompt, tool handling). The report records the CLI version and the model, and results are compared only across runs on the same version, or with that change noted.
+- **Leaking into the real account or a paid key.** `--strict-mcp-config`, `--setting-sources local`, an empty `cwd` and the scrubbed environment are set in one place (`claude.mjs`) and unit-tested: the spawn arguments and environment are asserted, and a run aborts when `system/init` reports any MCP server other than `smartchart` or any auth source other than the subscription.
+- **Subscription limits mid-run.** Runs are marked `limited` and retried, never scored as failures.
 - **The local server drifts from production.** It reuses `mcpHandler` and `runTool` unchanged, and only `Db` and auth are swapped. `--live` checks the deployed path.
