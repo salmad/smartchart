@@ -26,10 +26,18 @@ describe('MCP host', () => {
     expect(tools.find((t) => t.name === 'get_deck')?.annotations).toMatchObject({ readOnlyHint: true })
     expect(tools.find((t) => t.name === 'delete_slide')?.annotations).toMatchObject({ destructiveHint: true })
   })
-  it('calls a tool: structuredContent plus one text line', async () => {
+  it('calls a tool: structuredContent plus the same result as text', async () => {
     const r = await (await connect()).callTool({ name: 'whoami', arguments: {} })
     expect(r.structuredContent).toMatchObject({ email: 'a@b.c' })
     expect(r.content).toEqual([{ type: 'text', text: expect.any(String) }])
+  })
+  it('the text block carries the whole result, for clients that read only text', async () => {
+    // A long result (a template card is thousands of characters) must not be cut: an agent reading text saw
+    // get_deck stop after slide 2 and could not address the rest.
+    const r = await (await connect()).callTool({ name: 'get_template', arguments: { template: 'table', style: 'consulting' } })
+    const text = (r.content as { type: string; text: string }[])[0].text
+    expect(text.length).toBeGreaterThan(1000)
+    expect(JSON.parse(text)).toEqual(r.structuredContent)
   })
   it('tool errors are results the model can read', async () => {
     const r = await (await connect()).callTool({ name: 'get_deck', arguments: { deckId: 'd_none' } })

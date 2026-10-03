@@ -36,11 +36,6 @@ function readResource(uri: string): { uri: string; mimeType: string; text: strin
   return null
 }
 
-/** One line for clients that read text: what happened, and the open issues. */
-function summary(name: string, r: Record<string, unknown>): string {
-  if (r.applied) return `Applied ${String(r.slideId)} at ${String(r.n)}${Array.isArray(r.issues) ? ` · ${r.issues.length} issue${r.issues.length > 1 ? 's' : ''}: ${r.issues.join('; ')}` : ' · no issues'}.`
-  return `${name}: ${JSON.stringify(r).slice(0, 400)}`
-}
 
 export function mcpHandler(deps: { userFrom: UserFrom; db: () => Db | null; jev?: JevFn; allowedOrigins?: string[] }) {
   return async (request: Request): Promise<Response> => {
@@ -75,7 +70,9 @@ export function mcpHandler(deps: { userFrom: UserFrom; db: () => Db | null; jev?
         if (!TOOLS.some((t) => t.name === name)) return rpcError(msg.id, -32602, `Unknown tool ${name}`)
         const client = request.headers.get('x-client') ?? 'Claude Code'
         const reply = await runTool(name, p.arguments ?? {}, { user, client, key: user.id }, { db, origin: url.origin, jev: deps.jev })
-        if (reply.ok) return rpc(msg.id, { content: [{ type: 'text', text: summary(name, reply.result) }], structuredContent: reply.result })
+        // The text block is the whole result as JSON (MCP: structured results are also sent serialized), so a client
+        // that reads only text sees every slide id and field, never a cut-off preview.
+        if (reply.ok) return rpc(msg.id, { content: [{ type: 'text', text: JSON.stringify(reply.result) }], structuredContent: reply.result })
         const e = reply.error
         return rpc(msg.id, { isError: true, content: [{ type: 'text', text: `${e.code}: ${e.message}${e.fix ? ` ${e.fix}` : ''}` }], structuredContent: { error: e } })
       }
