@@ -9,7 +9,7 @@ Each rerun answers two questions:
 - **Did the change help?** Every run is labelled with the commit it ran on, and the report compares it against a baseline.
 
 Design rules, because this is maintained, not run once:
-- **Test the existing code, build no copies.** The agent talks to the app's own dev server with a test account. Rendering and lints come from the existing lint fixture. The judge's generic questions are the J-checks' own questions, imported, never retyped.
+- **Test the existing code, build no copies, change no product code.** The agent talks to the app's own dev server with a test account. Rendering and lints come from the existing lint fixture. SmartChart's own verdicts (write issues and warnings, `check_slide`'s J-checks) reach the judge through the transcript.
 - **Code checks only what is exact and stable** (template, figures, fit, validation, tool use). Anything that depends on the slide schema's details (which row is focused, which marks, a total row) is a plain-English case question for the judge. A schema change then breaks no eval code.
 - **One command.** It runs, judges, reports and resumes.
 
@@ -23,7 +23,7 @@ cases.json ─► eval.ts ─► claude -p (Sonnet, the user's Claude Code) ─�
                  │                                                               └─ Jev (real)
                  ├─ final deck: GET /api/decks?id= ─► docFromData()
                  ├─ measure: src/dev/fixture.html lint() at 1920×1080 + PNG
-                 ├─ judge: claude -p (Opus): screenshot + JSON + request + reply + questions
+                 ├─ judge: claude -p (Opus): screenshot + JSON + request + transcript + questions
                  └─ out/<label>/results.json, report.md, gallery.html
 ```
 
@@ -126,14 +126,15 @@ A unit test keeps the cases honest: ids are unique; every fact appears in the re
 
 **Judge:**
 - `F3` ● Each figure on the slide that isn't in the request is either *derived* (a sum, share, difference, or a count or year the request implies) or *invented*. One invented figure fails F3.
-- `J1`–`J10` The J-checks' questions and options, imported from `src/engine/agent/checks.ts` (`judgmentQuestions`) and applied exactly where `judgmentChecks` applies them.
+- `G1` (consulting) The title states a so-what. `G2` The body proves the title. Jev's own J-check verdicts are in the transcript as `check_slide` results, so the judge reads them as evidence instead of asking them again.
 - `Q1…` The case's questions. `must` ones gate the magic rate.
 - `M1` "A first-time user sees this slide. Would they present it unchanged? If not, the one thing they'd fix." Reported, never gated.
+- **What confused the agent:** for every "no", every invented figure and every SmartChart issue left unfixed, the judge finds in the transcript the text that led the agent there. It quotes it exactly, names its source (server instructions, tool description, template card, guide, tool result, or none when the agent simply erred against clear guidance) and proposes the smallest fix. The report groups these by source: the fix list.
 - Every answer carries a `why`, kept for the report.
 
 ## 5. Scores
 
-- **Magic rate (headline):** the share of finished runs where S1–S3, F1–F3, R1, R3, J1, J2, J7 (where asked) and every `must` question pass. A slide the judge hasn't seen is not magic yet.
+- **Magic rate (headline):** the share of finished runs where S1–S3, F1–F3, R1, R3, G1 (consulting), G2 and every `must` question pass. A slide the judge hasn't seen is not magic yet.
 - **Fatal rate:** the share of runs with any ● failure.
 - Per-check pass rates; magic rate by group; for each case, how many of its runs reached magic (a 1/3 case is a prompt or card problem, not luck).
 - With `--against`: each of these numbers beside the baseline's.
@@ -149,7 +150,7 @@ There are no pass bars in v1. The first full run is the baseline, and bars are a
 - `account.ts`: empty, list and read decks through `/api/decks`.
 - `checks.ts`: the code checks (S, F1–F2, R, P).
 - `measure.ts`: the fixture lint and screenshot.
-- `judge.ts`: the judge's prompt and schema.
+- `judge.ts`: the judge's prompt (with the transcript) and schema.
 - `scores.ts`: all checks for a run, magic, summary and comparison.
 - `report.ts`: `report.md` and `gallery.html` as strings.
 - `eval.ts`: the command.
@@ -175,7 +176,7 @@ Unit tests (vitest, `tests/unit/mcp-eval/`):
   - Guard: refuses an API key or an extra MCP server.
 - **`checks.ts`:** S, P and R on small hand-built transcripts and decks.
 - **`scores.ts`:** magic gating (a failed `must` question blocks magic; a non-`must` one doesn't; an unjudged run isn't magic) and comparison deltas.
-- **Judge:** the schema lists exactly the questions `judgmentQuestions` returns for a gallery table.
+- **Judge:** the schema's counts and sources; the prompt carries the transcript, lints and every question.
 
 `measure.ts` gets one Playwright test (`tests/browser/`): a gallery table measures clean, and an overlong title is flagged.
 

@@ -7,6 +7,7 @@
 **Architecture:**
 - `tests/mcp-eval/eval.ts` spawns `claude -p` for each case against `npm run dev`'s real MCP endpoint, using a test account's agent key.
 - It reads the final deck through `/api/decks`, measures it on the existing lint fixture, judges it with a second `claude -p` (Opus), and writes `out/<label>/` (results, summary, report, gallery).
+- The judge also reads the full transcript and, for every mismatch, quotes the SmartChart text that misled the agent, names its source and proposes a fix. The report groups these by source.
 - Pure modules (`claude.ts`, `checks.ts`, `judge.ts`, `scores.ts`, `report.ts`) are unit-tested. `eval.ts` is the only file with side effects at import.
 
 **Tech Stack:** TypeScript (strict), vite-node (runs it, resolves `@/`), vitest, Playwright (`@playwright/test`'s `chromium`), the `claude` CLI 2.1.283+.
@@ -18,7 +19,7 @@
 - No paid Anthropic or OpenAI keys. The agent and the judge run through the `claude` CLI on the subscription, `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK` and `CLAUDE_CODE_USE_VERTEX` are removed from the child environment, and `--bare` is never used.
 - The eval stops unless `system/init` reports `apiKeySource: "none"` and exactly the expected MCP servers (`smartchart` for the agent, none for the judge).
 - Agent flags are exactly: `-p --model <m> --mcp-config <file> --allowedTools mcp__smartchart__* --max-turns 40 --setting-sources local --strict-mcp-config --no-session-persistence --output-format stream-json --verbose`. Never `--tools` for the agent: it keeps Claude Code's full default tool set.
-- Test the existing code, build no copies: the app's own `/mcp/v1` and `/api/decks`, `docFromData()`, `src/dev/fixture.html`'s `window.lint`, `validate()`, and the J-check questions imported from `src/engine/agent/checks.ts`.
+- Test the existing code, build no copies, change no product code: the app's own `/mcp/v1` and `/api/decks`, `docFromData()`, `src/dev/fixture.html`'s `window.lint`, `validate()`. SmartChart's own verdicts (write issues, `check_slide`'s J-checks) reach the judge through the transcript.
 - Code checks only exact, stable facts (S, F1–F2, R, P). Anything that depends on the slide schema's details goes in a case question for the judge.
 - No `any`, and no non-null assertions (`typescript-eslint` strict). Match the surrounding code's style: terse comments, short names.
 - Keys come from `.env` `SMARTCHART_EVAL_KEYS` (comma-separated); one worker per key.
@@ -29,7 +30,7 @@
 
 1. **The dev server isn't running, or the key is wrong.** The agent's `smartchart` server reports `failed` or `needs-auth`. Expected: the eval stops at once with a message naming `npm run dev` and the key, and doesn't score 75 empty runs. Pinned in Task 1 (`guardInit`).
 2. **The `claude` CLI isn't logged in, or exits before the init event.** Expected: the eval stops with "no init event: is claude logged in?", and never records the case as an agent failure. Pinned in Task 1.
-3. **The agent writes two slides, or creates a deck and then only asks a question.** Expected: S2 fails (or S1, with no slide), facts and the judge use the first slide, and an unjudged run is never counted as magic. Pinned in Tasks 2 and 5.
+3. **The agent writes two slides (a cover and the content), or creates a deck and then only asks a question.** Expected: S2 fails (or S1, with no slide), facts and the judge use the content slide, not the cover, and an unjudged run is never counted as magic. Pinned in Tasks 2 and 5.
 4. **A case is removed from or renamed in `cases.json` after runs exist under a label.** Expected: its old runs are ignored by the summary and the report, not crashed on. Pinned in Task 5.
 5. **A chart near-miss whose values are written through a `format` (`£{v}m`).** Expected: the request's bare figures (`18`) still match. Pinned in Task 2.
 
@@ -823,151 +824,155 @@ git commit -m "MCP eval: 25 cases (tables, stress, near-misses, ask) with an hon
 
 ---
 
-### Task 4: The judge, on the J-checks' own questions
+### Task 4: The judge: expectations, and what confused the agent
 
 **Files:**
-- Modify: `src/engine/agent/checks.ts` (export `Judgment` and a new `judgmentQuestions`; `judgmentChecks` uses it)
 - Create: `tests/mcp-eval/judge.ts`
 - Test: `tests/unit/mcp-eval/judge.test.ts`
 
-**Interfaces:**
-- Produces:
-  - `checks.ts`:
-    - `export interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }`
-    - `export function judgmentQuestions(s: Slide, style: Style): Record<string, Judgment>`
-  - `judge.ts`:
-    - `export interface Schema { type: string; additionalProperties?: boolean; required?: string[]; properties?: Record<string, Schema>; items?: Schema; enum?: string[]; minItems?: number; maxItems?: number }`
-    - `judgeSchema(qs: Record<string, Judgment>, questions: number): Schema`
-    - `judgePrompt(input: JudgeInput, qs: Record<string, Judgment>): string`, with `interface JudgeInput { c: Case; request: string; reply: string; slide: Slide; style: Style; unknown: string[] }`
+No engine change. Jev's J-check verdicts are in the transcript (the `check_slide` results), and the judge reads them there with every other tool result.
 
-- [ ] **Step 1: Write the failing test**
+**Interfaces:**
+- Consumes: `Case`, `Transcript`, `Verdict`, `SOURCES` (types).
+- Produces:
+  - `interface Schema { type: string; additionalProperties?: boolean; required?: string[]; properties?: Record<string, Schema>; items?: Schema; enum?: string[]; minItems?: number; maxItems?: number }`
+  - `genericQuestions(style: Style): { id: string; q: string }[]`
+  - `judgeSchema(generic: number, questions: number): Schema`
+  - `transcriptText(t: Transcript): string`
+  - `judgePrompt(input: JudgeInput): string`, with `interface JudgeInput { c: Case; request: string; t: Transcript; slide: Slide; style: Style; lints: string[]; unknown: string[] }`
+
+- [ ] **Step 1: Add the verdict's diagnosis to the shapes**
+
+In `tests/mcp-eval/types.ts`, replace the `Verdict` interface with:
+
+```ts
+/** Where the text that misled the agent lives, so the report says what to fix. */
+export const SOURCES = ['server instructions', 'tool description', 'template card', 'guide', 'tool result', 'none'] as const
+export interface Verdict {
+  generic: { id: string; yes: boolean; why: string }[]
+  case: { q: string; yes: boolean; why: string }[]
+  numbers: { value: string; kind: 'derived' | 'invented'; why: string }[]
+  magic: { presentAsIs: boolean; fix: string }
+  confusedBy: { mismatch: string; quote: string; source: (typeof SOURCES)[number]; why: string; fix: string }[]
+}
+```
+
+- [ ] **Step 2: Write the failing test**
 
 `tests/unit/mcp-eval/judge.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { judgmentQuestions } from '@/engine/agent/checks'
 import starters from '@/engine/starters/starters.json'
 import type { Slide } from '@/engine/types'
-import { judgePrompt, judgeSchema } from '../../mcp-eval/judge'
-import type { Case } from '../../mcp-eval/types'
+import { genericQuestions, judgePrompt, judgeSchema, transcriptText } from '../../mcp-eval/judge'
+import type { Case, Transcript } from '../../mcp-eval/types'
 
 const scoring = starters.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
 const c: Case = { id: 't', group: 'criteria', style: 'consulting', prompt: 'p', gold: 'table', acceptable: [], ask: false, files: [], facts: { numbers: [], names: [] },
   questions: [{ q: 'Is Acme highlighted?', must: true }, { q: 'Are marks used?', must: false }] }
+const t: Transcript = { init: null, finalText: 'REPLY', outcome: null, calls: [
+  { name: 'mcp__smartchart__create_slide', input: { slide: { title: 'x' } }, result: '{"issues":["title: too long"]}', isError: false },
+  { name: 'mcp__smartchart__check_slide', input: {}, result: '{"checks":[{"id":"J9","ok":false,"msg":"Judgements in words may read faster as marks"}]}', isError: false },
+] }
 
 describe('judge', () => {
-  it('asks exactly the J-checks judgmentChecks would ask of this slide', () => {
-    const qs = judgmentQuestions(scoring, 'consulting')
-    expect(Object.keys(qs)).toEqual(expect.arrayContaining(['J1', 'J2', 'J7', 'J9', 'J10']))
-    const s = judgeSchema(qs, 2)
-    expect(s.properties?.generic.required).toEqual(Object.keys(qs))
-    expect(s.properties?.generic.properties?.J1.properties?.answer.enum).toEqual(Object.keys(qs.J1.options))
-    expect([s.properties?.case.minItems, s.properties?.case.maxItems]).toEqual([2, 2])
+  it('generic questions: the so-what title in consulting only, the body proving it in both', () => {
+    expect(genericQuestions('consulting').map((g) => g.id)).toEqual(['G1', 'G2'])
+    expect(genericQuestions('pitch').map((g) => g.id)).toEqual(['G2'])
   })
-  it('the prompt carries the screenshot instruction, request, reply, every question and the figures to classify', () => {
-    const qs = judgmentQuestions(scoring, 'consulting')
-    const p = judgePrompt({ c, request: 'REQ', reply: 'REPLY', slide: scoring, style: 'consulting', unknown: ['£3,000'] }, qs)
-    for (const s of ['slide.png', 'REQ', 'REPLY', qs.J1.instructions, '1. Is Acme highlighted?', '2. Are marks used?', '£3,000', 'present']) expect(p).toContain(s)
+  it('schema: exact counts, the sources enum for what confused the agent', () => {
+    const s = judgeSchema(2, 3)
+    expect([s.properties?.generic.minItems, s.properties?.case.maxItems]).toEqual([2, 3])
+    expect(s.properties?.confusedBy.items?.properties?.source.enum).toContain('template card')
   })
-  it('a pitch slide gets no consulting-only J1', () => {
-    expect(judgmentQuestions(scoring, 'pitch').J1).toBeUndefined()
+  it('the transcript shows every call with SmartChart’s issues and Jev’s verdicts, then the reply', () => {
+    const x = transcriptText(t)
+    for (const s of ['1. create_slide', 'title: too long', '2. check_slide', 'J9', 'REPLY']) expect(x).toContain(s)
+  })
+  it('the prompt carries the screenshot, request, transcript, lints, every question and the figures to classify', () => {
+    const p = judgePrompt({ c, request: 'REQ', t, slide: scoring, style: 'consulting', lints: ['table: L1'], unknown: ['£3,000'] })
+    for (const s of ['slide.png', 'REQ', 'title: too long', 'table: L1', 'G1.', '1. Is Acme highlighted?', '2. Are marks used?', '£3,000', 'confusedBy']) expect(p).toContain(s)
   })
 })
 ```
 
-- [ ] **Step 2: Run it to make sure it fails**
+- [ ] **Step 3: Run it to make sure it fails**
 
 Run: `npx vitest run tests/unit/mcp-eval/judge.test.ts`
-Expected: FAIL, `judgmentQuestions` is not exported.
-
-- [ ] **Step 3: Extract `judgmentQuestions` in the engine (no behaviour change)**
-
-In `src/engine/agent/checks.ts`:
-
-1. Export the `Judgment` interface: change `interface Judgment {` to `export interface Judgment {`.
-2. Add this function directly above `judgmentChecks`, and move into it every line from the current `const qs: Record<string, Judgment> = {}, add = …` declaration through the J10 `add(…)` call, unchanged:
-
-```ts
-/** The judgment questions J1–J10 for one slide: asked of Jev here, and of any other judge (the MCP eval) word for word. */
-export function judgmentQuestions(s: Slide, style: Style): Record<string, Judgment> {
-  const qs: Record<string, Judgment> = {}, add = (id: string, styles: Style[], instructions: string, options: Record<string, string>, pass: string, label: Record<string, string>) => { if (styles.includes(style)) qs[id] = { instructions, options, pass, label }; };
-  if (MENU[s.template].frame === false) return qs;
-  // …the existing add("J1", …) through add("J10", …) lines, moved here unchanged…
-  return qs;
-}
-```
-
-3. `judgmentChecks` starts:
-
-```ts
-export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall): Promise<{ checks: Check[]; ms: number }> {
-  const qs = judgmentQuestions(s, style);
-  if (!Object.keys(qs).length) return { checks: [], ms: 0 };
-  const r = await jev(`Deck style: ${style}.\nSlide JSON: ${slideText(s)}`, …
-```
-
-with the rest of the function unchanged. (A framed slide always has J2, so an empty `qs` happens exactly when `frame === false`, as before.)
-
-Run: `npx vitest run tests/unit` (all existing judgment-check tests)
-Expected: PASS, same count as before the change.
+Expected: FAIL, cannot resolve `../../mcp-eval/judge`.
 
 - [ ] **Step 4: Implement `judge.ts`**
 
 `tests/mcp-eval/judge.ts`:
 
 ```ts
-// The judge (spec §4): its prompt and the schema of its answer. The generic questions are the J-checks' own,
-// imported from the engine, never retyped.
-import type { Judgment } from '@/engine/agent/checks'
+// The judge (spec §4): did the slide meet the case's expectations, and when not, what in SmartChart's text confused the
+// agent. It reads the whole transcript, so SmartChart's own feedback (write issues, check_slide's verdicts) is evidence.
 import type { Slide, Style } from '@/engine/types'
-import type { Case } from './types'
+import { SOURCES, type Case, type Transcript } from './types'
 
 export interface Schema { type: string; additionalProperties?: boolean; required?: string[]; properties?: Record<string, Schema>; items?: Schema; enum?: string[]; minItems?: number; maxItems?: number }
-const str: Schema = { type: 'string' }
+const str: Schema = { type: 'string' }, yes: Schema = { type: 'boolean' }
 const obj = (properties: Record<string, Schema>): Schema => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties })
+const list = (items: Schema, n?: number): Schema => ({ type: 'array', items, ...(n === undefined ? {} : { minItems: n, maxItems: n }) })
 
-export function judgeSchema(qs: Record<string, Judgment>, questions: number): Schema {
-  return obj({
-    generic: obj(Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, obj({ answer: { type: 'string', enum: Object.keys(q.options) }, why: str })]))),
-    case: { type: 'array', minItems: questions, maxItems: questions, items: obj({ q: str, yes: { type: 'boolean' }, why: str }) },
-    numbers: { type: 'array', items: obj({ value: str, kind: { type: 'string', enum: ['derived', 'invented'] }, why: str }) },
-    magic: obj({ presentAsIs: { type: 'boolean' }, fix: str }),
-  })
-}
+/** Asked of every slide: a consulting title states the so-what; the body proves the title. */
+export const genericQuestions = (style: Style): { id: string; q: string }[] => [
+  ...(style === 'consulting' ? [{ id: 'G1', q: 'Does the title state a so-what (a conclusion the reader should take away), not a topic label?' }] : []),
+  { id: 'G2', q: 'Does the body (the table, chart, cards or steps, and any notes) prove what the title and subtitle claim?' },
+]
 
-export interface JudgeInput { c: Case; request: string; reply: string; slide: Slide; style: Style; unknown: string[] }
-export function judgePrompt({ c, request, reply, slide, style, unknown }: JudgeInput, qs: Record<string, Judgment>): string {
+export const judgeSchema = (generic: number, questions: number): Schema => obj({
+  generic: list(obj({ id: str, yes, why: str }), generic),
+  case: list(obj({ q: str, yes, why: str }), questions),
+  numbers: list(obj({ value: str, kind: { type: 'string', enum: ['derived', 'invented'] }, why: str })),
+  magic: obj({ presentAsIs: yes, fix: str }),
+  confusedBy: list(obj({ mismatch: str, quote: str, source: { type: 'string', enum: [...SOURCES] }, why: str, fix: str })),
+})
+
+const tool = (name: string) => name.replace(/^mcp__smartchart__/, '')
+/** Every call in order, with what SmartChart answered (long results trimmed), then the reply to the user. */
+export const transcriptText = (t: Transcript): string => [
+  ...t.calls.map((x, i) => `${i + 1}. ${tool(x.name)} ${JSON.stringify(x.input).slice(0, 1500)}\n   → ${x.isError ? 'ERROR ' : ''}${x.result.slice(0, 3000)}`),
+  `Reply to the user:\n${t.finalText}`,
+].join('\n')
+
+export interface JudgeInput { c: Case; request: string; t: Transcript; slide: Slide; style: Style; lints: string[]; unknown: string[] }
+export function judgePrompt({ c, request, t, slide, style, lints, unknown }: JudgeInput): string {
+  const generic = genericQuestions(style)
   return [
-    'You are judging one slide an AI agent made in SmartChart for a first-time user. Be strict and concrete: the user will present it to a board or to investors without checking it closely.',
+    'You are judging one slide an AI agent made in SmartChart for a first-time user, and diagnosing what in SmartChart led the agent wrong. Be strict and concrete: the user will present the slide to a board or to investors without checking it closely.',
     'First Read slide.png in this folder: the slide as rendered at 1920×1080. Judge what the reader sees; use the JSON only to read values exactly.',
     `Deck style: ${style}.`,
     `The user's request:\n<<<\n${request}\n>>>`,
-    `The agent's reply to the user:\n<<<\n${reply}\n>>>`,
-    `Slide JSON:\n${JSON.stringify(slide)}`,
-    `Answer "generic" with one option key per question:\n${Object.entries(qs).map(([id, q]) => `${id}: ${q.instructions} Options: ${Object.entries(q.options).map(([k, v]) => `${k} = ${v}`).join(' | ')}`).join('\n')}`,
+    `What the agent did (SmartChart tool calls and answers, including its issues, warnings and check_slide verdicts), then its reply:\n<<<\n${transcriptText(t)}\n>>>`,
+    `Final slide JSON:\n${JSON.stringify(slide)}`,
+    `Measured on the rendered slide: ${lints.length ? lints.join('; ') : 'no fit issues or layout lints'}.`,
+    `Answer "generic" in this order, copying each id:\n${generic.map((g) => `${g.id}. ${g.q}`).join('\n')}`,
     c.questions.length ? `Answer "case" in this order, copying each question into q:\n${c.questions.map((q, i) => `${i + 1}. ${q.q}`).join('\n')}` : 'Answer "case" with an empty list.',
     unknown.length
       ? `Answer "numbers" for each of these figures on the slide that the request does not state, in this order: ${unknown.join(', ')}. "derived" if it follows from the request (a sum, share or difference of its figures, or a count or year it implies); "invented" if not.`
       : 'Answer "numbers" with an empty list.',
     'Answer "magic": would a first-time user present this slide unchanged? If not, the one thing they would fix first.',
+    'Answer "confusedBy": for every "no" above, every invented figure and every SmartChart issue the agent left unfixed, find in the transcript the text that led the agent there: a server instruction, a tool description, a template card or the guide (from get_guide or get_template results), or a tool result it misread or ignored. Quote it exactly, name its source, say why it misled, and propose the smallest fix to that text. Use source "none" when the agent simply erred against clear guidance, and say which guidance. An empty list when nothing went wrong.',
   ].join('\n\n')
 }
 ```
 
 - [ ] **Step 5: Run the tests and make sure they pass**
 
-Run: `npx vitest run tests/unit/mcp-eval/judge.test.ts tests/unit`
-Expected: PASS.
+Run: `npx vitest run tests/unit/mcp-eval/judge.test.ts`
+Expected: PASS (4 tests).
 
-Run: `npx tsc -b && npx eslint src/engine/agent/checks.ts tests/mcp-eval tests/unit/mcp-eval`
+Run: `npx tsc -b && npx eslint tests/mcp-eval tests/unit/mcp-eval`
 Expected: no errors.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/engine/agent/checks.ts tests/mcp-eval/judge.ts tests/unit/mcp-eval/judge.test.ts
-git commit -m "MCP eval: judge prompt and schema on the J-checks' own questions (judgmentQuestions extracted)"
+git add tests/mcp-eval/types.ts tests/mcp-eval/judge.ts tests/unit/mcp-eval/judge.test.ts
+git commit -m "MCP eval: judge reads the transcript and names what confused the agent"
 ```
 
 ---
@@ -980,7 +985,7 @@ git commit -m "MCP eval: judge prompt and schema on the J-checks' own questions 
 - Test: `tests/unit/mcp-eval/scores.test.ts`
 
 **Interfaces:**
-- Consumes: `judgmentQuestions` (engine); `Case`, `Check`, `Run` (types).
+- Consumes: `Case`, `Check`, `Run` (types); `genericQuestions` (judge).
 - Produces:
   - `scores.ts`:
     - `allChecks(r: Run, c: Case): Check[]`
@@ -1012,9 +1017,10 @@ const c: Case = { id: 't01', group: 'criteria', style: 'consulting', prompt: 'p'
 const ask: Case = { ...c, id: 'q01', group: 'ask', gold: null, ask: true, questions: [] }
 const passing = ['S1', 'S2', 'S3', 'S4', 'F1', 'F2', 'R1', 'R2', 'R3', 'P1'].map((id) => ({ id, ok: true, msg: '' }))
 const verdict = (over: Partial<Verdict> = {}): Verdict => ({
-  generic: { J1: { answer: 'action', why: '' }, J2: { answer: 'supported', why: '' }, J7: { answer: 'right', why: '' } },
+  generic: [{ id: 'G1', yes: true, why: '' }, { id: 'G2', yes: true, why: '' }],
   case: [{ q: 'Is Acme highlighted?', yes: true, why: '' }, { q: 'Nice icons?', yes: false, why: 'decorative' }],
-  numbers: [], magic: { presentAsIs: false, fix: 'shorter title' }, ...over })
+  numbers: [], magic: { presentAsIs: false, fix: 'shorter title' },
+  confusedBy: [{ mismatch: 'Nice icons? no', quote: 'Header icons: columns that are categories', source: 'template card', why: 'read as decoration', fix: 'say: not over entities' }], ...over })
 const run = (over: Partial<Run> = {}): Run => ({ id: 't01#1', caseId: 't01', n: 1, status: 'done', transcript: null,
   deck: { id: 'd', style: 'consulting', edit: 'e', slides: [{ id: 's1', slide: scoring }] }, measured: [], checks: passing, unknownFigures: [], verdict: verdict(), judgeModel: 'opus', ...over })
 
@@ -1041,11 +1047,16 @@ describe('scores', () => {
     expect(s.cases.t01).toEqual({ n: 1, of: 2 })
     expect(s.checks.Q1).toEqual({ n: 1, of: 1 })
   })
-  it('report: headline, deltas against a baseline, failures listed; gallery escapes text', () => {
+  it('a failed generic question blocks magic', () => {
+    expect(isMagic(run({ verdict: verdict({ generic: [{ id: 'G1', yes: false, why: 'topic label' }, { id: 'G2', yes: true, why: '' }] }) }), c)).toBe(false)
+  })
+  it('report: headline, deltas against a baseline, failures listed, confusions grouped by source; gallery escapes text', () => {
     const runs = [run()], s = summarize(runs, [c]), base = { ...s, magic: { n: 0, of: 2 } }
     const md = reportMd('abc-2026-10-03', s, runs, [c], { label: 'old', s: base })
     expect(md).toContain('| Magic rate | 100% (1/1) | +100 |')
     expect(md).toContain('Q2')
+    expect(md).toContain('### template card')
+    expect(md).toContain('Header icons: columns that are categories')
     expect(galleryHtml('x', [run({ transcript: { init: null, calls: [], finalText: '<b>', outcome: null } })], [c], (p) => p)).toContain('&lt;b&gt;')
   })
 })
@@ -1062,17 +1073,19 @@ Expected: FAIL, cannot resolve `../../mcp-eval/report`.
 
 ```ts
 // Scores (spec §5): a run's checks with the judge's verdict folded in, the magic bar, and the summary a report compares.
-import { judgmentQuestions } from '@/engine/agent/checks'
 import type { Case, Check, Run } from './types'
 
 const FATAL = new Set(['F1', 'F2', 'F3', 'R1'])
-const GATES = new Set(['S1', 'S2', 'S3', 'F1', 'F2', 'F3', 'R1', 'R3', 'J1', 'J2', 'J7'])
+const GATES = new Set(['S1', 'S2', 'S3', 'F1', 'F2', 'F3', 'R1', 'R3', 'G1', 'G2'])
 export const gates = (k: Check): boolean => GATES.has(k.id) || !!k.must
 export const isFatal = (k: Check): boolean => FATAL.has(k.id) && !k.ok
 
-/** The code checks, then what the judge decided: F3, the J-checks, the case questions (Q1…) and M1. */
+/** The slide the case is about: the first that is not a cover or a section divider. */
+export const contentSlide = (r: Run) => r.deck?.slides.find((s) => s.slide.template !== 'cover' && s.slide.template !== 'section') ?? r.deck?.slides[0]
+
+/** The code checks, then what the judge decided: F3, the generic questions (G1, G2), the case questions (Q1…) and M1. */
 export function allChecks(r: Run, c: Case): Check[] {
-  const out = [...r.checks], v = r.verdict, slide = r.deck?.slides[0]?.slide
+  const out = [...r.checks], v = r.verdict, slide = contentSlide(r)?.slide
   if (!slide || !r.deck) return out
   if (!r.unknownFigures.length) out.push({ id: 'F3', ok: true, msg: 'No figures beyond the request' })
   if (!v) return out
@@ -1080,10 +1093,7 @@ export function allChecks(r: Run, c: Case): Check[] {
     const made = v.numbers.filter((x) => x.kind === 'invented')
     out.push({ id: 'F3', ok: !made.length, msg: made.length ? `Invented: ${made.map((x) => `${x.value} (${x.why})`).join('; ')}` : `Derived: ${r.unknownFigures.join(', ')}` })
   }
-  for (const [id, q] of Object.entries(judgmentQuestions(slide, r.deck.style))) {
-    const a = v.generic[id]
-    if (a) out.push({ id, ok: a.answer === q.pass, msg: `${q.label[a.answer] ?? a.answer}: ${a.why}` })
-  }
+  for (const g of v.generic) out.push({ id: g.id, ok: g.yes, msg: g.why })
   v.case.forEach((a, i) => out.push({ id: `Q${i + 1}`, ok: a.yes, msg: `${c.questions[i]?.q ?? a.q} ${a.why}`, must: c.questions[i]?.must ?? false }))
   out.push({ id: 'M1', ok: v.magic.presentAsIs, msg: v.magic.presentAsIs ? 'Would present it as is' : v.magic.fix })
   return out
@@ -1157,8 +1167,17 @@ export function reportMd(label: string, s: Summary, runs: Run[], cases: Case[], 
     '', '## By group', '', `| Group | Magic${vs} |`, sep, ...Object.keys(s.groups).map((g) => row(g, s.groups[g], base?.s.groups[g])),
     '', '## Per check', '', `| Check | Pass${vs} |`, sep, ...Object.keys(s.checks).sort(byCheck).map((k) => row(k, s.checks[k], base?.s.checks[k])),
     '', '## Runs at magic, per case', '', Object.entries(s.cases).map(([id, r]) => `${id} ${r.n}/${r.of}`).join(' · '),
+    '', '## What confused the agent, by where to fix it', '', ...confusions(runs),
     '', '## For review', '', ...review,
   ].join('\n')
+}
+
+/** The judge's diagnoses grouped by source: the fix list. */
+function confusions(runs: Run[]): string[] {
+  const by = new Map<string, string[]>()
+  for (const r of runs) for (const x of r.verdict?.confusedBy ?? [])
+    by.set(x.source, [...(by.get(x.source) ?? []), `- **${r.id}** ${x.mismatch}. “${x.quote}”: ${x.why} Fix: ${x.fix}`])
+  return by.size ? [...by].flatMap(([source, items]) => [`### ${source}`, '', ...items, '']) : ['Nothing.']
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch] ?? ch)
@@ -1182,7 +1201,7 @@ ${items.join('\n')}</body></html>`
 - [ ] **Step 5: Run the tests and make sure they pass**
 
 Run: `npx vitest run tests/unit/mcp-eval/scores.test.ts`
-Expected: PASS (6 tests).
+Expected: PASS (7 tests).
 
 Run: `npx tsc -b && npx eslint tests/mcp-eval tests/unit/mcp-eval`
 Expected: no errors.
@@ -1335,7 +1354,7 @@ git commit -m "MCP eval: measure on the lint fixture, test account through /api/
 
 **Prerequisite (the user does this; the agent never makes accounts or handles keys):**
 1. With `npm run dev` running against the database the user chose, the user signs up one or two test accounts used only for the eval. Under Agent keys, they make a key for each.
-2. They add `SMARTCHART_EVAL_KEYS=<key1>,<key2>` to `.env` in the checkout the eval runs from. A worktree has no `.env` of its own, so copy it or run from the main checkout.
+2. They add `SMARTCHART_EVAL_KEYS=<key1>,<key2>` to `.env` in the checkout the eval runs from. A worktree has no `.env` of its own, so copy it or run from the main checkout. `npm run dev` must also run from a folder with `.env`: without `DATABASE_URL` it answers 503 on `/mcp/v1` and `/api/decks`.
 3. `claude` is logged in with the subscription (`claude` → `/login`).
 
 - [ ] **Step 1: Implement `eval.ts`**
@@ -1351,14 +1370,13 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
-import { judgmentQuestions } from '@/engine/agent/checks'
 import { emptyAccount, readOnlyDeck, type Account } from './account'
 import { choiceChecks, factChecks, renderChecks, requestText, wiringChecks } from './checks'
 import { agentArgs, guardInit, isLimited, judgeArgs, parseStream, runClaude } from './claude'
-import { judgePrompt, judgeSchema } from './judge'
+import { genericQuestions, judgePrompt, judgeSchema } from './judge'
 import { openMeasurer, type Measurer } from './measure'
 import { galleryHtml, reportMd } from './report'
-import { summarize, type Summary } from './scores'
+import { contentSlide, summarize, type Summary } from './scores'
 import type { Case, Measured, Results, Run, Verdict } from './types'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), FILES = path.join(HERE, 'files'), BASELINES = path.join(HERE, 'baselines')
@@ -1390,7 +1408,7 @@ async function runCase(c: Case, i: number, account: Account, measurer: Measurer)
     if (!t.outcome) return { ...run, transcript: t, error: `Claude Code exited ${out.code}: ${out.stderr.slice(-300)}` }
     const deck = await readOnlyDeck(account), measured: Measured[] = []
     if (deck) for (const s of deck.slides) measured.push(await measurer.measure(s.id, s.slide, deck.style, path.join(OUT, 'shots', `${c.id}-${i}-${s.id}.png`)))
-    const slide = deck?.slides[0]?.slide, facts = slide ? factChecks(c, slide, requestText(c, FILES)) : { checks: [], unknown: [] }
+    const slide = contentSlide({ ...run, deck })?.slide, facts = slide ? factChecks(c, slide, requestText(c, FILES)) : { checks: [], unknown: [] }
     return { ...run, status: 'done', transcript: t, deck, measured, unknownFigures: facts.unknown,
       checks: [...choiceChecks(c, t, deck), ...facts.checks, ...renderChecks(deck, measured), ...wiringChecks(c, t, deck)] }
   } catch (e) {
@@ -1404,12 +1422,12 @@ async function judgeAll(model: string, workers: number): Promise<void> {
   const todo = Object.values(results).filter((r) => r.status === 'done' && !r.verdict && r.measured.length && byId.has(r.caseId))
   await Promise.all(Array.from({ length: workers }, async () => {
     for (let r = todo.shift(); r; r = todo.shift()) {
-      const c = byId.get(r.caseId), deck = r.deck, png = r.measured[0]?.png, slide = deck?.slides[0]?.slide
-      if (!c || !deck || !png || !slide) continue
-      const qs = judgmentQuestions(slide, deck.style), dir = mkdtempSync(path.join(tmpdir(), 'mcp-judge-'))
-      copyFileSync(png, path.join(dir, 'slide.png'))
-      const prompt = judgePrompt({ c, request: requestText(c, FILES), reply: r.transcript?.finalText ?? '', slide, style: deck.style, unknown: r.unknownFigures }, qs)
-      const out = await runClaude(judgeArgs(model, judgeSchema(qs, c.questions.length)), prompt, dir, 300_000)
+      const c = byId.get(r.caseId), deck = r.deck, target = contentSlide(r), m = r.measured.find((x) => x.slideId === target?.id)
+      if (!c || !deck || !target || !m || !r.transcript) continue
+      const dir = mkdtempSync(path.join(tmpdir(), 'mcp-judge-'))
+      copyFileSync(m.png, path.join(dir, 'slide.png'))
+      const prompt = judgePrompt({ c, request: requestText(c, FILES), t: r.transcript, slide: target.slide, style: deck.style, lints: [...m.fit, ...m.issues], unknown: r.unknownFigures })
+      const out = await runClaude(judgeArgs(model, judgeSchema(genericQuestions(deck.style).length, c.questions.length)), prompt, dir, 300_000)
       const t = parseStream(out.lines), bad = guardInit(t.init, [])
       if (bad) throw new Stop(bad)
       const v = t.outcome?.structured
@@ -1507,7 +1525,8 @@ Output, in `out/<label>/`: `report.md` (headline, by group, per check, for revie
 
 ## Reading it
 
-- **Magic rate:** every gating check passed (right template, one slide, facts kept, nothing invented, fits, validates, J1/J2/J7, the case's `must` questions).
+- **Magic rate:** every gating check passed (right template, one slide, facts kept, nothing invented, fits, validates, a so-what title that the body proves, the case's `must` questions).
+- **What confused the agent:** the judge's diagnoses grouped by where to fix them (server instructions, tool descriptions, template cards, the guide), each with the exact text quoted. This is the fix list.
 - **Fatal rate:** a figure dropped or invented, or the slide overflows.
 - **`P` checks** show whether the server's instructions landed (guide and card read first, issues fixed, `check_slide` run, request passed, look left alone, short reply with the link).
 - **Compare like with like:** the same cases and `--n`, and the same Claude Code version (the report flags a version change).
@@ -1516,7 +1535,7 @@ Output, in `out/<label>/`: `report.md` (headline, by group, per check, for revie
 
 Add it to `cases.json`. `facts` lists only figures and names the request states exactly. Anything about the slide's details (what is highlighted, which marks, a total row) is a yes/no question for the judge, with `must: true` when the slide fails the user without it. `npx vitest run tests/unit/mcp-eval` checks that the case is honest.
 
-Never copy engine text into the eval. The judge's generic questions come from `judgmentQuestions` in `src/engine/agent/checks.ts`.
+The eval changes no product code. SmartChart's own verdicts (write issues, `check_slide`'s J-checks) reach the judge through the transcript.
 ````
 
 - [ ] **Step 3: First end-to-end run, one case**
@@ -1531,6 +1550,7 @@ Expected:
 Check, and fix what's wrong before going on:
 - Open `gallery.html`. The slide renders at full size, and the failed checks read sensibly.
 - In `results.json`: `transcript.init.apiKeySource` is `"none"`, and the calls include `mcp__smartchart__create_slide`.
+- `transcript.outcome.denials` holds no `mcp__smartchart__*` tool. If it does, the wildcard in `--allowedTools` isn't honoured: use `mcp__smartchart` (the whole server) in `agentArgs` and its test.
 - The test account in the app shows the deck. The next run deletes it.
 
 If the guard stops the run, the message names the cause (dev server, key, login). Fix that, not the guard.
