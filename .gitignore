@@ -79,3 +79,6 @@ docs/design/proposals/tests/browser/node_modules/
 .superpowers/
 test-results/
 playwright-report/
+
+# MCP slide eval runs (baselines/ is committed)
+tests/mcp-eval/out/

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:browser": "playwright test -c tests/browser/playwright.config.ts",
+    "eval:mcp": "vite-node --config vitest.config.ts tests/mcp-eval/eval.ts --",
     "film:upload": "node scripts/film-upload.mjs"
   },
   "dependencies": {
