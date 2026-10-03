@@ -41,8 +41,8 @@ Comments are input written by people, so agents treat them as requests to weigh,
 ## 5. Mixed halves in the pair (built, switched off)
 A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.
 
-## 6. Fix what the MCP eval found (2026-10-04)
-The first MCP eval run (Claude Code with Sonnet 5 making slides through `/mcp/v1`; `tests/mcp-eval/`) traced each miss to the SmartChart text or code that caused it. The list, with quotes and a proposed fix for each, is the "What confused the agent" section of `tests/mcp-eval/baselines/2026-10-04-pass1.md`. In short:
+## 11. Fix what the MCP eval found (2026-10-04)
+A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonnet 5 making slides through `/mcp/v1`; `tests/mcp-eval/`) traced each miss to the SmartChart text or code that caused it. The list, with quotes and a proposed fix for each, is the "What confused the agent" section of `tests/mcp-eval/baselines/2026-10-04-pass1.md`. In short:
 - **Checks that push agents into wrong edits:** R11 ignores a figure written with its unit in the subtitle ("18 months"); R4 forces the highlight into a pitch topic title; R13 flags comparison tables whose rows differ in unit by nature; R8's wording invites invented sources (the guide forbids them).
 - **Checks that pass what they shouldn't:** J2 approves a causal title the data doesn't carry, and a "most efficient" focus row that loses in other columns; R4/J4 approve a highlight on a row when the title names a column.
 - **Code overriding the agent silently:** an explicit `stacking: "stacked"` came back side by side with no warning (against "checks warn, never silently rewrite"); `auto` focus picks a row when the title highlights a column.
