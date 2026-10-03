@@ -42,8 +42,9 @@ describe('slide tools', () => {
     await expect(t('update_slide').run(ctxFor({ deck: withSlides() }), { deckId: 'd_1', slideId: 's_b', set: { 'cardz[0].title': 'x' } })).rejects.toMatchObject({ code: 'bad_input' })
   })
   it('read_slide returns content and what lists can grow or shrink', async () => {
-    const r = (await t('read_slide').run(ctxFor({ deck: withSlides() }), { deckId: 'd_1', slideId: 's_b' })).result as { lists: { path: string }[] }
+    const r = (await t('read_slide').run(ctxFor({ deck: withSlides() }), { deckId: 'd_1', slideId: 's_b' })).result as { lists: { path: string }[]; capabilities?: string[] }
     expect(r.lists.some((l) => l.path === 'cards')).toBe(true)
+    expect(r.capabilities).toEqual(expect.arrayContaining(['Icon cards', 'Framed contrast']))
     const v = (await t('read_slide').run(ctxFor({ deck: withSlides() }), { deckId: 'd_1', slideId: 's_b', path: 'cards[0].title' })).result
     expect(v).toMatchObject({ path: 'cards[0].title', value: cardSlide.cards?.[0].title })
   })

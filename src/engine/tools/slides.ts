@@ -1,5 +1,6 @@
 import { applyPatch } from "../agent/patch.js";
 import { NAMED_MARK, matchNewSeries, prefixed, touches } from "../agent/agent.js";
+import { CAPABILITIES } from "../slides/capabilities.js";
 import { getAt, listOps } from "../slides/edit.js";
 import type { Slide } from "../types.js";
 import { insertIndex, newSlideId, slideAt, storylineRows } from "./doc.js";
@@ -37,12 +38,13 @@ export const slideTools = [
     } }),
 
   tool<{ deckId: string; slideId: string; path?: string }>({ name: "read_slide", title: "Read a slide", group: "slides", scope: "deck", annotations: READ,
-    description: "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template and which lists can grow or shrink (min, max, length). Content only; checks come back with writes and check_slide.",
+    description: "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template, which lists can grow or shrink (min, max, length) and the template's capabilities by name (get_template says when to use each). Content only; checks come back with writes and check_slide.",
     input: { type: "object", additionalProperties: false, required: ["deckId", "slideId"], properties: { deckId: DECK, slideId: SLIDE_ID, path: { type: "string" } } },
     run: async (ctx, { slideId, path }) => {
       const doc = ctx.deck as DeckDoc, { item } = slideAt(doc, slideId);
       const lists = listOps(item.slide, doc.style).map((o) => ({ path: o.path, min: o.min, max: o.max, length: o.length }));
-      if (!path) return { result: { slideId, template: item.slide.template, slide: item.slide, lists } };
+      const capabilities = (CAPABILITIES[item.slide.template] ?? []).filter((c) => !c.styles || c.styles.includes(doc.style)).map((c) => c.name);
+      if (!path) return { result: { slideId, template: item.slide.template, slide: item.slide, lists, ...(capabilities.length ? { capabilities } : {}) } };
       const value = getAt(item.slide, path);
       if (value === undefined) throw new ToolError("bad_input", `path: nothing at ${path}.`, `Top-level fields: ${Object.keys(item.slide).join(", ")}.`);
       return { result: { slideId, template: item.slide.template, path, value, lists: lists.filter((l) => l.path.startsWith(path.split("[")[0])) } };

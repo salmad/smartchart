@@ -159,7 +159,7 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
 
 const slideText = (s: Slide) => JSON.stringify(s, (_k, v) => (typeof v === "string" ? plain(v) : v));
 
-/** Judgment checks J1–J8: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
+/** Judgment checks J1–J9: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }
 
 export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall): Promise<{ checks: Check[]; ms: number }> {
@@ -174,6 +174,11 @@ export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCal
   add("J6", ["pitch"], "Does the slide carry one idea, or several?", { one: "One idea.", several: "Several ideas competing." }, "one", { one: "One idea per slide", several: "Several ideas on one slide" });
   add("J7", ["consulting", "pitch"], `The slide uses the "${s.template}" template. Is that the right kind of slide for this content?`, { right: "The template suits the content.", ...Object.fromEntries(Object.keys(MENU).filter((k) => k !== s.template && !["cover", "section"].includes(k)).map((k) => [`better_${k}`, `A ${k} slide would show this better.`])) }, "right", {});
   if (parallel) add("J8", ["consulting"], "Are the parallel items (card titles, step names or note titles) written in the same grammatical form?", { parallel: "All in one form: all noun phrases, all verbs, or all outcomes.", mixed: "The forms are mixed." }, "parallel", { parallel: "Parallel items share one form", mixed: "Parallel items mix forms" });
+  // J9: judgements written as words in a table's cells read faster as marks. A narrow question on purpose: one asking
+  // which of the template's capabilities fits suggested ones the slide already used and missed this case.
+  if (s.template === "table") add("J9", ["consulting", "pitch"], "Look at the table's body cells (not the first column). Are they has/lacks or degree judgements written as words (Yes, No, Partly, Often, None) that would read faster as marks (✓ ✗ or Harvey balls ○ ◔ ◑ ◕ ●), with any detail as a short note under the mark? Cells that are figures, or already marks, are not.",
+    { keep: "The cells are figures, phrases that need words, or already marks.", marks: "Most cells in at least one column are has/lacks or degree judgements in words." }, "keep",
+    { keep: "Cells suit words and figures", marks: "Judgements in words may read faster as marks (✓ ✗ or Harvey balls)" });
   const r = await jev(`Deck style: ${style}.\nSlide JSON: ${slideText(s)}`, Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, { instructions: q.instructions, options: q.options }])));
   const checks = Object.entries(qs).map(([id, q]): Check | null => {
     const a = r[id]; if (!a) return null;

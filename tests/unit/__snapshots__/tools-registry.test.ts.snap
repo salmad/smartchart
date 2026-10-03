@@ -85,7 +85,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Template card",
     },
-    "description": "One template's card (every field with its type, limits and description, and the template's rules) and a worked example. Fetch it once per template before writing that kind of slide; cards don't change within a session.",
+    "description": "One template's card (every field with its type, limits and description, the template's rules, and its capabilities and shapes: marks, icons, notes… and when to use each) and a worked example. Fetch it once per template before writing or reviewing that kind of slide; cards don't change within a session.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -384,7 +384,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Read a slide",
     },
-    "description": "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template and which lists can grow or shrink (min, max, length). Content only; checks come back with writes and check_slide.",
+    "description": "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template, which lists can grow or shrink (min, max, length) and the template's capabilities by name (get_template says when to use each). Content only; checks come back with writes and check_slide.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -560,7 +560,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Check a slide",
     },
-    "description": "Judge a finished slide: the rule checks (title length, highlight, chart guide…) and the judgment checks (does the body prove the title, are the items MECE, is this the right template). Advice only: act when a small edit fixes it. One model call.",
+    "description": "Judge a finished slide: the rule checks (title length, highlight, chart guide…) and the judgment checks (does the body prove the title, are the items MECE, is this the right template, would a table's judgements read better as marks). Advice only: act when a small edit fixes it. One model call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

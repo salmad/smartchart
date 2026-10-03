@@ -17,7 +17,7 @@ export const guideTools = [
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },
     run: async () => ({ result: { templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: "get_template for the one you pick; suggest_template to have SmartChart choose from the content." } }) }),
   tool<{ template: TemplateId; style: Style }>({ name: "get_template", title: "Template card", group: "guide", scope: "account", annotations: READ,
-    description: "One template's card (every field with its type, limits and description, and the template's rules) and a worked example. Fetch it once per template before writing that kind of slide; cards don't change within a session.",
+    description: "One template's card (every field with its type, limits and description, the template's rules, and its capabilities and shapes: marks, icons, notes… and when to use each) and a worked example. Fetch it once per template before writing or reviewing that kind of slide; cards don't change within a session.",
     input: { type: "object", additionalProperties: false, required: ["template", "style"], properties: { template: TEMPLATE, style: STYLE } },
     run: async (_ctx, { template, style }) => {
       const ex = exampleFor(template, style);

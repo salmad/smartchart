@@ -3,7 +3,7 @@ export const INSTRUCTIONS = `SmartChart makes consulting and pitch slides. You w
 
 Start: list_decks. If the user has none, create_deck. Give the user the deck's editor link (links.edit from get_deck or create_deck) so they can watch it change live.
 
-Before writing: get_guide once per style (the rules), get_template once per template (its fields, limits and an example; cards don't change within a session).
+Before writing or reviewing: get_guide once per style (the rules), get_template once per template (its fields, limits, capabilities and an example; cards don't change within a session). A review weighs the capabilities the slide does not use yet (marks, icons, notes…), not only its words.
 
 Loop: choose a template (list_templates yourself, or suggest_template) → create_slide with the whole slide → fix every issue it returns with the smallest edit → check_slide when the slide is done → check_storyline when the deck is. Change existing slides with update_slide at exact paths, never by rewriting them.
 
