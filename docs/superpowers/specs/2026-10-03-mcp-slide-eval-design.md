@@ -215,10 +215,10 @@ npm run eval:judge && npm run eval:report
 ## 7. Testing the eval itself
 
 - **Unit (vitest, in `tests/unit`):**
-  - The fact matcher's normalisation (`£1,200k` against `£1.2m` is *not* a match; `(53)` against `-53` is).
+  - The fact matcher's normalisation (`£1,200k` matches `£1.2m`, `(53)` matches `-53`, `42%` does not match `42`).
   - The T-checks on the four gallery tables in `starters.json` with hand-written `expect`s: all pass, and each fails when its `expect` is flipped.
 - `claude.ts`: the spawn arguments and the scrubbed environment (no `ANTHROPIC_API_KEY`, no `--bare`), and stream-json parsing on a recorded transcript.
-- **Smoke:** one scripted run with a stub "agent" that sends a fixed `create_slide` from a gallery table. It must reach the magic bar end to end: server, measure, judge and report. This proves the pipe before spending tokens on Sonnet.
+- **Smoke:** one scripted run with a stub "agent" that sends a fixed `create_slide` from a gallery table. It goes through the real dev server and test account, then measure, judge and report, and must reach the magic bar. This proves the pipe before spending tokens on Sonnet.
 
 ## 8. Cost and time
 
