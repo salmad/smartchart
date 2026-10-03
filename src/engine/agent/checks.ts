@@ -159,7 +159,7 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
 
 const slideText = (s: Slide) => JSON.stringify(s, (_k, v) => (typeof v === "string" ? plain(v) : v));
 
-/** Judgment checks J1–J9: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
+/** Judgment checks J1–J10: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }
 
 export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall): Promise<{ checks: Check[]; ms: number }> {
@@ -179,6 +179,11 @@ export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCal
   if (s.template === "table") add("J9", ["consulting", "pitch"], "Look at the table's body cells (not the first column). Are they has/lacks or degree judgements written as words (Yes, No, Partly, Often, None) that would read faster as marks (✓ ✗ or Harvey balls ○ ◔ ◑ ◕ ●), with any detail as a short note under the mark? Cells that are figures, or already marks, are not.",
     { keep: "The cells are figures, phrases that need words, or already marks.", marks: "Most cells in at least one column are has/lacks or degree judgements in words." }, "keep",
     { keep: "Cells suit words and figures", marks: "Judgements in words may read faster as marks (✓ ✗ or Harvey balls)" });
+  // J10: header icons help when the columns are categories scanned across (mainly columns of marks); over the things
+  // compared (a bank, a product) or over columns of words and figures they are decoration.
+  if (s.template === "table" && s.table?.columns?.some((c) => c?.icon)) add("J10", ["consulting", "pitch"], "The table's columns carry header icons. Do they help the reader scan columns that are categories or criteria (mainly columns of marks), or are they decoration over the things being compared (a bank, a product) or over columns of words and figures?",
+    { help: "The columns are categories scanned across; the icons help.", decorative: "The icons decorate entities or columns of words and figures." }, "help",
+    { help: "Header icons help the scan", decorative: "Header icons look decorative; consider removing them" });
   const r = await jev(`Deck style: ${style}.\nSlide JSON: ${slideText(s)}`, Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, { instructions: q.instructions, options: q.options }])));
   const checks = Object.entries(qs).map(([id, q]): Check | null => {
     const a = r[id]; if (!a) return null;
