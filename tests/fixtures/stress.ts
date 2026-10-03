@@ -98,7 +98,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
     { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
-    // At the budget: 2 rows of two one-line bullets (2.7 each) and 2 scored rows (1.05 each) under two group headings, with icons (10.5).
+    // 2 rows of two one-line bullets (2.7 each) and 2 scored rows (1.15 each) under two short group headings (a column, 0), with icons (8.7).
     { template: "table", name: "Stress · table rich", ...frame("table"), takeaway: undefined, table: {
       columns: [{ label: W(20) }, { label: W(12), icon: "zap" }, { label: W(12), icon: "clock" }, { label: W(12), icon: "users" }],
       rows: [
@@ -107,6 +107,13 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
         { cells: [W(18)], style: "group" },
         ...TIMES(2).map(() => ({ cells: [W(20), "✗", { value: "Pilot", status: true }, W(30)] })),
       ] } },
+    // Group headings at the budget, in both layouts. Long headings are rows: consulting 2 + 7 rows + takeaway 1.5 = 10.5,
+    // pitch 2 + 5 rows = 7. Short ones (18 characters) are a first column and cost nothing: consulting 7 scored rows ×
+    // 1.15 + takeaway 1.5 = 9.55 (an 8th row would pass the budget), pitch 6 × 1.15 = 6.9. Pitch takes no takeaway here.
+    { template: "table", name: "Stress · table groups as rows", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: { columns: [{ label: W(20) }, { label: W(12) }, { label: W(12) }],
+      rows: [{ cells: [W(30)], style: "group" }, ...TIMES(c ? 4 : 3).map(() => ({ cells: [W(24), "(1,234)", "12,345"] })), { cells: [W(30)], style: "group" }, ...TIMES(c ? 3 : 2).map(() => ({ cells: [W(24), "(1,234)", "12,345"] }))] } },
+    { template: "table", name: "Stress · table groups as a column", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: { columns: [{ label: W(20) }, { label: W(12) }, { label: W(12) }, { label: W(12) }],
+      rows: [{ cells: [W(18)], style: "group" }, ...TIMES(c ? 4 : 3).map(() => ({ cells: [W(24), "✓", "✗", "12,345"] })), { cells: [W(18)], style: "group" }, ...TIMES(3).map(() => ({ cells: [W(24), "✗", "✓", "12,345"] }))] } },
     { template: "steps", name: "Stress · steps", ...frame("steps"), steps: TIMES(c ? 5 : 3).map((_, i) => ({ when: "Q3 2027+", title: W(max("steps", st, "steps", "title")), text: W(max("steps", st, "steps", "text")), focus: i === 1 })) },
     { template: "cards", name: "Stress · cards icon ×3", ...frame("cards"), cards: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { icon: "zap", title: W(22), text: W(50) }) },
     { template: "cards", name: "Stress · cards icon ×4", ...frame("cards"), cards: TIMES(4).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(2).map(() => W(48)) } : { icon: "zap", title: W(22), text: W(30) }) },

@@ -71,6 +71,17 @@ test('budget: bullets rows, group rows and header icons cost lines', () => {
   expect(errs(T(cols(3), heavy, { subtitle: 'A claim.' }), 'pitch')).not.toMatch(/costs/)
 })
 
+test('budget: short group headings sit in a column and cost nothing; long ones are rows and cost 1, with a hint', () => {
+  const g = (h: string) => ({ cells: [h], style: 'group' as const })
+  const rows = (h1: string, h2: string) => [g(h1), ...Array.from({ length: 4 }, (_, i) => row(`A${i}`, 'x', 'y')), g(h2), ...Array.from({ length: 4 }, (_, i) => row(`B${i}`, 'x', 'y'))]
+  // 8 rows + takeaway 1.5 + caption 1 = 10.5: in budget while the headings are a column.
+  expect(errs(T(cols(3), rows('Fees', 'Limits'), { takeaway: 'So what.', caption: 'Terms' }))).not.toMatch(/costs/)
+  // The same table with headings over 18 characters: + 2 heading rows = 12.5, refused, and told how to fit.
+  const long = errs(T(cols(3), rows('What it costs each month', 'What you get in return'), { takeaway: 'So what.', caption: 'Terms' }))
+  expect(long).toMatch(/costs 12\.5 rows/)
+  expect(long).toMatch(/shorten every group heading to 18 characters/)
+})
+
 test('columnAlign: group rows are skipped; status and bullet cells make a text column', () => {
   const t: Table = { columns: cols(3), rows: [{ cells: ['Fees'], style: 'group' }, row('A', '£5', { value: 'Live', status: true }), row('B', '£7', { value: 'Pilot', status: true })] }
   expect(columnAlign(t)).toEqual(['text', 'num', 'text'])

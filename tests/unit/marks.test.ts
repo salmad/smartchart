@@ -36,9 +36,10 @@ test('mixing Harvey balls and ticks in one table is a warning, not an error', ()
 
 test('the Harvey-ball key costs a row in consulting, none in pitch', () => {
   const rows = Array.from({ length: 7 }, () => ['◔', '●'])
-  // 7 scored rows at 1.05 + takeaway 1.5 = 8.85; the key makes it 9.85, still in budget; a caption on top goes over.
-  expect(validate(slide(table(rows), { takeaway: 'So what.' })).errors).toEqual([])
-  expect(validate(slide(table(rows), { takeaway: 'So what.', caption: 'Cards scored' })).errors.join()).toMatch(/Harvey-ball key = 1/)
+  // Measured (rows of marks are 59–60px against 51px): 6 scored rows, a takeaway and the key fit (9.4); a 7th runs
+  // the takeaway 4px into the bottom margin, and the budget (10.55) refuses it.
+  expect(validate(slide(table(rows.slice(0, 6)), { takeaway: 'So what.' })).errors).toEqual([])
+  expect(validate(slide(table(rows), { takeaway: 'So what.' })).errors.join()).toMatch(/Harvey-ball key = 1/)
 })
 
 test('scores by hand: the selected body cells take a mark, and a checked mark clears them', () => {
