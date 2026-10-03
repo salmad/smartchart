@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import starters from '@/engine/starters/starters.json'
 import type { Slide } from '@/engine/types'
-import { choiceChecks, factChecks, figures, renderChecks, slideText, wiringChecks } from '../../mcp-eval/checks'
+import { choiceChecks, contentSlide, factChecks, figures, renderChecks, slideText, wiringChecks } from '../../mcp-eval/checks'
 import type { Case, Deck, ToolCall, Transcript } from '../../mcp-eval/types'
 
 const key = (s: string) => figures(s).map((f) => f.key)
@@ -46,6 +46,33 @@ describe('facts', () => {
     const r = factChecks(kase({ facts: { numbers: ['£250k'], names: ['Amex'] } }), { ...scoring, takeaway: 'Saves £3,000 a year' }, 'limit £250k vs Amex')
     expect(r.checks.map((c) => c.ok)).toEqual([false, false])
     expect(r.unknown).toContain('£3,000')
+  })
+})
+
+describe('review fixes', () => {
+  it('F1: a unitless request figure matches the slide with the unit the request stated in prose', () => {
+    const slide = { ...scoring, takeaway: 'Revenue £48.2m; labour 31%' }
+    const r = factChecks(kase({ facts: { numbers: ['48.2', '31'], names: [] } }), slide, 'Revenue in £m: 48.2. labour_pct 31')
+    expect(r.checks[0]).toMatchObject({ id: 'F1', ok: true })
+    expect(r.unknown).not.toContain('£48.2m')
+    expect(r.unknown).not.toContain('31%')
+  })
+  it('F1 stays strict the other way: 42% asked, a bare 42 on the slide does not count', () => {
+    const r = factChecks(kase({ facts: { numbers: ['42%'], names: [] } }), { ...scoring, takeaway: 'Margin 42' }, 'margin 42%')
+    expect(r.checks[0].ok).toBe(false)
+  })
+  it('index, at and level are positions, and a format applies only to values', () => {
+    const chart = { template: 'chart', title: 't', chart: { format: '£{v}m', categories: ['Jan', 'Feb', 'Mar'], series: [{ name: 'Spend', mark: 'bar', values: [18] }],
+      annotations: [{ type: 'target', value: 25, index: 2 }], rows: [{ label: 'Build', level: 1, at: 3 }] } } as unknown as Slide
+    const k = key(slideText(chart))
+    expect(k).toEqual(expect.arrayContaining(['18', '18000000', '25', '25000000']))
+    for (const x of ['2', '2000000', '3', '1']) expect(k).not.toContain(x)
+  })
+  it('S1 and P1 judge the content slide when the agent adds a cover first', () => {
+    const cover = { template: 'cover', title: 'Board pack' } as unknown as Slide, deck = deckOf([cover, scoring])
+    expect(contentSlide(deck)?.slide).toBe(scoring)
+    expect(choiceChecks(kase(), transcript(good, 'Done'), deck).find((c) => c.id === 'S1')?.ok).toBe(true)
+    expect(wiringChecks(kase(), transcript(good, 'http://localhost:5173/d/d1'), deck).find((c) => c.id === 'P1')?.ok).toBe(true)
   })
 })
 

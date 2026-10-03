@@ -1371,12 +1371,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 import { emptyAccount, readOnlyDeck, type Account } from './account'
-import { choiceChecks, factChecks, renderChecks, requestText, wiringChecks } from './checks'
+import { choiceChecks, contentSlide, factChecks, renderChecks, requestText, wiringChecks } from './checks'
 import { agentArgs, guardInit, isLimited, judgeArgs, parseStream, runClaude } from './claude'
 import { genericQuestions, judgePrompt, judgeSchema } from './judge'
 import { openMeasurer, type Measurer } from './measure'
 import { galleryHtml, reportMd } from './report'
-import { contentSlide, summarize, type Summary } from './scores'
+import { summarize, type Summary } from './scores'
 import type { Case, Measured, Results, Run, Verdict } from './types'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), FILES = path.join(HERE, 'files'), BASELINES = path.join(HERE, 'baselines')
@@ -1408,7 +1408,7 @@ async function runCase(c: Case, i: number, account: Account, measurer: Measurer)
     if (!t.outcome) return { ...run, transcript: t, error: `Claude Code exited ${out.code}: ${out.stderr.slice(-300)}` }
     const deck = await readOnlyDeck(account), measured: Measured[] = []
     if (deck) for (const s of deck.slides) measured.push(await measurer.measure(s.id, s.slide, deck.style, path.join(OUT, 'shots', `${c.id}-${i}-${s.id}.png`)))
-    const slide = contentSlide({ ...run, deck })?.slide, facts = slide ? factChecks(c, slide, requestText(c, FILES)) : { checks: [], unknown: [] }
+    const slide = contentSlide(deck)?.slide, facts = slide ? factChecks(c, slide, requestText(c, FILES)) : { checks: [], unknown: [] }
     return { ...run, status: 'done', transcript: t, deck, measured, unknownFigures: facts.unknown,
       checks: [...choiceChecks(c, t, deck), ...facts.checks, ...renderChecks(deck, measured), ...wiringChecks(c, t, deck)] }
   } catch (e) {
@@ -1422,7 +1422,7 @@ async function judgeAll(model: string, workers: number): Promise<void> {
   const todo = Object.values(results).filter((r) => r.status === 'done' && !r.verdict && r.measured.length && byId.has(r.caseId))
   await Promise.all(Array.from({ length: workers }, async () => {
     for (let r = todo.shift(); r; r = todo.shift()) {
-      const c = byId.get(r.caseId), deck = r.deck, target = contentSlide(r), m = r.measured.find((x) => x.slideId === target?.id)
+      const c = byId.get(r.caseId), deck = r.deck, target = contentSlide(r.deck), m = r.measured.find((x) => x.slideId === target?.id)
       if (!c || !deck || !target || !m || !r.transcript) continue
       const dir = mkdtempSync(path.join(tmpdir(), 'mcp-judge-'))
       copyFileSync(m.png, path.join(dir, 'slide.png'))

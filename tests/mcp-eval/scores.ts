@@ -1,4 +1,5 @@
 // Scores (spec §5): a run's checks with the judge's verdict folded in, the magic bar, and the summary a report compares.
+import { contentSlide } from './checks'
 import type { Case, Check, Run } from './types'
 
 const FATAL = new Set(['F1', 'F2', 'F3', 'R1'])
@@ -6,12 +7,9 @@ const GATES = new Set(['S1', 'S2', 'S3', 'F1', 'F2', 'F3', 'R1', 'R3', 'G1', 'G2
 export const gates = (k: Check): boolean => GATES.has(k.id) || !!k.must
 export const isFatal = (k: Check): boolean => FATAL.has(k.id) && !k.ok
 
-/** The slide the case is about: the first that is not a cover or a section divider. */
-export const contentSlide = (r: Run) => r.deck?.slides.find((s) => s.slide.template !== 'cover' && s.slide.template !== 'section') ?? r.deck?.slides[0]
-
 /** The code checks, then what the judge decided: F3, the generic questions (G1, G2), the case questions (Q1…) and M1. */
 export function allChecks(r: Run, c: Case): Check[] {
-  const out = [...r.checks], v = r.verdict, slide = contentSlide(r)?.slide
+  const out = [...r.checks], v = r.verdict, slide = contentSlide(r.deck)?.slide
   if (!slide || !r.deck) return out
   if (!r.unknownFigures.length) out.push({ id: 'F3', ok: true, msg: 'No figures beyond the request' })
   if (!v) return out

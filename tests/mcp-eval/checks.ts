@@ -8,22 +8,25 @@ import type { Case, Check, Deck, Measured, Transcript } from './types'
 
 const SCALE: Record<string, number> = { k: 1e3, m: 1e6, b: 1e9, bn: 1e9 }
 const FIGURE = /(?<![\w.])[£$€]?(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?(bn|b|m|k|%|x)?(?!\w)/gi
-/** Figures in a text: separators and currency dropped, scale applied, % and x kept as units, sign ignored, never rounded. */
-export function figures(text: string): { key: string; text: string }[] {
+/** Figures in a text: separators and currency dropped, scale applied, % and x kept as units, sign ignored, never rounded.
+    `bare` is the figure without its unit or scale: a request that gives the unit in prose ("£m: 48.2") writes it bare. */
+export function figures(text: string): { key: string; bare: string; text: string }[] {
   return [...text.matchAll(FIGURE)].map((m) => {
-    const unit = (m[3] ?? '').toLowerCase(), value = Number(`${m[1].replace(/,/g, '')}${m[2] ?? ''}`) * (SCALE[unit] ?? 1)
-    return { key: `${Number(value.toPrecision(12))}${unit === '%' || unit === 'x' ? unit : ''}`, text: m[0] }
+    const unit = (m[3] ?? '').toLowerCase(), n = Number(`${m[1].replace(/,/g, '')}${m[2] ?? ''}`), value = n * (SCALE[unit] ?? 1)
+    return { key: `${Number(value.toPrecision(12))}${unit === '%' || unit === 'x' ? unit : ''}`, bare: String(n), text: m[0] }
   })
 }
 
-// Positions and indices, not figures a reader sees.
-const NOT_SHOWN = new Set(['from', 'to', 'start', 'end', 'x', 'y', 'series'])
-/** Every piece of text on the slide, plain; a number under a `format` is written both raw and through it (18, £18m). */
+// Positions and indices (schema.ts), not figures a reader sees.
+const NOT_SHOWN = new Set(['from', 'to', 'start', 'end', 'x', 'y', 'series', 'index', 'at', 'level'])
+// Numbers a chart's `format` writes; other numbers under the chart are shown as they are.
+const FORMATTED = new Set(['values', 'value'])
+/** Every piece of text on the slide, plain; a value under a `format` is written both raw and through it (18, £18m). */
 export function slideText(s: Slide): string {
   const out: string[] = []
   const walk = (v: unknown, format: string | null, key: string): void => {
     if (typeof v === 'string') out.push(plain(v))
-    else if (typeof v === 'number') { if (!NOT_SHOWN.has(key)) out.push(String(v), ...(format ? [format.replace('{v}', String(v))] : [])) }
+    else if (typeof v === 'number') { if (!NOT_SHOWN.has(key)) out.push(String(v), ...(format && FORMATTED.has(key) ? [format.replace('{v}', String(v))] : [])) }
     else if (Array.isArray(v)) v.forEach((x) => walk(x, format, key))
     else if (v && typeof v === 'object') {
       const o = v as Record<string, unknown>, f = typeof o.format === 'string' ? o.format : format
@@ -40,15 +43,20 @@ export const requestText = (c: Case, filesDir: string): string =>
 
 /** F1–F2: the request's figures and names are on the slide; figures it doesn't state go to the judge (F3). */
 export function factChecks(c: Case, s: Slide, request: string): { checks: Check[]; unknown: string[] } {
-  const text = slideText(s), shown = figures(text), have = new Set(shown.map((f) => f.key)), asked = new Set(figures(request).map((f) => f.key))
-  const lost = c.facts.numbers.filter((n) => figures(n).some((f) => !have.has(f.key)))
+  const text = slideText(s), shown = figures(text), asked = new Set(figures(request).map((f) => f.key))
+  // A bare fact ("48.2") also matches the slide's figure with a unit ("£48.2m"); a fact with a unit ("42%") must keep it.
+  const have = new Set(shown.map((f) => f.key)), bare = new Set(shown.map((f) => f.bare))
+  const lost = c.facts.numbers.filter((n) => figures(n).some((f) => !have.has(f.key) && !(f.key === f.bare && bare.has(f.key))))
   const lostNames = c.facts.names.filter((n) => !text.toLowerCase().includes(n.toLowerCase()))
-  const unknown = [...new Map(shown.filter((f) => !asked.has(f.key)).map((f) => [f.key, f.text])).values()]
+  const unknown = [...new Map(shown.filter((f) => !asked.has(f.key) && !asked.has(f.bare)).map((f) => [f.key, f.text])).values()]
   return { unknown, checks: [
     { id: 'F1', ok: !lost.length, msg: lost.length ? `Figures from the request missing: ${lost.join(', ')}` : 'Every figure from the request is on the slide' },
     { id: 'F2', ok: !lostNames.length, msg: lostNames.length ? `Names from the request missing: ${lostNames.join(', ')}` : 'Every name from the request is on the slide' },
   ] }
 }
+
+/** The slide the case is about: the first that is not a cover or a section divider. */
+export const contentSlide = (deck: Deck | null) => deck?.slides.find((s) => s.slide.template !== 'cover' && s.slide.template !== 'section') ?? deck?.slides[0]
 
 const tool = (name: string) => name.replace(/^mcp__smartchart__/, '')
 const SLIDE_WRITES = ['create_slide', 'update_slide', 'change_template']
@@ -58,7 +66,7 @@ const asks = (text: string) => text.trim().split('\n').slice(-3).join(' ').inclu
 export function choiceChecks(c: Case, t: Transcript, deck: Deck | null): Check[] {
   const slides = deck?.slides ?? [], wrote = t.calls.some((x) => SLIDE_WRITES.includes(tool(x.name)) && !x.isError), asked = asks(t.finalText), out: Check[] = []
   if (!c.ask) {
-    const tpl = slides[0]?.slide.template, ok = !!tpl && (tpl === c.gold || c.acceptable.includes(tpl))
+    const tpl = contentSlide(deck)?.slide.template, ok = !!tpl && (tpl === c.gold || c.acceptable.includes(tpl))
     out.push({ id: 'S1', ok, msg: `${tpl ?? 'No slide'}; expected ${[c.gold, ...c.acceptable].join(' or ')}` })
   }
   const want = c.ask ? 0 : 1
@@ -92,7 +100,7 @@ export function wiringChecks(c: Case, t: Transcript, deck: Deck | null): Check[]
   const calls = t.calls.map((x) => ({ ...x, tool: tool(x.name) })), writes = calls.filter((x) => SLIDE_WRITES.includes(x.tool)), out: Check[] = []
   const add = (id: string, ok: boolean, pass: string, fail: string) => out.push({ id, ok, msg: ok ? pass : fail })
   if (writes.length) {
-    const first = calls.indexOf(writes[0]), before = calls.slice(0, first), tpl = deck?.slides[0]?.slide.template
+    const first = calls.indexOf(writes[0]), before = calls.slice(0, first), tpl = contentSlide(deck)?.slide.template
     const guide = before.some((x) => x.tool === 'get_guide'), card = before.some((x) => x.tool === 'get_template' && x.input.template === tpl)
     add('P1', guide && card, 'Read the guide and the card before writing', `Wrote before reading ${[!guide && 'the guide', !card && `the ${tpl ?? ''} card`].filter(Boolean).join(' and ')}`)
     const last = writes[writes.length - 1], issues = json(last.result).issues
