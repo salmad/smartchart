@@ -13,6 +13,7 @@
 import { timelineLines } from "./charts/timeline-rows.js";
 import { waterfall } from "./charts/chart-math.js";
 import { markKinds, markOf } from "./marks.js";
+import { groupLayout, roomOf } from "./groups.js";
 import { columnAlign } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
 import type { Capability, Shape } from "./capabilities.js";
@@ -352,7 +353,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.05, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1, header icons 1, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
+      "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), header icons 1, a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
       "Header icons: on every column after the first, or none.",
@@ -845,8 +846,10 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       const t: Partial<Table> = s.table || {}, n = (t.columns || []).length;
       checkGrid(t, "table", style, out);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
+      // Short group headings sit in a first column beside their rows and cost no height; long ones are heading rows.
+      const byColumn = groupLayout(t, roomOf(t, !!s.notes?.length)) === "column";
       const rowCost = (r: Table["rows"][number]) => {
-        if (r.style === "group") return 1;
+        if (r.style === "group") return byColumn ? 0 : 1;
         if (style === "pitch") return 1;
         const cells = r.cells || [];
         // Bullets are costed by line (measured: a bullet line is 0.75 of a row; a bullet wraps past ~48 characters in a
@@ -855,13 +858,13 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         const lines = Math.max(0, ...cells.map((c) => (c && typeof c === "object" && Array.isArray(c.bullets) ? c.bullets.reduce((k, b) => k + Math.max(1, Math.ceil(plain(String(b)).length / perLine)), 0) : 0)));
         if (lines) return 1.2 + 0.75 * lines;
         if (cells.some((c) => c && typeof c === "object" && c.note)) return 1.5;
-        // A row holding a mark is taller (measured: 59px against 51px for a row of words; at 1, eight scored rows with a
-        // takeaway and the key ran 6px into the bottom margin).
-        return cells.some((c) => markOf(String(c && typeof c === "object" ? c.value ?? "" : c ?? ""))) ? 1.05 : 1;
+        // A row holding a mark is taller: 59px against 51px for a row of words (1.16). Rounded so the budget never lets an
+        // overflow through; a wrong refusal is cheaper than a slide that runs into its footnote.
+        return cells.some((c) => markOf(String(c && typeof c === "object" ? c.value ?? "" : c ?? ""))) ? 1.15 : 1;
       };
       const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = (t.columns || []).some((c) => c?.icon) ? 1 : 0;
       const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.05, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1, header icons = 1, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.`);
+      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 1, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);

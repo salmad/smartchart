@@ -213,6 +213,14 @@
 .tbl tr.group td:first-child { white-space: nowrap; overflow: visible; }
 .tbl tr.group td { padding: 26px 0 10px; border-bottom: 1px solid var(--line); font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .tbl tbody tr.group:first-child td { padding-top: 14px; }
+/* Groups as a first column (groups.ts picks it when every heading is short): the heading in the header's voice beside its
+   first row, on one line; hairlines run only beside the rows, and a firmer rule closes each group. */
+.tbl.by-group tr > td.grp { font: 500 19px/1.25 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; vertical-align: top; padding-top: 14px; }
+.tbl.by-group tr:has(td.score) > td.grp { padding-top: 18px; vertical-align: top; }
+.tbl.by-group tr:not(.grp-end) > td.grp { border-bottom-color: transparent; }
+.tbl.by-group tr.grp-end > td { border-bottom-color: var(--line-2); }
+.tbl.by-group.measuring tr > :nth-child(2) { white-space: nowrap; }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
 .tbl tr.total td:first-child { color: var(--fg); }
@@ -241,6 +249,7 @@
 .style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
 .style-pitch .tbl td.has-bul .bullets { display: none; }
 .style-pitch .tbl td { font-size: 34px; padding-top: 13px; padding-bottom: 13px; }
+.style-pitch .tbl.by-group tr > td.grp, .style-pitch .tbl.by-group tr:has(td.score) > td.grp { font-size: 19px; padding-top: 22px; }
 .style-pitch .split .tbl td { font-size: 30px; }
 .style-pitch .tbl td.al-num { font-size: 32px; }
 

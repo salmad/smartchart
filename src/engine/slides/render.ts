@@ -6,6 +6,7 @@ import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
 import { columnAlign } from "./align.js";
+import { groupLayout, roomOf, type TableRoom } from "./groups.js";
 export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -55,8 +56,8 @@ const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<sp
 /** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
 const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
 
-function tableHTML(t: Table, base = "table", key = true) {
-  const al = columnAlign(t), n = t.columns.length;
+function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full") {
+  const al = columnAlign(t), n = t.columns.length, byColumn = groupLayout(t, room) === "column";
   const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
   const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
@@ -77,9 +78,24 @@ function tableHTML(t: Table, base = "table", key = true) {
       return `<tr class="group"${item(`${base}.rows[${i}]`)}><td${at(o ? `${P(i, 0)}.value` : P(i, 0), "md")}>${md(o ? o.value ?? "" : g ?? "")}</td>${"<td></td>".repeat(n - 1)}</tr>`; }
     return `<tr class="${[r.style, r.focus ? "focus" : ""].filter(Boolean).join(" ")}"${item(`${base}.rows[${i}]`)}>${r.cells.map((c, j) => cell(c, i, j)).join("")}</tr>`;
   };
-  return `<table class="tbl${n <= 2 ? " narrow" : ""}"><colgroup>${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
-    <thead><tr>${t.columns.map(head).join("")}</tr></thead>
-    <tbody>${t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
+  /* Groups as a first column: every row gets a group cell, so columns keep their index; the heading sits in its first
+     row's cell (an item of its own, so it is selected and edited as the group row), and a group's last row closes it. */
+  const groupCell = (i: number) => {
+    const r = t.rows[i], g = r.cells[0], o = typeof g === "object" && g ? g : null;
+    return `<td class="grp"${item(`${base}.rows[${i}]`)}><span${at(o ? `${P(i, 0)}.value` : P(i, 0), "md")}>${md(o ? o.value ?? "" : g ?? "")}</span></td>`;
+  };
+  const columnRows = () => {
+    let head = -1;
+    return t.rows.flatMap((r, i) => {
+      if (r.style === "group") { head = i; return []; }
+      const first = head >= 0 && t.rows[i - 1]?.style === "group", end = i === t.rows.length - 1 || t.rows[i + 1]?.style === "group";
+      const html = row(r, i).replace(/^(<tr class=")([^"]*)("[^>]*>)/, (_m, a: string, c: string, b: string) => `${a}${[c, end ? "grp-end" : ""].filter(Boolean).join(" ")}${b}${first ? groupCell(head) : `<td class="grp"></td>`}`);
+      return [html];
+    }).join("");
+  };
+  return `<table class="tbl${n <= 2 ? " narrow" : ""}${byColumn ? " by-group" : ""}"><colgroup>${byColumn ? `<col class="grp">` : ""}${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
+    <thead><tr>${byColumn ? `<th class="grp"></th>` : ""}${t.columns.map(head).join("")}</tr></thead>
+    <tbody>${byColumn ? columnRows() : t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
 }
 
 function cardHTML(c: Card, variant: string, i: number) {
@@ -99,8 +115,8 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
     ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
   table: (s, v) => v === "split"
-    ? splitHTML(s, tableHTML(table(s)), "with-table")
-    : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${tableHTML(table(s))}`,
+    ? splitHTML(s, tableHTML(table(s), "table", true, "split"), "with-table")
+    : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${tableHTML(table(s), "table", true, roomOf(table(s), false))}`,
   steps: (s) => `<div class="steps">${(s.steps ?? []).map((r, i) => `
     <span class="t"${at(`steps[${i}].when`, "esc")}>${esc(r.when)}</span>
     <div class="d ${r.focus ? "row-focus" : ""}"${item(`steps[${i}]`)}><span class="h"${at(`steps[${i}].title`, "esc")}>${esc(r.title)}</span><span${at(`steps[${i}].text`, "md")}>${md(r.text)}</span></div>`).join("")}</div>`,
@@ -110,7 +126,7 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
       if (!h) return "";
       const p = `halves[${i}]`;
       const body = h.chart ? `<div class="chart" data-chart="${i}"></div>${h.bullets?.length ? list(h.bullets, `${p}.bullets`) : ""}`
-        : h.table ? tableHTML(h.table, `${p}.table`, false)
+        : h.table ? tableHTML(h.table, `${p}.table`, false, "half")
         : h.number ? `<div class="half-num"><div class="shout big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
         : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
         : "";
@@ -200,23 +216,27 @@ function drawIcons(root: HTMLElement) {
 }
 
 /* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. Every table on the
-   slide (a pair can have two). Group rows span the table, so they are not measured. */
+   slide (a pair can have two). Group rows span the table, so they are not measured. A group column comes first and
+   takes its longest heading on one line. */
 function sizeTable(slide: HTMLElement) {
+  const k = slide.getBoundingClientRect().width / 1920;
   slide.querySelectorAll<HTMLElement>(".tbl").forEach((tbl) => {
-    const col = tbl.querySelector<HTMLElement>("col");
+    const cols = [...tbl.querySelectorAll<HTMLElement>("col")], grp = tbl.classList.contains("by-group") ? 1 : 0, col = cols[grp];
     if (!col) return;
+    const g = grp ? (Math.max(0, ...[...tbl.querySelectorAll("td.grp > span")].map((el) => el.getBoundingClientRect().width / k)) + 28) / tbl.clientWidth : 0;
+    if (grp) cols[0].style.width = `${(g * 100).toFixed(2)}%`;
     tbl.classList.add("measuring");
-    const natural = Math.max(...[...tbl.querySelectorAll("tr:not(.group) > :first-child")].map((c) => c.scrollWidth));
+    const natural = Math.max(...[...tbl.querySelectorAll(`tr:not(.group) > :nth-child(${grp + 1})`)].map((c) => c.scrollWidth));
     tbl.classList.remove("measuring");
     // +2px: at exactly its natural width, subpixel rounding can wrap the label.
     const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
     col.style.width = `${(share * 100).toFixed(2)}%`;
     // A column of bullets explains positions: it takes a double share of the rest, so its bullets keep to a line or two.
-    const cols = [...tbl.querySelectorAll<HTMLElement>("col")], bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex));
+    const data = cols.slice(grp + 1), bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex - grp - 1));
     // Pitch hides bullets, so its columns stay equal.
-    if (!bul.size || slide.classList.contains("style-pitch")) return;
-    const shares = cols.slice(1).map((_, j) => (bul.has(j + 1) ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
-    cols.slice(1).forEach((c, j) => { c.style.width = `${((1 - share) * shares[j] / total * 100).toFixed(2)}%`; });
+    const shares = data.map((_, j) => (bul.has(j) && !slide.classList.contains("style-pitch") ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
+    if (!grp && total === data.length) return;
+    data.forEach((c, j) => { c.style.width = `${((1 - g - share) * shares[j] / total * 100).toFixed(2)}%`; });
   });
 }
 
