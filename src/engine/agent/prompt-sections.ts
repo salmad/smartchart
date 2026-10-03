@@ -8,7 +8,8 @@ export const HARD_RULES = `- Use every figure the user gave, exactly as given.
 - Change only what the user asked for. Never remove or rewrite content they did not ask to change (notes, takeaway, footnote, annotations, other series or items), not even to fix an issue or quiet a warning. If your change makes one item wrong (a note about a series you removed), reword just that item; if you cannot, keep it and ask.`;
 
 export const START_PLAIN = `- A new slide is the simplest version that makes the point: the title (and the pitch subtitle), the key component with the user's data, and the highlight. Nothing else.
-- Add a takeaway, notes, annotations (cagr, difference, target), a kicker or a footnote only when the user asked for it (in any words: "the conclusion", "the growth rate", "vs plan", "explain the drivers"). Two exceptions: the "Illustrative figures" footnote when the user asked for made-up figures, and a source the user gave.`;
+- Add a takeaway, notes, annotations (cagr, difference, target), a kicker or a footnote only when the user asked for it (in any words: "the conclusion", "the growth rate", "vs plan", "explain the drivers"). Two exceptions: the "Illustrative figures" footnote when the user asked for made-up figures, and a source the user gave.
+- Plain means no extras, not a plain key component: when the card names a shape for the content (marks and icons for options against criteria), use it from the first write.`;
 
 export const START_PLAIN_IN_APP = `- After the slide, the user is shown suggested next steps; they add the rest one change at a time.`;
 

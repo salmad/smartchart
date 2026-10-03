@@ -6,7 +6,7 @@ import { READ, tool, type DeckDoc } from "./types.js";
 
 export const checkTools = [
   tool<{ deckId: string; slideId: string }>({ name: "check_slide", title: "Check a slide", group: "checks", scope: "deck", annotations: READ,
-    description: "Judge a finished slide: the rule checks (title length, highlight, chart guide…) and the judgment checks (does the body prove the title, are the items MECE, is this the right template). Advice only: act when a small edit fixes it. One model call.",
+    description: "Judge a finished slide: the rule checks (title length, highlight, chart guide…) and the judgment checks (does the body prove the title, are the items MECE, is this the right template, would a table's judgements read better as marks). Advice only: act when a small edit fixes it. One model call.",
     input: { type: "object", additionalProperties: false, required: ["deckId", "slideId"], properties: { deckId: { type: "string" }, slideId: { type: "string" } } },
     run: async (ctx, { slideId }) => {
       const doc = ctx.deck as DeckDoc, { item } = slideAt(doc, slideId);

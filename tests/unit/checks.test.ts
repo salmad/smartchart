@@ -1,6 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { numbersIn, nudge, ruleChecks, withNudge } from "../../src/engine/agent/checks";
+import { judgmentChecks, numbersIn, nudge, ruleChecks, withNudge } from "../../src/engine/agent/checks";
+import type { JevFn, JevQuestion, JevResult } from "../../src/engine/agent/llm";
 import type { Chart, Series, Slide, Style } from "../../src/engine/types";
 
 type ChartSlide = Slide & { chart: Chart & { categories: string[]; series: Series[] } };
@@ -125,4 +126,31 @@ test("R8 reaches the slides without a title and the two-chart slide; a quote nam
     { caption: "Market · £bn", chart: { categories: ["a", "b"], series: [{ name: "M", mark: "bar", values: [1, 2] }] } },
     { caption: "Share · %", chart: { categories: ["a", "b"], series: [{ name: "S", mark: "bar", values: [1, 2] }] } }] };
   assert.equal(get(pair, "R8")?.ok, false);
+});
+
+// J9: a stub Jev that records the questions and answers J9 with the given probabilities.
+const judge = async (s: Slide, style: Style, j9?: Record<string, number>) => {
+  let asked: Record<string, JevQuestion> = {};
+  const jev: JevFn = async (_state, qs) => { asked = qs; const r: JevResult = { _ms: 0 } as JevResult; if (j9) r.J9 = { choice: "", p: 0, probabilities: j9 }; return r; };
+  const { checks } = await judgmentChecks(s, style, jev);
+  return { asked, j9: checks.find((c) => c.id === "J9") };
+};
+const marks: Slide = { template: "table", title: "Acme is the only provider with [[fast approval]] and high limits", table: { columns: [{ label: "Provider" }, { label: "Fast" }], rows: [{ cells: ["Acme", "Yes"], focus: true }, { cells: ["Bank", "No"] }] } };
+
+test("J9: asked for tables only, with keep and marks", async () => {
+  assert.deepEqual(Object.keys((await judge(marks, "consulting")).asked.J9.options), ["keep", "marks"]);
+  assert.ok((await judge(marks, "pitch")).asked.J9);
+  const cards: Slide = { template: "cards", title: "Three reasons Acme [[wins]] on speed", cards: [{ title: "Fast", text: "Minutes." }, { title: "Big", text: "£250k." }] };
+  assert.equal((await judge(cards, "consulting")).asked.J9, undefined);
+});
+
+test("J9: fails at p ≥ 0.7 toward marks", async () => {
+  const { j9 } = await judge(marks, "consulting", { keep: 0.15, marks: 0.85 });
+  assert.equal(j9?.ok, false);
+  assert.match(j9?.msg ?? "", /read faster as marks/);
+  assert.equal((await judge(marks, "consulting", { keep: 0.4, marks: 0.6 })).j9?.ok, true);
+});
+
+test("nudge picks a failed J9 like any judgment check", () => {
+  assert.equal(nudge([{ id: "J9", ok: false, msg: "Judgements in words may read faster as marks (✓ ✗ or Harvey balls)" }]), "Worth a look: judgements in words may read faster as marks (✓ ✗ or Harvey balls).");
 });
