@@ -48,7 +48,7 @@
   "id": "t02",
   "group": "criteria",
   "style": "consulting",
-  "prompt": "Can you make me a slide rating the four vendors we shortlisted for the CRM replacement, Salesforce, HubSpot, Pipedrive and Attio, on ease of migration, reporting depth, price and fit with our sales team. My take: Salesforce has great reporting but a painful migration and it's expensive; HubSpot is good all-round at a decent price; Pipedrive is cheap and easy but weak on reporting; Attio is easy and modern, reporting still immature, mid price. We're recommending HubSpot.",
+  "prompt": "Can you make me a slide rating the four vendors we shortlisted for the CRM replacement, Salesforce, HubSpot, Pipedrive and Attio, on ease of migration, reporting depth, price and fit with our sales team. My take: Salesforce has great reporting but a painful migration, it's expensive and our reps find it heavy; HubSpot is good all-round at a decent price and the team likes it; Pipedrive is cheap and easy but weak on reporting, fits the reps well; Attio is easy and modern, reporting still immature, mid price, so-so fit. We're recommending HubSpot.",
   "gold": "table",
   "acceptable": [],
   "ask": false,
