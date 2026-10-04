@@ -21,7 +21,7 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
   useLayoutEffect(() => {
     const el = frame.current
     if (!el) return
-    const s = mountSlide(el, edit.shown, { page: ctx.page, section: ctx.section, kicker: ctx.kicker, footer: ctx.footer }, { style, theme, accent })
+    const s = mountSlide(el, edit.shown, { page: ctx.page, section: ctx.section, kicker: ctx.kicker, footer: ctx.footer, sections: ctx.sections }, { style, theme, accent })
     s.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => {
       f.contentEditable = 'true'; f.spellcheck = true; f.dataset.hint = hint(f.dataset.path ?? '')
       if (editRef.current.samples.has(f.dataset.path ?? '')) f.dataset.sample = ''
@@ -40,7 +40,7 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
     onSlide(s)
     return () => { ro.disconnect(); onSlide(null) }
     // Primitives only: a new ctx object on each render must not remount the slide under the cursor.
-  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, style, theme, accent, onSlide])
+  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, ctx.sections, style, theme, accent, onSlide])
 
   // While a save runs, the fields stop taking text: what is typed now would be lost when edit mode closes.
   useEffect(() => { frame.current?.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => { f.contentEditable = edit.saving ? 'false' : 'true' }) }, [edit.saving, edit.shown])

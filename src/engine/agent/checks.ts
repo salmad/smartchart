@@ -34,6 +34,7 @@ function focusCount(s: Slide): number | null {
 function parallelTexts(s: Slide): string[] {
   if (s.template === "cards") return (s.cards || []).map((c) => plain(c.text || (c.bullets || []).join(" ") || c.title));
   if (s.template === "steps") return (s.steps || []).map((x) => plain(x.text));
+  if (s.template === "text") return (s.paragraphs || []).map((x) => plain(x?.text ?? ""));
   if (s.template === "team") return (s.people || []).flatMap((p) => (p?.text ? [plain(p.text)] : []));
   return (s.notes || []).map((n) => plain(n.title + " " + (n.text || "")));
 }
@@ -44,7 +45,7 @@ const hasFigures = (s: Slide) => (["chart", "pair", "table", "number"].includes(
 /** The words a slide claims with: its headline and body text (not chart positions, step times or page furniture). */
 const claimText = (s: Slide) => [s.title, s.subtitle, s.takeaway, s.number?.caption, ...(s.points || []).flatMap((p) => [p.title, p.text]),
   ...(s.cards || []).flatMap((c) => [c.title, c.text, ...(c.bullets || [])]), ...(s.notes || []).flatMap((n) => [n.title, n.text]),
-  ...(s.steps || []).map((x) => x.text), ...(s.people || []).map((p) => p?.text), ...(s.halves || []).flatMap((h) => [...(h.bullets || []), ...(h.points || []), h.number?.caption])].filter(Boolean).map((t) => plain(t)).join(" ");
+  ...(s.steps || []).map((x) => x.text), ...(s.people || []).map((p) => p?.text), ...(s.paragraphs || []).flatMap((p) => [p?.title, p?.text]), ...(s.halves || []).flatMap((h) => [...(h.bullets || []), ...(h.points || []), h.number?.caption])].filter(Boolean).map((t) => plain(t)).join(" ");
 /** R8: in consulting, a slide that claims figures says where they come from, in its source or a footnote. A quote names its speaker. */
 function sourceCheck(s: Slide): Check | null {
   if (s.template === "quote" || s.template === "cover" || s.template === "section") return null;

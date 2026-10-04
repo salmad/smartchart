@@ -2678,5 +2678,60 @@
     }
    ]
   }
+ },
+ {
+  "id": "text",
+  "group": "case",
+  "label": "Argument",
+  "blurb": "Two or three reasons, each with a paragraph of proof",
+  "consulting": {
+   "template": "text",
+   "title": "SMEs choose Acme because it solves [[three problems]] their bank leaves open",
+   "paragraphs": [
+    {
+     "title": "Credit that grows with them",
+     "text": "Banks cap SME cards at £25k and review limits once a year. Acme reads live bank data and raises the limit as revenue grows, so a seasonal business is never stuck at its smallest month."
+    },
+    {
+     "title": "One place for the money",
+     "text": "Owners juggle a bank account, a card from another provider and a lender. Acme puts the account, the card and the credit line in one app, with one view of cash."
+    },
+    {
+     "title": "Rewards that pay for themselves",
+     "text": "Business cards return 0.5% at best. Acme returns 1% on spend with the suppliers SMEs already use, funded by the interchange the card earns."
+    }
+   ]
+  },
+  "pitch": {
+   "template": "text",
+   "title": "Why Acme",
+   "subtitle": "Three things the bank cannot do.",
+   "paragraphs": [
+    {
+     "title": "Limits that grow",
+     "text": "Live bank data raises the limit as revenue grows, not once a year."
+    },
+    {
+     "title": "One app",
+     "text": "Account, card and credit line together, with one view of cash."
+    },
+    {
+     "title": "1% back",
+     "text": "Rewards on everyday supplier spend, paid for by interchange."
+    }
+   ]
+  }
+ },
+ {
+  "id": "agenda",
+  "group": "open",
+  "label": "Agenda",
+  "blurb": "The deck’s chapters, listed from its chapter dividers",
+  "consulting": {
+   "template": "agenda"
+  },
+  "pitch": {
+   "template": "agenda"
+  }
  }
 ]

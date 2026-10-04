@@ -1,6 +1,6 @@
 export type Style = 'consulting' | 'pitch'
 export type Theme = 'ink' | 'paper'
-export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'quote' | 'steps' | 'cards' | 'summary' | 'image' | 'team' | 'logos' | 'cover' | 'section'
+export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'quote' | 'steps' | 'cards' | 'summary' | 'image' | 'team' | 'logos' | 'text' | 'agenda' | 'cover' | 'section'
 export type Tone = 'neutral' | 'focus' | 'neg' | 'pos'
 export type SeriesColor = 'focus' | 'neutral' | 'contrast'
 
@@ -24,7 +24,7 @@ export interface Note { title: string; text?: string; point?: { series: number; 
 /** A SmartChart picture (slides/images.ts): `src` names its kind and size; `alt` is what it shows, in words. */
 export interface ImageRef { src: string; alt?: string }
 export type Cell = string | { value?: string; note?: string; bullets?: string[]; status?: boolean; logo?: ImageRef }
-export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[] }
+export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; bars?: boolean; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[] }
 export interface Card { icon?: string; value?: string; logo?: ImageRef; label?: string; title: string; bullets?: string[]; text?: string; tone?: Tone; facts?: { label: string; text: string }[] }
 export interface Step { when: string; title: string; text: string; focus?: boolean }
 export interface Point { title: string; text: string }
@@ -47,8 +47,10 @@ export interface Slide {
   points?: Point[]
   halves?: Half[]
   image?: ImageRef; people?: Person[]; logos?: LogoItem[]
+  paragraphs?: { title: string; text: string }[]
 }
 
 export interface Deck { style: Style; theme: Theme; accent?: string | null; footer: string; slides: Slide[] }
-export interface SlideContext { page: number; section: number; kicker: string; footer: string }
+/** `sections`: every chapter divider in the deck, in order (the agenda lists them). */
+export interface SlideContext { page: number; section: number; kicker: string; footer: string; sections?: { title: string; subtitle?: string }[] }
 export interface Validation { errors: string[]; warnings: string[] }

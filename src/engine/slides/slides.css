@@ -471,3 +471,46 @@
 .style-consulting .wall .cell.fl { border-left: 0; } .style-consulting .wall .cell.ft { border-top: 0; }
 .cap + .wall { margin-top: 28px; }
 .lg-name { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 44px; color: var(--muted); }
+
+/* ═════════════ Bars in table cells: a figure's size beside it, measured from one edge per column ═════════════ */
+.tbl td.has-bar { white-space: nowrap; }
+.tbl td.has-bar > .cbar { display: inline-block; width: calc(100% - var(--vc) * 1ch - 20px); height: .36em; margin-right: 20px; vertical-align: .2em; }
+.tbl td.has-bar > .cbar > i { display: block; height: 100%; min-width: 2px; border-radius: 2px; background: var(--neutral); }
+.tbl td.has-bar > .cbar + span { display: inline-block; min-width: calc(var(--vc) * 1ch); text-align: right; }
+.tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
+.tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
+.tbl tr.total td.has-bar > .cbar { visibility: hidden; }
+
+/* ═════════════ Text: 2–3 headlined paragraphs side by side, the argument in prose ═════════════ */
+.prose { display: grid; grid-template-columns: repeat(var(--n), 1fr); column-gap: 72px; align-content: start; }
+.prose.n-2 { --n: 2; } .prose.n-3 { --n: 3; }
+.para { min-width: 0; padding-top: 28px; border-top: 1px solid var(--line); }
+.para .n { display: block; font: 600 26px/1 var(--mono); color: var(--focus); }
+.para h3 { margin-top: 24px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 60px; line-height: 1.02; text-wrap: balance; }
+.para p { margin-top: 26px; font-size: 34px; line-height: 1.42; color: var(--fg-2); }
+.prose.n-3 .para h3 { font-size: 46px; }
+.prose.n-3 .para p { font-size: 30px; }
+.style-pitch .para h3 { font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 48px; line-height: 1.12; }
+.style-pitch .para p { font-size: 38px; }
+
+/* ═════════════ Agenda: the deck's chapters, from its dividers; the next one highlighted ═════════════ */
+.t-agenda { justify-content: flex-start; }
+.style-consulting.t-agenda .title { font-size: 120px; line-height: .95; }
+.style-pitch.t-agenda .title { font-size: 150px; }
+.agenda { list-style: none; margin-top: 64px; display: grid; }
+.agenda li { display: grid; grid-template-columns: 120px minmax(0, 760px) 1fr; column-gap: 40px; align-items: center; min-height: 112px; padding: 20px 0; border-top: 1px solid var(--line); }
+.agenda li:last-child { border-bottom: 1px solid var(--line); }
+.agenda .n { font: 600 34px/1 var(--mono); color: var(--muted); }
+.agenda .t { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 56px; line-height: 1; }
+.agenda .s { font-size: 27px; line-height: 1.3; color: var(--fg-2); }
+.agenda li.next .n, .agenda li.next .t { color: var(--focus); }
+.agenda li.done :is(.t, .s) { color: var(--muted); }
+/* Six chapters or more: a tighter list. */
+.agenda.many { margin-top: 40px; }
+.agenda.many li { min-height: 0; padding: 14px 0; }
+.agenda.many .t { font-size: 44px; }
+.agenda.many .s { font-size: 24px; }
+.style-pitch .agenda li { grid-template-columns: 120px minmax(0, 860px) 1fr; }
+.style-pitch .agenda .t { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 64px; line-height: .9; }
+.style-pitch .agenda.many .t { font-size: 50px; }
+.agenda-empty { margin-top: 64px; max-width: 900px; font-size: 34px; line-height: 1.35; color: var(--muted); padding-top: 28px; border-top: 1px solid var(--line); }

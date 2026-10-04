@@ -6,7 +6,7 @@ import { imageMeta, isWordmark } from "./images.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
-import { columnAlign } from "./align.js";
+import { columnAlign, figureOf } from "./align.js";
 import { groupLayout, roomOf, type TableRoom } from "./groups.js";
 export { drawChart };
 
@@ -88,6 +88,16 @@ const wallColumns = (n: number) => (n <= 4 ? n : n <= 6 ? 3 : n <= 8 ? 4 : n <= 
 
 function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full") {
   const al = columnAlign(t), n = t.columns.length, byColumn = groupLayout(t, room) === "column";
+  // Bars: each figure to scale with its column's largest; the figures right-aligned in a fixed width (in ch, mono) so every
+  // bar in the column starts and is measured from one edge.
+  const body = t.rows.filter((r) => r.style !== "group");
+  const bars = t.columns.map((c, j) => (c.bars && al[j] === "num" ? { max: Math.max(0, ...body.filter((r) => r.style !== "total").map((r) => figureOf(r.cells[j]) ?? 0)), ch: Math.max(1, ...body.map((r) => plain(String(typeof r.cells[j] === "object" && r.cells[j] ? (r.cells[j] as { value?: string }).value ?? "" : r.cells[j] ?? "")).length)) } : null));
+  const barred = (j: number, c: Cell, inner: string) => {
+    const b = bars[j], v = figureOf(c);
+    if (!b) return inner;
+    const p = b.max > 0 && v !== null && v > 0 ? Math.round((v / b.max) * 1000) / 10 : 0;
+    return `<span class="cbar"><i style="width:${p}%"></i></span>${inner}`;
+  };
   const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
   const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
@@ -98,6 +108,7 @@ function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full
     if (o?.status) return `<td class="${k} status"><span class="pill"${at(`${p}.value`, "esc")}>${esc(o.value ?? "")}</span>${note(o, p)}</td>`;
     if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
     if (o?.logo) return `<td class="${k} has-lg">${named(o.logo, `<span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>`, plain(String(o.value ?? "")))}${note(o, p)}</td>`;
+    if (bars[j]) return `<td class="${k} has-bar" style="--vc:${bars[j]?.ch}">${barred(j, c, `<span${at(o ? `${p}.value` : p, "md")}>${md(o ? o.value ?? "" : c ?? "")}</span>`)}${o ? note(o, p) : ""}</td>`;
     if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;
     return `<td class="${k}"${at(p, "md")}>${md(c ?? "")}</td>`;
   };
@@ -144,7 +155,7 @@ function cardHTML(c: Card, variant: string, i: number) {
 
 /* Body per menu entry. The variant (layout) comes from the registry, never from the agent. */
 const table = (s: Slide): Table => s.table ?? { columns: [], rows: [] };
-const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">, (s: Slide, variant: string) => string> = {
+const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" | "agenda">, (s: Slide, variant: string) => string> = {
   chart: (s, v) => v === "split"
     ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
@@ -178,6 +189,8 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
     return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p, i, photos)).join("")}</div>`; },
   logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
     return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "") || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
+  text: (s) => { const ps = s.paragraphs ?? [];
+    return `<div class="prose n-${ps.length}">${ps.map((p, i) => `<div class="para"${item(`paragraphs[${i}]`)}><span class="n">${pad2(i + 1)}</span><h3${at(`paragraphs[${i}].title`, "md")}>${md(p?.title ?? "")}</h3><p${at(`paragraphs[${i}].text`, "md")}>${md(p?.text ?? "")}</p></div>`).join("")}</div>`; },
   cards: (s, v) => { const cards = s.cards ?? [];
     return `<div class="cards ${v} ${v === "framed" ? "grow" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
 };
@@ -185,9 +198,10 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
 /** Deck context per slide: page number, section number and the default kicker. */
 export function contexts(deck: Pick<Deck, "slides" | "footer">): SlideContext[] {
   let section = 0, sectionTitle = "";
+  const sections = deck.slides.filter((s) => s.template === "section").map((s) => ({ title: s.title, ...(s.subtitle ? { subtitle: s.subtitle } : {}) }));
   return deck.slides.map((s, i) => {
     if (s.template === "section") { section += 1; sectionTitle = s.title; }
-    return { page: i + 1, section, kicker: sectionTitle ? `${pad2(section)} · ${sectionTitle}` : "", footer: deck.footer || "" };
+    return { page: i + 1, section, kicker: sectionTitle ? `${pad2(section)} · ${sectionTitle}` : "", footer: deck.footer || "", sections };
   });
 }
 
@@ -199,6 +213,13 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
   } else if (s.template === "section") {
     // The subtitle box is always there: it holds its 2 lines, so the number and title sit still across dividers.
     body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title"${at("title", "esc")}>${esc(s.title)}</h2><p class="sec-sub"${at("subtitle", "md")}>${s.subtitle ? md(s.subtitle) : ""}</p>`;
+  } else if (s.template === "agenda") {
+    // The deck's chapters, from its dividers. After chapter k the next one is highlighted and the covered ones go quiet; after
+    // the last chapter (or before the first) the list is plain.
+    const list = ctx.sections ?? [], next = ctx.section >= 1 && ctx.section < list.length ? ctx.section + 1 : 0;
+    body = `<h2 class="title"${at("title", "esc")}>${esc(s.title || "Agenda")}</h2>` + (list.length
+      ? `<ol class="agenda${list.length > 5 ? " many" : ""}">${list.map((x, i) => `<li class="${i + 1 === next ? "next" : i + 1 < next ? "done" : ""}"><span class="n">${pad2(i + 1)}</span><span class="t">${esc(x.title)}</span>${x.subtitle ? `<span class="s">${md(x.subtitle)}</span>` : ""}</li>`).join("")}</ol>`
+      : `<p class="agenda-empty">No chapters yet. Add chapter dividers and they are listed here, numbered, in order.</p>`);
   } else if (s.template === "number") {
     // No title: the number and its sentence are the slide (the sentence is its line in the storyline).
     const n = s.number ?? { value: "", caption: "" };

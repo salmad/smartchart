@@ -33,10 +33,10 @@ Pairs well with #1: a resolved comment can link to the revision that fixed it.
 Comments are input written by people, so agents treat them as requests to weigh, not commands. A shared viewer's comment never acts with the owner's authority.
 
 ## 4. Slide gaps found while designing richer tables (2026-10-03)
-- **Images:** see #6.
-- **Agenda slide:** built by code from the section titles.
-- **Text slide:** 2–3 headlined paragraphs (the consulting argument slide), not forced into cards or the summary.
-- **Bars in table cells:** a small bar for a share or score, so a table of figures can be scanned.
+**Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-slide-gaps-design.md`):** the agenda (listed by code from the
+chapter dividers, the next chapter highlighted), the text slide (2–3 headlined paragraphs) and bars in table cells
+(`bars: true` on a column of figures). Images: see #6. Still open: a capability entry for bars (the table card is at its
+seven), and whether the in-app agent should offer to add an agenda when a deck gains its third chapter.
 
 ## 5. Mixed halves in the pair (built, switched off)
 A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.

@@ -111,6 +111,8 @@ exports[`registry > the three views agree (published contract: only additions al
             "image",
             "team",
             "logos",
+            "text",
+            "agenda",
             "cover",
             "section",
           ],

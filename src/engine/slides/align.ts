@@ -6,6 +6,14 @@ const cellValue = (c: Cell | undefined) => plainOf(String(c && typeof c === "obj
 const NUMERIC = /^~?\(?[+−-]?[£$€]?\d[\d,.]*(?:[–-]\d[\d,.]*)?\s?(%|x|×|k|m|bn|pp|bps)?\)?(\/\w+)?$/i;
 const rich = (c: Cell | undefined) => !!c && typeof c === "object" && (!!c.status || !!c.bullets);
 
+/** A figure as a number for drawing (a cell's bar): "£1,234k" → 1234, "(12)" → -12; null when there is none. */
+export function figureOf(c: Cell | undefined): number | null {
+  const v = cellValue(c), m = /\d[\d,]*(?:\.\d+)?/.exec(v);
+  if (!m) return null;
+  const n = parseFloat(m[0].replace(/,/g, ""));
+  return /^~?\(|^~?[−-]|^~?[£$€][−-]/.test(v) ? -n : n;
+}
+
 /** Alignment per column from its content: label column text, numbers right, short symbols centred. */
 export type Align = "text" | "num" | "sym";
 export function columnAlign(t: Pick<Table, "columns" | "rows">): Align[] {

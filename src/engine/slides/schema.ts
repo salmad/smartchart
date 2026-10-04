@@ -15,7 +15,7 @@ import { waterfall } from "./charts/chart-math.js";
 import { markKinds, markOf } from "./marks.js";
 import { groupLayout, roomOf } from "./groups.js";
 import { iconsMayStack } from "./head-icons.js";
-import { columnAlign } from "./align.js";
+import { columnAlign, figureOf } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
 import { imageMeta, type ImageKind } from "./images.js";
 import type { Capability, Shape } from "./capabilities.js";
@@ -285,6 +285,7 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   ...COLUMN_FIELDS,
   icon: f("enum", "Optional icon over the header, from the curated set: on every column after the first, or none.", { values: ICONS }),
   logo: { ...LOGO, desc: `Optional logo as the header, when the columns are companies: on every column after the first, or none. Not with \`icon\`. The label stays as its name. ${ADD_IMAGE}` },
+  bars: f("boolean", "A column of figures (0 or more): a small bar beside each figure, to scale with the column's largest, so the column can be scanned. Shares, scores, sizes. Not on marks or words.", { default: false }),
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
 } });
@@ -498,6 +499,28 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: () => "wall",
     rules: ["Code sets the grid and sizes every logo to the same visual weight; never order them by size.", "One group per slide: customers, or investors, not both. Two groups are two slides."],
   },
+  text: {
+    summary: "2–3 headlined paragraphs: an argument in prose.",
+    use: "Reasons that each need a paragraph. Short points: cards.",
+    fields: {
+      paragraphs: f("list", "The reasons, in the order they build the argument.", { required: true, items: { min: 2, max: 3 }, of: f("object", "One paragraph.", { fields: {
+        title: f("markup", "Its claim, as a short headline.", { required: true, max: 40 }),
+        text: f("markup", "The reasoning, in full sentences, with the evidence.", { required: true, max: { consulting: 320, pitch: 160 } }),
+      } }) }),
+    },
+    variant: () => "cols",
+    rules: ["Three paragraphs: text of at most 260 characters each (pitch 140).", "With a takeaway: text of at most 190 characters each (pitch 100)."],
+  },
+  agenda: {
+    summary: "The deck's chapters, listed by code from its dividers.",
+    use: "An agenda; repeated before a chapter, it shows where the deck is.",
+    frame: false,
+    fields: {
+      title: f("text", "Optional heading. Default 'Agenda'.", { max: 24 }),
+    },
+    variant: () => "agenda",
+    rules: ["Write no list: code lists the deck's section slides, numbered, in order. Add the section slides first.", "Placed after a chapter, it highlights the next one: the deck's 'you are here'."],
+  },
   cover: {
     summary: "The deck title and a one-line subtitle.",
     use: "The first slide, once.",
@@ -537,6 +560,8 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the people behind it: founders, the team, advisors", "team"],
   ["who already uses, backs or partners with it, shown as their logos", "logos"],
   ["a picture that makes the point: the product, a place, a diagram", "image"],
+  ["an argument in prose: 2–3 reasons, each needing a paragraph", "text"],
+  ["the agenda or contents of a deck with chapters", "agenda"],
 ];
 
 /* ─────────────── Resolving fields for one style ─────────────── */
@@ -865,6 +890,16 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
     const al = columnAlign({ columns: cols, rows: rows as Table["rows"] });
     cols.forEach((c, j) => { if (c?.icon && al[j] === "num") out.warnings.push(`${base}.columns[${j}].icon: an icon on a column of numbers adds nothing; remove it.`); });
   }
+  // Bars: on a column of figures, 0 or more, never the label column.
+  const al = cols.every(Boolean) && rows.every((r) => r && Array.isArray(r.cells)) ? columnAlign({ columns: cols, rows: rows as Table["rows"] }) : [];
+  cols.forEach((c, j) => {
+    if (!c?.bars) return;
+    if (j === 0) return out.errors.push(`${base}.columns[0].bars: the label column has no bars.`);
+    if (al.length && al[j] !== "num") return out.errors.push(`${base}.columns[${j}].bars: bars need a column of figures; this one reads as ${al[j] === "sym" ? "marks" : "words"}. Remove bars.`);
+    const neg = rows.findIndex((r) => r?.style !== "group" && (figureOf(r?.cells?.[j]) ?? 0) < 0);
+    if (neg >= 0) out.errors.push(`${base}.rows[${neg}].cells[${j}]: a negative figure in a column with bars; bars show sizes of 0 or more. Remove bars, or use a chart for gains and losses.`);
+  });
+  if (half && cols.some((c) => c?.bars)) out.errors.push(`${base}: bars in cells do not fit half a slide. Use the table template.`);
   // Logos: every column after the first (as headers), or none; every row's label (as its first cell), or none.
   if (cols[0]?.logo) out.errors.push(`${base}.columns[0].logo: the label column has no logo; put logos on its cells instead.`);
   cols.forEach((c, j) => { if (c?.logo && c.icon) out.errors.push(`${base}.columns[${j}]: an icon or a logo, not both.`); });
@@ -1014,6 +1049,12 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       if (same) out.errors.push("logos: two items share one picture; each company needs its own logo.");
       break;
     }
+    case "text": {
+      const ps = Array.isArray(s.paragraphs) ? s.paragraphs : [], three = ps.length === 3;
+      const cap = s.takeaway ? (style === "pitch" ? 100 : 190) : three ? (style === "pitch" ? 140 : 260) : 0;
+      if (cap) ps.forEach((x, i) => { const n = x?.text ? plain(x.text).length : 0; if (n > cap) out.errors.push(`paragraphs[${i}].text: ${n} characters; ${s.takeaway ? "with a takeaway" : "with three paragraphs"} at most ${cap}. Shorten it.`); });
+      break;
+    }
     case "summary": {
       if (s.takeaway && (s.points || []).length > 3) out.errors.push(`points: ${s.points?.length} points; with a takeaway at most 3. Merge two points or drop the takeaway.`);
       break;
@@ -1096,6 +1137,7 @@ export function validateDeck(deck: { style: Style; slides?: readonly Slide[] }):
     r.warnings.forEach((w) => out.warnings.push(`slides[${i}].${w}`));
   });
   if (slides.filter((s) => s.template === "cover").length > 1) out.errors.push("slides: only one cover.");
+  if (slides.some((s) => s.template === "agenda") && !slides.some((s) => s.template === "section")) out.warnings.push("slides: an agenda lists the chapter dividers, and this deck has none. Add section slides, or remove the agenda.");
   return out;
 }
 

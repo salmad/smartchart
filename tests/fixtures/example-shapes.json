@@ -1498,5 +1498,44 @@
     "title"
    ]
   }
+ },
+ {
+  "name": "Text · three paragraphs",
+  "consulting": {
+   "template": "text",
+   "variant": "cols",
+   "keys": [
+    "paragraphs",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "text",
+   "variant": "cols",
+   "keys": [
+    "paragraphs",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
+ },
+ {
+  "name": "Agenda",
+  "consulting": {
+   "template": "agenda",
+   "variant": "agenda",
+   "keys": [
+    "template"
+   ]
+  },
+  "pitch": {
+   "template": "agenda",
+   "variant": "agenda",
+   "keys": [
+    "template"
+   ]
+  }
  }
 ]
