@@ -71,16 +71,16 @@ const named = (ref: ImageRef | undefined, nameHTML: string, name: string) => {
   if (!m) return nameHTML;
   return logoHTML(ref, name) + (isWordmark(m.aspect) ? `<span class="mk-txt">${nameHTML}</span>` : nameHTML);
 };
-const imgHTML = (ref: ImageRef | undefined, path: string, cls: string) => {
+const imgHTML = (ref: ImageRef | undefined, cls: string) => {
   const m = imageMeta(ref?.src);
-  if (!ref || !m) return `<div class="${cls} missing"${item(path)}></div>`;
-  return `<div class="${cls} k-${m.kind}" style="--a:${+m.aspect.toFixed(4)}"${item(path)}><img src="${esc(ref.src)}" alt="${esc(ref.alt ?? "")}" width="${m.w}" height="${m.h}" decoding="sync" draggable="false"></div>`;
+  if (!ref || !m) return `<div class="${cls} missing"></div>`;
+  return `<div class="${cls} k-${m.kind}" style="--a:${+m.aspect.toFixed(4)}"><img src="${esc(ref.src)}" alt="${esc(ref.alt ?? "")}" width="${m.w}" height="${m.h}" decoding="sync" draggable="false"></div>`;
 };
 const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 /* A team with photos keeps every tile (initials stand in for one that is missing); a team without is text over a rule. */
 function personHTML(p: Person, i: number, photos: boolean) {
   const at0 = `people[${i}]`;
-  const photo = !photos ? "" : p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, `${at0}.photo`, "ph") : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
+  const photo = !photos ? "" : p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, "ph") : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
   return `<div class="person"${item(at0)}>${photo}<div class="who"><h3${at(`${at0}.name`, "esc")}>${esc(p.name ?? "")}</h3><p class="role"${at(`${at0}.role`, "esc")}>${esc(p.role ?? "")}</p>${p.text ? `<p class="bio"${at(`${at0}.text`, "md")}>${md(p.text)}</p>` : ""}</div></div>`;
 }
 /* The wall's grid: 3–4 in a row, then rows of 3, 4, 5 and 6 as the count grows. */
@@ -172,8 +172,8 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
   summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
     <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
   image: (s, v) => v === "split"
-    ? splitHTML(s, imgHTML(s.image, "image", "pic"), "grow with-pic")
-    : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "image", "pic grow")}`,
+    ? splitHTML(s, imgHTML(s.image, "pic"), "grow with-pic")
+    : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "pic grow")}`,
   team: (s, v) => { const people = s.people ?? [], photos = people.some((p) => p?.photo);
     return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p, i, photos)).join("")}</div>`; },
   logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);

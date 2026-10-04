@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { STARTERS, GROUPS, starterSlide } from '@/engine/starters'
+import { STARTERS, GROUPS, IN_APP_STARTERS, starterSlide } from '@/engine/starters'
 import { validateDeck, MIXED_HALVES } from '@/engine/slides/schema'
 import { stressFor } from '../fixtures/stress'
 
@@ -23,4 +23,9 @@ test('every starter validates with no errors or warnings, both styles', () => {
 test('starterSlide returns a copy', () => {
   const a = starterSlide(STARTERS[0], 'consulting'); a.title = 'changed'
   expect(starterSlide(STARTERS[0], 'consulting').title).not.toBe('changed')
+})
+
+test('the app gallery leaves out starters with pictures (no upload in the app yet); the rest are all there', () => {
+  expect(IN_APP_STARTERS.map((s) => s.id).filter((id) => ['image', 'team', 'logos'].includes(id))).toEqual([])
+  expect(IN_APP_STARTERS).toHaveLength(STARTERS.length - 3)
 })

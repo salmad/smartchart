@@ -22,6 +22,11 @@ for (const style of ['consulting', 'pitch'] as const) {
 }
 for (const s of STARTERS) if (!GROUPS.some((g) => g.id === s.group)) throw new Error(`starters.json: ${s.id} has unknown group ${s.group}`)
 
+/** Starters a deck in the app can take: not the ones carrying pictures (a product screenshot, team photos, logos), since
+    the app cannot replace a picture yet and the maker would be left with Acme's. MCP examples and the site show them all. */
+export const pictured = (s: Starter) => JSON.stringify(s.consulting).includes('"src"')
+export const IN_APP_STARTERS: readonly Starter[] = STARTERS.filter((s) => !pictured(s))
+
 /** A deep copy of the starter in one style, safe to put in a deck. */
 export function starterSlide(s: Starter, style: Style): Slide {
   return structuredClone(s[style])
