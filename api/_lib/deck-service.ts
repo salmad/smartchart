@@ -39,6 +39,8 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       return tok ? `${origin}/s/${tok}` : null
     },
     newDeckId,
+    versions: (deckId) => db.listVersions(uid, deckId),
+    blobs: (deckId, hashes) => db.blobs(uid, deckId, hashes),
   }
   const jev = deps.jev ?? serverJev({ userId: uid, db })
   const deckId = (input as { deckId?: string }).deckId
@@ -63,7 +65,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       if (put === 'foreign') return fail('not_found', `No deck ${out.deck.id}.`)
       if (put === 'conflict') { if (attempt === 0) continue; return fail('conflict', 'The deck changed while this ran.', 'Call it again.') }
       // One version per request: an agent's writes for the same words, close together, group into one.
-      const request = (input as { request?: unknown }).request, label = typeof request === 'string' && request.trim() ? request.trim().slice(0, 300) : null
+      const request = (input as { request?: unknown }).request, label = out.label ?? (typeof request === 'string' && request.trim() ? request.trim().slice(0, 300) : null)
       await recordVersion(db, uid, out.deck.id, data, { by: caller.client, turn: `mcp:${label ?? ''}`, label }, put.rev, now())
       if (out.events?.length) await db.addEvents(uid, out.deck.id, out.events.map((e) => ({ ...e, rev: put.rev, by: caller.client })))
       const result = { ...out.result }

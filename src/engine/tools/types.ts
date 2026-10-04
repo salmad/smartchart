@@ -3,6 +3,7 @@ import type { Slide, Style, Theme } from "../types.js";
 import type { Check } from "../agent/checks.js";
 import type { JevFn } from "../agent/llm.js";
 import type { DeckComment } from "../comments.js";
+import type { Version } from "../versions.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };
@@ -18,6 +19,9 @@ export interface AccountPort {
   listDecks(limit: number, cursor: number): Promise<{ decks: DeckListItem[]; next?: number }>;
   share(deckId: string, on: boolean): Promise<string | null>;
   newDeckId(): string;
+  /** The deck's versions, newest first, and the slides their trees name. */
+  versions(deckId: string): Promise<Version[]>;
+  blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"
@@ -32,7 +36,8 @@ export interface ToolContext {
 }
 export type Scope = "account" | "deck" | "create";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean }
+/** `label`: the version's label when the write is not a user request (a restore). */
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean; label?: string }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";

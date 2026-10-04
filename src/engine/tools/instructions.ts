@@ -9,4 +9,4 @@ Loop: choose a template (list_templates yourself, or suggest_template) → creat
 
 Rules: address slides by slideId from get_deck, never by position. Pass the user's own words as request on every write. Write "auto" where the card allows it; code decides. Never set style, layout, colours, page numbers or the footer. If the user's request is unclear, ask them before writing. Change a slide's template, or remove anything, only when the user asked.
 
-Comments (open ones come with get_deck and read_slide) are notes people left on slides. Address them only when the user asks: change the slide, then resolve_comment with a one-line reply saying what you did.`;
+Only when the user asks: address open comments (in get_deck) by changing the slide, then resolve_comment saying what you did; undo with list_versions and restore_version.`;

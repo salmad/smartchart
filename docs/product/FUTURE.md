@@ -3,7 +3,7 @@
 Ideas agreed but not scheduled. Each needs its own brainstorm → spec → plan before building.
 
 ## 1. Deck history (git's ideas, not git)
-**First slice built (2026-10-04):** Versions panel (preview, restore) and Undo on agent turns. Slides are stored as blobs by hash and each version is a tree, grouped by writer and turn (MCP: one version per request). Spec: `docs/superpowers/specs/2026-10-04-deck-versions-design.md`. Still open from the list below: per-slide history, MCP tools (`list_versions`, `restore_version`), named versions, removing blobs no version uses, conflict checks per path.
+**First slice built (2026-10-04):** Versions panel (preview, restore) and Undo on agent turns. Slides are stored as blobs by hash and each version is a tree, grouped by writer and turn (MCP: one version per request). Spec: `docs/superpowers/specs/2026-10-04-deck-versions-design.md`. MCP agents can `list_versions` and `restore_version` (a restore is a new version). Still open from the list below: per-slide history, named versions, removing blobs no version uses, conflict checks per path.
 **Decision (2026-10-02):** keep decks as JSON rows in Postgres. No `.md` storage, no git repo (Slidev's model fits one developer working locally, not a multi-user app on serverless).
 Google Docs/Slides (operation log + snapshots), Confluence (a full version per save), Figma, Notion, Linear and Pitch all keep versions in a database or blob storage; none uses git.
 - `deck_events` row per write, in the same transaction as the `rev` bump. It records the author kind (human, in-app agent or MCP client), the turn id, the user's request (as the "commit message"), the forward patch and the inverse patch.

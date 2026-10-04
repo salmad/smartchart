@@ -639,5 +639,65 @@ exports[`registry > the three views agree (published contract: only additions al
     "name": "resolve_comment",
     "title": "Resolve a comment",
   },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List versions",
+    },
+    "description": "Every saved state of the deck, newest first: its number, who wrote it (the user, SmartChart or an agent), the request in the user's words, what changed and when. The first is the deck as it is now.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "deckId": {
+          "description": "The deck id.",
+          "type": "string",
+        },
+        "limit": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "deckId",
+      ],
+      "type": "object",
+    },
+    "name": "list_versions",
+    "title": "List versions",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Restore a version",
+    },
+    "description": "Put the deck back as it was at an earlier version (from list_versions): its slides, order and look. Saved as a new version on top, so the state before stays in the list. Only when the user asked to undo or go back.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "deckId": {
+          "description": "The deck id.",
+          "type": "string",
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "deckId",
+        "version",
+      ],
+      "type": "object",
+    },
+    "name": "restore_version",
+    "title": "Restore a version",
+  },
 ]
 `;

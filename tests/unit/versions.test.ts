@@ -98,3 +98,23 @@ describe('versions from MCP writes', () => {
     expect(list.map((v) => [v.by, v.label, v.tree.slides.length])).toEqual([['Claude Code', 'One more', 3], ['Claude Code', 'Two slides on churn', 2], ['Claude Code', null, 0]])
   })
 })
+
+describe('version tools over MCP', () => {
+  it('list_versions shows who and what; restore_version puts an earlier state back as a new version', async () => {
+    const db = fakeDb(), d = { db, origin: 'https://app.test', jev: fakeJev(), now: () => 1_000_000 }
+    const caller = { user: { id: 'u1', email: 'u1@x.y' }, client: 'Claude Code', key: 'k' }
+    const made = await runTool('create_deck', { style: 'consulting' }, caller, d)
+    const deckId = made.ok ? String(made.result.deckId) : ''
+    await runTool('create_slide', { deckId, slide: card, request: 'A slide on churn' }, caller, d)
+    await runTool('create_slide', { deckId, slide: titled('Second'), request: 'Add a second slide' }, caller, d)
+    const listed = await runTool('list_versions', { deckId }, caller, d)
+    expect(listed).toMatchObject({ ok: true, result: { versions: [
+      { version: 3, by: 'Claude Code', request: 'Add a second slide', changed: 'Added 1 slide', slides: 2, current: true },
+      { version: 2, request: 'A slide on churn', slides: 1 }, { version: 1, slides: 0 }] } })
+    expect(await runTool('restore_version', { deckId, version: 3 }, caller, d)).toMatchObject({ ok: false, error: { code: 'refused' } })
+    expect(await runTool('restore_version', { deckId, version: 9 }, caller, d)).toMatchObject({ ok: false, error: { code: 'not_found' } })
+    expect(await runTool('restore_version', { deckId, version: 2 }, caller, d)).toMatchObject({ ok: true, result: { restored: 2, slides: [{ n: 1 }] } })
+    const after = await runTool('list_versions', { deckId }, caller, d)
+    expect(after.ok && (after.result.versions as { request?: string; changed: string }[])[0]).toMatchObject({ request: 'Restored version 2', changed: 'Removed 1 slide' })
+  })
+})
