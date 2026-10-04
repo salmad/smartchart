@@ -116,3 +116,12 @@ rules would refuse (too grey, too close to the loss red or the gain green) says 
 well-known sites: the true brand colour was among the candidates for 6 (Monzo, Xero, Shopify, HubSpot, Figma, Slack),
 not for Stripe and Wise (their colours live in stylesheets), and black-and-white brands correctly offer none.
 Next: read the site's stylesheets too; offer the brand's own typeface as a note (fonts stay ours).
+
+## 18. Sell Occam through its own gallery slides
+**Idea (2026-10-05):** the starters are what visitors and new users see first (the landing's "Every slide you need", Add slide, the tour's sample deck). Make them quietly sell the service: each slide shows the template at work and says something true about Occam, never an advert.
+Done: the cover, the problem, the difference (blank canvas against rules and checks), next steps (four steps to a first deck), Three pillars, and the footer ("Occam").
+Still the Acme lending story, to rewrite around Occam or a neutral product company (structure unchanged, numbers consistent across slides):
+- Executive summary, Number and trend, Mix over time, Market race, Scenarios, Growth to a target, Bridge and Bridge with reasons, Scorecard, 2×2 matrix, Ranking, Key figures, One number, Quote, Product, Partners, Team, Agenda, and the Acme content on the picture and logo starters.
+- The terms to hunt for: loan book, lender, warehouse, interchange, borrowers, underwriting, APR, SME card spend.
+Rules: claims stay checkable and about the product (what it does, how it checks), no invented statistics or named competitors; comparisons use categories (blank canvas, generic AI slide makers). Do it one slide at a time and review each at full size in both styles; relock `tests/fixtures/example-lines.json` for what rewraps.
+Open: whether Acme stays as the sample company for the data slides (it shows a real deck) while the framing slides are Occam, or the whole gallery tells one Occam story.
