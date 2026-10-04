@@ -196,14 +196,14 @@
      "facts": 0
     },
     {
-     "icon": "wallet",
+     "icon": "layers",
      "hasValue": false,
      "hasText": false,
      "bullets": 2,
      "facts": 0
     },
     {
-     "icon": "refresh-cw",
+     "icon": "shield-check",
      "hasValue": false,
      "hasText": false,
      "bullets": 2,

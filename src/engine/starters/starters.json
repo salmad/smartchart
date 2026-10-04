@@ -378,59 +378,59 @@
   "consulting": {
    "template": "cards",
    "kicker": "The solution",
-   "title": "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+   "title": "One chat replaces the template hunt, the chart tool and the formatting pass",
    "cards": [
     {
      "icon": "zap",
-     "title": "Approved in five minutes",
+     "title": "A slide in minutes",
      "bullets": [
-      "Limits up to **£250k**, spend the same day",
-      "Underwritten on live bank and sales data, not filed accounts"
+      "Describe it in plain words, get a finished slide",
+      "Charts, tables and bridges set from your figures"
      ]
     },
     {
-     "icon": "wallet",
-     "title": "Cashflow in one place",
+     "icon": "layers",
+     "title": "One look throughout",
      "bullets": [
-      "Pay bills, get paid and control team spend",
-      "Choose balance or limit funds per payment"
+      "Layout, sizes and colours come from rules",
+      "Slide thirty looks like slide one"
      ]
     },
     {
-     "icon": "refresh-cw",
-     "title": "Earn on every pound",
+     "icon": "shield-check",
+     "title": "Checked every slide",
      "bullets": [
-      "**1% cashback** on all card spend",
-      "Rewards attract transactors, lowering adverse selection"
+      "Every slide is measured to fit",
+      "Warnings point at the exact words"
      ]
     }
    ],
-   "takeaway": "Three providers today. **Acme replaces all of them.**",
-   "source": "Acme product terms, 2026."
+   "takeaway": "Three tools today. **Occam replaces all of them.**",
+   "source": "Occam product guide."
   },
   "pitch": {
    "template": "cards",
    "title": "The solution",
-   "subtitle": "Bank. Card. Lender. [[One app.]]",
+   "subtitle": "Template. Chart tool. Polish. [[One chat.]]",
    "cards": [
     {
-     "value": "5 min",
-     "title": "to a spending limit",
-     "text": "Up to £250k. Spend the same day."
+     "value": "1 chat",
+     "title": "to a finished slide",
+     "text": "Describe it. Occam sets it."
     },
     {
-     "value": "1 app",
-     "title": "for all cashflow",
-     "text": "Pay, get paid, control team spend."
+     "value": "1 look",
+     "title": "across the deck",
+     "text": "Rules, not hand-tuning."
     },
     {
-     "value": "1%",
+     "value": "0",
      "tone": "focus",
-     "title": "back on everything",
-     "text": "Rewards bring the right customers."
+     "title": "slides left unchecked",
+     "text": "Each one fits before you see it."
     }
    ],
-   "takeaway": "Today: three companies. [[We are one.]]"
+   "takeaway": "Today: three tools. [[We are one.]]"
   }
  },
  {

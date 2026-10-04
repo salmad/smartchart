@@ -16,7 +16,7 @@ export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', 
     if (!starter) throw new Error(`no starter ${id}`)
     const slide = starterSlide(starter, style)
     if (withoutNotes) delete slide.notes
-    return { slide, ctx: contexts({ footer: 'Acme', slides: [slide] })[0] }
+    return { slide, ctx: contexts({ footer: 'Occam', slides: [slide] })[0] }
   }, [id, style, withoutNotes])
   return <SlideView slide={slide} deck={{ style, theme, accent: null }} ctx={{ ...ctx, section: Math.max(ctx.section, 1) }}
     className={cn('relative aspect-video w-full overflow-hidden', className)} />
