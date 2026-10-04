@@ -2733,5 +2733,98 @@
   "pitch": {
    "template": "agenda"
   }
+ },
+ {
+  "id": "pair-number",
+  "group": "trend",
+  "label": "Number and trend",
+  "blurb": "The figure that matters, beside the trend behind it",
+  "consulting": {
+   "template": "pair",
+   "kicker": "Market",
+   "title": "Acme’s spend book reaches [[£3.6bn]] by 2030, 7% of a market growing 13% a year",
+   "halves": [
+    {
+     "number": {
+      "value": "£3.6bn",
+      "caption": "Acme’s spend book in 2030: 7% of UK SME card spend."
+     }
+    },
+    {
+     "caption": "UK SME card spend · £bn",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "£{v}bn",
+      "series": [
+       {
+        "name": "Market",
+        "mark": "bar",
+        "color": "neutral",
+        "values": [
+         32,
+         36,
+         41,
+         46,
+         52
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Grows 13% a year as cards replace transfers"
+     ]
+    }
+   ],
+   "source": "Acme market model, base case."
+  },
+  "pitch": {
+   "template": "pair",
+   "title": "Market",
+   "subtitle": "7% of a £52bn market by 2030.",
+   "halves": [
+    {
+     "number": {
+      "value": "£3.6bn",
+      "caption": "Our spend book by 2030."
+     }
+    },
+    {
+     "caption": "UK SME card spend · £bn",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "£{v}bn",
+      "series": [
+       {
+        "name": "Market",
+        "mark": "bar",
+        "color": "neutral",
+        "values": [
+         32,
+         36,
+         41,
+         46,
+         52
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Grows 13% a year"
+     ]
+    }
+   ]
+  }
  }
 ]

@@ -1537,5 +1537,29 @@
     "template"
    ]
   }
+ },
+ {
+  "name": "Pair · number and chart",
+  "consulting": {
+   "template": "pair",
+   "variant": "pair",
+   "keys": [
+    "halves",
+    "kicker",
+    "source",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "pair",
+   "variant": "pair",
+   "keys": [
+    "halves",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
  }
 ]

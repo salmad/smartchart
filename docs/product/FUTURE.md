@@ -42,8 +42,7 @@ seven), and whether the in-app agent should offer to add an agenda when a deck g
 A pair half can be a chart, a table, a number or points. Unlike halves share one floor: the chart's baseline when a half is
 a chart, else the taller half's bottom grown by up to half (L5). A table's rows grow to it, points become equal bands with
 hairlines, a number sits on it, and a half without a caption keeps the caption's line. A half's overflow is now a fit issue
-(the pair stretches, so it was invisible before). Pitch limits are tighter beside a takeaway. Still open: a starter that
-shows a mixed pair in the gallery.
+(the pair stretches, so it was invisible before). Pitch limits are tighter beside a takeaway. The gallery shows one: Number and trend.
 
 ## 6. Images and screenshots in slides: the next steps
 **Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-images-design.md`):** the image, team and logos slides, logos in
