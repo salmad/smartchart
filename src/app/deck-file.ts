@@ -5,6 +5,8 @@ import type { Page } from '@/engine/agent/review'
 
 export const DECK_ACCEPT = '.pptx,.pdf'
 const MAX_BYTES = 50_000_000
+/** Slides read from one file: a review is of the story, and past this the model call grows too large. */
+export const MAX_SLIDES = 60
 
 export async function readDeck(file: File): Promise<Page[]> {
   if (file.size > MAX_BYTES) throw new Error(`${file.name} is over 50 MB.`)
@@ -65,10 +67,16 @@ export function pptxPage(xml: string): Page {
   return { title: t ? t.lines.join(' ') : '', body: [...shapes.filter((s) => s !== t).flatMap((s) => s.lines), ...tables.flat()].join('\n') }
 }
 
+/** Slides in the order the deck shows them: presentation.xml lists slide ids, its rels map them to files. Without
+    those (a stripped file), file number order. Hidden slides are left out. */
 export async function readPptx(data: Uint8Array): Promise<Page[]> {
-  const files = await unzip(data, (n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
-  const text = new TextDecoder()
-  return [...files.entries()].sort(([a], [b]) => Number(a.match(/\d+/)?.[0]) - Number(b.match(/\d+/)?.[0])).map(([, x]) => pptxPage(text.decode(x)))
+  const files = await unzip(data, (n) => /^ppt\/slides\/slide\d+\.xml$/.test(n) || n === 'ppt/presentation.xml' || n === 'ppt/_rels/presentation.xml.rels')
+  const text = new TextDecoder(), read = (n: string) => { const f = files.get(n); return f ? text.decode(f) : '' }
+  const rels = new Map([...read('ppt/_rels/presentation.xml.rels').matchAll(/<Relationship\b[^>]*>/g)].map((m) => [m[0].match(/Id="([^"]+)"/)?.[1], m[0].match(/Target="([^"]+)"/)?.[1]]))
+  const listed = [...read('ppt/presentation.xml').matchAll(/<p:sldId\b[^>]*r:id="([^"]+)"/g)].map((m) => rels.get(m[1])).filter((t): t is string => !!t)
+    .map((t) => `ppt/${t.replace(/^\/?ppt\//, '').replace(/^\.\//, '')}`).filter((n) => files.has(n))
+  const names = listed.length ? listed : [...files.keys()].filter((n) => n.startsWith('ppt/slides/')).sort((a, b) => Number(a.match(/\d+/)?.[0]) - Number(b.match(/\d+/)?.[0]))
+  return names.map(read).filter((x) => !/<p:sld\b[^>]*\bshow="(?:0|false)"/.test(x)).slice(0, MAX_SLIDES).map(pptxPage)
 }
 
 /* ---- pdf ---- */
@@ -87,7 +95,7 @@ async function readPdfDeck(file: File): Promise<Page[]> {
   pdfjs.GlobalWorkerOptions.workerSrc = worker
   const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }), doc = await task.promise
   const pages: Page[] = []
-  for (let i = 1; i <= Math.min(doc.numPages, 60); i++) {
+  for (let i = 1; i <= Math.min(doc.numPages, MAX_SLIDES); i++) {
     const items = (await (await doc.getPage(i)).getTextContent()).items
     pages.push(pageBySize(items.flatMap((it) => ('str' in it ? [{ str: it.str, size: Math.hypot(it.transform[2], it.transform[3]), eol: it.hasEOL }] : []))))
   }

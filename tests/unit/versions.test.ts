@@ -33,6 +33,8 @@ describe('trees and blobs', () => {
     const swapped = treeOf(deck(['s2', titled('Two')], ['s1', card], ['s3', titled('Three')])).tree
     expect(describeDiff(diffTrees(a, swapped))).toBe('Reordered slides')
     expect(describeDiff(diffTrees(null, a))).toBe('Added 3 slides')
+    const changedAndMoved = treeOf(deck(['s2', titled('Two')], ['s1', titled('One!')], ['s3', titled('Three')])).tree
+    expect(describeDiff(diffTrees(a, changedAndMoved))).toBe('Changed 1 slide, reordered slides')
   })
 })
 
@@ -95,7 +97,7 @@ describe('versions from MCP writes', () => {
     await runTool('create_slide', { deckId, slide: titled('Second'), request: 'Two slides on churn' }, caller, d)
     await runTool('create_slide', { deckId, slide: titled('Third'), request: 'One more' }, caller, d)
     const list = await db.listVersions('u1', deckId)
-    expect(list.map((v) => [v.by, v.label, v.tree.slides.length])).toEqual([['Claude Code', 'One more', 3], ['Claude Code', 'Two slides on churn', 2], ['Claude Code', null, 0]])
+    expect(list.map((v) => [v.by, v.label, v.tree.slides.length])).toEqual([['Claude Code', 'One more', 3], ['Claude Code', 'Two slides on churn', 2], ['Claude Code', 'Create a deck', 0]])
   })
 })
 

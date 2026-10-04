@@ -11,7 +11,7 @@ export interface Page { title: string; body: string }
 export interface PageReview { page: number; title: string; notes: string[] }
 export interface Review { pages: PageReview[]; deck: StoryCheck[]; verdict: string; ms: number }
 
-const P_FAIL = 0.7, LONG_TITLE = 15, WALL = 120;
+const P_FAIL = 0.7, LONG_TITLE = 15, WALL = 120, MAX_JUDGED = 40;
 const words = (t: string) => t.match(/\S+/g)?.length ?? 0;
 const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
@@ -42,7 +42,8 @@ export async function reviewDeck(pages: Page[], style: Style, jev: JevFn = jevCa
   const lines: StoryLine[] = pages.map((p, i) => ({ id: `p${i + 1}`, page: i + 1, kind: kindOf(p, i), title: p.title.trim() || "(no title)" }));
   const content = lines.filter((l) => l.kind === "content");
   // Pitch titles name the topic by design; a consulting title should state the finding.
-  const titles = style === "consulting" ? Object.fromEntries(content.map((l) => [`T${l.page}`, {
+  // At most MAX_JUDGED titles ride in the one call; past that the code notes still apply.
+  const titles = style === "consulting" ? Object.fromEntries(content.slice(0, MAX_JUDGED).map((l) => [`T${l.page}`, {
     instructions: `Slide ${l.page}'s title is "${l.title}". Does it state a conclusion or so-what, or only name a topic?`,
     options: { action: "States a conclusion or so-what.", topic: "Names a topic without a claim." } }])) : {};
   const r = content.length >= 2

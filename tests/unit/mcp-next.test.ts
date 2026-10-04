@@ -33,4 +33,15 @@ describe('checks reach the agent unasked', () => {
     const kept = await runTool('create_slide', { deckId, slide, request: 'Stacked bars of revenue and costs' }, caller, d)
     expect(kept.ok && ((kept.result.warnings as string[] | undefined) ?? []).some((w) => /chart\.stacking: you wrote/.test(w))).toBe(false)
   })
+  it('an explicit mark code draws the same way is not worth a warning; a different one is', async () => {
+    if (!bars) throw new Error('no two-series chart starter')
+    const slide = starterSlide(bars, 'consulting') as { chart: { series: { mark: string }[]; stacking?: string } }
+    delete slide.chart.stacking
+    slide.chart.series.forEach((x) => { x.mark = 'bar' })
+    const d = deps(), deckId = await deck(d)
+    const same = await runTool('create_slide', { deckId, slide: structuredClone(slide), request: 'Revenue and costs' }, caller, { ...d, jev: fakeJev({ mark0: ['bar', 0.9], mark1: ['bar', 0.9] }) })
+    expect(same.ok && ((same.result.warnings as string[] | undefined) ?? []).some((w) => /mark: you wrote/.test(w))).toBe(false)
+    const other = await runTool('create_slide', { deckId, slide: structuredClone(slide), request: 'Revenue and costs' }, caller, { ...d, jev: fakeJev({ mark0: ['line', 0.9], mark1: ['line', 0.9] }) })
+    expect(other.ok && (other.result.warnings as string[]).some((w) => /mark: you wrote "bar"; code drew it as "line"/.test(w))).toBe(true)
+  })
 })

@@ -22,6 +22,16 @@ describe('reading a deck made anywhere', () => {
     }, true)
     expect(await readPptx(z)).toEqual([{ title: 'Q3 review', body: '' }, { title: 'Revenue & margin', body: 'Revenue grew 21%\nMargin 66%' }, { title: 'Ten', body: 'x' }])
   })
+  it('follows the presentation order, not file numbers, and leaves hidden slides out', async () => {
+    const z = await makeZip({
+      'ppt/presentation.xml': '<p:presentation><p:sldIdLst><p:sldId id="256" r:id="rId9"/><p:sldId id="257" r:id="rId2"/><p:sldId id="258" r:id="rId3"/></p:sldIdLst></p:presentation>',
+      'ppt/_rels/presentation.xml.rels': '<Relationships><Relationship Id="rId2" Target="slides/slide1.xml"/><Relationship Id="rId3" Target="slides/slide3.xml"/><Relationship Id="rId9" Target="slides/slide2.xml"/></Relationships>',
+      'ppt/slides/slide1.xml': slideXml('One', []),
+      'ppt/slides/slide2.xml': slideXml('Two', []),
+      'ppt/slides/slide3.xml': slideXml('Three', []).replace('<p:sld>', '<p:sld show="0">'),
+    })
+    expect((await readPptx(z)).map((p) => p.title)).toEqual(['Two', 'One'])
+  })
   it('a slide with no title placeholder takes its first text as the title; tables are read', () => {
     const xml = '<p:sld><p:sp><p:txBody><a:p><a:r><a:t>First</a:t></a:r></a:p></p:txBody></p:sp><a:tbl><a:tr><a:tc><a:p><a:r><a:t>A</a:t></a:r></a:p></a:tc><a:tc><a:p><a:r><a:t>1</a:t></a:r></a:p></a:tc></a:tr></a:tbl></p:sld>'
     expect(pptxPage(xml)).toEqual({ title: 'First', body: 'A\t1' })

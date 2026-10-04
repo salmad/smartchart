@@ -65,8 +65,9 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       if (put === 'foreign') return fail('not_found', `No deck ${out.deck.id}.`)
       if (put === 'conflict') { if (attempt === 0) continue; return fail('conflict', 'The deck changed while this ran.', 'Call it again.') }
       // One version per request: an agent's writes for the same words, close together, group into one.
-      const request = (input as { request?: unknown }).request, label = out.label ?? (typeof request === 'string' && request.trim() ? request.trim().slice(0, 300) : null)
-      await recordVersion(db, uid, out.deck.id, data, { by: caller.client, turn: `mcp:${label ?? ''}`, label }, put.rev, now())
+      // A write with no request (a move, a delete, a resolve) is its own version, named by the tool.
+      const request = (input as { request?: unknown }).request, asked = out.label ?? (typeof request === 'string' && request.trim() ? request.trim().slice(0, 300) : null)
+      await recordVersion(db, uid, out.deck.id, data, { by: caller.client, turn: asked ? `mcp:${asked}` : `mcp-op:${name}:${now()}`, label: asked ?? t.title }, put.rev, now())
       if (out.events?.length) await db.addEvents(uid, out.deck.id, out.events.map((e) => ({ ...e, rev: put.rev, by: caller.client })))
       const result = { ...out.result }
       if ('rev' in result) result.rev = put.rev

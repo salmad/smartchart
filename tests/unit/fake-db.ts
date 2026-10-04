@@ -27,7 +27,7 @@ export function fakeDb(): FakeDb {
     rows, events, keys, rate, calls, versions, blobStore,
     versionHead: async (u, id) => {
       const v = versions.filter((x) => x.deck === id && x.user === u).at(-1)
-      return v ? { n: v.n, by: v.by, turn: v.turn, at: v.at, key: v.key } : null
+      return v ? { n: v.n, by: v.by, turn: v.turn, at: v.at, key: v.key, hashes: v.tree.slides.map(([, h]) => h) } : null
     },
     writeVersion: async (u, id, v) => {
       for (const [h, s] of v.blobs) if (!blobStore.has(`${id}:${h}`)) blobStore.set(`${id}:${h}`, structuredClone(s))

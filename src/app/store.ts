@@ -85,7 +85,7 @@ export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>, op
   const recordLocal = async (deck: SavedDeck, meta: SaveMeta | undefined) => {
     const all = readV(), mine = (all[deck.id] ??= { versions: [], blobs: {} })
     await record({
-      head: async () => { const v = mine.versions.at(-1); return v ? { n: v.n, by: v.by, turn: v.turn, at: v.at, key: v.key } : null },
+      head: async () => { const v = mine.versions.at(-1); return v ? { n: v.n, by: v.by, turn: v.turn, at: v.at, key: v.key, hashes: v.tree.slides.map(([, h]) => h) } : null },
       write: async (_step, v) => {
         for (const [h, sl] of v.blobs) mine.blobs[h] ??= sl
         const top = mine.versions.at(-1)

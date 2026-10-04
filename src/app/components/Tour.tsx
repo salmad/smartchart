@@ -35,7 +35,8 @@ export function Tour({ onClose }: { onClose: () => void }) {
     const key = (e: KeyboardEvent) => {
       if (connecting) return
       if (e.key === 'Escape') { e.preventDefault(); onClose() }
-      if ((e.key === 'ArrowRight' || e.key === 'Enter') && !last) { e.preventDefault(); setI(i + 1) }
+      // Enter means Next only on the card itself; on a button it presses that button.
+      if ((e.key === 'ArrowRight' || (e.key === 'Enter' && e.target === card.current)) && !last) { e.preventDefault(); setI(i + 1) }
       if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); setI(i - 1) }
     }
     document.addEventListener('keydown', key, true)

@@ -16,21 +16,27 @@ const SLIDE = { description: "The whole slide JSON for its template ({ template,
 
 /** The in-app guards: chart marks and stacking stay "auto" unless the user named them. An explicit value code sets
     back to "auto" is said in the result, never changed silently. */
-function choicesToCode(input: unknown, request: string): { input: unknown; notes: string[] } {
+function choicesToCode(input: unknown, request: string): { input: unknown; notes: string[]; written: Record<string, string> } {
   const s = input as { chart?: { series?: { mark?: string }[]; stacking?: string } } | null;
-  const chart = s && typeof s === "object" ? s.chart : undefined, notes: string[] = [];
+  const chart = s && typeof s === "object" ? s.chart : undefined, notes: string[] = [], written: Record<string, string> = {};
   if (chart && Array.isArray(chart.series) && !NAMED_MARK.test(request)) chart.series.forEach((x, i) => {
     if (!x || typeof x !== "object") return;
-    if (x.mark && x.mark !== "auto") notes.push(`chart.series[${i}].mark: you wrote "${x.mark}"; code picks marks unless the user's request names one, so it is "auto" (see resolved). Pass the user's words in request if they asked for it.`);
+    if (x.mark && x.mark !== "auto") written[`chart.series[${i}].mark`] = x.mark;
     x.mark = "auto";
   });
   if (chart && chart.stacking !== undefined && chart.stacking !== "auto" && !/stack|percent|share/i.test(request)) {
     notes.push(`chart.stacking: you wrote "${chart.stacking}"; code picks stacking unless the user's request asks for it, so it is "auto" (see resolved). Pass the user's words in request if they asked for it.`);
     chart.stacking = "auto";
   }
-  return { input, notes };
+  return { input, notes, written };
 }
-const withNotes = (w: Written, notes: string[]): Written => (notes.length ? { ...w, warnings: [...notes, ...w.warnings] } : w);
+/** The overrides worth saying: stacking always, a mark only when code drew it differently from what was written. */
+function withNotes(w: Written, { notes, written }: { notes: string[]; written: Record<string, string> }): Written {
+  const marks = Object.entries(written).filter(([path, v]) => w.resolved[path] !== undefined && w.resolved[path] !== v)
+    .map(([path, v]) => `${path}: you wrote "${v}"; code drew it as "${w.resolved[path]}" because the user's request names no mark. Pass the user's words in request if they asked for it.`);
+  const all = [...notes, ...marks];
+  return all.length ? { ...w, warnings: [...all, ...w.warnings] } : w;
+}
 const parsed = (v: unknown) => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v) as unknown; } catch { /* keep */ } } return v; };
 const docOf = (ctx: ToolContext) => structuredClone(ctx.deck as DeckDoc);
 
@@ -39,10 +45,10 @@ export const slideTools = [
     description: "Add a slide: the whole slide JSON for its template (get_template first). Code autofixes, validates, resolves \"auto\" choices and checks fit, then returns the stored slide, its position, issues to fix, warnings and failed rule checks. slideId only to restore a slide you deleted.",
     input: { type: "object", additionalProperties: false, required: ["deckId", "slide"], properties: { deckId: DECK, slide: SLIDE, after: AFTER, request: REQUEST, slideId: SLIDE_ID } },
     run: async (ctx, { slide, after, request = "", slideId }) => {
-      const doc = docOf(ctx), { input, notes } = choicesToCode(parsed(slide), request);
+      const doc = docOf(ctx), choices = choicesToCode(parsed(slide), request), input = choices.input;
       if (slideId && (!/^s_[\w-]{1,32}$/.test(slideId) || doc.slides.some((s) => s.id === slideId)))
         throw new ToolError("bad_input", `slideId: ${slideId} is taken or malformed.`, "Leave slideId out; it is only for restoring a deleted slide.");
-      const at = insertIndex(doc, after), w = withNotes(await writeSlide(ctx, input, request), notes), id = slideId ?? newSlideId(doc);
+      const at = insertIndex(doc, after), w = withNotes(await writeSlide(ctx, input, request), choices), id = slideId ?? newSlideId(doc);
       doc.slides.splice(at, 0, { id, slide: w.slide, issues: w.issues, warnings: w.warnings, checks: [] });
       return { result: writeResult(ctx, doc, id, w, {}, true), deck: doc, events: [{ slideId: id, what: "created", paths: [] }] };
     } }),
@@ -80,8 +86,8 @@ export const slideTools = [
     description: "Rewrite a slide in another template, keeping its id and position (\"show this as a table\"). Write the whole slide JSON for the new template, keeping the message and every figure. Only when the user asked for another kind of slide.",
     input: { type: "object", additionalProperties: false, required: ["deckId", "slideId", "slide"], properties: { deckId: DECK, slideId: SLIDE_ID, slide: SLIDE, request: REQUEST } },
     run: async (ctx, { slideId, slide, request = "" }) => {
-      const doc = docOf(ctx), { item, index } = slideAt(doc, slideId), { input, notes } = choicesToCode(parsed(slide), request);
-      const w = withNotes(await writeSlide(ctx, input, request), notes);
+      const doc = docOf(ctx), { item, index } = slideAt(doc, slideId), choices = choicesToCode(parsed(slide), request);
+      const w = withNotes(await writeSlide(ctx, choices.input, request), choices);
       doc.slides[index] = { ...item, slide: w.slide, issues: w.issues, warnings: w.warnings, checks: [] };
       return { result: writeResult(ctx, doc, slideId, w), deck: doc, events: [{ slideId, what: "template", paths: [] }] };
     } }),

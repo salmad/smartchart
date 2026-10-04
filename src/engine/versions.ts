@@ -8,7 +8,8 @@ export interface Tree { style: Style; theme: Theme; accent: string | null; slide
 /** A version as a list shows it. `by` is who wrote it (You, SmartChart, or an agent's client name); `turn` groups the
     saves of one agent turn or one request; `label` is the request in the user's words, when there was one. */
 export interface Version { n: number; rev: number; by: string; turn: string | null; label: string | null; at: number; tree: Tree }
-export interface VersionHead { n: number; by: string; turn: string | null; at: number; key: string }
+/** `hashes`: the slide blobs the head names, already stored, so a save sends only new ones. */
+export interface VersionHead { n: number; by: string; turn: string | null; at: number; key: string; hashes?: string[] }
 /** Who is saving and why, sent with a save. */
 export interface VersionMeta { by: string; turn: string | null; label: string | null }
 
@@ -76,7 +77,8 @@ export function describeDiff(d: TreeDiff): string {
     d.look && "changed the look",
   ].filter((p): p is string => !!p);
   // "slide" is said once when the parts run together: "added 1 slide, changed 2".
-  const text = parts.map((p, i) => (i && parts[0].endsWith("slide") || i && parts[0].endsWith("slides") ? p.replace(/ slides?$/, "") : p)).join(", ");
+  const counted = (p: string) => /^(?:added|changed|removed) \d+ slides?$/.test(p);
+  const text = parts.map((p, i) => (i && counted(parts[0]) && counted(p) ? p.replace(/ slides?$/, "") : p)).join(", ");
   return text ? text[0].toUpperCase() + text.slice(1) : "";
 }
 
@@ -101,6 +103,7 @@ export interface VersionStore {
 }
 export async function record(store: VersionStore, data: unknown, meta: VersionMeta, rev: number, now: number): Promise<"skip" | "replace" | "add"> {
   const head = await store.head(), { tree, blobs, key } = treeOf(data), step = nextStep(head, meta, key, now);
-  if (step !== "skip") await store.write(step, { replace: step === "replace" ? (head as VersionHead).n : null, rev, meta, tree, key, blobs, at: now });
+  const stored = new Set(head?.hashes ?? []), fresh = new Map([...blobs].filter(([h]) => !stored.has(h)));
+  if (step !== "skip") await store.write(step, { replace: step === "replace" ? (head as VersionHead).n : null, rev, meta, tree, key, blobs: fresh, at: now });
   return step;
 }

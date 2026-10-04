@@ -24,7 +24,7 @@ export function useTour(app: { getState(): AppState; dispatch(a: Action): void }
   }, [app, recheck])
   const stop = useCallback(() => { setTouring(false); markSeen() }, [])
   /** After a turn: the first slide someone makes is the moment to offer the tour, once. */
-  const offer = useCallback(() => { if (!seen()) setNudge(true) }, [])
+  const offer = useCallback(() => { if (!seen()) { setNudge(true); markSeen() } }, [])
   const dismiss = useCallback(() => { setNudge(false); markSeen() }, [])
   return { touring, start, stop, nudge, offer, dismiss }
 }

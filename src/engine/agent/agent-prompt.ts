@@ -78,7 +78,7 @@ const FUNCTIONS: ToolDef["function"][] = [
 export const TOOLS: ToolDef[] = FUNCTIONS.map((f) => ({ type: "function", function: f }));
 /** Offered only while the deck has open comments, so a turn without them carries nothing extra. */
 export const RESOLVE_COMMENT: ToolDef = { type: "function", function: { name: "resolve_comment",
-  description: "Mark a comment from the deck state as done once you addressed it, with a one-line reply saying what you changed, or why you changed nothing. Only for comments the user asked you to address.",
+  description: `Mark a comment from the deck state as done once you addressed it, with a one-line reply saying what you changed, or why you changed nothing. ${COMMENTS_RULE}`,
   parameters: { type: "object", required: ["commentId", "reply"], properties: { commentId: { type: "string", description: "A comment id from the deck state, e.g. c_a1b2." }, reply: { type: "string", description: "What you did about it, in one line." } } } } };
 
 /** State block: rebuilt every user turn and sent as the last message before the user's. */
@@ -86,7 +86,7 @@ export function stateBlock({ style, theme, slides, selection, edited = [], comme
   const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide?.template}] ${headline(s.slide)}`).join("\n") : "(empty)";
   const sel = selection?.slideId ? `${selection.slideId}${selection.path ? ` · component ${selection.path}` : ""}` : "nothing";
   const notes = commentLines(comments, slides.map((s) => s.id));
-  return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}${edited.length ? `\nEdited by hand since the last turn: ${edited.join(", ")}` : ""}${notes.length ? `\nOpen comments (${COMMENTS_RULE})\n${notes.map((l) => `- ${l}`).join("\n")}` : ""}`;
+  return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}${edited.length ? `\nEdited by hand since the last turn: ${edited.join(", ")}` : ""}${notes.length ? `\nOpen comments (notes people left; act on them only when the user asks, see resolve_comment):\n${notes.map((l) => `- ${l}`).join("\n")}` : ""}`;
 }
 
 /** Working slides (spec 9.3): rebuilt before every model step, sent last, never stored in the history. */

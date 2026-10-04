@@ -66,7 +66,8 @@ export function App({ route, account, repo, backup }: Props) {
     return (measurerRef.current ??= createMeasurer(frame.current))
   }, [])
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
-  const tour = useTour(app, useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer]))
+  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
+  const tour = useTour(app, recheck)
   const offerTour = tour.offer
 
   // The deck as last saved (or opened): a save happens only when this changes, so opening a deck or selecting a
@@ -235,7 +236,6 @@ export function App({ route, account, repo, backup }: Props) {
     account,
   }
 
-  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
   const flush = useCallback(async () => {
     const saved = toSaved(app.getState())
     if (saved && unsaved(saved)) await persist(saved)

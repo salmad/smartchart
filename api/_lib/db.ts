@@ -155,9 +155,9 @@ export function getDb(): Db | null {
       .map((r) => ({ id: r.id, prefix: r.prefix, created: +new Date(r.created), lastUsed: r.lastUsed ? +new Date(r.lastUsed) : null })),
     deleteKey: async (u, id) => (await q('delete from api_keys where user_id = $1 and left(hash, 12) = $2 returning hash', [u, id])).length > 0,
     versionHead: async (u, id) => {
-      const r = await q<{ n: number; by: string; turn: string | null; at: string | Date; key: string }>(
-        'select n, by_client as by, turn, at, key from deck_versions where deck_id = $1 and user_id = $2 order by n desc limit 1', [id, u])
-      return r[0] ? { ...r[0], at: new Date(r[0].at).getTime() } : null
+      const r = await q<{ n: number; by: string; turn: string | null; at: string | Date; key: string; tree: Tree }>(
+        'select n, by_client as by, turn, at, key, tree from deck_versions where deck_id = $1 and user_id = $2 order by n desc limit 1', [id, u])
+      return r[0] ? { n: r[0].n, by: r[0].by, turn: r[0].turn, key: r[0].key, at: new Date(r[0].at).getTime(), hashes: r[0].tree.slides.map(([, h]) => h) } : null
     },
     writeVersion: async (u, id, v) => {
       const hashes = [...v.blobs.keys()]
