@@ -17,6 +17,8 @@ export interface BarProps {
   /** Null before the deck is saved. */
   onDelete: (() => void) | null
   onLook: () => void
+  /** Null when the decks' store keeps no versions. */
+  onVersions: (() => void) | null
   /** The view switch; null when the stage shows something else (the starter picker, edit mode). */
   view: DeckView | null; onView: (v: DeckView) => void
   onPresent: () => void
@@ -53,7 +55,7 @@ export function Bar(p: BarProps) {
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-ink-3">/</span>
           <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
-          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onLook={p.onLook} onDelete={p.onDelete} />
+          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onLook={p.onLook} onVersions={p.onVersions} onDelete={p.onDelete} />
         </nav>
       </div>
       <div className="max-[900px]:hidden">

@@ -23,35 +23,42 @@
 
 ## Task 2: Repos
 
-- [ ] `store.ts`: `DeckRepo.save(deck, meta?)`, optional `versions(id)`, `blobs(id, hashes)`; `SaveMeta = { by: 'you' | 'agent'; turn?: string; label?: string }`
-- [ ] `remote.ts`: send `version` with the PUT; `versions` and `blobs` call the API
-- [ ] `localDeckRepo`: versions under their own localStorage key, using `record()`, capped at 30 per deck; removed with the deck
-- [ ] Tests: remote sends meta; the local repo groups, skips and lists like the server
+- [x] `store.ts`: `DeckRepo.save(deck, meta?)`, optional `versions(id)`, `blobs(id, hashes)`; `SaveMeta = { by: 'you' | 'agent'; turn?: string; label?: string }`
+- [x] `remote.ts`: send `version` with the PUT; `versions` and `blobs` call the API
+- [x] `localDeckRepo`: versions under their own localStorage key, using `record()`, capped at 30 per deck; removed with the deck
+- [x] Tests: remote sends meta; the local repo groups, skips and lists like the server
 
 ## Task 3: Restore and Undo logic (pure, in `src/app/versions.ts`)
 
-- [ ] `loadVersion(repo, deckId, version)` → `Item[]` (fetches missing blobs, caches per deck)
-- [ ] `undoTarget(list, turn)` → `{ before: Tree | null, later: number }`: the version before the turn's first version; `null` means the deck had nothing before (restore to empty)
-- [ ] Tests for both, including the first turn and later edits
+- [x] `loadVersion(repo, deckId, version)` → `Item[]` (fetches missing blobs, caches per deck)
+- [x] `undoTarget(list, turn)` → `{ before: Tree | null, later: number }`: the version before the turn's first version; `null` means the deck had nothing before (restore to empty)
+- [x] Tests for both, including the first turn and later edits
 
 ## Task 4: App wiring
 
-- [ ] `Message.turn?: string`; `sendTurn` makes a turn id, sets it on the bot message when slides were written, and returns it
-- [ ] `App.tsx`: a ref holding the next save's meta (the agent after a turn, a restore); `persist` passes it to `repo.save`
-- [ ] `restoreTo(items, look, label)`: dispatches items and look, adds changed ids to `edited`, says it in the chat, saves now
-- [ ] `undoTurn(turn)`: flush the save, list the versions, pick the target, restore, and say what was undone
-- [ ] Locked while busy or editing
+- [x] `Message.turn?: string`; `sendTurn` makes a turn id, sets it on the bot message when slides were written, and returns it
+- [x] `App.tsx`: a ref holding the next save's meta (the agent after a turn, a restore); `persist` passes it to `repo.save`
+- [x] `restoreTo(items, look, label)`: dispatches items and look, adds changed ids to `edited`, says it in the chat, saves now
+- [x] `undoTurn(turn)`: flush the save, list the versions, pick the target, restore, and say what was undone
+- [x] Locked while busy or editing
 
 ## Task 5: UI
 
-- [ ] `DeckMenu`: a "Versions" item (lucide `History`), shown when supported
-- [ ] `VersionsPanel.tsx` (right inspector like `LookPanel`): grouped by day; who, request, diff words, time; Current on top
-- [ ] `VersionPreview.tsx` (the stage): a read-only grid of the version's slides with changed ones marked; a bar with Restore and Back to current
-- [ ] `Chat.tsx`: a quiet "Undo" under bot messages that carry `turn`, disabled while locked
-- [ ] Verify in the browser (dev account): edits → Versions → preview → restore; Undo on a turn (the dev account has a model if the keys are set; otherwise test with a hand edit and restore)
+- [x] `DeckMenu`: a "Versions" item (lucide `History`), shown when supported
+- [x] `VersionsPanel.tsx` (right inspector like `LookPanel`): grouped by day; who, request, diff words, time; Current on top
+- [x] `VersionPreview.tsx` (the stage): a read-only grid of the version's slides with changed ones marked; a bar with Restore and Back to current
+- [x] `Chat.tsx`: a quiet "Undo" under bot messages that carry `turn`, disabled while locked
+- [x] Verify in the browser (dev account): edits → Versions → preview → restore; Undo on a turn (the dev account has a model if the keys are set; otherwise test with a hand edit and restore)
 
 ## Task 6: Browser test, docs, commit
 
-- [ ] Playwright: `tests/browser/versions.spec.ts`, using the dev account
-- [ ] FUTURE.md #1: mark the first slice as built and list what's left
-- [ ] Commit
+- [x] Playwright: `tests/browser/versions.spec.ts`, using the dev account
+- [x] FUTURE.md #1: mark the first slice as built and list what's left
+- [x] Commit
+
+## Verification (2026-10-04)
+
+- vitest: 872 passed. The one failure (`mcp-eval s05 is honest`) also fails on the base commit b5fb347.
+- Playwright: `versions.spec.ts` passes (2). Four other specs (example-lines, starters ×2, share) also fail on the base commit.
+- `db.ts` SQL checked against a throwaway Postgres 17 (grouping, skipping, blobs stored once, another account blocked, KEEP, delete cascade).
+- End to end in the dev app with real models: two turns gave two labelled versions; preview, restore and Undo all worked.

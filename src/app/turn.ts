@@ -13,7 +13,8 @@ export interface TurnDeps {
   measurer: ReturnType<typeof createMeasurer>; dispatch: (a: Action) => void; getState: () => AppState
   models?: Parameters<typeof runTurn>[0]['models']; judge?: typeof judgmentChecks
 }
-export interface TurnRecord { request: string; reply?: string; error?: string; trace: TraceStep[]; modelCalls?: number; toolCalls?: number; ms: number; pre?: { intent: string; p: number }; written?: string[]; items: Item[] }
+/** `turn`: the id the turn's save carries, so its version can be found for Undo; set when slides were written. */
+export interface TurnRecord { turn?: string; request: string; reply?: string; error?: string; trace: TraceStep[]; modelCalls?: number; toolCalls?: number; ms: number; pre?: { intent: string; p: number }; written?: string[]; items: Item[] }
 
 /** The bot message's sub line while the turn runs. */
 export const WORKING = 'Working…'
@@ -69,9 +70,10 @@ export async function sendTurn(input: string, deps: TurnDeps, files: Attached[] 
     const last = history.at(-1)
     if (last?.role === 'assistant' && !last.tool_calls?.length) last.content = reply
     const replyMs = Math.round(performance.now() - t0), secs = (replyMs / 1000).toFixed(1)
-    setBot({ kind: 'bot', text: reply, sub: `${plural(r.modelCalls, 'model call')} · ${plural(r.toolCalls, 'tool call')} · ${secs}s`, trace })
+    const turn = r.written.length ? `t_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` : undefined
+    setBot({ kind: 'bot', text: reply, sub: `${plural(r.modelCalls, 'model call')} · ${plural(r.toolCalls, 'tool call')} · ${secs}s`, trace, ...(turn ? { turn } : {}) })
     dispatch({ type: 'set', patch: { busy: false, history, working } })
-    return { request: text, reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: replyMs,
+    return { turn, request: text, reply, trace, modelCalls: r.modelCalls, toolCalls: r.toolCalls, ms: replyMs,
       pre: { intent: r.pre.intent, p: r.pre.p }, written: r.written, items: structuredClone(getState().items) }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)

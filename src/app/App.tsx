@@ -13,7 +13,8 @@ import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
 import { deckOf, editKey, locked, toSaved } from './state'
 import { saveEdit } from './edit/save'
-import { deckName, newDeckId, type DeckRepo, type Item, type SavedDeck } from './store'
+import { deckName, newDeckId, type DeckRepo, type Item, type SaveMeta, type SavedDeck } from './store'
+import { useVersions } from './useVersions'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
@@ -46,6 +47,10 @@ export function App({ route, account, repo, backup }: Props) {
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
+  // Who wrote the next save, for its version: the agent right after a turn, or a restore. Kept until a save lands.
+  const author = useRef<SaveMeta | null>(null)
+  // Counts saves that landed, so the Versions panel knows to read the list again.
+  const [saves, setSaves] = useState(0)
   const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
@@ -120,8 +125,11 @@ export function App({ route, account, repo, backup }: Props) {
   const persist = useCallback(async (saved: SavedDeck) => {
     const r = retry.current
     clearTimeout(r.timer)
-    const why = await repo.save(saved)
+    const meta = author.current ?? undefined
+    const why = await repo.save(saved, meta)
     if (!why) {
+      if (author.current === meta) author.current = null
+      setSaves((n) => n + 1)
       savedKey.current = editKey(saved)
       if (r.wait) void backup?.remove(saved.id)
       r.wait = 0; warned.current = false
@@ -202,6 +210,8 @@ export function App({ route, account, repo, backup }: Props) {
 
   const send = useCallback(async (text: string, files: Attached[] = []) => {
     const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }, files)
+    // The save after the turn is the agent's: its version carries the turn and the request in the user's words.
+    if (r.turn) author.current = { by: 'agent', turn: r.turn, label: text.trim().slice(0, 300) || 'Files' }
     turns.current.push(r)
     return r
   }, [app, measurer])
@@ -232,6 +242,13 @@ export function App({ route, account, repo, backup }: Props) {
     account,
   }
 
+  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
+  const flush = useCallback(async () => {
+    const saved = toSaved(app.getState())
+    if (saved && unsaved(saved)) await persist(saved)
+  }, [app, persist])
+  const { versions, undoTurn } = useVersions({ app, repo, author, flush, recheck, say })
+
   const onClear = useCallback(() => {
     if (locked(app.getState())) return
     app.dispatch({ type: 'set', patch: { history: [], working: new Set(), messages: [{ kind: 'bot', text: '', sub: CLEARED }] } })
@@ -251,7 +268,6 @@ export function App({ route, account, repo, backup }: Props) {
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
   // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
   // A starter's checks run as it lands, so its check line is never empty.
-  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
   const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
@@ -265,7 +281,7 @@ export function App({ route, account, repo, backup }: Props) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}

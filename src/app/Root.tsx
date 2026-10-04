@@ -18,7 +18,7 @@ export function Root() {
   const [signingIn, setSigningIn] = useState(false), [ended, setEnded] = useState(false)
   // Decks live in the account; a 401 from the decks API means the session ended: ask to sign in again, over
   // whatever screen is open. The dev account keeps its decks in this browser, with nothing to back them up to.
-  const repo = useMemo(() => (dev ? localDeckRepo() : remoteDeckRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
 

@@ -1,4 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { diffTrees, type TreeDiff, type Version } from '@/engine/versions'
+import type { VersionsApi } from '@/app/useVersions'
+import type { Item } from '@/app/store'
 import type { Pill } from '@/engine/agent/suggest'
 import type { Deck, Slide, Style, Theme } from '@/engine/types'
 import { locked, type AppState } from '@/app/state'
@@ -16,10 +19,12 @@ import { LookPanel } from './LookPanel'
 import { SLIDE_W, Stage } from './Stage'
 import { Storyline } from './Storyline'
 import { Strip } from './Strip'
+import { VersionPreview } from './VersionPreview'
+import { VersionsPanel } from './VersionsPanel'
 
 export interface EditorProps {
   state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
-  bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onLook'> & {
+  bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onLook' | 'onVersions'> & {
     onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void; onAdd: () => void
   }
   onSend: (text: string, files?: Attached[]) => void; onClear: () => void; onSelect: (index: number) => void
@@ -30,23 +35,36 @@ export interface EditorProps {
   decks: ReactNode
   edit: { measurer: () => Measurer; save: (id: string, draft: Slide) => Promise<string | null> }
   onEdit: (id: string | null) => void
+  /** Null when the decks' store keeps no versions; `saves` counts saves that landed. */
+  versions: { api: VersionsApi; saves: number } | null
+  onUndo: ((turn: string) => void) | null
 }
+
+type Preview = { v: Version; diff: TreeDiff; current: boolean; items: Item[] | null | 'missing' }
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
     with the deck's look as an inspector on the right while it is open. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
-  const [look, setLook] = useState(false)
+  // The right inspector: the deck's look, or its versions (one at a time).
+  const [side, setSide] = useState<'look' | 'versions' | null>(null)
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const closeVersions = () => { setSide(null); setPreview(null) }
+  const showVersion = (v: Version, before: Version | null, current: boolean) => {
+    const p: Preview = { v, diff: diffTrees(before?.tree ?? null, v.tree), current, items: null }
+    setPreview(p)
+    versions?.api.items(v).then((items) => setPreview((now) => (now?.v.n === v.n ? { ...now, items: items ?? 'missing' } : now)), () => setPreview((now) => (now?.v.n === v.n ? { ...now, items: 'missing' } : now)))
+  }
   // The view switch only applies when the stage shows the deck.
-  const shown = items.length && !stage && !editing ? view : null
+  const shown = items.length && !stage && !editing && !preview ? view : null
   const open = (i: number) => { onSelect(i); setView('slide') }
 
   // F presents; the arrows move through the deck. Typing in a field is left alone.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (stage || s.editing || e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
+      if (stage || preview || s.editing || e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
       if (e.key === 'e' && items[current] && !lock) { e.preventDefault(); onEdit(items[current].id) }
       if (e.key === 'f') bar.onPresent()
       if (e.key === 'ArrowRight' && current < items.length - 1) onSelect(current + 1)
@@ -54,7 +72,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
     }
     document.addEventListener('keydown', key)
     return () => document.removeEventListener('keydown', key)
-  }, [bar, current, items, onSelect, onEdit, stage, s.editing, lock])
+  }, [bar, current, items, onSelect, onEdit, stage, preview, s.editing, lock])
 
   const strip = (layout: 'row' | 'grid') => (
     <Strip items={items} current={current} deck={deck} busy={lock} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
@@ -64,16 +82,21 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   return (
     <>
       <Bar {...bar} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live}
-        view={shown || null} onView={setView} onLook={() => setLook(true)} />
+        view={shown || null} onView={setView} onLook={() => { setPreview(null); setSide('look') }} onVersions={versions && (() => setSide('versions'))} />
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
         {decks}
         {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}
         <aside aria-label="Chat" className={cn('flex w-[400px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
-          <Chat messages={s.messages} offline={booted && !s.live} />
+          <Chat messages={s.messages} offline={booted && !s.live} onUndo={onUndo} busy={lock} />
           <Composer chips={chips} canSend={s.live && !lock} busy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
         </aside>
-        {stage
+        {preview
+          ? <main className="grid min-h-0 min-w-0 flex-1 max-[900px]:contents">
+              <VersionPreview version={preview.v} items={preview.items} diff={preview.diff} current={preview.current} busy={lock} onBack={() => setPreview(null)}
+                onRestore={() => { if (Array.isArray(preview.items)) { versions?.api.restore(preview.v, preview.items); setPreview(null) } }} />
+            </main>
+          : stage
           ? <main className="grid min-h-0 min-w-0 flex-1 max-[900px]:contents">{stage}</main>
           : editing
           ? <main className="flex min-h-0 min-w-0 flex-1 flex-col justify-center max-[900px]:contents">
@@ -94,8 +117,10 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
                 {strip('row')}
               </section>
             </main>}
-        {look && <LookPanel deckStyle={s.style} theme={s.theme} accent={s.accent} styleLocked={items.length > 0}
-          onStyle={bar.onStyle} onTheme={bar.onTheme} onAccent={bar.onAccent} onClose={() => setLook(false)} />}
+        {side === 'versions' && versions && <VersionsPanel api={versions.api} saves={versions.saves} selected={preview?.v.n ?? null}
+          onPreview={showVersion} onClose={closeVersions} />}
+        {side === 'look' && <LookPanel deckStyle={s.style} theme={s.theme} accent={s.accent} styleLocked={items.length > 0}
+          onStyle={bar.onStyle} onTheme={bar.onTheme} onAccent={bar.onAccent} onClose={() => setSide(null)} />}
       </div>
     </>
   )
