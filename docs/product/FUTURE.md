@@ -50,8 +50,9 @@ shows a mixed pair in the gallery.
 tables and cards, one-colour logos, `add_image` for MCP and REST, and pictures in the app: drop or paste one into the chat
 (the agent gets a src for each use it can have), replace one in edit mode, and add a logo or a person by picking the picture
 first. Still to do:
-- **Logos from a company domain:** the agent writes `stripe.com` and SmartChart fetches the logo (needs a logo service key,
-  e.g. logo.dev).
+- **Logos from a company domain: built** (`add_image { domain, kind: "logo" }`), from the company's own home page, no logo
+  service. Measured on 12 well-known sites: 8 right, 4 refused (blocked pages, logos drawn by script), none wrong. A logo
+  service (logo.dev, Brandfetch) would raise the hit rate if refusals become a problem.
 - **The user's own crop** of a photo (a focal point), and **images in pair halves**.
 - **Original colours** for a logo, as an option beside one colour (one colour stays the default).
 - A new row by hand in a table with row logos (it needs a logo too), and pictures for a signed-out maker (local decks).

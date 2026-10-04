@@ -187,7 +187,14 @@ export function blobStore(): StoreFn | null {
   }
 }
 
-export async function addImage(input: { url?: string; data?: string; kind: ImageKind }, deps: { store: StoreFn; fetch?: typeof fetch; lookup?: Lookup }) {
+export async function addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }, deps: { store: StoreFn; fetch?: typeof fetch; lookup?: Lookup }) {
+  if (input.domain) {
+    if (input.kind !== 'logo') throw new ImageError('domain: only a logo is found from a domain.', 'Pass kind "logo", or a url for a photo or screenshot.')
+    const { findLogo } = await import('./logo-finder.js')
+    const { prepared: p, from } = await findLogo(input.domain, deps)
+    const src = await deps.store(p.name, p.bytes, 'image/png')
+    return { src, width: p.w, height: p.h, kind: p.kind, from }
+  }
   let bytes: Uint8Array
   if (input.url) bytes = await fetchPublic(input.url, deps)
   else {

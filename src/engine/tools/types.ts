@@ -19,7 +19,7 @@ export interface AccountPort {
   share(deckId: string, on: boolean): Promise<string | null>;
   newDeckId(): string;
   /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
-  addImage(input: { url?: string; data?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind }>;
+  addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind; from?: string }>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"

@@ -34,7 +34,7 @@ describe('add_image', () => {
   })
   it('names what is wrong and what to pass instead', async () => {
     const { deps } = setup()
-    expect(await runTool('add_image', { kind: 'logo' }, caller, deps)).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringMatching(/exactly one of url or data/) } })
+    expect(await runTool('add_image', { kind: 'logo' }, caller, deps)).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringMatching(/exactly one of url, data or domain/) } })
     expect(await runTool('add_image', { url: 'http://x.test/a.png', kind: 'photo' }, caller, deps)).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringMatching(/https/) } })
     const small = (await sharp({ create: { width: 120, height: 90, channels: 3, background: '#777' } }).jpeg().toBuffer()).toString('base64')
     expect(await runTool('add_image', { data: small, kind: 'photo' }, caller, deps)).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringMatching(/200 px/), fix: expect.stringMatching(/larger/) } })

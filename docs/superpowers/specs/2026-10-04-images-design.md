@@ -134,3 +134,11 @@ the user; images in pair halves. Each is a FUTURE.md line.
   ask for a picture it does not have. Add slide shows the picture starters again.
 - **Edit mode:** "Replace picture" over the picture under the pointer (same kind, alt kept); "Add after" on a list whose
   items carry a picture opens the picker first. Failures show their reason; signed out, it says to sign in.
+
+## Logos from a domain (added 2026-10-04)
+`add_image { domain: "stripe.com", kind: "logo" }` reads the company's home page (`api/_lib/logo-finder.ts`). Candidates:
+inline SVGs and `<img>`s whose human-readable words (aria-label, title, alt, the link around them) name the brand or say
+"logo", near the top, in a link to the home page; never one in a customer, partner, press or social context; then the
+site's SVG icon and app icon. Each goes through the logo pipeline; a filled disc or square (over 72% ink) is refused. The
+result says where it was found, and the agent tells the user so they can check. Precision over recall: a wrong logo on a
+board slide is worse than asking for a link.
