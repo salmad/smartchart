@@ -7,12 +7,12 @@
   "consulting": {
    "template": "cover",
    "title": "Acme",
-   "subtitle": "A revolving credit card and business account for UK small and medium-sized businesses."
+   "subtitle": "A business card and account for small and medium-sized businesses."
   },
   "pitch": {
    "template": "cover",
    "title": "The card that [[runs the business.]]",
-   "subtitle": "Credit, cashflow and rewards for UK small businesses, all in one app."
+   "subtitle": "Spending limits, cashflow and rewards for small businesses, all in one app."
   }
  },
  {
@@ -23,7 +23,7 @@
   "consulting": {
    "template": "section",
    "title": "The problem",
-   "subtitle": "SME founders fund the business on personal credit because no provider bundles credit with banking."
+   "subtitle": "SME founders fund the business on personal cards because no provider bundles a real limit with banking."
   },
   "pitch": {
    "template": "section",
@@ -38,11 +38,11 @@
   "consulting": {
    "template": "summary",
    "kicker": "Executive summary",
-   "title": "Acme can build a [[£120m loan book]] by 2030 by bundling SME credit with banking",
+   "title": "Acme can build a [[£120m loan book]] by 2030 by bundling SME lending with banking",
    "points": [
     {
-     "title": "SMEs fund growth on personal credit",
-     "text": "A third need revolving credit; no provider pairs a real limit with a business account."
+     "title": "SMEs fund growth on personal cards",
+     "text": "A third need flexible funding; no provider pairs a real limit with a business account."
     },
     {
      "title": "Bundling fixes adverse selection",
@@ -238,7 +238,7 @@
    "title": "The market grows [[a third]] by 2030 while Acme takes 7% of it",
    "halves": [
     {
-     "caption": "UK SME card spend · £bn",
+     "caption": "SME card spend · £bn",
      "chart": {
       "categories": [
        "2026",
@@ -307,7 +307,7 @@
    "subtitle": "A growing market, [[a rising share.]]",
    "halves": [
     {
-     "caption": "UK SME card spend · £bn",
+     "caption": "SME card spend · £bn",
      "chart": {
       "categories": [
        "2026",
@@ -393,7 +393,7 @@
      "title": "Cashflow in one place",
      "bullets": [
       "Pay bills, get paid and control team spend",
-      "Move between debit and credit funds per payment"
+      "Choose balance or limit funds per payment"
      ]
     },
     {
@@ -415,7 +415,7 @@
    "cards": [
     {
      "value": "5 min",
-     "title": "to a credit line",
+     "title": "to a spending limit",
      "text": "Up to £250k. Spend the same day."
     },
     {
@@ -441,12 +441,12 @@
   "consulting": {
    "template": "cards",
    "kicker": "The insight",
-   "title": "Credit-only lenders attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
+   "title": "Lender-only fintechs attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
    "framed": true,
    "cards": [
     {
      "tone": "neutral",
-     "label": "Credit-only lenders",
+     "label": "Lender-only fintechs",
      "title": "Adverse loop",
      "bullets": [
       "Expensive acquisition of desperate borrowers",
@@ -460,7 +460,7 @@
       },
       {
        "label": "Track record",
-       "text": "Most credit-only fintechs shut down"
+       "text": "Most lender-only fintechs shut down"
       }
      ]
     },
@@ -469,8 +469,8 @@
      "label": "Acme",
      "title": "Positive loop",
      "bullets": [
-      "Customers arrive for non-credit reasons",
-      "Credit funds the cashflow of a working business",
+      "Customers arrive for non-lending reasons",
+      "Lending funds the cashflow of a working business",
       "More data, better pricing, better customers"
      ],
      "facts": [
@@ -485,17 +485,17 @@
      ]
     }
    ],
-   "takeaway": "Why customers join decides how much credit loses."
+   "takeaway": "Why customers join decides how much lending loses."
   },
   "pitch": {
    "template": "cards",
    "title": "The insight",
-   "subtitle": "Credit alone attracts the wrong borrowers.",
+   "subtitle": "Lending alone attracts the wrong borrowers.",
    "framed": true,
    "cards": [
     {
      "tone": "neutral",
-     "label": "Credit only",
+     "label": "Lender only",
      "title": "Adverse loop",
      "text": "Desperate borrowers, thin data, rising prices."
     },
@@ -503,7 +503,7 @@
      "tone": "focus",
      "label": "Acme",
      "title": "Positive loop",
-     "text": "Good businesses arrive first. Credit follows."
+     "text": "Good businesses arrive first. Lending follows."
     }
    ]
   }
@@ -758,7 +758,7 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit"
+      "label": "Limit"
      },
      {
       "label": "No annual fee"
@@ -771,7 +771,7 @@
     "rows": [
      {
       "cells": [
-       "High-street bank",
+       "Retail bank",
        "£25k",
        {
         "value": "✗",
@@ -820,7 +820,7 @@
     },
     {
      "title": "Neobanks stop at debit",
-     "text": "No credit line, so spend leaves for personal cards."
+     "text": "No real limit, so spend leaves for personal cards."
     },
     {
      "title": "Charge card perks cost extra",
@@ -837,7 +837,7 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit"
+      "label": "Limit"
      },
      {
       "label": "No annual fee"
@@ -850,7 +850,7 @@
     "rows": [
      {
       "cells": [
-       "High-street bank",
+       "Retail bank",
        "£25k",
        {
         "value": "✗",
@@ -1009,7 +1009,7 @@
     "kind": "matrix",
     "axes": {
      "x": "Rewards",
-     "y": "Credit limit"
+     "y": "Limit"
     },
     "quadrants": [
      "Lenders",
@@ -1019,7 +1019,7 @@
     ],
     "points": [
      {
-      "label": "Credit-only lender",
+      "label": "Lender-only fintech",
       "x": 18,
       "y": 78
      },
@@ -1029,7 +1029,7 @@
       "y": 62
      },
      {
-      "label": "High-street bank",
+      "label": "Retail bank",
       "x": 22,
       "y": 30
      },
@@ -1054,7 +1054,7 @@
    "notes": [
     {
      "title": "Lenders: limit only",
-     "text": "Credit-only lenders and charge cards offer £50k, no rewards."
+     "text": "Lender-only fintechs and charge cards offer £50k, no rewards."
     },
     {
      "title": "Cards: rewards only",
@@ -1076,7 +1076,7 @@
     "kind": "matrix",
     "axes": {
      "x": "Rewards",
-     "y": "Credit limit"
+     "y": "Limit"
     },
     "quadrants": [
      "Lenders",
@@ -1086,7 +1086,7 @@
     ],
     "points": [
      {
-      "label": "Credit-only lender",
+      "label": "Lender-only fintech",
       "x": 18,
       "y": 78
      },
@@ -1096,7 +1096,7 @@
       "y": 62
      },
      {
-      "label": "High-street bank",
+      "label": "Retail bank",
       "x": 22,
       "y": 30
      },
@@ -1137,7 +1137,7 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit",
+      "label": "Limit",
       "icon": "wallet"
      },
      {
@@ -1156,7 +1156,7 @@
     "rows": [
      {
       "cells": [
-       "High-street bank",
+       "Retail bank",
        "◑",
        "○",
        "◔",
@@ -1183,7 +1183,7 @@
      },
      {
       "cells": [
-       "Credit-only lender",
+       "Lender-only fintech",
        "◕",
        "○",
        "◑",
@@ -1215,7 +1215,7 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit",
+      "label": "Limit",
       "icon": "wallet"
      },
      {
@@ -1234,7 +1234,7 @@
     "rows": [
      {
       "cells": [
-       "High-street bank",
+       "Retail bank",
        "◑",
        "○",
        "◔",
@@ -1261,7 +1261,7 @@
      },
      {
       "cells": [
-       "Credit-only lender",
+       "Lender-only fintech",
        "◕",
        "○",
        "◑",
@@ -2006,10 +2006,10 @@
      }
     ]
    },
-   "caption": "UK SME card spend by issuer, 2020–2026 · £bn",
+   "caption": "SME card spend by issuer, 2020–2026 · £bn",
    "kicker": "Competition",
-   "title": "[[The largest issuer]] widens its lead in UK SME card spend to £15bn while challengers stay near £1bn",
-   "source": "UK card spending statistics; Acme analysis. Illustrative."
+   "title": "[[The largest issuer]] widens its lead in SME card spend to £15bn while challengers stay near £1bn",
+   "source": "Card spending statistics; Acme analysis. Illustrative."
   },
   "pitch": {
    "template": "chart",
@@ -2232,7 +2232,7 @@
      {
       "cells": [
        {
-        "value": "Hire the head of credit",
+        "value": "Hire the head of risk",
         "note": "Two finalists; owns underwriting"
        },
        "CEO",
@@ -2314,7 +2314,7 @@
      {
       "cells": [
        {
-        "value": "Hire the head of credit",
+        "value": "Hire the head of risk",
         "note": "Two finalists; owns underwriting"
        },
        "CEO",
@@ -2373,20 +2373,20 @@
   "consulting": {
    "template": "cards",
    "kicker": "Appendix · Market",
-   "title": "Demand is documented: a third of UK SMEs need revolving credit and [[a fifth]] already use a card",
+   "title": "Demand is documented: a third of SMEs need flexible funding and [[a fifth]] already use a card",
    "cards": [
     {
      "value": "5.7M",
-     "title": "UK SMEs",
+     "title": "SMEs",
      "bullets": [
-      "Private-sector businesses across the UK",
+      "Private-sector businesses",
       "34M more across the EU, most under ten staff"
      ]
     },
     {
      "value": "19%",
      "tone": "focus",
-     "title": "Use a credit card",
+     "title": "Use a business card",
      "bullets": [
       "The most-used external finance product",
       "Ahead of overdrafts and term loans"
@@ -2402,15 +2402,15 @@
     },
     {
      "value": "€400bn",
-     "title": "SME credit gap",
+     "title": "SME funding gap",
      "bullets": [
-      "Estimated across the EU and UK",
+      "Estimated across the EU",
       "Banks decline most small unsecured requests"
      ]
     }
    ],
    "takeaway": "The product sits where card use and revolving need overlap.",
-   "source": "EC SME Annual Report 2025/26; UK DBT Business Population 2025; ECB SAFE; EIB Group."
+   "source": "EC SME Annual Report 2025/26; ECB SAFE; EIB Group."
   },
   "pitch": {
    "template": "cards",
@@ -2419,13 +2419,13 @@
    "cards": [
     {
      "value": "5.7M",
-     "title": "UK SMEs",
+     "title": "SMEs",
      "text": "Private-sector firms, most under ten staff."
     },
     {
      "value": "19%",
      "tone": "focus",
-     "title": "Use a credit card",
+     "title": "Use a business card",
      "text": "Already paying for business on a card."
     },
     {
@@ -2435,8 +2435,8 @@
     },
     {
      "value": "€400bn",
-     "title": "Credit gap",
-     "text": "Unmet demand across the EU and UK."
+     "title": "Funding gap",
+     "text": "Unmet demand across the EU."
     }
    ],
    "takeaway": "The product is [[the intersection.]]"
@@ -2449,7 +2449,7 @@
   "blurb": "A screenshot that shows the product doing the job",
   "consulting": {
    "template": "image",
-   "title": "Owners see their [[lowest cash point]] weeks ahead, and draw credit before it bites",
+   "title": "Owners see their [[lowest cash point]] weeks ahead, and draw funds before it bites",
    "caption": "Acme app · 90-day cash flow forecast",
    "image": {
     "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
@@ -2465,7 +2465,7 @@
      "text": "VAT, payroll and rent are named as the reasons the balance falls."
     },
     {
-     "title": "Credit in one tap",
+     "title": "Funds in one tap",
      "text": "A draw is suggested before the buffer is breached, repaid from a known invoice."
     }
    ]
@@ -2487,7 +2487,7 @@
   "blurb": "The people behind it, each with one line of proof",
   "consulting": {
    "template": "team",
-   "title": "The team has built SME lending, card issuing and credit risk at scale before",
+   "title": "The team has built SME lending, card issuing and risk at scale before",
    "people": [
     {
      "photo": {
@@ -2503,7 +2503,7 @@
      },
      "name": "Tom Ellison",
      "role": "CTO & co-founder",
-     "text": "Ran card issuing for 4m customers at a UK neobank"
+     "text": "Ran card issuing for 4m customers at a neobank"
     },
     {
      "photo": {
@@ -2511,7 +2511,7 @@
      },
      "name": "Grace Adeyemi",
      "role": "Chief risk officer",
-     "text": "12 years in SME credit risk at a high-street bank"
+     "text": "12 years in SME risk at a retail bank"
     },
     {
      "photo": {
@@ -2550,7 +2550,7 @@
      },
      "name": "Grace Adeyemi",
      "role": "Chief risk officer",
-     "text": "12 years of SME credit risk"
+     "text": "12 years of SME risk"
     },
     {
      "photo": {
@@ -2570,7 +2570,7 @@
   "blurb": "Who already works with you, as their logos",
   "consulting": {
    "template": "logos",
-   "title": "Acme launches inside the [[eight tools]] UK small businesses already run their money on",
+   "title": "Acme launches inside the [[eight tools]] small businesses already run their money on",
    "caption": "Launch partners · signed integrations",
    "logos": [
     {
@@ -2689,12 +2689,12 @@
    "title": "SMEs choose Acme because it solves [[three problems]] their bank leaves open",
    "paragraphs": [
     {
-     "title": "Credit that grows with them",
+     "title": "A limit that grows with them",
      "text": "Banks cap SME cards at £25k and review limits once a year. Acme reads live bank data and raises the limit as revenue grows, so a seasonal business is never stuck at its smallest month."
     },
     {
      "title": "One place for the money",
-     "text": "Owners juggle a bank account, a card from another provider and a lender. Acme puts the account, the card and the credit line in one app, with one view of cash."
+     "text": "Owners juggle a bank account, a card from another provider and a lender. Acme puts the account, the card and a lending line in one app, with one view of cash."
     },
     {
      "title": "Rewards that pay for themselves",
@@ -2713,7 +2713,7 @@
     },
     {
      "title": "One app",
-     "text": "Account, card and credit line together, with one view of cash."
+     "text": "Account, card and lending line together, with one view of cash."
     },
     {
      "title": "1% back",
@@ -2747,11 +2747,11 @@
     {
      "number": {
       "value": "£3.6bn",
-      "caption": "Acme’s spend book in 2030: 7% of UK SME card spend."
+      "caption": "Acme’s spend book in 2030: 7% of SME card spend."
      }
     },
     {
-     "caption": "UK SME card spend · £bn",
+     "caption": "SME card spend · £bn",
      "chart": {
       "categories": [
        "2026",
@@ -2795,7 +2795,7 @@
      }
     },
     {
-     "caption": "UK SME card spend · £bn",
+     "caption": "SME card spend · £bn",
      "chart": {
       "categories": [
        "2026",
