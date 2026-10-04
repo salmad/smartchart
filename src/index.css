@@ -56,6 +56,11 @@
   .ba-before { clip-path: inset(0 0 0 var(--x)); }
   .ba-line { left: var(--x); }
 
+  /* A horizontal scroller with more to show fades out at that edge (set by useEdgeFade), so nothing ends in a hard cut. */
+  .edge-fade { --fs: 0px; --fe: 0px; mask-image: linear-gradient(to right, transparent, #000 var(--fs), #000 calc(100% - var(--fe)), transparent); }
+  .edge-fade[data-more-start] { --fs: 40px; }
+  .edge-fade[data-more-end] { --fe: 56px; }
+
   .spinner { @apply mr-2 inline-block size-3 animate-spin rounded-full border-[1.5px] border-line-2 border-t-ink align-[-1px]; animation-duration: .8s; }
 
   /* The custom swatch: a colour wheel, and the chosen colour as a dot in its middle when it is on.

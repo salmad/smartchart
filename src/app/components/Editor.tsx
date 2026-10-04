@@ -8,12 +8,13 @@ import type { Attached } from '@/app/files'
 import { deckName } from '@/app/store'
 import { cn } from '@/app/lib/utils'
 import { phaseLinesOf } from '@/app/phase'
+import { useRoomy } from '@/app/panel'
 import { Bar, type BarProps, type DeckView } from './Bar'
 import { Chat } from './Chat'
 import { Checks } from './Checks'
 import { Composer } from './Composer'
 import { LookPanel } from './LookPanel'
-import { SLIDE_W, Stage } from './Stage'
+import { SLIDE_W, Stage, UNDER_SLIDE } from './Stage'
 import { Storyline } from './Storyline'
 import { Strip } from './Strip'
 
@@ -39,6 +40,16 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
   const [look, setLook] = useState(false)
+  // Look is an inspector on the right. Where the window is too narrow for it, the decks and the chat beside the slide,
+  // the decks step aside while it is open; their button brings them back and closes it.
+  const roomy = useRoomy(), decksAside = look && !roomy && bar.decksOpen
+  useEffect(() => {
+    if (!decksAside) return
+    // ⌘\ does what the decks button does here: it closes Look, rather than hiding decks that are already out of sight.
+    const key = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); e.stopPropagation(); setLook(false) } }
+    window.addEventListener('keydown', key, true)
+    return () => window.removeEventListener('keydown', key, true)
+  }, [decksAside])
   // The view switch only applies when the stage shows the deck.
   const shown = items.length && !stage && !editing ? view : null
   const open = (i: number) => { onSelect(i); setView('slide') }
@@ -63,12 +74,12 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
 
   return (
     <>
-      <Bar {...bar} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live}
+      <Bar {...bar} decksOpen={bar.decksOpen && !decksAside} onToggleDecks={decksAside ? () => setLook(false) : bar.onToggleDecks} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live}
         view={shown || null} onView={setView} onLook={() => setLook(true)} />
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
-        {decks}
+        {!decksAside && decks}
         {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}
-        <aside aria-label="Chat" className={cn('flex w-[400px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
+        <aside aria-label="Chat" className={cn('flex w-[368px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
           <Chat messages={s.messages} offline={booted && !s.live} />
           <Composer chips={chips} canSend={s.live && !lock} busy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
@@ -89,7 +100,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
           : <main className="flex min-h-0 min-w-0 flex-1 flex-col justify-center max-[900px]:contents">
               <Stage deck={deck} current={current} onEdit={() => items[current] && onEdit(items[current].id)} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
               {/* Under the slide and as wide as it: how its checks stand, then the deck as a filmstrip. */}
-              <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W}`}>
+              <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W} ${UNDER_SLIDE}`}>
                 <div className="flex h-7 items-center max-[900px]:order-4 max-[900px]:px-4"><Checks item={items[current]} /></div>
                 {strip('row')}
               </section>

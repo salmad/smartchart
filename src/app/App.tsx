@@ -22,7 +22,7 @@ import { STALE, findDeck } from './remote'
 import { useLiveDeck } from './live'
 import type { Attached } from './files'
 import { Decks } from './components/Decks'
-import { usePanel } from './panel'
+import { ROOMY, usePanel } from './panel'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
@@ -47,8 +47,9 @@ export function App({ route, account, repo, backup }: Props) {
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
   const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
-  // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
-  const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
+  // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
+  // laptop-width window, where the slide needs the room, until the maker opens them.
+  const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   const deck = deckOf(s)
 
@@ -266,7 +267,7 @@ export function App({ route, account, repo, backup }: Props) {
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
-            decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
+            decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}

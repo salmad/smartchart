@@ -43,7 +43,7 @@ export function Bar(p: BarProps) {
   const [renaming, setRenaming] = useState(false)
   return (
     <header className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-6 border-b border-line pl-3 pr-4 max-[900px]:flex max-[900px]:gap-3 max-[900px]:px-4">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3 max-[900px]:flex-1">
         {/* The layout toggles, together as in Cursor's title bar: each shows whether its panel is open. */}
         <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
           <Toggle open={p.decksOpen} onClick={p.onToggleDecks} name="your decks" keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>

@@ -4,6 +4,7 @@ import { GROUPS, STARTERS, starterSlide, type Group, type Starter } from '@/engi
 import type { Deck, TemplateId } from '@/engine/types'
 import { Button } from '@/app/components/ui/button'
 import { cn } from '@/app/lib/utils'
+import { useEdgeFade } from '@/app/fade'
 import { SlideView } from './SlideView'
 import { Tile } from './Tile'
 
@@ -22,8 +23,9 @@ const GROUPED = GROUPS.map((g) => ({ ...g, starters: STARTERS.filter((s) => s.gr
     tab scrolls the strip to it. In a new deck the empty frame also points at the chat, where the slide can be described. */
 export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   const start = GROUP_OF[deck.slides[current]?.template ?? 'chart']
-  const film = useRef<HTMLDivElement>(null)
+  const film = useRef<HTMLDivElement | null>(null)
   const [picked, setPicked] = useState<Starter | null>(null), [group, setGroup] = useState<Group>(start)
+  const fadeTabs = useEdgeFade(), fadeFilm = useEdgeFade()
 
   const pickGroup = (g: Group) => { setGroup(g); scrollTo(film.current, g, true) }
   const pick = (s: Starter) => { setPicked(s); setGroup(s.group) }
@@ -52,7 +54,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
             ? <div data-featured><SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]} className={cn(frame, 'shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)]')} /></div>
             : <div className={cn(frame, 'grid place-content-center gap-1.5 border border-dashed border-line-2 text-center')}>
                 <p className="text-[17px] font-medium">{first ? 'Your slide appears here.' : 'Add a slide'}</p>
-                <span className="text-ink-3">{first ? 'Describe it in the chat, or start from a slide below.' : 'Pick one below to preview it here, in your deck’s look.'}</span>
+                {!first && <span className="text-ink-3">Pick one below to preview it here, in your deck’s look.</span>}
               </div>}
         </div>
         <div className="flex w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] items-center gap-3 max-[900px]:w-full max-[900px]:flex-wrap">
@@ -64,7 +66,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
         </div>
       </div>
       <div className="grid gap-3 border-t border-line px-8 pb-5 pt-4 max-[900px]:px-4">
-        <div role="tablist" aria-label="Slide groups" className="flex gap-1 overflow-x-auto [scrollbar-width:none]">
+        <div ref={fadeTabs} role="tablist" aria-label="Slide groups" className="edge-fade flex gap-1 overflow-x-auto [scrollbar-width:none]">
           {GROUPED.map((g) => (
             <button key={g.id} type="button" role="tab" aria-selected={g.id === group} onClick={() => pickGroup(g.id)}
               className={cn('shrink-0 rounded-md px-2.5 py-1 text-[12.5px] transition-colors', g.id === group ? 'bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]' : 'text-ink-3 hover:text-ink-2')}>
@@ -72,7 +74,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
             </button>
           ))}
         </div>
-        <div ref={film} role="tabpanel" className="relative flex gap-6 overflow-x-auto px-0.5 pb-3 pt-0.5">
+        <div ref={(el) => { film.current = el; fadeFilm(el) }} role="tabpanel" className="edge-fade relative flex gap-6 overflow-x-auto px-0.5 pb-3 pt-0.5">
           {GROUPED.map((g) => (
             <div key={g.id} data-group={g.id} className="flex flex-none gap-3">
               {g.starters.map((s) => (
@@ -86,8 +88,9 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   )
 }
 
-/** Scrolls the filmstrip so a group's first tile sits at its left edge. */
+/** Scrolls the filmstrip so a group's first tile sits just inside its left edge, clear of the edge fade, with the
+    group before it peeking into the fade. */
 function scrollTo(strip: HTMLDivElement | null, g: Group, smooth: boolean) {
   const el = strip?.querySelector<HTMLElement>(`[data-group="${g}"]`)
-  if (strip && el) strip.scrollTo({ left: el.offsetLeft, behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' })
+  if (strip && el) strip.scrollTo({ left: Math.max(0, el.offsetLeft - 40), behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' })
 }
