@@ -77,3 +77,15 @@ A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonne
 - **Wiring:** agents skip `get_guide`, edit after `check_slide`, and once asked for a deck name and style instead of creating the deck.
 
 The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.
+
+## 12. A red-pen review of any deck, in 20 seconds, no signup
+Drop in a PPTX, PDF or Google Slides link, even one not made in Occam, and get the partner review: titles that don't make a point, charts that don't prove the claim, slides that repeat each other. Then one button: **Rebuild in Occam**, the same story with every flaw fixed.
+- Why: it meets makers where their decks already are, and the before/after is the demo. A shareable review gives people a reason to pass it on. The checks already exist; this puts them in front of people before signup.
+- Open questions: reading other formats (text, charts and order from PPTX/PDF), what a guest gets before an account (the review free, the rebuild after signup?), what is shareable without exposing the deck itself, and abuse limits on a public model-backed endpoint.
+- Builds on #8 and #9 (checks and softer checks).
+
+## 13. The slide engine behind every agent
+When someone asks Claude, ChatGPT or Cursor to "turn this research into slides", the answer should be an Occam deck: checked, consistent, with linked sources (#10). Agent users already have the thinking (reports, PRDs, research) and nowhere good to put it.
+- One-line connector setup for each major client, listings in every MCP directory, and a skill so agents reach for Occam without being told.
+- Open questions: which clients first, sign-in from inside an agent (OAuth vs a pasted key), and pricing for agent-driven use.
+- Depends on #7 and #11 (MCP bug hunt and the eval fixes) and #8 (checks that reach the agent unasked): agents need to succeed first time.
