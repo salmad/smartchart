@@ -22,6 +22,7 @@ MCP is currently the most useful feature, and the tour exists to lead people the
 - **Build:** not decided. Own Popover-based component vs driver.js.
 
 ## 3. Comments in the deck that agents pick up
+**Built (2026-10-04):** comments on slides, a badge on the strip, Resolve and Delete, "Ask SmartChart to address"; the in-app agent and MCP (`get_deck`, `read_slide`, `resolve_comment`) address them when asked and resolve with a reply. Spec: `docs/superpowers/specs/2026-10-04-deck-comments-design.md`. Still open: anchors to a part of a slide, comments from share links, @mentions, a deck-wide list, and a resolved comment linking to its version (#1).
 The maker leaves notes on a slide, or on a part of it ("this number is from Q2, update it", "too wordy"). An agent (in-app or MCP) reads the open comments and acts on them, then replies and resolves.
 Open questions for the brainstorm:
 - What a comment anchors to: a slide, or a path inside it.

@@ -10,12 +10,14 @@ import { applyPatch } from "./patch.js";
 import type { Resolved } from "./resolve.js";
 import type { Check } from "./checks.js";
 import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep, type Pre, type Selection } from "./pre.js";
-import { TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt.js";
+import { RESOLVE_COMMENT, TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt.js";
+import { openComments, resolveComment, type DeckComment } from "../comments.js";
 import { shorten, targets } from "./shorten.js";
 import type { Series, Slide, Style, TemplateId, Theme } from "../types.js";
 
 export interface AgentSlide { id: string; slide: Slide | null; pending?: boolean; issues: string[]; warnings: string[]; checks?: Check[] }
-export interface AgentDeck { style: Style; theme: Theme; slides: AgentSlide[] }
+/** `comments`: notes people left on slides; the agent can resolve them (resolve_comment), and the caller takes them back. */
+export interface AgentDeck { style: Style; theme: Theme; slides: AgentSlide[]; comments?: DeckComment[] }
 /** Renders and measures a slide: layout issues, with the title's line count and the L5 warnings set on it. */
 export type MeasureFn = ((slide: Slide, index: number) => string[]) & { lines: number; warnings?: string[] };
 export interface TraceStep { step: string; detail: string; model: string; ms?: number; tokensIn?: number; tokensOut?: number }
@@ -33,7 +35,7 @@ export interface TurnArgs {
 }
 
 /* Tool arguments come from the model's JSON; each tool reads the fields it needs. */
-interface ToolArgs { about?: string; after?: string; template?: string; replace?: string; slideId?: string; slide?: unknown; set?: unknown; reply?: unknown }
+interface ToolArgs { about?: string; after?: string; template?: string; replace?: string; slideId?: string; slide?: unknown; set?: unknown; reply?: unknown; commentId?: string }
 /** Every tool result shape in one: an error, a write result, or a create/read result. */
 interface ToolOut {
   error?: string; applied?: boolean; issues?: string[]; warnings?: string[]; elsewhere?: string[]; changed?: string[]
@@ -44,6 +46,7 @@ interface ToolOut {
   card?: ReturnType<typeof describe>; example?: unknown; note?: string
   /** Reserved slides still to write this turn. */
   todo?: string
+  resolved_comment?: string
 }
 interface WriteResult extends ToolOut { applied: boolean; issues: string[] }
 interface CallResult { clean: boolean; name: string; out: ToolOut; args: ToolArgs | null; reply: string | null }
@@ -174,6 +177,14 @@ export async function runTurn({ text, deck, history, working, selection, edited 
       return { ...res, changed: p.changed, issues: res.issues.filter((i) => touches(i, p.changed)), elsewhere: res.issues.filter((i) => !touches(i, p.changed)) };
     },
 
+    async resolve_comment({ commentId = "", reply }) {
+      const next = resolveComment(deck.comments ?? [], commentId, "SmartChart", typeof reply === "string" ? reply : undefined, Date.now());
+      if (typeof next === "string") return { error: next };
+      deck.comments = next;
+      onChange?.(deck);
+      return { resolved_comment: commentId };
+    },
+
     async read_slide({ slideId }) {
       const item = find(slideId);
       if (!item || item.pending || !item.slide) return unknown(slideId);
@@ -203,7 +214,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
   // The working set starts with the selected slide only; the agent reads others when it needs them.
   working.clear();
   if (selection?.slideId && find(selection.slideId)?.slide) working.add(selection.slideId);
-  history.push({ role: "user", content: `${stateBlock({ style, theme: deck.theme, slides: visible(), selection, edited })}\n\n${text}` });
+  history.push({ role: "user", content: `${stateBlock({ style, theme: deck.theme, slides: visible(), selection, edited, comments: deck.comments })}\n\n${text}` });
   const pre = await preStep({ text: brief, deck, selection, jev });
   turnPre = pre;
   const sure = isSure(pre, deck), first = firstCall(pre, selection, brief, deck);
@@ -214,7 +225,8 @@ export async function runTurn({ text, deck, history, working, selection, edited 
   while (reply === null) {
     const capped = trail.toolCalls >= MAX_TOOL_CALLS;
     const messages: ChatMessage[] = [{ role: "system", content: agentSystem(style) }, ...history, { role: "user", content: workingBlock(deck.slides.filter((s): s is AgentSlide & { slide: Slide } => working.has(s.id) && !!s.slide)) }];
-    const { message, ms, tokensIn = 0, tokensOut = 0 } = await agentStep({ messages, tools: TOOLS, toolChoice: capped ? "none" : "auto" });
+    const offered = openComments(deck.comments ?? []).length ? [...TOOLS, RESOLVE_COMMENT] : TOOLS;
+    const { message, ms, tokensIn = 0, tokensOut = 0 } = await agentStep({ messages, tools: offered, toolChoice: capped ? "none" : "auto" });
     trail.modelCalls++; trail.modelMs += ms;
     history.push(message);
     const calls = message.tool_calls || [];
@@ -228,11 +240,13 @@ export async function runTurn({ text, deck, history, working, selection, edited 
       clean &&= r.clean; carried = r.reply || carried; done.push(r);
     }
     // A sure single-slide request that ends on a clean write needs no reply call: code writes the reply.
-    const finishing = sure && DONE_BY[pre.intent] && done.every((r) => r.name === "edit_slide" || r.name === "patch_slide");
+    // Not while a slide written this turn has open comments: the agent may still resolve the ones it just addressed.
+    const noted = [...written].some((id) => openComments(deck.comments ?? [], id).length);
+    const finishing = sure && DONE_BY[pre.intent] && !noted && done.every((r) => r.name === "edit_slide" || r.name === "patch_slide");
     const last = done[done.length - 1];
     if (clean && !carried && finishing) carried = message.content?.trim() || codeReply(pre.intent, last, find(last.args?.slideId)?.slide || deck.slides.find((x) => written.has(x.id))?.slide);
     // Reserved slides still unwritten keep the turn going (the tool result lists them).
-    if (clean && carried && !unwritten().length) { reply = carried; history.push({ role: "assistant", content: reply }); }
+    if (clean && carried && !unwritten().length && !noted) { reply = carried; history.push({ role: "assistant", content: reply }); }
   }
   deck.slides = deck.slides.filter((s) => !s.pending);
   compact(history);
@@ -313,6 +327,7 @@ function summary(name: string, out: ToolOut): string {
   if (out.error) return out.error;
   if (name === "create_slide") return `${out.slideId} · ${out.template}`;
   if (name === "read_slide") return `${out.slideId} · ${out.template}`;
+  if (name === "resolve_comment") return `resolved ${out.resolved_comment}`;
   // A write without an error always carries its issues list.
   const issues = out.issues ?? [];
   if (!out.applied) return `not applied · ${issues.length} shape error${issues.length === 1 ? "" : "s"}: ${issues.join(" | ")}`;

@@ -2,13 +2,14 @@
 import type { Slide, Style, Theme } from "../types.js";
 import type { Check } from "../agent/checks.js";
 import type { JevFn } from "../agent/llm.js";
+import type { DeckComment } from "../comments.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };
 export interface DocSlide { id: string; slide: Slide; issues: string[]; warnings: string[]; checks: Check[] }
-export interface DeckDoc { id: string; name: string; style: Style; theme: Theme; accent: string | null; slides: DocSlide[] }
+export interface DeckDoc { id: string; name: string; style: Style; theme: Theme; accent: string | null; slides: DocSlide[]; comments: DeckComment[] }
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
-export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck";
+export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck" | "comment";
 export interface DeckEvent { slideId: string | null; what: EventWhat; paths: string[] }
 export interface DeckListItem { deckId: string; name: string; style: Style; slides: number; updated: number; shared: boolean }
 export interface AccountPort {
@@ -26,6 +27,8 @@ export interface ToolContext {
   port: AccountPort;
   jev: JevFn;
   now(): number;
+  /** Who is calling, as the user knows them ("Claude Code"): signs what the agent resolves. */
+  client?: string;
 }
 export type Scope = "account" | "deck" | "create";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }

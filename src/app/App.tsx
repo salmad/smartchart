@@ -15,6 +15,7 @@ import { deckOf, editKey, locked, toSaved } from './state'
 import { saveEdit } from './edit/save'
 import { deckName, newDeckId, type DeckRepo, type Item, type SaveMeta, type SavedDeck } from './store'
 import { useVersions } from './useVersions'
+import { authorOf, useComments } from './useComments'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
@@ -265,6 +266,7 @@ export function App({ route, account, repo, backup }: Props) {
     void send(text, files)
   }, [app, send])
   sendRef.current = onSend
+  const commentActions = useComments(app, authorOf(account), onSend)
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
   // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
   // A starter's checks run as it lands, so its check line is never empty.
@@ -281,7 +283,7 @@ export function App({ route, account, repo, backup }: Props) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}

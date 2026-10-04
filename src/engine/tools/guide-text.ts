@@ -1,6 +1,7 @@
 /* get_guide: the rules an outside agent needs before it writes a slide, from the same sections as the in-app prompt. */
 import { HARD_RULES, START_PLAIN, WRITING_JSON } from "../agent/prompt-sections.js";
 import { styleBlock } from "../agent/prompts.js";
+import { COMMENTS_RULE } from "../comments.js";
 import type { Style } from "../types.js";
 
 const ASK_OUTSIDE = `- Ask your user before writing when you would remove something they did not name (a note, the takeaway, a series, a card, a row, a footnote) or change a slide's template they did not ask to change.
@@ -15,5 +16,5 @@ const TOOLS_OUTSIDE = `- New slide: create_slide with the whole slide JSON for i
 
 export function guideText(style: Style): string {
   return [`# Hard rules\n${HARD_RULES}`, `# How to write\n${TOOLS_OUTSIDE}`, `# Start plain\n${START_PLAIN}\n${START_PLAIN_OUTSIDE}`,
-    `# When to stop and ask\n${ASK_OUTSIDE}`, `# Writing slide JSON\n${WRITING_JSON()}`, `# Style\n${styleBlock(style)}`].join("\n\n");
+    `# When to stop and ask\n${ASK_OUTSIDE}`, `# Comments\n- ${COMMENTS_RULE}`, `# Writing slide JSON\n${WRITING_JSON()}`, `# Style\n${styleBlock(style)}`].join("\n\n");
 }

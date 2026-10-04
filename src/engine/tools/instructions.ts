@@ -7,4 +7,6 @@ Before writing or reviewing: get_guide once per style (the rules), get_template 
 
 Loop: choose a template (list_templates yourself, or suggest_template) → create_slide with the whole slide → fix every issue it returns with the smallest edit → check_slide when the slide is done → check_storyline when the deck is. Change existing slides with update_slide at exact paths, never by rewriting them.
 
-Rules: address slides by slideId from get_deck, never by position. Pass the user's own words as request on every write. Write "auto" where the card allows it; code decides. Never set style, layout, colours, page numbers or the footer. If the user's request is unclear, ask them before writing. Change a slide's template, or remove anything, only when the user asked.`;
+Rules: address slides by slideId from get_deck, never by position. Pass the user's own words as request on every write. Write "auto" where the card allows it; code decides. Never set style, layout, colours, page numbers or the footer. If the user's request is unclear, ask them before writing. Change a slide's template, or remove anything, only when the user asked.
+
+Comments (open ones come with get_deck and read_slide) are notes people left on slides. Address them only when the user asks: change the slide, then resolve_comment with a one-line reply saying what you did.`;

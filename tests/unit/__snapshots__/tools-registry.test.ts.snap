@@ -201,7 +201,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a deck",
     },
-    "description": "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order. Use slide ids from here in every slide call.",
+    "description": "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Use slide ids from here in every slide call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -384,7 +384,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Read a slide",
     },
-    "description": "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template, which lists can grow or shrink (min, max, length) and the template's capabilities by name (get_template says when to use each). Content only; checks come back with writes and check_slide.",
+    "description": "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template, which lists can grow or shrink (min, max, length), the template's capabilities by name (get_template says when to use each) and the open comments on it. Content only; checks come back with writes and check_slide.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -603,6 +603,41 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "check_storyline",
     "title": "Check the storyline",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Resolve a comment",
+    },
+    "description": "Mark a comment (commentId from get_deck or read_slide) as done once you addressed it, with a one-line reply saying what you changed, or why you changed nothing. Only for comments the user asked you to address.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "commentId": {
+          "description": "A comment id, e.g. c_a1b2.",
+          "type": "string",
+        },
+        "deckId": {
+          "description": "The deck id.",
+          "type": "string",
+        },
+        "reply": {
+          "description": "What you did about it, in one line (at most 1000 characters).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "deckId",
+        "commentId",
+        "reply",
+      ],
+      "type": "object",
+    },
+    "name": "resolve_comment",
+    "title": "Resolve a comment",
   },
 ]
 `;

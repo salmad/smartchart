@@ -6,6 +6,7 @@ import { plain } from '@/engine/slides/schema'
 import type { ChatMessage } from '@/engine/agent/llm'
 import type { TraceStep } from '@/engine/agent/agent'
 import { record, type Version, type VersionMeta } from '@/engine/versions'
+import { mergeComments, type DeckComment } from '@/engine/comments'
 
 export const KEY = 'smartchart.journey.decks.v1'
 
@@ -14,7 +15,8 @@ export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors
 /** `turn`: set on an agent reply that wrote slides, so Undo can find the version before it; `undone` once it was. */
 export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[]; turn?: string; undone?: boolean }
 /** `name`: what the maker called the deck; null while it follows its first title. */
-export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number }
+/** `comments`: notes people left on slides (src/engine/comments.ts); missing on decks saved before comments. */
+export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number; comments?: DeckComment[] }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
@@ -167,5 +169,6 @@ export function mergeDecks(local: SavedDeck, server: SavedDeck, base: SavedDeck 
   }
   // The look follows the same rule as slides: a field changed here since `base` is kept, otherwise the server's is taken.
   const take = <K extends 'name' | 'style' | 'theme' | 'accent'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
-  return { deck: { ...local, name: take('name'), style: take('style'), theme: take('theme'), accent: take('accent'), items }, changed }
+  return { deck: { ...local, name: take('name'), style: take('style'), theme: take('theme'), accent: take('accent'), items,
+    comments: mergeComments(local.comments ?? [], server.comments ?? [], base ? base.comments ?? [] : null) }, changed }
 }

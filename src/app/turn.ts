@@ -42,12 +42,14 @@ export async function sendTurn(input: string, deps: TurnDeps, files: Attached[] 
   const setBot = (m: Message) => { const messages = getState().messages.slice(); messages[botAt] = m; dispatch({ type: 'set', patch: { messages } }) }
   const log = (step: TraceStep) => { trace.push(step); setBot({ kind: 'bot', text: '', sub: WORKING, trace: trace.slice() }) }
 
-  const adeck: AgentDeck = { style: start.style, theme: start.theme, slides: start.items.map((it) => ({ id: it.id, slide: it.slide, issues: it.errors || [], warnings: it.warnings || [], checks: it.checks || [] })) }
+  const adeck: AgentDeck = { style: start.style, theme: start.theme, comments: structuredClone(start.comments), slides: start.items.map((it) => ({ id: it.id, slide: it.slide, issues: it.errors || [], warnings: it.warnings || [], checks: it.checks || [] })) }
   const cur = start.items[start.current]
   const sync = (d: AgentDeck, focusId?: string) => {
     const items: Item[] = d.slides.filter((s): s is typeof s & { slide: Slide } => !!s.slide)
       .map((s) => ({ id: s.id, slide: s.slide, status: s.issues.length ? 'draft' : 'ok', errors: s.issues, warnings: s.warnings, checks: s.checks || [], checksPending: false }))
     dispatch({ type: 'items', items, focusId })
+    // Comments the agent resolved this turn.
+    if (d.comments && d.comments !== getState().comments) dispatch({ type: 'set', patch: { comments: d.comments } })
   }
   // The agent's deck may hold a reserved slide with no JSON yet: measure within the slides that exist.
   const measure: MeasureFn = Object.assign((slide: Slide, index: number) => {

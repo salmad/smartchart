@@ -45,7 +45,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
 
   try {
     for (let attempt = 0; ; attempt++) {
-      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, port, jev, now }
+      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, port, jev, now, client: caller.client }
       let row: Awaited<ReturnType<Db['getDeck']>> = null
       if (t.scope === 'deck') {
         row = deckId ? await db.getDeck(uid, deckId) : null

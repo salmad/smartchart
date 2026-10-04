@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { diffTrees, type TreeDiff, type Version } from '@/engine/versions'
 import type { VersionsApi } from '@/app/useVersions'
+import type { CommentActions } from '@/app/useComments'
+import { openComments } from '@/engine/comments'
 import type { Item } from '@/app/store'
 import type { Pill } from '@/engine/agent/suggest'
 import type { Deck, Slide, Style, Theme } from '@/engine/types'
@@ -14,6 +16,7 @@ import { phaseLinesOf } from '@/app/phase'
 import { Bar, type BarProps, type DeckView } from './Bar'
 import { Chat } from './Chat'
 import { Checks } from './Checks'
+import { Comments } from './Comments'
 import { Composer } from './Composer'
 import { LookPanel } from './LookPanel'
 import { SLIDE_W, Stage } from './Stage'
@@ -38,13 +41,14 @@ export interface EditorProps {
   /** Null when the decks' store keeps no versions; `saves` counts saves that landed. */
   versions: { api: VersionsApi; saves: number } | null
   onUndo: ((turn: string) => void) | null
+  comments: CommentActions
 }
 
 type Preview = { v: Version; diff: TreeDiff; current: boolean; items: Item[] | null | 'missing' }
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
     with the deck's look as an inspector on the right while it is open. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
@@ -60,6 +64,8 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   // The view switch only applies when the stage shows the deck.
   const shown = items.length && !stage && !editing && !preview ? view : null
   const open = (i: number) => { onSelect(i); setView('slide') }
+  // Open comments per slide, for the strip's badges.
+  const noted = Object.fromEntries(items.map((it) => [it.id, openComments(s.comments, it.id).length]))
 
   // F presents; the arrows move through the deck. Typing in a field is left alone.
   useEffect(() => {
@@ -75,7 +81,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   }, [bar, current, items, onSelect, onEdit, stage, preview, s.editing, lock])
 
   const strip = (layout: 'row' | 'grid') => (
-    <Strip items={items} current={current} deck={deck} busy={lock} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
+    <Strip items={items} current={current} deck={deck} busy={lock} noted={noted} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
       onOpen={layout === 'grid' ? open : undefined} onMove={onMove} onRemove={onRemove} removed={s.removed?.item ?? null} onRestore={onRestore} />
   )
 
@@ -113,7 +119,11 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
               <Stage deck={deck} current={current} onEdit={() => items[current] && onEdit(items[current].id)} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
               {/* Under the slide and as wide as it: how its checks stand, then the deck as a filmstrip. */}
               <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W}`}>
-                <div className="flex h-7 items-center max-[900px]:order-4 max-[900px]:px-4"><Checks item={items[current]} /></div>
+                <div className="flex h-7 items-center justify-between gap-4 max-[900px]:order-4 max-[900px]:px-4">
+                  <Checks item={items[current]} />
+                  {items[current] && <Comments key={items[current].id} slideId={items[current].id} n={current + 1} comments={s.comments} busy={lock} canAsk={s.live}
+                    onAdd={(t) => comments.add(items[current].id, t)} onResolve={comments.resolve} onDelete={comments.remove} onAsk={() => comments.ask(items[current].id)} />}
+                </div>
                 {strip('row')}
               </section>
             </main>}
