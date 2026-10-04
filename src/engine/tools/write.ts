@@ -6,6 +6,7 @@ import type { Slide } from "../types.js";
 import { estimate } from "./estimate.js";
 import { storyline } from "../agent/story.js";
 import { openComments } from "../comments.js";
+import { softChecks } from "../agent/soft.js";
 import { ToolError, type DeckDoc, type ToolContext } from "./types.js";
 
 const asValue = (v: unknown): unknown => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v); } catch { /* keep */ } } return v; };
@@ -47,6 +48,9 @@ export function writeResult(ctx: ToolContext, doc: DeckDoc, slideId: string, w: 
   for (const [k, v] of Object.entries({ issues: w.issues, warnings: w.warnings, checks: w.checks, autofixes: w.autofixes })) if (v.length) out[k] = v;
   if (Object.keys(w.resolved).length) out.resolved = w.resolved;
   if (notice) out.notice = notice;
+  // What would make it better, below the problems: at most two, and only once the slide has no issues.
+  const soft = w.issues.length ? [] : softChecks(w.slide);
+  if (soft.length) out.suggestions = soft.map((x) => x.msg);
   out.next = nextStep(doc, slideId, w, created);
   return out;
 }

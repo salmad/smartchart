@@ -560,7 +560,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Check a slide",
     },
-    "description": "Judge a finished slide: the rule checks (title length, highlight, chart guide…) and the judgment checks (does the body prove the title, are the items MECE, is this the right template, would a table's judgements read better as marks). Advice only: act when a small edit fixes it. One model call.",
+    "description": "Judge a finished slide: the rule checks (title length, highlight, chart guide…), the judgment checks (does the body prove the title, are the items MECE, is this the right template, would a table's judgements read better as marks) and up to two suggestions that would make it better. Advice only: act when a small edit fixes it; offer suggestions to the user. One model call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

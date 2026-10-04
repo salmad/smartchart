@@ -62,6 +62,7 @@ Today `check_slide` and `check_storyline` run only when the agent calls them, so
 - Open question: what runs on every write (cheap rule checks) vs what costs a model call and stays on request.
 
 ## 9. Softer checks that make a slide great, not just valid
+**First slice built (2026-10-04):** S2 (a claimed change with no annotation) and S3 (judgements in words instead of marks), code-only, at most 2, in the checks popover and as MCP `suggestions`. Spec: `docs/superpowers/specs/2026-10-04-softer-checks-design.md`.
 Non-blocking suggestions on top of today's checks: things a partner would say in review. For example: a capability the slide doesn't use yet (marks, icons, a highlight, notes), a title that states a topic instead of a finding, a number with no comparison, a missing source on a figure.
 - Shown as suggestions, ranked below real problems, in the app and over MCP (#8).
 - Open question: how many to show at once so they help rather than nag.
