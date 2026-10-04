@@ -344,6 +344,48 @@ exports[`registry > the three views agree (published contract: only additions al
       "idempotentHint": false,
       "openWorldHint": false,
       "readOnlyHint": false,
+      "title": "Add a picture",
+    },
+    "description": "Copy a picture into SmartChart from a public https URL (or base64 bytes) and get the reference a slide takes: { src }. kind: "logo" (a company's mark: drawn in one colour, its plain background removed, trimmed), "photo" (people, places: cropped to its frame) or "screenshot" (the product: never cropped). Pass a logo as a PNG or SVG on a plain or transparent background. Only use pictures the user gave or asked for. The same picture added twice returns the same src.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "alt": {
+          "description": "What the picture shows, in one plain sentence. Required by the image slide; returned with the src.",
+          "type": "string",
+        },
+        "data": {
+          "description": "The picture's bytes, base64, at most 3 MB. Instead of url; prefer url for anything larger.",
+          "type": "string",
+        },
+        "kind": {
+          "description": "logo, photo or screenshot.",
+          "enum": [
+            "photo",
+            "screenshot",
+            "logo",
+          ],
+          "type": "string",
+        },
+        "url": {
+          "description": "A public https link to the picture itself (not a web page).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "kind",
+      ],
+      "type": "object",
+    },
+    "name": "add_image",
+    "title": "Add a picture",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
       "title": "Create a slide",
     },
     "description": "Add a slide: the whole slide JSON for its template (get_template first). Code autofixes, validates, resolves "auto" choices and checks fit, then returns the stored slide, its position, issues to fix, warnings and failed rule checks. slideId only to restore a slide you deleted.",

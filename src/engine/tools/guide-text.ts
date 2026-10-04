@@ -11,7 +11,8 @@ const START_PLAIN_OUTSIDE = `- Reviewing or improving slides: do suggest extras 
 
 const TOOLS_OUTSIDE = `- New slide: create_slide with the whole slide JSON for its template (get_template gives the card and an example). Existing slide: update_slide with only the paths that change, e.g. { "cards[1].title": "…", "chart.series[0].values[3]": 42 }. null removes an item; the next index appends; reorder by setting the whole list. Indexes start at 0.
 - Every write returns issues (fix them with the smallest edit, never by deleting content), warnings (advice), checks (rule checks that failed) and resolved (the "auto" values code picked). A write with wrong shapes is refused with the path and the fix: correct it and write again.
-- Pass request: the user's own words, on every write. Code uses it for "auto" choices.`;
+- Pass request: the user's own words, on every write. Code uses it for "auto" choices.
+- Pictures (a product screenshot, team photos, logos): add_image with a public link to the picture itself (or its bytes) and the right kind, then put the { src } it returns where the card says. Use pictures the user gave, or asked you to find (a company's logo from its own site or press kit); never a stock photo nobody asked for. If a picture cannot be added, tell the user why and ask for another; do not drop it silently.`;
 
 export function guideText(style: Style): string {
   return [`# Hard rules\n${HARD_RULES}`, `# How to write\n${TOOLS_OUTSIDE}`, `# Start plain\n${START_PLAIN}\n${START_PLAIN_OUTSIDE}`,

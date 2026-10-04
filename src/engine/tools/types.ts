@@ -1,5 +1,6 @@
 /* The tool registry's shared types. Framework-free: the same tools run behind REST, MCP and (later) the in-app agent. */
 import type { Slide, Style, Theme } from "../types.js";
+import type { ImageKind } from "../slides/images.js";
 import type { Check } from "../agent/checks.js";
 import type { JevFn } from "../agent/llm.js";
 
@@ -17,6 +18,8 @@ export interface AccountPort {
   listDecks(limit: number, cursor: number): Promise<{ decks: DeckListItem[]; next?: number }>;
   share(deckId: string, on: boolean): Promise<string | null>;
   newDeckId(): string;
+  /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
+  addImage(input: { url?: string; data?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind }>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"

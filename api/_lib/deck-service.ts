@@ -9,6 +9,7 @@ import type { Db } from './db.js'
 import { serverJev } from './models.js'
 import { DAILY_CALLS } from './quota.js'
 import { overRate } from './rate.js'
+import { addImage, blobStore, DAILY_IMAGES, ImageError, type StoreFn } from './images.js'
 
 export interface Caller { user: { id: string; email: string }; client: string; key: string }
 export type ToolReply = { ok: true; result: Record<string, unknown> } | { ok: false; error: { code: ErrorCode; message: string; fix?: string } }
@@ -16,7 +17,7 @@ export type ToolReply = { ok: true; result: Record<string, unknown> } | { ok: fa
 const fail = (code: ErrorCode, message: string, fix?: string): ToolReply => ({ ok: false, error: { code, message, ...(fix ? { fix } : {}) } })
 const newDeckId = () => `d_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
-export async function runTool(name: string, input: unknown, caller: Caller, deps: { db: Db; origin: string; jev?: JevFn; now?: () => number }): Promise<ToolReply> {
+export async function runTool(name: string, input: unknown, caller: Caller, deps: { db: Db; origin: string; jev?: JevFn; now?: () => number; store?: StoreFn | null; fetch?: typeof fetch }): Promise<ToolReply> {
   const { db, origin } = deps, now = deps.now ?? Date.now, uid = caller.user.id
   const t = toolByName(name)
   if (!t) return fail('bad_input', `Unknown tool ${name}.`, 'tools/list shows the tools.')
@@ -38,6 +39,13 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       return tok ? `${origin}/s/${tok}` : null
     },
     newDeckId,
+    addImage: async (img) => {
+      const store = deps.store === undefined ? blobStore() : deps.store
+      if (!store) throw new ToolError('refused', 'Pictures are not set up on this server.', 'Tell the user; slides without pictures still work.')
+      if (await db.bumpRate(`img:${uid}`, Math.floor(now() / 86_400_000)) > DAILY_IMAGES) throw new ToolError('quota', `At most ${DAILY_IMAGES} pictures a day.`, 'Reuse a src you already have, or continue tomorrow.')
+      try { return await addImage(img, { store, fetch: deps.fetch }) }
+      catch (e) { if (e instanceof ImageError) throw new ToolError('bad_input', e.message, e.fix); throw e }
+    },
   }
   const jev = deps.jev ?? serverJev({ userId: uid, db })
   const deckId = (input as { deckId?: string }).deckId

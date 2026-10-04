@@ -7,7 +7,7 @@ import { isIP } from 'node:net'
 import sharp from 'sharp'
 import { imageName, type ImageKind } from '../../src/engine/slides/images.js'
 
-export const MAX_BYTES = 10_000_000
+export const MAX_BYTES = 10_000_000, MAX_DATA = 3_000_000
 const MAX_PIXELS = 60_000_000
 /** What a refusal says: what was wrong and what to do instead. */
 export class ImageError extends Error {
@@ -168,4 +168,36 @@ export async function fetchPublic(url: string, deps: { fetch?: typeof fetch; loo
     return out
   }
   throw new ImageError('url: more than 3 redirects.', 'Pass the final link to the picture.')
+}
+
+/* ─────────── add_image, end to end ─────────── */
+
+/** Stores a prepared picture under its name and returns its public URL. */
+export type StoreFn = (name: string, bytes: Buffer, contentType: string) => Promise<string>
+export const DAILY_IMAGES = 200
+
+/** Vercel Blob, when the server has a token: public, never overwritten under another name (the name is the content). */
+export function blobStore(): StoreFn | null {
+  const token = process.env.BLOB_READ_WRITE_TOKEN
+  if (!token) return null
+  return async (name, bytes, contentType) => {
+    const { put } = await import('@vercel/blob')
+    const r = await put(name, bytes, { access: 'public', contentType, token, addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 31_536_000 })
+    return r.url
+  }
+}
+
+export async function addImage(input: { url?: string; data?: string; kind: ImageKind }, deps: { store: StoreFn; fetch?: typeof fetch; lookup?: Lookup }) {
+  let bytes: Uint8Array
+  if (input.url) bytes = await fetchPublic(input.url, deps)
+  else {
+    const b64 = String(input.data ?? '').replace(/^data:[^,]*,/, '').replace(/\s+/g, '')
+    if (!/^[A-Za-z0-9+/]+=*$/.test(b64)) throw new ImageError('data: not base64.', 'Pass the picture’s bytes as base64, or a url.')
+    // A request body is at most 4.5 MB on Vercel: base64 adds a third.
+    if (b64.length * 0.75 > MAX_DATA) throw new ImageError('data: the picture is over 3 MB.', 'Pass a public url instead, or a smaller version.')
+    bytes = Buffer.from(b64, 'base64')
+  }
+  const p = await prepare(bytes, input.kind)
+  const src = await deps.store(p.name, p.bytes, p.ext === 'png' ? 'image/png' : 'image/webp')
+  return { src, width: p.w, height: p.h, kind: p.kind }
 }
