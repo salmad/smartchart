@@ -53,7 +53,7 @@ test('the presentation draws disappearing ink while the button is held, and a cl
   await expect.poll(lit).toBe(true)
   await show.mouse.up()
   await expect(show).toHaveURL(/#\/1$/)
-  await expect.poll(lit, { timeout: 4000 }).toBe(false)
+  await expect.poll(lit, { timeout: 5000 }).toBe(false)
   await show.mouse.click(w * 0.8, 300)
   await expect(show.locator('.slide .rail .pg b')).toHaveText('02')
 })

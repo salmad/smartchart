@@ -1,15 +1,16 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
-export interface InkHandle { down(x: number, y: number): void; move(x: number, y: number): void; up(): void }
+export interface InkHandle { down(x: number, y: number): void; move(x: number, y: number): void; up(): void; at(x: number, y: number): void }
 
-const LIFE = 1400
+const LIFE = 2000
 type Point = { x: number; y: number; t: number }
 
-/** Disappearing ink for presenting: hold the button and draw; each stretch of the line fades a moment after it was
-    drawn, so the pointer shows where to look and leaves nothing behind. Pointer-transparent; the parent feeds it. */
+/** The pointer for presenting: a gold dot where the cursor is, and disappearing ink under it. Hold the button and draw;
+    each stretch of the line fades two seconds after it was drawn, so the pointer shows where to look and leaves nothing
+    behind. Pointer-transparent; the parent feeds it. */
 export const Ink = forwardRef<InkHandle>(function Ink(_, ref) {
   const canvas = useRef<HTMLCanvasElement>(null)
-  const strokes = useRef<Point[][]>([]), drawing = useRef(false), frame = useRef(0)
+  const dot = useRef<HTMLElement>(null), strokes = useRef<Point[][]>([]), drawing = useRef(false), frame = useRef(0)
 
   const paint = () => {
     const el = canvas.current, g = el?.getContext('2d')
@@ -45,6 +46,12 @@ export const Ink = forwardRef<InkHandle>(function Ink(_, ref) {
     down(x, y) { drawing.current = true; strokes.current.push([{ x, y, t: performance.now() }]); wake() },
     move(x, y) { const s = strokes.current[strokes.current.length - 1]; if (drawing.current && s) { s.push({ x, y, t: performance.now() }); wake() } },
     up() { drawing.current = false },
+    at(x, y) { const el = dot.current; if (el) { el.style.transform = `translate(${x}px, ${y}px)`; el.style.opacity = '1' } },
   }))
-  return <canvas ref={canvas} aria-hidden className="pointer-events-none fixed inset-0 size-full" />
+  return (
+    <>
+      <canvas ref={canvas} aria-hidden className="pointer-events-none fixed inset-0 size-full" />
+      <i ref={dot} aria-hidden className="pointer-events-none fixed left-0 top-0 -ml-2 -mt-2 size-4 rounded-full bg-[#FFD24A] opacity-0 shadow-[0_0_0_2px_rgba(0,0,0,.45),0_0_14px_rgba(255,210,74,.7)]" />
+    </>
+  )
 })

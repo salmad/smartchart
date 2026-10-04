@@ -78,3 +78,11 @@ test('toggleSpans: one mark over many fields, on unless every span already has i
   expect(toggleSpans([{ markup: '[[one]]', from: 0, to: 3 }, { markup: 'two', from: 0, to: 3 }], 'f')).toEqual(['[[one]]', '[[two]]'])
   expect(toggleSpans([{ markup: 'a', from: 0, to: 0 }], 'b')).toEqual(['a'])
 })
+
+test('a link keeps its address through hand editing, and only its words count as text', () => {
+  const m = 'ONS, [FCA report](https://fca.org.uk/r?a=1) 2026'
+  expect(plainOf(m)).toBe('ONS, FCA report 2026')
+  expect(serialize(parse(m))).toBe(m)
+  expect(applyText(m, 'ONS, FCA reports 2026')).toBe('ONS, [FCA reports](https://fca.org.uk/r?a=1) 2026')
+  expect(applyText(m, 'Source, FCA report 2026')).toBe('Source, [FCA report](https://fca.org.uk/r?a=1) 2026')
+})

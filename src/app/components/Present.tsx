@@ -59,8 +59,9 @@ export function Present() {
 
   // A click turns the slide (right half forward, left half back); holding and dragging draws disappearing ink instead.
   const onLink = (e: PointerEvent) => !!(e.target as Element).closest('a')
-  const down = (e: PointerEvent) => { if (onLink(e)) return; press.current = { x: e.clientX, y: e.clientY, far: false }; ink.current?.down(e.clientX, e.clientY) }
+  const down = (e: PointerEvent) => { ink.current?.at(e.clientX, e.clientY); if (onLink(e)) return; press.current = { x: e.clientX, y: e.clientY, far: false }; ink.current?.down(e.clientX, e.clientY) }
   const move = (e: PointerEvent) => {
+    ink.current?.at(e.clientX, e.clientY)
     const p = press.current
     if (!p) return
     if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 6) p.far = true
@@ -89,7 +90,7 @@ export function Present() {
             <p className="text-white/60">Open it in Occam and press Present. This tab shows it as you edit.</p>
           </div>}
       <Ink ref={ink} />
-      {deck && hint && <p className="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-2 text-[13px] text-white/70">F full screen · P presenter view · hold and drag to draw</p>}
+      {deck && hint && <p className="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-2 text-[13px] text-white/70">F full screen · P presenter view · hold and drag to draw (fades in 2s)</p>}
     </div>
   )
 }

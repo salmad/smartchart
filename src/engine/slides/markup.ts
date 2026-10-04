@@ -1,37 +1,48 @@
 /* A markup field as characters with marks (spec 4.1): hand editing works in plain-text offsets and writes the
    markup string back, so the string stays the truth and the marks keep their place around the text that changed. */
-export type Mark = "b" | "f" | "neg" | "pos";
+export type Mark = "b" | "f" | "neg" | "pos" | `link:${string}`;
 export interface Char { ch: string; marks: Mark[] }
 
-const ORDER: Mark[] = ["b", "f", "neg", "pos"];
-const TOKENS: Record<Mark, [string, string]> = { b: ["**", "**"], f: ["[[", "]]"], neg: ["[-", "-]"], pos: ["[+", "+]"] };
+type Plain = "b" | "f" | "neg" | "pos";
+const ORDER: Plain[] = ["b", "f", "neg", "pos"];
+const TOKENS: Record<Plain, [string, string]> = { b: ["**", "**"], f: ["[[", "]]"], neg: ["[-", "-]"], pos: ["[+", "+]"] };
+const LINK = /\[([^\][]+)\]\((https?:\/\/[^\s)]+)\)/g;
+const open = (m: Mark) => (m.startsWith("link:") ? "[" : TOKENS[m as Plain][0]);
+const close = (m: Mark) => (m.startsWith("link:") ? `](${m.slice(5)})` : TOKENS[m as Plain][1]);
 // The same pairs md() draws, so a string means the same thing here and on the slide.
-const PAIRS: [Mark, RegExp][] = [["b", /\*\*(.+?)\*\*/g], ["f", /\[\[(.+?)\]\]/g], ["neg", /\[-(.+?)-\]/g], ["pos", /\[\+(.+?)\+\]/g]];
+const PAIRS: [Plain, RegExp][] = [["b", /\*\*(.+?)\*\*/g], ["f", /\[\[(.+?)\]\]/g], ["neg", /\[-(.+?)-\]/g], ["pos", /\[\+(.+?)\+\]/g]];
 
 export function parse(markup: string): Char[] {
   const token = new Array<boolean>(markup.length).fill(false);
   const marks = Array.from({ length: markup.length }, () => new Set<Mark>());
   for (const [mark, re] of PAIRS) for (const m of markup.matchAll(re)) {
-    const start = m.index ?? 0, end = start + m[0].length, open = TOKENS[mark][0].length, close = TOKENS[mark][1].length;
-    for (let i = start; i < start + open; i++) token[i] = true;
-    for (let i = end - close; i < end; i++) token[i] = true;
-    for (let i = start + open; i < end - close; i++) marks[i].add(mark);
+    const start = m.index ?? 0, end = start + m[0].length, o = TOKENS[mark][0].length, c = TOKENS[mark][1].length;
+    for (let i = start; i < start + o; i++) token[i] = true;
+    for (let i = end - c; i < end; i++) token[i] = true;
+    for (let i = start + o; i < end - c; i++) marks[i].add(mark);
+  }
+  // A link keeps its address in the mark, so editing the words around it never loses where it goes.
+  for (const m of markup.matchAll(LINK)) {
+    const start = m.index ?? 0, end = start + m[0].length, label = start + 1, labelEnd = label + m[1].length;
+    for (let i = start; i < label; i++) token[i] = true;
+    for (let i = labelEnd; i < end; i++) token[i] = true;
+    for (let i = label; i < labelEnd; i++) marks[i].add(`link:${m[2]}`);
   }
   const out: Char[] = [];
-  for (let i = 0; i < markup.length; i++) if (!token[i]) out.push({ ch: markup[i], marks: ORDER.filter((m) => marks[i].has(m)) });
+  for (let i = 0; i < markup.length; i++) if (!token[i]) out.push({ ch: markup[i], marks: [...ORDER.filter((m) => marks[i].has(m)), ...[...marks[i]].filter((m) => m.startsWith("link:"))] });
   return out;
 }
 
 /** Characters back to markup: a mark opens where a run starts having it and closes where it stops. */
 export function serialize(chars: Char[]): string {
   let out = "";
-  const open: Mark[] = [];
-  const closeTo = (keep: number) => { while (open.length > keep) out += TOKENS[open.pop() as Mark][1]; };
+  const opened: Mark[] = [];
+  const closeTo = (keep: number) => { while (opened.length > keep) out += close(opened.pop() as Mark); };
   for (const c of chars) {
     let k = 0;
-    while (k < open.length && c.marks.includes(open[k])) k++;
+    while (k < opened.length && c.marks.includes(opened[k])) k++;
     closeTo(k);
-    for (const m of c.marks) if (!open.includes(m)) { out += TOKENS[m][0]; open.push(m); }
+    for (const m of c.marks) if (!opened.includes(m)) { out += open(m); opened.push(m); }
     out += c.ch;
   }
   closeTo(0);
@@ -64,7 +75,7 @@ export function toggle(markup: string, from: number, to: number, mark: Mark): st
   const [a, b] = from <= to ? [from, to] : [to, from];
   if (a === b) return markup;
   const on = !hasMark(markup, a, b, mark);
-  return serialize(parse(markup).map((c, i) => (i < a || i >= b ? c : { ch: c.ch, marks: ORDER.filter((m) => (m === mark ? on : c.marks.includes(m))) })));
+  return serialize(parse(markup).map((c, i) => (i < a || i >= b ? c : { ch: c.ch, marks: [...ORDER.filter((m) => (m === mark ? on : c.marks.includes(m))), ...c.marks.filter((m) => m.startsWith("link:"))] })));
 }
 
 /** One mark over a span in each of several fields (text selected across table cells): on unless every span has it. */

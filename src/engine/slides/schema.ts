@@ -125,8 +125,8 @@ const FRAME: Record<string, FieldDef> = {
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
   subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; one line.", { required: true, max: 60, styles: PITCH }),
   takeaway: f("markup", "Optional one-line conclusion at the bottom. Must fit on ONE line.", { max: { consulting: 75, pitch: 42 } }),
-  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions. A full https:// address in it becomes a clickable link.", { max: 110 }),
-  source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix. A full https:// address in it becomes a clickable link, so give the page the figure came from when you have it.", { max: 110 }),
+  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions. Link words with [words](https://address): they show as the words with a small arrow and open the page on a click.", { max: 110 }),
+  source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix. Link the report by name when you know its page: `FCA report` becomes [FCA report](https://…), shown as the words with a small arrow (never paste a bare address). Several sources can each be linked.", { max: 110 }),
 };
 
 /* A picture: { src, alt }. `src` comes from add_image (or a starter); code sizes, crops and tones it. */
@@ -632,7 +632,7 @@ export function describe(id: TemplateId, style: Style = "consulting"): TemplateC
 /** The slide's line in the storyline: its title, or (no title) the number's caption or the quote. */
 export const headline = (s: Partial<Slide> | null | undefined): string => plain(s?.title || s?.number?.caption || s?.quote || "");
 
-export const plain = (s: unknown): string => String(s).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
+export const plain = (s: unknown): string => String(s).replace(/\[([^\][]+)\]\(https?:\/\/[^\s)]+\)/g, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
 const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 
 type Out = Validation;

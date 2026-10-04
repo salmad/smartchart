@@ -17,9 +17,10 @@ export const md = (s: unknown): string => esc(s)
   .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
   .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>');
-/** A footnote or source line: an https:// address in it is a link, shown as written (what is stored is what is read). */
-export const mdLinked = (s: unknown): string => md(s).replace(/(^|[\s(])(https?:\/\/[^\s<>]+?)([.,;:!?)]*)(?=$|[\s<])/g,
-  (_, before: string, url: string, after: string) => `${before}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${after}`);
+/** A footnote or source line: `[FCA report](https://…)` is the words with a small arrow, and a click goes to the page. */
+const EXT = `<svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>`;
+export const mdLinked = (s: unknown): string => md(s).replace(/\[([^\][]+)\]\((https?:\/\/[^\s)<>]+)\)/g,
+  (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}${EXT}</a>`);
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
 const display = (s: string) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
