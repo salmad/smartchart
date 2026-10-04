@@ -22,7 +22,7 @@ async function boot(page: Page, path = '/new') {
 
 test('the app loads', async ({ page }) => {
   await boot(page)
-  await expect(page.getByText('Occam', { exact: true })).toBeVisible()
+  await expect(page.getByText('Occam', { exact: true }).first()).toBeVisible()
   await page.getByRole('button', { name: 'Deck menu' }).click()
   await page.getByRole('menuitem', { name: 'Look' }).click()
   await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
