@@ -6,13 +6,13 @@
   "blurb": "The deck’s title and what it is about",
   "consulting": {
    "template": "cover",
-   "title": "Acme",
-   "subtitle": "A business card and account for small and medium-sized businesses."
+   "title": "Occam",
+   "subtitle": "Slides that make the point, built by describing them."
   },
   "pitch": {
    "template": "cover",
-   "title": "The card that [[runs the business.]]",
-   "subtitle": "Spending limits, cashflow and rewards for small businesses, all in one app."
+   "title": "The deck that [[builds itself.]]",
+   "subtitle": "Describe the slide. Occam sets it, checks it, fits it."
   }
  },
  {
@@ -23,7 +23,7 @@
   "consulting": {
    "template": "section",
    "title": "The problem",
-   "subtitle": "SME founders fund the business on personal cards because no provider bundles a real limit with banking."
+   "subtitle": "Slides take hours, drift from one to the next, and nothing checks the words behind them."
   },
   "pitch": {
    "template": "section",
@@ -440,70 +440,70 @@
   "blurb": "Why your approach beats the old one",
   "consulting": {
    "template": "cards",
-   "kicker": "The insight",
-   "title": "Lender-only fintechs attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
+   "kicker": "The difference",
+   "title": "A blank canvas leaves the layout to you; [[rules and checks]] leave it to the product",
    "framed": true,
    "cards": [
     {
      "tone": "neutral",
-     "label": "Lender-only fintechs",
-     "title": "Adverse loop",
+     "label": "Blank canvas",
+     "title": "Fiddly loop",
      "bullets": [
-      "Expensive acquisition of desperate borrowers",
-      "Little data beyond filed accounts",
-      "High risk drives high prices, then higher risk"
+      "Spacing and sizes set slide by slide",
+      "Charts pasted in, restyled, mis-scaled",
+      "Nothing checks the words or the numbers"
      ],
      "facts": [
       {
        "label": "Outcome",
-       "text": "Rising losses, rising prices"
+       "text": "Every slide a little different"
       },
       {
-       "label": "Track record",
-       "text": "Most lender-only fintechs shut down"
+       "label": "Time",
+       "text": "Hours per deck, every time"
       }
      ]
     },
     {
      "tone": "focus",
-     "label": "Acme",
-     "title": "Positive loop",
+     "label": "Occam",
+     "title": "Checked loop",
      "bullets": [
-      "Customers arrive for non-lending reasons",
-      "Lending funds the cashflow of a working business",
-      "More data, better pricing, better customers"
+      "Say what the slide must prove",
+      "Layout, sizes and colours come from rules",
+      "Every slide is measured and checked"
      ],
      "facts": [
       {
        "label": "Outcome",
-       "text": "Falling losses, better pricing"
+       "text": "One look across every slide"
       },
       {
        "label": "Proof",
-       "text": "Card-led lenders are profitable"
+       "text": "Each slide fits before you see it"
       }
      ]
     }
    ],
-   "takeaway": "Why customers join decides how much lending loses."
+   "takeaway": "The point of a slide is the message, not the formatting."
   },
   "pitch": {
    "template": "cards",
-   "title": "The insight",
-   "subtitle": "Lending alone attracts the wrong borrowers.",
+   "title": "The difference",
+   "subtitle": "Layout by rules, not by hand.",
    "framed": true,
    "cards": [
     {
      "tone": "neutral",
-     "label": "Lender only",
-     "title": "Adverse loop",
-     "text": "Desperate borrowers, thin data, rising prices."
+     "label": "Blank canvas",
+     "title": "Fiddly loop",
+     "text": "Sizes and spacing set by hand, every slide."
     },
     {
      "tone": "focus",
-     "label": "Acme",
-     "title": "Positive loop",
-     "text": "Good businesses arrive first. Lending follows."
+     "label": "Occam",
+     "title": "Checked loop",
+     "text": "Rules set the layout. Every slide is checked."
     }
    ]
   }
@@ -2183,7 +2183,7 @@
   "consulting": {
    "template": "table",
    "kicker": "Next steps",
-   "title": "Four actions this quarter put the [[first 100 cards]] in customers’ hands by Q1 2027",
+   "title": "Four steps take you from a blank page to [[a deck you can present]]",
    "table": {
     "columns": [
      {
@@ -2203,13 +2203,13 @@
      {
       "cells": [
        {
-        "value": "Sign the issuing partner",
-        "note": "Term sheet agreed; legal open"
+        "value": "Describe your first slide",
+        "note": "Say what it must prove"
        },
-       "CEO",
-       "15 Oct",
+       "You",
+       "Today",
        {
-        "value": "Under way",
+        "value": "Start here",
         "status": true
        }
       ],
@@ -2218,13 +2218,13 @@
      {
       "cells": [
        {
-        "value": "Close the £5m seed round",
-        "note": "Lead confirmed; allocations next"
+        "value": "Check the storyline",
+        "note": "Reads the whole deck for gaps"
        },
-       "CFO",
-       "31 Oct",
+       "Occam",
+       "5 min",
        {
-        "value": "Under way",
+        "value": "Automatic",
         "status": true
        }
       ]
@@ -2232,13 +2232,13 @@
      {
       "cells": [
        {
-        "value": "Hire the head of risk",
-        "note": "Two finalists; owns underwriting"
+        "value": "Rehearse the room",
+        "note": "Hardest questions, with answers"
        },
-       "CEO",
-       "15 Nov",
+       "Occam",
+       "10 min",
        {
-        "value": "Final round",
+        "value": "On request",
         "status": true
        }
       ]
@@ -2246,26 +2246,26 @@
      {
       "cells": [
        {
-        "value": "Open the warehouse process",
-        "note": "Shortlist three lenders"
+        "value": "Share or present",
+        "note": "A link, a PDF, or full screen"
        },
-       "CFO",
-       "Dec",
+       "You",
+       "Today",
        {
-        "value": "Shortlisting",
+        "value": "Ready",
         "status": true
        }
       ]
      }
     ]
    },
-   "takeaway": "Only the first needs **a board decision**; the rest are in hand.",
-   "footnote": "Dates are target completion; owners are accountable."
+   "takeaway": "Only the first needs **you**; Occam does the rest.",
+   "footnote": "Times are indicative."
   },
   "pitch": {
    "template": "table",
    "title": "What’s next",
-   "subtitle": "First 100 cards by [[Q1 2027.]]",
+   "subtitle": "Your first deck by [[today.]]",
    "table": {
     "columns": [
      {
@@ -2285,13 +2285,13 @@
      {
       "cells": [
        {
-        "value": "Sign the issuing partner",
-        "note": "Term sheet agreed; legal open"
+        "value": "Describe your first slide",
+        "note": "Say what it must prove"
        },
-       "CEO",
-       "15 Oct",
+       "You",
+       "Today",
        {
-        "value": "Under way",
+        "value": "Start here",
         "status": true
        }
       ],
@@ -2300,13 +2300,13 @@
      {
       "cells": [
        {
-        "value": "Close the £5m seed round",
-        "note": "Lead confirmed; allocations next"
+        "value": "Check the storyline",
+        "note": "Reads the whole deck for gaps"
        },
-       "CFO",
-       "31 Oct",
+       "Occam",
+       "5 min",
        {
-        "value": "Under way",
+        "value": "Automatic",
         "status": true
        }
       ]
@@ -2314,13 +2314,13 @@
      {
       "cells": [
        {
-        "value": "Hire the head of risk",
-        "note": "Two finalists; owns underwriting"
+        "value": "Rehearse the room",
+        "note": "Hardest questions, with answers"
        },
-       "CEO",
-       "15 Nov",
+       "Occam",
+       "10 min",
        {
-        "value": "Final round",
+        "value": "On request",
         "status": true
        }
       ]
@@ -2328,20 +2328,20 @@
      {
       "cells": [
        {
-        "value": "Open the warehouse process",
-        "note": "Shortlist three lenders"
+        "value": "Share or present",
+        "note": "A link, a PDF, or full screen"
        },
-       "CFO",
-       "Dec",
+       "You",
+       "Today",
        {
-        "value": "Shortlisting",
+        "value": "Ready",
         "status": true
        }
       ]
      }
     ]
    },
-   "takeaway": "Only the first needs [[a board decision.]]"
+   "takeaway": "Only the first needs [[you.]]"
   }
  },
  {
