@@ -15,7 +15,7 @@ describe('reading files', () => {
     expect(r.cut).toBe(true)
   })
   it('refuses a kind it cannot read, and an empty file, with a sentence', async () => {
-    await expect(readFile(file('deck.pptx', 'x'))).rejects.toThrow('Occam reads PDF, Word, Excel, CSV, Markdown and text files.')
+    await expect(readFile(file('deck.pptx', 'x'))).rejects.toThrow('Occam reads PDF, Word, Excel, CSV, Markdown and text files, and pictures.')
     await expect(readFile(file('empty.txt', '  \n '))).rejects.toThrow('empty.txt has no text')
   })
 })

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
-import { GROUPS, IN_APP_STARTERS, starterSlide, type Group, type Starter } from '@/engine/starters'
+import { GROUPS, STARTERS, starterSlide, type Group, type Starter } from '@/engine/starters'
 import type { Deck, TemplateId } from '@/engine/types'
 import { Button } from '@/app/components/ui/button'
 import { cn } from '@/app/lib/utils'
@@ -15,7 +15,7 @@ interface Props {
 
 // Add slide opens on the group of the slide you are on: its likeliest neighbour.
 const GROUP_OF: Record<TemplateId, Group> = { chart: 'trend', pair: 'trend', table: 'compare', cards: 'case', number: 'number', quote: 'case', steps: 'plan', summary: 'open', image: 'case', team: 'case', logos: 'case', text: 'case', agenda: 'open', cover: 'trend', section: 'trend' }
-const GROUPED = GROUPS.map((g) => ({ ...g, starters: IN_APP_STARTERS.filter((s) => s.group === g.id) })).filter((g) => g.starters.length)
+const GROUPED = GROUPS.map((g) => ({ ...g, starters: STARTERS.filter((s) => s.group === g.id) })).filter((g) => g.starters.length)
 
 /** Add slide, and a new deck's first screen: pick a starter from the filmstrip (nothing is picked at first), see it
     full size in the deck's own look where it would land, then add it. A double click adds straight away; a group's

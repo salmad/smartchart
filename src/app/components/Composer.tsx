@@ -41,7 +41,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }:
     setText('')
     if (withFiles) setFiles([])
   }
-  const add = (list: FileList | null) => {
+  const add = (list: FileList | File[] | null) => {
     for (const f of Array.from(list ?? [])) {
       const id = nextId.current++
       setFiles((fs) => [...fs, { id, name: f.name, state: 'reading' }])
@@ -50,6 +50,8 @@ export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }:
         (e: unknown) => setFiles((fs) => fs.map((x) => (x.id === id ? { id, name: f.name, state: 'failed', why: e instanceof Error ? e.message : String(e) } : x))))
     }
   }
+  // A pasted screenshot arrives as "image.png": name it so the chips and the agent can tell pictures apart.
+  const named = (pics: File[]) => pics.map((f, i) => new File([f], /^image\.\w+$/.test(f.name) ? `Pasted picture ${nextId.current + i + 1}.${f.type.split('/')[1] ?? 'png'}` : f.name, { type: f.type }))
   // A file dropped anywhere on the editor joins the message; the browser never opens it in place of the deck.
   const addRef = useRef(add)
   addRef.current = add
@@ -100,6 +102,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }:
         </ul>
       )}
       <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} disabled={!canSend}
+        onPaste={(e) => { const pics = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/')); if (!pics.length) return; e.preventDefault(); add(named(pics)) }}
         placeholder={hint ?? (files.length ? 'Say what the room should take away…' : start ? 'Paste your numbers, or drop a doc or sheet, and say what the slide should argue…' : 'Describe a slide, or ask for a change…')}
         className="min-h-0 resize-none rounded-[10px] border-line-2 bg-app-bg px-3 py-2.5 text-sm leading-[1.45] shadow-none focus-visible:border-ink-3 focus-visible:ring-0 disabled:opacity-50" />
       <div className="flex items-center gap-2">

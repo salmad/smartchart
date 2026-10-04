@@ -587,11 +587,6 @@ export function fieldsFor(id: string, style: Style): Record<string, FieldDef> {
 export const ARCHIVED: readonly TemplateId[] = [];
 /** The templates the agent may pick: the menu minus the archived ones. */
 export const OFFERED = (Object.keys(MENU) as TemplateId[]).filter((id) => !ARCHIVED.includes(id));
-/** Templates that are nothing without a picture. Pictures come in through add_image (MCP and REST); the app cannot add
-    one yet, so its agent is not offered these. */
-export const NEEDS_PICTURE: readonly TemplateId[] = ["image", "logos"];
-/** The templates the in-app agent may pick. */
-export const IN_APP = OFFERED.filter((id) => !NEEDS_PICTURE.includes(id));
 
 /** One line per offered entry: what the router and planning prompt see. */
 export function catalogue(): string {

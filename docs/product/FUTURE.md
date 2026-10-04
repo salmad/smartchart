@@ -47,14 +47,14 @@ shows a mixed pair in the gallery.
 
 ## 6. Images and screenshots in slides: the next steps
 **Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-images-design.md`):** the image, team and logos slides, logos in
-tables and cards, one-colour logos, `add_image` for MCP and REST (a URL or bytes into Vercel Blob). Still to do:
-- **Upload in the app:** drop or paste a picture into the chat, replace one in edit mode, add a logo or a person by hand. Until
-  then the app's Add slide hides the picture starters, its agent is not offered the image and logos slides, and lists of
-  pictured items cannot grow by hand. A new table row in a table with logos needs one too.
+tables and cards, one-colour logos, `add_image` for MCP and REST, and pictures in the app: drop or paste one into the chat
+(the agent gets a src for each use it can have), replace one in edit mode, and add a logo or a person by picking the picture
+first. Still to do:
 - **Logos from a company domain:** the agent writes `stripe.com` and SmartChart fetches the logo (needs a logo service key,
   e.g. logo.dev).
 - **The user's own crop** of a photo (a focal point), and **images in pair halves**.
 - **Original colours** for a logo, as an option beside one colour (one colour stays the default).
+- A new row by hand in a table with row logos (it needs a logo too), and pictures for a signed-out maker (local decks).
 
 ## 7. Bug hunt: how MCP works in practice (2026-10-04)
 Recent MCP testing turned up rough edges. Go through it on purpose: replay real sessions (Claude, Cursor, other clients) against the MCP tools, and list every wrong error, confusing result, wasted call and missing guidance. Fix at the tool or instruction level, then add each case to `tests/agent-harness` so it stays fixed.

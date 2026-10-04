@@ -63,7 +63,7 @@ function itemActions(slide: Slide, style: Style, item: string, prefix = ""): Act
   if (!hit) return [];
   const { op, index } = hit, out: Action[] = [];
   const at = (i: number) => `${op.path}[${i}]`;
-  if (op.length < op.max && !op.pictured) {
+  if (op.length < op.max && !op.picture) {
     out.push({ id: `${prefix}insert-before`, label: "Insert before", group: "item", run: () => ({ set: newItem(slide, style, op, index), focus: at(index) }) });
     out.push({ id: `${prefix}insert-after`, label: "Insert after", group: "item", run: () => ({ set: newItem(slide, style, op, index + 1), focus: at(index + 1) }) });
   }

@@ -33,7 +33,7 @@ for (const st of STARTERS) for (const style of ['consulting', 'pitch'] as const)
   test(`${st.id} (${style}): a new item on every list validates once its text is filled in`, () => {
     const slide = starterSlide(st, style)
     for (const op of listOps(slide, style)) {
-      if (op.length >= op.max || op.pictured) continue
+      if (op.length >= op.max || op.picture) continue
       const next = autofix(fill(patched(slide, newItem(slide, style, op, op.length))) as Slide, style).slide
       const errors = validate(next, style).errors.filter((e) => !/characters|at most|budget/.test(e))
       expect(errors, `${op.path}`).toEqual([])
@@ -43,7 +43,7 @@ for (const st of STARTERS) for (const style of ['consulting', 'pitch'] as const)
 
 test('a list of pictured items cannot grow by hand (no upload yet); a new item never copies a picture', () => {
   const s = starter('logos')
-  expect(listOps(s, 'consulting').find((o) => o.path === 'logos')).toMatchObject({ pictured: true, max: 12 })
+  expect(listOps(s, 'consulting').find((o) => o.path === 'logos')).toMatchObject({ picture: { field: 'logo', kind: 'logo' }, max: 12 })
   const team = starter('team'), op = must(listOps(team, 'consulting').find((o) => o.path === 'people'))
   expect((newItem(team, 'consulting', op, 1).people as Record<string, unknown>[])[1].photo).toBeUndefined()
 })

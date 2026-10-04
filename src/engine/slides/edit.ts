@@ -4,6 +4,7 @@ import { parsePath } from "../agent/patch.js";
 import { STARTERS, starterSlide } from "../starters/index.js";
 import { MENU, describe, fieldsFor, plain, type FieldView } from "./schema.js";
 import type { Slide, Style, TemplateId } from "../types.js";
+import type { ImageKind } from "./images.js";
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -13,8 +14,8 @@ export function getAt(slide: Slide, path: string): unknown {
 }
 
 export interface ListOp { path: string; min: number; max: number; length: number; required: boolean
-  /** Its items carry pictures (logos, team photos): the app cannot add one by hand until it can upload pictures. */
-  pictured?: boolean }
+  /** Its items carry a picture (a logo, a team photo): a new item needs one picked first. The field and its kind. */
+  picture?: { field: string; kind: ImageKind } }
 // Chart and table data have their own grid (a pair's halves too; the pair itself can swap); table columns change every row,
 // and cells follow the columns.
 const SKIP = /^chart\b|^halves\[\d+\]\.chart\b|^halves\[\d+\]\.table\.columns$|^table\.columns$|\.cells$/;
@@ -28,8 +29,9 @@ export function listOps(slide: Slide, style: Style): ListOp[] {
       if (def.type === "list" && Array.isArray(v)) {
         // Framed cards come in exactly 2 (a contrast), whatever the list's general limits.
         const fixed = path === "cards" && (value as Obj).framed === true;
-        const pictured = v.some((x) => isObj(x) && Object.entries(def.of?.fields ?? {}).some(([f, d]) => d.type === "image" && x[f] !== undefined));
-        out.push({ path, min: fixed ? 2 : def.items?.min ?? 0, max: fixed ? 2 : def.items?.max ?? Infinity, length: v.length, required: !!def.required, ...(pictured ? { pictured } : {}) });
+        const field = Object.entries(def.of?.fields ?? {}).find(([f, d]) => d.type === "image" && v.some((x) => isObj(x) && x[f] !== undefined));
+        const picture = field ? { field: field[0], kind: field[1].kinds?.[0] ?? "photo" } : undefined;
+        out.push({ path, min: fixed ? 2 : def.items?.min ?? 0, max: fixed ? 2 : def.items?.max ?? Infinity, length: v.length, required: !!def.required, ...(picture ? { picture } : {}) });
         const of = def.of?.fields;
         if (of) v.forEach((x, i) => { if (isObj(x)) walk(of, x, `${path}[${i}]`); });
       } else if (def.type === "object" && def.fields && isObj(v)) walk(def.fields, v, path);

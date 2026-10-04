@@ -1,6 +1,6 @@
 /* PRE (spec 9.0): one Jev call before the agent runs: intent, template, card lead, position.
    When the intent is sure, code makes the agent's first tool call itself. */
-import { APP_GUIDE, APP_MENU_OPTIONS, STYLE_STATE } from "./prompts.js";
+import { GUIDE, MENU_OPTIONS, STYLE_STATE } from "./prompts.js";
 import type { JevFn, JevQuestion } from "./llm.js";
 import { headline } from "../slides/schema.js";
 import type { Slide, Style } from "../types.js";
@@ -38,7 +38,7 @@ export async function preStep({ text, deck, selection, jev }: { text: string; de
     selection?.slideId ? `Selected slide: ${selection.slideId}.` : "No slide is selected.", `User message: ${text}`].join("\n");
   const qs: Record<string, JevQuestion> = {
     intent: { instructions: "What does the user want done with this message?", options: INTENTS },
-    template: { instructions: `If this message asks for a new slide or another kind of slide, which template fits its content?\n${APP_GUIDE}`, options: APP_MENU_OPTIONS },
+    template: { instructions: `If this message asks for a new slide or another kind of slide, which template fits its content?\n${GUIDE}`, options: MENU_OPTIONS },
     lead: { instructions: LEAD_Q, options: LEADS },
   };
   if (slides.length) qs.after = { instructions: "If a new slide is added, after which slide should it go? The end, unless the message says where or clearly continues a particular slide.",

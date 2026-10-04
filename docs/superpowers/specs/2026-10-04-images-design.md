@@ -9,7 +9,7 @@ FUTURE.md #6. Pitch decks need pictures: the product, the team, who already uses
 |---|---|
 | I1 | Four places take a picture: a new **image** slide, a new **team** slide, a new **logos** slide (a wall), and **logos in tables and cards** (a row label or a column header in a table, a card's lead). |
 | I2 | **Logos are drawn in one colour**, the slide's text colour, like a "Trusted by" strip. Works on Ink and Paper alike. A logo with a solid background has it removed when it is added. |
-| I3 | Agents add a picture by **URL** (or base64 bytes) with a new `add_image` tool. SmartChart copies it into its own storage, measures and prepares it, and returns a reference the agent puts on a slide. Upload by the user in the app is **not** in this version. |
+| I3 | Agents add a picture by **URL** (or base64 bytes) with a new `add_image` tool. SmartChart copies it into its own storage, measures and prepares it, and returns a reference the agent puts on a slide. (Added later the same night: upload in the app, below.) |
 | I4 | Pictures live in **Vercel Blob** (public, unguessable URLs), so share links and PDFs work. |
 
 ## Principles carried over
@@ -124,3 +124,13 @@ Title frame, optional `caption`, 3–12 logos `{ logo: image(logo), name }`.
 
 Upload in the app (chat drop, paste, replace in edit mode); logos fetched from a company domain; picture crops chosen by
 the user; images in pair halves. Each is a FUTURE.md line.
+
+## Pictures in the app (added 2026-10-04, after the first version)
+- `POST /api/images?kind=photo|screenshot|logo|all` (signed-in makers; also an agent key): the body is the picture, at most
+  4.4 MB (the app shrinks a bigger photo to 2400 px WebP first). `all` prepares every kind the picture can be and returns
+  `{ kinds: { kind: { src, width, height } }, refused: { kind: why } }`; the daily cap is shared with add_image.
+- **Chat:** a picture dropped, picked or pasted joins the message as text the agent reads: its src for each use, and why the
+  other uses are refused. The in-app agent is offered every template again, with one rule: only those srcs, never invented;
+  ask for a picture it does not have. Add slide shows the picture starters again.
+- **Edit mode:** "Replace picture" over the picture under the pointer (same kind, alt kept); "Add after" on a list whose
+  items carry a picture opens the picker first. Failures show their reason; signed out, it says to sign in.
