@@ -528,221 +528,221 @@
   "id": "table",
   "group": "compare",
   "label": "Comparison table",
-  "blurb": "Options against the same criteria",
+  "blurb": "Plans against the same criteria",
   "consulting": {
    "template": "table",
    "table": {
     "columns": [
      {
-      "label": "£ per customer per month"
+      "label": "£ per seat per month"
      },
      {
-      "label": "Revolver",
+      "label": "Pro",
       "focus": true
      },
      {
-      "label": "Transactor"
+      "label": "Team"
      },
      {
-      "label": "Super-transactor"
+      "label": "Enterprise"
      }
     ],
     "rows": [
      {
       "cells": [
-       "Share of customers",
-       "40–60%",
-       "40–60%",
+       "Share of paid seats",
+       "~55%",
+       "~35%",
        "~10%"
       ],
       "style": "muted"
      },
      {
       "cells": [
-       "Interest revenue",
+       "Subscription",
        {
-        "value": "267",
-        "note": "40% APR × £8.0k"
-       },
-       "—",
-       "—"
-      ]
-     },
-     {
-      "cells": [
-       "Cost of funding",
-       {
-        "value": "(53)",
-        "note": "8% × £8.0k"
+        "value": "20",
+        "note": "billed monthly"
        },
        {
-        "value": "(33)",
-        "note": "8% × £5.0k"
+        "value": "30",
+        "note": "3-seat minimum"
        },
        {
-        "value": "(70)",
-        "note": "8% × £10.5k"
+        "value": "60",
+        "note": "annual contract"
        }
       ]
      },
      {
       "cells": [
-       "Interchange revenue",
+       "Add-on usage",
        {
-        "value": "90",
-        "note": "1.8% × £5.0k spend"
+        "value": "6",
+        "note": "~0.4m extra tokens"
        },
        {
-        "value": "120",
-        "note": "1.8% × £6.7k"
+        "value": "12",
+        "note": "~0.8m extra tokens"
        },
        {
-        "value": "480",
-        "note": "1.8% × £26.7k"
+        "value": "45",
+        "note": "~3m extra tokens"
        }
       ]
      },
      {
       "cells": [
-       "Cost of rewards",
-       "(50)",
-       "(67)",
-       "(267)"
+       "Model cost",
+       "(8)",
+       "(11)",
+       "(34)"
       ]
      },
      {
       "cells": [
-       "Bad debt",
+       "Support and success",
+       "(1)",
+       "(2)",
        {
-        "value": "(70)",
-        "note": "~10% of balance p.a."
-       },
-       "(5)",
-       "(10)"
+        "value": "(12)",
+        "note": "named manager"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Discounts",
+       "(2)",
+       "(3)",
+       {
+        "value": "(15)",
+        "note": "volume, ~25%"
+       }
       ]
      },
      {
       "cells": [
        "Monthly gross margin",
-       "£184",
        "£15",
-       "£133"
+       "£26",
+       "£44"
       ],
       "style": "total"
      }
     ]
    },
    "kicker": "Business model",
-   "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
-   "takeaway": "A 50/50 revolver–transactor mix earns ~£100 a month each.",
-   "footnote": "Balances and spend are monthly averages per active customer.",
-   "source": "Acme model; funding cost assumes an 8% warehouse rate."
+   "title": "Pro seats are most of the base, but [[Enterprise earns three times the margin]] per seat",
+   "takeaway": "One Pro seat in five moved to Team lifts blended margin by £2 a month.",
+   "footnote": "Usage and costs are monthly averages per paid seat.",
+   "source": "Acme model; model cost assumes current API rates."
   },
   "pitch": {
    "template": "table",
    "table": {
     "columns": [
      {
-      "label": "£ per customer per month"
+      "label": "£ per seat per month"
      },
      {
-      "label": "Revolver",
+      "label": "Pro",
       "focus": true
      },
      {
-      "label": "Transactor"
+      "label": "Team"
      },
      {
-      "label": "Super-transactor"
+      "label": "Enterprise"
      }
     ],
     "rows": [
      {
       "cells": [
-       "Share of customers",
-       "40–60%",
-       "40–60%",
+       "Share of paid seats",
+       "~55%",
+       "~35%",
        "~10%"
       ],
       "style": "muted"
      },
      {
       "cells": [
-       "Interest revenue",
+       "Subscription",
        {
-        "value": "267",
-        "note": "40% APR × £8.0k"
-       },
-       "—",
-       "—"
-      ]
-     },
-     {
-      "cells": [
-       "Cost of funding",
-       {
-        "value": "(53)",
-        "note": "8% × £8.0k"
+        "value": "20",
+        "note": "billed monthly"
        },
        {
-        "value": "(33)",
-        "note": "8% × £5.0k"
+        "value": "30",
+        "note": "3-seat minimum"
        },
        {
-        "value": "(70)",
-        "note": "8% × £10.5k"
+        "value": "60",
+        "note": "annual contract"
        }
       ]
      },
      {
       "cells": [
-       "Interchange revenue",
+       "Add-on usage",
        {
-        "value": "90",
-        "note": "1.8% × £5.0k spend"
+        "value": "6",
+        "note": "~0.4m extra tokens"
        },
        {
-        "value": "120",
-        "note": "1.8% × £6.7k"
+        "value": "12",
+        "note": "~0.8m extra tokens"
        },
        {
-        "value": "480",
-        "note": "1.8% × £26.7k"
+        "value": "45",
+        "note": "~3m extra tokens"
        }
       ]
      },
      {
       "cells": [
-       "Cost of rewards",
-       "(50)",
-       "(67)",
-       "(267)"
+       "Model cost",
+       "(8)",
+       "(11)",
+       "(34)"
       ]
      },
      {
       "cells": [
-       "Bad debt",
+       "Support and success",
+       "(1)",
+       "(2)",
        {
-        "value": "(70)",
-        "note": "~10% of balance p.a."
-       },
-       "(5)",
-       "(10)"
+        "value": "(12)",
+        "note": "named manager"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Discounts",
+       "(2)",
+       "(3)",
+       {
+        "value": "(15)",
+        "note": "volume, ~25%"
+       }
       ]
      },
      {
       "cells": [
        "Monthly gross margin",
-       "£184",
        "£15",
-       "£133"
+       "£26",
+       "£44"
       ],
       "style": "total"
      }
     ]
    },
    "title": "Business model",
-   "subtitle": "Every customer [[makes money.]]"
+   "subtitle": "Every seat [[makes money.]]"
   }
  },
  {
@@ -758,76 +758,76 @@
       "label": "Provider"
      },
      {
-      "label": "Limit"
+      "label": "Context"
      },
      {
-      "label": "No annual fee"
+      "label": "Free tier"
      },
      {
-      "label": "Cashback",
+      "label": "Per 1M tokens",
       "focus": true
      }
     ],
     "rows": [
      {
       "cells": [
-       "Retail bank",
-       "£25k",
+       "Closed-model API",
+       "200k",
        {
         "value": "✗",
-        "note": "£120 a year"
+        "note": "billed from day one"
        },
-       "0%"
+       "£12"
       ]
      },
      {
       "cells": [
-       "Neobank (debit)",
-       "—",
+       "Open-weight host",
+       "128k",
        "✓",
-       "0.5%"
+       "£3"
       ]
      },
      {
       "cells": [
-       "Corporate charge card",
-       "£50k",
+       "Cloud marketplace",
+       "1m",
        {
         "value": "✗",
-        "note": "£550 a year"
+        "note": "minimum spend"
        },
-       "1%"
+       "£9"
       ]
      },
      {
       "cells": [
        "Acme",
-       "£250k",
+       "640k",
        "✓",
-       "1%"
+       "£2"
       ],
       "style": "total"
      }
     ]
    },
-   "caption": "SME business cards compared, 2026",
+   "caption": "AI model providers compared, 2026",
    "kicker": "Competition",
-   "title": "Acme offers [[five times the limit]] of the nearest SME card with no annual fee",
+   "title": "Acme offers [[five times the context]] of the nearest provider with a free tier",
    "notes": [
     {
-     "title": "Banks cap at £25k",
-     "text": "Underwriting on filed accounts limits young firms."
+     "title": "Closed APIs bill at once",
+     "text": "No free tier, so teams cannot test on real documents."
     },
     {
-     "title": "Neobanks stop at debit",
-     "text": "No real limit, so spend leaves for personal cards."
+     "title": "Open hosts stop at 128k",
+     "text": "Long documents must be split and stitched back together."
     },
     {
-     "title": "Charge card perks cost extra",
-     "text": "**£550 a year** before the first pound of cashback."
+     "title": "Marketplaces add a minimum",
+     "text": "**Minimum spend** before the first token is read."
     }
    ],
-   "source": "Provider websites, September 2026."
+   "source": "Provider pricing pages, September 2026."
   },
   "pitch": {
    "template": "table",
@@ -837,70 +837,70 @@
       "label": "Provider"
      },
      {
-      "label": "Limit"
+      "label": "Context"
      },
      {
-      "label": "No annual fee"
+      "label": "Free tier"
      },
      {
-      "label": "Cashback",
+      "label": "Per 1M tokens",
       "focus": true
      }
     ],
     "rows": [
      {
       "cells": [
-       "Retail bank",
-       "£25k",
+       "Closed-model API",
+       "200k",
        {
         "value": "✗",
-        "note": "£120 a year"
+        "note": "billed from day one"
        },
-       "0%"
+       "£12"
       ]
      },
      {
       "cells": [
-       "Neobank (debit)",
-       "—",
+       "Open-weight host",
+       "128k",
        "✓",
-       "0.5%"
+       "£3"
       ]
      },
      {
       "cells": [
-       "Corporate charge card",
-       "£50k",
+       "Cloud marketplace",
+       "1m",
        {
         "value": "✗",
-        "note": "£550 a year"
+        "note": "minimum spend"
        },
-       "1%"
+       "£9"
       ]
      },
      {
       "cells": [
        "Acme",
-       "£250k",
+       "640k",
        "✓",
-       "1%"
+       "£2"
       ],
       "style": "total"
      }
     ]
    },
-   "caption": "SME business cards compared",
+   "caption": "AI model providers compared",
    "title": "Competition",
-   "subtitle": "[[5×]] the limit. No fee.",
+   "subtitle": "[[5×]] the context. Free tier.",
    "notes": [
     {
-     "title": "Banks cap at £25k"
+     "title": "Closed APIs bill at once"
     },
     {
-     "title": "Neobanks stop at debit"
+     "title": "Open hosts stop at 128k"
     },
     {
-     "title": "Charge cards: £550 a year"
+     "title": "Marketplaces add a minimum"
     }
    ]
   }
@@ -1686,46 +1686,46 @@
     ],
     "rows": [
      {
-      "label": "Card issuing",
+      "label": "Core product",
       "start": 0,
       "end": 2
      },
      {
-      "label": "Underwriting engine",
+      "label": "Billing and plans",
       "start": 1,
       "end": 3
      },
      {
-      "label": "Warehouse facility",
+      "label": "Enterprise security",
       "start": 2,
       "end": 5,
       "focus": true
      },
      {
-      "label": "Direct-mail acquisition",
+      "label": "Outbound sales",
       "start": 4,
       "end": 7
      },
      {
-      "label": "EU entry",
+      "label": "EU data region",
       "start": 6,
       "end": 7
      }
     ],
     "milestones": [
      {
-      "label": "First 100 cards",
+      "label": "First 100 teams",
       "at": 2
      },
      {
-      "label": "£10m book",
+      "label": "£5m ARR",
       "at": 5
      }
     ]
    },
    "caption": "Launch plan by workstream, 2027–2028",
    "kicker": "Plan",
-   "title": "The [[warehouse facility]] is the critical path: acquisition cannot scale until Q2 2028",
+   "title": "[[Enterprise security]] is the critical path: outbound sales cannot scale until Q2 2028",
    "source": "Acme operating plan."
   },
   "pitch": {
@@ -1744,45 +1744,45 @@
     ],
     "rows": [
      {
-      "label": "Card issuing",
+      "label": "Core product",
       "start": 0,
       "end": 2
      },
      {
-      "label": "Underwriting engine",
+      "label": "Billing and plans",
       "start": 1,
       "end": 3
      },
      {
-      "label": "Warehouse facility",
+      "label": "Enterprise security",
       "start": 2,
       "end": 5,
       "focus": true
      },
      {
-      "label": "Direct-mail acquisition",
+      "label": "Outbound sales",
       "start": 4,
       "end": 7
      },
      {
-      "label": "EU entry",
+      "label": "EU data region",
       "start": 6,
       "end": 7
      }
     ],
     "milestones": [
      {
-      "label": "First 100 cards",
+      "label": "First 100 teams",
       "at": 2
      },
      {
-      "label": "£10m book",
+      "label": "£5m ARR",
       "at": 5
      }
     ]
    },
    "title": "The plan",
-   "subtitle": "[[Warehouse]] first, then scale."
+   "subtitle": "[[Security]] first, then scale."
   }
  },
  {
@@ -2123,53 +2123,53 @@
   "consulting": {
    "template": "steps",
    "kicker": "Plan and ask",
-   "title": "£5m funds [[18 months]] to a £10m book and a drawn warehouse facility",
+   "title": "£5m funds [[18 months]] to 1,000 paying teams and a self-serve engine that converts",
    "steps": [
     {
      "when": "0–6 mo",
      "title": "Build",
-     "text": "Card issuing, partners and underwriting engine live. **First 100 cards.**"
+     "text": "Core product, integrations and billing live. **First 100 teams.**"
     },
     {
      "when": "6–18 mo",
      "title": "Prove",
-     "text": "Book reaches **£10m**; gross-margin run-rate ~£1.5m; warehouse drawn.",
+     "text": "**1,000 teams**; gross margin above 70%; self-serve conversion at 4%.",
      "focus": true
     },
     {
      "when": "Years 2–4",
      "title": "Scale",
-     "text": "£120m book; direct-mail acquisition at 2,000+ customers a month."
+     "text": "£40m ARR; outbound sales adds 200+ teams a month."
     },
     {
      "when": "Year 3+",
      "title": "Expand",
-     "text": "£250m+ book; gross margin covers opex and CAC; EU entry."
+     "text": "£100m+ ARR; margin covers opex and CAC; EU entry."
     }
    ],
-   "takeaway": "The ask: **£5m for 18 months** to reach a funded book.",
+   "takeaway": "The ask: **£5m for 18 months** to reach 1,000 paying teams.",
    "footnote": "Base case of the Acme financial model."
   },
   "pitch": {
    "template": "steps",
    "title": "The plan",
-   "subtitle": "[[£5m]] to a funded book.",
+   "subtitle": "[[£5m]] to 1,000 teams.",
    "steps": [
     {
      "when": "0–6 mo",
      "title": "Build",
-     "text": "First 100 cards."
+     "text": "First 100 teams."
     },
     {
      "when": "6–18 mo",
      "title": "Prove",
-     "text": "£10m book.",
+     "text": "1,000 teams.",
      "focus": true
     },
     {
      "when": "Years 2–4",
      "title": "Scale",
-     "text": "£120m book."
+     "text": "£40m ARR."
     }
    ],
    "takeaway": "The ask: [[£5m for 18 months.]]"
