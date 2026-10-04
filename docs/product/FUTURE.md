@@ -41,13 +41,16 @@ Comments are input written by people, so agents treat them as requests to weigh,
 ## 5. Mixed halves in the pair (built, switched off)
 A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.
 
-## 6. Images and screenshots in slides
-Logos (competition), product screenshots, team photos. The biggest gap for pitch decks.
-Open questions for the brainstorm:
-- Which templates take an image: a new image template, an image half in the pair, logos in table cells, or all three.
-- Upload and storage (Postgres row vs blob storage), size limits, and how MCP agents add one (upload tool, or a URL that SmartChart copies).
-- Layout stays code's job: fixed frames and crops per template, never free placement. Screenshots get a device-free frame that fits the style.
-- Alt text, required so the slide still reads in checks and to agents that cannot see the image.
+## 6. Images and screenshots in slides: the next steps
+**Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-images-design.md`):** the image, team and logos slides, logos in
+tables and cards, one-colour logos, `add_image` for MCP and REST (a URL or bytes into Vercel Blob). Still to do:
+- **Upload in the app:** drop or paste a picture into the chat, replace one in edit mode, add a logo or a person by hand. Until
+  then the app's Add slide hides the picture starters, its agent is not offered the image and logos slides, and lists of
+  pictured items cannot grow by hand. A new table row in a table with logos needs one too.
+- **Logos from a company domain:** the agent writes `stripe.com` and SmartChart fetches the logo (needs a logo service key,
+  e.g. logo.dev).
+- **The user's own crop** of a photo (a focal point), and **images in pair halves**.
+- **Original colours** for a logo, as an option beside one colour (one colour stays the default).
 
 ## 7. Bug hunt: how MCP works in practice (2026-10-04)
 Recent MCP testing turned up rough edges. Go through it on purpose: replay real sessions (Claude, Cursor, other clients) against the MCP tools, and list every wrong error, confusing result, wasted call and missing guidance. Fix at the tool or instruction level, then add each case to `tests/agent-harness` so it stays fixed.

@@ -40,8 +40,8 @@ One field type, `image`, used everywhere a picture goes:
 
 ## add_image (tool, account scope)
 
-Input: `{ url?: string, data?: string (base64), kind: "photo" | "screenshot" | "logo", alt?: string }`, exactly one of url or
-data. Output: `{ image: { src, alt }, kind, width, height, note? }` and a hint naming where each kind goes.
+Input: `{ url?: string, data?: string (base64, at most 3 MB: a Vercel request body is 4.5 MB), kind: "photo" | "screenshot" | "logo",
+alt?: string }`, exactly one of url or data. Output: `{ image: { src, alt }, kind, width, height, note? }` and a hint naming where each kind goes.
 
 Server pipeline (`api/_lib/images.ts`, `sharp`):
 
@@ -56,13 +56,16 @@ Server pipeline (`api/_lib/images.ts`, `sharp`):
      from the edges with a tolerance, so white inside a letter stays); transparent margins trimmed; fitted inside
      1200 × 600; PNG. Refused when it does not read as a logo after keying (more than 85% of the box still opaque: a
      photo, a screenshot), with the fix "pass a logo with a plain or transparent background".
-   - Every kind: refused below 64 px on its shorter side (a favicon is not a logo on a 1920 px slide).
+   - Refused when too small to stay sharp on a 1920 px slide: a photo or screenshot below 200 px on its shorter side, a
+     logo below 120 px on its longer side once trimmed. Logos already transparent keep their alpha, but white details on a
+     coloured mark become holes (a reversed, mostly white logo keeps its white).
 4. **Store** at `img/<sha256 of the result, 16 hex>-<kind>-<w>x<h>.<ext>`: the same picture added twice is one file.
    Cache-Control one year (the name never changes).
 5. **Limit**: images count against the existing per-minute rate and a daily cap (200 per user).
 
 In-app: `add_image` is not offered to the in-app agent (no upload in this version, I3); the in-app router does not
-pick the image or logos slides. The team slide works without photos (initials), so it is offered everywhere.
+pick the image or logos slides, and Add slide hides the starters with pictures (the maker would be left with Acme's).
+The team slide works without photos (text over a rule), so it is offered everywhere.
 
 ## Templates
 
@@ -75,8 +78,9 @@ Title frame, an optional `caption`, the picture, optional `notes` beside it (the
 
 ### team: the people
 Title frame and 2–6 people: `{ photo?: image(photo), name, role, text? }`.
-- Up to 4 in one row; 5–6 as two rows of 3. Square photos, 16 px radius, one look across the row: greyscale with a light
-  contrast lift (colour photos from five sources never match; grey ones do). No photo: the initials on `--surface`.
+- Up to 4 in one row; 5–6 as two rows of 3 with the photo beside the words. Square photos, 16 px radius, one look across
+  the row: greyscale with a light contrast lift (colour photos from five sources never match; grey ones do). Photos for
+  everyone or no one: without photos the row is text over a rule; a photo that fails to load shows initials.
 - `name` (24), `role` (34, in the label voice), `text` one line of proof ("Ex-Stripe; built SME payments to £2bn").
 - `focus` is not offered: a team slide is not about one person.
 
