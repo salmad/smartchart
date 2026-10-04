@@ -108,3 +108,11 @@ pictures, /api/read) and the browser reads it with the file readers (PDF, Word, 
 article text without menus, footers, references or cookie banners. The operator's report, a public Google Doc exported
 as PDF, an article: the deck starts from the link. Next: links behind a sign-in (Confluence, Notion) need connectors;
 several links in one message.
+
+## 17. Colours from your website (built 2026-10-04)
+In the Look panel, a website in, its brand colours out (/api/brand): the colour it declares (theme-color), its logo's
+main colour, and the ones its pages use most, each labelled with where it came from. The maker picks; a colour the slide
+rules would refuse (too grey, too close to the loss red or the gain green) says so and cannot be picked. Measured on 9
+well-known sites: the true brand colour was among the candidates for 6 (Monzo, Xero, Shopify, HubSpot, Figma, Slack),
+not for Stripe and Wise (their colours live in stylesheets), and black-and-white brands correctly offer none.
+Next: read the site's stylesheets too; offer the brand's own typeface as a note (fonts stay ours).

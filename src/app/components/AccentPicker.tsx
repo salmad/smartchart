@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, type KeyboardEvent } from 'react'
 import { PALETTES, accentOn, resolveAccent } from '@/engine/slides/colours'
 import type { Theme } from '@/engine/types'
 import { cn } from '@/app/lib/utils'
+import { BrandColours } from './BrandColours'
 
 // Curated: distinct hues that stay clear of the palettes' problem red and gain green.
 const PRESETS = [['Gold', '#E8B94A'], ['Cobalt', '#2447D1'], ['Sky', '#0EA5E9'], ['Violet', '#7C5CFF'], ['Magenta', '#D946EF'], ['Teal', '#14B8A6']] as const
@@ -20,7 +21,9 @@ export function accentLook(accent: string | null, theme: Theme) {
   // The allocator decides (colour spec C7): a refused accent falls back to the palette's own focus.
   const note = refused ? `${refused} Using the ${name} default instead.`
     : shown !== chosen ? `Drawn as ${shown} on ${name} so it stays legible.` : ''
-  return { chosen, shown, drawn, refused: !!refused, note }
+  // Why a colour would be refused on this palette, before it is chosen (the website's colours say so up front).
+  const refuses = (hex: string) => resolveAccent(theme, hex).error
+  return { chosen, shown, drawn, refused: !!refused, note, refuses }
 }
 
 export const paint = (el: HTMLElement | null, hex: string) => el?.style.setProperty('--sw', hex)
@@ -76,6 +79,7 @@ export function AccentPanel({ look: l, accent, onChange }: { look: Look; accent:
           className="min-w-0 flex-1 border-0 bg-transparent font-mono text-[12.5px] font-medium uppercase leading-none tracking-[.04em] text-ink outline-none" />
       </label>
       {l.note && <p className={cn('text-xs leading-[1.45]', l.refused ? 'text-warn' : 'text-ink-3')}>{l.note}</p>}
+      <BrandColours chosen={l.chosen} drawn={l.drawn} refuses={l.refuses} onPick={onChange} />
     </>
   )
 }
