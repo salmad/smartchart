@@ -266,7 +266,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
     for (const [k, v] of Object.entries(own.vars)) host.style.setProperty(`--${k}`, v);
     drawChart(host, spec, [], own);
   });
-  drawIcons(slide); fitPictures(slide); alignHalves(slide);
+  drawIcons(slide); growCards(slide); fitPictures(slide); alignHalves(slide);
   return slide;
 }
 
@@ -359,6 +359,18 @@ function growTable(slide: HTMLElement) {
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
   const area = (tk ? top(tk) - 40 : bottom) - top(body), natural = body.getBoundingClientRect().height / k;
   if (natural < area) body.style.height = `${Math.min(area, natural * 1.5)}px`;
+}
+
+/* L5 for cards: icon, logo and value cards grow towards the bottom of the body (or the takeaway), up to 1.5× their natural
+   height, so their column rules run down the slide like a table's rows instead of stopping halfway. After the icons are
+   drawn: they are part of the natural height. */
+function growCards(slide: HTMLElement) {
+  const cards = slide.querySelector<HTMLElement>(":scope > .cards:not(.framed)");
+  if (!cards) return;
+  const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;
+  const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
+  const area = (tk ? top(tk) - 40 : bottom) - top(cards), natural = cards.getBoundingClientRect().height / k;
+  if (natural < area) cards.style.height = `${Math.min(area, natural * 1.5)}px`;
 }
 
 /* A screenshot is never cropped: it is fitted whole inside its area (its aspect is in the file name, so this needs no
