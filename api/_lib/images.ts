@@ -3,7 +3,7 @@
 // its kind and size (src/engine/slides/images.ts), so slides render it without loading it first.
 import { createHash } from 'node:crypto'
 import { lookup as dnsLookup } from 'node:dns/promises'
-import { isIP } from 'node:net'
+import { isIP, type LookupFunction } from 'node:net'
 import sharp from 'sharp'
 import { imageName, type ImageKind } from '../../src/engine/slides/images.js'
 
@@ -63,7 +63,8 @@ async function decode(input: Uint8Array, format: Format, kind: ImageKind) {
    keyed out across the whole picture (a white letter inside a badge is knocked out too, as the mask needs); one that is
    already transparent keeps its alpha. Then it is trimmed to its ink. */
 async function logo(img: sharp.Sharp): Promise<Prepared> {
-  const { data, info } = await img.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  // Shrunk before it is unpacked: a small file can hold a huge picture, and raw RGBA is 4 bytes a pixel.
+  const { data, info } = await img.resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   const { width: W, height: H } = info, px = (x: number, y: number) => (y * W + x) * 4
   const border: number[] = []
   for (let x = 0; x < W; x++) border.push(px(x, 0), px(x, H - 1))
@@ -122,21 +123,53 @@ function done(bytes: Buffer, w: number, h: number, ext: 'png' | 'webp', kind: Im
 export type Lookup = (host: string) => Promise<{ address: string }[]>
 const defaultLookup: Lookup = (host) => dnsLookup(host, { all: true, verbatim: true })
 
-/** Loopback, private, link-local, carrier-grade NAT, multicast and reserved ranges, in IPv4 and IPv6. */
-export function isPrivateAddress(ip: string): boolean {
-  const v4 = /^(?:::ffff:)?(\d+)\.(\d+)\.(\d+)\.(\d+)$/i.exec(ip)
-  if (v4) {
-    const [a, b] = [Number(v4[1]), Number(v4[2])]
-    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b < 128) || (a === 169 && b === 254)
-      || (a === 172 && b >= 16 && b < 32) || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19))
-  }
-  const x = ip.toLowerCase()
-  return x === '::' || x === '::1' || /^f[cd]/.test(x) || /^fe[89ab]/.test(x) || /^ff/.test(x) || x.startsWith('64:ff9b:') || x.startsWith('2001:db8')
+const privateV4 = (a: number, b: number) => a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b < 128) || (a === 169 && b === 254)
+  || (a === 172 && b >= 16 && b < 32) || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19))
+
+/** An IPv6 address as its eight 16-bit groups (a dotted IPv4 tail is folded in), or null when it is not one. */
+function groupsV6(ip: string): number[] | null {
+  let x = ip.toLowerCase().replace(/%.*$/, '')
+  const tail = /(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(x)
+  if (tail) { const [a, b, c, d] = tail.slice(1).map(Number); x = `${x.slice(0, tail.index)}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}` }
+  const [head, rest] = x.split('::')
+  if (x.split('::').length > 2) return null
+  const h = head ? head.split(':') : [], r = rest !== undefined && rest ? rest.split(':') : []
+  const fill = rest === undefined ? 0 : 8 - h.length - r.length
+  const all = [...h, ...Array<string>(Math.max(0, fill)).fill('0'), ...r]
+  if (all.length !== 8 || all.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return null
+  return all.map((g) => parseInt(g, 16))
 }
 
-/** Fetch a public https URL: every hop's host resolved and checked, at most 3 redirects, 10 s, MAX_BYTES. */
+/** Loopback, private, link-local, carrier-grade NAT, multicast and reserved ranges, in IPv4 and IPv6, including IPv4
+    carried inside IPv6 (mapped ::ffff:, compatible ::, NAT64 64:ff9b::, 6to4 2002::, Teredo 2001:0::). */
+export function isPrivateAddress(ip: string): boolean {
+  const v4 = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(ip)
+  if (v4) return privateV4(Number(v4[1]), Number(v4[2]))
+  const g = groupsV6(ip)
+  if (!g) return true
+  const embedded = (hi: number) => privateV4(hi >> 8, hi & 255)
+  if (g.slice(0, 5).every((x) => x === 0) && (g[5] === 0xffff || g[5] === 0)) return g[5] === 0 && g[6] === 0 && g[7] <= 1 ? true : embedded(g[6])
+  if (g[0] === 0x64 && g[1] === 0xff9b) return embedded(g[6])
+  if (g[0] === 0x2002) return embedded(g[1])
+  if (g[0] === 0x2001 && g[1] === 0) return true
+  if (g[0] === 0x2001 && g[1] === 0xdb8) return true
+  return (g[0] & 0xfe00) === 0xfc00 || (g[0] & 0xffc0) === 0xfe80 || (g[0] & 0xff00) === 0xff00
+}
+
+/** A connection pinned to the address that was checked, so the name cannot resolve somewhere else in between. */
+async function pinnedFetch(url: URL, init: RequestInit, address: string): Promise<Response> {
+  const { Agent, fetch: ufetch } = await import('undici')
+  const family = isIP(address)
+  // With { all: true } the callback takes a list of addresses; Node's type only describes the single-address form.
+  const lookup: LookupFunction = (_h, opts, cb) => { if (opts.all) (cb as unknown as (e: null, a: { address: string; family: number }[]) => void)(null, [{ address, family }]); else cb(null, address, family) }
+  const dispatcher = new Agent({ connect: { lookup } })
+  try { return await (ufetch as unknown as (u: URL, i: RequestInit & { dispatcher: unknown }) => Promise<Response>)(url, { ...init, dispatcher }) }
+  finally { void dispatcher.close() }
+}
+
+/** Fetch a public https URL: every hop's host resolved, checked and pinned, at most 3 redirects, 10 s, MAX_BYTES. */
 export async function fetchPublic(url: string, deps: { fetch?: typeof fetch; lookup?: Lookup } = {}): Promise<Uint8Array> {
-  const get = deps.fetch ?? fetch, lookup = deps.lookup ?? defaultLookup
+  const lookup = deps.lookup ?? defaultLookup
   let at: URL
   try { at = new URL(url) } catch { throw new ImageError('url: not a valid URL.', 'Pass a full https:// link to the picture.') }
   const signal = AbortSignal.timeout(10_000)
@@ -147,12 +180,18 @@ export async function fetchPublic(url: string, deps: { fetch?: typeof fetch; loo
     const addrs = isIP(host) ? [{ address: host }] : await lookup(host).catch(() => [])
     if (!addrs.length) throw new ImageError(`url: ${host} could not be found.`, 'Check the link.')
     if (addrs.some((a) => isPrivateAddress(a.address))) throw new ImageError('url: that address is not public.', 'Pass a link anyone on the internet can open.')
+    const init: RequestInit = { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'SmartChart/1 (+https://smartchart.app)' } }
     let res: Response
-    try { res = await get(at, { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'SmartChart/1 (+https://smartchart.app)' } }) }
+    try { res = deps.fetch ? await deps.fetch(at, init) : await pinnedFetch(at, init, addrs[0].address) }
     catch { throw new ImageError('url: the picture could not be fetched (no answer within 10 seconds).', 'Check the link, or pass the bytes as data.') }
-    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) { at = new URL(res.headers.get('location') as string, at); continue }
-    if (!res.ok || !res.body) throw new ImageError(`url: the server answered ${res.status}.`, 'Check that the link opens the picture itself, without signing in.')
-    if (Number(res.headers.get('content-length') ?? 0) > MAX_BYTES) throw new ImageError('url: the picture is over 10 MB.', 'Pass a smaller version.')
+    const location = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null
+    if (location) {
+      await res.body?.cancel().catch(() => {})
+      try { at = new URL(location, at) } catch { throw new ImageError('url: the server redirected to a link that is not valid.', 'Pass the final link to the picture.') }
+      continue
+    }
+    if (!res.ok || !res.body) { await res.body?.cancel().catch(() => {}); throw new ImageError(`url: the server answered ${res.status}.`, 'Check that the link opens the picture itself, without signing in.') }
+    if (Number(res.headers.get('content-length') ?? 0) > MAX_BYTES) { await res.body.cancel().catch(() => {}); throw new ImageError('url: the picture is over 10 MB.', 'Pass a smaller version.') }
     const reader = res.body.getReader(), parts: Uint8Array[] = []
     let size = 0
     for (;;) {

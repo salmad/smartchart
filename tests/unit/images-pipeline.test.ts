@@ -86,3 +86,21 @@ test('a redirect to a private address is refused, and big bodies are cut off', a
   const ok = (async () => new Response(new Uint8Array([1, 2, 3]))) as unknown as typeof fetch
   expect([...await fetchPublic('https://good.example/a.png', { fetch: ok, lookup })]).toEqual([1, 2, 3])
 })
+
+test('IPv4 inside IPv6 is checked as IPv4: mapped, compatible, NAT64, 6to4; Teredo is refused', () => {
+  for (const ip of ['::ffff:7f00:1', '::ffff:a9fe:a9fe', '::ffff:127.0.0.1', '::7f00:1', '64:ff9b::a00:1', '2002:7f00:1::', '2001:0:4136:e378::1', '::', '::1', 'not an ip'])
+    expect(isPrivateAddress(ip), ip).toBe(true)
+  for (const ip of ['::ffff:808:808', '2002:808:808::1', '64:ff9b::808:808']) expect(isPrivateAddress(ip), ip).toBe(false)
+})
+
+test('a redirect to a link that is not valid is refused with a fix, not a crash', async () => {
+  const bad = (async () => new Response(null, { status: 302, headers: { location: 'https://[not a host' } })) as unknown as typeof fetch
+  await expect(fetchPublic('https://good.example/a.png', { fetch: bad, lookup: async () => [{ address: '93.184.216.34' }] })).rejects.toThrow(/redirected to a link that is not valid/)
+})
+
+test('a logo far bigger than a slide needs is shrunk before it is unpacked', async () => {
+  const huge = await sharp({ create: { width: 7000, height: 2000, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite([{ input: { create: { width: 5000, height: 800, channels: 4, background: '#123' } }, left: 1000, top: 600 }]).png().toBuffer()
+  const p = await prepare(huge, 'logo')
+  expect(Math.max(p.w, p.h)).toBeLessThanOrEqual(1200)
+})

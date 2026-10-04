@@ -66,3 +66,8 @@ test('bars only on a column of figures of 0 or more', () => {
   const t = tbl(['£1k', '£2k']); t.columns[0].bars = true
   expect(validate(tableSlide(t), 'consulting').errors.join(' ')).toMatch(/label column has no bars/)
 })
+
+test('a team slide with a missing person still renders (model output is not trusted to be whole)', () => {
+  const s = { template: 'team', title: 'The team', people: [null, { name: 'Priya Shah', role: 'CEO' }] } as unknown as Slide
+  expect(slideHTML(s, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })).toContain('Priya Shah')
+})

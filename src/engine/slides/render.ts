@@ -191,7 +191,7 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" 
     ? splitHTML(s, imgHTML(s.image, "pic", "image"), "grow with-pic")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "pic grow", "image")}`,
   team: (s, v) => { const people = s.people ?? [], photos = people.some((p) => p?.photo);
-    return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p, i, photos)).join("")}</div>`; },
+    return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p ?? { name: "", role: "" }, i, photos)).join("")}</div>`; },
   logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
     return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "", `logos[${i}].logo`) || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
   text: (s) => { const ps = s.paragraphs ?? [];

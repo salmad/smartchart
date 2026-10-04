@@ -20,9 +20,29 @@ export function homeOf(domain: string): { home: URL; brand: string } {
 const OTHERS = /customer|partner|client|investor|press|trusted|featured|award|testimonial|integration|marquee|facebook|twitter|linkedin|instagram|youtube|tiktok|github|discord|social|app ?store|google ?play|translat|language/i
 const attr = (tag: string, name: string) => new RegExp(`\\s${name}\\s*=\\s*"([^"]*)"`, 'i').exec(tag)?.[1] ?? new RegExp(`\\s${name}\\s*=\\s*'([^']*)'`, 'i').exec(tag)?.[1] ?? ''
 
+/** Tags named `name` in the page, by a linear scan (a regex over an untrusted page can take seconds on unclosed tags).
+    `body` is the content up to the closing tag, for elements that close (svg). */
+function* tags(html: string, lower: string, name: string, closes = false): Generator<{ index: number; open: string; whole: string }> {
+  let i = 0
+  for (;;) {
+    i = lower.indexOf(`<${name}`, i)
+    if (i < 0) return
+    const next = lower[i + name.length + 1]
+    if (next !== undefined && !/[\s>/]/.test(next)) { i += name.length + 1; continue }
+    const end = lower.indexOf('>', i)
+    if (end < 0 || end - i > 4000) return
+    const open = html.slice(i, end + 1)
+    if (!closes) { yield { index: i, open, whole: open }; i = end + 1; continue }
+    const close = lower.indexOf(`</${name}>`, end)
+    if (close < 0) return
+    yield { index: i, open, whole: html.slice(i, close + name.length + 3) }
+    i = close + name.length + 3
+  }
+}
+
 /** Every likely mark on the page, scored: the brand named on it counts most, then "logo", then being near the top. */
 export function candidates(html: string, home: URL, brand: string, get: (u: URL) => Promise<Uint8Array>): Candidate[] {
-  const out: Candidate[] = [], top = (i: number) => (i < html.length * 0.15 ? 2 : 0)
+  const out: Candidate[] = [], top = (i: number) => (i < html.length * 0.15 ? 2 : 0), lower = html.toLowerCase()
   // The brand counts only in words written for people (a label, a title, alt text): sites prefix their CSS classes with
   // their own name, so a class names it everywhere. A class or a file name counts only for saying "logo".
   const score = (label: string, cls: string, i: number) => {
@@ -31,8 +51,8 @@ export function candidates(html: string, home: URL, brand: string, get: (u: URL)
   }
   /** The link a mark sits in: the nearest opening <a> before it that has not closed. */
   const linkOf = (i: number) => { const before = html.slice(Math.max(0, i - 600), i), at = before.lastIndexOf('<a '); return at >= 0 && !before.slice(at).includes('</a>') ? before.slice(at, before.indexOf('>', at) + 1) : '' }
-  for (const m of html.matchAll(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi)) {
-    const svg = m[0], open = svg.slice(0, svg.indexOf('>') + 1)
+  for (const m of tags(html, lower, 'svg', true)) {
+    const svg = m.whole, open = m.open
     // A sprite reference has nothing to draw on its own; an icon-sized glyph (a menu, an arrow) is not a mark.
     if (/<use\b/i.test(svg) && !/<path\b/i.test(svg)) continue
     if (svg.length < 300) continue
@@ -45,8 +65,8 @@ export function candidates(html: string, home: URL, brand: string, get: (u: URL)
     const doc = /xmlns=/.test(open) ? svg : svg.replace(/^<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"')
     out.push({ score: s + 1, from: 'an inline SVG on the home page', load: async () => new TextEncoder().encode(doc) })
   }
-  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
-    const tag = m[0], src = attr(tag, 'src')
+  for (const m of tags(html, lower, 'img')) {
+    const tag = m.open, src = attr(tag, 'src')
     if (!src || src.startsWith('data:')) continue
     const file = src.split('?')[0].split('/').pop() ?? '', label = `${attr(tag, 'alt')} ${attr(tag, 'title')}`
     // A logo is a drawing (SVG, PNG, WebP), never a photo; and something says it is one.
@@ -57,8 +77,8 @@ export function candidates(html: string, home: URL, brand: string, get: (u: URL)
     try { u = new URL(src, home) } catch { continue }
     out.push({ score: s, from: `the image ${file} on the home page`, load: () => get(u) })
   }
-  for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
-    const tag = m[0], rel = attr(tag, 'rel').toLowerCase(), href = attr(tag, 'href')
+  for (const m of tags(html, lower, 'link')) {
+    const tag = m.open, rel = attr(tag, 'rel').toLowerCase(), href = attr(tag, 'href')
     if (!href || !/icon/.test(rel)) continue
     let u: URL
     try { u = new URL(href, home) } catch { continue }
@@ -73,7 +93,8 @@ export function candidates(html: string, home: URL, brand: string, get: (u: URL)
 export async function findLogo(domain: string, deps: { fetch?: typeof fetch; lookup?: Lookup } = {}): Promise<{ prepared: Prepared; from: string }> {
   const { home, brand } = homeOf(domain)
   let html: string
-  try { html = new TextDecoder().decode(await fetchPublic(home.href, deps)) }
+  // The marks are near the top: 3 MB of the page is plenty, and bounds the scan.
+  try { html = new TextDecoder().decode((await fetchPublic(home.href, deps)).subarray(0, 3_000_000)) }
   catch (e) { throw new ImageError(`domain: ${home.hostname} could not be read (${e instanceof ImageError ? e.message.replace(/^url: /, '') : 'no answer'}).`, 'Pass a link to the logo itself (its press kit or Wikimedia), or ask the user for it.') }
   const list = candidates(html, home, brand, (u) => fetchPublic(u.href, deps))
   for (const c of list.slice(0, 6)) {

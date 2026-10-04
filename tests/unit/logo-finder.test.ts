@@ -36,3 +36,9 @@ describe('a company’s logo from its own site', () => {
     await expect(findLogo('acme.test', { fetch: empty, lookup })).rejects.toThrow(/no logo of acme could be found/)
   })
 })
+
+it('a hostile page of unclosed tags is scanned in linear time', () => {
+  const t = Date.now()
+  candidates('<img '.repeat(60_000) + '<svg '.repeat(60_000) + '<link '.repeat(60_000), new URL('https://acme.test/'), 'acme', async () => new Uint8Array())
+  expect(Date.now() - t).toBeLessThan(500)
+})
