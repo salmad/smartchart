@@ -26,7 +26,7 @@ export function VersionPreview({ version: v, items, diff, current, busy, onResto
   const day = dayOf(v.at)
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-col">
       <div role="status" className="flex flex-none items-center gap-4 border-b border-line px-8 py-3 max-[900px]:flex-wrap max-[900px]:px-4">
         <div className="grid min-w-0 flex-1 gap-0.5">
           <p className="truncate text-[13.5px] text-ink">

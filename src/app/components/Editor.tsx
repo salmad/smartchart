@@ -92,7 +92,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
         </aside>
         {preview
-          ? <main className="grid min-h-0 min-w-0 flex-1 max-[900px]:contents">
+          ? <main className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)] max-[900px]:contents">
               <VersionPreview version={preview.v} items={preview.items} diff={preview.diff} current={preview.current} busy={lock} onBack={() => setPreview(null)}
                 onRestore={() => { if (Array.isArray(preview.items)) { versions?.api.restore(preview.v, preview.items); setPreview(null) } }} />
             </main>
