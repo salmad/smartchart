@@ -17,10 +17,12 @@ interface Props {
   onUndo: ((turn: string) => void) | null
   /** A turn runs or a slide is being edited: Undo waits. */
   busy: boolean
+  /** Opens the red-pen review of a deck made elsewhere. */
+  onReview?: () => void
 }
 
 /** The conversation, newest at the bottom. */
-export function Chat({ messages, offline, onUndo, busy }: Props) {
+export function Chat({ messages, offline, onUndo, busy, onReview }: Props) {
   const thread = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, offline])
 
@@ -31,6 +33,7 @@ export function Chat({ messages, offline, onUndo, busy }: Props) {
         <div className="grid gap-1.5">
           <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>
           <p className="text-ink-2">Paste your numbers or notes, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>
+          {onReview && <button type="button" onClick={onReview} className="mt-1 w-fit cursor-pointer text-left text-[13px] text-ink-2 underline decoration-line-2 underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-3">Have a deck already? Get a red-pen review</button>}
         </div>
       )}
       {messages.map((m, k) => <Bubble key={k} m={m} onUndo={onUndo} busy={busy} />)}

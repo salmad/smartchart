@@ -21,7 +21,7 @@ import { usePresence } from './usePresence'
 import { Tour, TourNudge } from './components/Tour'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
-import { go, takePendingPrompt, type Route } from './route'
+import { go, parsePending, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
 import { STALE, findDeck } from './remote'
 import { useLiveDeck } from './live'
@@ -259,6 +259,11 @@ export function App({ route, account, repo, backup }: Props) {
   }, [app, send])
   sendRef.current = onSend
   const commentActions = useComments(app, authorOf(account), onSend)
+  // Rebuild in Occam: a new deck in the reviewed deck's style, written by the agent from its text and the review.
+  const rebuild = useCallback((brief: string, file: Attached, style: Style) => {
+    if (locked(app.getState())) return
+    newDeck(); app.dispatch({ type: 'set', patch: { style } }); onSend(brief, [file])
+  }, [app, newDeck, onSend])
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
   // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
   // A starter's checks run as it lands, so its check line is never empty.
@@ -275,7 +280,7 @@ export function App({ route, account, repo, backup }: Props) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} onRebuild={rebuild}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
       {tour.touring && !presenting && <Tour onClose={tour.stop} />}
@@ -285,13 +290,4 @@ export function App({ route, account, repo, backup }: Props) {
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>
   )
-}
-
-function parsePending(raw: string | null): { text: string; style: Style } | null {
-  if (!raw) return null
-  try {
-    const p = JSON.parse(raw) as { text?: unknown; style?: unknown }
-    if (typeof p.text === 'string' && p.text.trim()) return { text: p.text, style: p.style === 'pitch' ? 'pitch' : 'consulting' }
-  } catch { /* a bare string from an older page */ }
-  return { text: raw, style: 'consulting' }
 }

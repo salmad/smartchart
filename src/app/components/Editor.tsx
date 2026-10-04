@@ -24,6 +24,8 @@ import { Storyline } from './Storyline'
 import { Strip } from './Strip'
 import { VersionPreview } from './VersionPreview'
 import { VersionsPanel } from './VersionsPanel'
+import { ReviewDeck } from './ReviewDeck'
+import type { Attached as File } from '@/app/files'
 
 export interface EditorProps {
   state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
@@ -42,19 +44,21 @@ export interface EditorProps {
   versions: { api: VersionsApi; saves: number } | null
   onUndo: ((turn: string) => void) | null
   comments: CommentActions
+  /** Rebuild in Occam: a new deck, written from a reviewed deck's text. */
+  onRebuild: (brief: string, file: File, style: Style) => void
 }
 
 type Preview = { v: Version; diff: TreeDiff; current: boolean; items: Item[] | null | 'missing' }
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
     with the deck's look as an inspector on the right while it is open. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments, onRebuild }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
   // The right inspector: the deck's look, or its versions (one at a time).
   const [side, setSide] = useState<'look' | 'versions' | null>(null)
-  const [preview, setPreview] = useState<Preview | null>(null)
+  const [preview, setPreview] = useState<Preview | null>(null), [reviewing, setReviewing] = useState(false)
   const closeVersions = () => { setSide(null); setPreview(null) }
   const showVersion = (v: Version, before: Version | null, current: boolean) => {
     const p: Preview = { v, diff: diffTrees(before?.tree ?? null, v.tree), current, items: null }
@@ -88,12 +92,12 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   return (
     <>
       <Bar {...bar} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live}
-        view={shown || null} onView={setView} onLook={() => { setPreview(null); setSide('look') }} onVersions={versions && (() => setSide('versions'))} />
+        view={shown || null} onView={setView} onLook={() => { setPreview(null); setSide('look') }} onVersions={versions && (() => setSide('versions'))} onReview={() => setReviewing(true)} />
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
         {decks}
         {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}
         <aside aria-label="Chat" data-tour="chat" className={cn('flex w-[400px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
-          <Chat messages={s.messages} offline={booted && !s.live} onUndo={onUndo} busy={lock} />
+          <Chat messages={s.messages} offline={booted && !s.live} onUndo={onUndo} busy={lock} onReview={() => setReviewing(true)} />
           <Composer chips={chips} canSend={s.live && !lock} busy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
         </aside>
@@ -129,6 +133,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
             </main>}
         {side === 'versions' && versions && <VersionsPanel api={versions.api} saves={versions.saves} selected={preview?.v.n ?? null}
           onPreview={showVersion} onClose={closeVersions} />}
+        <ReviewDeck open={reviewing} onOpenChange={setReviewing} live={s.live} onRebuild={onRebuild} />
         {side === 'look' && <LookPanel deckStyle={s.style} theme={s.theme} accent={s.accent} styleLocked={items.length > 0}
           onStyle={bar.onStyle} onTheme={bar.onTheme} onAccent={bar.onAccent} onClose={() => setSide(null)} />}
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Compass, LogOut, Plug } from 'lucide-react'
+import { Compass, LogOut, PenLine, Plug } from 'lucide-react'
 import { signOut, type Account } from '@/app/auth'
 import { go } from '@/app/route'
 import { AgentKey } from './AgentKey'
@@ -7,7 +7,7 @@ import { MENU_ICON, MENU_ITEM } from './menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 
 /** Your avatar at the right of the bar: who is signed in, Connect an agent and Sign out. */
-export function AccountMenu({ account, onTour = null }: { account: Account; onTour?: (() => void) | null }) {
+export function AccountMenu({ account, onTour = null, onReview = null }: { account: Account; onTour?: (() => void) | null; onReview?: (() => void) | null }) {
   const [connecting, setConnecting] = useState(false)
   const who = account.name || account.email
   return (
@@ -26,6 +26,7 @@ export function AccountMenu({ account, onTour = null }: { account: Account; onTo
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-line" />
           <DropdownMenuItem onSelect={() => setConnecting(true)} className={MENU_ITEM}><Plug {...MENU_ICON} />Connect an agent</DropdownMenuItem>
+          {onReview && <DropdownMenuItem onSelect={onReview} className={MENU_ITEM}><PenLine {...MENU_ICON} />Review a deck</DropdownMenuItem>}
           {onTour && <DropdownMenuItem onSelect={onTour} className={MENU_ITEM}><Compass {...MENU_ICON} />Take the tour</DropdownMenuItem>}
           <DropdownMenuItem onSelect={() => void signOut().then(() => go('/'))} className={MENU_ITEM}><LogOut {...MENU_ICON} />Sign out</DropdownMenuItem>
         </DropdownMenuContent>

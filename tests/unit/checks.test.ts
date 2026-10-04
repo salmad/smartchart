@@ -172,3 +172,9 @@ test("R11: a span of time frames the claim and is not a headline figure", () => 
   assert.equal(get(s, "R11")?.ok, true);
   assert.match(get({ ...s, title: "Revenue hit [[£12m]]" } as Parameters<typeof get>[0], "R11")?.msg ?? "", /show it .* or reword the headline/);
 });
+
+test("nudge: the same failed check from several slides is said once", async () => {
+  const { nudge } = await import("../../src/engine/agent/checks");
+  const r8 = { id: "R8", ok: false, msg: "Figures with no source" };
+  assert.equal(nudge([r8, { ...r8 }]), "Worth a look: figures with no source.");
+});

@@ -203,7 +203,8 @@ const NUDGE_MAX = 2;
 
 /** One sentence pointing the user at the failed checks worth fixing (judgment first, at most 2), or "". */
 export function nudge(checks: Check[]): string {
-  const failed = checks.filter((c) => !c.ok && /^[JR]\d/.test(c.id));
+  // Checks from several slides: the same message once.
+  const failed = checks.filter((c, i) => !c.ok && /^[JR]\d/.test(c.id) && checks.findIndex((x) => !x.ok && x.msg === c.msg) === i);
   const ids = new Set(failed.map((c) => c.id));
   const picked = [...failed.filter((c) => c.id.startsWith("J")), ...failed.filter((c) => c.id.startsWith("R") && !ids.has(SAME_AS[c.id]))].slice(0, NUDGE_MAX);
   if (!picked.length) return "";
