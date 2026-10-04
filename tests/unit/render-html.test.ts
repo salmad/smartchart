@@ -41,3 +41,11 @@ test('a highlighted row carries the focus class next to its style', () => {
   expect(html).toContain('<tr class="total focus" data-item="table.rows[0]">')
   expect(html).toContain('<tr class="" data-item="table.rows[1]">')
 })
+
+test('an https:// address in a source or footnote is a link, shown as written; trailing punctuation stays outside', () => {
+  const s: Slide = { template: 'text', title: 'Cards', source: 'ONS, https://www.ons.gov.uk/a?x=1&y=2.', footnote: 'See (https://acme.com/notes).' } as Slide
+  const html = slideHTML(s, CTX, { style: 'consulting', theme: 'ink' })
+  expect(html).toContain('<a href="https://www.ons.gov.uk/a?x=1&amp;y=2" target="_blank" rel="noopener noreferrer">https://www.ons.gov.uk/a?x=1&amp;y=2</a>.')
+  expect(html).toContain('(<a href="https://acme.com/notes" target="_blank" rel="noopener noreferrer">https://acme.com/notes</a>).')
+  expect(slideHTML({ ...s, footnote: '', source: 'javascript:alert(1) and <b>x</b>' }, CTX, { style: 'consulting', theme: 'ink' })).not.toContain('<a href')
+})

@@ -17,6 +17,9 @@ export const md = (s: unknown): string => esc(s)
   .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
   .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>');
+/** A footnote or source line: an https:// address in it is a link, shown as written (what is stored is what is read). */
+export const mdLinked = (s: unknown): string => md(s).replace(/(^|[\s(])(https?:\/\/[^\s<>]+?)([.,;:!?)]*)(?=$|[\s<])/g,
+  (_, before: string, url: string, after: string) => `${before}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${after}`);
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
 const display = (s: string) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
@@ -241,7 +244,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
       + BODY[s.template as keyof typeof BODY](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway"${at("takeaway", "md")}>${md(s.takeaway)}</p>` : "");
   }
-  const fn = [s.footnote && `<p${at("footnote", "md")}>${md(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${md(s.source)}</span></p>`].filter(Boolean).join("");
+  const fn = [s.footnote && `<p${at("footnote", "md")}>${mdLinked(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${mdLinked(s.source)}</span></p>`].filter(Boolean).join("");
   const rail = s.template === "cover" ? "" : `<div class="rail"><div class="fn">${fn}</div><div class="pg">${esc(ctx.footer)}<b>${pad2(ctx.page)}</b></div></div>`;
   return `<section class="slide t-${s.template} v-${variant} style-${deck.style} theme-${deck.theme}">${body}${rail}</section>`;
 }

@@ -125,8 +125,8 @@ const FRAME: Record<string, FieldDef> = {
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
   subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; one line.", { required: true, max: 60, styles: PITCH }),
   takeaway: f("markup", "Optional one-line conclusion at the bottom. Must fit on ONE line.", { max: { consulting: 75, pitch: 42 } }),
-  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions.", { max: 110 }),
-  source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
+  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions. A full https:// address in it becomes a clickable link.", { max: 110 }),
+  source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix. A full https:// address in it becomes a clickable link, so give the page the figure came from when you have it.", { max: 110 }),
 };
 
 /* A picture: { src, alt }. `src` comes from add_image (or a starter); code sizes, crops and tones it. */
