@@ -84,3 +84,8 @@ A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonne
 - **Wiring:** agents skip `get_guide`, edit after `check_slide`, and once asked for a deck name and style instead of creating the deck.
 
 The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.
+
+## 13. The slide engine behind every agent
+When someone asks Claude, ChatGPT or Cursor to "turn this research into slides", the answer should be an Occam deck.
+- **Built (2026-10-04):** one step per client in Connect an agent (a command for Claude Code, install links for Cursor and VS Code, config for Claude Desktop via mcp-remote, the raw endpoint for the rest) and the Occam skill for Claude Code (`/agents/occam/SKILL.md`).
+- Still to do: listings in MCP directories (outward-facing, the owner's call), OAuth sign-in from inside an agent (ChatGPT needs it), pricing for agent-driven use.
