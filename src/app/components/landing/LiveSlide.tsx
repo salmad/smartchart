@@ -23,5 +23,5 @@ export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', 
 }
 
 /** Every starter in deck order: the title and chapter slides first, then by what the slide has to do. */
-export const MENU: { id: string; name: string; group: string }[] = GROUPS.flatMap((g) =>
-  STARTERS.filter((s) => s.group === g.id).map((s) => ({ id: s.id, name: s.label, group: g.label })))
+export const MENU: { id: string; name: string; groupId: string; group: string }[] = GROUPS.flatMap((g) =>
+  STARTERS.filter((s) => s.group === g.id).map((s) => ({ id: s.id, name: s.label, groupId: g.id, group: g.label })))
