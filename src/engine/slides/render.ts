@@ -63,7 +63,7 @@ const cssUrl = (src: string) => `url(&quot;${esc(src).replace(/[()\\]/g, (c) => 
 const logoHTML = (ref: ImageRef | undefined, name: string, cls = "") => {
   const m = imageMeta(ref?.src);
   if (!ref || !m) return "";
-  return `<span class="logo${cls ? ` ${cls}` : ""}${isWordmark(m.aspect) ? " word" : ""}" role="img" aria-label="${esc(name)}" style="--a:${+m.aspect.toFixed(4)};--src:${cssUrl(ref.src)}"></span>`;
+  return `<span class="brand${cls ? ` ${cls}` : ""}${isWordmark(m.aspect) ? " word" : ""}" role="img" aria-label="${esc(name)}" style="--a:${+m.aspect.toFixed(4)};--src:${cssUrl(ref.src)}"></span>`;
 };
 /** A logo standing in for a name: a wordmark replaces the visible name, a symbol sits before it. */
 const named = (ref: ImageRef | undefined, nameHTML: string, name: string) => {
@@ -77,9 +77,10 @@ const imgHTML = (ref: ImageRef | undefined, path: string, cls: string) => {
   return `<div class="${cls} k-${m.kind}" style="--a:${+m.aspect.toFixed(4)}"${item(path)}><img src="${esc(ref.src)}" alt="${esc(ref.alt ?? "")}" width="${m.w}" height="${m.h}" decoding="sync" draggable="false"></div>`;
 };
 const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-function personHTML(p: Person, i: number) {
+/* A team with photos keeps every tile (initials stand in for one that is missing); a team without is text over a rule. */
+function personHTML(p: Person, i: number, photos: boolean) {
   const at0 = `people[${i}]`;
-  const photo = p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, `${at0}.photo`, "ph") : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
+  const photo = !photos ? "" : p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, `${at0}.photo`, "ph") : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
   return `<div class="person"${item(at0)}>${photo}<div class="who"><h3${at(`${at0}.name`, "esc")}>${esc(p.name ?? "")}</h3><p class="role"${at(`${at0}.role`, "esc")}>${esc(p.role ?? "")}</p>${p.text ? `<p class="bio"${at(`${at0}.text`, "md")}>${md(p.text)}</p>` : ""}</div></div>`;
 }
 /* The wall's grid: 3–4 in a row, then rows of 3, 4, 5 and 6 as the count grows. */
@@ -173,8 +174,8 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
   image: (s, v) => v === "split"
     ? splitHTML(s, imgHTML(s.image, "image", "pic"), "grow with-pic")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "image", "pic grow")}`,
-  team: (s, v) => { const people = s.people ?? [];
-    return `<div class="team ${v} n-${people.length}${people.some((p) => p?.photo) ? "" : " no-ph"}">${people.map((p, i) => personHTML(p, i)).join("")}</div>`; },
+  team: (s, v) => { const people = s.people ?? [], photos = people.some((p) => p?.photo);
+    return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p, i, photos)).join("")}</div>`; },
   logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
     return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "") || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
   cards: (s, v) => { const cards = s.cards ?? [];

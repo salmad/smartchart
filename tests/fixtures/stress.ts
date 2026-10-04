@@ -125,12 +125,42 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "cards", name: "Stress · cards value ×4", ...frame("cards"), cards: TIMES(4).map((_, i) => ({ value: "€400bn", title: W(c ? 24 : 22), text: W(c ? 80 : 44), tone: i === 1 ? "focus" : "neutral" })) },
     { template: "cards", name: "Stress · cards framed", ...frame("cards"), framed: true, cards: TIMES(2).map((_, i) => ({ tone: i ? "focus" : "neg", label: W(30), title: W(14),
       ...(c ? { bullets: TIMES(3).map(() => W(48)), facts: TIMES(2).map(() => ({ label: W(14), text: W(38) })) } : { text: W(50) }) })) },
+    ...pictures(st, frame, notes),
   ].map((s) => withExhibitHeads(s as Slide & { name: string }, st));
 }
 
 /** Charts take a caption at its limit. A table takes one only where its row budget leaves room (the full consulting
     table is already at 10 of 10.5 rows; pitch tables stay plain). A notes heading does not go with a takeaway, so
     the waterfall with notes trades its takeaway for a heading at its limit. */
+/* Pictures: the starters' bundled files, so the stress deck needs no network. */
+const IMG = "/starters/img/";
+const LOGOS = ["ledgerline-logo-731x150", "northwind-logo-861x192", "tally-logo-764x159", "shopwell-logo-797x264", "payroo-logo-796x130", "kiln-logo-453x600", "fieldbook-logo-750x216", "brightdesk-logo-812x190", "harbour-logo-686x122", "quill-logo-352x183", "mosaic-logo-590x161", "lumen-logo-576x96"].map((f) => `${IMG}${f}.png`);
+const PHOTOS = ["priya", "tom", "grace", "daniel"].map((n) => `${IMG}${n}-photo-1024x1024.webp`);
+const logo = (i: number) => ({ src: LOGOS[i % LOGOS.length] });
+function pictures(st: Style, frame: (id: TemplateId) => Partial<Slide>, notes: (n: number, p: boolean, full?: boolean) => Slide["notes"]): (Slide & { name: string })[] {
+  const c = st === "consulting", shot = { src: `${IMG}acme-app-screenshot-2400x1500.webp`, alt: W(140) };
+  const person = (i: number, photo: boolean) => ({ ...(photo ? { photo: { src: PHOTOS[i % 4] } } : {}), name: W(24), role: W(34), text: W(max("team", st, "people", "text")) });
+  const names = (n: number) => TIMES(n).map((_, i) => ({ logo: logo(i), name: `${W(20)} ${i}` }));
+  return [
+    { template: "image", name: "Stress · picture + notes", ...frame("image"), image: shot, notes: notes(3, false) },
+    { template: "image", name: "Stress · photo full", ...frame("image"), image: { src: PHOTOS[0], alt: W(60) } },
+    { template: "team", name: "Stress · team ×4", ...frame("team"), takeaway: undefined, people: TIMES(4).map((_, i) => person(i, true)) },
+    { template: "team", name: "Stress · team ×6", ...frame("team"), takeaway: undefined, people: TIMES(6).map((_, i) => person(i, true)) },
+    { template: "team", name: "Stress · team ×3, no photos + takeaway", ...frame("team"), people: TIMES(3).map((_, i) => person(i, false)) },
+    { template: "logos", name: "Stress · logos ×3", ...frame("logos"), logos: names(3) },
+    { template: "logos", name: "Stress · logos ×5", ...frame("logos"), takeaway: undefined, logos: names(5) },
+    { template: "logos", name: "Stress · logos ×12", ...frame("logos"), logos: names(12) },
+    { template: "table", name: "Stress · table with logos", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: {
+      columns: [{ label: W(20) }, { label: W(12), focus: true }, { label: W(12) }, { label: W(12) }],
+      rows: TIMES(c ? 6 : 5).map((_, i) => ({ cells: [{ value: `${W(14)} ${i}`, logo: logo(i) }, "£25,000", "✓", "0.9%"], ...(i === 0 ? { focus: true } : {}) })) } },
+    { template: "table", name: "Stress · table with header logos", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: {
+      columns: [{ label: W(20) }, ...TIMES(4).map((_, i) => ({ label: `${W(10)} ${i}`, logo: logo(i + 1), focus: i === 0 }))],
+      rows: TIMES(c ? 6 : 5).map(() => ({ cells: [W(24), "◕", "◑", "●", "○"] })) } },
+    { template: "cards", name: "Stress · cards logo ×3", ...frame("cards"), cards: TIMES(3).map((_, i) => c ? { logo: logo(i), title: W(24), bullets: TIMES(3).map(() => W(40)), tone: i === 1 ? "focus" : "neutral" } : { logo: logo(i), title: W(22), text: W(50) }) },
+    { template: "cards", name: "Stress · cards logo ×4", ...frame("cards"), cards: TIMES(4).map((_, i) => c ? { logo: logo(i + 4), title: W(24), bullets: TIMES(2).map(() => W(48)) } : { logo: logo(i + 4), title: W(22), text: W(30) }) },
+  ] as (Slide & { name: string })[];
+}
+
 function withExhibitHeads(s: Slide & { name: string }, st: Style): Slide & { name: string } {
   const caption = s.template === "chart" || (s.template === "table" && st === "consulting" && s.notes?.length) ? { caption: `${W(max(s.template, st, "caption") - 5)} · £m` } : {};
   if (s.name !== "Stress · waterfall + notes") return { ...s, ...caption };

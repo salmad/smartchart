@@ -393,7 +393,7 @@
 /* ═════════════ Pictures: a picture, the team, a wall of logos, logos by names ═════════════ */
 /* A logo is its shape in one colour: the picture is a mask over the text colour, so every logo reads on both themes.
    Optical size from its aspect (--a): every logo covers the area of a square --b wide, then fits --mw × --mh. */
-.logo {
+.brand {
   --b: 1.5em; --mw: 9em; --mh: 1.3em;
   --h: min(calc(var(--b) / sqrt(var(--a))), var(--mh), calc(var(--mw) / var(--a)));
   display: inline-block; flex: none; height: var(--h); width: calc(var(--h) * var(--a)); vertical-align: middle;
@@ -402,20 +402,20 @@
 }
 /* By a name in a table: a symbol sits before the name; a wordmark stands in for it. */
 .tbl td.has-lg { white-space: nowrap; }
-.tbl td.has-lg > .logo { margin-right: .45em; vertical-align: -.28em; }
-.tbl td.has-lg > .logo.word { --b: 2.4em; --mh: 1.1em; --mw: 6.5em; margin-right: 0; vertical-align: -.2em; }
+.tbl td.has-lg > .brand { margin-right: .45em; vertical-align: -.28em; }
+.tbl td.has-lg > .brand.word { --b: 2.2em; --mh: 1.4em; --mw: 6.2em; margin-right: 0; vertical-align: -.2em; }
 .tbl tr:has(td.has-lg) td { padding-top: 12px; padding-bottom: 12px; }
 .tbl th.has-lg { color: var(--muted); }
-.tbl th.has-lg > .logo { --b: 46px; --mh: 40px; --mw: 180px; display: block; margin-bottom: 12px; color: var(--fg-2); }
-.tbl th.has-lg > .logo.word { --b: 84px; --mh: 34px; margin-bottom: 0; }
-.tbl th.al-num.has-lg > .logo { margin-left: auto; } .tbl th.al-sym.has-lg > .logo { margin-inline: auto; }
-.tbl th.focus.has-lg > .logo { color: var(--focus); }
-.tbl tr.focus td.has-lg > .logo, .tbl tr.muted td.has-lg > .logo { color: inherit; }
+.tbl th.has-lg > .brand { --b: 46px; --mh: 40px; --mw: 180px; display: block; margin-bottom: 12px; color: var(--fg-2); }
+.tbl th.has-lg > .brand.word { --b: 84px; --mh: 44px; --mw: 190px; margin-bottom: 0; }
+.tbl th.al-num.has-lg > .brand { margin-left: auto; } .tbl th.al-sym.has-lg > .brand { margin-inline: auto; }
+.tbl th.focus.has-lg > .brand { color: var(--focus); }
+.tbl tr.focus td.has-lg > .brand, .tbl tr.muted td.has-lg > .brand { color: inherit; }
 /* A card led by a logo: on the icon's line, the same height band. */
 .card .lead { height: 64px; display: flex; align-items: center; }
-.card .lead .logo { --b: 64px; --mh: 60px; --mw: 280px; }
-.card .lead .logo.word { --b: 112px; --mh: 52px; }
-.card.focus .lead .logo { color: var(--focus); }
+.card .lead .brand { --b: 64px; --mh: 60px; --mw: 280px; }
+.card .lead .brand.word { --b: 112px; --mh: 52px; }
+.card.focus .lead .brand { color: var(--focus); }
 
 /* One picture. A screenshot is fitted whole on a quiet panel (render.ts sizes it); a photo fills its frame. */
 /* The picture is out of flow: the frame's size comes from the layout alone, never from the file's pixels. */
@@ -434,15 +434,15 @@
 .team.rows { grid-template-columns: repeat(3, 1fr); row-gap: 56px; }
 .person { min-width: 0; }
 .team .ph { position: relative; width: min(100%, var(--pw)); aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--surface); }
-.team { --pw: 360px; } .style-pitch .team { --pw: 300px; } .style-pitch .team.n-2 { --pw: 340px; }
+.team { --pw: 330px; } .style-pitch .team { --pw: 280px; } .style-pitch .team.n-2 { --pw: 340px; }
 .team .ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.06); border-radius: 0; }
 .theme-ink .team .ph img { filter: grayscale(1) contrast(1.06) brightness(.94); }
 .team .ini { display: grid; place-items: center; outline: 1px solid var(--line); outline-offset: -1px;
   font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 96px; letter-spacing: .02em; color: var(--muted); }
-.team .who { margin-top: 32px; }
+.team .who { margin-top: 28px; }
 .team h3 { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1; }
-.team .role { margin-top: 14px; font: 500 20px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--focus); }
-.team .bio { margin-top: 16px; font-size: 27px; line-height: 1.35; color: var(--fg-2); max-width: 30ch; }
+.team .role { margin-top: 12px; font: 500 20px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--focus); }
+.team .bio { margin-top: 12px; font-size: 27px; line-height: 1.35; color: var(--fg-2); max-width: 30ch; }
 .team.no-ph .who { margin-top: 0; padding-top: 28px; border-top: 1px solid var(--line); }
 .team.rows .person { display: grid; grid-template-columns: 168px 1fr; column-gap: 32px; align-items: start; }
 .team.rows .ph { width: 168px; }
@@ -464,10 +464,10 @@
 .wall.c-3 { --c: 3; } .wall.c-4 { --c: 4; } .wall.c-5 { --c: 5; } .wall.c-6 { --c: 6; }
 .wall { --rh: 220px; } .wall.r-1 { --rh: 300px; } .wall.r-3 { --rh: 200px; }
 .wall .cell { display: grid; place-items: center; min-width: 0; padding: 24px; color: var(--fg); container-type: inline-size; }
-.wall .logo { --b: 132px; --mw: 78cqw; --mh: 124px; font-size: 26px; }
-.wall.c-5 .logo, .wall.c-6 .logo { --b: 108px; --mh: 100px; }
-.wall .logo.word { --b: 156px; }
-.wall.c-5 .logo.word, .wall.c-6 .logo.word { --b: 128px; }
+.wall .brand { --b: 132px; --mw: 78cqw; --mh: 124px; font-size: 26px; }
+.wall.c-5 .brand, .wall.c-6 .brand { --b: 108px; --mh: 100px; }
+.wall .brand.word { --b: 156px; }
+.wall.c-5 .brand.word, .wall.c-6 .brand.word { --b: 128px; }
 .style-consulting .wall .cell { border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
 .style-consulting .wall .cell.fl { border-left: 0; } .style-consulting .wall .cell.ft { border-top: 0; }
 .cap + .wall { margin-top: 28px; }
