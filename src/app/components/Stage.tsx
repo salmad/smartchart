@@ -40,9 +40,9 @@ export function Stage({ deck, current, onPresent, onEdit, slideId, phase }: Prop
   if (slideId) seen.current.add(slideId)
 
   return (
-    <div className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4 max-[900px]:pb-3 max-[900px]:pt-4">
+    <div data-links className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4 max-[900px]:pb-3 max-[900px]:pt-4">
       {/* The second click of a double click (e.g. on a gallery tile that just became this slide) does not present. */}
-      <SlideFrame onClick={(e) => { if (slide && e.detail < 2) onPresent() }} title={slide ? 'Present (F)' : undefined} className={slide ? 'cursor-zoom-in' : undefined}>
+      <SlideFrame onClick={(e) => { if (slide && e.detail < 2 && !(e.target as Element).closest('a')) onPresent() }} title={slide ? 'Present (F)' : undefined} className={slide ? 'cursor-zoom-in' : undefined}>
         {slide
           ? <SlideView key={slideId} slide={slide} deck={deck} ctx={contexts(deck)[current]} className={cn('absolute inset-0', fresh && 'motion-safe:animate-reveal')} />
           : phase !== null ? <Skeleton /> : (

@@ -7,25 +7,55 @@ const slides = (starters as { consulting?: Record<string, unknown> }[]).map((s) 
   .map((s, i) => (i === 0 ? { ...s, talk: 'Open on the problem: founders fund the business on their own cards.\nThen hand over to the numbers.' } : s))
 const shared = { name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides }
 
-test('the presenter view follows the presentation, shows the talk, and drives it', async ({ page, context }) => {
+test('the presentation and the presenter view are independent tabs on one deck', async ({ page, context }) => {
   await page.route('**/api/share?s=tok_1', (r) => r.fulfill({ json: shared }))
   await page.goto('/s/tok_1')
+  const showOpened = context.waitForEvent('page')
   await page.getByRole('button', { name: 'Present from slide 1' }).click()
+  const show = await showOpened
+  await expect(show.locator('.slide')).toBeVisible()
   const presenterOpened = context.waitForEvent('page')
-  await page.keyboard.press('p')
+  await show.keyboard.press('p')
   const presenter = await presenterOpened
   await presenter.waitForLoadState()
   await expect(presenter.getByText('Slide 1')).toBeVisible()
   await expect(presenter.getByLabel('Speaker notes')).toContainText('Open on the problem')
   await expect(presenter.getByLabel('Speaker notes').locator('p')).toHaveCount(2)
   await presenter.keyboard.press('ArrowRight')
-  await expect(page.locator('div.fixed.inset-0 .slide .rail .pg b')).toHaveText('02')
+  await expect(show.locator('.slide .rail .pg b')).toHaveText('02')
   await expect(presenter.getByText('Slide 2')).toBeVisible()
   await expect(presenter.getByLabel('Speaker notes')).toContainText('No speaker notes on this slide')
-  await page.keyboard.press('ArrowRight')
+  await show.keyboard.press('ArrowRight')
   await expect(presenter.getByText('End of the deck')).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(presenter.getByText('The presentation has ended.')).toBeVisible()
+  // Closing the presentation leaves the presenter view working, and it still moves the slide.
+  await show.close()
+  await presenter.keyboard.press('ArrowLeft')
+  await expect(presenter.getByText('Slide 2')).toBeVisible()
+  await expect(presenter.getByText('has ended')).toHaveCount(0)
+})
+
+test('the presentation draws disappearing ink while the button is held, and a click still turns the slide', async ({ page, context }) => {
+  await page.route('**/api/share?s=tok_1', (r) => r.fulfill({ json: shared }))
+  await page.goto('/s/tok_1')
+  const opened = context.waitForEvent('page')
+  await page.getByRole('button', { name: 'Present from slide 1' }).click()
+  const show = await opened
+  await expect(show.locator('.slide')).toBeVisible()
+  const lit = () => show.locator('canvas').evaluate((c: HTMLCanvasElement) => {
+    const d = c.getContext('2d')?.getImageData(0, 0, c.width, c.height).data ?? []
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 0) return true
+    return false
+  })
+  const w = show.viewportSize()?.width ?? 1280
+  await show.mouse.move(w * 0.3, 200)
+  await show.mouse.down()
+  await show.mouse.move(w * 0.4, 260, { steps: 6 })
+  await expect.poll(lit).toBe(true)
+  await show.mouse.up()
+  await expect(show).toHaveURL(/#\/1$/)
+  await expect.poll(lit, { timeout: 4000 }).toBe(false)
+  await show.mouse.click(w * 0.8, 300)
+  await expect(show.locator('.slide .rail .pg b')).toHaveText('02')
 })
 
 test.describe('speaker notes in edit mode', () => {

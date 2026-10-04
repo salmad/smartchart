@@ -4,7 +4,7 @@ import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
-import { Present } from './components/Present'
+import { newLiveKey, openPresentation, usePublishDeck } from './presenter-channel'
 import { PrintDeck, pdfName } from './components/PrintDeck'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
@@ -46,11 +46,15 @@ export function App({ route, account, repo, backup }: Props) {
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
-  const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
+  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
-  const deck = deckOf(s)
+  // The same deck object until a slide or the look changes: it is what the presentation tab follows.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deckOf reads only these four
+  const deck = useMemo(() => deckOf(s), [s.items, s.style, s.theme, s.accent])
+  const liveKey = useMemo(newLiveKey, [])
+  usePublishDeck(deck.slides.length ? deck : null, liveKey)
 
   const measurer = useCallback((): Measurer => {
     if (!frame.current) throw new Error('the measuring frame is not mounted')
@@ -214,7 +218,8 @@ export function App({ route, account, repo, backup }: Props) {
 
   useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
-  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) setPresenting(true) }, [app])
+  // The presentation opens in its own tab and follows this deck as it is edited.
+  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
     onTheme: (theme: Theme) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { theme } }),
@@ -265,11 +270,9 @@ export function App({ route, account, repo, backup }: Props) {
 
   return (
     <TooltipProvider delayDuration={400}>
-      {presenting
-        ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
+      <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
-              onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
+              onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
