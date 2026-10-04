@@ -1,7 +1,8 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
 import { MENU, NOTE_POINTS, plain } from "./schema.js";
-import type { Card, Cell, Deck, Half, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import type { Card, Cell, Deck, Half, ImageRef, Note, Person, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import { imageMeta, isWordmark } from "./images.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
@@ -56,6 +57,34 @@ const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<sp
 /** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
 const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
 
+/* Pictures. A logo is its shape drawn in one colour (a mask over currentColor), sized by CSS from its aspect (`--a`) so
+   every logo carries the same weight; a wordmark spells the name, so the name beside it is kept as hidden text. */
+const cssUrl = (src: string) => `url(&quot;${esc(src).replace(/[()\\]/g, (c) => `\\${c}`)}&quot;)`;
+const logoHTML = (ref: ImageRef | undefined, name: string, cls = "") => {
+  const m = imageMeta(ref?.src);
+  if (!ref || !m) return "";
+  return `<span class="logo${cls ? ` ${cls}` : ""}${isWordmark(m.aspect) ? " word" : ""}" role="img" aria-label="${esc(name)}" style="--a:${+m.aspect.toFixed(4)};--src:${cssUrl(ref.src)}"></span>`;
+};
+/** A logo standing in for a name: a wordmark replaces the visible name, a symbol sits before it. */
+const named = (ref: ImageRef | undefined, nameHTML: string, name: string) => {
+  const m = imageMeta(ref?.src);
+  if (!m) return nameHTML;
+  return logoHTML(ref, name) + (isWordmark(m.aspect) ? `<span class="mk-txt">${nameHTML}</span>` : nameHTML);
+};
+const imgHTML = (ref: ImageRef | undefined, path: string, cls: string) => {
+  const m = imageMeta(ref?.src);
+  if (!ref || !m) return `<div class="${cls} missing"${item(path)}></div>`;
+  return `<div class="${cls} k-${m.kind}" style="--a:${+m.aspect.toFixed(4)}"${item(path)}><img src="${esc(ref.src)}" alt="${esc(ref.alt ?? "")}" width="${m.w}" height="${m.h}" decoding="sync" draggable="false"></div>`;
+};
+const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+function personHTML(p: Person, i: number) {
+  const at0 = `people[${i}]`;
+  const photo = p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, `${at0}.photo`, "ph") : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
+  return `<div class="person"${item(at0)}>${photo}<div class="who"><h3${at(`${at0}.name`, "esc")}>${esc(p.name ?? "")}</h3><p class="role"${at(`${at0}.role`, "esc")}>${esc(p.role ?? "")}</p>${p.text ? `<p class="bio"${at(`${at0}.text`, "md")}>${md(p.text)}</p>` : ""}</div></div>`;
+}
+/* The wall's grid: 3–4 in a row, then rows of 3, 4, 5 and 6 as the count grows. */
+const wallColumns = (n: number) => (n <= 4 ? n : n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : 6);
+
 function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full") {
   const al = columnAlign(t), n = t.columns.length, byColumn = groupLayout(t, room) === "column";
   const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
@@ -67,10 +96,13 @@ function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full
     if (mark) return `<td class="${k} score"${at(o ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
     if (o?.status) return `<td class="${k} status"><span class="pill"${at(`${p}.value`, "esc")}>${esc(o.value ?? "")}</span>${note(o, p)}</td>`;
     if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
+    if (o?.logo) return `<td class="${k} has-lg">${named(o.logo, `<span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>`, plain(String(o.value ?? "")))}${note(o, p)}</td>`;
     if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;
     return `<td class="${k}"${at(p, "md")}>${md(c ?? "")}</td>`;
   };
-  const head = (c: Table["columns"][number], j: number) => c.icon
+  const head = (c: Table["columns"][number], j: number) => c.logo
+    ? `<th class="${cls(c, j)} has-lg">${named(c.logo, `<span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span>`, c.label ?? "")}</th>`
+    : c.icon
     ? `<th class="${cls(c, j)} has-ic"><i data-lucide="${esc(c.icon)}"></i><span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span></th>`
     : `<th class="${cls(c, j)}"${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`;
   const row = (r: Table["rows"][number], i: number) => {
@@ -105,6 +137,7 @@ function cardHTML(c: Card, variant: string, i: number) {
   if (variant === "framed") return `<div class="card ${tone}"${item(p)}><div class="who"${at(`${p}.label`, "esc")}>${esc(c.label || "")}</div><h3${at(`${p}.title`, "esc")}>${esc(c.title)}</h3>${body}
     ${c.facts ? `<div class="facts">${c.facts.map((x, k) => `<div${item(`${p}.facts[${k}]`)}><div class="k"${at(`${p}.facts[${k}].label`, "esc")}>${esc(x.label)}</div><div class="v"${at(`${p}.facts[${k}].text`, "md")}>${md(x.text)}</div></div>`).join("")}</div>` : ""}</div>`;
   if (variant === "value") return `<div class="card ${tone}"${item(p)}><div class="shout v"${at(`${p}.value`, "esc")}>${esc(c.value)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
+  if (variant === "logo") return `<div class="card ${tone}"${item(p)}><div class="lead">${logoHTML(c.logo, plain(c.title))}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
   return `<div class="card ${tone}"${item(p)}><div class="ic"><i data-lucide="${esc(c.icon)}"></i></div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
 }
 
@@ -137,6 +170,13 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
   },
   summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
     <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
+  image: (s, v) => v === "split"
+    ? splitHTML(s, imgHTML(s.image, "image", "pic"), "grow with-pic")
+    : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "image", "pic grow")}`,
+  team: (s, v) => { const people = s.people ?? [];
+    return `<div class="team ${v} n-${people.length}${people.some((p) => p?.photo) ? "" : " no-ph"}">${people.map((p, i) => personHTML(p, i)).join("")}</div>`; },
+  logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
+    return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "") || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
   cards: (s, v) => { const cards = s.cards ?? [];
     return `<div class="cards ${v} ${v === "framed" ? "grow" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
 };
@@ -199,7 +239,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
     for (const [k, v] of Object.entries(own.vars)) host.style.setProperty(`--${k}`, v);
     drawChart(host, spec, [], own);
   });
-  drawIcons(slide);
+  drawIcons(slide); fitPictures(slide);
   return slide;
 }
 
@@ -277,6 +317,18 @@ function growTable(slide: HTMLElement) {
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
   const area = (tk ? top(tk) - 40 : bottom) - top(body), natural = body.getBoundingClientRect().height / k;
   if (natural < area) body.style.height = `${Math.min(area, natural * 1.5)}px`;
+}
+
+/* A screenshot is never cropped: it is fitted whole inside its area (its aspect is in the file name, so this needs no
+   load), at the top of the area like a chart; centred across a full-width slide, from the left beside notes. */
+function fitPictures(slide: HTMLElement) {
+  const k = slide.getBoundingClientRect().width / 1920;
+  slide.querySelectorAll<HTMLElement>(".pic.k-screenshot").forEach((fig) => {
+    const area = fig.getBoundingClientRect(), a = parseFloat(fig.style.getPropertyValue("--a")) || 1.6;
+    const W = area.width / k, H = area.height / k, w = Math.min(W, H * a);
+    const img = fig.querySelector("img");
+    if (img) { img.style.width = `${w}px`; img.style.height = `${w / a}px`; }
+  });
 }
 
 /* Big values in a row shrink together (to 75% at most) so the widest fits. */

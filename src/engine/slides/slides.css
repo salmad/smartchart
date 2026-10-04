@@ -389,3 +389,86 @@
 .mx-lbl.focus { font-size: calc(var(--lbl) + 4px); font-weight: 700; color: var(--fg); }
 .area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
 .theme-paper .area-top { stop-opacity: .16; }
+
+/* ═════════════ Pictures: a picture, the team, a wall of logos, logos by names ═════════════ */
+/* A logo is its shape in one colour: the picture is a mask over the text colour, so every logo reads on both themes.
+   Optical size from its aspect (--a): every logo covers the area of a square --b wide, then fits --mw × --mh. */
+.logo {
+  --b: 1.5em; --mw: 9em; --mh: 1.3em;
+  --h: min(calc(var(--b) / sqrt(var(--a))), var(--mh), calc(var(--mw) / var(--a)));
+  display: inline-block; flex: none; height: var(--h); width: calc(var(--h) * var(--a)); vertical-align: middle;
+  background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+/* By a name in a table: a symbol sits before the name; a wordmark stands in for it. */
+.tbl td.has-lg { white-space: nowrap; }
+.tbl td.has-lg > .logo { margin-right: .45em; vertical-align: -.28em; }
+.tbl td.has-lg > .logo.word { --b: 2.4em; --mh: 1.1em; --mw: 6.5em; margin-right: 0; vertical-align: -.2em; }
+.tbl tr:has(td.has-lg) td { padding-top: 12px; padding-bottom: 12px; }
+.tbl th.has-lg { color: var(--muted); }
+.tbl th.has-lg > .logo { --b: 46px; --mh: 40px; --mw: 180px; display: block; margin-bottom: 12px; color: var(--fg-2); }
+.tbl th.has-lg > .logo.word { --b: 84px; --mh: 34px; margin-bottom: 0; }
+.tbl th.al-num.has-lg > .logo { margin-left: auto; } .tbl th.al-sym.has-lg > .logo { margin-inline: auto; }
+.tbl th.focus.has-lg > .logo { color: var(--focus); }
+.tbl tr.focus td.has-lg > .logo, .tbl tr.muted td.has-lg > .logo { color: inherit; }
+/* A card led by a logo: on the icon's line, the same height band. */
+.card .lead { height: 64px; display: flex; align-items: center; }
+.card .lead .logo { --b: 64px; --mh: 60px; --mw: 280px; }
+.card .lead .logo.word { --b: 112px; --mh: 52px; }
+.card.focus .lead .logo { color: var(--focus); }
+
+/* One picture. A screenshot is fitted whole on a quiet panel (render.ts sizes it); a photo fills its frame. */
+/* The picture is out of flow: the frame's size comes from the layout alone, never from the file's pixels. */
+.pic { position: relative; min-height: 0; }
+.split .pic { flex: 1; }
+.pic img { position: absolute; top: 0; display: block; border-radius: 16px; }
+.pic.k-screenshot img { left: 50%; transform: translateX(-50%); max-width: 100%; max-height: 100%; background: var(--surface); outline: 1px solid var(--line); outline-offset: -1px; object-fit: contain; }
+.split .pic.k-screenshot img { left: 0; transform: none; }
+.pic.k-photo img { inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; }
+.cap + .pic { margin-top: 32px; }
+
+/* The team: up to 4 in a row, photo above; 5–6 as two rows of 3, photo beside. Photos square and greyscale, so five
+   sources read as one set; no photo, the initials. */
+.team { display: grid; column-gap: 56px; }
+.team.row { grid-template-columns: repeat(var(--n), 1fr); } .team.n-2 { --n: 2; } .team.n-3 { --n: 3; } .team.n-4 { --n: 4; }
+.team.rows { grid-template-columns: repeat(3, 1fr); row-gap: 56px; }
+.person { min-width: 0; }
+.team .ph { position: relative; width: min(100%, var(--pw)); aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--surface); }
+.team { --pw: 360px; } .style-pitch .team { --pw: 300px; } .style-pitch .team.n-2 { --pw: 340px; }
+.team .ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.06); border-radius: 0; }
+.theme-ink .team .ph img { filter: grayscale(1) contrast(1.06) brightness(.94); }
+.team .ini { display: grid; place-items: center; outline: 1px solid var(--line); outline-offset: -1px;
+  font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 96px; letter-spacing: .02em; color: var(--muted); }
+.team .who { margin-top: 32px; }
+.team h3 { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1; }
+.team .role { margin-top: 14px; font: 500 20px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--focus); }
+.team .bio { margin-top: 16px; font-size: 27px; line-height: 1.35; color: var(--fg-2); max-width: 30ch; }
+.team.no-ph .who { margin-top: 0; padding-top: 28px; border-top: 1px solid var(--line); }
+.team.rows .person { display: grid; grid-template-columns: 168px 1fr; column-gap: 32px; align-items: start; }
+.team.rows .ph { width: 168px; }
+.team.rows .ini { font-size: 60px; }
+.team.rows .who { margin-top: 4px; }
+.team.rows h3 { font-size: 40px; }
+.team.rows .role { margin-top: 12px; font-size: 18px; }
+.team.rows .bio { margin-top: 12px; font-size: 24px; }
+.team.rows.no-ph .person { display: block; }
+.style-pitch .team h3 { font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 42px; line-height: 1.1; }
+.style-pitch .team.rows h3 { font-size: 36px; }
+.style-pitch .team .bio { font-size: 30px; }
+.style-pitch .team.rows .bio { font-size: 26px; }
+
+/* The wall: equal cells on one grid, hairlines between them (consulting) or space alone (pitch); every logo the same
+   visual weight, centred in its cell. */
+/* Rows grow towards the bottom of the body, up to a third more, like a table's (L5). */
+.wall { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--c), 1fr); grid-auto-rows: minmax(var(--rh), calc(var(--rh) * 1.33)); align-content: start; }
+.wall.c-3 { --c: 3; } .wall.c-4 { --c: 4; } .wall.c-5 { --c: 5; } .wall.c-6 { --c: 6; }
+.wall { --rh: 220px; } .wall.r-1 { --rh: 300px; } .wall.r-3 { --rh: 200px; }
+.wall .cell { display: grid; place-items: center; min-width: 0; padding: 24px; color: var(--fg); container-type: inline-size; }
+.wall .logo { --b: 132px; --mw: 78cqw; --mh: 124px; font-size: 26px; }
+.wall.c-5 .logo, .wall.c-6 .logo { --b: 108px; --mh: 100px; }
+.wall .logo.word { --b: 156px; }
+.wall.c-5 .logo.word, .wall.c-6 .logo.word { --b: 128px; }
+.style-consulting .wall .cell { border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+.style-consulting .wall .cell.fl { border-left: 0; } .style-consulting .wall .cell.ft { border-top: 0; }
+.cap + .wall { margin-top: 28px; }
+.lg-name { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 44px; color: var(--muted); }

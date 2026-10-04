@@ -17,11 +17,12 @@ import { groupLayout, roomOf } from "./groups.js";
 import { iconsMayStack } from "./head-icons.js";
 import { columnAlign } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
+import { imageMeta, type ImageKind } from "./images.js";
 import type { Capability, Shape } from "./capabilities.js";
 import type { Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
-export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell";
+export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell" | "image";
 export interface FieldDef {
   type: FieldType;
   desc: ByStyle<string>;
@@ -33,6 +34,9 @@ export interface FieldDef {
   of?: FieldDef;
   fields?: Record<string, FieldDef>;
   styles?: readonly Style[];
+  /** Image fields: the kinds of picture the field takes, and whether `alt` is required (no name beside the picture). */
+  kinds?: readonly ImageKind[];
+  alt?: boolean;
 }
 /** A field definition resolved for one style (what the agent reads). */
 export interface FieldView {
@@ -45,6 +49,7 @@ export interface FieldView {
   desc?: string;
   of?: FieldView;
   fields?: Record<string, FieldView>;
+  kinds?: readonly ImageKind[];
 }
 export interface MenuEntry {
   summary: string;
@@ -123,6 +128,11 @@ const FRAME: Record<string, FieldDef> = {
   footnote: f("markup", "Optional footnote: definitions, caveats, assumptions.", { max: 110 }),
   source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
 };
+
+/* A picture: { src, alt }. `src` comes from add_image (or a starter); code sizes, crops and tones it. */
+const ADD_IMAGE = "`src` is what add_image returned; never a link of your own.";
+const image = (desc: string, kinds: readonly ImageKind[], extra: Partial<Omit<FieldDef, "type">> = {}) => f("image", `${desc} ${ADD_IMAGE}`, { kinds, ...extra });
+const LOGO = image("A logo: { src }. Drawn in one colour, sized by code.", ["logo"]);
 
 const TONE = f("enum", "Colour of the value. `focus` by default; `neg` or `pos` only for a loss or gain the user named, or when they ask for red or green.", { values: ["focus", "neg", "pos"], default: "focus" });
 
@@ -274,10 +284,11 @@ const COLUMN_FIELDS = {
 const TABLE_COLUMN = f("object", "Column.", { fields: {
   ...COLUMN_FIELDS,
   icon: f("enum", "Optional icon over the header, from the curated set: on every column after the first, or none.", { values: ICONS }),
+  logo: { ...LOGO, desc: `Optional logo as the header, when the columns are companies: on every column after the first, or none. Not with \`icon\`. The label stays as its name. ${ADD_IMAGE}` },
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
 } });
-const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
+const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
 
 /* A small table for half a slide: no icons, no group headings, no bullets in cells (checked in checkGrid). */
 const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns, at most 5 rows. Marks, cell notes and status labels work; bullets, icons and group headings do not.", { fields: {
@@ -403,13 +414,14 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     rules: ["Pitch: at most 3 steps with a takeaway."],
   },
   cards: {
-    summary: "2–4 cards, each led by an icon or a big value, or two framed cards.",
+    summary: "2–4 cards, each led by an icon, a big value or a logo, or two framed cards.",
     use: "2–4 parallel options, pillars or figures, or a two-way contrast (them vs us).",
     fields: {
       framed: f("boolean", "Two framed cards side by side, for a contrast: the losing case left (tone `neutral`), the winning case right (tone `focus`). Red (`neg`) only when the user asks for it.", { default: false }),
       cards: f("list", "The cards, left to right.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One card.", { fields: {
         icon: f("enum", "Icon lead: an icon from the curated set, or \"auto\" to let code pick one from the card's text. Not with `value` or `framed`.", { values: [...ICONS, "auto"] }),
         value: f("text", "Value lead: a big number with its unit, e.g. '5 min', '19%'. Not with `icon` or `framed`.", { max: 6 }),
+        logo: { ...LOGO, desc: `Logo lead: the company the card is about. Not with \`icon\`, \`value\` or \`framed\`. ${ADD_IMAGE}` },
         label: f("text", "Framed only: who or what this case is, e.g. 'Credit-only lenders'.", { max: 30 }),
         title: f("markup", "Card title. Framed: a big 2-word headline, plain text.", { required: true, max: { consulting: 24, pitch: 22 } }),
         bullets: f("list", "1–3 bullets. Not with `text`.", { items: { min: 1, max: 3 }, of: f("markup", "Bullet.", { max: 60 }), styles: CONSULTING }),
@@ -422,11 +434,11 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       } }) }),
       focus: FOCUS,
     },
-    variant: (s) => (s.framed ? "framed" : s.cards?.some((c) => c?.value) ? "value" : "icon"),
+    variant: (s) => (s.framed ? "framed" : s.cards?.some((c) => c?.value) ? "value" : s.cards?.some((c) => c?.logo) ? "logo" : "icon"),
     rules: [
-      "Not framed: every card has an icon, or every card has a value. Framed: exactly 2 cards, each with a `label`, no icon or value.",
+      "Not framed: every card has an icon, every card has a value, or every card has a logo. Framed: exactly 2 cards, each with a `label`, no icon, value or logo.",
       "All cards use the same body: all bullets, all text, or (value cards only) none.",
-      "Text: icon cards at most 50 characters (30 in a row of 4); value cards at most 80 (pitch 44); framed at most 50.",
+      "Text: icon and logo cards at most 50 characters (30 in a row of 4); value cards at most 80 (pitch 44); framed at most 50.",
       "Bullets: at most 60 characters each and 120 per card; 48 each in framed cards or a row of 4, and at most 2 per card in a row of 4.",
       "At most one card has tone `focus` unless framed.",
     ],
@@ -442,6 +454,49 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: () => "full",
     rules: ["With a takeaway: at most 3 points.", "Each claim fits on two lines: at most 40 characters."],
+  },
+  image: {
+    summary: "One picture, with optional notes beside it.",
+    use: "The product (a screenshot), a place or thing (a photo), a diagram. Logos: logos. People: team.",
+    fields: {
+      image: image("The picture: { src, alt }. `alt` says what it shows in one plain sentence ('The Acme app: cashflow forecast for the next 90 days'); checks and readers who cannot see it read that.", ["screenshot", "photo"], { required: true, alt: true }),
+      caption: CAPTION,
+      notes: notes(false),
+      notesTitle: NOTES_TITLE,
+    },
+    variant: (s) => (s.notes?.length ? "split" : "full"),
+    rules: [
+      "A screenshot is never cropped: code fits it whole on a quiet panel. A photo fills the frame and is cropped to it, so keep the subject near the middle.",
+      "With notes: the picture takes two thirds, the notes one third. Notes: 3 or none; note text 300 characters in total, 200 with a takeaway.",
+      "The title says what the picture proves, not what it is: 'Owners see 90 days of cash at a glance', not 'App screenshot'.",
+    ],
+  },
+  team: {
+    summary: "2–6 people: photo, name, role and one line of proof.",
+    use: "Founders, the team, advisors or the board.",
+    fields: {
+      people: f("list", "The people, in the order the room should meet them.", { required: true, items: { min: 2, max: 6 }, of: f("object", "One person.", { fields: {
+        photo: image("Optional headshot: { src }. Code crops it square and sets every photo in one tone; without one, the initials stand in. Give every person a photo, or none.", ["photo"]),
+        name: f("text", "Full name.", { required: true, max: 24 }),
+        role: f("text", "Role: 'CEO & co-founder', 'Advisor, ex-CFO Monzo'.", { required: true, max: 34 }),
+        text: f("markup", "Optional: one line of proof, a fact not an adjective: 'Built SME lending at Funding Circle to £1bn'. Every person or none.", { max: { consulting: 64, pitch: 44 } }),
+      } }) }),
+    },
+    variant: (s) => ((s.people?.length ?? 0) > 4 ? "rows" : "row"),
+    rules: ["Photos: every person or none, so the row reads as one.", "Text: every person or none.", "With a takeaway: at most 4 people."],
+  },
+  logos: {
+    summary: "A wall of 3–12 logos.",
+    use: "Customers, investors or partners, when the names are the proof. Compared on features: table.",
+    fields: {
+      caption: CAPTION,
+      logos: f("list", "The logos, most important first.", { required: true, items: { min: 3, max: 12 }, of: f("object", "One logo.", { fields: {
+        logo: { ...LOGO, required: true },
+        name: f("text", "The company's name: read by checks and screen readers, and shown when the logo cannot load.", { required: true, max: 30 }),
+      } }) }),
+    },
+    variant: () => "wall",
+    rules: ["Code sets the grid and sizes every logo to the same visual weight; never order them by size.", "One group per slide: customers, or investors, not both. Two groups are two slides."],
   },
   cover: {
     summary: "The deck title and a one-line subtitle.",
@@ -479,6 +534,9 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["one figure that makes the point on its own", "number"],
   ["a customer's or expert's own words", "quote"],
   ["2–4 parallel things: options, pillars, features, several independent numbers, or a two-way contrast", "cards"],
+  ["the people behind it: founders, the team, advisors", "team"],
+  ["who already uses, backs or partners with it, shown as their logos", "logos"],
+  ["a picture that makes the point: the product, a place, a diagram", "image"],
 ];
 
 /* ─────────────── Resolving fields for one style ─────────────── */
@@ -504,6 +562,11 @@ export function fieldsFor(id: string, style: Style): Record<string, FieldDef> {
 export const ARCHIVED: readonly TemplateId[] = [];
 /** The templates the agent may pick: the menu minus the archived ones. */
 export const OFFERED = (Object.keys(MENU) as TemplateId[]).filter((id) => !ARCHIVED.includes(id));
+/** Templates that are nothing without a picture. Pictures come in through add_image (MCP and REST); the app cannot add
+    one yet, so its agent is not offered these. */
+export const NEEDS_PICTURE: readonly TemplateId[] = ["image", "logos"];
+/** The templates the in-app agent may pick. */
+export const IN_APP = OFFERED.filter((id) => !NEEDS_PICTURE.includes(id));
 
 /** One line per offered entry: what the router and planning prompt see. */
 export function catalogue(): string {
@@ -520,6 +583,7 @@ function view(def: FieldDef, style: Style): FieldView {
   if (def.default !== undefined) out.default = def.default;
   if (def.items) out.items = { min: byStyle(def.items.min, style), max: byStyle(def.items.max, style) };
   out.desc = byStyle(def.desc, style);
+  if (def.kinds) out.kinds = def.kinds;
   if (def.of) out.of = view(def.of, style);
   if (def.fields) out.fields = Object.fromEntries(Object.entries(def.fields).filter(([, d]) => inStyle(d, style)).map(([k, v]) => [k, view(v, style)]));
   return out;
@@ -551,7 +615,7 @@ const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 type Out = Validation;
 /** Fields of an object value the validator walks; the value is unvalidated input. */
 const fieldsOf = (v: object) => v as Record<string, unknown>;
-const CELL_KEYS = ["value", "note", "bullets", "status"];
+const CELL_KEYS = ["value", "note", "bullets", "status", "logo"];
 
 function check(def: FieldDef, value: unknown, path: string, style: Style, out: Out): void {
   if (value === undefined || value === null || value === "") {
@@ -600,6 +664,21 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       }
       if (v.status !== undefined && typeof v.status !== "boolean") out.errors.push(`${path}.status: must be true or false.`);
       if (v.status && v.bullets) out.errors.push(`${path}: a status label has no bullets.`);
+      if (v.logo !== undefined) check(LOGO, v.logo, `${path}.logo`, style, out);
+      break;
+    }
+    case "image": {
+      if (typeof value !== "object" || Array.isArray(value)) { out.errors.push(`${path}: a picture is { "src": "…"${def.alt ? ', "alt": "…"' : ""} } with the src add_image returned.`); return; }
+      const v = fieldsOf(value), allowed = def.alt ? ["src", "alt"] : ["src"];
+      for (const k of Object.keys(v)) if (!allowed.includes(k)) out.errors.push(`${path}.${k}: not a picture field here. Allowed: ${allowed.join(", ")}.`);
+      const meta = imageMeta(v.src);
+      if (v.src === undefined || v.src === "") out.errors.push(`${path}.src: required. Add the picture with add_image and use the src it returns.`);
+      else if (!meta) out.errors.push(`${path}.src: not a SmartChart picture. Add it with add_image (a public URL or the bytes) and use the src it returns.`);
+      else if (def.kinds && !def.kinds.includes(meta.kind)) out.errors.push(`${path}.src: a ${meta.kind}, but this takes ${def.kinds.join(" or ")}. Add the picture with add_image and kind "${def.kinds[0]}"${def.kinds.includes("logo") ? "" : ", or use another template"}.`);
+      if (def.alt) {
+        if (typeof v.alt !== "string" || !v.alt.trim()) out.errors.push(`${path}.alt: required. What the picture shows, in one plain sentence.`);
+        else if (v.alt.length > 140) out.errors.push(`${path}.alt: ${v.alt.length} characters, limit 140.`);
+      }
       break;
     }
     case "list": {
@@ -786,6 +865,16 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
     const al = columnAlign({ columns: cols, rows: rows as Table["rows"] });
     cols.forEach((c, j) => { if (c?.icon && al[j] === "num") out.warnings.push(`${base}.columns[${j}].icon: an icon on a column of numbers adds nothing; remove it.`); });
   }
+  // Logos: every column after the first (as headers), or none; every row's label (as its first cell), or none.
+  if (cols[0]?.logo) out.errors.push(`${base}.columns[0].logo: the label column has no logo; put logos on its cells instead.`);
+  cols.forEach((c, j) => { if (c?.logo && c.icon) out.errors.push(`${base}.columns[${j}]: an icon or a logo, not both.`); });
+  const logoed = cols.slice(1).filter((c) => c?.logo).length;
+  if (logoed && logoed !== n - 1) out.errors.push(`${base}.columns: ${logoed} of ${n - 1} columns have a logo; give every column after the first a logo, or none.`);
+  const dataRows = rows.filter((r) => r && r.style !== "group" && Array.isArray(r.cells));
+  const rowLogos = dataRows.filter((r) => obj(r.cells[0])?.logo).length;
+  rows.forEach((r, i) => (r?.cells || []).forEach((c, j) => { if (j > 0 && obj(c)?.logo) out.errors.push(`${base}.rows[${i}].cells[${j}].logo: logos go in the first column only, by each row's name.`); }));
+  if (rowLogos && rowLogos !== dataRows.length) out.errors.push(`${base}.rows: ${rowLogos} of ${dataRows.length} rows have a logo; give every row's first cell a logo, or none.`);
+  if (half && (logoed || rowLogos)) out.errors.push(`${base}: logos do not fit half a slide. Use the table template.`);
   // Bullets in cells.
   const bulletCols = new Set<number>();
   rows.forEach((r, i) => (r?.cells || []).forEach((c, j) => { const o = obj(c); if (o?.bullets) { bulletCols.add(j); if (o.note) out.errors.push(`${base}.rows[${i}].cells[${j}]: bullets or a note, not both.`); } }));
@@ -904,6 +993,27 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       });
       break;
     }
+    case "image": {
+      if (s.notes?.length) { checkNotes(s, style, out); if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a picture at most 3.`); }
+      const alt = s.image?.alt;
+      if (typeof alt === "string" && /\.(png|jpe?g|webp|gif|svg|heic)$/i.test(alt.trim())) out.errors.push("image.alt: a file name. Say what the picture shows, in words.");
+      break;
+    }
+    case "team": {
+      const people = Array.isArray(s.people) ? s.people : [];
+      const photos = count(people, "photo"), texts = count(people, "text");
+      if (photos && photos !== people.length) out.errors.push(`people: ${photos} of ${people.length} have a photo; give every person a photo, or none.`);
+      if (texts && texts !== people.length) out.errors.push(`people: ${texts} of ${people.length} have a line of text; give every person one, or none.`);
+      if (s.takeaway && people.length > 4) out.errors.push(`people: ${people.length} people; with a takeaway at most 4. Drop the takeaway or move people to another slide.`);
+      break;
+    }
+    case "logos": {
+      const names = (s.logos || []).map((x) => plain(x?.name ?? "").toLowerCase()).filter(Boolean), dup = names.find((x, i) => names.indexOf(x) !== i);
+      if (dup) out.errors.push(`logos: "${dup}" appears twice; each logo once.`);
+      const srcs = (s.logos || []).map((x) => x?.logo?.src).filter(Boolean), same = srcs.find((x, i) => srcs.indexOf(x) !== i);
+      if (same) out.errors.push("logos: two items share one picture; each company needs its own logo.");
+      break;
+    }
     case "summary": {
       if (s.takeaway && (s.points || []).length > 3) out.errors.push(`points: ${s.points?.length} points; with a takeaway at most 3. Merge two points or drop the takeaway.`);
       break;
@@ -920,26 +1030,27 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         cards.forEach((c, i) => {
           if (!c) return;
           if (!c.label) out.errors.push(`cards[${i}].label: required for framed cards.`);
-          if (c.icon || c.value) out.errors.push(`cards[${i}]: framed cards have no icon or value; remove it.`);
+          if (c.icon || c.value || c.logo) out.errors.push(`cards[${i}]: framed cards have no icon, value or logo; remove it.`);
           if (c.title && MARKUP_RE.test(c.title)) out.errors.push(`cards[${i}].title: framed titles are plain text.`);
           if (c.title && plain(c.title).length > 14) out.errors.push(`cards[${i}].title: ${plain(c.title).length} characters; framed titles are at most 14 (a 2-word headline).`);
         });
       } else {
         cards.forEach((c, i) => {
           if (!c) return;
-          if (!!c.icon === !!c.value) out.errors.push(`cards[${i}]: give exactly one of "icon" or "value".`);
+          const leads = [c.icon, c.value, c.logo].filter(Boolean).length;
+          if (leads !== 1) out.errors.push(`cards[${i}]: give exactly one of "icon", "value" or "logo".`);
           if (c.label) out.errors.push(`cards[${i}].label: only for framed cards; remove it.`);
           if (c.facts) out.errors.push(`cards[${i}].facts: only for framed cards; remove them.`);
-          if (c.icon && !c.bullets && !c.text) out.errors.push(`cards[${i}]: icon cards need "bullets" or "text".`);
+          if ((c.icon || c.logo) && !c.bullets && !c.text) out.errors.push(`cards[${i}]: ${c.logo ? "logo" : "icon"} cards need "bullets" or "text".`);
         });
-        if (count(cards, "icon") && count(cards, "value")) out.errors.push("cards: mix of icons and values; use the same lead on every card.");
+        if ([count(cards, "icon"), count(cards, "value"), count(cards, "logo")].filter(Boolean).length > 1) out.errors.push("cards: mix of leads (icons, values, logos); use the same lead on every card.");
         if (cards.filter((c) => c?.tone === "focus").length > 1) out.errors.push("cards: at most one card has tone focus.");
       }
       cards.forEach((c, i) => { if (c?.bullets && c?.text) out.errors.push(`cards[${i}]: give "bullets" or "text", not both.`); });
       if (count(cards, "bullets") && count(cards, "text")) out.errors.push("cards: mix of bullets and text; use the same on every card.");
       // Limits per look: framed cards are wide, value cards set text small, icon cards set it large.
       const look = MENU.cards.variant(s), four = cards.length === 4;
-      const textMax = ({ framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50 } as Record<string, number>)[look];
+      const textMax = ({ framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50, logo: four ? 30 : 50 } as Record<string, number>)[look];
       const bulletMax = look === "framed" || four ? 48 : 60;
       cards.forEach((c, i) => {
         if (!c) return;

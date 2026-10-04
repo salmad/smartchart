@@ -2441,5 +2441,242 @@
    ],
    "takeaway": "The product is [[the intersection.]]"
   }
+ },
+ {
+  "id": "image",
+  "group": "case",
+  "label": "Product",
+  "blurb": "A screenshot that shows the product doing the job",
+  "consulting": {
+   "template": "image",
+   "title": "Owners see their [[lowest cash point]] weeks ahead, and draw credit before it bites",
+   "caption": "Acme app · 90-day cash flow forecast",
+   "image": {
+    "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
+    "alt": "The Acme cash flow screen: a 90-day forecast dipping to £14,820 when VAT is due, and a suggested £12,000 draw"
+   },
+   "notes": [
+    {
+     "title": "Forecast from live data",
+     "text": "Bank feeds, invoices and bills sync daily; the forecast updates every morning."
+    },
+    {
+     "title": "The dip, explained",
+     "text": "VAT, payroll and rent are named as the reasons the balance falls."
+    },
+    {
+     "title": "Credit in one tap",
+     "text": "A draw is suggested before the buffer is breached, repaid from a known invoice."
+    }
+   ]
+  },
+  "pitch": {
+   "template": "image",
+   "title": "Product",
+   "subtitle": "See the cash gap coming. Fix it in one tap.",
+   "image": {
+    "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
+    "alt": "The Acme cash flow screen: a 90-day forecast dipping to £14,820 when VAT is due, and a suggested £12,000 draw"
+   }
+  }
+ },
+ {
+  "id": "team",
+  "group": "case",
+  "label": "Team",
+  "blurb": "The people behind it, each with one line of proof",
+  "consulting": {
+   "template": "team",
+   "title": "The team has built SME lending, card issuing and credit risk at scale before",
+   "people": [
+    {
+     "photo": {
+      "src": "/starters/img/priya-photo-1024x1024.webp"
+     },
+     "name": "Priya Shah",
+     "role": "CEO & co-founder",
+     "text": "Built an SME lending book to £1bn a year"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/tom-photo-1024x1024.webp"
+     },
+     "name": "Tom Ellison",
+     "role": "CTO & co-founder",
+     "text": "Ran card issuing for 4m customers at a UK neobank"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/grace-photo-1024x1024.webp"
+     },
+     "name": "Grace Adeyemi",
+     "role": "Chief risk officer",
+     "text": "12 years in SME credit risk at a high-street bank"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/daniel-photo-1024x1024.webp"
+     },
+     "name": "Daniel Cho",
+     "role": "Head of growth",
+     "text": "Grew an SME banking app from 20k to 400k members"
+    }
+   ]
+  },
+  "pitch": {
+   "template": "team",
+   "title": "Team",
+   "subtitle": "We have built every part of this before.",
+   "people": [
+    {
+     "photo": {
+      "src": "/starters/img/priya-photo-1024x1024.webp"
+     },
+     "name": "Priya Shah",
+     "role": "CEO & co-founder",
+     "text": "Built a £1bn-a-year SME lending book"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/tom-photo-1024x1024.webp"
+     },
+     "name": "Tom Ellison",
+     "role": "CTO & co-founder",
+     "text": "Ran card issuing for 4m customers"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/grace-photo-1024x1024.webp"
+     },
+     "name": "Grace Adeyemi",
+     "role": "Chief risk officer",
+     "text": "12 years of SME credit risk"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/daniel-photo-1024x1024.webp"
+     },
+     "name": "Daniel Cho",
+     "role": "Head of growth",
+     "text": "Grew an SME app to 400k members"
+    }
+   ]
+  }
+ },
+ {
+  "id": "logos",
+  "group": "case",
+  "label": "Partners",
+  "blurb": "Who already works with you, as their logos",
+  "consulting": {
+   "template": "logos",
+   "title": "Acme launches inside the [[eight tools]] UK small businesses already run their money on",
+   "caption": "Launch partners · signed integrations",
+   "logos": [
+    {
+     "logo": {
+      "src": "/starters/img/ledgerline-logo-731x150.png"
+     },
+     "name": "Ledgerline"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/northwind-logo-861x192.png"
+     },
+     "name": "Northwind"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/tally-logo-764x159.png"
+     },
+     "name": "Tally & Co."
+    },
+    {
+     "logo": {
+      "src": "/starters/img/shopwell-logo-797x264.png"
+     },
+     "name": "Shopwell"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/payroo-logo-796x130.png"
+     },
+     "name": "Payroo"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/kiln-logo-453x600.png"
+     },
+     "name": "Kiln"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/fieldbook-logo-750x216.png"
+     },
+     "name": "Fieldbook"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/brightdesk-logo-812x190.png"
+     },
+     "name": "Brightdesk"
+    }
+   ]
+  },
+  "pitch": {
+   "template": "logos",
+   "title": "Partners",
+   "subtitle": "Live inside the tools SMEs already use.",
+   "logos": [
+    {
+     "logo": {
+      "src": "/starters/img/ledgerline-logo-731x150.png"
+     },
+     "name": "Ledgerline"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/northwind-logo-861x192.png"
+     },
+     "name": "Northwind"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/tally-logo-764x159.png"
+     },
+     "name": "Tally & Co."
+    },
+    {
+     "logo": {
+      "src": "/starters/img/shopwell-logo-797x264.png"
+     },
+     "name": "Shopwell"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/payroo-logo-796x130.png"
+     },
+     "name": "Payroo"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/kiln-logo-453x600.png"
+     },
+     "name": "Kiln"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/fieldbook-logo-750x216.png"
+     },
+     "name": "Fieldbook"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/brightdesk-logo-812x190.png"
+     },
+     "name": "Brightdesk"
+    }
+   ]
+  }
  }
 ]

@@ -80,7 +80,7 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       // Enter in a list item adds the next item; anywhere else it does nothing.
       const itemEl = f.closest<HTMLElement>('[data-item]'), cur = editRef.current
       const hit = itemEl && listOf(listOps(cur.draft, style), itemEl.dataset.item ?? '')
-      if (!hit || hit.op.length >= hit.op.max) return
+      if (!hit || hit.op.length >= hit.op.max || hit.op.pictured) return
       const set = newItem(cur.draft, style, hit.op, hit.index + 1)
       const tail = (f.dataset.path ?? '').slice((itemEl.dataset.item ?? '').length)
       cur.patch(set, `${hit.op.path}[${hit.index + 1}]${tail}`)

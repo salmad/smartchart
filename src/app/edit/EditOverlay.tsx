@@ -83,7 +83,7 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: 
           <span className="pointer-events-auto absolute left-full top-1/2 flex w-14 -translate-y-1/2 flex-col gap-1 pl-2">
             {hit.op.length > 1 && <button type="button" aria-label={`Move ${hit.op.path.split('.').at(-1)?.replace(/s$/, '')} ${hit.index + 1}`} onPointerDown={(e) => begin(e, { kind: 'item', list: hit.op.path, index: hit.index })} onMouseDown={keep}
               className="grid size-6 cursor-grab touch-none place-items-center rounded-full bg-raise text-ink-3 shadow-[0_0_0_1px_theme(colors.line-2)] hover:text-ink active:cursor-grabbing"><GripVertical className="size-3.5" /></button>}
-            {hit.op.length < hit.op.max && <button type="button" aria-label="Add after" onMouseDown={keep} onClick={() => edit.patch(newItem(edit.draft, style, hit.op, hit.index + 1), `${hit.op.path}[${hit.index + 1}]`)}
+            {hit.op.length < hit.op.max && !hit.op.pictured && <button type="button" aria-label="Add after" onMouseDown={keep} onClick={() => edit.patch(newItem(edit.draft, style, hit.op, hit.index + 1), `${hit.op.path}[${hit.index + 1}]`)}
               className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><Plus className="size-3.5" /></button>}
             {(hit.op.length > hit.op.min || !hit.op.required) && <button type="button" aria-label="Remove" onMouseDown={keep} onClick={() => { setHover(null); edit.patch(removeItem(hit.op, hit.index)) }}
               className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><X className="size-3.5" /></button>}

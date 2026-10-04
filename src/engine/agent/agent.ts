@@ -2,9 +2,9 @@
    Then GLM 5.3 Flash in a tool loop. New slides are written whole right after create_slide; existing slides
    change only through path patches. Every write: autofix → validate → resolve auto (Jev) → autofix →
    measure → rule checks. The working-slides block goes last before every model step, never into history. */
-import { OFFERED, describe, headline, isTemplate } from "../slides/schema.js";
+import { IN_APP, describe, headline, isTemplate } from "../slides/schema.js";
 import { agentStep as glmStep, jev as jevCall, type AgentStepFn, type ChatMessage, type JevFn } from "./llm.js";
-import { GUIDE, MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
+import { APP_GUIDE, APP_MENU_OPTIONS, STYLE_STATE, exampleFor } from "./prompts.js";
 import { checkWrite } from "./write.js";
 import { applyPatch } from "./patch.js";
 import type { Resolved } from "./resolve.js";
@@ -81,7 +81,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
   async function classify(about: string): Promise<{ template: TemplateId; probabilities: Record<string, number>; lead: string | null }> {
     const titles = visible().map((s, i) => `${i + 1}. [${s.slide.template}] ${headline(s.slide)}`).join("\n");
     const r = await jev(`Deck style: ${STYLE_STATE[style]}.\n${titles ? `Slides already in the deck:\n${titles}` : "The deck is empty."}\nContent for the slide: ${about}`,
-      { template: { instructions: `Which slide template best fits this content?\n${GUIDE}`, options: MENU_OPTIONS }, lead: { instructions: LEAD_Q, options: LEADS } });
+      { template: { instructions: `Which slide template best fits this content?\n${APP_GUIDE}`, options: APP_MENU_OPTIONS }, lead: { instructions: LEAD_Q, options: LEADS } });
     log({ step: "Classify", model: "Jev", ms: r._ms, detail: `${r.template.choice} · p ${r.template.p.toFixed(2)}` });
     // Jev answers with one of the options, which are the template ids.
     return { template: r.template.choice as TemplateId, probabilities: r.template.probabilities, lead: r.lead.p >= P_LEAD ? r.lead.choice : null };
@@ -113,7 +113,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
       if (replace && !find(replace)) return unknown(replace);
       let template: TemplateId, probabilities = pre?.probabilities || null, lead = pre?.lead || null;
       // An archived template cannot be named (it is not in the tool's enum); a model that writes it anyway is refused.
-      if (isTemplate(asked) && !OFFERED.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${OFFERED.join(", ")}, or leave template out.` };
+      if (isTemplate(asked) && !IN_APP.includes(asked)) return { error: `template: "${asked}" is not available. Use one of: ${IN_APP.join(", ")}, or leave template out.` };
       if (isTemplate(asked)) template = asked; else ({ template, probabilities, lead } = await classify(about));
       const current = replace ? find(replace)?.slide?.template : undefined;
       const requested = !!turnPre && turnPre.intent === "change_template" && isSure(turnPre, deck);

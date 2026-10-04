@@ -12,7 +12,9 @@ export function getAt(slide: Slide, path: string): unknown {
   return (parsePath(path) ?? []).reduce<unknown>((v, k) => (v !== null && typeof v === "object" ? (v as Record<string | number, unknown>)[k] : undefined), slide);
 }
 
-export interface ListOp { path: string; min: number; max: number; length: number; required: boolean }
+export interface ListOp { path: string; min: number; max: number; length: number; required: boolean
+  /** Its items carry pictures (logos, team photos): the app cannot add one by hand until it can upload pictures. */
+  pictured?: boolean }
 // Chart and table data have their own grid (a pair's halves too; the pair itself can swap); table columns change every row,
 // and cells follow the columns.
 const SKIP = /^chart\b|^halves\[\d+\]\.chart\b|^halves\[\d+\]\.table\.columns$|^table\.columns$|\.cells$/;
@@ -26,7 +28,8 @@ export function listOps(slide: Slide, style: Style): ListOp[] {
       if (def.type === "list" && Array.isArray(v)) {
         // Framed cards come in exactly 2 (a contrast), whatever the list's general limits.
         const fixed = path === "cards" && (value as Obj).framed === true;
-        out.push({ path, min: fixed ? 2 : def.items?.min ?? 0, max: fixed ? 2 : def.items?.max ?? Infinity, length: v.length, required: !!def.required });
+        const pictured = v.some((x) => isObj(x) && Object.entries(def.of?.fields ?? {}).some(([f, d]) => d.type === "image" && x[f] !== undefined));
+        out.push({ path, min: fixed ? 2 : def.items?.min ?? 0, max: fixed ? 2 : def.items?.max ?? Infinity, length: v.length, required: !!def.required, ...(pictured ? { pictured } : {}) });
         const of = def.of?.fields;
         if (of) v.forEach((x, i) => { if (isObj(x)) walk(of, x, `${path}[${i}]`); });
       } else if (def.type === "object" && def.fields && isObj(v)) walk(def.fields, v, path);
@@ -48,6 +51,7 @@ function blank(def: FieldView, like: unknown): unknown {
   if (def.type === "text" || def.type === "markup" || def.type === "cell") return "";
   if (def.type === "enum") return def.values?.includes("auto") ? "auto" : def.default ?? like;
   if (def.type === "boolean") return def.default ?? false;
+  if (def.type === "image") return undefined;
   // A list with a minimum keeps that many empty entries (bullets: 1); one without keeps its length (a row's cells).
   if (def.type === "list") return Array.isArray(like) && def.of ? Array.from({ length: Math.max(1, def.items?.min ?? like.length) }, () => blank(def.of as FieldView, like[0])) : like;
   if (def.type === "object" && def.fields && isObj(like)) return Object.fromEntries(Object.entries(like).flatMap(([k, x]) => (def.fields?.[k] ? [[k, blank(def.fields[k], x)]] : [])));

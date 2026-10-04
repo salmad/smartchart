@@ -1424,5 +1424,79 @@
     }
    ]
   }
+ },
+ {
+  "name": "Picture · screenshot with notes",
+  "consulting": {
+   "template": "image",
+   "variant": "split",
+   "keys": [
+    "caption",
+    "image",
+    "notes",
+    "template",
+    "title"
+   ],
+   "notes": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "pitch": {
+   "template": "image",
+   "variant": "full",
+   "keys": [
+    "image",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
+ },
+ {
+  "name": "Team · photos and proof",
+  "consulting": {
+   "template": "team",
+   "variant": "row",
+   "keys": [
+    "people",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "team",
+   "variant": "row",
+   "keys": [
+    "people",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
+ },
+ {
+  "name": "Logo wall",
+  "consulting": {
+   "template": "logos",
+   "variant": "wall",
+   "keys": [
+    "caption",
+    "logos",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "logos",
+   "variant": "wall",
+   "keys": [
+    "logos",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
  }
 ]

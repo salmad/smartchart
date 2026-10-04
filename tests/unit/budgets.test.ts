@@ -10,8 +10,8 @@ const list = JSON.stringify({ templates: OFFERED.map((id) => ({ template: id, su
 describe('context budgets (tokens ≈ chars / 4)', () => {
   it('instructions ≤ 400', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(400))
   it.each(['consulting', 'pitch'] as const)('get_guide %s ≤ 2000', (s) => expect(tokens(guideText(s))).toBeLessThanOrEqual(2000))
-  // 450 for ten templates (it was 400 for seven): about 45 tokens each, down from 57.
-  it('list_templates ≤ 450', () => expect(tokens(list)).toBeLessThanOrEqual(450))
+  // 580 for thirteen templates (450 for ten, 400 for seven): about 45 tokens each.
+  it('list_templates ≤ 580', () => expect(tokens(list)).toBeLessThanOrEqual(580))
   for (const s of ['consulting', 'pitch'] as const) for (const t of OFFERED) {
     // Cards with capability guidance may add ~600 tokens (spec 2026-10-03 §2).
     const cap = MENU[t].capabilities?.length ? 3600 : 3000

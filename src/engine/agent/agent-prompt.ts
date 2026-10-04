@@ -1,5 +1,5 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
-import { MENU, OFFERED, headline } from "../slides/schema.js";
+import { IN_APP, MENU, headline } from "../slides/schema.js";
 import { ASK_IN_APP, HARD_RULES, START_PLAIN, START_PLAIN_IN_APP, WRITING_JSON } from "./prompt-sections.js";
 import { styleBlock } from "./prompts.js";
 import type { Check } from "./checks.js";
@@ -11,7 +11,7 @@ export interface ToolDef { type: "function"; function: { name: string; descripti
 /** A slide as the agent sees it: id, content and what is still open on it. */
 export interface WorkingSlide { id: string; slide: Slide; issues?: string[]; warnings?: string[]; checks?: Check[] }
 
-const templates = () => OFFERED.map((id) => `- ${id}: ${MENU[id].summary} Use when: ${MENU[id].use}`).join("\n");
+const templates = () => IN_APP.map((id) => `- ${id}: ${MENU[id].summary} Use when: ${MENU[id].use}`).join("\n");
 
 /** System prompt: fixed for the whole deck (the style is locked after the first slide). */
 export function agentSystem(style: Style): string {
@@ -62,7 +62,7 @@ const FUNCTIONS: ToolDef["function"][] = [
     parameters: { type: "object", required: ["about"], properties: {
       about: { type: "string", description: "The slide's content, keeping the user's words and every figure." },
       after: { type: "string", description: "Slide id to insert after, or \"end\". Not used with replace." },
-      template: { type: "string", enum: OFFERED, description: "Only when the user named the kind of slide." },
+      template: { type: "string", enum: IN_APP, description: "Only when the user named the kind of slide." },
       replace: { ...ID, description: "For a template change: the slide to re-template (it keeps its id)." } } } },
   { name: "edit_slide", description: "Write a WHOLE slide, only right after create_slide reserved it (a new slide or a template change). Existing slides change with patch_slide. Code fixes trivia, resolves \"auto\" choices, validates and measures it at 1920×1080.",
     parameters: { type: "object", required: ["slideId", "slide"], properties: { slideId: ID,
