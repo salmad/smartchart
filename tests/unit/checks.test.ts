@@ -178,3 +178,12 @@ test("nudge: the same failed check from several slides is said once", async () =
   const r8 = { id: "R8", ok: false, msg: "Figures with no source" };
   assert.equal(nudge([r8, { ...r8 }]), "Worth a look: figures with no source.");
 });
+
+test("R13: a criteria table (options across, criteria down) is read by row", () => {
+  const t = { template: "table", title: "Card B wins on cost for a business spending £20k a month", table: { columns: [{ label: "" }, { label: "Card A" }, { label: "Card B" }, { label: "Card C" }],
+    rows: [{ cells: ["Credit limit", "£250k", "£50k", "£100k"] }, { cells: ["Annual fee", "£0", "£120", "£0"] }, { cells: ["Cashback", "1.0%", "0.5%", "1.5%"] }] } } as Parameters<typeof get>[0];
+  assert.equal(get(t, "R13")?.ok, true);
+  const bad = structuredClone(t) as { table: { rows: { cells: string[] }[] } };
+  bad.table.rows[0].cells[2] = "£50,000";
+  assert.match(get(bad as Parameters<typeof get>[0], "R13")?.msg ?? "", /Mixed units or decimals: £250k, £50,000/);
+});

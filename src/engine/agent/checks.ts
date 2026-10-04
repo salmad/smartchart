@@ -100,7 +100,7 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const head = style === "pitch" ? `${s.title} ${s.subtitle || ""}` : s.title;
     // A framed contrast can carry its point in the negative or positive colour instead.
     const titled = hasFocusSpan(head) || (!!s.framed && /\[-.+?-\]|\[\+.+?\+\]/.test(head));
-    add("R4", fc === 1 && titled, fc !== 1 ? `${fc} focus elements; exactly one should stand out` : titled ? "One focus element, highlighted in the title" : "Focus element is not highlighted in the title with [[…]]");
+    add("R4", fc === 1 && titled, fc !== 1 ? `${fc} focus elements; exactly one should stand out` : titled ? "One focus element, highlighted in the title" :  style === "pitch" ? "Focus element is not highlighted with [[…]] in the title or subtitle" : "Focus element is not highlighted in the title with [[…]]");
   }
   if (s.template === "chart" && !isTimeline(s)) add("R5", UNIT.test(s.chart?.format || "") || (s.chart?.series || []).some((x) => UNIT.test(x.format || "")), "Chart values carry a unit");
   if (s.template === "number") add("R5", UNIT.test(s.number?.value || "") || /\d/.test(s.number?.value || "") === false, UNIT.test(s.number?.value || "") ? "The big number carries a unit" : "The big number has no unit");
@@ -143,8 +143,10 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
   // Value cards are independent numbers: only false precision applies to them.
   const values = s.template === "cards" ? (s.cards || []).map((c) => c.value).filter((v): v is string => !!v) : [];
   if (body.length || values.length) {
-    const rows = body.map(figs), byRow = rows.some((g) => g.length > 1) && !rows.some(mixedGroup);
-    const bad = byRow ? null : cols.find(mixedGroup);
+    // Read the table the way it is most consistent: rows as metrics (periods across) or columns as metrics (options
+    // across, criteria down). A criteria table's columns mix units by nature; only a row that mixes is a problem.
+    const rows = body.map(figs), mixedRows = rows.filter(mixedGroup), mixedCols = cols.filter(mixedGroup);
+    const bad = rows.some((g) => g.length > 1) && mixedRows.length < mixedCols.length ? mixedRows[0] ?? null : mixedCols[0] ?? null;
     const precise = [...body.flat(), ...values].find(tooPrecise);
     add("R13", !bad && !precise, bad ? `Mixed units or decimals: ${bad.join(", ")}` : precise ? `False precision: ${precise}; round to 3 significant digits` : "Consistent units and precision");
   }
