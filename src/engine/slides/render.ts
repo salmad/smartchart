@@ -175,7 +175,10 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" 
         : h.number ? `<div class="half-num"><div class="shout big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
         : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
         : "";
-      return `<div class="half"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
+      // A half without a caption keeps the caption's line (its hairline, no words) when the other half has one, so both
+      // bodies start on one line.
+      const cap = h.caption ? capHTML(h.caption, "", `${p}.caption`) : halves.some((x) => x?.caption) ? `<p class="cap ghost" aria-hidden="true">&nbsp;</p>` : capHTML(undefined);
+      return `<div class="half"${item(p)} data-grid="${i}">${cap}${body}</div>`;
     };
     const balls = halves.some((h) => h?.table && markKinds(h.table).has("balls"));
     return `<div class="pair grow">${halves.map(half).join("")}</div>${balls ? ballKey() : ""}`;
@@ -251,7 +254,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   const colours = allocate(s, deck.theme, deck.accent);
   for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
-  sizeTable(slide); stackIcons(slide); growTable(slide); growHalfTables(slide);
+  sizeTable(slide); stackIcons(slide); growTable(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
     const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
@@ -261,7 +264,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
     for (const [k, v] of Object.entries(own.vars)) host.style.setProperty(`--${k}`, v);
     drawChart(host, spec, [], own);
   });
-  drawIcons(slide); fitPictures(slide);
+  drawIcons(slide); fitPictures(slide); alignHalves(slide);
   return slide;
 }
 
@@ -314,16 +317,31 @@ function stackIcons(slide: HTMLElement) {
   });
 }
 
-/* L5 in a pair: a half table grows its rows towards the bottom of its half, up to 1.5× its natural height, so it
-   ends level with the chart beside it rather than stopping halfway down. */
-function growHalfTables(slide: HTMLElement) {
-  const R = slide.getBoundingClientRect(), k = R.width / 1920;
-  slide.querySelectorAll<HTMLElement>(".pair > .half > .tbl").forEach((tbl) => {
-    const half = tbl.parentElement;
-    if (!half) return;
-    const area = (half.getBoundingClientRect().bottom - tbl.getBoundingClientRect().top) / k, natural = tbl.getBoundingClientRect().height / k;
-    if (natural < area) tbl.style.height = `${Math.min(area, natural * 1.5)}px`;
-  });
+/* L5 in a pair: the two halves share one floor, the chart's plot bottom (its baseline) when a half is a chart, else the
+   bottom of the taller half. Every other half meets it: a table's rows grow, points become equal bands, a number sits on
+   it. A half never shrinks below its natural height (the fit checks report that). Runs after the charts are drawn. */
+function alignHalves(slide: HTMLElement) {
+  const pair = slide.querySelector<HTMLElement>(":scope > .pair");
+  if (!pair) return;
+  const R = slide.getBoundingClientRect(), k = R.width / 1920, y = (v: number) => (v - R.top) / k;
+  const halves = [...pair.querySelectorAll<HTMLElement>(":scope > .half")];
+  const body = (h: HTMLElement) => h.querySelector<HTMLElement>(":scope > .tbl, :scope > .bullets.points, :scope > .half-num");
+  // A chart's floor is its baseline (the horizontal base line), not the plot box, which also holds the category labels.
+  const baseline = (plot: HTMLElement) => {
+    const line = [...plot.querySelectorAll<SVGLineElement>("line.base")].find((l) => l.getAttribute("y1") === l.getAttribute("y2"));
+    return y((line ?? plot).getBoundingClientRect().bottom);
+  };
+  const plots = halves.map((h) => h.querySelector<HTMLElement>(".plot")).filter((p): p is HTMLElement => !!p);
+  // Without a chart: the taller half's bottom, grown by up to half its height towards the body's bottom (L5, as a table).
+  const bodies = halves.map(body).filter((b): b is HTMLElement => !!b), tallest = Math.max(0, ...bodies.map((b) => b.getBoundingClientRect().height / k));
+  const floor = plots.length ? Math.max(...plots.map(baseline))
+    : Math.min(y(pair.getBoundingClientRect().bottom), Math.max(...bodies.map((b) => y(b.getBoundingClientRect().top))) + tallest * 1.5);
+  for (const h of halves) {
+    const b = body(h);
+    if (!b || h.querySelector(".plot")) continue;
+    const top = y(b.getBoundingClientRect().top), natural = b.getBoundingClientRect().height / k;
+    if (floor - top > natural + 1) b.style.height = `${floor - top}px`;
+  }
 }
 
 /* L5: a table or a list of steps grows its rows towards the bottom of the body (or the takeaway), up to 1.5× its natural

@@ -28,6 +28,12 @@ export function fitIssuesAt(slide: HTMLElement, style: Style): Located[] {
   });
   slide.querySelectorAll(".notes, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
     if (last && box(last).b > box(el).b - pb + 1) push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`, el); });
+  // A pair stretches to the body's height, so a half's overflow does not move anything after it: measure each half's
+  // content against the half itself.
+  slide.querySelectorAll(".pair > .half").forEach((el) => {
+    const over = Math.max(...[...el.children].map((c) => box(c).b)) - box(el).b;
+    if (over > 1) push(`half runs ${Math.round(over)}px past the bottom of its half; shorten it or drop the takeaway`, el);
+  });
   const title = slide.querySelector("h2.title, h1.title");
   // Section titles hold one line so the section number sits still across dividers.
   const maxTitle = slide.matches(".t-section") || (style === "pitch" && !slide.matches(".t-cover")) ? 1 : 2;

@@ -38,8 +38,12 @@ chapter dividers, the next chapter highlighted), the text slide (2–3 headlined
 (`bars: true` on a column of figures). Images: see #6. Still open: a capability entry for bars (the table card is at its
 seven), and whether the in-app agent should offer to add an agenda when a deck gains its third chapter.
 
-## 5. Mixed halves in the pair (built, switched off)
-A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.
+## 5. Mixed halves in the pair (switched on 2026-10-04)
+A pair half can be a chart, a table, a number or points. Unlike halves share one floor: the chart's baseline when a half is
+a chart, else the taller half's bottom grown by up to half (L5). A table's rows grow to it, points become equal bands with
+hairlines, a number sits on it, and a half without a caption keeps the caption's line. A half's overflow is now a fit issue
+(the pair stretches, so it was invisible before). Pitch limits are tighter beside a takeaway. Still open: a starter that
+shows a mixed pair in the gallery.
 
 ## 6. Images and screenshots in slides: the next steps
 **Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-images-design.md`):** the image, team and logos slides, logos in

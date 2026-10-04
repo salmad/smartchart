@@ -282,9 +282,19 @@
 /* A number half: the value at half size, its sentence under it, both from the top like a chart. */
 .half-num { display: flex; flex-direction: column; gap: 28px; }
 .half-num .big-v { font-size: 300px; }
-.style-consulting .half-num .big-v { font-size: 200px; }
+.style-consulting .half-num .big-v { font-size: 250px; }
 .half-num p { font-size: 34px; line-height: 1.3; color: var(--fg-2); max-width: 24ch; }
 .style-pitch .half-num p { font-size: 40px; }
+/* Mixed halves share a floor (render.ts alignHalves): a number sits on it, points are equal bands down to it. */
+.cap.ghost { color: transparent; }
+.cap.ghost + .half-num, .cap.ghost + .bullets.points { margin-top: 28px; }
+.pair > .half > .half-num { justify-content: flex-end; }
+.pair > .half > .bullets.points { display: flex; flex-direction: column; gap: 0; }
+.pair > .half > .bullets.points li { flex: 1 1 0; padding: 20px 0 20px 40px; border-bottom: 1px solid var(--line); }
+.pair > .half > .bullets.points li:first-child { padding-top: 0; }
+.pair > .half > .bullets.points li::before { top: 20px; }
+.pair > .half > .bullets.points li:first-child::before { top: 0; }
+.cap + .bullets.points, .cap + .half-num { margin-top: 28px; }
 /* Points: the half's own list, larger than the bullets under a chart. */
 .pair .bullets.points { margin-top: 0; font-size: 32px; line-height: 1.35; gap: 22px; }
 .style-pitch .pair .bullets.points { font-size: 36px; }
@@ -514,3 +524,7 @@
 .style-pitch .agenda .t { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 64px; line-height: .9; }
 .style-pitch .agenda.many .t { font-size: 50px; }
 .agenda-empty { margin-top: 64px; max-width: 900px; font-size: 34px; line-height: 1.35; color: var(--muted); padding-top: 28px; border-top: 1px solid var(--line); }
+/* Pitch with a takeaway: the halves give up a little size for the line under them. */
+.style-pitch.t-pair:has(.takeaway) .half-num .big-v { font-size: 240px; }
+.style-pitch.t-pair:has(.takeaway) .pair .bullets.points { font-size: 34px; }
+.style-pitch.t-pair:has(.takeaway) .half-num p { font-size: 36px; }

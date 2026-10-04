@@ -302,15 +302,15 @@ const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns,
 } });
 /** Halves other than charts (a table, a number, points). Off for now: a chart beside a table or a number reads
     unbalanced, so agents see only two-chart pairs until the layout is fixed. The renderer and editor keep them. */
-export const MIXED_HALVES = false;
+export const MIXED_HALVES = true;
 type HalfBody = "chart" | "table" | "number" | "points";
 export const HALF_BODIES: readonly HalfBody[] = MIXED_HALVES ? ["chart", "table", "number", "points"] : ["chart"];
 const MIXED_NUMBER = f("object", "A big figure and what it means.", { fields: {
   value: f("text", "The number with its unit: '£3.6bn', '7%'.", { required: true, max: 7 }),
-  caption: f("markup", "What it means, as one sentence.", { required: true, max: 80 }),
+  caption: f("markup", "What it means, as one sentence.", { required: true, max: { consulting: 80, pitch: 60 } }),
   tone: TONE,
 } });
-const MIXED_POINTS = f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: 70 }) });
+const MIXED_POINTS = f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: { consulting: 70, pitch: 44 } }) });
 
 /* How to write each chart kind: enforced or mechanical, so rules. When to choose one is in the chart's capabilities. */
 const CHART_KINDS = [
@@ -1008,6 +1008,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
         // Without mixed halves the chart field itself is required, so its own message covers a missing chart.
         if (MIXED_HALVES && found.length !== 1) out.errors.push(`${p}: ${found.length ? `has ${found.join(" and ")}` : "has no body"}; give exactly one of ${bodies}.`);
         if ((h.chart || h.table) && !h.caption) out.errors.push(`${p}.caption: required${MIXED_HALVES ? " with a chart or table" : ""}. What it shows, then ' · ' and the unit.`);
+        if (MIXED_HALVES && style === "pitch" && s.takeaway && (h.points || []).length > 3) out.errors.push(`${p}.points: pitch with a takeaway takes at most 3 points per half. Cut one, or drop the takeaway.`);
         if (MIXED_HALVES && h.bullets && !h.chart) out.errors.push(`${p}.bullets: only under a chart. A list on its own is points.`);
         if (MIXED_HALVES && h.table && typeof h.table === "object") checkGrid(h.table, `${p}.table`, style, out, true);
         const c = h.chart, at = `${p}.chart`;

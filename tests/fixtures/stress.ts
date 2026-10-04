@@ -88,8 +88,8 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       { caption: `${W(30)} · £m`, chart: { categories: TIMES(6).map((_, i) => `Y${i + 1}`), format: "£{v}m", series: [{ name: W(16), mark: "bar", color: "neutral", values: [3, 5, 8, 12, 17, 23] }] }, bullets: TIMES(2).map(() => W(max("pair", st, "halves", "bullets"))) },
       { caption: `${W(30)} · £m`, table: { columns: [{ label: W(12) }, { label: W(10) }, { label: W(10) }], rows: TIMES(5).map((_, i) => ({ cells: [W(14), { value: "(1,234)", note: "8% × £10.5k" }, "12,345"], focus: i === 4 })) } }] },
       { template: "pair", name: "Stress · number + points", ...frame("pair"), halves: [
-      { number: { value: "€4,000b", caption: W(80) } },
-      { caption: W(36), points: TIMES(4).map(() => W(70)) }] },
+      { number: { value: "€4,000b", caption: W(c ? 80 : 60) } },
+      { caption: W(36), points: TIMES(c ? 4 : 3).map(() => W(c ? 70 : 44)) }] },
     ] as (Slide & { name: string })[]) : []),
     { template: "summary", name: "Stress · summary + takeaway", ...frame("summary"), points: TIMES(3).map(() => ({ title: W(40), text: W(100) })) },
     { template: "summary", name: "Stress · summary ×4", ...frame("summary"), takeaway: undefined, points: TIMES(4).map(() => ({ title: W(40), text: W(100) })) },
