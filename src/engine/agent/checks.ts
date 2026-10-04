@@ -48,7 +48,7 @@ function sourceCheck(s: Slide): Check | null {
   if (s.template === "quote" || s.template === "cover" || s.template === "section") return null;
   if (!hasFigures(s) && !numbersIn(claimText(s)).length) return null;
   const ok = !!(s.source || s.footnote);
-  return { id: "R8", ok, msg: ok ? "Figures say where they come from" : "Figures with no source or footnote: say where they come from" };
+  return { id: "R8", ok, msg: ok ? "Figures say where they come from" : "Figures with no source or footnote: add the source the user gave, or ask them for one; never invent one" };
 }
 
 // "2019–20" and "2019–2020" name a period: only the year counts, not the shorthand end.
@@ -57,6 +57,7 @@ const YEAR = (n: number, raw: string) => Number.isInteger(n) && n >= 1900 && n <
 /** Figures in a text: "£9,400k" → 9400, "4.5×" → 4.5; four-digit years are left out. */
 // Thousands separators only between digit groups: "2030," at the end of a clause is the year 2030.
 export const numbersIn = (text: unknown): number[] => [...String(text).replace(YEAR_RANGE, "$1").matchAll(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g)].map((m): [number, string] => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
+const HORIZON = /\b\d+(?:\.\d+)?\s*-?\s*(?:months?|mo|years?|yrs?|weeks?|wks?|days?|quarters?)\b/gi;
 const close = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
 
 function bodyText(s: Slide): string {
@@ -127,11 +128,12 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const n = (s.cards || []).length;
     if (n) add("R10", n <= 3, n <= 3 ? `${n} parallel items` : `${n} parallel items; 3 reads best: merge or cut to 3`);
   }
-  const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" "));
+  // A span of time ("18 months", "3-year") frames the claim; it is not a figure the body has to show.
+  const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" ").replace(HORIZON, " "));
   if (heads.length) {
     // Figures code computed (a CAGR, a difference, a waterfall total, a 100% share) count as on the slide.
     const nums = [...numbersIn(bodyText(s)), ...derivedFigures(s.template === "chart" ? s.chart : null)], missing = heads.filter((h) => !derivable(h, nums));
-    add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide` : "Headline figures are on the slide");
+    add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide: show it (in the data, an annotation, a note or the takeaway) or reword the headline to a figure the slide shows; keep the so-what` : "Headline figures are on the slide");
   }
   if (style === "consulting" && hasFigures(s)) add("R12", numbersIn(plain(s.title)).length > 0, numbersIn(plain(s.title)).length ? "The title quantifies the so-what" : "The title has no figure; quantify the so-what");
   // Tables: one unit and precision per column, or per row when rows are the metrics (columns are periods).

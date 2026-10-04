@@ -166,3 +166,9 @@ test("J10: asked only when the table has header icons; fails at p ≥ 0.7 toward
   assert.equal(j10?.ok, false);
   assert.match(j10?.msg ?? "", /decorative/);
 });
+
+test("R11: a span of time frames the claim and is not a headline figure", () => {
+  const s = { ...chart([REV]), template: "chart", title: "£2m buys [[18 months]] of runway", subtitle: "Revenue 2.1 to 9.4" } as Parameters<typeof get>[0];
+  assert.equal(get(s, "R11")?.ok, true);
+  assert.match(get({ ...s, title: "Revenue hit [[£12m]]" } as Parameters<typeof get>[0], "R11")?.msg ?? "", /show it .* or reword the headline/);
+});

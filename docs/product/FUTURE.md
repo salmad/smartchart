@@ -56,6 +56,7 @@ Open questions for the brainstorm:
 Recent MCP testing turned up rough edges. Go through it on purpose: replay real sessions (Claude, Cursor, other clients) against the MCP tools, and list every wrong error, confusing result, wasted call and missing guidance. Fix at the tool or instruction level, then add each case to `tests/agent-harness` so it stays fixed.
 
 ## 8. Checks that reach the MCP agent unasked
+**Built (2026-10-04):** every write returns `next`: what to fix, when to call check_slide, `check_storyline` once the deck has 2+ content slides (on new slides), and open comments. Rule checks run on every write; model checks stay on request. A chart choice code sets back to "auto" is now a warning, not silent.
 Today `check_slide` and `check_storyline` run only when the agent calls them, so many agents never do. Instead, the write tools return the relevant warnings and a suggested next step: after a slide is written, its rule checks; once the deck has 2+ content slides, a hint that the storyline is worth checking, or its open warnings.
 - Warnings stay advice (thin harness): the agent weighs them, nothing is rewritten.
 - Open question: what runs on every write (cheap rule checks) vs what costs a model call and stays on request.
@@ -78,5 +79,7 @@ A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonne
 - **Cards:** the line chart's "values are written on the data" (only the last point is labelled).
 - **J5's message** ("Takeaway restates the slide") led an agent to swap a true takeaway for a false one; offer removing the optional takeaway.
 - **Wiring:** agents skip `get_guide`, edit after `check_slide`, and once asked for a deck name and style instead of creating the deck.
+
+**Done (2026-10-04):** R8's wording no longer invites invented sources; R11 ignores spans of time ("18 months") and says how to fix; the chart card says a line labels only its last point; overridden stacking and marks warn. **Still open:** R4 for pitch subtitles and column focus, R13 on criteria tables, J2 causal and focus-row checks, J5's message, the `auto` focus picking a column, and the wiring.
 
 The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.

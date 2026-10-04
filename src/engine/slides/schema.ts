@@ -153,7 +153,7 @@ export const KIND_FIELDS: Record<Kind, string[]> = {
 };
 const idx = (what: string) => f("number", `0-based index into ${what}.`);
 
-const CHART = f("object", "A chart. Values are written on the data; there is no y-axis to configure. `kind` sets which fields it takes.", {
+const CHART = f("object", "A chart. Values are written on the data (bars: every value; a line: its last point only, so name any other point in an annotation or a note); there is no y-axis to configure. `kind` sets which fields it takes.", {
   required: true,
   fields: {
     kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt). `ranked`: horizontal bars by named item. `matrix`: a 2×2.", { values: KINDS, default: "bars" }),
