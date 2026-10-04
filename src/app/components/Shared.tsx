@@ -57,7 +57,7 @@ export function Shared({ token }: { token: string }) {
         <span aria-hidden className="text-[13px] text-ink-3">/</span>
         <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{load.shared.name}</h1>
         {deck.slides.length > 0 && <Button variant="outline" onClick={() => setPrinting(true)} title="Download PDF (⌘P)">PDF</Button>}
-        {deck.slides.length > 0 && <Button onClick={() => setPresenting(0)}>Present</Button>}
+        {deck.slides.length > 0 && <Button onClick={() => setPresenting(0)} title="Present full screen. While presenting, P opens the presenter view.">Present</Button>}
       </header>
       <main className="mx-auto grid w-full max-w-[1200px] gap-8 px-8 pb-16 pt-10 max-[900px]:gap-4 max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-4">
         {deck.slides.map((slide, i) => (

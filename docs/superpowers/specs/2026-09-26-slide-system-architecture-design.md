@@ -265,7 +265,7 @@ The slide canvas is fixed (D12), so presenting is the same components scaled to 
 - **Present** button in the deck view opens it; Esc returns to the same slide in the editor.
 - No transitions (restraint), except a 150 ms fade when leaving the overview grid.
 - The next slide is pre-rendered so switching is instant.
-- Later: presenter view (current + next slide, speaker notes, timer) in a second window.
+- Presenter view (built 2026-10-04): P while presenting opens /presenter in a second window, with the slide shown, the next one, the speaker notes (`talk`, a field on every template, never drawn) and a timer; it moves the slides with its own keys over a BroadcastChannel.
 
 ## 9. Agent architecture
 

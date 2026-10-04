@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import type { Deck } from '@/engine/types'
 import { contexts } from '@/engine/slides/render'
 import { SlideView } from './SlideView'
+import { openPresenter, presenterChannel, type PresenterMsg } from '@/app/presenter-channel'
 
 interface Props { deck: Deck; start: number; onExit: (index: number) => void }
 
@@ -13,7 +14,7 @@ export function Present({ deck, start, onExit }: Props) {
   const indexRef = useRef(index)
   indexRef.current = index
   const rootRef = useRef<HTMLDivElement>(null)
-  const exitedRef = useRef(false)
+  const exitedRef = useRef(false), presenter = useRef<Window | null>(null)
   // The parent passes a new callback each render; the listeners below are set up once.
   const onExitRef = useRef(onExit)
   onExitRef.current = onExit
@@ -22,6 +23,20 @@ export function Present({ deck, start, onExit }: Props) {
   useEffect(() => {
     history.replaceState(null, '', `#/${index + 1}`)
   }, [index])
+
+  // The presenter view (P): it is told every slide shown, and can move the slide itself.
+  const channel = useRef<BroadcastChannel | null>(null), deckRef = useRef(deck)
+  deckRef.current = deck
+  useEffect(() => {
+    const ch = presenterChannel()
+    channel.current = ch
+    ch.onmessage = (e: MessageEvent<PresenterMsg>) => {
+      if (e.data.type === 'hello') ch.postMessage({ type: 'state', deck: deckRef.current, index: indexRef.current } satisfies PresenterMsg)
+      if (e.data.type === 'go') { indexRef.current = Math.max(0, Math.min(n - 1, e.data.index)); setIndex(indexRef.current) }
+    }
+    return () => { ch.postMessage({ type: 'end' } satisfies PresenterMsg); ch.close(); channel.current = null }
+  }, [n])
+  useEffect(() => { channel.current?.postMessage({ type: 'state', deck: deckRef.current, index } satisfies PresenterMsg) }, [index])
 
   useEffect(() => {
     const root = rootRef.current
@@ -46,12 +61,15 @@ export function Present({ deck, start, onExit }: Props) {
       else if (/^\d$/.test(k)) { typed += k; return }
       else if (k === 'Enter' && typed) show(Number(typed) - 1)
       else if (k === 'f' || k === 'F') (document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen?.())?.catch(() => {})
+      else if (k === 'p' || k === 'P') presenter.current = openPresenter()
       else if (k === 'Escape') exit()
       else return
       typed = ''
       e.preventDefault()
     }
-    const onFullscreenChange = () => { if (!document.fullscreenElement) exit() }
+    // Leaving full screen ends the presentation, except while the presenter view is open: opening it leaves full screen,
+    // and the maker then moves this window to the projector and presses F.
+    const onFullscreenChange = () => { if (!document.fullscreenElement && !(presenter.current && !presenter.current.closed)) exit() }
     // On a notched MacBook, full screen keeps the strip beside the camera black and centres the slide below it.
     // Keynote centres on the whole screen: lift the slide by half that strip, within its letterbox room.
     const lift = () => {

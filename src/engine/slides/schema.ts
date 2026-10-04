@@ -574,11 +574,14 @@ const inStyle = (def: FieldDef, style: Style) => !def.styles || def.styles.inclu
 /** Own keys only, so "constructor" or "toString" is never a template. */
 export const isTemplate = (id: unknown): id is TemplateId => typeof id === "string" && Object.hasOwn(MENU, id);
 
-/** The fields of one entry for one style: frame + body, with style-only fields removed. */
+/* Speaker notes, on every template: what the maker says over the slide, never drawn on it. */
+const TALK = f("text", "Optional speaker notes: what to say over this slide, 2–5 plain sentences in the maker's voice, adding what the slide does not show (the story, the why). Never shown on the slide; the presenter view shows it. Only when the user asks for speaker notes or a talk track.", { max: 700 });
+
+/** The fields of one entry for one style: frame + body + speaker notes, with style-only fields removed. */
 export function fieldsFor(id: string, style: Style): Record<string, FieldDef> {
   const entry = isTemplate(id) ? MENU[id] : undefined;
   if (!entry) throw new Error(`Unknown template "${id}". Known: ${Object.keys(MENU).join(", ")}`);
-  const all = entry.frame === false ? entry.fields : { ...FRAME, ...entry.fields };
+  const all = { ...(entry.frame === false ? entry.fields : { ...FRAME, ...entry.fields }), talk: TALK };
   return Object.fromEntries(Object.entries(all).filter(([, d]) => inStyle(d, style)));
 }
 

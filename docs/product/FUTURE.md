@@ -90,3 +90,9 @@ The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code a
 When someone asks Claude, ChatGPT or Cursor to "turn this research into slides", the answer should be an Occam deck.
 - **Built (2026-10-04):** one step per client in Connect an agent (a command for Claude Code, install links for Cursor and VS Code, config for Claude Desktop via mcp-remote, the raw endpoint for the rest) and the Occam skill for Claude Code (`/agents/occam/SKILL.md`).
 - Still to do: listings in MCP directories (outward-facing, the owner's call), OAuth sign-in from inside an agent (ChatGPT needs it), pricing for agent-driven use.
+
+## 14. Speaker notes and the presenter view (built 2026-10-04)
+Every template takes `talk`: what to say over the slide, never drawn on it, written by the agent when the maker asks for
+speaker notes. P while presenting opens the presenter view: the slide, the next one, the talk and a timer, driving the
+presentation from its own keys. Next: edit the talk by hand in edit mode; the PowerPoint export (#12's branch) can carry it
+as the slide's notes; a rehearsal timer per slide.

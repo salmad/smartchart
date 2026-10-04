@@ -63,7 +63,8 @@ export const numbersIn = (text: unknown): number[] => [...String(text).replace(Y
 const close = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
 
 function bodyText(s: Slide): string {
-  const { title, subtitle, takeaway, kicker, footnote, source, ...body } = s;
+  // Speaker notes are said, not shown: a figure there does not put it on the slide.
+  const { title, subtitle, takeaway, kicker, footnote, source, talk, ...body } = s;
   // Indented: compact JSON would read [1,4,10] as one number.
   return JSON.stringify(body, (k, v) => { const w = pictureAsWords(k, v); return typeof w === "string" ? plain(w) : w; }, 1);
 }
@@ -165,7 +166,8 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
   return out;
 }
 
-const slideText = (s: Slide) => JSON.stringify(s, (k, v) => { const w = pictureAsWords(k, v); return typeof w === "string" ? plain(w) : w; });
+// The slide as the room sees it: speaker notes are left out, so they never make a claim look supported.
+const slideText = (s: Slide) => JSON.stringify({ ...s, talk: undefined }, (k, v) => { const w = pictureAsWords(k, v); return typeof w === "string" ? plain(w) : w; });
 
 /** Judgment checks J1–J10: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }

@@ -48,6 +48,8 @@ export interface Slide {
   halves?: Half[]
   image?: ImageRef; people?: Person[]; logos?: LogoItem[]
   paragraphs?: { title: string; text: string }[]
+  /** Speaker notes: what to say over the slide. Never drawn on it; the presenter view shows it. */
+  talk?: string
 }
 
 export interface Deck { style: Style; theme: Theme; accent?: string | null; footer: string; slides: Slide[] }
