@@ -169,9 +169,14 @@ async function pinnedFetch(url: URL, init: RequestInit, address: string): Promis
 
 /** Fetch a public https URL: every hop's host resolved, checked and pinned, at most 3 redirects, 10 s, MAX_BYTES. */
 export async function fetchPublic(url: string, deps: { fetch?: typeof fetch; lookup?: Lookup } = {}): Promise<Uint8Array> {
-  const lookup = deps.lookup ?? defaultLookup
+  return (await fetchPublicFull(url, deps)).bytes
+}
+
+/** fetchPublic with what came back: the bytes, their content type and the final URL. `noun` names it in messages. */
+export async function fetchPublicFull(url: string, deps: { fetch?: typeof fetch; lookup?: Lookup; noun?: string } = {}): Promise<{ bytes: Uint8Array; type: string; url: string }> {
+  const lookup = deps.lookup ?? defaultLookup, noun = deps.noun ?? 'picture'
   let at: URL
-  try { at = new URL(url) } catch { throw new ImageError('url: not a valid URL.', 'Pass a full https:// link to the picture.') }
+  try { at = new URL(url) } catch { throw new ImageError('url: not a valid URL.', `Pass a full https:// link to the ${noun}.`) }
   const signal = AbortSignal.timeout(10_000)
   for (let hop = 0; hop <= 3; hop++) {
     if (at.protocol !== 'https:') throw new ImageError('url: only https links are fetched.', 'Pass an https:// link, or the bytes as data.')
@@ -183,30 +188,30 @@ export async function fetchPublic(url: string, deps: { fetch?: typeof fetch; loo
     const init: RequestInit = { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'SmartChart/1 (+https://smartchart.app)' } }
     let res: Response
     try { res = deps.fetch ? await deps.fetch(at, init) : await pinnedFetch(at, init, addrs[0].address) }
-    catch { throw new ImageError('url: the picture could not be fetched (no answer within 10 seconds).', 'Check the link, or pass the bytes as data.') }
+    catch { throw new ImageError(`url: the ${noun} could not be fetched (no answer within 10 seconds).`, 'Check the link.') }
     const location = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null
     if (location) {
       await res.body?.cancel().catch(() => {})
-      try { at = new URL(location, at) } catch { throw new ImageError('url: the server redirected to a link that is not valid.', 'Pass the final link to the picture.') }
+      try { at = new URL(location, at) } catch { throw new ImageError('url: the server redirected to a link that is not valid.', `Pass the final link to the ${noun}.`) }
       continue
     }
-    if (!res.ok || !res.body) { await res.body?.cancel().catch(() => {}); throw new ImageError(`url: the server answered ${res.status}.`, 'Check that the link opens the picture itself, without signing in.') }
-    if (Number(res.headers.get('content-length') ?? 0) > MAX_BYTES) { await res.body.cancel().catch(() => {}); throw new ImageError('url: the picture is over 10 MB.', 'Pass a smaller version.') }
+    if (!res.ok || !res.body) { await res.body?.cancel().catch(() => {}); throw new ImageError(`url: the server answered ${res.status}.`, `Check that the link opens the ${noun} itself, without signing in.`) }
+    if (Number(res.headers.get('content-length') ?? 0) > MAX_BYTES) { await res.body.cancel().catch(() => {}); throw new ImageError(`url: the ${noun} is over 10 MB.`, 'Pass a smaller version.') }
     const reader = res.body.getReader(), parts: Uint8Array[] = []
     let size = 0
     for (;;) {
       const { done, value } = await reader.read()
       if (done) break
       size += value.byteLength
-      if (size > MAX_BYTES) { await reader.cancel(); throw new ImageError('url: the picture is over 10 MB.', 'Pass a smaller version.') }
+      if (size > MAX_BYTES) { await reader.cancel(); throw new ImageError(`url: the ${noun} is over 10 MB.`, 'Pass a smaller version.') }
       parts.push(value)
     }
     const out = new Uint8Array(size)
     let o = 0
     for (const p of parts) { out.set(p, o); o += p.byteLength }
-    return out
+    return { bytes: out, type: res.headers.get('content-type') ?? '', url: at.href }
   }
-  throw new ImageError('url: more than 3 redirects.', 'Pass the final link to the picture.')
+  throw new ImageError('url: more than 3 redirects.', `Pass the final link to the ${noun}.`)
 }
 
 /* ─────────── add_image, end to end ─────────── */

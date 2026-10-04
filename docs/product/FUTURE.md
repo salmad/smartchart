@@ -101,3 +101,10 @@ Under the storyline, one model call reads the deck as the room (a board, or inve
 slide, with the answer to give from what the deck holds. An answer goes into the slide's speaker notes in one click; a
 question the deck cannot answer becomes a request for a backup slide. MCP agents are told to offer the same before a
 meeting. Next: show the rehearsed answers in the presenter view beside the talk; a timed run-through.
+
+## 16. Links in the chat are read (built 2026-10-04)
+A link pasted on its own becomes an attachment: the server fetches it (public https only, the same address guard as
+pictures, /api/read) and the browser reads it with the file readers (PDF, Word, Excel, CSV, text) or keeps a web page's
+article text without menus, footers, references or cookie banners. The operator's report, a public Google Doc exported
+as PDF, an article: the deck starts from the link. Next: links behind a sign-in (Confluence, Notion) need connectors;
+several links in one message.
