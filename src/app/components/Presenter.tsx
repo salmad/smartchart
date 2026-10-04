@@ -14,13 +14,15 @@ const clock = (ms: number) => { const s = Math.floor(ms / 1000); return `${Math.
 export function Presenter() {
   const [shown, setShown] = useState<Shown>({ state: 'waiting' }), [started, setStarted] = useState(() => Date.now()), [now, setNow] = useState(() => Date.now())
   const channel = useRef<BroadcastChannel | null>(null), indexRef = useRef(0), countRef = useRef(0)
+  // When the slide shown last changed: the time on this slide is what a rehearsal watches.
+  const [slideSince, setSlideSince] = useState(() => Date.now())
 
   useEffect(() => {
     const ch = presenterChannel()
     channel.current = ch
     ch.onmessage = (e: MessageEvent<PresenterMsg>) => {
       const m = e.data
-      if (m.type === 'state') { indexRef.current = m.index; countRef.current = m.deck.slides.length; setShown({ state: 'on', deck: m.deck, index: m.index }) }
+      if (m.type === 'state') { if (m.index !== indexRef.current) setSlideSince(Date.now()); indexRef.current = m.index; countRef.current = m.deck.slides.length; setShown({ state: 'on', deck: m.deck, index: m.index }) }
       if (m.type === 'end') setShown({ state: 'ended' })
     }
     ch.postMessage({ type: 'hello' } satisfies PresenterMsg)
@@ -62,9 +64,10 @@ export function Presenter() {
     <div className="grid h-full grid-rows-[auto_1fr] gap-5 bg-app-bg p-6 text-ink">
       <header className="flex items-center gap-6 text-[14px]">
         <span className="font-medium">Slide {index + 1} <span className="text-ink-3">of {deck.slides.length}</span></span>
-        <span className="ml-auto flex items-center gap-2 font-mono text-[22px] tabular-nums" aria-label="Time presenting">
+        <span className="ml-auto font-mono text-[15px] tabular-nums text-ink-2" aria-label="Time on this slide">this slide {clock(Math.max(0, now - slideSince))}</span>
+        <span className="flex items-center gap-2 font-mono text-[22px] tabular-nums" aria-label="Time presenting">
           {clock(now - started)}
-          <button type="button" aria-label="Restart the timer" onClick={() => { setStarted(Date.now()); setNow(Date.now()) }} className="grid size-7 place-items-center rounded-md text-ink-3 hover:bg-panel hover:text-ink"><RotateCcw className="size-3.5" /></button>
+          <button type="button" aria-label="Restart the timer" onClick={() => { setStarted(Date.now()); setSlideSince(Date.now()); setNow(Date.now()) }} className="grid size-7 place-items-center rounded-md text-ink-3 hover:bg-panel hover:text-ink"><RotateCcw className="size-3.5" /></button>
         </span>
         <span className="font-mono text-[15px] tabular-nums text-ink-3" aria-label="Time of day">{new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </header>
