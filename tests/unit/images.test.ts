@@ -1,5 +1,7 @@
 import { test, expect } from 'vitest'
-import { imageMeta, isImageSrc, imageName, logoSize, isWordmark } from '@/engine/slides/images'
+import { imageMeta, isImageSrc, imageName, isWordmark, pictureAsWords } from '@/engine/slides/images'
+import { ruleChecks } from '@/engine/agent/checks'
+import type { Slide } from '@/engine/types'
 
 const BLOB = 'https://i22hzrcpnvzinqep.public.blob.vercel-storage.com/img/3f9a0c1d2e4b5a6f-logo-640x160.png'
 
@@ -30,18 +32,21 @@ test('the stored name is built from the content hash, kind and size', () => {
   expect(imageName('3f9a0c1d2e4b5a6f9999', 'logo', 640, 160, 'png')).toBe('img/3f9a0c1d2e4b5a6f-logo-640x160.png')
 })
 
-test('logos of any shape get the same visual weight, inside their box', () => {
-  const square = logoSize(1, { base: 100, maxW: 400, maxH: 200 }), word = logoSize(4, { base: 100, maxW: 400, maxH: 200 })
-  expect(square).toEqual({ w: 100, h: 100 })
-  expect(word.w * word.h).toBeCloseTo(square.w * square.h)
-  // Too wide for the box: scaled down whole, keeping its shape.
-  const long = logoSize(16, { base: 100, maxW: 300, maxH: 200 })
-  expect(long.w).toBe(300); expect(long.h).toBeCloseTo(300 / 16)
-  const tall = logoSize(0.25, { base: 100, maxW: 300, maxH: 120 })
-  expect(tall.h).toBe(120); expect(tall.w).toBeCloseTo(30)
-})
-
 test('a wide logo is a wordmark: it is the name, so it can stand in for it', () => {
   expect(isWordmark(4)).toBe(true)
   expect(isWordmark(1.2)).toBe(false)
+})
+
+test('checks read a picture as words, never its file name', () => {
+  expect(JSON.stringify({ logo: { src: BLOB }, name: 'Northwind' }, pictureAsWords)).toBe('{"logo":"[logo]","name":"Northwind"}')
+  expect(pictureAsWords('image', { src: '/starters/img/acme-app-screenshot-2400x1500.webp', alt: 'The cash screen' })).toBe('[screenshot: The cash screen]')
+  // The file name's size (2400x1500) is not a figure on the slide.
+  const s: Slide = { template: 'image', title: 'Owners see 2400 days of cash ahead', image: { src: '/starters/img/acme-app-screenshot-2400x1500.webp', alt: 'The Acme cash flow screen' } }
+  expect(ruleChecks(s, 'consulting', 1).find((c) => c.id === 'R11')?.ok).toBe(false)
+})
+
+test('R15: the alt text says what the picture shows, not the title again', () => {
+  const s = (alt: string): Slide => ({ template: 'image', title: 'Owners see their lowest cash point weeks ahead', image: { src: '/starters/img/acme-app-screenshot-2400x1500.webp', alt } })
+  expect(ruleChecks(s('Owners see their lowest cash point weeks ahead'), 'consulting', 1).find((c) => c.id === 'R15')?.ok).toBe(false)
+  expect(ruleChecks(s('The Acme cash flow screen: a 90-day forecast with a VAT dip'), 'consulting', 1).find((c) => c.id === 'R15')?.ok).toBe(true)
 })

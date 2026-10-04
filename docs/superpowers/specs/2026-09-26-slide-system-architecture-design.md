@@ -210,6 +210,7 @@ Two kinds, both cheap:
 | R12 | A consulting slide with figures has a figure in its title (the so-what is quantified) | consulting |
 | R13 | Consistent precision: within a series, a table column or a row of value cards, one unit and one number of decimals; no false precision (at most 3 significant digits on a slide, e.g. £9.8m, not £9,837,221) | both |
 | R14 | Order: time runs oldest to newest, left to right and top to bottom; bars and table rows that are not time are sorted by value, largest first, with a total row last (a warning: the user may have given the order on purpose) | both |
+| R15 | A picture slide: its alt text says what the picture shows, not the title again (pictures read as words in every check: `[screenshot: …]`, `[logo]`; spec 2026-10-04-images) | both |
 
 **Judgment checks** (Jev, one typed decision each, ~100 ms; a check fails only when Jev's probability for a failing value is ≥ 0.7, to keep noise down):
 

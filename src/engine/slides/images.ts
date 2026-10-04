@@ -24,14 +24,13 @@ export const isImageSrc = (src: unknown): src is string => imageMeta(src) !== nu
 export const imageName = (hash: string, kind: ImageKind, w: number, h: number, ext: "png" | "webp" | "jpg") =>
   `img/${hash.slice(0, 16)}-${kind}-${w}x${h}.${ext}`;
 
-/** Optical size: every logo covers the same area as a square `base` wide, so a wordmark and a symbol weigh the same;
-    then scaled down whole to fit the box. */
-export function logoSize(aspect: number, box: { base: number; maxW: number; maxH: number }): { w: number; h: number } {
-  let h = box.base / Math.sqrt(aspect), w = h * aspect;
-  const k = Math.min(1, box.maxW / w, box.maxH / h);
-  w *= k; h *= k;
-  return { w: Math.round(w * 100) / 100, h: Math.round(h * 100) / 100 };
-}
-
 /** A logo this wide is a wordmark: it spells the name, so it can stand in for it. */
 export const isWordmark = (aspect: number) => aspect >= 2.4;
+
+/** A JSON replacer that reads a picture as words ("[logo]", "[screenshot: The Acme app…]"): checks and models that cannot
+    see it read what it shows, never its file name (whose hash and size would read as figures). */
+export function pictureAsWords(_key: string, v: unknown): unknown {
+  if (!v || typeof v !== "object" || Array.isArray(v) || typeof (v as ImageRef).src !== "string") return v;
+  const ref = v as ImageRef, kind = imageMeta(ref.src)?.kind ?? "picture";
+  return ref.alt ? `[${kind}: ${ref.alt}]` : `[${kind}]`;
+}

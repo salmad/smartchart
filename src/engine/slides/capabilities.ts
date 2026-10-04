@@ -7,6 +7,8 @@ export interface Capability { name: string; use: string; avoid: string; sample: 
 export interface Shape { content: string; shape: string }
 
 const bars = { categories: ["2024", "2025", "2026"], format: "£{v}m", series: [{ name: "Revenue", mark: "bar", color: "focus", values: [12, 18, 26] }] };
+// Samples use the starters' bundled pictures; an agent's own come from add_image.
+const NORTHWIND = { src: "/starters/img/northwind-logo-861x192.png" }, PAYROO = { src: "/starters/img/payroo-logo-796x130.png" };
 const notes = { name: "Notes", use: "Observations beside the exhibit that say what it does not show: a cause, a caveat, an implication.", avoid: "Restating the title, the takeaway or a value the reader can see; in pitch, prefer none." };
 
 export const CAPABILITIES: Partial<Record<TemplateId, Capability[]>> = {
@@ -35,9 +37,18 @@ export const CAPABILITIES: Partial<Record<TemplateId, Capability[]>> = {
   ],
   cards: [
     { name: "Icon cards", use: "Parallel ideas (pillars, features, options) where a symbol helps recognition; icon \"auto\" lets code pick.", avoid: "Ideas that are really figures; use value cards.", sample: { cards: [{ icon: "zap", title: "Fast", text: "Approval in minutes." }, { icon: "wallet", title: "Big limits", text: "Up to £250k." }] } },
+    { name: "Logo cards", use: "2–4 companies side by side (partners, rivals), each with something to say; the logo leads in place of an icon.", avoid: "Names with nothing to say about each; use the logos template.", sample: { cards: [{ logo: NORTHWIND, title: "Accounting", text: "Cash data in one click." }, { logo: PAYROO, title: "Payroll", text: "Wages forecast to the day." }] } },
     { name: "Value cards", use: "Independent figures, each with one line of context.", avoid: "One figure that makes the point alone (number template) or figures on one measure (a chart).", sample: { cards: [{ value: "5 min", title: "To approve", text: "From application to card." }, { value: "£250k", title: "Top limit", text: "Ten times a bank's." }] } },
     { name: "Framed contrast", use: "A two-way contrast, them against us or before against after: the losing case left, the winning case right with tone focus.", avoid: "More than two sides, or sides that are not opposed; use icon cards.", sample: { framed: true, cards: [{ label: "Banks", title: "Too slow", text: "Weeks to approve.", tone: "neutral" }, { label: "Acme", title: "Instant", text: "Minutes to approve.", tone: "focus" }] } },
     { name: "Bullets or text", use: "Bullets when each card holds 2–3 separate facts (consulting); one line of text when it holds one.", avoid: "Bullets for a single fact, or text that runs to several.", sample: { cards: [{ icon: "zap", title: "Fast", bullets: ["Minutes to approve", "Cards issued same day"] }, { icon: "wallet", title: "Big limits", bullets: ["Up to £250k", "Raised with spend"] }] }, styles: ["consulting"] },
+  ],
+  image: [
+    { name: "Screenshot", use: "The product doing the job the title claims: the screen where it happens, not a home page. Code fits it whole on a quiet panel.", avoid: "A screenshot as decoration, or one whose point the title does not name.", sample: { image: { src: "/starters/img/acme-app-screenshot-2400x1500.webp", alt: "The Acme cash flow screen: a 90-day forecast with a VAT dip" } } },
+    { name: "Photo", use: "A place, a thing or people at work that the room should see. Code crops it to the frame.", avoid: "Stock photos that prove nothing.", sample: { image: { src: "/starters/img/priya-photo-1024x1024.webp", alt: "Priya Shah presenting to the pilot customers" } } },
+    { ...notes, sample: { image: { src: "/starters/img/acme-app-screenshot-2400x1500.webp", alt: "The Acme cash flow screen" }, notes: [{ title: "Live data" }, { title: "The dip, named" }, { title: "Credit in a tap" }] } },
+  ],
+  team: [
+    { name: "Photos", use: "A headshot for every person: code sets them in one tone so they read as a set.", avoid: "Photos for some people only; without photos the row is text over a rule, which reads better than a gap.", sample: { people: [{ photo: { src: "/starters/img/priya-photo-1024x1024.webp" }, name: "Priya Shah", role: "CEO", text: "Built a £1bn SME lending book" }, { photo: { src: "/starters/img/tom-photo-1024x1024.webp" }, name: "Tom Ellison", role: "CTO", text: "Ran card issuing for 4m customers" }] } },
   ],
   steps: [
     { name: "Steps", use: "A sequence in time: a plan, a process, a history.", avoid: "Workstreams that overlap (a chart timeline) or items with no order (cards).", sample: { steps: [{ when: "Q4 2026", title: "Build", text: "Issuer signed." }, { when: "Q1 2027", title: "Prove", text: "First 100 customers." }] } },
