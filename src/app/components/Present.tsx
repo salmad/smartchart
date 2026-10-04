@@ -69,7 +69,7 @@ export function Present({ deck, start, onExit }: Props) {
     }
   }, [n])
 
-  const onClick = (e: MouseEvent) => { indexRef.current = Math.max(0, Math.min(n - 1, indexRef.current + (e.clientX > window.innerWidth / 2 ? 1 : -1))); setIndex(indexRef.current) }
+  const onClick = (e: MouseEvent) => { if (e.target instanceof Element && e.target.closest('a')) return; indexRef.current = Math.max(0, Math.min(n - 1, indexRef.current + (e.clientX > window.innerWidth / 2 ? 1 : -1))); setIndex(indexRef.current) }
 
   return (
     <div ref={rootRef} onClick={onClick} className="fixed inset-0 z-10 bg-black grid place-items-center cursor-none">

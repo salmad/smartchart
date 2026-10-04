@@ -12,6 +12,8 @@ export { drawChart };
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, (c) => ENTITIES[c]);
 export const md = (s: unknown): string => esc(s)
+  // A link (source and footnote only; the validator keeps it there): http(s) only, a new tab, no opener.
+  .replace(/\[([^[\]]+)\]\((https?:\/\/[^\s()<>"]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
   .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
   .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')

@@ -61,7 +61,7 @@ export function Shared({ token }: { token: string }) {
       </header>
       <main className="mx-auto grid w-full max-w-[1200px] gap-8 px-8 pb-16 pt-10 max-[900px]:gap-4 max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-4">
         {deck.slides.map((slide, i) => (
-          <button key={i} ref={(el) => { slideRefs.current[i] = el }} type="button" onClick={() => setPresenting(i)} aria-label={`Present from slide ${i + 1}`}
+          <button key={i} ref={(el) => { slideRefs.current[i] = el }} type="button" onClick={(e) => { if (!(e.target instanceof Element && e.target.closest('a'))) setPresenting(i) }} aria-label={`Present from slide ${i + 1}`}
             className="relative mx-auto block aspect-video w-[min(100%,calc((100vh_-_56px_-_64px)*16/9))] cursor-zoom-in overflow-hidden rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] outline-none focus-visible:shadow-[0_0_0_2px_theme(colors.ink-3)] max-[900px]:w-full max-[900px]:rounded-lg">
             <SlideView slide={slide} deck={deck} ctx={ctx[i]} className="absolute inset-0" />
           </button>

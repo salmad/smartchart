@@ -67,6 +67,7 @@ Non-blocking suggestions on top of today's checks: things a partner would say in
 - Open question: how many to show at once so they help rather than nag.
 
 ## 10. Linked sources, so a slide can be verified
+**First slice built (2026-10-04):** `[label](https://…)` in source and footnote, clickable in the editor, present and share links, label-only in print. Spec: `docs/superpowers/specs/2026-10-04-linked-sources-design.md`. Still open: per-figure markers, the soft check, a link button in hand editing.
 `source` is plain text today. Let it carry links: the source line and footnote markers point to the page, report or dataset behind a number. Optional but recommended: a soft check (#9) suggests a link when a slide shows figures without one.
 - Clickable in the app, in present mode and in shared links; shown as plain text in PDF/print, or as a short URL.
 - Open question: one source per slide, or one per figure (footnote markers ¹ ² tied to specific numbers).

@@ -120,8 +120,8 @@ const FRAME: Record<string, FieldDef> = {
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
   subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; one line.", { required: true, max: 60, styles: PITCH }),
   takeaway: f("markup", "Optional one-line conclusion at the bottom. Must fit on ONE line.", { max: { consulting: 75, pitch: 42 } }),
-  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions.", { max: 110 }),
-  source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix.", { max: 110 }),
+  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions. A page the user gave can be linked: [label](https://…).", { max: 110 }),
+  source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix. Link the page, report or dataset when the user gave its address: [Company accounts 2025](https://…); never invent a link.", { max: 110 }),
 };
 
 const TONE = f("enum", "Colour of the value. `focus` by default; `neg` or `pos` only for a loss or gain the user named, or when they ask for red or green.", { values: ["focus", "neg", "pos"], default: "focus" });
@@ -545,7 +545,10 @@ export function describe(id: TemplateId, style: Style = "consulting"): TemplateC
 /** The slide's line in the storyline: its title, or (no title) the number's caption or the quote. */
 export const headline = (s: Partial<Slide> | null | undefined): string => plain(s?.title || s?.number?.caption || s?.quote || "");
 
-export const plain = (s: unknown): string => String(s).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
+/** A link in a source or footnote: [label](https://…). Only its label counts as text. */
+export const LINK_RE = /\[([^[\]]+)\]\((https?:\/\/[^\s()<>"]+)\)/g;
+const LINKED = new Set(["source", "footnote"]);
+export const plain = (s: unknown): string => String(s).replace(LINK_RE, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
 const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 
 type Out = Validation;
@@ -565,6 +568,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       if (typeof value !== "string") { out.errors.push(`${path}: must be a string.`); return; }
       if (/<[a-z/][^>]*>/i.test(value)) out.errors.push(`${path}: HTML is not allowed. Use the markup syntax instead.`);
       if (def.type === "text" && MARKUP_RE.test(value)) out.errors.push(`${path}: plain text only; remove the markup.`);
+      if (new RegExp(LINK_RE.source).test(value) && !LINKED.has(path.split(".").pop() ?? "")) out.errors.push(`${path}: links go in source or footnote, not here.`);
       const len = plain(value).length;
       if (max && len > max) out.errors.push(`${path}: ${len} characters, limit ${max} (${len - max} too many). Shorten this field only.`);
       break;
