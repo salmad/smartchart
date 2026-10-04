@@ -95,3 +95,9 @@ Every template takes `talk`: what to say over the slide, never drawn on it, writ
 speaker notes. P while presenting opens the presenter view: the slide, the next one, the talk and a timer, driving the
 presentation from its own keys. Next: edit the talk by hand in edit mode; the PowerPoint export (#12's branch) can carry it
 as the slide's notes; a rehearsal timer per slide.
+
+## 15. Rehearse: the room's questions (built 2026-10-04)
+Under the storyline, one model call reads the deck as the room (a board, or investors) and asks the hardest question per
+slide, with the answer to give from what the deck holds. An answer goes into the slide's speaker notes in one click; a
+question the deck cannot answer becomes a request for a backup slide. MCP agents are told to offer the same before a
+meeting. Next: show the rehearsed answers in the presenter view beside the talk; a timed run-through.

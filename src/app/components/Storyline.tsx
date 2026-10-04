@@ -6,6 +6,7 @@ import type { Style } from '@/engine/types'
 import type { Item } from '@/app/store'
 import { cn } from '@/app/lib/utils'
 import { Button } from './ui/button'
+import { Rehearse } from './Rehearse'
 
 interface Props {
   items: Item[]; deckStyle: Style
@@ -13,6 +14,8 @@ interface Props {
   live: boolean; busy: boolean
   /** A title's click: that slide, in the Slide view. */
   onOpen: (index: number) => void; onMove: (id: string, to: number) => void; onAsk: (prompt: string) => void
+  /** A slide's speaker notes, written as they are (Rehearse adds an answer to them). */
+  onTalk: (id: string, talk: string) => void
 }
 
 type Result = { state: 'checking' } | { state: 'done'; checks: StoryCheck[] } | { state: 'failed' }
@@ -22,7 +25,7 @@ type Result = { state: 'checking' } | { state: 'done'; checks: StoryCheck[] } | 
 const seen = new Map<string, StoryCheck[]>()
 const reading = new Map<string, Promise<StoryCheck[]>>()
 
-export function Storyline({ items, deckStyle: style, live, busy, onOpen, onMove, onAsk }: Props) {
+export function Storyline({ items, deckStyle: style, live, busy, onOpen, onMove, onAsk, onTalk }: Props) {
   const slides = items.map(({ id, slide }) => ({ id, slide })), key = storyKey(slides, style)
   const lines = storyline(slides, style)
   const [result, setResult] = useState<Result>({ state: 'checking' })
@@ -97,6 +100,7 @@ export function Storyline({ items, deckStyle: style, live, busy, onOpen, onMove,
                   </ul>
                 </>}
           </section>
+          <Rehearse slides={slides} deckStyle={style} storyKey={key} live={live} busy={busy} onOpen={onOpen} onAsk={onAsk} onTalk={onTalk} />
         </div>
       </div>
     </section>

@@ -23,7 +23,7 @@ export interface EditorProps {
     onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void; onAdd: () => void
   }
   onSend: (text: string, files?: Attached[]) => void; onClear: () => void; onSelect: (index: number) => void
-  onMove: (id: string, to: number) => void; onRemove: (id: string) => void; onRestore: () => void
+  onMove: (id: string, to: number) => void; onTalk: (id: string, talk: string) => void; onRemove: (id: string) => void; onRestore: () => void
   /** Replaces the slide, checks and strip: the starter picker (a new deck, or Add slide). */
   stage?: ReactNode
   /** Your decks, down the left; null while hidden. */
@@ -34,7 +34,7 @@ export interface EditorProps {
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
     with the deck's look as an inspector on the right while it is open. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onTalk, onRemove, onRestore, stage, decks, edit, onEdit }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
@@ -84,7 +84,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
           : shown === 'story'
           ? <main className="grid min-h-0 min-w-0 flex-1 max-[900px]:contents">
               <Storyline items={items} deckStyle={s.style} live={s.live} busy={lock} onOpen={open}
-                onMove={(id, to) => { onMove(id, to); onSelect(to) }} onAsk={(prompt) => onSend(prompt)} />
+                onMove={(id, to) => { onMove(id, to); onSelect(to) }} onAsk={(prompt) => onSend(prompt)} onTalk={onTalk} />
             </main>
           : <main className="flex min-h-0 min-w-0 flex-1 flex-col justify-center max-[900px]:contents">
               <Stage deck={deck} current={current} onEdit={() => items[current] && onEdit(items[current].id)} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />

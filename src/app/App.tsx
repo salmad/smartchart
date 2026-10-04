@@ -240,6 +240,8 @@ export function App({ route, account, repo, backup }: Props) {
   const edit = useMemo(() => ({ measurer, save: (id: string, draft: Slide) => saveEdit(id, draft, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }) }), [app, measurer])
   const onSelect = useCallback((index: number) => app.dispatch({ type: 'select', index }), [app])
   const onMove = useCallback((id: string, to: number) => app.dispatch({ type: 'moveSlide', id, to }), [app])
+  // Speaker notes change nothing on the slide, so they are written straight to it: no checks or measuring to rerun.
+  const onTalk = useCallback((id: string, talk: string) => app.dispatch({ type: 'items', items: app.getState().items.map((it) => (it.id === id && it.slide ? { ...it, slide: { ...it.slide, talk } } : it)) }), [app])
   const onRemove = useCallback((id: string) => app.dispatch({ type: 'removeSlide', id }), [app])
   const onRestore = useCallback(() => app.dispatch({ type: 'restoreSlide' }), [app])
   // A prompt from the landing (or Add slide) builds the slide in the editor.
@@ -265,7 +267,7 @@ export function App({ route, account, repo, backup }: Props) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
