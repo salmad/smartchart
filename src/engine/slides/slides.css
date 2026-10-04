@@ -398,7 +398,6 @@
   --h: min(calc(var(--b) / sqrt(var(--a))), var(--mh), calc(var(--mw) / var(--a)));
   display: inline-block; flex: none; height: var(--h); width: calc(var(--h) * var(--a)); vertical-align: middle;
   background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 /* By a name in a table: a symbol sits before the name; a wordmark stands in for it. */
 .tbl td.has-lg { white-space: nowrap; }
