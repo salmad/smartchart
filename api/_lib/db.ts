@@ -1,6 +1,8 @@
 // Postgres on Neon over HTTP (one query per request suits serverless functions). Decks are one JSON
 // document each, so the deck shape can change without a migration; owner, name and time are columns.
 import { neon } from '@neondatabase/serverless'
+import { KEEP, type Tree, type Version, type VersionHead, type VersionMeta } from '../../src/engine/versions.js'
+import type { Slide } from '../../src/engine/types.js'
 
 /** `rev` counts saves; `chat` is the conversation (agent history, messages), kept apart from the slides in `data`. A deck saved before
     chats were kept apart has rev 0 and no chat; its conversation is still inside `data`. */
@@ -47,6 +49,13 @@ export interface Db {
   shareDeck(userId: string, id: string, on?: boolean): Promise<string | null | undefined>
   /** A shared deck by its link token, for anyone who has the link. */
   sharedDeck(token: string): Promise<{ name: string; data: unknown; rev: number } | null>
+  /* Versions (src/engine/versions.ts): trees per save, slide blobs stored once per hash. */
+  versionHead(userId: string, id: string): Promise<VersionHead | null>
+  /** Stores the blobs, then adds a version (or replaces version `replace`) and keeps the newest KEEP. */
+  writeVersion(userId: string, id: string, v: { replace: number | null; rev: number; meta: VersionMeta; tree: Tree; key: string; blobs: Map<string, Slide>; at: number }): Promise<void>
+  /** Newest first. */
+  listVersions(userId: string, id: string): Promise<Version[]>
+  blobs(userId: string, id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>
 }
 
 const SCHEMA = [
@@ -68,6 +77,9 @@ const SCHEMA = [
   `alter table api_keys drop constraint if exists api_keys_user_id_key`,
   `create index if not exists api_keys_user on api_keys (user_id)`,
   `create table if not exists api_rate (key text not null, minute bigint not null, calls integer not null default 0, primary key (key, minute))`,
+  // Versions: a tree per version (look + slide ids and hashes); each slide's JSON once per hash, per deck.
+  `create table if not exists deck_versions (deck_id text not null, user_id text not null, n integer not null, rev integer not null, by_client text not null, turn text, label text, key text not null, tree jsonb not null, at timestamptz not null default now(), primary key (deck_id, n))`,
+  `create table if not exists deck_blobs (deck_id text not null, hash text not null, slide jsonb not null, primary key (deck_id, hash))`,
 ]
 
 let db: Db | null | undefined
@@ -111,7 +123,11 @@ export function getDb(): Db | null {
       const owner = await q<{ user_id: string }>('select user_id from decks where id = $1', [id])
       return owner[0]?.user_id === u ? 'conflict' : 'foreign'
     },
-    deleteDeck: async (u, id) => (await q<{ id: string }>('delete from decks where user_id = $1 and id = $2 returning id', [u, id])).length > 0,
+    deleteDeck: async (u, id) => {
+      const gone = (await q<{ id: string }>('delete from decks where user_id = $1 and id = $2 returning id', [u, id])).length > 0
+      if (gone) { await q('delete from deck_versions where deck_id = $1 and user_id = $2', [id, u]); await q('delete from deck_blobs where deck_id = $1', [id]) }
+      return gone
+    },
     countCall: async (u) => Number((await q<{ calls: number }>(
       `insert into model_usage (user_id, day, calls) values ($1, current_date, 1)
        on conflict (user_id, day) do update set calls = model_usage.calls + 1 returning calls`, [u]))[0].calls),
@@ -138,6 +154,33 @@ export function getDb(): Db | null {
     listKeys: async (u) => (await q<{ id: string; prefix: string; created: Date; lastUsed: Date | null }>(`select left(hash, 12) as id, prefix, created, last_used as "lastUsed" from api_keys where user_id = $1 order by created`, [u]))
       .map((r) => ({ id: r.id, prefix: r.prefix, created: +new Date(r.created), lastUsed: r.lastUsed ? +new Date(r.lastUsed) : null })),
     deleteKey: async (u, id) => (await q('delete from api_keys where user_id = $1 and left(hash, 12) = $2 returning hash', [u, id])).length > 0,
+    versionHead: async (u, id) => {
+      const r = await q<{ n: number; by: string; turn: string | null; at: string | Date; key: string }>(
+        'select n, by_client as by, turn, at, key from deck_versions where deck_id = $1 and user_id = $2 order by n desc limit 1', [id, u])
+      return r[0] ? { ...r[0], at: new Date(r[0].at).getTime() } : null
+    },
+    writeVersion: async (u, id, v) => {
+      const hashes = [...v.blobs.keys()]
+      if (hashes.length) await q(
+        `insert into deck_blobs (deck_id, hash, slide) select $1, h, s from jsonb_each($2::jsonb) as b(h, s) on conflict do nothing`,
+        [id, JSON.stringify(Object.fromEntries(v.blobs))])
+      const at = new Date(v.at).toISOString()
+      if (v.replace !== null) {
+        await q('update deck_versions set rev = $4, key = $5, tree = $6, at = $7, label = coalesce(label, $8) where deck_id = $1 and user_id = $2 and n = $3',
+          [id, u, v.replace, v.rev, v.key, JSON.stringify(v.tree), at, v.meta.label])
+        return
+      }
+      await q(`insert into deck_versions (deck_id, user_id, n, rev, by_client, turn, label, key, tree, at)
+        select $1, $2, coalesce(max(n), 0) + 1, $3, $4, $5, $6, $7, $8, $9 from deck_versions where deck_id = $1`,
+        [id, u, v.rev, v.meta.by, v.meta.turn, v.meta.label, v.key, JSON.stringify(v.tree), at])
+      await q('delete from deck_versions where deck_id = $1 and n <= (select max(n) from deck_versions where deck_id = $1) - $2', [id, KEEP])
+    },
+    listVersions: async (u, id) => (await q<{ n: number; rev: number; by: string; turn: string | null; label: string | null; at: string | Date; tree: Tree }>(
+      'select n, rev, by_client as by, turn, label, at, tree from deck_versions where deck_id = $1 and user_id = $2 order by n desc limit $3', [id, u, KEEP]))
+      .map((r) => ({ ...r, at: new Date(r.at).getTime() })),
+    // The deck's owner is checked on the versions table: blobs carry no user of their own.
+    blobs: async (u, id, hashes) => hashes.length ? q<{ hash: string; slide: Slide }>(
+      `select hash, slide from deck_blobs where deck_id = $1 and hash = any($2::text[]) and exists (select 1 from deck_versions where deck_id = $1 and user_id = $3)`, [id, hashes, u]) : [],
     bumpRate: async (key, minute) => Number((await q<{ calls: number }>(
       `insert into api_rate (key, minute, calls) values ($1, $2, 1) on conflict (key, minute) do update set calls = api_rate.calls + 1 returning calls`, [key, minute]))[0].calls),
   })

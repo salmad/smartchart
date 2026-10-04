@@ -1,6 +1,7 @@
 // The decks API, built from its dependencies so tests can run it against a fake database and user.
 import type { UserFrom } from './auth.js'
 import type { Db, Presence } from './db.js'
+import { appMeta, recordVersion } from './versions.js'
 
 const ID = /^[\w-]{1,64}$/
 const MAX_BYTES = 2_000_000
@@ -20,6 +21,13 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     }
     if (request.method === 'GET' && id && q.get('events') !== null)
       return Response.json(ID.test(id) ? await db.eventsSince(user.id, id, Number(q.get('events')) || 0) : [], { headers: { 'Cache-Control': 'no-store' } })
+    // Versions: the list (trees, newest first), and the slides a tree needs, by hash.
+    if (request.method === 'GET' && id && q.get('versions') !== null)
+      return Response.json(ID.test(id) ? await db.listVersions(user.id, id) : [], { headers: { 'Cache-Control': 'no-store' } })
+    if (request.method === 'GET' && id && q.get('blobs') !== null) {
+      const hashes = (q.get('blobs') ?? '').split(',').filter((h) => /^[a-z0-9]{1,24}$/.test(h)).slice(0, 500)
+      return Response.json(ID.test(id) ? await db.blobs(user.id, id, hashes) : [])
+    }
     if (request.method === 'PUT' && id && q.get('presence')) {
       const b = (await request.json().catch(() => ({}))) as { busy?: unknown; editing?: unknown }, now = Date.now(), p: Presence = {}
       if (b.busy === true) p.busy = { by: 'SmartChart', until: now + 90_000 }
@@ -38,7 +46,7 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (request.method === 'PUT') {
       const text = await request.text()
       if (text.length > MAX_BYTES) return Response.json({ error: 'This deck is too large to save.' }, { status: 413 })
-      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown }
+      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown; version?: unknown }
       try { body = JSON.parse(text) as typeof body } catch { return Response.json({ error: 'Bad deck.' }, { status: 400 }) }
       const { id: deckId, name, named, data, chat, baseRev } = body
       if (typeof deckId !== 'string' || !ID.test(deckId) || typeof name !== 'string' || !data || typeof data !== 'object'
@@ -48,7 +56,9 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
       const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true })
       if (put === 'conflict') return Response.json({ error: 'This deck changed somewhere else.' }, { status: 409 })
       // 'foreign': the id is someone else's deck; answer as if it did not exist.
-      return put === 'foreign' ? Response.json({ error: 'No such deck.' }, { status: 404 }) : Response.json({ ok: true, rev: put.rev })
+      if (put === 'foreign') return Response.json({ error: 'No such deck.' }, { status: 404 })
+      await recordVersion(db, user.id, deckId, data, appMeta(body.version), put.rev)
+      return Response.json({ ok: true, rev: put.rev })
     }
     return Response.json({ error: 'method not allowed' }, { status: 405 })
   }
