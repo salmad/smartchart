@@ -17,7 +17,8 @@ test('a shared deck opens for a signed-out visitor, every slide in order, and pr
   await expect(frames.first().locator('.slide')).toBeVisible()
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
   await frames.nth(1).click()
-  await expect(page.getByText(`2 / ${slides.length}`)).toBeVisible()
+  // Present has no counter of its own (the slide's page number is enough): the slide shown is the one clicked.
+  await expect(page.locator('div.fixed.inset-0 .slide .rail .pg b')).toHaveText('02')
   await page.keyboard.press('Escape')
   await expect(frames).toHaveCount(slides.length)
   expect(errors).toEqual([])
