@@ -1,6 +1,6 @@
 export type Style = 'consulting' | 'pitch'
 export type Theme = 'ink' | 'paper'
-export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'quote' | 'steps' | 'cards' | 'summary' | 'image' | 'team' | 'logos' | 'text' | 'agenda' | 'cover' | 'section'
+export type TemplateId = 'chart' | 'pair' | 'table' | 'number' | 'quote' | 'steps' | 'cards' | 'summary' | 'image' | 'team' | 'logos' | 'agenda' | 'cover' | 'section'
 export type Tone = 'neutral' | 'focus' | 'neg' | 'pos'
 export type SeriesColor = 'focus' | 'neutral' | 'contrast'
 
@@ -43,11 +43,10 @@ export interface Slide {
   number?: { value: string; caption: string; tone?: Tone }
   quote?: string; who?: string
   steps?: Step[]
-  framed?: boolean; cards?: Card[]
+  framed?: boolean; lead?: 'icon' | 'number' | 'value' | 'logo' | 'none'; arrange?: 'row' | 'grid'; cards?: Card[]
   points?: Point[]
   halves?: Half[]
   image?: ImageRef; people?: Person[]; logos?: LogoItem[]
-  paragraphs?: { title: string; text: string }[]
   /** Speaker notes: what to say over the slide. Never drawn on it; the presenter view shows it. */
   talk?: string
 }

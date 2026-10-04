@@ -9,7 +9,7 @@ test('count lock: 30 starters, unique ids, known groups', () => {
   for (const s of STARTERS) expect(GROUPS.map((g) => g.id)).toContain(s.group)
 })
 // Two more with mixed halves on (a chart beside a table, a number beside points).
-const STRESS = 52 + (MIXED_HALVES ? 2 : 0)
+const STRESS = 54 + (MIXED_HALVES ? 2 : 0)
 test('stress fixture keeps its slides per style', () => {
   expect(stressFor('consulting')).toHaveLength(STRESS)
   expect(stressFor('pitch')).toHaveLength(STRESS)

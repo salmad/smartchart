@@ -33,13 +33,21 @@ test('an agenda in a deck without chapters says so, and the deck warns', () => {
   expect(validateDeck(deck([AGENDA])).warnings.join(' ')).toMatch(/agenda lists the chapter dividers/)
 })
 
-test('text: 2–3 headlined paragraphs, with tighter limits for three or beside a takeaway', () => {
-  const p = (n: number) => ({ title: 'Credit that grows with them', text: 'x'.repeat(n) })
-  const s = (ps: { title: string; text: string }[], extra: Partial<Slide> = {}): Slide => ({ template: 'text', title: 'SMEs choose Acme because it solves three problems their bank leaves open', paragraphs: ps, ...extra })
-  expect(validate(s([p(320), p(320)]), 'consulting').errors).toEqual([])
-  expect(validate(s([p(300), p(200), p(200)]), 'consulting').errors[0]).toMatch(/paragraphs\[0\]\.text: 300 characters; with three paragraphs at most 260/)
-  expect(validate(s([p(200), p(200)], { takeaway: 'Bundling is the moat.' }), 'consulting').errors[0]).toMatch(/with a takeaway at most 190/)
-  expect(validate(s([p(10)]), 'consulting').errors[0]).toMatch(/at least 2/)
+test('cards: a lead of number or none, four cards two over two, and what each needs', () => {
+  const title = 'SMEs choose Acme because it solves three problems their bank leaves open'
+  const card = (extra: object = {}) => ({ title: 'A limit that grows', bullets: ['Banks cap cards at £25k', 'Acme raises it with revenue'], ...extra })
+  const s = (cards: object[], extra: Partial<Slide> = {}): Slide => ({ template: 'cards', title, cards, ...extra } as Slide)
+  expect(validate(s([card(), card(), card()], { lead: 'number' }), 'consulting').errors).toEqual([])
+  expect(validate(s([card(), card()], { lead: 'none' }), 'consulting').errors).toEqual([])
+  expect(validate(s([card(), card(), card(), card()], { lead: 'number', arrange: 'grid' }), 'consulting').errors).toEqual([])
+  expect(validate(s([card({ icon: 'zap' }), card()], { lead: 'number' }), 'consulting').errors[0]).toMatch(/lead "number" has no icon, value or logo/)
+  expect(validate(s([card(), card()]), 'consulting').errors[0]).toMatch(/exactly one of "icon", "value" or "logo" \(or set lead to "number" or "none"\)/)
+  expect(validate(s([card(), card(), card()], { lead: 'number', arrange: 'grid' }), 'consulting').errors[0]).toMatch(/"grid" is for exactly 4 cards/)
+  expect(validate(s([card({ bullets: undefined }), card()], { lead: 'none' }), 'consulting').errors[0]).toMatch(/plain cards need "bullets" or "text"/)
+  // A grid card has the room of a card in a row of three: 52-character bullets pass there, not in a row of four.
+  const wide = card({ bullets: ['x'.repeat(52), 'y'.repeat(52)] })
+  expect(validate(s([wide, wide, wide, wide], { lead: 'number', arrange: 'grid' }), 'consulting').errors).toEqual([])
+  expect(validate(s([wide, wide, wide, wide], { lead: 'number' }), 'consulting').errors.join(' ')).toMatch(/at most 48 here/)
 })
 
 const tbl = (vals: string[], bars = true): Table => ({ columns: [{ label: 'Provider' }, { label: 'Book', bars }], rows: vals.map((v, i) => ({ cells: [`P${i}`, v] })) })

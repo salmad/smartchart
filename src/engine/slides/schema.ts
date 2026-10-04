@@ -419,14 +419,16 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "2–4 parallel options, pillars or figures, or a two-way contrast (them vs us).",
     fields: {
       framed: f("boolean", "Two framed cards side by side, for a contrast: the losing case left (tone `neutral`), the winning case right (tone `focus`). Red (`neg`) only when the user asks for it.", { default: false }),
+      lead: f("enum", "What leads every card: `icon` (default, from the cards' icons), `number` (01, 02, 03, set by code: reasons or steps in an order), `value` (a big figure), `logo`, or `none` (title and bullets only). One lead on every card. `number` and `none` mean no card has an icon, value or logo.", { values: ["icon", "number", "value", "logo", "none"] }),
+      arrange: f("enum", "Four cards only. `row`: four across (default). `grid`: two over two, cards 1–2 above 3–4, with room for longer bullets and text. Two cards sit as two halves; three in a row.", { values: ["row", "grid"], default: "row" }),
       cards: f("list", "The cards, left to right.", { required: true, items: { min: 2, max: 4 }, of: f("object", "One card.", { fields: {
         icon: f("enum", "Icon lead: an icon from the curated set, or \"auto\" to let code pick one from the card's text. Not with `value` or `framed`.", { values: [...ICONS, "auto"] }),
         value: f("text", "Value lead: a big number with its unit, e.g. '5 min', '19%'. Not with `icon` or `framed`.", { max: 6 }),
         logo: { ...LOGO, desc: `Logo lead: the company the card is about. Not with \`icon\`, \`value\` or \`framed\`. ${ADD_IMAGE}` },
         label: f("text", "Framed only: who or what this case is, e.g. 'Credit-only lenders'.", { max: 30 }),
         title: f("markup", "Card title. Framed: a big 2-word headline, plain text.", { required: true, max: { consulting: 24, pitch: 22 } }),
-        bullets: f("list", "1–3 bullets. Not with `text`.", { items: { min: 1, max: 3 }, of: f("markup", "Bullet.", { max: 60 }), styles: CONSULTING }),
-        text: f("markup", "One short line. Not with `bullets`. Value cards: one sentence of context.", { max: { consulting: 80, pitch: 50 } }),
+        bullets: f("list", "1–3 short bullets: the way to say it. Not with `text`.", { items: { min: 1, max: 3 }, of: f("markup", "Bullet.", { max: 60 }), styles: CONSULTING }),
+        text: f("markup", "One short line, when a single fact needs no bullets. Not with `bullets`. Value cards: one sentence of context.", { max: { consulting: 80, pitch: 50 } }),
         tone: f("enum", "`focus`: the card the title is about. `neg`: only when the user asks for red. `neutral`: the rest, including the losing case in a two-card contrast.", { values: ["neutral", "focus", "neg"], default: "neutral" }),
         facts: f("list", "Framed only, optional: up to 2 labelled facts at the bottom of the card.", { items: { min: 1, max: 2 }, styles: CONSULTING, of: f("object", "Fact.", { fields: {
           label: f("text", "Short label: 'Outcome', 'Proof'.", { required: true, max: 14 }),
@@ -435,9 +437,11 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       } }) }),
       focus: FOCUS,
     },
-    variant: (s) => (s.framed ? "framed" : s.cards?.some((c) => c?.value) ? "value" : s.cards?.some((c) => c?.logo) ? "logo" : "icon"),
+    variant: (s) => (s.framed ? "framed" : s.lead === "number" ? "numbered" : s.lead === "none" ? "plain" : s.cards?.some((c) => c?.value) ? "value" : s.cards?.some((c) => c?.logo) ? "logo" : "icon"),
     rules: [
-      "Not framed: every card has an icon, every card has a value, or every card has a logo. Framed: exactly 2 cards, each with a `label`, no icon, value or logo.",
+      "Not framed: one lead on every card: an icon, a value, a logo, a number (`lead: \"number\"`) or none (`lead: \"none\"`). Framed: exactly 2 cards, each with a `label`, no icon, value or logo.",
+      "Say it in bullets (consulting): 2–3 short ones per card, never a paragraph. Pitch cards use one short line.",
+      "Four cards: in a row (default) or `arrange: \"grid\"`, two over two. A row of 4 allows 48 characters a bullet and 2 bullets; the grid 52, 2 bullets, text 44.",
       "All cards use the same body: all bullets, all text, or (value cards only) none.",
       "Text: icon and logo cards at most 50 characters (30 in a row of 4); value cards at most 80 (pitch 44); framed at most 50.",
       "Bullets: at most 60 characters each and 120 per card; 48 each in framed cards or a row of 4, and at most 2 per card in a row of 4.",
@@ -499,18 +503,6 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: () => "wall",
     rules: ["Code sets the grid and sizes every logo to the same visual weight; never order them by size.", "One group per slide: customers, or investors, not both. Two groups are two slides."],
   },
-  text: {
-    summary: "2–3 headlined paragraphs: an argument in prose.",
-    use: "Reasons that each need a paragraph. Short points: cards.",
-    fields: {
-      paragraphs: f("list", "The reasons, in the order they build the argument.", { required: true, items: { min: 2, max: 3 }, of: f("object", "One paragraph.", { fields: {
-        title: f("markup", "Its claim, as a short headline.", { required: true, max: 40 }),
-        text: f("markup", "The reasoning, in full sentences, with the evidence.", { required: true, max: { consulting: 320, pitch: 160 } }),
-      } }) }),
-    },
-    variant: () => "cols",
-    rules: ["Three paragraphs: text of at most 260 characters each (pitch 140).", "With a takeaway: text of at most 190 characters each (pitch 100)."],
-  },
   agenda: {
     summary: "The deck's chapters, listed by code from its dividers.",
     use: "An agenda; repeated before a chapter, it shows where the deck is.",
@@ -560,7 +552,6 @@ export const PICKING_GUIDE: [string, TemplateId][] = [
   ["the people behind it: founders, the team, advisors", "team"],
   ["who already uses, backs or partners with it, shown as their logos", "logos"],
   ["a picture that makes the point: the product, a place, a diagram", "image"],
-  ["an argument in prose: 2–3 reasons, each needing a paragraph", "text"],
   ["the agenda or contents of a deck with chapters", "agenda"],
 ];
 
@@ -1048,12 +1039,6 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       if (same) out.errors.push("logos: two items share one picture; each company needs its own logo.");
       break;
     }
-    case "text": {
-      const ps = Array.isArray(s.paragraphs) ? s.paragraphs : [], three = ps.length === 3;
-      const cap = s.takeaway ? (style === "pitch" ? 100 : 190) : three ? (style === "pitch" ? 140 : 260) : 0;
-      if (cap) ps.forEach((x, i) => { const n = x?.text ? plain(x.text).length : 0; if (n > cap) out.errors.push(`paragraphs[${i}].text: ${n} characters; ${s.takeaway ? "with a takeaway" : "with three paragraphs"} at most ${cap}. Shorten it.`); });
-      break;
-    }
     case "summary": {
       if (s.takeaway && (s.points || []).length > 3) out.errors.push(`points: ${s.points?.length} points; with a takeaway at most 3. Merge two points or drop the takeaway.`);
       break;
@@ -1077,26 +1062,29 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       } else {
         cards.forEach((c, i) => {
           if (!c) return;
-          const leads = [c.icon, c.value, c.logo].filter(Boolean).length;
-          if (leads !== 1) out.errors.push(`cards[${i}]: give exactly one of "icon", "value" or "logo".`);
+          const leads = [c.icon, c.value, c.logo].filter(Boolean).length, bare = s.lead === "number" || s.lead === "none";
+          if (bare && leads) out.errors.push(`cards[${i}]: lead "${s.lead}" has no icon, value or logo; remove it.`);
+          else if (!bare && leads !== 1) out.errors.push(`cards[${i}]: give exactly one of "icon", "value" or "logo" (or set lead to "number" or "none").`);
           if (c.label) out.errors.push(`cards[${i}].label: only for framed cards; remove it.`);
           if (c.facts) out.errors.push(`cards[${i}].facts: only for framed cards; remove them.`);
-          if ((c.icon || c.logo) && !c.bullets && !c.text) out.errors.push(`cards[${i}]: ${c.logo ? "logo" : "icon"} cards need "bullets" or "text".`);
+          if (!c.value && !c.bullets && !c.text) out.errors.push(`cards[${i}]: ${MENU.cards.variant(s)} cards need "bullets" or "text".`);
         });
         if ([count(cards, "icon"), count(cards, "value"), count(cards, "logo")].filter(Boolean).length > 1) out.errors.push("cards: mix of leads (icons, values, logos); use the same lead on every card.");
         if (cards.filter((c) => c?.tone === "focus").length > 1) out.errors.push("cards: at most one card has tone focus.");
+        if (s.lead === "value" && !cards.every((c) => c?.value)) out.errors.push('cards: lead "value" needs a value on every card.');
       }
+      if (s.arrange === "grid" && (s.framed || cards.length !== 4)) out.errors.push(`arrange: "grid" is for exactly 4 cards that are not framed (got ${s.framed ? "framed cards" : `${cards.length} cards`}).`);
       cards.forEach((c, i) => { if (c?.bullets && c?.text) out.errors.push(`cards[${i}]: give "bullets" or "text", not both.`); });
       if (count(cards, "bullets") && count(cards, "text")) out.errors.push("cards: mix of bullets and text; use the same on every card.");
       // Limits per look: framed cards are wide, value cards set text small, icon cards set it large.
-      const look = MENU.cards.variant(s), four = cards.length === 4;
-      const textMax = ({ framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50, logo: four ? 30 : 50 } as Record<string, number>)[look];
-      const bulletMax = look === "framed" || four ? 48 : 60;
+      const look = MENU.cards.variant(s), four = cards.length === 4 && s.arrange !== "grid";
+      const grid = cards.length === 4 && s.arrange === "grid", textMax = grid ? 44 : ({ framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50, logo: four ? 30 : 50, numbered: four ? 30 : 50, plain: four ? 30 : 50 } as Record<string, number>)[look];
+      const bulletMax = look === "framed" || four ? 48 : grid ? 52 : 60;
       cards.forEach((c, i) => {
         if (!c) return;
         if (c.text && plain(c.text).length > textMax) out.errors.push(`cards[${i}].text: ${plain(c.text).length} characters; ${look} cards${four ? " in a row of 4" : ""} allow ${textMax}. Shorten it.`);
         (c.bullets || []).forEach((b, j) => { if (plain(b).length > bulletMax) out.errors.push(`cards[${i}].bullets[${j}]: ${plain(b).length} characters; at most ${bulletMax} here.`); });
-        if (four && c.bullets && c.bullets.length > 2) out.errors.push(`cards[${i}].bullets: with 4 cards, at most 2 bullets each.`);
+        if (cards.length === 4 && c.bullets && c.bullets.length > 2) out.errors.push(`cards[${i}].bullets: with 4 cards, at most 2 bullets each.`);
         const n = c.bullets ? c.bullets.reduce((sum, b) => sum + plain(b).length, 0) : 0;
         if (look !== "framed" && n > 120) out.errors.push(`cards[${i}].bullets: ${n} characters in total; at most 120. Cut a bullet or shorten them.`);
       });

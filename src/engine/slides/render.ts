@@ -156,6 +156,8 @@ function cardHTML(c: Card, variant: string, i: number) {
     ${c.facts ? `<div class="facts">${c.facts.map((x, k) => `<div${item(`${p}.facts[${k}]`)}><div class="k"${at(`${p}.facts[${k}].label`, "esc")}>${esc(x.label)}</div><div class="v"${at(`${p}.facts[${k}].text`, "md")}>${md(x.text)}</div></div>`).join("")}</div>` : ""}</div>`;
   if (variant === "value") return `<div class="card ${tone}"${item(p)}><div class="shout v"${at(`${p}.value`, "esc")}>${esc(c.value)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
   if (variant === "logo") return `<div class="card ${tone}"${item(p)}><div class="lead">${logoHTML(c.logo, plain(c.title), `${p}.logo`)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
+  if (variant === "numbered") return `<div class="card ${tone}"${item(p)}><div class="num">${pad2(i + 1)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
+  if (variant === "plain") return `<div class="card ${tone}"${item(p)}><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
   return `<div class="card ${tone}"${item(p)}><div class="ic"><i data-lucide="${esc(c.icon)}"></i></div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
 }
 
@@ -198,10 +200,9 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" 
     return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p ?? { name: "", role: "" }, i, photos)).join("")}</div>`; },
   logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
     return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "", `logos[${i}].logo`) || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
-  text: (s) => { const ps = s.paragraphs ?? [];
-    return `<div class="prose n-${ps.length}">${ps.map((p, i) => `<div class="para"${item(`paragraphs[${i}]`)}><span class="n">${pad2(i + 1)}</span><h3${at(`paragraphs[${i}].title`, "md")}>${md(p?.title ?? "")}</h3><p${at(`paragraphs[${i}].text`, "md")}>${md(p?.text ?? "")}</p></div>`).join("")}</div>`; },
-  cards: (s, v) => { const cards = s.cards ?? [];
-    return `<div class="cards ${v} ${v === "framed" ? "grow" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
+  cards: (s, v) => { const cards = s.cards ?? [], grid = v !== "framed" && cards.length === 4 && s.arrange === "grid";
+    // Four cards two over two are laid out as two columns; their rows line up like any other cards'.
+    return `<div class="cards ${v} ${v === "framed" ? "grow" : grid ? "n-2 g-2x2" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
 };
 
 /** Deck context per slide: page number, section number and the default kicker. */
@@ -373,7 +374,10 @@ function growCards(slide: HTMLElement) {
   if (!cards) return;
   const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
-  const area = (tk ? top(tk) - 40 : bottom) - top(cards), natural = cards.getBoundingClientRect().height / k;
+  const room = () => (tk ? top(tk) - 40 : bottom) - top(cards), natural0 = () => cards.getBoundingClientRect().height / k;
+  // Numbers sit above their titles while the slide has room, and beside them when it has not.
+  if (cards.classList.contains("numbered") && natural0() > room() + 1) cards.classList.add("inline");
+  const area = room(), natural = natural0();
   if (natural < area) cards.style.height = `${Math.min(area, natural * 1.5)}px`;
 }
 

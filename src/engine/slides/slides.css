@@ -137,6 +137,39 @@
 .n-4 .card { padding: 0 44px; }
 .n-4 .card:first-child { padding-left: 0; }
 .card .ic { color: var(--focus); }
+/* Number lead: 01, 02, 03 in the icon's place, the same height, so the row below starts at one line. */
+.card .num { height: 52px; display: flex; align-items: center; font: 600 34px/1 var(--mono); letter-spacing: .02em; color: var(--focus); }
+/* A number is a small label, not an icon: the title sits close under it. */
+.cards.numbered .num { height: auto; }
+.cards.numbered .card > h3 { margin-top: 14px; }
+/* Every card's lead, title and body sit on shared rows (the card is a subgrid), so the titles share a line and the text
+   under them starts at one level whatever the titles' lengths. Extra height goes to the body row. */
+.cards:not(.framed) { grid-template-rows: auto auto 1fr; }
+.cards:not(.framed) .card { display: grid; grid-row: span 3; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+.cards:not(.framed) .card > :is(h3, .bullets, p) { align-self: start; }
+/* Numbered and plain pitch cards have little to say and the whole slide to say it on: set larger. */
+.style-pitch .cards:is(.numbered, .plain):not(.n-4, .g-2x2) h3 { font-size: 54px; } .style-pitch .cards:is(.numbered, .plain):not(.n-4, .g-2x2) p { font-size: 38px; }
+.style-pitch .cards.numbered:not(.n-4, .g-2x2) .num { font-size: 44px; }
+.cards.plain, .cards.numbered.inline { grid-template-rows: auto 1fr; }
+/* Short of room, the number shares its line with the title: one row less per card. */
+.cards.numbered.inline .card { grid-row: span 2; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; align-items: baseline; }
+.cards.numbered.inline .num { height: auto; }
+.cards.numbered.inline .card > h3 { margin-top: 0; }
+.cards.numbered.inline .card > :is(.bullets, p) { grid-column: 1 / -1; }
+.cards.numbered.inline.g-2x2 { grid-template-rows: repeat(2, auto 1fr); } .cards.plain .card { grid-row: span 2; }
+.cards.plain .card h3 { margin-top: 0; }
+.cards.g-2x2 { grid-template-rows: repeat(2, auto auto 1fr); row-gap: 28px; }
+.cards.g-2x2.plain { grid-template-rows: repeat(2, auto 1fr); }
+.cards.g-2x2 .card { padding: 0 56px; }
+/* Two over two has half the height per row: the lead, title and bullets are set a size down. */
+.cards.g-2x2 .num { font-size: 28px; } .cards.g-2x2 .ic svg { width: 40px; height: 40px; }
+.cards.g-2x2 h3 { margin-top: 14px; font-size: 40px; } .cards.g-2x2 .bullets { margin-top: 12px; font-size: 26px; gap: 8px; } .cards.g-2x2 p { font-size: 26px; }
+.style-pitch .cards.g-2x2 h3 { font-size: 36px; } .style-pitch .cards.g-2x2 p { font-size: 28px; }
+.cards.g-2x2 .card:nth-child(odd) { padding-left: 0; border-left: 0; }
+.cards.g-2x2 .card:nth-child(even) { padding-left: 56px; }
+/* Two cards read as two halves: wide columns with the room a pair has, no rules between. */
+.cards.n-2:not(.framed):not(.g-2x2) { column-gap: 96px; }
+.cards.n-2:not(.framed):not(.g-2x2) .card { padding: 0; border: 0; }
 .card .ic svg { width: 52px; height: 52px; stroke-width: 1.5; }
 .card h3 { margin-top: 24px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 50px; line-height: 1; }
 .card .bullets { margin-top: 20px; font-size: 28px; }
@@ -495,18 +528,6 @@
 .tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
 .tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
 .tbl tr.total td.has-bar > .cbar { visibility: hidden; }
-
-/* ═════════════ Text: 2–3 headlined paragraphs side by side, the argument in prose ═════════════ */
-.prose { display: grid; grid-template-columns: repeat(var(--n), 1fr); column-gap: 72px; align-content: start; }
-.prose.n-2 { --n: 2; } .prose.n-3 { --n: 3; }
-.para { min-width: 0; padding-top: 28px; border-top: 1px solid var(--line); }
-.para .n { display: block; font: 600 26px/1 var(--mono); color: var(--focus); }
-.para h3 { margin-top: 24px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 60px; line-height: 1.02; text-wrap: balance; }
-.para p { margin-top: 26px; font-size: 34px; line-height: 1.42; color: var(--fg-2); }
-.prose.n-3 .para h3 { font-size: 46px; }
-.prose.n-3 .para p { font-size: 30px; }
-.style-pitch .para h3 { font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 48px; line-height: 1.12; }
-.style-pitch .para p { font-size: 38px; }
 
 /* ═════════════ Agenda: the deck's chapters, from its dividers; the next one highlighted ═════════════ */
 .t-agenda { justify-content: flex-start; }

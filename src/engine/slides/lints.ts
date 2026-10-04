@@ -94,6 +94,9 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
 
   const cards = [...slide.querySelectorAll(".cards > .card")].map((c) => box(c).h);
   if (spread(cards) > 1) out.push(`cards: heights differ by ${Math.round(spread(cards))}px; parallel cards share one size (L6)`);
+  // L7: a card's title reads best on one line; a long one makes the cards uneven and pushes the text down (a warning).
+  const wrapped = [...slide.querySelectorAll(".cards:not(.framed) > .card > h3")].flatMap((h, i) => (box(h).h / (parseFloat(getComputedStyle(h).lineHeight) || 1) > 1.5 ? [i + 1] : []));
+  if (wrapped.length) warnings.push(`cards: the title of card ${wrapped.join(", ")} runs to two lines; shorten it so every title is one line (L7)`);
   const steps = [...slide.querySelectorAll(".steps > .d")].map((d) => box(d).h);
   if (spread(steps) > 1) out.push(`steps: row heights differ by ${Math.round(spread(steps))}px (L6)`);
   out.push(...chartLabelLints(slide), ...colourLints(slide));

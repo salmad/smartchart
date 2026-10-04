@@ -8,7 +8,7 @@ import { switchTemplate } from '@/engine/slides/edit'
 import type { Style, TemplateId } from '@/engine/types'
 import type { SlideEdit } from './useSlideEdit'
 
-const NAME: Record<TemplateId, string> = { chart: 'Chart', pair: MIXED_HALVES ? 'Two halves' : 'Two charts', table: 'Table', number: 'Number', quote: 'Quote', steps: 'Steps', cards: 'Cards', summary: 'Summary', image: 'Picture', team: 'Team', logos: 'Logos', text: 'Text', agenda: 'Agenda', cover: 'Cover', section: 'Chapter divider' }
+const NAME: Record<TemplateId, string> = { chart: 'Chart', pair: MIXED_HALVES ? 'Two halves' : 'Two charts', table: 'Table', number: 'Number', quote: 'Quote', steps: 'Steps', cards: 'Cards', summary: 'Summary', image: 'Picture', team: 'Team', logos: 'Logos', agenda: 'Agenda', cover: 'Cover', section: 'Chapter divider' }
 
 export function EditBar({ edit, deckStyle: style, onDiscard }: { edit: SlideEdit; deckStyle: Style; onDiscard: () => void }) {
   const [pick, setPick] = useState<TemplateId | null>(null)

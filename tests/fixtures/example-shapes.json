@@ -1502,22 +1502,64 @@
  {
   "name": "Text · three paragraphs",
   "consulting": {
-   "template": "text",
-   "variant": "cols",
+   "template": "cards",
+   "variant": "numbered",
    "keys": [
-    "paragraphs",
+    "cards",
+    "lead",
     "template",
     "title"
+   ],
+   "cards": [
+    {
+     "hasValue": false,
+     "hasText": false,
+     "bullets": 2,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": false,
+     "bullets": 2,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": false,
+     "bullets": 2,
+     "facts": 0
+    }
    ]
   },
   "pitch": {
-   "template": "text",
-   "variant": "cols",
+   "template": "cards",
+   "variant": "numbered",
    "keys": [
-    "paragraphs",
+    "cards",
+    "lead",
     "subtitle",
     "template",
     "title"
+   ],
+   "cards": [
+    {
+     "hasValue": false,
+     "hasText": true,
+     "bullets": 0,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": true,
+     "bullets": 0,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": true,
+     "bullets": 0,
+     "facts": 0
+    }
    ]
   }
  },

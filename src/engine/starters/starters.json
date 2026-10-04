@@ -2680,44 +2680,55 @@
   }
  },
  {
-  "id": "text",
+  "id": "cards-numbered",
   "group": "case",
   "label": "Argument",
-  "blurb": "Two or three reasons, each with a paragraph of proof",
+  "blurb": "Two or three reasons in order, each with the proof in two bullets",
   "consulting": {
-   "template": "text",
+   "template": "cards",
+   "lead": "number",
    "title": "SMEs choose Acme because it solves [[three problems]] their bank leaves open",
-   "paragraphs": [
+   "cards": [
     {
-     "title": "A limit that grows with them",
-     "text": "Banks cap SME cards at £25k and review limits once a year. Acme reads live bank data and raises the limit as revenue grows, so a seasonal business is never stuck at its smallest month."
+     "title": "A limit that grows",
+     "bullets": [
+      "Banks cap SME cards at **£25k**, reviewed yearly",
+      "Acme raises the limit live as revenue grows"
+     ]
     },
     {
-     "title": "One place for the money",
-     "text": "Owners juggle a bank account, a card from another provider and a lender. Acme puts the account, the card and a lending line in one app, with one view of cash."
+     "title": "One home for money",
+     "bullets": [
+      "Account, card and lending line in one app",
+      "One view of cash across all three"
+     ]
     },
     {
-     "title": "Rewards that pay for themselves",
-     "text": "Business cards return 0.5% at best. Acme returns 1% on spend with the suppliers SMEs already use, funded by the interchange the card earns."
+     "title": "Rewards that repay",
+     "bullets": [
+      "**1% back** on supplier spend, against 0.5% at best",
+      "Funded by the interchange the card earns"
+     ]
     }
    ]
   },
   "pitch": {
-   "template": "text",
+   "template": "cards",
+   "lead": "number",
    "title": "Why Acme",
    "subtitle": "Three things the bank cannot do.",
-   "paragraphs": [
+   "cards": [
     {
      "title": "Limits that grow",
-     "text": "Live bank data raises the limit as revenue grows, not once a year."
+     "text": "Live bank data raises the limit with revenue."
     },
     {
      "title": "One app",
-     "text": "Account, card and lending line together, with one view of cash."
+     "text": "Account, card and lending line together."
     },
     {
      "title": "1% back",
-     "text": "Rewards on everyday supplier spend, paid for by interchange."
+     "text": "Rewards on everyday supplier spend."
     }
    ]
   }

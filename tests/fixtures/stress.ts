@@ -126,8 +126,12 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
     { template: "cards", name: "Stress · cards framed", ...frame("cards"), framed: true, cards: TIMES(2).map((_, i) => ({ tone: i ? "focus" : "neg", label: W(30), title: W(14),
       ...(c ? { bullets: TIMES(3).map(() => W(48)), facts: TIMES(2).map(() => ({ label: W(14), text: W(38) })) } : { text: W(50) }) })) },
     ...pictures(st, frame, notes),
-    { template: "text", name: "Stress · text ×2", ...frame("text"), takeaway: undefined, paragraphs: TIMES(2).map(() => ({ title: W(40), text: W(c ? 320 : 160) })) },
-    { template: "text", name: "Stress · text ×3 + takeaway", ...frame("text"), paragraphs: TIMES(3).map(() => ({ title: W(40), text: W(c ? 190 : 100) })) },
+    // Numbered and plain cards at their limits; a long title wraps to two lines in one card while the others stay short,
+    // which is where the shared rows are tested; the grid is four cards two over two; two cards read as two halves.
+    { template: "cards", name: "Stress · cards numbered ×3", ...frame("cards"), lead: "number", cards: TIMES(3).map((_, i) => c ? { title: W(i === 1 ? 24 : 10), bullets: TIMES(3).map(() => W(40)) } : { title: W(i === 1 ? 22 : 10), text: W(50) }) },
+    { template: "cards", name: "Stress · cards plain ×3", ...frame("cards"), lead: "none", cards: TIMES(3).map((_, i) => c ? { title: W(i === 1 ? 24 : 10), bullets: TIMES(3).map(() => W(40)) } : { title: W(i === 1 ? 22 : 10), text: W(50) }) },
+    { template: "cards", name: "Stress · cards grid 2×2", ...frame("cards"), lead: "number", arrange: "grid", cards: TIMES(4).map((_, i) => c ? { title: W(i === 1 ? 24 : 12), bullets: TIMES(2).map(() => W(52)) } : { title: W(i === 1 ? 22 : 12), text: W(44) }) },
+    { template: "cards", name: "Stress · cards icon ×2", ...frame("cards"), cards: TIMES(2).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(40)) } : { icon: "zap", title: W(22), text: W(50) }) },
     { template: "table", name: "Stress · table with bars", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: {
       columns: [{ label: W(20) }, { label: W(12), bars: true, focus: true }, { label: W(12) }, { label: W(12), bars: true }],
       rows: [...TIMES(c ? 6 : 5).map((_, i) => ({ cells: [W(20), `£${[1240, 860, 2310, 415, 1980, 95][i]}k`, "✓", `${[31, 12, 48, 7, 22, 3][i]}%`], ...(i === 2 ? { focus: true } : {}) })),
