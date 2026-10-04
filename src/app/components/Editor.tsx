@@ -92,7 +92,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
         {decks}
         {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}
-        <aside aria-label="Chat" className={cn('flex w-[400px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
+        <aside aria-label="Chat" data-tour="chat" className={cn('flex w-[400px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
           <Chat messages={s.messages} offline={booted && !s.live} onUndo={onUndo} busy={lock} />
           <Composer chips={chips} canSend={s.live && !lock} busy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
@@ -120,7 +120,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
               {/* Under the slide and as wide as it: how its checks stand, then the deck as a filmstrip. */}
               <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W}`}>
                 <div className="flex h-7 items-center justify-between gap-4 max-[900px]:order-4 max-[900px]:px-4">
-                  <Checks item={items[current]} />
+                  <div data-tour="checks"><Checks item={items[current]} /></div>
                   {items[current] && <Comments key={items[current].id} slideId={items[current].id} n={current + 1} comments={s.comments} busy={lock} canAsk={s.live}
                     onAdd={(t) => comments.add(items[current].id, t)} onResolve={comments.resolve} onDelete={comments.remove} onAsk={() => comments.ask(items[current].id)} />}
                 </div>

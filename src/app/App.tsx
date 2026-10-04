@@ -16,6 +16,9 @@ import { saveEdit } from './edit/save'
 import { deckName, newDeckId, type DeckRepo, type Item, type SaveMeta, type SavedDeck } from './store'
 import { useVersions } from './useVersions'
 import { authorOf, useComments } from './useComments'
+import { useTour } from './useTour'
+import { usePresence } from './usePresence'
+import { Tour, TourNudge } from './components/Tour'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, takePendingPrompt, type Route } from './route'
@@ -63,6 +66,8 @@ export function App({ route, account, repo, backup }: Props) {
     return (measurerRef.current ??= createMeasurer(frame.current))
   }, [])
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
+  const tour = useTour(app, useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer]))
+  const offerTour = tour.offer
 
   // The deck as last saved (or opened): a save happens only when this changes, so opening a deck or selecting a
   // slide does not stamp it as edited and move it up the list.
@@ -159,22 +164,7 @@ export function App({ route, account, repo, backup }: Props) {
     return () => clearTimeout(t)
   }, [s, loaded, app, persist])
 
-  // Who is working on the deck, for a writer elsewhere to see: a turn running, or a slide open for hand editing.
-  // Entries expire on the server, so both are renewed while they last and cleared when they end.
-  const sent = useRef<{ id: string; active: boolean } | null>(null)
-  useEffect(() => {
-    const id = s.deckId
-    if (!id || !repo.presence) return
-    if (sent.current && sent.current.id !== id && sent.current.active) void repo.presence(sent.current.id, {})
-    const active = s.busy || s.editing !== null
-    if (!active && !(sent.current?.id === id && sent.current.active)) { sent.current = { id, active }; return }
-    const send = () => void repo.presence?.(id, { ...(s.busy ? { busy: true } : {}), ...(s.editing ? { editing: s.editing } : {}) })
-    sent.current = { id, active }
-    send()
-    if (!active) return
-    const t = window.setInterval(send, 30_000)
-    return () => window.clearInterval(t)
-  }, [s.deckId, s.busy, s.editing, repo])
+  usePresence(repo, s.deckId, s.busy, s.editing)
 
   // Another deck picked in the sidebar (or Back/Forward): open it, or start a new one at /new. Boot handles the
   // route the page opened on; a pick made while it runs is acted on as soon as boot is done, never dropped.
@@ -213,9 +203,10 @@ export function App({ route, account, repo, backup }: Props) {
     const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }, files)
     // The save after the turn is the agent's: its version carries the turn and the request in the user's words.
     if (r.turn) author.current = { by: 'agent', turn: r.turn, label: text.trim().slice(0, 300) || 'Files' }
+    if (r.written?.length) offerTour()
     turns.current.push(r)
     return r
-  }, [app, measurer])
+  }, [app, measurer, offerTour])
   const setStyle = useCallback((style: Style) => app.dispatch({ type: 'set', patch: { style } }), [app])
   const load = useCallback((slides: Slide[], style: Style) => {
     turns.current = []
@@ -234,6 +225,7 @@ export function App({ route, account, repo, backup }: Props) {
     onAdd: () => { if (!locked(app.getState()) && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks, chatOpen, onToggleChat: toggleChat,
     onSite: () => leaveTo('/home'),
+    onTour: tour.start,
     // A share link lives on the server copy: the dev account keeps its decks in this browser.
     shareId: backup ? s.deckId : null,
     onPdf: () => { if (app.getState().items.length) setPrinting(true) },
@@ -286,6 +278,8 @@ export function App({ route, account, repo, backup }: Props) {
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
+      {tour.touring && !presenting && <Tour onClose={tour.stop} />}
+      {tour.nudge && !tour.touring && !presenting && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />

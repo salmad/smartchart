@@ -21,7 +21,7 @@ export function DeckMenu({ name, busy, onRename, onLook, onVersions, onDelete }:
   return (
     <>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger aria-label="Deck menu" title="Deck menu"
+        <DropdownMenuTrigger data-tour="deck" aria-label="Deck menu" title="Deck menu"
           className="grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 outline-none transition-colors hover:bg-panel hover:text-ink focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel data-[state=open]:text-ink">
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>

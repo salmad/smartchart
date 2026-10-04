@@ -13,6 +13,7 @@ Google Docs/Slides (operation log + snapshots), Confluence (a full version per s
 - Later: conflict checks per path; stable ids for table rows and chart series (LLM patches fail on array indexes); history retention as a pricing tier; agent edits as suggestions or branches (Ink & Switch Patchwork, Tiptap). Avoid: CRDTs and OT until there is live co-editing.
 
 ## 2. First-run tour, ending at Connect an agent
+**Built (2026-10-04):** our own spotlight component (no driver.js), 8 steps including Comments and Versions, from "Take the tour" in the account menu or a one-time nudge after the first slide is made. Spec: `docs/superpowers/specs/2026-10-04-tour-design.md`.
 MCP is currently the most useful feature, and the tour exists to lead people there.
 - **For:** everyone, with MCP as the finale. Because of that, it explains in plain words what an agent is.
 - **Form:** a classic step-by-step tour (Next / Done).

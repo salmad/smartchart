@@ -27,7 +27,7 @@ export function Comments({ slideId, n, comments, busy, canAsk, onAdd, onResolve,
 
   return (
     <Popover>
-      <PopoverTrigger aria-label={open.length ? `${open.length} open comment${open.length === 1 ? '' : 's'}` : 'Comments'} title="Comments"
+      <PopoverTrigger data-tour="comments" aria-label={open.length ? `${open.length} open comment${open.length === 1 ? '' : 's'}` : 'Comments'} title="Comments"
         className="-mx-2 flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[12.5px] text-ink-2 outline-none transition-colors hover:bg-panel hover:text-ink focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel data-[state=open]:text-ink">
         <MessageSquare aria-hidden className="size-4" strokeWidth={1.75} />
         {open.length ? <span className="tabular-nums">{open.length}</span> : <span className="max-[1100px]:sr-only">Comment</span>}

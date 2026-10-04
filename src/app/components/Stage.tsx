@@ -11,9 +11,9 @@ import { Glint, Stars, Thinking } from './Working'
 export const SLIDE_W = 'w-[min(100%,calc((100vh_-_56px_-_44px_-_140px)*16/9))]'
 
 /** The framed slide box: the largest 16:9 that fits, with its ring and shadow. Edit mode uses it too. */
-export function SlideFrame({ children, onClick, title, className }: { children: ReactNode; onClick?: (e: React.MouseEvent) => void; title?: string; className?: string }) {
+export function SlideFrame({ children, onClick, title, className, tour }: { children: ReactNode; onClick?: (e: React.MouseEvent) => void; title?: string; className?: string; tour?: string }) {
   return (
-    <div onClick={onClick} title={title}
+    <div onClick={onClick} title={title} data-tour={tour}
       className={cn('group relative aspect-video overflow-hidden', SLIDE_W, 'rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] max-[900px]:w-full max-[900px]:rounded-lg', className)}>
       {children}
     </div>
@@ -42,7 +42,7 @@ export function Stage({ deck, current, onPresent, onEdit, slideId, phase }: Prop
   return (
     <div className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4 max-[900px]:pb-3 max-[900px]:pt-4">
       {/* The second click of a double click (e.g. on a gallery tile that just became this slide) does not present. */}
-      <SlideFrame onClick={(e) => { if (slide && e.detail < 2) onPresent() }} title={slide ? 'Present (F)' : undefined} className={slide ? 'cursor-zoom-in' : undefined}>
+      <SlideFrame tour="stage" onClick={(e) => { if (slide && e.detail < 2) onPresent() }} title={slide ? 'Present (F)' : undefined} className={slide ? 'cursor-zoom-in' : undefined}>
         {slide
           ? <SlideView key={slideId} slide={slide} deck={deck} ctx={contexts(deck)[current]} className={cn('absolute inset-0', fresh && 'motion-safe:animate-reveal')} />
           : phase !== null ? <Skeleton /> : (
