@@ -11,7 +11,7 @@ interface Props { starter: Starter; deckStyle: Style; theme: Theme; accent: stri
 /** A starter in the filmstrip: a live slide in the deck's look, with its label; the whole tile is the button. */
 export function Tile({ starter, deckStyle: style, theme, accent, onPick, onConfirm, selected = false }: Props) {
   const slide = starterSlide(starter, style)
-  const ctx = contexts({ footer: 'Acme', slides: [slide] })[0]
+  const ctx = contexts({ footer: 'Occam', slides: [slide] })[0]
   // A section starter is numbered as the deck's first section, so its thumbnail reads like the real thing.
   return (
     <button type="button" data-starter={starter.id} aria-label={starter.label} aria-pressed={selected} onClick={() => onPick(starter)} onDoubleClick={onConfirm && (() => onConfirm(starter))}

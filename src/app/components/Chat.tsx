@@ -32,7 +32,7 @@ export function Chat({ messages, offline, onUndo, busy, onReview }: Props) {
       {!messages.length && (
         <div className="grid gap-1.5">
           <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>
-          <p className="text-ink-2">Paste your numbers or notes, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>
+          <p className="text-ink-2">Paste your numbers or notes or a link, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>
           {onReview && <button type="button" onClick={onReview} className="mt-1 w-fit cursor-pointer text-left text-[13px] text-ink-2 underline decoration-line-2 underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-3">Have a deck already? Get a red-pen review</button>}
         </div>
       )}

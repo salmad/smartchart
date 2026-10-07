@@ -28,6 +28,12 @@ export function fitIssuesAt(slide: HTMLElement, style: Style): Located[] {
   });
   slide.querySelectorAll(".notes, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
     if (last && box(last).b > box(el).b - pb + 1) push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`, el); });
+  // A pair stretches to the body's height, so a half's overflow does not move anything after it: measure each half's
+  // content against the half itself.
+  slide.querySelectorAll(".pair > .half").forEach((el) => {
+    const over = Math.max(...[...el.children].map((c) => box(c).b)) - box(el).b;
+    if (over > 1) push(`half runs ${Math.round(over)}px past the bottom of its half; shorten it or drop the takeaway`, el);
+  });
   const title = slide.querySelector("h2.title, h1.title");
   // Section titles hold one line so the section number sits still across dividers.
   const maxTitle = slide.matches(".t-section") || (style === "pitch" && !slide.matches(".t-cover")) ? 1 : 2;
@@ -88,6 +94,9 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
 
   const cards = [...slide.querySelectorAll(".cards > .card")].map((c) => box(c).h);
   if (spread(cards) > 1) out.push(`cards: heights differ by ${Math.round(spread(cards))}px; parallel cards share one size (L6)`);
+  // L7: a card's title reads best on one line; a long one makes the cards uneven and pushes the text down (a warning).
+  const wrapped = [...slide.querySelectorAll(".cards:not(.framed) > .card > h3")].flatMap((h, i) => (box(h).h / (parseFloat(getComputedStyle(h).lineHeight) || 1) > 1.5 ? [i + 1] : []));
+  if (wrapped.length) warnings.push(`cards: the title of card ${wrapped.join(", ")} runs to two lines; shorten it so every title is one line (L7)`);
   const steps = [...slide.querySelectorAll(".steps > .d")].map((d) => box(d).h);
   if (spread(steps) > 1) out.push(`steps: row heights differ by ${Math.round(spread(steps))}px (L6)`);
   out.push(...chartLabelLints(slide), ...colourLints(slide));

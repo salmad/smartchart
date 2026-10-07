@@ -3,11 +3,13 @@
 import { useSyncExternalStore } from 'react'
 import type { Style } from '@/engine/types'
 
-export type Route = { name: 'home' } | { name: 'site' } | { name: 'new' } | { name: 'deck'; id: string } | { name: 'shared'; token: string }
+export type Route = { name: 'home' } | { name: 'site' } | { name: 'new' } | { name: 'deck'; id: string } | { name: 'shared'; token: string } | { name: 'present' } | { name: 'presenter' }
 
 export function parseRoute(path: string): Route {
   if (path === '/new') return { name: 'new' }
   if (path === '/home') return { name: 'site' }
+  if (path === '/present') return { name: 'present' }
+  if (path === '/presenter') return { name: 'presenter' }
   const shared = /^\/s\/([\w-]+)$/.exec(path)
   if (shared) return { name: 'shared', token: shared[1] }
   const m = /^\/d\/([\w-]+)$/.exec(path)

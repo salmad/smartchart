@@ -41,9 +41,11 @@
   font: 400 17px/1.4 var(--mono); color: var(--muted);
 }
 .rail .fn { flex: 1; min-width: 0; }
-/* A linked source reads as text with a quiet underline; it shows it can be opened, nothing more. */
-.rail a { color: inherit; text-decoration: underline 1px var(--line-2); text-underline-offset: .22em; }
-.rail a:hover { text-decoration-color: currentColor; }
+/* A link in a footnote or source reads as the line does, underlined; it is live only where the slide is shown whole. */
+.slide a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 2px; pointer-events: none; }
+[data-links] .slide a { pointer-events: auto; }
+.slide a .ext { width: .85em; height: .85em; margin-left: .3em; vertical-align: -.08em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[data-links] .slide a:hover { text-decoration-color: currentColor; }
 .rail .pg { margin-left: auto; white-space: nowrap; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
 .rail .pg b { margin-left: 28px; font-weight: 500; color: var(--fg); }
 /* The kicker sits in the top margin, mirroring the rail in the bottom one, so every title starts at the margin with or
@@ -135,6 +137,39 @@
 .n-4 .card { padding: 0 44px; }
 .n-4 .card:first-child { padding-left: 0; }
 .card .ic { color: var(--focus); }
+/* Number lead: 01, 02, 03 in the icon's place, the same height, so the row below starts at one line. */
+.card .num { height: 52px; display: flex; align-items: center; font: 600 34px/1 var(--mono); letter-spacing: .02em; color: var(--focus); }
+/* A number is a small label, not an icon: the title sits close under it. */
+.cards.numbered .num { height: auto; }
+.cards.numbered .card > h3 { margin-top: 14px; }
+/* Every card's lead, title and body sit on shared rows (the card is a subgrid), so the titles share a line and the text
+   under them starts at one level whatever the titles' lengths. Extra height goes to the body row. */
+.cards:not(.framed) { grid-template-rows: auto auto 1fr; }
+.cards:not(.framed) .card { display: grid; grid-row: span 3; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+.cards:not(.framed) .card > :is(h3, .bullets, p) { align-self: start; }
+/* Numbered and plain pitch cards have little to say and the whole slide to say it on: set larger. */
+.style-pitch .cards:is(.numbered, .plain):not(.n-4, .g-2x2) h3 { font-size: 54px; } .style-pitch .cards:is(.numbered, .plain):not(.n-4, .g-2x2) p { font-size: 38px; }
+.style-pitch .cards.numbered:not(.n-4, .g-2x2) .num { font-size: 44px; }
+.cards.plain, .cards.numbered.inline { grid-template-rows: auto 1fr; }
+/* Short of room, the number shares its line with the title: one row less per card. */
+.cards.numbered.inline .card { grid-row: span 2; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; align-items: baseline; }
+.cards.numbered.inline .num { height: auto; }
+.cards.numbered.inline .card > h3 { margin-top: 0; }
+.cards.numbered.inline .card > :is(.bullets, p) { grid-column: 1 / -1; }
+.cards.numbered.inline.g-2x2 { grid-template-rows: repeat(2, auto 1fr); } .cards.plain .card { grid-row: span 2; }
+.cards.plain .card h3 { margin-top: 0; }
+.cards.g-2x2 { grid-template-rows: repeat(2, auto auto 1fr); row-gap: 28px; }
+.cards.g-2x2.plain { grid-template-rows: repeat(2, auto 1fr); }
+.cards.g-2x2 .card { padding: 0 56px; }
+/* Two over two has half the height per row: the lead, title and bullets are set a size down. */
+.cards.g-2x2 .num { font-size: 28px; } .cards.g-2x2 .ic svg { width: 40px; height: 40px; }
+.cards.g-2x2 h3 { margin-top: 14px; font-size: 40px; } .cards.g-2x2 .bullets { margin-top: 12px; font-size: 26px; gap: 8px; } .cards.g-2x2 p { font-size: 26px; }
+.style-pitch .cards.g-2x2 h3 { font-size: 36px; } .style-pitch .cards.g-2x2 p { font-size: 28px; }
+.cards.g-2x2 .card:nth-child(odd) { padding-left: 0; border-left: 0; }
+.cards.g-2x2 .card:nth-child(even) { padding-left: 56px; }
+/* Two cards read as two halves: wide columns with the room a pair has, no rules between. */
+.cards.n-2:not(.framed):not(.g-2x2) { column-gap: 96px; }
+.cards.n-2:not(.framed):not(.g-2x2) .card { padding: 0; border: 0; }
 .card .ic svg { width: 52px; height: 52px; stroke-width: 1.5; }
 .card h3 { margin-top: 24px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 50px; line-height: 1; }
 .card .bullets { margin-top: 20px; font-size: 28px; }
@@ -285,9 +320,19 @@
 /* A number half: the value at half size, its sentence under it, both from the top like a chart. */
 .half-num { display: flex; flex-direction: column; gap: 28px; }
 .half-num .big-v { font-size: 300px; }
-.style-consulting .half-num .big-v { font-size: 200px; }
+.style-consulting .half-num .big-v { font-size: 250px; }
 .half-num p { font-size: 34px; line-height: 1.3; color: var(--fg-2); max-width: 24ch; }
 .style-pitch .half-num p { font-size: 40px; }
+/* Mixed halves share a floor (render.ts alignHalves): a number sits on it, points are equal bands down to it. */
+.cap.ghost { color: transparent; }
+.cap.ghost + .half-num, .cap.ghost + .bullets.points { margin-top: 28px; }
+.pair > .half > .half-num { justify-content: flex-end; }
+.pair > .half > .bullets.points { display: flex; flex-direction: column; gap: 0; }
+.pair > .half > .bullets.points li { flex: 1 1 0; padding: 20px 0 20px 40px; border-bottom: 1px solid var(--line); }
+.pair > .half > .bullets.points li:first-child { padding-top: 0; }
+.pair > .half > .bullets.points li::before { top: 20px; }
+.pair > .half > .bullets.points li:first-child::before { top: 0; }
+.cap + .bullets.points, .cap + .half-num { margin-top: 28px; }
 /* Points: the half's own list, larger than the bullets under a chart. */
 .pair .bullets.points { margin-top: 0; font-size: 32px; line-height: 1.35; gap: 22px; }
 .style-pitch .pair .bullets.points { font-size: 36px; }
@@ -392,3 +437,120 @@
 .mx-lbl.focus { font-size: calc(var(--lbl) + 4px); font-weight: 700; color: var(--fg); }
 .area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
 .theme-paper .area-top { stop-opacity: .16; }
+
+/* ═════════════ Pictures: a picture, the team, a wall of logos, logos by names ═════════════ */
+/* A logo is its shape in one colour: the picture is a mask over the text colour, so every logo reads on both themes.
+   Optical size from its aspect (--a): every logo covers the area of a square --b wide, then fits --mw × --mh. */
+.brand {
+  --b: 1.5em; --mw: 9em; --mh: 1.3em;
+  --h: min(calc(var(--b) / sqrt(var(--a))), var(--mh), calc(var(--mw) / var(--a)));
+  display: inline-block; flex: none; height: var(--h); width: calc(var(--h) * var(--a)); vertical-align: middle;
+  background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat;
+}
+/* By a name in a table: a symbol sits before the name; a wordmark stands in for it. */
+.tbl td.has-lg { white-space: nowrap; }
+.tbl td.has-lg > .brand { margin-right: .45em; vertical-align: -.28em; }
+.tbl td.has-lg > .brand.word { --b: 2.2em; --mh: 1.4em; --mw: 6.2em; margin-right: 0; vertical-align: -.2em; }
+.tbl tr:has(td.has-lg) td { padding-top: 12px; padding-bottom: 12px; }
+.tbl th.has-lg { color: var(--muted); }
+.tbl th.has-lg > .brand { --b: 46px; --mh: 40px; --mw: 180px; display: block; margin-bottom: 12px; color: var(--fg-2); }
+.tbl th.has-lg > .brand.word { --b: 84px; --mh: 44px; --mw: 190px; margin-bottom: 0; }
+.tbl th.al-num.has-lg > .brand { margin-left: auto; } .tbl th.al-sym.has-lg > .brand { margin-inline: auto; }
+.tbl th.focus.has-lg > .brand { color: var(--focus); }
+.tbl tr.focus td.has-lg > .brand, .tbl tr.muted td.has-lg > .brand { color: inherit; }
+/* A card led by a logo: on the icon's line, the same height band. */
+.card .lead { height: 64px; display: flex; align-items: center; }
+.card .lead .brand { --b: 64px; --mh: 60px; --mw: 280px; }
+.card .lead .brand.word { --b: 112px; --mh: 52px; }
+.card.focus .lead .brand { color: var(--focus); }
+
+/* One picture. A screenshot is fitted whole on a quiet panel (render.ts sizes it); a photo fills its frame. */
+/* The picture is out of flow: the frame's size comes from the layout alone, never from the file's pixels. */
+.pic { position: relative; min-height: 0; }
+.split .pic { flex: 1; }
+.pic img { position: absolute; top: 0; display: block; border-radius: 16px; }
+.pic.k-screenshot img { left: 50%; transform: translateX(-50%); max-width: 100%; max-height: 100%; background: var(--surface); outline: 1px solid var(--line); outline-offset: -1px; object-fit: contain; }
+.split .pic.k-screenshot img { left: 0; transform: none; }
+.pic.k-photo img { inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; }
+.cap + .pic { margin-top: 32px; }
+
+/* The team: up to 4 in a row, photo above; 5–6 as two rows of 3, photo beside. Photos square and greyscale, so five
+   sources read as one set; no photo, the initials. */
+.team { display: grid; column-gap: 56px; }
+.team.row { grid-template-columns: repeat(var(--n), 1fr); } .team.n-2 { --n: 2; } .team.n-3 { --n: 3; } .team.n-4 { --n: 4; }
+.team.rows { grid-template-columns: repeat(3, 1fr); row-gap: 56px; }
+.person { min-width: 0; }
+.team .ph { position: relative; width: min(100%, var(--pw)); aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--surface); }
+.team { --pw: 330px; } .style-pitch .team { --pw: 280px; } .style-pitch .team.n-2 { --pw: 340px; }
+.team .ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.06); border-radius: 0; }
+.theme-ink .team .ph img { filter: grayscale(1) contrast(1.06) brightness(.94); }
+.team .ini { display: grid; place-items: center; outline: 1px solid var(--line); outline-offset: -1px;
+  font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 96px; letter-spacing: .02em; color: var(--muted); }
+.team .who { margin-top: 28px; }
+.team h3 { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1; }
+.team .role { margin-top: 12px; font: 500 20px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--focus); }
+.team .bio { margin-top: 12px; font-size: 27px; line-height: 1.35; color: var(--fg-2); max-width: 30ch; }
+.team.no-ph .who { margin-top: 0; padding-top: 28px; border-top: 1px solid var(--line); }
+.team.rows .person { display: grid; grid-template-columns: 168px 1fr; column-gap: 32px; align-items: start; }
+.team.rows .ph { width: 168px; }
+.team.rows .ini { font-size: 60px; }
+.team.rows .who { margin-top: 4px; }
+.team.rows h3 { font-size: 40px; }
+.team.rows .role { margin-top: 12px; font-size: 18px; }
+.team.rows .bio { margin-top: 12px; font-size: 24px; }
+.team.rows.no-ph .person { display: block; }
+.style-pitch .team h3 { font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 42px; line-height: 1.1; }
+.style-pitch .team.rows h3 { font-size: 36px; }
+.style-pitch .team .bio { font-size: 30px; }
+.style-pitch .team.rows .bio { font-size: 26px; }
+
+/* The wall: equal cells on one grid, hairlines between them (consulting) or space alone (pitch); every logo the same
+   visual weight, centred in its cell. */
+/* Rows grow towards the bottom of the body, up to a third more, like a table's (L5). */
+.wall { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--c), 1fr); grid-auto-rows: minmax(var(--rh), calc(var(--rh) * 1.33)); align-content: start; }
+.wall.c-3 { --c: 3; } .wall.c-4 { --c: 4; } .wall.c-5 { --c: 5; } .wall.c-6 { --c: 6; }
+.wall { --rh: 220px; } .wall.r-1 { --rh: 300px; } .wall.r-3 { --rh: 200px; }
+.wall .cell { display: grid; place-items: center; min-width: 0; padding: 24px; color: var(--fg); container-type: inline-size; }
+.wall .brand { --b: 132px; --mw: 78cqw; --mh: 124px; font-size: 26px; }
+.wall.c-5 .brand, .wall.c-6 .brand { --b: 108px; --mh: 100px; }
+.wall .brand.word { --b: 156px; }
+.wall.c-5 .brand.word, .wall.c-6 .brand.word { --b: 128px; }
+.style-consulting .wall .cell { border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+.style-consulting .wall .cell.fl { border-left: 0; } .style-consulting .wall .cell.ft { border-top: 0; }
+.cap + .wall { margin-top: 28px; }
+.lg-name { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 44px; color: var(--muted); }
+
+/* ═════════════ Bars in table cells: a figure's size beside it, measured from one edge per column ═════════════ */
+.tbl td.has-bar { white-space: nowrap; }
+.tbl td.has-bar > .cbar { display: inline-block; width: calc(100% - var(--vc) * 1ch - 20px); height: .36em; margin-right: 20px; vertical-align: .2em; }
+.tbl td.has-bar > .cbar > i { display: block; height: 100%; min-width: 2px; border-radius: 2px; background: var(--neutral); }
+.tbl td.has-bar > .cbar + span { display: inline-block; min-width: calc(var(--vc) * 1ch); text-align: right; }
+.tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
+.tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
+.tbl tr.total td.has-bar > .cbar { visibility: hidden; }
+
+/* ═════════════ Agenda: the deck's chapters, from its dividers; the next one highlighted ═════════════ */
+.t-agenda { justify-content: flex-start; }
+.style-consulting.t-agenda .title { font-size: 120px; line-height: .95; }
+.style-pitch.t-agenda .title { font-size: 150px; }
+.agenda { list-style: none; margin-top: 64px; display: grid; }
+.agenda li { display: grid; grid-template-columns: 120px minmax(0, 760px) 1fr; column-gap: 40px; align-items: center; min-height: 112px; padding: 20px 0; border-top: 1px solid var(--line); }
+.agenda li:last-child { border-bottom: 1px solid var(--line); }
+.agenda .n { font: 600 34px/1 var(--mono); color: var(--muted); }
+.agenda .t { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 56px; line-height: 1; }
+.agenda .s { font-size: 27px; line-height: 1.3; color: var(--fg-2); }
+.agenda li.next .n, .agenda li.next .t { color: var(--focus); }
+.agenda li.done :is(.t, .s) { color: var(--muted); }
+/* Six chapters or more: a tighter list. */
+.agenda.many { margin-top: 40px; }
+.agenda.many li { min-height: 0; padding: 14px 0; }
+.agenda.many .t { font-size: 44px; }
+.agenda.many .s { font-size: 24px; }
+.style-pitch .agenda li { grid-template-columns: 120px minmax(0, 860px) 1fr; }
+.style-pitch .agenda .t { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 64px; line-height: .9; }
+.style-pitch .agenda.many .t { font-size: 50px; }
+.agenda-empty { margin-top: 64px; max-width: 900px; font-size: 34px; line-height: 1.35; color: var(--muted); padding-top: 28px; border-top: 1px solid var(--line); }
+/* Pitch with a takeaway: the halves give up a little size for the line under them. */
+.style-pitch.t-pair:has(.takeaway) .half-num .big-v { font-size: 240px; }
+.style-pitch.t-pair:has(.takeaway) .pair .bullets.points { font-size: 34px; }
+.style-pitch.t-pair:has(.takeaway) .half-num p { font-size: 36px; }

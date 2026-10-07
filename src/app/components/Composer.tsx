@@ -4,6 +4,7 @@ import type { Pill } from '@/engine/agent/suggest'
 import type { Style } from '@/engine/types'
 import { EXAMPLES } from '@/app/examples'
 import { ACCEPT, readFile, type Attached } from '@/app/files'
+import { LINK, linkName, readLink } from '@/app/links'
 import { cn } from '@/app/lib/utils'
 import { FileChip } from './FileChip'
 import { Button } from '@/app/components/ui/button'
@@ -41,15 +42,17 @@ export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }:
     setText('')
     if (withFiles) setFiles([])
   }
-  const add = (list: FileList | null) => {
-    for (const f of Array.from(list ?? [])) {
-      const id = nextId.current++
-      setFiles((fs) => [...fs, { id, name: f.name, state: 'reading' }])
-      readFile(f).then(
-        (file) => setFiles((fs) => fs.map((x) => (x.id === id ? { id, name: f.name, state: 'ready', file } : x))),
-        (e: unknown) => setFiles((fs) => fs.map((x) => (x.id === id ? { id, name: f.name, state: 'failed', why: e instanceof Error ? e.message : String(e) } : x))))
-    }
+  /** One attachment being read: a file, or a link the server fetches. */
+  const attach = (name: string, read: () => Promise<Attached>) => {
+    const id = nextId.current++
+    setFiles((fs) => [...fs, { id, name, state: 'reading' }])
+    read().then(
+      (file) => setFiles((fs) => fs.map((x) => (x.id === id ? { id, name: file.name, state: 'ready', file } : x))),
+      (e: unknown) => setFiles((fs) => fs.map((x) => (x.id === id ? { id, name, state: 'failed', why: e instanceof Error ? e.message : String(e) } : x))))
   }
+  const add = (list: FileList | File[] | null) => { for (const f of Array.from(list ?? [])) attach(f.name, () => readFile(f)) }
+  // A pasted screenshot arrives as "image.png": name it so the chips and the agent can tell pictures apart.
+  const named = (pics: File[]) => pics.map((f, i) => new File([f], /^image\.\w+$/.test(f.name) ? `Pasted picture ${nextId.current + i + 1}.${f.type.split('/')[1] ?? 'png'}` : f.name, { type: f.type }))
   // A file dropped anywhere on the editor joins the message; the browser never opens it in place of the deck.
   const addRef = useRef(add)
   addRef.current = add
@@ -100,7 +103,14 @@ export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }:
         </ul>
       )}
       <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} disabled={!canSend}
-        placeholder={hint ?? (files.length ? 'Say what the room should take away…' : start ? 'Paste your numbers, or drop a doc or sheet, and say what the slide should argue…' : 'Describe a slide, or ask for a change…')}
+        onPaste={(e) => {
+          const pics = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/'))
+          if (pics.length) { e.preventDefault(); add(named(pics)); return }
+          // A link pasted on its own is read and attached, like a dropped file; a link inside a sentence stays text.
+          const link = e.clipboardData.getData('text/plain').trim()
+          if (LINK.test(link)) { e.preventDefault(); attach(linkName(link), () => readLink(link)) }
+        }}
+        placeholder={hint ?? (files.length ? 'Say what the room should take away…' : start ? 'Paste your numbers or a link, or drop a doc or sheet, and say what the slide should argue…' : 'Describe a slide, or ask for a change…')}
         className="min-h-0 resize-none rounded-[10px] border-line-2 bg-app-bg px-3 py-2.5 text-sm leading-[1.45] shadow-none focus-visible:border-ink-3 focus-visible:ring-0 disabled:opacity-50" />
       <div className="flex items-center gap-2">
         {start

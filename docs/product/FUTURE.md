@@ -36,21 +36,28 @@ Pairs well with #1: a resolved comment can link to the revision that fixed it.
 Comments are input written by people, so agents treat them as requests to weigh, not commands. A shared viewer's comment never acts with the owner's authority.
 
 ## 4. Slide gaps found while designing richer tables (2026-10-03)
-- **Images:** see #6.
-- **Agenda slide:** built by code from the section titles.
-- **Text slide:** 2–3 headlined paragraphs (the consulting argument slide), not forced into cards or the summary.
-- **Bars in table cells:** a small bar for a share or score, so a table of figures can be scanned.
+**Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-slide-gaps-design.md`):** the agenda (listed by code from the
+chapter dividers, the next chapter highlighted), the text slide (2–3 headlined paragraphs) and bars in table cells
+(`bars: true` on a column of figures). Images: see #6. Still open: a capability entry for bars (the table card is at its
+seven), and whether the in-app agent should offer to add an agenda when a deck gains its third chapter.
 
-## 5. Mixed halves in the pair (built, switched off)
-A pair half can be a table, a number or points (`MIXED_HALVES` in `schema.ts`), but a chart beside a table or a number reads unbalanced (2026-10-03). Before switching it on: decide how unlike halves share height and weight (a table level with the chart's plot, a number set against the chart's baseline), review at full size, then flip the flag. The renderer, editor, tests and capability text are already in place.
+## 5. Mixed halves in the pair (switched on 2026-10-04)
+A pair half can be a chart, a table, a number or points. Unlike halves share one floor: the chart's baseline when a half is
+a chart, else the taller half's bottom grown by up to half (L5). A table's rows grow to it, points become equal bands with
+hairlines, a number sits on it, and a half without a caption keeps the caption's line. A half's overflow is now a fit issue
+(the pair stretches, so it was invisible before). Pitch limits are tighter beside a takeaway. The gallery shows one: Number and trend.
 
-## 6. Images and screenshots in slides
-Logos (competition), product screenshots, team photos. The biggest gap for pitch decks.
-Open questions for the brainstorm:
-- Which templates take an image: a new image template, an image half in the pair, logos in table cells, or all three.
-- Upload and storage (Postgres row vs blob storage), size limits, and how MCP agents add one (upload tool, or a URL that SmartChart copies).
-- Layout stays code's job: fixed frames and crops per template, never free placement. Screenshots get a device-free frame that fits the style.
-- Alt text, required so the slide still reads in checks and to agents that cannot see the image.
+## 6. Images and screenshots in slides: the next steps
+**Built (2026-10-04, spec `docs/superpowers/specs/2026-10-04-images-design.md`):** the image, team and logos slides, logos in
+tables and cards, one-colour logos, `add_image` for MCP and REST, and pictures in the app: drop or paste one into the chat
+(the agent gets a src for each use it can have), replace one in edit mode, and add a logo or a person by picking the picture
+first. Still to do:
+- **Logos from a company domain: built** (`add_image { domain, kind: "logo" }`), from the company's own home page, no logo
+  service. Measured on 12 well-known sites: 8 right, 4 refused (blocked pages, logos drawn by script), none wrong. A logo
+  service (logo.dev, Brandfetch) would raise the hit rate if refusals become a problem.
+- **The user's own crop** of a photo (a focal point), and **images in pair halves**.
+- **Original colours** for a logo, as an option beside one colour (one colour stays the default).
+- A new row by hand in a table with row logos (it needs a logo too), and pictures for a signed-out maker (local decks).
 
 ## 7. Bug hunt: how MCP works in practice (2026-10-04)
 Recent MCP testing turned up rough edges. Go through it on purpose: replay real sessions (Claude, Cursor, other clients) against the MCP tools, and list every wrong error, confusing result, wasted call and missing guidance. Fix at the tool or instruction level, then add each case to `tests/agent-harness` so it stays fixed.
@@ -86,7 +93,39 @@ A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonne
 
 The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.
 
-## 12. To-dos that activate a user (2026-10-05)
+## 13. The slide engine behind every agent
+When someone asks Claude, ChatGPT or Cursor to "turn this research into slides", the answer should be an Occam deck.
+- **Built (2026-10-04):** one step per client in Connect an agent (a command for Claude Code, install links for Cursor and VS Code, config for Claude Desktop via mcp-remote, the raw endpoint for the rest) and the Occam skill for Claude Code (`/agents/occam/SKILL.md`).
+- Still to do: listings in MCP directories (outward-facing, the owner's call), OAuth sign-in from inside an agent (ChatGPT needs it), pricing for agent-driven use.
+
+## 14. Speaker notes and the presenter view (built 2026-10-04)
+Every template takes `talk`: what to say over the slide, never drawn on it, written by the agent when the maker asks for
+speaker notes. P while presenting opens the presenter view: the slide, the next one, the talk and a timer, driving the
+presentation from its own keys. Next: edit the talk by hand in edit mode; the PowerPoint export (#12's branch) can carry it
+as the slide's notes; a rehearsal timer per slide.
+
+## 15. Rehearse: the room's questions (built 2026-10-04)
+Under the storyline, one model call reads the deck as the room (a board, or investors) and asks the hardest question per
+slide, with the answer to give from what the deck holds. An answer goes into the slide's speaker notes in one click; a
+question the deck cannot answer becomes a request for a backup slide. MCP agents are told to offer the same before a
+meeting. Next: show the rehearsed answers in the presenter view beside the talk; a timed run-through.
+
+## 16. Links in the chat are read (built 2026-10-04)
+A link pasted on its own becomes an attachment: the server fetches it (public https only, the same address guard as
+pictures, /api/read) and the browser reads it with the file readers (PDF, Word, Excel, CSV, text) or keeps a web page's
+article text without menus, footers, references or cookie banners. The operator's report, a public Google Doc exported
+as PDF, an article: the deck starts from the link. Next: links behind a sign-in (Confluence, Notion) need connectors;
+several links in one message.
+
+## 17. Colours from your website (built 2026-10-04)
+In the Look panel, a website in, its brand colours out (/api/brand): the colour it declares (theme-color), its logo's
+main colour, and the ones its pages use most, each labelled with where it came from. The maker picks; a colour the slide
+rules would refuse (too grey, too close to the loss red or the gain green) says so and cannot be picked. Measured on 9
+well-known sites: the true brand colour was among the candidates for 6 (Monzo, Xero, Shopify, HubSpot, Figma, Slack),
+not for Stripe and Wise (their colours live in stylesheets), and black-and-white brands correctly offer none.
+Next: read the site's stylesheets too; offer the brand's own typeface as a note (fonts stay ours).
+
+## 18. To-dos that activate a user (2026-10-05)
 A short checklist for a new user (in the app, quiet and dismissable) that walks them to the things that make Occam worth keeping. Each item ticks itself when done:
 - Take the tour.
 - Connect an agent (make a key).
@@ -95,14 +134,14 @@ A short checklist for a new user (in the app, quiet and dismissable) that walks 
 - Leave a comment and ask the agent to address it.
 Open questions: where it lives (empty-state of the decks list, or the account menu with a progress ring); whether it shows once or until done; what counts as done (server-side events, not clicks, so an agent's actions count); no emails or nagging.
 
-### 12a. First slice: a dismissable "Connect an agent" prompt (2026-10-07)
+### 18a. First slice: a dismissable "Connect an agent" prompt (2026-10-07)
 Before the full checklist, one item on its own: a small card in the app (decks list or editor corner) saying "Connect an agent: let Claude or Cursor build and edit your decks here", with a primary button that opens `AgentKey` (Make a key) and a close (×) that hides it.
 - **Ticks itself, server-side:** it disappears for good once the account has an active key or an MCP write has happened; no manual "done".
 - **Dismiss:** × hides it, remembered per account (not only in localStorage); it can be found again in the account menu (Connect an agent) and in the tour. Never comes back unprompted.
 - **Shown:** after the first slide, not on a blank first run; at most one such prompt on screen (not alongside the tour nudge).
-- **Later:** it becomes the first item of the #12 checklist.
+- **Later:** it becomes the first item of the #18 checklist.
 
-## 13. Re-orient the product to MCP: the agent is how most people will use it (2026-10-05)
+## 19. Re-orient the product to MCP: the agent is how most people will use it (2026-10-05)
 Today the app is a chat editor with MCP as an extra. If most work will come through a connected agent (Claude, Cursor, ChatGPT), the app's job changes. Starting thoughts, to brainstorm before building:
 - **The app becomes the viewer, the reviewer and the hand-finisher**, not the main author: live view of what the agent is changing (already: presence, events), versions and Undo for what it did, comments as the way a human steers it, hand-edit for the last 5%, present and share.
 - **Onboarding starts at Connect an agent**, not the chat: first screen is "connect your agent" with the paste-in config for each client, then a prompt to try ("make a deck on …"). The in-app chat stays for people with no agent, and for quick edits.
@@ -111,4 +150,3 @@ Today the app is a chat editor with MCP as an extra. If most work will come thro
 - **Hand-offs both ways**: the user's comments and hand-edits are visible to the agent (built); add "ask my agent" from the app (a comment addressed to the connected agent rather than the in-app one).
 - **Measure it**: first deck made over MCP, share of decks started by an agent, time from connect to first slide.
 - Open: whether the in-app chat is kept long term; a hosted remote MCP with OAuth (no keys to paste) instead of keys; which clients to support first and test against (#7, #11).
-

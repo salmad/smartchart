@@ -47,7 +47,7 @@ export function autofix(slide: unknown, style: Style): { slide: Slide; fixes: st
     }
   });
   // A card row with no lead gets icons, picked by code (the same as icon "auto").
-  if (out.template === "cards" && !out.framed && Array.isArray(out.cards) && out.cards.every((c) => c && !c.icon && !c.value)) {
+  if (out.template === "cards" && !out.framed && Array.isArray(out.cards) && !out.lead && out.cards.every((c) => c && !c.icon && !c.value && !c.logo)) {
     out.cards.forEach((c) => { c.icon = "auto"; }); fixes.push("cards[].icon: auto (no lead given)");
   }
   // Chart fields written at the slide's top level belong inside `chart` (no slide field shares their names).

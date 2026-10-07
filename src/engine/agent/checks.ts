@@ -2,6 +2,7 @@
    They are advisory: shown on the slide, never blocking. */
 import { MENU, plain } from "../slides/schema.js";
 import { derivedFigures } from "../slides/charts/chart-math.js";
+import { pictureAsWords } from "../slides/images.js";
 import { jev as jevCall, type JevFn } from "./llm.js";
 import type { Slide, Style } from "../types.js";
 
@@ -33,6 +34,7 @@ function focusCount(s: Slide): number | null {
 function parallelTexts(s: Slide): string[] {
   if (s.template === "cards") return (s.cards || []).map((c) => plain(c.text || (c.bullets || []).join(" ") || c.title));
   if (s.template === "steps") return (s.steps || []).map((x) => plain(x.text));
+  if (s.template === "team") return (s.people || []).flatMap((p) => (p?.text ? [plain(p.text)] : []));
   return (s.notes || []).map((n) => plain(n.title + " " + (n.text || "")));
 }
 
@@ -42,7 +44,7 @@ const hasFigures = (s: Slide) => (["chart", "pair", "table", "number"].includes(
 /** The words a slide claims with: its headline and body text (not chart positions, step times or page furniture). */
 const claimText = (s: Slide) => [s.title, s.subtitle, s.takeaway, s.number?.caption, ...(s.points || []).flatMap((p) => [p.title, p.text]),
   ...(s.cards || []).flatMap((c) => [c.title, c.text, ...(c.bullets || [])]), ...(s.notes || []).flatMap((n) => [n.title, n.text]),
-  ...(s.steps || []).map((x) => x.text), ...(s.halves || []).flatMap((h) => [...(h.bullets || []), ...(h.points || []), h.number?.caption])].filter(Boolean).map((t) => plain(t)).join(" ");
+  ...(s.steps || []).map((x) => x.text), ...(s.people || []).map((p) => p?.text), ...(s.halves || []).flatMap((h) => [...(h.bullets || []), ...(h.points || []), h.number?.caption])].filter(Boolean).map((t) => plain(t)).join(" ");
 /** R8: in consulting, a slide that claims figures says where they come from, in its source or a footnote. A quote names its speaker. */
 function sourceCheck(s: Slide): Check | null {
   if (s.template === "quote" || s.template === "cover" || s.template === "section") return null;
@@ -61,9 +63,10 @@ const HORIZON = /\b\d+(?:\.\d+)?\s*-?\s*(?:months?|mo|years?|yrs?|weeks?|wks?|da
 const close = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
 
 function bodyText(s: Slide): string {
-  const { title, subtitle, takeaway, kicker, footnote, source, ...body } = s;
+  // Speaker notes are said, not shown: a figure there does not put it on the slide.
+  const { title, subtitle, takeaway, kicker, footnote, source, talk, ...body } = s;
   // Indented: compact JSON would read [1,4,10] as one number.
-  return JSON.stringify(body, (_k, v) => (typeof v === "string" ? plain(v) : v), 1);
+  return JSON.stringify(body, (k, v) => { const w = pictureAsWords(k, v); return typeof w === "string" ? plain(w) : w; }, 1);
 }
 /** A headline figure is on the slide, or is a difference, ratio or % change of two body figures. */
 function derivable(h: number, nums: number[]): boolean {
@@ -156,12 +159,18 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     else if (series.length === 1 && series[0].mark === "bar") { const v = series[0].values; const sorted = v.every((x, i) => !i || x <= v[i - 1]);
       add("R14", sorted, sorted ? "Bars sorted largest first" : "Bars are not sorted by value; largest first unless the order means something"); }
   }
+  // R15: a picture's words say what it shows; the title already says what it proves.
+  if (s.template === "image" && s.image?.alt) {
+    const t = new Set(words(s.title)), a = words(s.image.alt), same = a.filter((w) => t.has(w)).length / Math.max(1, a.length);
+    add("R15", same < 0.7, same < 0.7 ? "The picture is described in its own words" : "The picture's alt text repeats the title; say what the picture shows");
+  }
   // Fix the R5 message when it fails.
   out.forEach((c) => { if (c.id === "R5" && !c.ok && c.msg.startsWith("Chart")) c.msg = "Chart values have no unit in `format`"; });
   return out;
 }
 
-const slideText = (s: Slide) => JSON.stringify(s, (_k, v) => (typeof v === "string" ? plain(v) : v));
+// The slide as the room sees it: speaker notes are left out, so they never make a claim look supported.
+const slideText = (s: Slide) => JSON.stringify({ ...s, talk: undefined }, (k, v) => { const w = pictureAsWords(k, v); return typeof w === "string" ? plain(w) : w; });
 
 /** Judgment checks J1–J10: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }

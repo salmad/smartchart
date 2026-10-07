@@ -1,10 +1,12 @@
 /* Files dropped on the chat: read to text in the browser, then handed to the agent with the message. Only the text
-   leaves the browser, inside the message. Each parser loads the first time a file of its kind arrives. */
+   leaves the browser, inside the message. Each parser loads the first time a file of its kind arrives. A picture is the
+   exception: it is uploaded (pictures.ts) and the agent reads the srcs it can use. */
+import { PICTURE, pictureText, uploadPicture } from './pictures'
 
 /** A file read to text: `about` says what was read ("4 pages", "2 sheets", "1,240 words") for its chip. */
 export interface Attached { name: string; text: string; about: string; cut: boolean }
 
-export const ACCEPT = '.pdf,.docx,.xlsx,.csv,.tsv,.md,.markdown,.txt,.json'
+export const ACCEPT = '.pdf,.docx,.xlsx,.csv,.tsv,.md,.markdown,.txt,.json,.png,.jpg,.jpeg,.webp,.gif,.svg,.avif'
 const MAX_BYTES = 20_000_000
 /** Per file and in all: a long report is read in full; a data dump is cut, and the agent is told it was. */
 export const MAX_CHARS = 40_000, MAX_TOTAL = 60_000
@@ -16,6 +18,10 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
 /** Reads one file to text. Throws with a sentence the chat can show when it can't. */
 export async function readFile(file: File): Promise<Attached> {
   if (file.size > MAX_BYTES) throw new Error(`${file.name} is over 20 MB.`)
+  if (PICTURE.test(file.name)) {
+    try { return { name: file.name, text: pictureText(file.name, await uploadPicture(file, 'all')), about: 'picture', cut: false } }
+    catch (e) { throw new Error(`${file.name}: ${e instanceof Error ? e.message : String(e)}`) }
+  }
   const kind = ext(file.name)
   let text: string, about: string
   try {
@@ -23,7 +29,7 @@ export async function readFile(file: File): Promise<Attached> {
     else if (kind === 'docx') { text = await readDocx(file); about = words(text) }
     else if (kind === 'xlsx') ({ text, about } = await readXlsx(file))
     else if (['csv', 'tsv', 'md', 'markdown', 'txt', 'json'].includes(kind)) { text = await file.text(); about = kind === 'csv' || kind === 'tsv' ? plural(text.split(/\r?\n/).filter((l) => l.trim()).length, 'row') : words(text) }
-    else throw new Error(`${file.name}: Occam reads PDF, Word, Excel, CSV, Markdown and text files.`)
+    else throw new Error(`${file.name}: Occam reads PDF, Word, Excel, CSV, Markdown and text files, and pictures.`)
   } catch (e) {
     if (e instanceof Error && e.message.startsWith(file.name)) throw e
     throw new Error(`${file.name} couldn’t be read. Is it open in another app, or protected with a password?`)

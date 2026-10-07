@@ -69,7 +69,7 @@ export function Bar(p: BarProps) {
       <div className="flex items-center justify-end gap-2.5 max-[900px]:gap-2">
         {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
         {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} deckId={p.shareId} onPdf={p.onPdf} /></div>}
-        {p.hasSlides && <Button onClick={p.onPresent}><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
+        {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
         <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
       </div>
     </header>

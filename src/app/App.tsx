@@ -5,7 +5,7 @@ import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
-import { Present } from './components/Present'
+import { newLiveKey, openPresentation, usePublishDeck } from './presenter-channel'
 import { PrintDeck, pdfName } from './components/PrintDeck'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
@@ -56,14 +56,18 @@ export function App({ route, account, repo, backup }: Props) {
   const author = useRef<SaveMeta | null>(null)
   // Counts saves that landed, so the Versions panel knows to read the list again.
   const [saves, setSaves] = useState(0)
-  const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
+  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
   useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
-  const deck = deckOf(s)
+  // The same deck object until a slide or the look changes: it is what the presentation tab follows.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deckOf reads only these four
+  const deck = useMemo(() => deckOf(s), [s.items, s.style, s.theme, s.accent])
+  const liveKey = useMemo(newLiveKey, [])
+  usePublishDeck(deck.slides.length ? deck : null, liveKey)
 
   const measurer = useCallback((): Measurer => {
     if (!frame.current) throw new Error('the measuring frame is not mounted')
@@ -221,7 +225,8 @@ export function App({ route, account, repo, backup }: Props) {
 
   useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
-  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) setPresenting(true) }, [app])
+  // The presentation opens in its own tab and follows this deck as it is edited.
+  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
     onTheme: (theme: Theme) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { theme } }),
@@ -254,6 +259,8 @@ export function App({ route, account, repo, backup }: Props) {
   const edit = useMemo(() => ({ measurer, save: (id: string, draft: Slide) => saveEdit(id, draft, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }) }), [app, measurer])
   const onSelect = useCallback((index: number) => app.dispatch({ type: 'select', index }), [app])
   const onMove = useCallback((id: string, to: number) => app.dispatch({ type: 'moveSlide', id, to }), [app])
+  // Speaker notes change nothing on the slide, so they are written straight to it: no checks or measuring to rerun.
+  const onTalk = useCallback((id: string, talk: string) => app.dispatch({ type: 'items', items: app.getState().items.map((it) => (it.id === id && it.slide ? { ...it, slide: { ...it.slide, talk } } : it)) }), [app])
   const onRemove = useCallback((id: string) => app.dispatch({ type: 'removeSlide', id }), [app])
   const onRestore = useCallback(() => app.dispatch({ type: 'restoreSlide' }), [app])
   // A prompt from the landing (or Add slide) builds the slide in the editor.
@@ -282,13 +289,11 @@ export function App({ route, account, repo, backup }: Props) {
 
   return (
     <TooltipProvider delayDuration={400}>
-      {presenting
-        ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild}
-            decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
-              onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
-      {tour.touring && !presenting && <Tour onClose={tour.stop} onShow={setTourShow} />}
-      {tour.nudge && !tour.touring && !presenting && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
+      <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild}
+        decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
+          onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />
+      {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
+      {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />

@@ -1,5 +1,6 @@
 /* The tool registry's shared types. Framework-free: the same tools run behind REST, MCP and (later) the in-app agent. */
 import type { Slide, Style, Theme } from "../types.js";
+import type { ImageKind } from "../slides/images.js";
 import type { Check } from "../agent/checks.js";
 import type { JevFn } from "../agent/llm.js";
 import type { DeckComment } from "../comments.js";
@@ -22,6 +23,8 @@ export interface AccountPort {
   /** The deck's versions, newest first, and the slides their trees name. */
   versions(deckId: string): Promise<Version[]>;
   blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;
+  /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
+  addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind; from?: string }>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"

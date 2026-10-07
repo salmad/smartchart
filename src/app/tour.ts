@@ -7,10 +7,10 @@ export type TourShow = 'chat' | 'grid' | 'comments'
 export interface TourStep { id: string; title: string; body: string; show?: TourShow; target?: string; via?: string }
 
 export const TOUR: readonly TourStep[] = [
-  { id: 'chat', show: 'chat', title: 'Say what the slide should say', body: 'Paste your numbers or notes, or drop in a doc, and say what the room should take away. SmartChart picks the slide and writes it.' },
+  { id: 'chat', show: 'chat', title: 'Say what the slide should say', body: 'Paste your numbers, notes or a link, or drop in a doc, and say what the room should take away. Occam picks the slide and writes it.' },
   { id: 'stage', title: 'Your slide, always in shape', body: 'Code draws every slide, so it always fits and always matches. Press E to edit it by hand, F to present.' },
   { id: 'checks', title: 'Checked like a partner would', body: 'Every slide is checked: does the title make a point, does the chart prove it, do the figures add up. Click to see what to look at.' },
-  { id: 'comments', show: 'comments', target: 'comments-panel', via: 'comments', title: 'Leave notes for any agent', body: 'Write “this number is from Q2, update it” on a slide. Ask SmartChart, or any connected agent, to address the notes: it fixes each one and replies.' },
+  { id: 'comments', show: 'comments', target: 'comments-panel', via: 'comments', title: 'Leave notes for any agent', body: 'Write “this number is from Q2, update it” on a slide. Ask Occam, or any connected agent, to address the notes: it fixes each one and replies.' },
   { id: 'views', show: 'grid', target: 'grid', via: 'views', title: 'The whole deck', body: 'Drag slides to reorder them. Grid shows every slide at once; Storyline reads the titles as the room will, and checks the argument.' },
   { id: 'share', title: 'Share it', body: 'A read-only link that stays up to date as the deck changes, or a PDF.' },
   { id: 'account', title: 'Connect an agent', body: 'An agent is an AI assistant, like Claude Code or Cursor, that can do work for you. Connect one, and it builds and edits your decks here by the same rules, while you watch.' },

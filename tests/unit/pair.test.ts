@@ -94,7 +94,7 @@ test('halves render by body: chart host, table, number, points; the caption row 
     { caption: 'Share · %', table: { columns: [{ label: 'Year' }, { label: 'Share' }], rows: [{ cells: ['2026', '◑'] }] } },
   ] }
   const html = slideHTML(s, { page: 1, section: 0, kicker: '', footer: '' }, { style: 'consulting', theme: 'ink' })
-  expect(html).toContain('<div class="half" data-item="halves[0]" data-grid="0"><p class="cap blank "></p><div class="half-num"><div class="shout big-v" data-path="halves[0].number.value" data-kind="esc">7%</div>')
+  expect(html).toContain('<div class="half" data-item="halves[0]" data-grid="0"><p class="cap ghost" aria-hidden="true">&nbsp;</p><div class="half-num"><div class="shout big-v" data-path="halves[0].number.value" data-kind="esc">7%</div>')
   expect(html).toContain('data-path="halves[1].table.rows[0].cells[0]"')
   // The Harvey-ball key appears once, under the pair, not inside the half.
   expect(html.match(/class="mk-key"/g)).toHaveLength(1)

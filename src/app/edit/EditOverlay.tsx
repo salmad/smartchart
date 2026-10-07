@@ -2,7 +2,7 @@
    +/× on the list item under the pointer. Positions are read from the slide's own elements (spec 4.2, 4.5). */
 import { useEffect, useRef, useState } from 'react'
 import { GripHorizontal, GripVertical, Plus, X } from 'lucide-react'
-import { listOf, listOps, newItem, removeItem } from '@/engine/slides/edit'
+import { listOf, listOps, newItem, removeItem, type ListOp } from '@/engine/slides/edit'
 import { cellAt } from './selection'
 import type { Style } from '@/engine/types'
 import type { SlideEdit } from './useSlideEdit'
@@ -15,7 +15,8 @@ const boxIn = (el: Element, host: Element): Box => { const a = el.getBoundingCli
 const place = (el: HTMLElement | null, b: Box) => { if (!el) return; for (const [k, v] of Object.entries(b)) el.style.setProperty(`--${k}`, `${v}px`) }
 const MARK = 'absolute left-[var(--l)] top-[var(--t)] w-[var(--w)] h-[var(--h)]'
 
-export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void }) {
+/** `onAddPicture`: adding to a list whose items carry a picture picks the picture first (EditPictures). */
+export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPicture }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void; onAddPicture: (op: ListOp, index: number) => void }) {
   const host = useRef<HTMLDivElement>(null), [hover, setHover] = useState<HTMLElement | null>(null), [, setTick] = useState(0)
   // A press on a grip that does not move selects the thing: a table row is its cells, anything else is the item.
   const select = (t: Thing) => {
@@ -83,7 +84,7 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart }: { edit: 
           <span className="pointer-events-auto absolute left-full top-1/2 flex w-14 -translate-y-1/2 flex-col gap-1 pl-2">
             {hit.op.length > 1 && <button type="button" aria-label={`Move ${hit.op.path.split('.').at(-1)?.replace(/s$/, '')} ${hit.index + 1}`} onPointerDown={(e) => begin(e, { kind: 'item', list: hit.op.path, index: hit.index })} onMouseDown={keep}
               className="grid size-6 cursor-grab touch-none place-items-center rounded-full bg-raise text-ink-3 shadow-[0_0_0_1px_theme(colors.line-2)] hover:text-ink active:cursor-grabbing"><GripVertical className="size-3.5" /></button>}
-            {hit.op.length < hit.op.max && <button type="button" aria-label="Add after" onMouseDown={keep} onClick={() => edit.patch(newItem(edit.draft, style, hit.op, hit.index + 1), `${hit.op.path}[${hit.index + 1}]`)}
+            {hit.op.length < hit.op.max && <button type="button" aria-label="Add after" onMouseDown={keep} onClick={() => (hit.op.picture ? onAddPicture(hit.op, hit.index) : edit.patch(newItem(edit.draft, style, hit.op, hit.index + 1), `${hit.op.path}[${hit.index + 1}]`))}
               className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><Plus className="size-3.5" /></button>}
             {(hit.op.length > hit.op.min || !hit.op.required) && <button type="button" aria-label="Remove" onMouseDown={keep} onClick={() => { setHover(null); edit.patch(removeItem(hit.op, hit.index)) }}
               className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><X className="size-3.5" /></button>}

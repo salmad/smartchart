@@ -16,7 +16,7 @@ test('every capability sample validates in the styles it declares', () => {
 
 test('guidance only where there is a choice; at most 7 entries; use and avoid one sentence each', () => {
   const withCaps = (Object.keys(MENU) as TemplateId[]).filter((id) => MENU[id].capabilities?.length)
-  expect(withCaps.sort()).toEqual(['cards', 'chart', 'pair', 'steps', 'table'])
+  expect(withCaps.sort()).toEqual(['cards', 'chart', 'image', 'pair', 'steps', 'table', 'team'])
   for (const id of withCaps) {
     const caps = MENU[id].capabilities ?? []
     expect(caps.length, id).toBeLessThanOrEqual(7)

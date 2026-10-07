@@ -14,11 +14,21 @@ for (const width of [1440, 390]) {
     await site(page, width)
     await page.evaluate(() => document.fonts.ready)
     const slides = page.locator('.site .slide')
-    expect(await slides.count()).toBeGreaterThanOrEqual(11)
+    expect(await slides.count()).toBeGreaterThanOrEqual(6)
     const overflow = await page.locator('.site').evaluate((el) => el.scrollWidth - el.clientWidth)
     expect(overflow).toBe(0)
   })
 }
+
+test('the gallery is grouped by job: a tab shows all of that group\u2019s slides at once', async ({ page }) => {
+  await site(page, 1440)
+  const tabs = page.getByRole('tab')
+  await expect(tabs).toHaveCount(7)
+  const panel = page.getByRole('tabpanel')
+  await expect(panel.locator('.slide')).toHaveCount(4)
+  await tabs.filter({ hasText: 'Show a trend' }).click()
+  await expect(panel.locator('.slide')).toHaveCount(7)
+})
 
 test('the page switches between the Ink and Paper looks and remembers the pick', async ({ page }) => {
   await site(page, 1440)

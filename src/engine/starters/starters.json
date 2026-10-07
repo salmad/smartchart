@@ -6,13 +6,13 @@
   "blurb": "The deck’s title and what it is about",
   "consulting": {
    "template": "cover",
-   "title": "Acme",
-   "subtitle": "A revolving credit card and business account for UK small and medium-sized businesses."
+   "title": "Occam",
+   "subtitle": "Slides that make the point, built by describing them."
   },
   "pitch": {
    "template": "cover",
-   "title": "The card that [[runs the business.]]",
-   "subtitle": "Credit, cashflow and rewards for UK small businesses, all in one app."
+   "title": "The deck that [[builds itself.]]",
+   "subtitle": "Describe the slide. Occam sets it, checks it, fits it."
   }
  },
  {
@@ -23,7 +23,7 @@
   "consulting": {
    "template": "section",
    "title": "The problem",
-   "subtitle": "SME founders fund the business on personal credit because no provider bundles credit with banking."
+   "subtitle": "Slides take hours, drift from one to the next, and nothing checks the words behind them."
   },
   "pitch": {
    "template": "section",
@@ -38,11 +38,11 @@
   "consulting": {
    "template": "summary",
    "kicker": "Executive summary",
-   "title": "Acme can build a [[£120m loan book]] by 2030 by bundling SME credit with banking",
+   "title": "Acme can build a [[£120m loan book]] by 2030 by bundling SME lending with banking",
    "points": [
     {
-     "title": "SMEs fund growth on personal credit",
-     "text": "A third need revolving credit; no provider pairs a real limit with a business account."
+     "title": "SMEs fund growth on personal cards",
+     "text": "A third need flexible funding; no provider pairs a real limit with a business account."
     },
     {
      "title": "Bundling fixes adverse selection",
@@ -238,7 +238,7 @@
    "title": "The market grows [[a third]] by 2030 while Acme takes 7% of it",
    "halves": [
     {
-     "caption": "UK SME card spend · £bn",
+     "caption": "SME card spend · £bn",
      "chart": {
       "categories": [
        "2026",
@@ -307,7 +307,7 @@
    "subtitle": "A growing market, [[a rising share.]]",
    "halves": [
     {
-     "caption": "UK SME card spend · £bn",
+     "caption": "SME card spend · £bn",
      "chart": {
       "categories": [
        "2026",
@@ -378,59 +378,59 @@
   "consulting": {
    "template": "cards",
    "kicker": "The solution",
-   "title": "One account replaces the bank, the card platform and the lender that SMEs juggle today",
+   "title": "One chat replaces the template hunt, the chart tool and the formatting pass",
    "cards": [
     {
      "icon": "zap",
-     "title": "Approved in five minutes",
+     "title": "A slide in minutes",
      "bullets": [
-      "Limits up to **£250k**, spend the same day",
-      "Underwritten on live bank and sales data, not filed accounts"
+      "Describe it in plain words, get a finished slide",
+      "Charts, tables and bridges set from your figures"
      ]
     },
     {
-     "icon": "wallet",
-     "title": "Cashflow in one place",
+     "icon": "layers",
+     "title": "One look throughout",
      "bullets": [
-      "Pay bills, get paid and control team spend",
-      "Move between debit and credit funds per payment"
+      "Layout, sizes and colours come from rules",
+      "Slide thirty looks like slide one"
      ]
     },
     {
-     "icon": "refresh-cw",
-     "title": "Earn on every pound",
+     "icon": "shield-check",
+     "title": "Checked every slide",
      "bullets": [
-      "**1% cashback** on all card spend",
-      "Rewards attract transactors, lowering adverse selection"
+      "Every slide is measured to fit",
+      "Warnings point at the exact words"
      ]
     }
    ],
-   "takeaway": "Three providers today. **Acme replaces all of them.**",
-   "source": "Acme product terms, 2026."
+   "takeaway": "Three tools today. **Occam replaces all of them.**",
+   "source": "Occam product guide."
   },
   "pitch": {
    "template": "cards",
    "title": "The solution",
-   "subtitle": "Bank. Card. Lender. [[One app.]]",
+   "subtitle": "Template. Chart tool. Polish. [[One chat.]]",
    "cards": [
     {
-     "value": "5 min",
-     "title": "to a credit line",
-     "text": "Up to £250k. Spend the same day."
+     "value": "1 chat",
+     "title": "to a finished slide",
+     "text": "Describe it. Occam sets it."
     },
     {
-     "value": "1 app",
-     "title": "for all cashflow",
-     "text": "Pay, get paid, control team spend."
+     "value": "1 look",
+     "title": "across the deck",
+     "text": "Rules, not hand-tuning."
     },
     {
-     "value": "1%",
+     "value": "0",
      "tone": "focus",
-     "title": "back on everything",
-     "text": "Rewards bring the right customers."
+     "title": "slides left unchecked",
+     "text": "Each one fits before you see it."
     }
    ],
-   "takeaway": "Today: three companies. [[We are one.]]"
+   "takeaway": "Today: three tools. [[We are one.]]"
   }
  },
  {
@@ -440,70 +440,70 @@
   "blurb": "Why your approach beats the old one",
   "consulting": {
    "template": "cards",
-   "kicker": "The insight",
-   "title": "Credit-only lenders attract adverse selection; [[bundling spend and rewards]] fixes the funnel",
+   "kicker": "The difference",
+   "title": "A blank canvas leaves the layout to you; [[rules and checks]] leave it to the product",
    "framed": true,
    "cards": [
     {
      "tone": "neutral",
-     "label": "Credit-only lenders",
-     "title": "Adverse loop",
+     "label": "Blank canvas",
+     "title": "Fiddly loop",
      "bullets": [
-      "Expensive acquisition of desperate borrowers",
-      "Little data beyond filed accounts",
-      "High risk drives high prices, then higher risk"
+      "Spacing and sizes set slide by slide",
+      "Charts pasted in, restyled, mis-scaled",
+      "Nothing checks the words or the numbers"
      ],
      "facts": [
       {
        "label": "Outcome",
-       "text": "Rising losses, rising prices"
+       "text": "Every slide a little different"
       },
       {
-       "label": "Track record",
-       "text": "Most credit-only fintechs shut down"
+       "label": "Time",
+       "text": "Hours per deck, every time"
       }
      ]
     },
     {
      "tone": "focus",
-     "label": "Acme",
-     "title": "Positive loop",
+     "label": "Occam",
+     "title": "Checked loop",
      "bullets": [
-      "Customers arrive for non-credit reasons",
-      "Credit funds the cashflow of a working business",
-      "More data, better pricing, better customers"
+      "Say what the slide must prove",
+      "Layout, sizes and colours come from rules",
+      "Every slide is measured and checked"
      ],
      "facts": [
       {
        "label": "Outcome",
-       "text": "Falling losses, better pricing"
+       "text": "One look across every slide"
       },
       {
        "label": "Proof",
-       "text": "Card-led lenders are profitable"
+       "text": "Each slide fits before you see it"
       }
      ]
     }
    ],
-   "takeaway": "Why customers join decides how much credit loses."
+   "takeaway": "The point of a slide is the message, not the formatting."
   },
   "pitch": {
    "template": "cards",
-   "title": "The insight",
-   "subtitle": "Credit alone attracts the wrong borrowers.",
+   "title": "The difference",
+   "subtitle": "Layout by rules, not by hand.",
    "framed": true,
    "cards": [
     {
      "tone": "neutral",
-     "label": "Credit only",
-     "title": "Adverse loop",
-     "text": "Desperate borrowers, thin data, rising prices."
+     "label": "Blank canvas",
+     "title": "Fiddly loop",
+     "text": "Sizes and spacing set by hand, every slide."
     },
     {
      "tone": "focus",
-     "label": "Acme",
-     "title": "Positive loop",
-     "text": "Good businesses arrive first. Credit follows."
+     "label": "Occam",
+     "title": "Checked loop",
+     "text": "Rules set the layout. Every slide is checked."
     }
    ]
   }
@@ -528,221 +528,221 @@
   "id": "table",
   "group": "compare",
   "label": "Comparison table",
-  "blurb": "Options against the same criteria",
+  "blurb": "Plans against the same criteria",
   "consulting": {
    "template": "table",
    "table": {
     "columns": [
      {
-      "label": "£ per customer per month"
+      "label": "£ per seat per month"
      },
      {
-      "label": "Revolver",
+      "label": "Pro",
       "focus": true
      },
      {
-      "label": "Transactor"
+      "label": "Team"
      },
      {
-      "label": "Super-transactor"
+      "label": "Enterprise"
      }
     ],
     "rows": [
      {
       "cells": [
-       "Share of customers",
-       "40–60%",
-       "40–60%",
+       "Share of paid seats",
+       "~55%",
+       "~35%",
        "~10%"
       ],
       "style": "muted"
      },
      {
       "cells": [
-       "Interest revenue",
+       "Subscription",
        {
-        "value": "267",
-        "note": "40% APR × £8.0k"
-       },
-       "—",
-       "—"
-      ]
-     },
-     {
-      "cells": [
-       "Cost of funding",
-       {
-        "value": "(53)",
-        "note": "8% × £8.0k"
+        "value": "20",
+        "note": "billed monthly"
        },
        {
-        "value": "(33)",
-        "note": "8% × £5.0k"
+        "value": "30",
+        "note": "3-seat minimum"
        },
        {
-        "value": "(70)",
-        "note": "8% × £10.5k"
+        "value": "60",
+        "note": "annual contract"
        }
       ]
      },
      {
       "cells": [
-       "Interchange revenue",
+       "Add-on usage",
        {
-        "value": "90",
-        "note": "1.8% × £5.0k spend"
+        "value": "6",
+        "note": "~0.4m extra tokens"
        },
        {
-        "value": "120",
-        "note": "1.8% × £6.7k"
+        "value": "12",
+        "note": "~0.8m extra tokens"
        },
        {
-        "value": "480",
-        "note": "1.8% × £26.7k"
+        "value": "45",
+        "note": "~3m extra tokens"
        }
       ]
      },
      {
       "cells": [
-       "Cost of rewards",
-       "(50)",
-       "(67)",
-       "(267)"
+       "Model cost",
+       "(8)",
+       "(11)",
+       "(34)"
       ]
      },
      {
       "cells": [
-       "Bad debt",
+       "Support and success",
+       "(1)",
+       "(2)",
        {
-        "value": "(70)",
-        "note": "~10% of balance p.a."
-       },
-       "(5)",
-       "(10)"
+        "value": "(12)",
+        "note": "named manager"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Discounts",
+       "(2)",
+       "(3)",
+       {
+        "value": "(15)",
+        "note": "volume, ~25%"
+       }
       ]
      },
      {
       "cells": [
        "Monthly gross margin",
-       "£184",
        "£15",
-       "£133"
+       "£26",
+       "£44"
       ],
       "style": "total"
      }
     ]
    },
    "kicker": "Business model",
-   "title": "[[Revolvers]] carry the margin; super-transactors earn theirs on interchange alone",
-   "takeaway": "A 50/50 revolver–transactor mix earns ~£100 a month each.",
-   "footnote": "Balances and spend are monthly averages per active customer.",
-   "source": "Acme model; funding cost assumes an 8% warehouse rate."
+   "title": "Pro seats are most of the base, but [[Enterprise earns three times the margin]] per seat",
+   "takeaway": "One Pro seat in five moved to Team lifts blended margin by £2 a month.",
+   "footnote": "Usage and costs are monthly averages per paid seat.",
+   "source": "Acme model; model cost assumes current API rates."
   },
   "pitch": {
    "template": "table",
    "table": {
     "columns": [
      {
-      "label": "£ per customer per month"
+      "label": "£ per seat per month"
      },
      {
-      "label": "Revolver",
+      "label": "Pro",
       "focus": true
      },
      {
-      "label": "Transactor"
+      "label": "Team"
      },
      {
-      "label": "Super-transactor"
+      "label": "Enterprise"
      }
     ],
     "rows": [
      {
       "cells": [
-       "Share of customers",
-       "40–60%",
-       "40–60%",
+       "Share of paid seats",
+       "~55%",
+       "~35%",
        "~10%"
       ],
       "style": "muted"
      },
      {
       "cells": [
-       "Interest revenue",
+       "Subscription",
        {
-        "value": "267",
-        "note": "40% APR × £8.0k"
-       },
-       "—",
-       "—"
-      ]
-     },
-     {
-      "cells": [
-       "Cost of funding",
-       {
-        "value": "(53)",
-        "note": "8% × £8.0k"
+        "value": "20",
+        "note": "billed monthly"
        },
        {
-        "value": "(33)",
-        "note": "8% × £5.0k"
+        "value": "30",
+        "note": "3-seat minimum"
        },
        {
-        "value": "(70)",
-        "note": "8% × £10.5k"
+        "value": "60",
+        "note": "annual contract"
        }
       ]
      },
      {
       "cells": [
-       "Interchange revenue",
+       "Add-on usage",
        {
-        "value": "90",
-        "note": "1.8% × £5.0k spend"
+        "value": "6",
+        "note": "~0.4m extra tokens"
        },
        {
-        "value": "120",
-        "note": "1.8% × £6.7k"
+        "value": "12",
+        "note": "~0.8m extra tokens"
        },
        {
-        "value": "480",
-        "note": "1.8% × £26.7k"
+        "value": "45",
+        "note": "~3m extra tokens"
        }
       ]
      },
      {
       "cells": [
-       "Cost of rewards",
-       "(50)",
-       "(67)",
-       "(267)"
+       "Model cost",
+       "(8)",
+       "(11)",
+       "(34)"
       ]
      },
      {
       "cells": [
-       "Bad debt",
+       "Support and success",
+       "(1)",
+       "(2)",
        {
-        "value": "(70)",
-        "note": "~10% of balance p.a."
-       },
-       "(5)",
-       "(10)"
+        "value": "(12)",
+        "note": "named manager"
+       }
+      ]
+     },
+     {
+      "cells": [
+       "Discounts",
+       "(2)",
+       "(3)",
+       {
+        "value": "(15)",
+        "note": "volume, ~25%"
+       }
       ]
      },
      {
       "cells": [
        "Monthly gross margin",
-       "£184",
        "£15",
-       "£133"
+       "£26",
+       "£44"
       ],
       "style": "total"
      }
     ]
    },
    "title": "Business model",
-   "subtitle": "Every customer [[makes money.]]"
+   "subtitle": "Every seat [[makes money.]]"
   }
  },
  {
@@ -758,76 +758,76 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit"
+      "label": "Context"
      },
      {
-      "label": "No annual fee"
+      "label": "Free tier"
      },
      {
-      "label": "Cashback",
+      "label": "Per 1M tokens",
       "focus": true
      }
     ],
     "rows": [
      {
       "cells": [
-       "High-street bank",
-       "£25k",
+       "Closed-model API",
+       "200k",
        {
         "value": "✗",
-        "note": "£120 a year"
+        "note": "billed from day one"
        },
-       "0%"
+       "£12"
       ]
      },
      {
       "cells": [
-       "Neobank (debit)",
-       "—",
+       "Open-weight host",
+       "128k",
        "✓",
-       "0.5%"
+       "£3"
       ]
      },
      {
       "cells": [
-       "Corporate charge card",
-       "£50k",
+       "Cloud marketplace",
+       "1m",
        {
         "value": "✗",
-        "note": "£550 a year"
+        "note": "minimum spend"
        },
-       "1%"
+       "£9"
       ]
      },
      {
       "cells": [
        "Acme",
-       "£250k",
+       "640k",
        "✓",
-       "1%"
+       "£2"
       ],
       "style": "total"
      }
     ]
    },
-   "caption": "SME business cards compared, 2026",
+   "caption": "AI model providers compared, 2026",
    "kicker": "Competition",
-   "title": "Acme offers [[five times the limit]] of the nearest SME card with no annual fee",
+   "title": "Acme offers [[five times the context]] of the nearest provider with a free tier",
    "notes": [
     {
-     "title": "Banks cap at £25k",
-     "text": "Underwriting on filed accounts limits young firms."
+     "title": "Closed APIs bill at once",
+     "text": "No free tier, so teams cannot test on real documents."
     },
     {
-     "title": "Neobanks stop at debit",
-     "text": "No credit line, so spend leaves for personal cards."
+     "title": "Open hosts stop at 128k",
+     "text": "Long documents must be split and stitched back together."
     },
     {
-     "title": "Charge card perks cost extra",
-     "text": "**£550 a year** before the first pound of cashback."
+     "title": "Marketplaces add a minimum",
+     "text": "**Minimum spend** before the first token is read."
     }
    ],
-   "source": "Provider websites, September 2026."
+   "source": "Provider pricing pages, September 2026."
   },
   "pitch": {
    "template": "table",
@@ -837,70 +837,70 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit"
+      "label": "Context"
      },
      {
-      "label": "No annual fee"
+      "label": "Free tier"
      },
      {
-      "label": "Cashback",
+      "label": "Per 1M tokens",
       "focus": true
      }
     ],
     "rows": [
      {
       "cells": [
-       "High-street bank",
-       "£25k",
+       "Closed-model API",
+       "200k",
        {
         "value": "✗",
-        "note": "£120 a year"
+        "note": "billed from day one"
        },
-       "0%"
+       "£12"
       ]
      },
      {
       "cells": [
-       "Neobank (debit)",
-       "—",
+       "Open-weight host",
+       "128k",
        "✓",
-       "0.5%"
+       "£3"
       ]
      },
      {
       "cells": [
-       "Corporate charge card",
-       "£50k",
+       "Cloud marketplace",
+       "1m",
        {
         "value": "✗",
-        "note": "£550 a year"
+        "note": "minimum spend"
        },
-       "1%"
+       "£9"
       ]
      },
      {
       "cells": [
        "Acme",
-       "£250k",
+       "640k",
        "✓",
-       "1%"
+       "£2"
       ],
       "style": "total"
      }
     ]
    },
-   "caption": "SME business cards compared",
+   "caption": "AI model providers compared",
    "title": "Competition",
-   "subtitle": "[[5×]] the limit. No fee.",
+   "subtitle": "[[5×]] the context. Free tier.",
    "notes": [
     {
-     "title": "Banks cap at £25k"
+     "title": "Closed APIs bill at once"
     },
     {
-     "title": "Neobanks stop at debit"
+     "title": "Open hosts stop at 128k"
     },
     {
-     "title": "Charge cards: £550 a year"
+     "title": "Marketplaces add a minimum"
     }
    ]
   }
@@ -1009,7 +1009,7 @@
     "kind": "matrix",
     "axes": {
      "x": "Rewards",
-     "y": "Credit limit"
+     "y": "Limit"
     },
     "quadrants": [
      "Lenders",
@@ -1019,7 +1019,7 @@
     ],
     "points": [
      {
-      "label": "Credit-only lender",
+      "label": "Lender-only fintech",
       "x": 18,
       "y": 78
      },
@@ -1029,7 +1029,7 @@
       "y": 62
      },
      {
-      "label": "High-street bank",
+      "label": "Retail bank",
       "x": 22,
       "y": 30
      },
@@ -1054,7 +1054,7 @@
    "notes": [
     {
      "title": "Lenders: limit only",
-     "text": "Credit-only lenders and charge cards offer £50k, no rewards."
+     "text": "Lender-only fintechs and charge cards offer £50k, no rewards."
     },
     {
      "title": "Cards: rewards only",
@@ -1076,7 +1076,7 @@
     "kind": "matrix",
     "axes": {
      "x": "Rewards",
-     "y": "Credit limit"
+     "y": "Limit"
     },
     "quadrants": [
      "Lenders",
@@ -1086,7 +1086,7 @@
     ],
     "points": [
      {
-      "label": "Credit-only lender",
+      "label": "Lender-only fintech",
       "x": 18,
       "y": 78
      },
@@ -1096,7 +1096,7 @@
       "y": 62
      },
      {
-      "label": "High-street bank",
+      "label": "Retail bank",
       "x": 22,
       "y": 30
      },
@@ -1137,7 +1137,7 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit",
+      "label": "Limit",
       "icon": "wallet"
      },
      {
@@ -1156,7 +1156,7 @@
     "rows": [
      {
       "cells": [
-       "High-street bank",
+       "Retail bank",
        "◑",
        "○",
        "◔",
@@ -1183,7 +1183,7 @@
      },
      {
       "cells": [
-       "Credit-only lender",
+       "Lender-only fintech",
        "◕",
        "○",
        "◑",
@@ -1215,7 +1215,7 @@
       "label": "Provider"
      },
      {
-      "label": "Credit limit",
+      "label": "Limit",
       "icon": "wallet"
      },
      {
@@ -1234,7 +1234,7 @@
     "rows": [
      {
       "cells": [
-       "High-street bank",
+       "Retail bank",
        "◑",
        "○",
        "◔",
@@ -1261,7 +1261,7 @@
      },
      {
       "cells": [
-       "Credit-only lender",
+       "Lender-only fintech",
        "◕",
        "○",
        "◑",
@@ -1686,46 +1686,46 @@
     ],
     "rows": [
      {
-      "label": "Card issuing",
+      "label": "Core product",
       "start": 0,
       "end": 2
      },
      {
-      "label": "Underwriting engine",
+      "label": "Billing and plans",
       "start": 1,
       "end": 3
      },
      {
-      "label": "Warehouse facility",
+      "label": "Enterprise security",
       "start": 2,
       "end": 5,
       "focus": true
      },
      {
-      "label": "Direct-mail acquisition",
+      "label": "Outbound sales",
       "start": 4,
       "end": 7
      },
      {
-      "label": "EU entry",
+      "label": "EU data region",
       "start": 6,
       "end": 7
      }
     ],
     "milestones": [
      {
-      "label": "First 100 cards",
+      "label": "First 100 teams",
       "at": 2
      },
      {
-      "label": "£10m book",
+      "label": "£5m ARR",
       "at": 5
      }
     ]
    },
    "caption": "Launch plan by workstream, 2027–2028",
    "kicker": "Plan",
-   "title": "The [[warehouse facility]] is the critical path: acquisition cannot scale until Q2 2028",
+   "title": "[[Enterprise security]] is the critical path: outbound sales cannot scale until Q2 2028",
    "source": "Acme operating plan."
   },
   "pitch": {
@@ -1744,45 +1744,45 @@
     ],
     "rows": [
      {
-      "label": "Card issuing",
+      "label": "Core product",
       "start": 0,
       "end": 2
      },
      {
-      "label": "Underwriting engine",
+      "label": "Billing and plans",
       "start": 1,
       "end": 3
      },
      {
-      "label": "Warehouse facility",
+      "label": "Enterprise security",
       "start": 2,
       "end": 5,
       "focus": true
      },
      {
-      "label": "Direct-mail acquisition",
+      "label": "Outbound sales",
       "start": 4,
       "end": 7
      },
      {
-      "label": "EU entry",
+      "label": "EU data region",
       "start": 6,
       "end": 7
      }
     ],
     "milestones": [
      {
-      "label": "First 100 cards",
+      "label": "First 100 teams",
       "at": 2
      },
      {
-      "label": "£10m book",
+      "label": "£5m ARR",
       "at": 5
      }
     ]
    },
    "title": "The plan",
-   "subtitle": "[[Warehouse]] first, then scale."
+   "subtitle": "[[Security]] first, then scale."
   }
  },
  {
@@ -2006,10 +2006,10 @@
      }
     ]
    },
-   "caption": "UK SME card spend by issuer, 2020–2026 · £bn",
+   "caption": "SME card spend by issuer, 2020–2026 · £bn",
    "kicker": "Competition",
-   "title": "[[The largest issuer]] widens its lead in UK SME card spend to £15bn while challengers stay near £1bn",
-   "source": "UK card spending statistics; Acme analysis. Illustrative."
+   "title": "[[The largest issuer]] widens its lead in SME card spend to £15bn while challengers stay near £1bn",
+   "source": "Card spending statistics; Acme analysis. Illustrative."
   },
   "pitch": {
    "template": "chart",
@@ -2123,53 +2123,53 @@
   "consulting": {
    "template": "steps",
    "kicker": "Plan and ask",
-   "title": "£5m funds [[18 months]] to a £10m book and a drawn warehouse facility",
+   "title": "£5m funds [[18 months]] to 1,000 paying teams and a self-serve engine that converts",
    "steps": [
     {
      "when": "0–6 mo",
      "title": "Build",
-     "text": "Card issuing, partners and underwriting engine live. **First 100 cards.**"
+     "text": "Core product, integrations and billing live. **First 100 teams.**"
     },
     {
      "when": "6–18 mo",
      "title": "Prove",
-     "text": "Book reaches **£10m**; gross-margin run-rate ~£1.5m; warehouse drawn.",
+     "text": "**1,000 teams**; gross margin above 70%; self-serve conversion at 4%.",
      "focus": true
     },
     {
      "when": "Years 2–4",
      "title": "Scale",
-     "text": "£120m book; direct-mail acquisition at 2,000+ customers a month."
+     "text": "£40m ARR; outbound sales adds 200+ teams a month."
     },
     {
      "when": "Year 3+",
      "title": "Expand",
-     "text": "£250m+ book; gross margin covers opex and CAC; EU entry."
+     "text": "£100m+ ARR; margin covers opex and CAC; EU entry."
     }
    ],
-   "takeaway": "The ask: **£5m for 18 months** to reach a funded book.",
+   "takeaway": "The ask: **£5m for 18 months** to reach 1,000 paying teams.",
    "footnote": "Base case of the Acme financial model."
   },
   "pitch": {
    "template": "steps",
    "title": "The plan",
-   "subtitle": "[[£5m]] to a funded book.",
+   "subtitle": "[[£5m]] to 1,000 teams.",
    "steps": [
     {
      "when": "0–6 mo",
      "title": "Build",
-     "text": "First 100 cards."
+     "text": "First 100 teams."
     },
     {
      "when": "6–18 mo",
      "title": "Prove",
-     "text": "£10m book.",
+     "text": "1,000 teams.",
      "focus": true
     },
     {
      "when": "Years 2–4",
      "title": "Scale",
-     "text": "£120m book."
+     "text": "£40m ARR."
     }
    ],
    "takeaway": "The ask: [[£5m for 18 months.]]"
@@ -2183,7 +2183,7 @@
   "consulting": {
    "template": "table",
    "kicker": "Next steps",
-   "title": "Four actions this quarter put the [[first 100 cards]] in customers’ hands by Q1 2027",
+   "title": "Four steps take you from a blank page to [[a deck you can present]]",
    "table": {
     "columns": [
      {
@@ -2203,13 +2203,13 @@
      {
       "cells": [
        {
-        "value": "Sign the issuing partner",
-        "note": "Term sheet agreed; legal open"
+        "value": "Describe your first slide",
+        "note": "Say what it must prove"
        },
-       "CEO",
-       "15 Oct",
+       "You",
+       "Today",
        {
-        "value": "Under way",
+        "value": "Start here",
         "status": true
        }
       ],
@@ -2218,13 +2218,13 @@
      {
       "cells": [
        {
-        "value": "Close the £5m seed round",
-        "note": "Lead confirmed; allocations next"
+        "value": "Check the storyline",
+        "note": "Reads the whole deck for gaps"
        },
-       "CFO",
-       "31 Oct",
+       "Occam",
+       "5 min",
        {
-        "value": "Under way",
+        "value": "Automatic",
         "status": true
        }
       ]
@@ -2232,13 +2232,13 @@
      {
       "cells": [
        {
-        "value": "Hire the head of credit",
-        "note": "Two finalists; owns underwriting"
+        "value": "Rehearse the room",
+        "note": "Hardest questions, with answers"
        },
-       "CEO",
-       "15 Nov",
+       "Occam",
+       "10 min",
        {
-        "value": "Final round",
+        "value": "On request",
         "status": true
        }
       ]
@@ -2246,26 +2246,26 @@
      {
       "cells": [
        {
-        "value": "Open the warehouse process",
-        "note": "Shortlist three lenders"
+        "value": "Share or present",
+        "note": "A link, a PDF, or full screen"
        },
-       "CFO",
-       "Dec",
+       "You",
+       "Today",
        {
-        "value": "Shortlisting",
+        "value": "Ready",
         "status": true
        }
       ]
      }
     ]
    },
-   "takeaway": "Only the first needs **a board decision**; the rest are in hand.",
-   "footnote": "Dates are target completion; owners are accountable."
+   "takeaway": "Only the first needs **you**; Occam does the rest.",
+   "footnote": "Times are indicative."
   },
   "pitch": {
    "template": "table",
    "title": "What’s next",
-   "subtitle": "First 100 cards by [[Q1 2027.]]",
+   "subtitle": "Your first deck by [[today.]]",
    "table": {
     "columns": [
      {
@@ -2285,13 +2285,13 @@
      {
       "cells": [
        {
-        "value": "Sign the issuing partner",
-        "note": "Term sheet agreed; legal open"
+        "value": "Describe your first slide",
+        "note": "Say what it must prove"
        },
-       "CEO",
-       "15 Oct",
+       "You",
+       "Today",
        {
-        "value": "Under way",
+        "value": "Start here",
         "status": true
        }
       ],
@@ -2300,13 +2300,13 @@
      {
       "cells": [
        {
-        "value": "Close the £5m seed round",
-        "note": "Lead confirmed; allocations next"
+        "value": "Check the storyline",
+        "note": "Reads the whole deck for gaps"
        },
-       "CFO",
-       "31 Oct",
+       "Occam",
+       "5 min",
        {
-        "value": "Under way",
+        "value": "Automatic",
         "status": true
        }
       ]
@@ -2314,13 +2314,13 @@
      {
       "cells": [
        {
-        "value": "Hire the head of credit",
-        "note": "Two finalists; owns underwriting"
+        "value": "Rehearse the room",
+        "note": "Hardest questions, with answers"
        },
-       "CEO",
-       "15 Nov",
+       "Occam",
+       "10 min",
        {
-        "value": "Final round",
+        "value": "On request",
         "status": true
        }
       ]
@@ -2328,20 +2328,20 @@
      {
       "cells": [
        {
-        "value": "Open the warehouse process",
-        "note": "Shortlist three lenders"
+        "value": "Share or present",
+        "note": "A link, a PDF, or full screen"
        },
-       "CFO",
-       "Dec",
+       "You",
+       "Today",
        {
-        "value": "Shortlisting",
+        "value": "Ready",
         "status": true
        }
       ]
      }
     ]
    },
-   "takeaway": "Only the first needs [[a board decision.]]"
+   "takeaway": "Only the first needs [[you.]]"
   }
  },
  {
@@ -2373,20 +2373,20 @@
   "consulting": {
    "template": "cards",
    "kicker": "Appendix · Market",
-   "title": "Demand is documented: a third of UK SMEs need revolving credit and [[a fifth]] already use a card",
+   "title": "Demand is documented: a third of SMEs need flexible funding and [[a fifth]] already use a card",
    "cards": [
     {
      "value": "5.7M",
-     "title": "UK SMEs",
+     "title": "SMEs",
      "bullets": [
-      "Private-sector businesses across the UK",
+      "Private-sector businesses",
       "34M more across the EU, most under ten staff"
      ]
     },
     {
      "value": "19%",
      "tone": "focus",
-     "title": "Use a credit card",
+     "title": "Use a business card",
      "bullets": [
       "The most-used external finance product",
       "Ahead of overdrafts and term loans"
@@ -2402,15 +2402,15 @@
     },
     {
      "value": "€400bn",
-     "title": "SME credit gap",
+     "title": "SME funding gap",
      "bullets": [
-      "Estimated across the EU and UK",
+      "Estimated across the EU",
       "Banks decline most small unsecured requests"
      ]
     }
    ],
    "takeaway": "The product sits where card use and revolving need overlap.",
-   "source": "EC SME Annual Report 2025/26; UK DBT Business Population 2025; ECB SAFE; EIB Group."
+   "source": "EC SME Annual Report 2025/26; ECB SAFE; EIB Group."
   },
   "pitch": {
    "template": "cards",
@@ -2419,13 +2419,13 @@
    "cards": [
     {
      "value": "5.7M",
-     "title": "UK SMEs",
+     "title": "SMEs",
      "text": "Private-sector firms, most under ten staff."
     },
     {
      "value": "19%",
      "tone": "focus",
-     "title": "Use a credit card",
+     "title": "Use a business card",
      "text": "Already paying for business on a card."
     },
     {
@@ -2435,11 +2435,407 @@
     },
     {
      "value": "€400bn",
-     "title": "Credit gap",
-     "text": "Unmet demand across the EU and UK."
+     "title": "Funding gap",
+     "text": "Unmet demand across the EU."
     }
    ],
    "takeaway": "The product is [[the intersection.]]"
+  }
+ },
+ {
+  "id": "image",
+  "group": "case",
+  "label": "Product",
+  "blurb": "A screenshot that shows the product doing the job",
+  "consulting": {
+   "template": "image",
+   "title": "Owners see their [[lowest cash point]] weeks ahead, and draw funds before it bites",
+   "caption": "Acme app · 90-day cash flow forecast",
+   "image": {
+    "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
+    "alt": "The Acme cash flow screen: a 90-day forecast dipping to £14,820 when VAT is due, and a suggested £12,000 draw"
+   },
+   "notes": [
+    {
+     "title": "Forecast from live data",
+     "text": "Bank feeds, invoices and bills sync daily; the forecast updates every morning."
+    },
+    {
+     "title": "The dip, explained",
+     "text": "VAT, payroll and rent are named as the reasons the balance falls."
+    },
+    {
+     "title": "Funds in one tap",
+     "text": "A draw is suggested before the buffer is breached, repaid from a known invoice."
+    }
+   ]
+  },
+  "pitch": {
+   "template": "image",
+   "title": "Product",
+   "subtitle": "See the cash gap coming. Fix it in one tap.",
+   "image": {
+    "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
+    "alt": "The Acme cash flow screen: a 90-day forecast dipping to £14,820 when VAT is due, and a suggested £12,000 draw"
+   }
+  }
+ },
+ {
+  "id": "team",
+  "group": "case",
+  "label": "Team",
+  "blurb": "The people behind it, each with one line of proof",
+  "consulting": {
+   "template": "team",
+   "title": "The team has built SME lending, card issuing and risk at scale before",
+   "people": [
+    {
+     "photo": {
+      "src": "/starters/img/priya-photo-1024x1024.webp"
+     },
+     "name": "Priya Shah",
+     "role": "CEO & co-founder",
+     "text": "Built an SME lending book to £1bn a year"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/tom-photo-1024x1024.webp"
+     },
+     "name": "Tom Ellison",
+     "role": "CTO & co-founder",
+     "text": "Ran card issuing for 4m customers at a neobank"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/grace-photo-1024x1024.webp"
+     },
+     "name": "Grace Adeyemi",
+     "role": "Chief risk officer",
+     "text": "12 years in SME risk at a retail bank"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/daniel-photo-1024x1024.webp"
+     },
+     "name": "Daniel Cho",
+     "role": "Head of growth",
+     "text": "Grew an SME banking app from 20k to 400k members"
+    }
+   ]
+  },
+  "pitch": {
+   "template": "team",
+   "title": "Team",
+   "subtitle": "We have built every part of this before.",
+   "people": [
+    {
+     "photo": {
+      "src": "/starters/img/priya-photo-1024x1024.webp"
+     },
+     "name": "Priya Shah",
+     "role": "CEO & co-founder",
+     "text": "Built a £1bn-a-year SME lending book"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/tom-photo-1024x1024.webp"
+     },
+     "name": "Tom Ellison",
+     "role": "CTO & co-founder",
+     "text": "Ran card issuing for 4m customers"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/grace-photo-1024x1024.webp"
+     },
+     "name": "Grace Adeyemi",
+     "role": "Chief risk officer",
+     "text": "12 years of SME risk"
+    },
+    {
+     "photo": {
+      "src": "/starters/img/daniel-photo-1024x1024.webp"
+     },
+     "name": "Daniel Cho",
+     "role": "Head of growth",
+     "text": "Grew an SME app to 400k members"
+    }
+   ]
+  }
+ },
+ {
+  "id": "logos",
+  "group": "case",
+  "label": "Partners",
+  "blurb": "Who already works with you, as their logos",
+  "consulting": {
+   "template": "logos",
+   "title": "Acme launches inside the [[eight tools]] small businesses already run their money on",
+   "caption": "Launch partners · signed integrations",
+   "logos": [
+    {
+     "logo": {
+      "src": "/starters/img/ledgerline-logo-731x150.png"
+     },
+     "name": "Ledgerline"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/northwind-logo-861x192.png"
+     },
+     "name": "Northwind"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/tally-logo-764x159.png"
+     },
+     "name": "Tally & Co."
+    },
+    {
+     "logo": {
+      "src": "/starters/img/shopwell-logo-797x264.png"
+     },
+     "name": "Shopwell"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/payroo-logo-796x130.png"
+     },
+     "name": "Payroo"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/kiln-logo-453x600.png"
+     },
+     "name": "Kiln"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/fieldbook-logo-750x216.png"
+     },
+     "name": "Fieldbook"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/brightdesk-logo-812x190.png"
+     },
+     "name": "Brightdesk"
+    }
+   ]
+  },
+  "pitch": {
+   "template": "logos",
+   "title": "Partners",
+   "subtitle": "Live inside the tools SMEs already use.",
+   "logos": [
+    {
+     "logo": {
+      "src": "/starters/img/ledgerline-logo-731x150.png"
+     },
+     "name": "Ledgerline"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/northwind-logo-861x192.png"
+     },
+     "name": "Northwind"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/tally-logo-764x159.png"
+     },
+     "name": "Tally & Co."
+    },
+    {
+     "logo": {
+      "src": "/starters/img/shopwell-logo-797x264.png"
+     },
+     "name": "Shopwell"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/payroo-logo-796x130.png"
+     },
+     "name": "Payroo"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/kiln-logo-453x600.png"
+     },
+     "name": "Kiln"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/fieldbook-logo-750x216.png"
+     },
+     "name": "Fieldbook"
+    },
+    {
+     "logo": {
+      "src": "/starters/img/brightdesk-logo-812x190.png"
+     },
+     "name": "Brightdesk"
+    }
+   ]
+  }
+ },
+ {
+  "id": "cards-numbered",
+  "group": "case",
+  "label": "Argument",
+  "blurb": "Two or three reasons in order, each with the proof in two bullets",
+  "consulting": {
+   "template": "cards",
+   "lead": "number",
+   "title": "SMEs choose Acme because it solves [[three problems]] their bank leaves open",
+   "cards": [
+    {
+     "title": "A limit that grows",
+     "bullets": [
+      "Banks cap SME cards at **£25k**, reviewed yearly",
+      "Acme raises the limit live as revenue grows"
+     ]
+    },
+    {
+     "title": "One home for money",
+     "bullets": [
+      "Account, card and lending line in one app",
+      "One view of cash across all three"
+     ]
+    },
+    {
+     "title": "Rewards that repay",
+     "bullets": [
+      "**1% back** on supplier spend, against 0.5% at best",
+      "Funded by the interchange the card earns"
+     ]
+    }
+   ]
+  },
+  "pitch": {
+   "template": "cards",
+   "lead": "number",
+   "title": "Why Acme",
+   "subtitle": "Three things the bank cannot do.",
+   "cards": [
+    {
+     "title": "Limits that grow",
+     "text": "Live bank data raises the limit with revenue."
+    },
+    {
+     "title": "One app",
+     "text": "Account, card and lending line together."
+    },
+    {
+     "title": "1% back",
+     "text": "Rewards on everyday supplier spend."
+    }
+   ]
+  }
+ },
+ {
+  "id": "agenda",
+  "group": "open",
+  "label": "Agenda",
+  "blurb": "The deck’s chapters, listed from its chapter dividers",
+  "consulting": {
+   "template": "agenda"
+  },
+  "pitch": {
+   "template": "agenda"
+  }
+ },
+ {
+  "id": "pair-number",
+  "group": "trend",
+  "label": "Number and trend",
+  "blurb": "The figure that matters, beside the trend behind it",
+  "consulting": {
+   "template": "pair",
+   "kicker": "Market",
+   "title": "Acme’s spend book reaches [[£3.6bn]] by 2030, 7% of a market growing 13% a year",
+   "halves": [
+    {
+     "number": {
+      "value": "£3.6bn",
+      "caption": "Acme’s spend book in 2030: 7% of SME card spend."
+     }
+    },
+    {
+     "caption": "SME card spend · £bn",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "£{v}bn",
+      "series": [
+       {
+        "name": "Market",
+        "mark": "bar",
+        "color": "neutral",
+        "values": [
+         32,
+         36,
+         41,
+         46,
+         52
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Grows 13% a year as cards replace transfers"
+     ]
+    }
+   ],
+   "source": "Acme market model, base case."
+  },
+  "pitch": {
+   "template": "pair",
+   "title": "Market",
+   "subtitle": "7% of a £52bn market by 2030.",
+   "halves": [
+    {
+     "number": {
+      "value": "£3.6bn",
+      "caption": "Our spend book by 2030."
+     }
+    },
+    {
+     "caption": "SME card spend · £bn",
+     "chart": {
+      "categories": [
+       "2026",
+       "2027",
+       "2028",
+       "2029",
+       "2030"
+      ],
+      "format": "£{v}bn",
+      "series": [
+       {
+        "name": "Market",
+        "mark": "bar",
+        "color": "neutral",
+        "values": [
+         32,
+         36,
+         41,
+         46,
+         52
+        ]
+       }
+      ]
+     },
+     "bullets": [
+      "Grows 13% a year"
+     ]
+    }
+   ]
   }
  }
 ]
