@@ -1,5 +1,6 @@
 import { resolveAccent } from "../slides/colours.js";
 import type { Style, Theme } from "../types.js";
+import { getAt } from "../slides/edit.js";
 import { openComments } from "../comments.js";
 import { storylineRows } from "./doc.js";
 import { IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types.js";
@@ -17,9 +18,10 @@ export function deckView(ctx: ToolContext, doc: DeckDoc, rev: number): Record<st
 }
 
 /** Open comments, as an agent reads them; left out when there are none. */
-export function commentsView(doc: DeckDoc, slideId?: string): { comments?: { commentId: string; slideId: string; text: string; by: string; at: number }[] } {
+export function commentsView(doc: DeckDoc, slideId?: string): { comments?: { commentId: string; slideId: string; text: string; by: string; at: number; path?: string; quote?: string; partGone?: true }[] } {
   const open = openComments(doc.comments, slideId);
-  return open.length ? { comments: open.map((c) => ({ commentId: c.id, slideId: c.slideId, text: c.text, by: c.by, at: c.at })) } : {};
+  const gone = (c: (typeof open)[number]) => { const sl = doc.slides.find((s) => s.id === c.slideId)?.slide; return !!c.path && !!sl && getAt(sl, c.path) === undefined; };
+  return open.length ? { comments: open.map((c) => ({ commentId: c.id, slideId: c.slideId, text: c.text, by: c.by, at: c.at, ...(c.path ? { path: c.path } : {}), ...(c.quote ? { quote: c.quote } : {}), ...(gone(c) ? { partGone: true as const } : {}) })) } : {};
 }
 
 function checkAccent(theme: Theme, accent: string | null | undefined) {

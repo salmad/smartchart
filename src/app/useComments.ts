@@ -5,7 +5,8 @@ import { MAX_COMMENT, newCommentId, openComments, resolveComment } from '@/engin
 import { locked, type Action, type AppState } from './state'
 
 export interface CommentActions {
-  add(slideId: string, text: string): void
+  /** `path`: the part of the slide it is about (none: the whole slide); `quote`: that part's text, as it was. */
+  add(slideId: string, text: string, path?: string | null, quote?: string): void
   resolve(id: string): void
   remove(id: string): void
   /** Sends the agent a request to address the slide's open comments. */
@@ -17,10 +18,10 @@ export function useComments(app: { getState(): AppState; dispatch(a: Action): vo
     const set = (comments: AppState['comments']) => app.dispatch({ type: 'set', patch: { comments } })
     const free = () => !locked(app.getState())
     return {
-      add: (slideId, text) => {
+      add: (slideId, text, path, quote) => {
         const s = app.getState()
         if (!free() || !text.trim()) return
-        set([...s.comments, { id: newCommentId(s.comments.map((c) => c.id)), slideId, text: text.trim().slice(0, MAX_COMMENT), by: author, at: Date.now() }])
+        set([...s.comments, { id: newCommentId(s.comments.map((c) => c.id)), slideId, text: text.trim().slice(0, MAX_COMMENT), by: author, at: Date.now(), ...(path ? { path, ...(quote ? { quote } : {}) } : {}) }])
       },
       resolve: (id) => { const next = resolveComment(app.getState().comments, id, author, undefined, Date.now()); if (free() && typeof next !== 'string') set(next) },
       remove: (id) => { if (free()) set(app.getState().comments.filter((c) => c.id !== id)) },

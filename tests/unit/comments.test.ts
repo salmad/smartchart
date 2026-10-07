@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { commentLines, commentsOf, mergeComments, openComments, resolveComment, type DeckComment } from '../../src/engine/comments'
+import { commentLines, commentsOf, mergeComments, openComments, pathLabel, quoteOf, resolveComment, type DeckComment } from '../../src/engine/comments'
 
 const c = (id: string, at: number, extra: Partial<DeckComment> = {}): DeckComment => ({ id, slideId: 's1', text: `note ${id}`, by: 'Sam', at, ...extra })
 
@@ -64,5 +64,28 @@ describe('comments over MCP', () => {
     expect(got.ok && 'comments' in got.result).toBe(false)
     expect(await runTool('resolve_comment', { deckId, commentId: 'c_1', reply: 'again' }, caller, d)).toMatchObject({ ok: false, error: { code: 'refused' } })
     expect(await runTool('resolve_comment', { deckId, commentId: 'c_9', reply: 'x' }, caller, d)).toMatchObject({ ok: false, error: { code: 'not_found' } })
+  })
+})
+
+describe('comments on a part', () => {
+  const base = { id: 'c_1', slideId: 's_x1', by: 'Sam', at: 1 }
+  it('labels a path in words', () => {
+    expect(pathLabel('title')).toBe('Title')
+    expect(pathLabel('points[2].text')).toBe('Point 3 · text')
+    expect(pathLabel('notes[0]')).toBe('Note 1')
+  })
+  it('keeps the start of the part’s text, without markup', () => {
+    expect(quoteOf('**Churn** fell [4 pts](https://x.co)')).toBe('Churn fell 4 pts')
+    expect(quoteOf('x'.repeat(100))).toHaveLength(60)
+    expect(quoteOf(7)).toBeUndefined()
+  })
+  it('tells an agent where, and when the part is gone', () => {
+    const c = [{ ...base, text: 'too wordy', path: 'points[2].text', quote: 'Churn fell 4 pts' }, { ...base, id: 'c_2', text: 'whole' }]
+    expect(commentLines(c, ['s_x1'])[0]).toBe('c_1 on s_x1 (slide 1) at points[2].text ("Churn fell 4 pts"), by Sam: "too wordy"')
+    expect(commentLines(c, ['s_x1'], () => false)[0]).toContain('at points[2].text (gone; was "Churn fell 4 pts")')
+    expect(commentLines(c, ['s_x1'])[1]).toBe('c_2 on s_x1 (slide 1), by Sam: "whole"')
+  })
+  it('reads saved comments, dropping a malformed path or quote', () => {
+    expect(commentsOf([{ ...base, text: 't', path: 3, quote: 'q' }])).toEqual([{ ...base, text: 't', path: undefined, quote: 'q' }])
   })
 })

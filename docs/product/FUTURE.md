@@ -13,7 +13,7 @@ Google Docs/Slides (operation log + snapshots), Confluence (a full version per s
 - Later: conflict checks per path; stable ids for table rows and chart series (LLM patches fail on array indexes); history retention as a pricing tier; agent edits as suggestions or branches (Ink & Switch Patchwork, Tiptap). Avoid: CRDTs and OT until there is live co-editing.
 
 ## 2. First-run tour, ending at Connect an agent
-**Built (2026-10-04):** our own spotlight component (no driver.js), 8 steps including Comments and Versions, from "Take the tour" in the account menu or a one-time nudge after the first slide is made. Spec: `docs/superpowers/specs/2026-10-04-tour-design.md`.
+**Built (2026-10-04):** our own spotlight component (no driver.js), 7 steps (chat, slide, checks, comments, the grid, share, Connect an agent; each step opens what it describes and rings what it opened), from "Take the tour" in the account menu or a one-time nudge after the first slide is made. Spec: `docs/superpowers/specs/2026-10-04-tour-design.md`.
 MCP is currently the most useful feature, and the tour exists to lead people there.
 - **For:** everyone, with MCP as the finale. Because of that, it explains in plain words what an agent is.
 - **Form:** a classic step-by-step tour (Next / Done).
@@ -23,7 +23,7 @@ MCP is currently the most useful feature, and the tour exists to lead people the
 - **Build:** not decided. Own Popover-based component vs driver.js.
 
 ## 3. Comments in the deck that agents pick up
-**Built (2026-10-04):** comments on slides, a badge on the strip, Resolve and Delete, "Ask SmartChart to address"; the in-app agent and MCP (`get_deck`, `read_slide`, `resolve_comment`) address them when asked and resolve with a reply. Spec: `docs/superpowers/specs/2026-10-04-deck-comments-design.md`. Still open: anchors to a part of a slide, comments from share links, @mentions, a deck-wide list, and a resolved comment linking to its version (#1).
+**Built (2026-10-04):** comments on slides, a badge on the strip, Resolve and Delete, "Ask SmartChart to address"; the in-app agent and MCP (`get_deck`, `read_slide`, `resolve_comment`) address them when asked and resolve with a reply. Spec: `docs/superpowers/specs/2026-10-04-deck-comments-design.md`. **Part-level comments built (2026-10-05):** a Comment button beside Edit (C), one panel for whole-slide and part notes, click a part of the slide to pick it (path and quote saved; a gone part degrades to the whole slide). Still open: comments from share links, @mentions, a deck-wide list, and a resolved comment linking to its version (#1).
 The maker leaves notes on a slide, or on a part of it ("this number is from Q2, update it", "too wordy"). An agent (in-app or MCP) reads the open comments and acts on them, then replies and resolves.
 Open questions for the brainstorm:
 - What a comment anchors to: a slide, or a path inside it.
@@ -85,3 +85,30 @@ A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonne
 **Done (2026-10-04):** R8's wording no longer invites invented sources; R11 ignores spans of time ("18 months") and says how to fix; the chart card says a line labels only its last point; overridden stacking and marks warn. Also done: `auto` focus picks the item whose exact name the title highlights (FY25, a column) without asking Jev; R4's message names the subtitle for pitch; R13 reads a table the way it is most consistent, so criteria tables pass. **Still open:** R4/J4 when the highlight and the focused item disagree, J2 causal and focus-row checks, J5's message, and the wiring (agents skip get_guide, edit after check_slide).
 
 The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.
+
+## 12. To-dos that activate a user (2026-10-05)
+A short checklist for a new user (in the app, quiet and dismissable) that walks them to the things that make Occam worth keeping. Each item ticks itself when done:
+- Take the tour.
+- Connect an agent (make a key).
+- Ask your agent to create a deck (it ticks when a deck is written over MCP; offer a sentence to paste, e.g. "Make me a 6-slide deck on …").
+- Share a deck (a link made).
+- Leave a comment and ask the agent to address it.
+Open questions: where it lives (empty-state of the decks list, or the account menu with a progress ring); whether it shows once or until done; what counts as done (server-side events, not clicks, so an agent's actions count); no emails or nagging.
+
+### 12a. First slice: a dismissable "Connect an agent" prompt (2026-10-07)
+Before the full checklist, one item on its own: a small card in the app (decks list or editor corner) saying "Connect an agent: let Claude or Cursor build and edit your decks here", with a primary button that opens `AgentKey` (Make a key) and a close (×) that hides it.
+- **Ticks itself, server-side:** it disappears for good once the account has an active key or an MCP write has happened; no manual "done".
+- **Dismiss:** × hides it, remembered per account (not only in localStorage); it can be found again in the account menu (Connect an agent) and in the tour. Never comes back unprompted.
+- **Shown:** after the first slide, not on a blank first run; at most one such prompt on screen (not alongside the tour nudge).
+- **Later:** it becomes the first item of the #12 checklist.
+
+## 13. Re-orient the product to MCP: the agent is how most people will use it (2026-10-05)
+Today the app is a chat editor with MCP as an extra. If most work will come through a connected agent (Claude, Cursor, ChatGPT), the app's job changes. Starting thoughts, to brainstorm before building:
+- **The app becomes the viewer, the reviewer and the hand-finisher**, not the main author: live view of what the agent is changing (already: presence, events), versions and Undo for what it did, comments as the way a human steers it, hand-edit for the last 5%, present and share.
+- **Onboarding starts at Connect an agent**, not the chat: first screen is "connect your agent" with the paste-in config for each client, then a prompt to try ("make a deck on …"). The in-app chat stays for people with no agent, and for quick edits.
+- **Design the MCP surface as the product's main UI**: tool descriptions, guides, `next` hints and error messages are the interface copy. Every write returns what to fix next (#8) and suggestions (#9); a deck link is returned with every write so the user can watch.
+- **Trust and control for work done by someone else**: Undo per agent turn (built), an "agent activity" feed per deck (who changed what, from which request), and optional "suggest, don't write" mode where an agent's edits wait for approval (#1, agent edits as suggestions).
+- **Hand-offs both ways**: the user's comments and hand-edits are visible to the agent (built); add "ask my agent" from the app (a comment addressed to the connected agent rather than the in-app one).
+- **Measure it**: first deck made over MCP, share of decks started by an agent, time from connect to first slide.
+- Open: whether the in-app chat is kept long term; a hosted remote MCP with OAuth (no keys to paste) instead of keys; which clients to support first and test against (#7, #11).
+

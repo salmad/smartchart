@@ -32,7 +32,7 @@ Agents now write decks from three places: the maker by hand, SmartChart's own ag
 ## When a save becomes a version (one rule, in `src/engine/versions.ts`)
 
 - Same key as the latest version → skip.
-- Same writer and same turn as the latest, within 10 minutes → fold into it (replace its tree).
+- Same writer and same turn as the latest, within 1 minute → fold into it (replace its tree).
 - Otherwise → a new version.
 - Turn ids: the in-app agent uses one per turn; hand edits use none (grouped by time); MCP uses `mcp:<request>`, so one request's writes become one version; a restore uses `restore:<n>:<time>`, so it always stands alone.
 - The newest 100 versions per deck are kept.

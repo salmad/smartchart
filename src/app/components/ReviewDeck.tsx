@@ -74,7 +74,7 @@ export function ReviewDeck({ open, onOpenChange, live, onRebuild }: Props) {
         {state.at === 'done' && (
           <div className="flex items-center justify-between gap-3 border-t border-line px-6 py-4">
             <Button variant="outline" onClick={() => setState({ at: 'idle' })}>Review another</Button>
-            <Button onClick={rebuild} disabled={!live}>Rebuild in Occam</Button>
+            <Button onClick={rebuild} disabled={!live}>Rebuild its best slide in Occam</Button>
           </div>
         )}
       </DialogContent>

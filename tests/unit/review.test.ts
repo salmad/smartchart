@@ -67,7 +67,7 @@ describe('the red-pen review', () => {
     expect(r.pages[2].notes).toContain('Slide 3 repeats an earlier point')
     expect(r.verdict).toMatch(/notes on 4 slides; most titles name topics/)
     expect(deckText(pages, r)).toMatch(/Review \(.*\)\n- .*\n[\s\S]*- Slide 2: The title names a topic/)
-    expect(rebuildAsk('pitch')).toMatch(/as a pitch deck/)
+    expect(rebuildAsk('pitch')).toMatch(/as a pitch slide/)
     expect(deckText(pages)).toMatch(/^Slide 1: Acme Q3 review\nBoard, October/)
   })
 })

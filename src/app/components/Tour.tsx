@@ -2,33 +2,47 @@
    an agent. → or Enter for next, ← for back, Esc to close. Positions go through CSS variables (no inline styles). */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
-import { place, TOUR } from '@/app/tour'
+import { place, TOUR, type TourShow } from '@/app/tour'
 import { cn } from '@/app/lib/utils'
 import { AgentKey } from './AgentKey'
 import { Button } from './ui/button'
 
 const PAD = 6
 
-export function Tour({ onClose }: { onClose: () => void }) {
+export function Tour({ onClose, onShow }: { onClose: () => void; onShow: (s: TourShow | null) => void }) {
   const [i, setI] = useState(0), [connecting, setConnecting] = useState(false), [lit, setLit] = useState(false)
-  const spot = useRef<HTMLDivElement>(null), card = useRef<HTMLDivElement>(null)
-  const step = TOUR[i], last = i === TOUR.length - 1
+  const spot = useRef<HTMLDivElement>(null), via = useRef<HTMLDivElement>(null), card = useRef<HTMLDivElement>(null)
+  const step = TOUR[i], last = i === TOUR.length - 1, tag = step.target ?? step.id
+  const [clicked, setClicked] = useState(false)
 
   useLayoutEffect(() => {
     const layout = () => {
-      const el = document.querySelector<HTMLElement>(`[data-tour="${step.id}"]`), s = spot.current, c = card.current
+      const el = document.querySelector<HTMLElement>(`[data-tour="${tag}"]`), s = spot.current, c = card.current
       if (!s || !c) return
       const r = el?.getBoundingClientRect(), box = r && r.width && r.height ? { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 } : null
       setLit(!!box)
       if (box) for (const [k, v] of Object.entries({ '--x': box.left, '--y': box.top, '--w': box.width, '--h': box.height })) s.style.setProperty(k, `${v}px`)
+      // The control the step "clicked" gets a ring of its own, so it is plain what opened what.
+      const v = step.via ? document.querySelector<HTMLElement>(`[data-tour="${step.via}"]`)?.getBoundingClientRect() : null, vr = via.current
+      setClicked(!!(v && v.width && vr))
+      if (v && vr) for (const [k, n] of Object.entries({ '--x': v.left - 4, '--y': v.top - 4, '--w': v.width + 8, '--h': v.height + 8 })) vr.style.setProperty(k, `${n}px`)
       const p = place(box, { width: c.offsetWidth, height: c.offsetHeight }, { width: innerWidth, height: innerHeight })
       c.style.setProperty('--top', `${p.top}px`); c.style.setProperty('--left', `${p.left}px`)
     }
-    document.querySelector(`[data-tour="${step.id}"]`)?.scrollIntoView({ block: 'nearest' })
+    document.querySelector(`[data-tour="${tag}"]`)?.scrollIntoView({ block: 'nearest' })
     layout()
     addEventListener('resize', layout); addEventListener('scroll', layout, true)
     return () => { removeEventListener('resize', layout); removeEventListener('scroll', layout, true) }
-  }, [step])
+  }, [step, tag])
+
+  // What the step talks about is put on screen first, and taken away when the tour moves on. The spotlight waits a beat
+  // for it to draw.
+  useEffect(() => {
+    onShow(step.show ?? null)
+    const t = setTimeout(() => dispatchEvent(new Event('resize')), 120)
+    return () => clearTimeout(t)
+  }, [step, onShow])
+  useEffect(() => () => onShow(null), [onShow])
 
   useEffect(() => { card.current?.focus() }, [i])
   useEffect(() => {
@@ -46,8 +60,9 @@ export function Tour({ onClose }: { onClose: () => void }) {
   return (
     <>
       {/* Clicks on the page wait while the tour is open. It steps aside while Connect an agent is open. */}
-      <div aria-hidden className={cn('fixed inset-0 z-[60]', !lit && 'bg-[rgba(5,5,6,.62)]', connecting && 'hidden')} />
-      <div ref={spot} aria-hidden className={cn('pointer-events-none fixed left-[var(--x)] top-[var(--y)] z-[61] h-[var(--h)] w-[var(--w)] rounded-[12px] shadow-[0_0_0_1px_rgba(255,255,255,.18),0_0_0_9999px_rgba(5,5,6,.62)] transition-[left,top,width,height] duration-300 ease-out motion-reduce:transition-none', (!lit || connecting) && 'hidden')} />
+      <div aria-hidden className={cn('fixed inset-0 z-[60]', !lit && 'bg-[rgba(5,5,6,.82)]', connecting && 'hidden')} />
+      <div ref={spot} aria-hidden className={cn('pointer-events-none fixed left-[var(--x)] top-[var(--y)] z-[61] h-[var(--h)] w-[var(--w)] rounded-[12px] shadow-[0_0_0_2px_theme(colors.gold),0_0_28px_4px_rgba(232,185,74,.35),0_0_0_9999px_rgba(5,5,6,.82)] transition-[left,top,width,height] duration-300 ease-out motion-reduce:transition-none', (!lit || connecting) && 'hidden')} />
+      <div ref={via} aria-hidden className={cn('pointer-events-none fixed left-[var(--x)] top-[var(--y)] z-[63] h-[var(--h)] w-[var(--w)] rounded-[10px] border-2 border-gold bg-gold/15 motion-safe:animate-beacon', (!clicked || connecting) && 'hidden')} />
       <div ref={card} role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-body" tabIndex={-1}
         className={cn('fixed left-[var(--left)] top-[var(--top)] z-[62] grid w-[340px] max-w-[calc(100vw-32px)] gap-3 rounded-[14px] border border-line-2 bg-raise p-5 text-ink shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.8)] outline-none transition-[left,top] duration-300 ease-out motion-reduce:transition-none', connecting && 'hidden')}>
         <div className="flex items-center justify-between">

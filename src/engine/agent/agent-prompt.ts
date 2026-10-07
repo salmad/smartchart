@@ -5,6 +5,7 @@ import { styleBlock } from "./prompts.js";
 import type { Check } from "./checks.js";
 import type { Selection } from "./pre.js";
 import type { Slide, Style, Theme } from "../types.js";
+import { getAt } from "../slides/edit.js";
 import { COMMENTS_RULE, commentLines, type DeckComment } from "../comments.js";
 
 /** A tool in OpenAI function format; parameters are JSON Schema. */
@@ -85,7 +86,7 @@ export const RESOLVE_COMMENT: ToolDef = { type: "function", function: { name: "r
 export function stateBlock({ style, theme, slides, selection, edited = [], comments = [] }: { style: Style; theme: Theme; slides: { id: string; slide: Slide | null }[]; selection: Selection; edited?: string[]; comments?: DeckComment[] }): string {
   const list = slides.length ? slides.map((s, i) => `${i + 1}. ${s.id} [${s.slide?.template}] ${headline(s.slide)}`).join("\n") : "(empty)";
   const sel = selection?.slideId ? `${selection.slideId}${selection.path ? ` · component ${selection.path}` : ""}` : "nothing";
-  const notes = commentLines(comments, slides.map((s) => s.id));
+  const notes = commentLines(comments, slides.map((s) => s.id), (id, path) => { const sl = slides.find((x) => x.id === id)?.slide; return !sl || getAt(sl, path) !== undefined; });
   return `Deck state\nStyle: ${style} · theme: ${theme}\nSlides:\n${list}\nSelected: ${sel}${edited.length ? `\nEdited by hand since the last turn: ${edited.join(", ")}` : ""}${notes.length ? `\nOpen comments (notes people left; act on them only when the user asks, see resolve_comment):\n${notes.map((l) => `- ${l}`).join("\n")}` : ""}`;
 }
 

@@ -13,8 +13,9 @@ export interface VersionHead { n: number; by: string; turn: string | null; at: n
 /** Who is saving and why, sent with a save. */
 export interface VersionMeta { by: string; turn: string | null; label: string | null }
 
-/** Saves by the same writer for the same turn, this close together, become one version (as Google Docs groups edits). */
-export const GROUP_MS = 10 * 60_000;
+/** Saves by the same writer for the same turn, this close together, become one version: a burst of typing is one
+    version, a pause of a minute starts the next. Longer, and the state before an edit could not be restored. */
+export const GROUP_MS = 60_000;
 /** Versions kept per deck; older ones go. */
 export const KEEP = 100;
 

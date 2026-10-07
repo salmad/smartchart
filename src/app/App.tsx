@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { TourShow } from './tour'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
@@ -59,6 +60,9 @@ export function App({ route, account, repo, backup }: Props) {
   // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
+  // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
+  const [tourShow, setTourShow] = useState<TourShow | null>(null)
+  useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
   const deck = deckOf(s)
 
   const measurer = useCallback((): Measurer => {
@@ -280,10 +284,10 @@ export function App({ route, account, repo, backup }: Props) {
     <TooltipProvider delayDuration={400}>
       {presenting
         ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} onRebuild={rebuild}
+        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild}
             decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
               onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
-      {tour.touring && !presenting && <Tour onClose={tour.stop} />}
+      {tour.touring && !presenting && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && !presenting && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}

@@ -7,7 +7,7 @@ Status: design, 2026-10-04 (decided overnight).
 - **The storyline** (the D1–D6 deck checks on the titles in order): answer first, one argument, no repeats, nothing off-case, ends on what to do, in parts.
 - **Per slide, red-pen notes:** a title that names a topic instead of a finding; no figure in a consulting title when the slide has figures; a title too long to read at a glance; a wall of text; the same title as another slide.
 - A one-line verdict: "7 notes on 12 slides; the titles name topics."
-- **Rebuild in Occam:** a new deck, and a turn sent to the agent with the deck's text attached and the review's notes as the brief. The same story, every flaw fixed.
+- **Rebuild in Occam (trial, 2026-10-07):** one slide, the deck's most impressive and visual one from the middle of it, while whole-deck rebuild is unreliable (one turn builds 1–2 slides; see FUTURE.md). Was: a new deck, and a turn sent to the agent with the deck's text attached and the review's notes as the brief. The same story, every flaw fixed.
 
 ## Decisions
 | Question (FUTURE #12) | Decision |

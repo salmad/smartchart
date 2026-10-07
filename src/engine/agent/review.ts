@@ -63,8 +63,9 @@ export async function reviewDeck(pages: Page[], style: Style, jev: JevFn = jevCa
   return { pages: pages.map((p, i) => ({ page: i + 1, title: p.title, notes: notes[i] })), deck: r.checks, verdict, ms: r.ms };
 }
 
-/** What Rebuild in Occam asks, as the chat shows it; the deck and the review go along as the attached file. */
-export const rebuildAsk = (style: Style) => `Rebuild this deck in Occam as a ${style} deck: the same story, every figure exactly as given, and every note in its review fixed.`;
+/** What Rebuild in Occam asks, as the chat shows it; the deck and the review go along as the attached file. A trial: one slide,
+    the most impressive and visual one from the middle of the deck, not the cover. */
+export const rebuildAsk = (style: Style) => `Make one slide from this deck in Occam, as a ${style} slide: its most impressive and visual one, from the middle of the deck rather than the cover or a divider. Every figure exactly as given, and every note in its review fixed.`;
 
 /** The deck's text as the agent reads it, one block per slide, then the review's notes. */
 export function deckText(pages: Page[], review?: Review): string {

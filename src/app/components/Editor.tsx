@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import type { TourShow } from '@/app/tour'
 import { diffTrees, type TreeDiff, type Version } from '@/engine/versions'
 import type { VersionsApi } from '@/app/useVersions'
 import type { CommentActions } from '@/app/useComments'
-import { openComments } from '@/engine/comments'
+import { openComments, quoteOf } from '@/engine/comments'
+import { getAt } from '@/engine/slides/edit'
 import type { Item } from '@/app/store'
 import type { Pill } from '@/engine/agent/suggest'
 import type { Deck, Slide, Style, Theme } from '@/engine/types'
@@ -16,7 +18,8 @@ import { phaseLinesOf } from '@/app/phase'
 import { Bar, type BarProps, type DeckView } from './Bar'
 import { Chat } from './Chat'
 import { Checks } from './Checks'
-import { Comments } from './Comments'
+import { CommentsPanel } from './Comments'
+import { SlideActions } from './SlideActions'
 import { Composer } from './Composer'
 import { LookPanel } from './LookPanel'
 import { SLIDE_W, Stage } from './Stage'
@@ -44,6 +47,8 @@ export interface EditorProps {
   versions: { api: VersionsApi; saves: number } | null
   onUndo: ((turn: string) => void) | null
   comments: CommentActions
+  /** What the tour has the editor show right now. */
+  tourShow: TourShow | null
   /** Rebuild in Occam: a new deck, written from a reviewed deck's text. */
   onRebuild: (brief: string, file: File, style: Style) => void
 }
@@ -52,19 +57,31 @@ type Preview = { v: Version; diff: TreeDiff; current: boolean; items: Item[] | n
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
     with the deck's look as an inspector on the right while it is open. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments, onRebuild }: EditorProps) {
+export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments, tourShow, onRebuild }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
   // The right inspector: the deck's look, or its versions (one at a time).
-  const [side, setSide] = useState<'look' | 'versions' | null>(null)
+  const [side, setSide] = useState<'look' | 'versions' | 'comments' | null>(null)
+  // Comments: the part of the slide the next note is about, and the part a row points at while the pointer is on it.
+  const [target, setTarget] = useState<string | null>(null), [ring, setRing] = useState<string | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null), [reviewing, setReviewing] = useState(false)
   const closeVersions = () => { setSide(null); setPreview(null) }
+  // A note's target belongs to one slide.
+  useEffect(() => { setTarget(null); setRing(null) }, [items[current]?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const closeComments = () => { setSide(null); setTarget(null); setRing(null) }
+  const toggleComments = () => { if (side === 'comments') closeComments(); else { setPreview(null); setSide('comments') } }
   const showVersion = (v: Version, before: Version | null, current: boolean) => {
     const p: Preview = { v, diff: diffTrees(before?.tree ?? null, v.tree), current, items: null }
     setPreview(p)
     versions?.api.items(v).then((items) => setPreview((now) => (now?.v.n === v.n ? { ...now, items: items ?? 'missing' } : now)), () => setPreview((now) => (now?.v.n === v.n ? { ...now, items: 'missing' } : now)))
   }
+  // The tour's step shows its part of the editor, and puts it back when the step ends.
+  useEffect(() => {
+    if (tourShow === 'grid') setView('grid')
+    if (tourShow === 'comments') setSide('comments')
+    return () => { setView('slide'); if (tourShow === 'comments') closeComments() }
+  }, [tourShow])
   // The view switch only applies when the stage shows the deck.
   const shown = items.length && !stage && !editing && !preview ? view : null
   const open = (i: number) => { onSelect(i); setView('slide') }
@@ -76,13 +93,15 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
     const key = (e: KeyboardEvent) => {
       if (stage || preview || s.editing || e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
       if (e.key === 'e' && items[current] && !lock) { e.preventDefault(); onEdit(items[current].id) }
+      if (e.key === 'c' && items[current] && !lock && !editing) { e.preventDefault(); toggleComments() }
       if (e.key === 'f') bar.onPresent()
       if (e.key === 'ArrowRight' && current < items.length - 1) onSelect(current + 1)
       if (e.key === 'ArrowLeft' && current > 0) onSelect(current - 1)
     }
     document.addEventListener('keydown', key)
     return () => document.removeEventListener('keydown', key)
-  }, [bar, current, items, onSelect, onEdit, stage, preview, s.editing, lock])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bar, current, items, onSelect, onEdit, stage, preview, s.editing, lock, side])
 
   const strip = (layout: 'row' | 'grid') => (
     <Strip items={items} current={current} deck={deck} busy={lock} noted={noted} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
@@ -113,26 +132,32 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
               <EditMode key={items[current].id} item={items[current]} index={current} deck={deck} deckStyle={s.style} measurer={edit.measurer} save={edit.save} onDone={() => onEdit(null)} />
             </main>
           : shown === 'grid'
-          ? <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-8 py-8 max-[900px]:contents">{strip('grid')}</main>
+          ? <main data-tour="grid" className="min-h-0 min-w-0 flex-1 overflow-y-auto px-8 py-8 max-[900px]:contents">{strip('grid')}</main>
           : shown === 'story'
           ? <main className="grid min-h-0 min-w-0 flex-1 max-[900px]:contents">
               <Storyline items={items} deckStyle={s.style} live={s.live} busy={lock} onOpen={open}
                 onMove={(id, to) => { onMove(id, to); onSelect(to) }} onAsk={(prompt) => onSend(prompt)} />
             </main>
           : <main className="flex min-h-0 min-w-0 flex-1 flex-col justify-center max-[900px]:contents">
-              <Stage deck={deck} current={current} onEdit={() => items[current] && onEdit(items[current].id)} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
+              <Stage deck={deck} current={current} pick={side === 'comments' && !lock && items[current] ? { target, ring, onPick: setTarget } : undefined} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
               {/* Under the slide and as wide as it: how its checks stand, then the deck as a filmstrip. */}
               <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W}`}>
                 <div className="flex h-7 items-center justify-between gap-4 max-[900px]:order-4 max-[900px]:px-4">
                   <div data-tour="checks"><Checks item={items[current]} /></div>
-                  {items[current] && <Comments key={items[current].id} slideId={items[current].id} n={current + 1} comments={s.comments} busy={lock} canAsk={s.live}
-                    onAdd={(t) => comments.add(items[current].id, t)} onResolve={comments.resolve} onDelete={comments.remove} onAsk={() => comments.ask(items[current].id)} />}
+                  {items[current] && <SlideActions disabled={lock} commenting={side === 'comments'} open={openComments(s.comments, items[current].id).length}
+                    onEdit={() => onEdit(items[current].id)} onComment={toggleComments} />}
                 </div>
                 {strip('row')}
               </section>
             </main>}
         {side === 'versions' && versions && <VersionsPanel api={versions.api} saves={versions.saves} selected={preview?.v.n ?? null}
           onPreview={showVersion} onClose={closeVersions} />}
+        {side === 'comments' && items[current] && !editing && !preview && (
+          <CommentsPanel key={items[current].id} n={current + 1} comments={s.comments.filter((c) => c.slideId === items[current].id)} busy={lock} canAsk={s.live}
+            exists={(p) => getAt(items[current].slide, p) !== undefined} target={target} onTarget={setTarget} onHover={setRing} onClose={closeComments}
+            onAdd={(t) => { comments.add(items[current].id, t, target, target ? quoteOf(getAt(items[current].slide, target)) : undefined); setTarget(null) }}
+            onResolve={comments.resolve} onDelete={comments.remove} onAsk={() => comments.ask(items[current].id)} />
+        )}
         <ReviewDeck open={reviewing} onOpenChange={setReviewing} live={s.live} onRebuild={onRebuild} />
         {side === 'look' && <LookPanel deckStyle={s.style} theme={s.theme} accent={s.accent} styleLocked={items.length > 0}
           onStyle={bar.onStyle} onTheme={bar.onTheme} onAccent={bar.onAccent} onClose={() => setSide(null)} />}

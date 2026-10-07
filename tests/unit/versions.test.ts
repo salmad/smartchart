@@ -120,3 +120,11 @@ describe('version tools over MCP', () => {
     expect(after.ok && (after.result.versions as { request?: string; changed: string }[])[0]).toMatchObject({ request: 'Restored version 2', changed: 'Removed 1 slide' })
   })
 })
+
+describe('grouping window', () => {
+  it('a pause of a minute starts a new version; a burst stays one', () => {
+    const head = { n: 1, by: 'You', turn: null, at: 1000, key: 'k1' }, me = { by: 'You', turn: null, label: null }
+    expect(nextStep(head, me, 'k2', 1000 + GROUP_MS - 1)).toBe('replace')
+    expect(nextStep(head, me, 'k2', 1000 + GROUP_MS)).toBe('add')
+  })
+})

@@ -3,9 +3,13 @@ import { markSeen, place, seen, TOUR } from '@/app/tour'
 
 const view = { width: 1400, height: 900 }, card = { width: 340, height: 180 }
 describe('tour', () => {
-  it('has eight steps and ends at Connect an agent', () => {
-    expect(TOUR).toHaveLength(8)
+  it('has seven steps and ends at Connect an agent', () => {
+    expect(TOUR).toHaveLength(7)
     expect(TOUR.at(-1)?.id).toBe('account')
+  })
+  it('steps that talk about something say what to show, and where to look', () => {
+    expect(TOUR.filter((t) => t.show).map((t) => [t.id, t.show, t.target ?? t.id, t.via ?? null])).toEqual([
+      ['chat', 'chat', 'chat', null], ['comments', 'comments', 'comments-panel', 'comments'], ['views', 'grid', 'grid', 'views']])
   })
   it('places the card below, above, beside, or centred, inside the viewport', () => {
     expect(place({ top: 100, left: 600, width: 200, height: 40 }, card, view)).toEqual({ top: 152, left: 530, side: 'below' })
