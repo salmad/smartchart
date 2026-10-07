@@ -94,3 +94,15 @@ test("table focus names rows by their first cell, as plain text", async () => {
   assert.match(options, /Acme/);
   assert.doesNotMatch(options, /\*\*Acme/);
 });
+
+test("focus: a title highlight that is exactly one item's name picks it without asking", async () => {
+  const jev = fakeJev({ focus: ["item3", 0.95] });
+  const table = { template: "table", title: "EBITDA turns positive in [[FY25]]", focus: "auto",
+    table: { columns: [{ label: "" }, { label: "FY23" }, { label: "FY24" }, { label: "FY25" }], rows: [{ cells: ["Revenue", "1", "2", "3"] }, { cells: ["EBITDA", "-1", "-0.5", "0.6"] }] } } as unknown as Slide;
+  const r = await resolveAuto(table, "consulting", jev);
+  const t = must(r.slide.table, "table");
+  assert.equal(t.columns?.[3]?.focus, true);
+  assert.ok(!t.rows?.some((x) => x.focus));
+  assert.deepEqual(r.resolved.focus, { value: "item2", p: 1 });
+  assert.equal(jev.calls.length, 0);
+});

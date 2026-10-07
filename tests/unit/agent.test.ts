@@ -6,6 +6,9 @@ import type { ChatMessage } from "../../src/engine/agent/llm";
 import type { Slide } from "../../src/engine/types";
 import { fakeAgent, fakeJev, say, toolCall } from "./fakes";
 import { must } from "./must";
+import type { ToolDef } from "../../src/engine/agent/agent-prompt";
+
+const names = (tools: unknown[] | undefined) => ((tools ?? []) as ToolDef[]).map((t) => t.function.name);
 
 const CHART: Slide = { template: "chart", title: "Revenue grew [[4.5×]] from £2.1m to £9.4m", source: "Company accounts",
   chart: { categories: ["2022", "2023", "2024", "2025"], format: "£{v}m", series: [{ name: "Revenue", mark: "bar", color: "focus", values: [2.1, 4.8, 7.2, 9.4] }] } };
@@ -266,4 +269,39 @@ test("attached files: the writer reads them in full, Jev routes on the brief, an
   await runTurn({ ...ctx, text: full, ask: "Make the revenue slide", brief: "Make the revenue slide\n\nAttached report.pdf, starting: Board report.", selection: null, models: { agentStep, jev } });
   assert.ok(jev.calls.every((c) => !c.state.includes("Detail. Detail. Detail.")), "Jev never gets the whole file");
   assert.ok(jev.calls[0].state.includes("Attached report.pdf"));
+});
+
+test("comments: the deck state lists open ones, resolve_comment is offered and resolves with a reply", async () => {
+  const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
+  ctx.deck.comments = [{ id: "c_1", slideId: "s_ab12", text: "Title is too long", by: "Sam", at: 1 }];
+  const seen: string[][] = [];
+  const agentStep = fakeAgent([
+    (m, tools) => { seen.push(names(tools)); assert.ok(m.some((x) => text(x).includes('c_1 on s_ab12 (slide 1), by Sam: "Title is too long"'))); return toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]]" } }); },
+    toolCall("resolve_comment", { commentId: "c_1", reply: "Cut the title to four words." }),
+    say("Shortened the title and resolved Sam's comment."),
+  ]);
+  await runTurn({ ...ctx, text: "Address the comments", selection: null, models: { agentStep, jev: fakeJev({ intent: ["other", 0.9] }) } });
+  assert.ok(seen[0].includes("resolve_comment"));
+  assert.deepEqual(ctx.deck.comments?.[0].done && { by: ctx.deck.comments[0].done.by, reply: ctx.deck.comments[0].done.reply }, { by: "Occam", reply: "Cut the title to four words." });
+});
+
+test("comments: with none open, resolve_comment is not offered", async () => {
+  const ctx = setup();
+  const seen: string[][] = [];
+  const agentStep = fakeAgent([(_m, tools) => { seen.push(names(tools)); return say("Hi."); }]);
+  await runTurn({ ...ctx, text: "hello", selection: null, models: { agentStep, jev: fakeJev({ intent: ["other", 0.9] }) } });
+  assert.ok(!seen[0].includes("resolve_comment"));
+});
+
+test("comments: a sure edit on a slide with open comments does not end the turn by code, so the agent can resolve", async () => {
+  const ctx = setup([{ id: "s_ab12", slide: structuredClone(CHART), issues: [], warnings: [] }]);
+  ctx.deck.comments = [{ id: "c_1", slideId: "s_ab12", text: "Name the growth in the title", by: "Sam", at: 1 }];
+  const agentStep = fakeAgent([
+    toolCall("patch_slide", { slideId: "s_ab12", set: { title: "Revenue grew [[4.5×]]" }, reply: "Done." }),
+    toolCall("resolve_comment", { commentId: "c_1", reply: "The title names the 4.5× growth." }),
+    say("Updated the title and resolved Sam's comment."),
+  ]);
+  const r = await runTurn({ ...ctx, text: "Address the open comment on slide 1.", selection: { slideId: "s_ab12" }, models: { agentStep, jev: fakeJev({ intent: ["edit_selected", 0.95] }) } });
+  assert.equal(r.reply, "Updated the title and resolved Sam's comment.");
+  assert.ok(ctx.deck.comments?.[0].done);
 });

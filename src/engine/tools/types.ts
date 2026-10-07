@@ -1,14 +1,17 @@
 /* The tool registry's shared types. Framework-free: the same tools run behind REST, MCP and (later) the in-app agent. */
 import type { Slide, Style, Theme } from "../types.js";
+import type { ImageKind } from "../slides/images.js";
 import type { Check } from "../agent/checks.js";
 import type { JevFn } from "../agent/llm.js";
+import type { DeckComment } from "../comments.js";
+import type { Version } from "../versions.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };
 export interface DocSlide { id: string; slide: Slide; issues: string[]; warnings: string[]; checks: Check[] }
-export interface DeckDoc { id: string; name: string; style: Style; theme: Theme; accent: string | null; slides: DocSlide[] }
+export interface DeckDoc { id: string; name: string; style: Style; theme: Theme; accent: string | null; slides: DocSlide[]; comments: DeckComment[] }
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
-export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck";
+export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck" | "comment";
 export interface DeckEvent { slideId: string | null; what: EventWhat; paths: string[] }
 export interface DeckListItem { deckId: string; name: string; style: Style; slides: number; updated: number; shared: boolean }
 export interface AccountPort {
@@ -17,6 +20,11 @@ export interface AccountPort {
   listDecks(limit: number, cursor: number): Promise<{ decks: DeckListItem[]; next?: number }>;
   share(deckId: string, on: boolean): Promise<string | null>;
   newDeckId(): string;
+  /** The deck's versions, newest first, and the slides their trees name. */
+  versions(deckId: string): Promise<Version[]>;
+  blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;
+  /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
+  addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind; from?: string }>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"
@@ -26,10 +34,13 @@ export interface ToolContext {
   port: AccountPort;
   jev: JevFn;
   now(): number;
+  /** Who is calling, as the user knows them ("Claude Code"): signs what the agent resolves. */
+  client?: string;
 }
 export type Scope = "account" | "deck" | "create";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean }
+/** `label`: the version's label when the write is not a user request (a restore). */
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean; label?: string }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";

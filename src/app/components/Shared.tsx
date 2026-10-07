@@ -1,10 +1,10 @@
 /* A deck shared by link, for the room: every slide full width, top to bottom, and Present for the meeting.
    Open to anyone with the link, signed in or not; it always shows the deck as last saved. */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
 import { loadShared, type Shared as SharedDeck } from '@/app/share'
 import { Button } from './ui/button'
-import { Present } from './Present'
+import { newLiveKey, openPresentation, usePublishDeck } from '@/app/presenter-channel'
 import { PrintDeck, pdfName } from './PrintDeck'
 import { SlideView } from './SlideView'
 
@@ -12,8 +12,9 @@ type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { sta
 
 export function Shared({ token }: { token: string }) {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
-  const [presenting, setPresenting] = useState<number | null>(null), [printing, setPrinting] = useState(false)
+  const [printing, setPrinting] = useState(false), liveKey = useMemo(newLiveKey, [])
   const slideRefs = useRef<(HTMLButtonElement | null)[]>([])
+  usePublishDeck(load.state === 'ready' ? load.shared.deck : null, liveKey)
 
   useEffect(() => {
     let live = true
@@ -49,7 +50,7 @@ export function Shared({ token }: { token: string }) {
   if (load.state !== 'ready') return <Gone error={load.state === 'error'} />
   const { deck } = load.shared, ctx = contexts(deck)
 
-  if (presenting !== null) return <Present deck={deck} start={presenting} onExit={() => setPresenting(null)} />
+  const present = (from: number) => openPresentation(liveKey, from)
   return (
     <div className="h-full overflow-y-auto bg-app-bg text-ink">
       <header className="sticky top-0 z-[1] flex h-14 items-center gap-3 border-b border-line bg-app-bg/85 px-5 backdrop-blur max-[900px]:px-4">
@@ -57,11 +58,11 @@ export function Shared({ token }: { token: string }) {
         <span aria-hidden className="text-[13px] text-ink-3">/</span>
         <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{load.shared.name}</h1>
         {deck.slides.length > 0 && <Button variant="outline" onClick={() => setPrinting(true)} title="Download PDF (⌘P)">PDF</Button>}
-        {deck.slides.length > 0 && <Button onClick={() => setPresenting(0)}>Present</Button>}
+        {deck.slides.length > 0 && <Button onClick={() => present(0)} title="Present in its own tab. In it, P opens the presenter view.">Present</Button>}
       </header>
-      <main className="mx-auto grid w-full max-w-[1200px] gap-8 px-8 pb-16 pt-10 max-[900px]:gap-4 max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-4">
+      <main data-links className="mx-auto grid w-full max-w-[1200px] gap-8 px-8 pb-16 pt-10 max-[900px]:gap-4 max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-4">
         {deck.slides.map((slide, i) => (
-          <button key={i} ref={(el) => { slideRefs.current[i] = el }} type="button" onClick={() => setPresenting(i)} aria-label={`Present from slide ${i + 1}`}
+          <button key={i} ref={(el) => { slideRefs.current[i] = el }} type="button" onClick={(e) => { if (!(e.target as Element).closest('a')) present(i) }} aria-label={`Present from slide ${i + 1}`}
             className="relative mx-auto block aspect-video w-[min(100%,calc((100vh_-_56px_-_64px)*16/9))] cursor-zoom-in overflow-hidden rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] outline-none focus-visible:shadow-[0_0_0_2px_theme(colors.ink-3)] max-[900px]:w-full max-[900px]:rounded-lg">
             <SlideView slide={slide} deck={deck} ctx={ctx[i]} className="absolute inset-0" />
           </button>

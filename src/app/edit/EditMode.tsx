@@ -6,7 +6,9 @@ import { SLIDE_W, SlideFrame, UNDER_SLIDE } from '@/app/components/Stage'
 import type { Measurer } from '../measure'
 import type { Item } from '../store'
 import { EditBar } from './EditBar'
+import { EditTalk } from './EditTalk'
 import { EditOverlay } from './EditOverlay'
+import { PictureButtons, usePictures } from './EditPictures'
 import { ActionBar } from './ActionBar'
 import { EditMenu } from './EditMenu'
 import { EditSurface } from './EditSurface'
@@ -56,6 +58,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
     return () => { document.removeEventListener('keydown', key); window.removeEventListener('beforeunload', leave) }
   }, [edit, discard, grid, style])
 
+  const pictures = usePictures(edit, style)
   const ctx = useMemo(() => contexts({ ...deck, slides: deck.slides.map((s, i) => (i === index ? edit.shown : s)) })[index], [deck, index, edit.shown])
   return (
     <>
@@ -63,7 +66,8 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
         <SlideFrame>
           <EditMenu edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)}>
             <EditSurface edit={edit} deck={deck} ctx={ctx} onSlide={setSlideEl}>
-              <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)} />
+              <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)} onAddPicture={pictures.add} />
+              <PictureButtons slide={slideEl} pictures={pictures} />
               <ActionBar edit={edit} slide={slideEl} deckStyle={style} />
               <IconPicker edit={edit} slide={slideEl} deckStyle={style} />
               {grid !== null && (edit.draft.chart || edit.draft.table || edit.draft.halves) && <ChartGrid edit={edit} deckStyle={style} which={grid} onClose={() => setGrid(null)} />}
@@ -72,6 +76,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
         </SlideFrame>
       </div>
       <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 max-[900px]:order-2 max-[900px]:max-w-full max-[900px]:px-4 ${SLIDE_W} ${UNDER_SLIDE}`}>
+        <EditTalk edit={edit} />
         <EditBar edit={edit} deckStyle={style} onDiscard={discard} />
       </section>
     </>

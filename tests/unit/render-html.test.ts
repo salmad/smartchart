@@ -41,3 +41,13 @@ test('a highlighted row carries the focus class next to its style', () => {
   expect(html).toContain('<tr class="total focus" data-item="table.rows[0]">')
   expect(html).toContain('<tr class="" data-item="table.rows[1]">')
 })
+
+test('[words](https://…) in a source or footnote is the words with an arrow, linking out; nothing else becomes a link', () => {
+  const s: Slide = { template: 'cards', title: 'Cards', source: 'ONS, [FCA report](https://www.fca.org.uk/a?x=1&y=2)', footnote: 'See [notes](https://acme.com/notes). Bare https://acme.com stays text.' } as Slide
+  const html = slideHTML(s, CTX, { style: 'consulting', theme: 'ink' })
+  expect(html).toContain('<a href="https://www.fca.org.uk/a?x=1&amp;y=2" target="_blank" rel="noopener noreferrer">FCA report<svg class="ext"')
+  expect(html).toContain('<a href="https://acme.com/notes" target="_blank" rel="noopener noreferrer">notes<svg')
+  expect(html).toContain('Bare https://acme.com stays text.')
+  expect(html.match(/<a href/g)).toHaveLength(2)
+  expect(slideHTML({ ...s, footnote: '', source: '[x](javascript:alert(1)) and <b>x</b>' }, CTX, { style: 'consulting', theme: 'ink' })).not.toContain('<a href')
+})

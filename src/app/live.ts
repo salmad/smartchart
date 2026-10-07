@@ -23,7 +23,7 @@ export function useLiveDeck({ app, repo, onMerged }: { app: AppStore; repo: Deck
       if (!server || !local || locked(app.getState()) || app.getState().deckId !== id) return
       const { deck, changed } = mergeDecks(local, server, base)
       app.dispatch({ type: 'items', items: deck.items, focusId: changed.at(-1) })
-      app.dispatch({ type: 'set', patch: { name: deck.name ?? null, style: deck.style, theme: deck.theme, accent: deck.accent } })
+      app.dispatch({ type: 'set', patch: { name: deck.name ?? null, style: deck.style, theme: deck.theme, accent: deck.accent, comments: deck.comments ?? [] } })
       onMerged(changed, [...new Set(events.map((e) => e.by))])
     } finally { running.current = false }
   }, [app, repo, onMerged])

@@ -166,3 +166,24 @@ test("J10: asked only when the table has header icons; fails at p ≥ 0.7 toward
   assert.equal(j10?.ok, false);
   assert.match(j10?.msg ?? "", /decorative/);
 });
+
+test("R11: a span of time frames the claim and is not a headline figure", () => {
+  const s = { ...chart([REV]), template: "chart", title: "£2m buys [[18 months]] of runway", subtitle: "Revenue 2.1 to 9.4" } as Parameters<typeof get>[0];
+  assert.equal(get(s, "R11")?.ok, true);
+  assert.match(get({ ...s, title: "Revenue hit [[£12m]]" } as Parameters<typeof get>[0], "R11")?.msg ?? "", /show it .* or reword the headline/);
+});
+
+test("nudge: the same failed check from several slides is said once", async () => {
+  const { nudge } = await import("../../src/engine/agent/checks");
+  const r8 = { id: "R8", ok: false, msg: "Figures with no source" };
+  assert.equal(nudge([r8, { ...r8 }]), "Worth a look: figures with no source.");
+});
+
+test("R13: a criteria table (options across, criteria down) is read by row", () => {
+  const t = { template: "table", title: "Card B wins on cost for a business spending £20k a month", table: { columns: [{ label: "" }, { label: "Card A" }, { label: "Card B" }, { label: "Card C" }],
+    rows: [{ cells: ["Credit limit", "£250k", "£50k", "£100k"] }, { cells: ["Annual fee", "£0", "£120", "£0"] }, { cells: ["Cashback", "1.0%", "0.5%", "1.5%"] }] } } as Parameters<typeof get>[0];
+  assert.equal(get(t, "R13")?.ok, true);
+  const bad = structuredClone(t) as { table: { rows: { cells: string[] }[] } };
+  bad.table.rows[0].cells[2] = "£50,000";
+  assert.match(get(bad as Parameters<typeof get>[0], "R13")?.msg ?? "", /Mixed units or decimals: £250k, £50,000/);
+});

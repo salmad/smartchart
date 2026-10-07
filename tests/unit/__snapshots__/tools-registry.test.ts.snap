@@ -10,7 +10,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Who am I",
     },
-    "description": "The signed-in SmartChart user, how many model calls are left today, and the contract version. Call it to check the connection.",
+    "description": "The signed-in Occam user, how many model calls are left today, and the contract version. Call it to check the connection.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {},
@@ -27,7 +27,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Writing guide",
     },
-    "description": "The rules for writing SmartChart slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
+    "description": "The rules for writing Occam slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -56,7 +56,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List templates",
     },
-    "description": "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have SmartChart choose from the content.",
+    "description": "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have Occam choose from the content.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -108,6 +108,10 @@ exports[`registry > the three views agree (published contract: only additions al
             "steps",
             "cards",
             "summary",
+            "image",
+            "team",
+            "logos",
+            "agenda",
             "cover",
             "section",
           ],
@@ -201,7 +205,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a deck",
     },
-    "description": "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order. Use slide ids from here in every slide call.",
+    "description": "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Use slide ids from here in every slide call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -310,7 +314,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Suggest a template",
     },
-    "description": "Have SmartChart pick the template for some content (the user's words and figures). Returns the template, the probabilities of each, and values already decided (for cards: how they lead). Then get_template and create_slide. Costs one model call.",
+    "description": "Have Occam pick the template for some content (the user's words and figures). Returns the template, the probabilities of each, and values already decided (for cards: how they lead). Then get_template and create_slide. Costs one model call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -334,6 +338,52 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "suggest_template",
     "title": "Suggest a template",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Add a picture",
+    },
+    "description": "Copy a picture into Occam from a public https URL (or base64 bytes) and get the reference a slide takes: { src }. kind: "logo" (a company's mark: drawn in one colour, its plain background removed, trimmed), "photo" (people, places: cropped to its frame) or "screenshot" (the product: never cropped). Pass a logo as a PNG or SVG on a plain or transparent background, or, for a company's logo, its domain: Occam finds the mark on the company's own home page (say where it was found, and let the user check it). Only use pictures the user gave or asked for. The same picture added twice returns the same src.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "alt": {
+          "description": "What the picture shows, in one plain sentence. Required by the image slide; returned with the src.",
+          "type": "string",
+        },
+        "data": {
+          "description": "The picture's bytes, base64, at most 3 MB. Instead of url; prefer url for anything larger.",
+          "type": "string",
+        },
+        "domain": {
+          "description": "A company's web address ("stripe.com"), for its logo: kind "logo" only. Instead of url or data.",
+          "type": "string",
+        },
+        "kind": {
+          "description": "logo, photo or screenshot.",
+          "enum": [
+            "photo",
+            "screenshot",
+            "logo",
+          ],
+          "type": "string",
+        },
+        "url": {
+          "description": "A public https link to the picture itself (not a web page).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "kind",
+      ],
+      "type": "object",
+    },
+    "name": "add_image",
+    "title": "Add a picture",
   },
   {
     "annotations": {
@@ -384,7 +434,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Read a slide",
     },
-    "description": "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template, which lists can grow or shrink (min, max, length) and the template's capabilities by name (get_template says when to use each). Content only; checks come back with writes and check_slide.",
+    "description": "A slide's current JSON (or the value at one path, e.g. cards[2] or chart.series[0]), its template, which lists can grow or shrink (min, max, length), the template's capabilities by name (get_template says when to use each) and the open comments on it. Content only; checks come back with writes and check_slide.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -560,7 +610,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Check a slide",
     },
-    "description": "Judge a finished slide: the rule checks (title length, highlight, chart guide…) and the judgment checks (does the body prove the title, are the items MECE, is this the right template, would a table's judgements read better as marks). Advice only: act when a small edit fixes it. One model call.",
+    "description": "Judge a finished slide: the rule checks (title length, highlight, chart guide…), the judgment checks (does the body prove the title, are the items MECE, is this the right template, would a table's judgements read better as marks) and up to two suggestions that would make it better. Advice only: act when a small edit fixes it; offer suggestions to the user. One model call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -603,6 +653,101 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "check_storyline",
     "title": "Check the storyline",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Resolve a comment",
+    },
+    "description": "Mark a comment (commentId from get_deck or read_slide) as done once you addressed it, with a one-line reply saying what you changed, or why you changed nothing. Only for comments the user asked you to address.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "commentId": {
+          "description": "A comment id, e.g. c_a1b2.",
+          "type": "string",
+        },
+        "deckId": {
+          "description": "The deck id.",
+          "type": "string",
+        },
+        "reply": {
+          "description": "What you did about it, in one line (at most 1000 characters).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "deckId",
+        "commentId",
+        "reply",
+      ],
+      "type": "object",
+    },
+    "name": "resolve_comment",
+    "title": "Resolve a comment",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List versions",
+    },
+    "description": "Every saved state of the deck, newest first: its number, who wrote it (the user, Occam or an agent), the request in the user's words, what changed and when. The first is the deck as it is now.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "deckId": {
+          "description": "The deck id.",
+          "type": "string",
+        },
+        "limit": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "deckId",
+      ],
+      "type": "object",
+    },
+    "name": "list_versions",
+    "title": "List versions",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Restore a version",
+    },
+    "description": "Put the deck back as it was at an earlier version (from list_versions): its slides, order and look. Saved as a new version on top, so the state before stays in the list. Only when the user asked to undo or go back.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "deckId": {
+          "description": "The deck id.",
+          "type": "string",
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "deckId",
+        "version",
+      ],
+      "type": "object",
+    },
+    "name": "restore_version",
+    "title": "Restore a version",
   },
 ]
 `;

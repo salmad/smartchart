@@ -5,7 +5,7 @@ import starters from '../../src/engine/starters/starters.json' with { type: 'jso
 const slides = (starters as { consulting?: unknown }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
 const shared = { name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides }
 
-test('a shared deck opens for a signed-out visitor, every slide in order, and presents from the slide clicked', async ({ page }) => {
+test('a shared deck opens for a signed-out visitor, every slide in order, and presents from the slide clicked', async ({ page, context }) => {
   await page.route('**/api/share?s=tok_1', (r) => r.fulfill({ json: shared }))
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -16,9 +16,11 @@ test('a shared deck opens for a signed-out visitor, every slide in order, and pr
   await expect(frames).toHaveCount(slides.length)
   await expect(frames.first().locator('.slide')).toBeVisible()
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
+  const opened = context.waitForEvent('page')
   await frames.nth(1).click()
-  await expect(page.getByText(`2 / ${slides.length}`)).toBeVisible()
-  await page.keyboard.press('Escape')
+  // The presentation is its own tab, with no counter of its own (the slide's page number is enough): the slide clicked.
+  const show = await opened
+  await expect(show.locator('.slide .rail .pg b')).toHaveText('02')
   await expect(frames).toHaveCount(slides.length)
   expect(errors).toEqual([])
 })

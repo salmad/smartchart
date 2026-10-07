@@ -1,5 +1,7 @@
 /* Decks on the server for a signed-in user (/api/decks). The session cookie authenticates each call;
    a 401 means the session ended, and `onSignedOut` hears about it. */
+import type { Slide } from '@/engine/types'
+import type { Version } from '@/engine/versions'
 import { deckName, localDeckRepo, type DeckEvent, type DeckRepo, type DeckSummary, type Presence, type SavedDeck } from './store'
 
 /** What the chat says when the server refuses a save because the deck moved on since this tab read it. */
@@ -53,11 +55,11 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
       bases.set(id, structuredClone(got))
       return got
     }),
-    save: (deck) => inOrder(deck.id, async () => {
+    save: (deck, meta) => inOrder(deck.id, async () => {
       try {
         const { history, messages, working, name: _name, ...look } = deck
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0 }) })
+          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0, ...(meta ? { version: meta } : {}) }) })
         if (r.ok) {
           revs.set(deck.id, ((await r.json().catch(() => null)) as { rev?: number } | null)?.rev ?? (revs.get(deck.id) ?? 0) + 1)
           bases.set(deck.id, structuredClone(deck))
@@ -85,6 +87,12 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     rev: async (id) => { const r = await call(`?id=${encodeURIComponent(id)}&rev=1`); return r.ok ? ((await r.json()) as { rev: number; presence: Presence }) : null },
     events: async (id, since) => { const r = await call(`?id=${encodeURIComponent(id)}&events=${since}`); return r.ok ? ((await r.json()) as DeckEvent[]) : [] },
     presence: async (id, p) => { await call(`?id=${encodeURIComponent(id)}&presence=1`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).catch(() => undefined) },
+    versions: async (id) => { const r = await call(`?id=${encodeURIComponent(id)}&versions`); return r.ok ? ((await r.json()) as Version[]) : [] },
+    blobs: async (id, hashes) => {
+      if (!hashes.length) return []
+      const r = await call(`?id=${encodeURIComponent(id)}&blobs=${hashes.map(encodeURIComponent).join(',')}`)
+      return r.ok ? ((await r.json()) as { hash: string; slide: Slide }[]) : []
+    },
     base: (id) => bases.get(id) ?? null,
     known: (id) => revs.get(id) ?? 0,
   }

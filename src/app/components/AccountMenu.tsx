@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LogOut, Plug } from 'lucide-react'
+import { Compass, LogOut, PenLine, Plug } from 'lucide-react'
 import { signOut, type Account } from '@/app/auth'
 import { go } from '@/app/route'
 import { AgentKey } from './AgentKey'
@@ -7,13 +7,13 @@ import { MENU_ICON, MENU_ITEM } from './menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 
 /** Your avatar at the right of the bar: who is signed in, Connect an agent and Sign out. */
-export function AccountMenu({ account }: { account: Account }) {
+export function AccountMenu({ account, onTour = null, onReview = null }: { account: Account; onTour?: (() => void) | null; onReview?: (() => void) | null }) {
   const [connecting, setConnecting] = useState(false)
   const who = account.name || account.email
   return (
     <>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger aria-label={`Account: ${who}`} title={who}
+        <DropdownMenuTrigger data-tour="account" aria-label={`Account: ${who}`} title={who}
           className="grid size-8 flex-none cursor-pointer place-items-center rounded-full outline-none transition-colors hover:bg-panel focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel">
           <span className="grid size-7 place-items-center overflow-hidden rounded-full bg-raise text-[12px] font-medium text-ink shadow-[0_0_0_1px_theme(colors.line-2)]">
             {account.image ? <img src={account.image} alt="" className="size-full object-cover" /> : who.slice(0, 1).toUpperCase()}
@@ -26,6 +26,8 @@ export function AccountMenu({ account }: { account: Account }) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-line" />
           <DropdownMenuItem onSelect={() => setConnecting(true)} className={MENU_ITEM}><Plug {...MENU_ICON} />Connect an agent</DropdownMenuItem>
+          {onReview && <DropdownMenuItem onSelect={onReview} className={MENU_ITEM}><PenLine {...MENU_ICON} />Review a deck</DropdownMenuItem>}
+          {onTour && <DropdownMenuItem onSelect={onTour} className={MENU_ITEM}><Compass {...MENU_ICON} />Take the tour</DropdownMenuItem>}
           <DropdownMenuItem onSelect={() => void signOut().then(() => go('/'))} className={MENU_ITEM}><LogOut {...MENU_ICON} />Sign out</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

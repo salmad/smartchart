@@ -7,6 +7,8 @@ import { Site } from './components/landing/Site'
 import { devAccount } from './dev-account'
 import { remoteDeckRepo } from './remote'
 import { go, useRoute } from './route'
+import { Present } from './components/Present'
+import { Presenter } from './components/Presenter'
 import { localDeckRepo } from './store'
 
 /** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
@@ -18,12 +20,15 @@ export function Root() {
   const [signingIn, setSigningIn] = useState(false), [ended, setEnded] = useState(false)
   // Decks live in the account; a 401 from the decks API means the session ended: ask to sign in again, over
   // whatever screen is open. The dev account keeps its decks in this browser, with nothing to back them up to.
-  const repo = useMemo(() => (dev ? localDeckRepo() : remoteDeckRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
 
   // A deck shared by link is for anyone who has it: no session needed, nothing of the viewer's own is shown.
   if (route.name === 'shared') return <Shared token={route.token} />
+  // The presentation and the presenter view get the deck from the tab that has it open, so they need no session either.
+  if (route.name === 'present') return <Present />
+  if (route.name === 'presenter') return <Presenter />
   // The first session check is quick; until it answers, a blank page beats a flash of the wrong screen.
   if (session === undefined) return <div className={route.name === 'home' || route.name === 'site' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />
   if (!session) {

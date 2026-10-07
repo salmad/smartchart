@@ -51,6 +51,6 @@ test('E edits the slide where it stands', async ({ page }) => {
 
 test('on a phone, Present and the avatar sit at the right edge', async ({ page }) => {
   await open(page, 390, 844)
-  const right = await page.getByRole('button', { name: 'Present' }).evaluate((e) => e.parentElement!.getBoundingClientRect().right)
+  const right = await page.getByRole('button', { name: 'Present' }).evaluate((e) => e.parentElement?.getBoundingClientRect().right ?? 0)
   expect(right).toBeGreaterThan(390 - 20)
 })

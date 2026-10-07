@@ -1,11 +1,12 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
 import { MENU, NOTE_POINTS, plain } from "./schema.js";
-import type { Card, Cell, Deck, Half, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import type { Card, Cell, Deck, Half, ImageRef, Note, Person, Slide, SlideContext, Table, TemplateId } from "../types.js";
+import { imageMeta, isWordmark } from "./images.js";
 import { drawChart } from "./charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
-import { columnAlign } from "./align.js";
+import { columnAlign, figureOf } from "./align.js";
 import { groupLayout, roomOf, type TableRoom } from "./groups.js";
 export { drawChart };
 
@@ -16,6 +17,10 @@ export const md = (s: unknown): string => esc(s)
   .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
   .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>');
+/** A footnote or source line: `[FCA report](https://…)` is the words with a small arrow, and a click goes to the page. */
+const EXT = `<svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>`;
+export const mdLinked = (s: unknown): string => md(s).replace(/\[([^\][]+)\]\((https?:\/\/[^\s)<>]+)\)/g,
+  (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}${EXT}</a>`);
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
 const display = (s: string) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
@@ -56,8 +61,49 @@ const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<sp
 /** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
 const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
 
+/* Pictures. A logo is its shape drawn in one colour (a mask over currentColor), sized by CSS from its aspect (`--a`) so
+   every logo carries the same weight; a wordmark spells the name, so the name beside it is kept as hidden text. */
+const cssUrl = (src: string) => `url(&quot;${esc(src).replace(/[()\\]/g, (c) => `\\${c}`)}&quot;)`;
+/** `path` is the picture field's JSON path: what edit mode replaces. */
+const pic = (path: string) => (path ? ` data-pic="${path}"` : "");
+const logoHTML = (ref: ImageRef | undefined, name: string, path = "") => {
+  const m = imageMeta(ref?.src);
+  if (!ref || !m) return "";
+  return `<span class="brand${isWordmark(m.aspect) ? " word" : ""}"${pic(path)} role="img" aria-label="${esc(name)}" style="--a:${+m.aspect.toFixed(4)};--src:${cssUrl(ref.src)}"></span>`;
+};
+/** A logo standing in for a name: a wordmark replaces the visible name, a symbol sits before it. */
+const named = (ref: ImageRef | undefined, nameHTML: string, name: string, path: string) => {
+  const m = imageMeta(ref?.src);
+  if (!m) return nameHTML;
+  return logoHTML(ref, name, path) + (isWordmark(m.aspect) ? `<span class="mk-txt">${nameHTML}</span>` : nameHTML);
+};
+const imgHTML = (ref: ImageRef | undefined, cls: string, path: string) => {
+  const m = imageMeta(ref?.src);
+  if (!ref || !m) return `<div class="${cls} missing"></div>`;
+  return `<div class="${cls} k-${m.kind}"${pic(path)} style="--a:${+m.aspect.toFixed(4)}"><img src="${esc(ref.src)}" alt="${esc(ref.alt ?? "")}" width="${m.w}" height="${m.h}" decoding="sync" draggable="false"></div>`;
+};
+const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+/* A team with photos keeps every tile (initials stand in for one that is missing); a team without is text over a rule. */
+function personHTML(p: Person, i: number, photos: boolean) {
+  const at0 = `people[${i}]`;
+  const photo = !photos ? "" : p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, "ph", `${at0}.photo`) : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
+  return `<div class="person"${item(at0)}>${photo}<div class="who"><h3${at(`${at0}.name`, "esc")}>${esc(p.name ?? "")}</h3><p class="role"${at(`${at0}.role`, "esc")}>${esc(p.role ?? "")}</p>${p.text ? `<p class="bio"${at(`${at0}.text`, "md")}>${md(p.text)}</p>` : ""}</div></div>`;
+}
+/* The wall's grid: 3–4 in a row, then rows of 3, 4, 5 and 6 as the count grows. */
+const wallColumns = (n: number) => (n <= 4 ? n : n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : 6);
+
 function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full") {
   const al = columnAlign(t), n = t.columns.length, byColumn = groupLayout(t, room) === "column";
+  // Bars: each figure to scale with its column's largest; the figures right-aligned in a fixed width (in ch, mono) so every
+  // bar in the column starts and is measured from one edge.
+  const body = t.rows.filter((r) => r.style !== "group");
+  const bars = t.columns.map((c, j) => (c.bars && al[j] === "num" ? { max: Math.max(0, ...body.filter((r) => r.style !== "total").map((r) => figureOf(r.cells[j]) ?? 0)), ch: Math.max(1, ...body.map((r) => plain(String(typeof r.cells[j] === "object" && r.cells[j] ? (r.cells[j] as { value?: string }).value ?? "" : r.cells[j] ?? "")).length)) } : null));
+  const barred = (j: number, c: Cell, inner: string) => {
+    const b = bars[j], v = figureOf(c);
+    if (!b) return inner;
+    const p = b.max > 0 && v !== null && v > 0 ? Math.round((v / b.max) * 1000) / 10 : 0;
+    return `<span class="cbar"><i style="width:${p}%"></i></span>${inner}`;
+  };
   const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
   const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
@@ -67,10 +113,14 @@ function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full
     if (mark) return `<td class="${k} score"${at(o ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
     if (o?.status) return `<td class="${k} status"><span class="pill"${at(`${p}.value`, "esc")}>${esc(o.value ?? "")}</span>${note(o, p)}</td>`;
     if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
+    if (o?.logo) return `<td class="${k} has-lg">${named(o.logo, `<span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>`, plain(String(o.value ?? "")), `${p}.logo`)}${note(o, p)}</td>`;
+    if (bars[j]) return `<td class="${k} has-bar" style="--vc:${bars[j]?.ch}">${barred(j, c, `<span${at(o ? `${p}.value` : p, "md")}>${md(o ? o.value ?? "" : c ?? "")}</span>`)}${o ? note(o, p) : ""}</td>`;
     if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;
     return `<td class="${k}"${at(p, "md")}>${md(c ?? "")}</td>`;
   };
-  const head = (c: Table["columns"][number], j: number) => c.icon
+  const head = (c: Table["columns"][number], j: number) => c.logo
+    ? `<th class="${cls(c, j)} has-lg">${named(c.logo, `<span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span>`, c.label ?? "", `${base}.columns[${j}].logo`)}</th>`
+    : c.icon
     ? `<th class="${cls(c, j)} has-ic"><i data-lucide="${esc(c.icon)}"></i><span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span></th>`
     : `<th class="${cls(c, j)}"${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`;
   const row = (r: Table["rows"][number], i: number) => {
@@ -105,12 +155,15 @@ function cardHTML(c: Card, variant: string, i: number) {
   if (variant === "framed") return `<div class="card ${tone}"${item(p)}><div class="who"${at(`${p}.label`, "esc")}>${esc(c.label || "")}</div><h3${at(`${p}.title`, "esc")}>${esc(c.title)}</h3>${body}
     ${c.facts ? `<div class="facts">${c.facts.map((x, k) => `<div${item(`${p}.facts[${k}]`)}><div class="k"${at(`${p}.facts[${k}].label`, "esc")}>${esc(x.label)}</div><div class="v"${at(`${p}.facts[${k}].text`, "md")}>${md(x.text)}</div></div>`).join("")}</div>` : ""}</div>`;
   if (variant === "value") return `<div class="card ${tone}"${item(p)}><div class="shout v"${at(`${p}.value`, "esc")}>${esc(c.value)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
+  if (variant === "logo") return `<div class="card ${tone}"${item(p)}><div class="lead">${logoHTML(c.logo, plain(c.title), `${p}.logo`)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
+  if (variant === "numbered") return `<div class="card ${tone}"${item(p)}><div class="num">${pad2(i + 1)}</div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
+  if (variant === "plain") return `<div class="card ${tone}"${item(p)}><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
   return `<div class="card ${tone}"${item(p)}><div class="ic"><i data-lucide="${esc(c.icon)}"></i></div><h3${at(`${p}.title`, "md")}>${md(c.title)}</h3>${body}</div>`;
 }
 
 /* Body per menu entry. The variant (layout) comes from the registry, never from the agent. */
 const table = (s: Slide): Table => s.table ?? { columns: [], rows: [] };
-const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">, (s: Slide, variant: string) => string> = {
+const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" | "agenda">, (s: Slide, variant: string) => string> = {
   chart: (s, v) => v === "split"
     ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
@@ -130,23 +183,35 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote">
         : h.number ? `<div class="half-num"><div class="shout big-v${h.number.tone && h.number.tone !== "focus" ? ` ${h.number.tone}` : ""}"${at(`${p}.number.value`, "esc")}>${esc(h.number.value)}</div><p${at(`${p}.number.caption`, "md")}>${md(h.number.caption)}</p></div>`
         : h.points ? list(h.points, `${p}.points`).replace('<ul class="bullets">', '<ul class="bullets points">')
         : "";
-      return `<div class="half"${item(p)} data-grid="${i}">${capHTML(h.caption, "", h.caption ? `${p}.caption` : "")}${body}</div>`;
+      // A half without a caption keeps the caption's line (its hairline, no words) when the other half has one, so both
+      // bodies start on one line.
+      const cap = h.caption ? capHTML(h.caption, "", `${p}.caption`) : halves.some((x) => x?.caption) ? `<p class="cap ghost" aria-hidden="true">&nbsp;</p>` : capHTML(undefined);
+      return `<div class="half"${item(p)} data-grid="${i}">${cap}${body}</div>`;
     };
     const balls = halves.some((h) => h?.table && markKinds(h.table).has("balls"));
     return `<div class="pair grow">${halves.map(half).join("")}</div>${balls ? ballKey() : ""}`;
   },
   summary: (s) => `<div class="sum grow">${(s.points ?? []).map((p, i) => `<div class="row"${item(`points[${i}]`)}><span class="n">${pad2(i + 1)}</span>
     <span class="lead"${at(`points[${i}].title`, "md")}>${md(p.title)}</span><span class="why"${at(`points[${i}].text`, "md")}>${md(p.text)}</span></div>`).join("")}</div>`,
-  cards: (s, v) => { const cards = s.cards ?? [];
-    return `<div class="cards ${v} ${v === "framed" ? "grow" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
+  image: (s, v) => v === "split"
+    ? splitHTML(s, imgHTML(s.image, "pic", "image"), "grow with-pic")
+    : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "pic grow", "image")}`,
+  team: (s, v) => { const people = s.people ?? [], photos = people.some((p) => p?.photo);
+    return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p ?? { name: "", role: "" }, i, photos)).join("")}</div>`; },
+  logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
+    return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "", `logos[${i}].logo`) || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
+  cards: (s, v) => { const cards = s.cards ?? [], grid = v !== "framed" && cards.length === 4 && s.arrange === "grid";
+    // Four cards two over two are laid out as two columns; their rows line up like any other cards'.
+    return `<div class="cards ${v} ${v === "framed" ? "grow" : grid ? "n-2 g-2x2" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
 };
 
 /** Deck context per slide: page number, section number and the default kicker. */
 export function contexts(deck: Pick<Deck, "slides" | "footer">): SlideContext[] {
   let section = 0, sectionTitle = "";
+  const sections = deck.slides.filter((s) => s.template === "section").map((s) => ({ title: s.title, ...(s.subtitle ? { subtitle: s.subtitle } : {}) }));
   return deck.slides.map((s, i) => {
     if (s.template === "section") { section += 1; sectionTitle = s.title; }
-    return { page: i + 1, section, kicker: sectionTitle ? `${pad2(section)} · ${sectionTitle}` : "", footer: deck.footer || "" };
+    return { page: i + 1, section, kicker: sectionTitle ? `${pad2(section)} · ${sectionTitle}` : "", footer: deck.footer || "", sections };
   });
 }
 
@@ -158,6 +223,13 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
   } else if (s.template === "section") {
     // The subtitle box is always there: it holds its 2 lines, so the number and title sit still across dividers.
     body = `<p class="shout sec-n">${pad2(ctx.section)}</p><h2 class="title"${at("title", "esc")}>${esc(s.title)}</h2><p class="sec-sub"${at("subtitle", "md")}>${s.subtitle ? md(s.subtitle) : ""}</p>`;
+  } else if (s.template === "agenda") {
+    // The deck's chapters, from its dividers. After chapter k the next one is highlighted and the covered ones go quiet; after
+    // the last chapter (or before the first) the list is plain.
+    const list = ctx.sections ?? [], next = ctx.section >= 1 && ctx.section < list.length ? ctx.section + 1 : 0;
+    body = `<h2 class="title"${at("title", "esc")}>${esc(s.title || "Agenda")}</h2>` + (list.length
+      ? `<ol class="agenda${list.length > 5 ? " many" : ""}">${list.map((x, i) => `<li class="${i + 1 === next ? "next" : i + 1 < next ? "done" : ""}"><span class="n">${pad2(i + 1)}</span><span class="t">${esc(x.title)}</span>${x.subtitle ? `<span class="s">${md(x.subtitle)}</span>` : ""}</li>`).join("")}</ol>`
+      : `<p class="agenda-empty">No chapters yet. Add chapter dividers and they are listed here, numbered, in order.</p>`);
   } else if (s.template === "number") {
     // No title: the number and its sentence are the slide (the sentence is its line in the storyline).
     const n = s.number ?? { value: "", caption: "" };
@@ -174,7 +246,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
       + BODY[s.template as keyof typeof BODY](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway"${at("takeaway", "md")}>${md(s.takeaway)}</p>` : "");
   }
-  const fn = [s.footnote && `<p${at("footnote", "md")}>${md(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${md(s.source)}</span></p>`].filter(Boolean).join("");
+  const fn = [s.footnote && `<p${at("footnote", "md")}>${mdLinked(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${mdLinked(s.source)}</span></p>`].filter(Boolean).join("");
   const rail = s.template === "cover" ? "" : `<div class="rail"><div class="fn">${fn}</div><div class="pg">${esc(ctx.footer)}<b>${pad2(ctx.page)}</b></div></div>`;
   return `<section class="slide t-${s.template} v-${variant} style-${deck.style} theme-${deck.theme}">${body}${rail}</section>`;
 }
@@ -189,7 +261,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   const colours = allocate(s, deck.theme, deck.accent);
   for (const [k, v] of Object.entries(colours.vars)) slide.style.setProperty(`--${k}`, v);
   fitValues(slide);
-  sizeTable(slide); stackIcons(slide); growTable(slide); growHalfTables(slide);
+  sizeTable(slide); stackIcons(slide); growTable(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
     const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
@@ -199,7 +271,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
     for (const [k, v] of Object.entries(own.vars)) host.style.setProperty(`--${k}`, v);
     drawChart(host, spec, [], own);
   });
-  drawIcons(slide);
+  drawIcons(slide); growCards(slide); fitPictures(slide); alignHalves(slide);
   return slide;
 }
 
@@ -252,16 +324,31 @@ function stackIcons(slide: HTMLElement) {
   });
 }
 
-/* L5 in a pair: a half table grows its rows towards the bottom of its half, up to 1.5× its natural height, so it
-   ends level with the chart beside it rather than stopping halfway down. */
-function growHalfTables(slide: HTMLElement) {
-  const R = slide.getBoundingClientRect(), k = R.width / 1920;
-  slide.querySelectorAll<HTMLElement>(".pair > .half > .tbl").forEach((tbl) => {
-    const half = tbl.parentElement;
-    if (!half) return;
-    const area = (half.getBoundingClientRect().bottom - tbl.getBoundingClientRect().top) / k, natural = tbl.getBoundingClientRect().height / k;
-    if (natural < area) tbl.style.height = `${Math.min(area, natural * 1.5)}px`;
-  });
+/* L5 in a pair: the two halves share one floor, the chart's plot bottom (its baseline) when a half is a chart, else the
+   bottom of the taller half. Every other half meets it: a table's rows grow, points become equal bands, a number sits on
+   it. A half never shrinks below its natural height (the fit checks report that). Runs after the charts are drawn. */
+function alignHalves(slide: HTMLElement) {
+  const pair = slide.querySelector<HTMLElement>(":scope > .pair");
+  if (!pair) return;
+  const R = slide.getBoundingClientRect(), k = R.width / 1920, y = (v: number) => (v - R.top) / k;
+  const halves = [...pair.querySelectorAll<HTMLElement>(":scope > .half")];
+  const body = (h: HTMLElement) => h.querySelector<HTMLElement>(":scope > .tbl, :scope > .bullets.points, :scope > .half-num");
+  // A chart's floor is its baseline (the horizontal base line), not the plot box, which also holds the category labels.
+  const baseline = (plot: HTMLElement) => {
+    const line = [...plot.querySelectorAll<SVGLineElement>("line.base")].find((l) => l.getAttribute("y1") === l.getAttribute("y2"));
+    return y((line ?? plot).getBoundingClientRect().bottom);
+  };
+  const plots = halves.map((h) => h.querySelector<HTMLElement>(".plot")).filter((p): p is HTMLElement => !!p);
+  // Without a chart: the taller half's bottom, grown by up to half its height towards the body's bottom (L5, as a table).
+  const bodies = halves.map(body).filter((b): b is HTMLElement => !!b), tallest = Math.max(0, ...bodies.map((b) => b.getBoundingClientRect().height / k));
+  const floor = plots.length ? Math.max(...plots.map(baseline))
+    : Math.min(y(pair.getBoundingClientRect().bottom), Math.max(...bodies.map((b) => y(b.getBoundingClientRect().top))) + tallest * 1.5);
+  for (const h of halves) {
+    const b = body(h);
+    if (!b || h.querySelector(".plot")) continue;
+    const top = y(b.getBoundingClientRect().top), natural = b.getBoundingClientRect().height / k;
+    if (floor - top > natural + 1) b.style.height = `${floor - top}px`;
+  }
 }
 
 /* L5: a table or a list of steps grows its rows towards the bottom of the body (or the takeaway), up to 1.5× its natural
@@ -277,6 +364,33 @@ function growTable(slide: HTMLElement) {
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
   const area = (tk ? top(tk) - 40 : bottom) - top(body), natural = body.getBoundingClientRect().height / k;
   if (natural < area) body.style.height = `${Math.min(area, natural * 1.5)}px`;
+}
+
+/* L5 for cards: icon, logo and value cards grow towards the bottom of the body (or the takeaway), up to 1.5× their natural
+   height, so their column rules run down the slide like a table's rows instead of stopping halfway. After the icons are
+   drawn: they are part of the natural height. */
+function growCards(slide: HTMLElement) {
+  const cards = slide.querySelector<HTMLElement>(":scope > .cards:not(.framed)");
+  if (!cards) return;
+  const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;
+  const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
+  const room = () => (tk ? top(tk) - 40 : bottom) - top(cards), natural0 = () => cards.getBoundingClientRect().height / k;
+  // Numbers sit above their titles while the slide has room, and beside them when it has not.
+  if (cards.classList.contains("numbered") && natural0() > room() + 1) cards.classList.add("inline");
+  const area = room(), natural = natural0();
+  if (natural < area) cards.style.height = `${Math.min(area, natural * 1.5)}px`;
+}
+
+/* A screenshot is never cropped: it is fitted whole inside its area (its aspect is in the file name, so this needs no
+   load), at the top of the area like a chart; centred across a full-width slide, from the left beside notes. */
+function fitPictures(slide: HTMLElement) {
+  const k = slide.getBoundingClientRect().width / 1920;
+  slide.querySelectorAll<HTMLElement>(".pic.k-screenshot").forEach((fig) => {
+    const area = fig.getBoundingClientRect(), a = parseFloat(fig.style.getPropertyValue("--a")) || 1.6;
+    const W = area.width / k, H = area.height / k, w = Math.min(W, H * a);
+    const img = fig.querySelector("img");
+    if (img) { img.style.width = `${w}px`; img.style.height = `${w / a}px`; }
+  });
 }
 
 /* Big values in a row shrink together (to 75% at most) so the widest fits. */

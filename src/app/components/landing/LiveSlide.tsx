@@ -16,12 +16,12 @@ export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', 
     if (!starter) throw new Error(`no starter ${id}`)
     const slide = starterSlide(starter, style)
     if (withoutNotes) delete slide.notes
-    return { slide, ctx: contexts({ footer: 'Acme', slides: [slide] })[0] }
+    return { slide, ctx: contexts({ footer: 'Occam', slides: [slide] })[0] }
   }, [id, style, withoutNotes])
   return <SlideView slide={slide} deck={{ style, theme, accent: null }} ctx={{ ...ctx, section: Math.max(ctx.section, 1) }}
     className={cn('relative aspect-video w-full overflow-hidden', className)} />
 }
 
 /** Every starter in deck order: the title and chapter slides first, then by what the slide has to do. */
-export const MENU: { id: string; name: string; group: string }[] = GROUPS.flatMap((g) =>
-  STARTERS.filter((s) => s.group === g.id).map((s) => ({ id: s.id, name: s.label, group: g.label })))
+export const MENU: { id: string; name: string; groupId: string; group: string }[] = GROUPS.flatMap((g) =>
+  STARTERS.filter((s) => s.group === g.id).map((s) => ({ id: s.id, name: s.label, groupId: g.id, group: g.label })))

@@ -27,7 +27,8 @@ export const STYLE_STATE: Record<Style, string> = {
   pitch: "pitch (VC pitch deck: minimal text, one-line topic title, big numbers, one idea per slide)",
 };
 
-export const GUIDE = `Answer in order and stop at the first match:\n${PICKING_GUIDE.map(([q, id], i) => `${i + 1}. If the content is ${q}: ${id}`).join("\n")}\nCover or section only when the user asks for a title, cover, opening or divider slide; otherwise route the content itself, even into an empty deck.\nChart or table? Chart for a trend, a comparison of sizes or a crossover; table when the reader needs exact values. When in doubt, pick the entry with fewer words.`;
+const guide = (ids: readonly TemplateId[]) => `Answer in order and stop at the first match:\n${PICKING_GUIDE.filter(([, id]) => ids.includes(id)).map(([q, id], i) => `${i + 1}. If the content is ${q}: ${id}`).join("\n")}\nCover or section only when the user asks for a title, cover, opening or divider slide; otherwise route the content itself, even into an empty deck.\nChart or table? Chart for a trend, a comparison of sizes or a crossover; table when the reader needs exact values. When in doubt, pick the entry with fewer words.`;
 
-export const MENU_OPTIONS = Object.fromEntries(OFFERED.map((id) => [id, `${MENU[id].summary} Use when: ${MENU[id].use}`]));
+const menuOptions = (ids: readonly TemplateId[]) => Object.fromEntries(ids.map((id) => [id, `${MENU[id].summary} Use when: ${MENU[id].use}`]));
+export const GUIDE = guide(OFFERED), MENU_OPTIONS = menuOptions(OFFERED);
 

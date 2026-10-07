@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
-import { ArrowLeft, ArrowRight, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, MessageSquare, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { contexts } from '@/engine/slides/render'
 import type { Deck } from '@/engine/types'
 import type { Item } from '@/app/store'
@@ -19,12 +19,14 @@ interface Props {
   layout: 'row' | 'grid'
   /** Grid: a double click or Enter opens the slide. */
   onOpen?: (index: number) => void
+  /** Open comments per slide id. */
+  noted?: Record<string, number>
 }
 
 const UNDO_MS = 6000
 
 /** The deck as thumbnails: a click selects, a drag reorders; each slide's menu moves or deletes it. */
-export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onRemove, removed, onRestore, layout, onOpen }: Props) {
+export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onRemove, removed, onRestore, layout, onOpen, noted = {} }: Props) {
   const [dragged, setDragged] = useState<string | null>(null), [gap, setGap] = useState<number | null>(null)
   const [undo, setUndo] = useState(false)
   // Undo stays up a few seconds after each delete; ⌘Z brings the slide back meanwhile.
@@ -91,6 +93,7 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
               <span className={cn('flex gap-2 font-mono font-medium leading-none text-ink-3', grid ? 'text-[11px]' : 'text-[10px]')}>
                 <b className="font-medium text-ink-2">{String(i + 1).padStart(2, '0')}</b>
                 {it.status === 'draft' && <i className="not-italic text-warn">draft</i>}
+                {!!noted[it.id] && <i aria-label={`${noted[it.id]} open comment${noted[it.id] === 1 ? '' : 's'}`} className="ml-auto flex items-center gap-1 not-italic text-ink-2"><MessageSquare aria-hidden className="size-2.5" strokeWidth={2} />{noted[it.id]}</i>}
               </span>
             </button>
             <DropdownMenu modal={false}>

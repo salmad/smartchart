@@ -18,7 +18,7 @@ describe('Claude Code runner', () => {
     const env = childEnv({ ANTHROPIC_API_KEY: 'k', ANTHROPIC_AUTH_TOKEN: 't', CLAUDE_CODE_USE_BEDROCK: '1', CLAUDE_CODE_USE_VERTEX: '1', PATH: '/bin', HOME: '/h' })
     expect(env).toEqual({ PATH: '/bin', HOME: '/h' })
   })
-  it('agent: isolated from this machine, default tools kept, only SmartChart allowed', () => {
+  it('agent: isolated from this machine, default tools kept, only Occam allowed', () => {
     const a = agentArgs('sonnet', '/tmp/mcp.json')
     expect(a).toContain('--strict-mcp-config')
     expect(a.join(' ')).toContain('--setting-sources local')
@@ -52,7 +52,7 @@ describe('Claude Code runner', () => {
     expect(guardInit(init({ mcpServers: [{ name: 'smartchart', status: 'failed' }] }), ['smartchart'])).toMatch(/npm run dev/)
     expect(guardInit(init({ mcpServers: [] }), [])).toBeNull()
   })
-  it('limited: a usage limit from Claude Code, or SmartChart rate and quota errors', () => {
+  it('limited: a usage limit from Claude Code, or Occam rate and quota errors', () => {
     expect(isLimited({ ...empty, outcome: { isError: true, numTurns: 1, durationMs: 0, costUsd: 0, denials: [], text: 'Claude usage limit reached', structured: null } }, '')).toBe(true)
     expect(isLimited(empty, 'Error: 429 rate limit')).toBe(true)
     expect(isLimited({ ...empty, calls: [{ name: 'mcp__smartchart__create_slide', input: {}, result: 'quota: You’ve used today’s model calls.', isError: true }] }, '')).toBe(true)

@@ -116,7 +116,7 @@ export function wiringChecks(c: Case, t: Transcript, deck: Deck | null): Check[]
     if (x.tool === 'update_slide') return keysOf(x.input.set).filter((p) => LOOK.includes(p.split(/[.[]/)[0]))
     return []
   })
-  add('P5', !touched.length, 'Left the look to SmartChart', `Set ${[...new Set(touched)].join(', ')}`)
+  add('P5', !touched.length, 'Left the look to Occam', `Set ${[...new Set(touched)].join(', ')}`)
   if (!c.ask) {
     const text = t.finalText.trim(), words = text.split(/\s+/).filter(Boolean).length, hasJson = /[{[]\s*"/.test(text), link = !!deck && text.includes(deck.edit)
     add('P6', words <= 120 && !hasJson && link, 'Short reply with the editor link', [words > 120 && `${words} words`, hasJson && 'JSON in the reply', !link && 'no editor link'].filter(Boolean).join(', '))

@@ -22,7 +22,7 @@ async function boot(page: Page, path = '/new') {
 
 test('the app loads', async ({ page }) => {
   await boot(page)
-  await expect(page.getByText('Occam', { exact: true })).toBeVisible()
+  await expect(page.getByText('Occam', { exact: true }).first()).toBeVisible()
   await page.getByRole('button', { name: 'Deck menu' }).click()
   await page.getByRole('menuitem', { name: 'Look' }).click()
   await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
@@ -34,17 +34,21 @@ test('a loaded cover shows one strip thumb', async ({ page }) => {
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
 })
 
-test('F opens the presentation and Escape closes it', async ({ page }) => {
+test('F opens the presentation in its own tab, which follows the deck while it is edited', async ({ page, context }) => {
   await boot(page)
   await load(page, [COVER, { ...COVER, title: 'Second' }])
+  const opened = context.waitForEvent('page')
   await page.keyboard.press('f')
-  await expect(page).toHaveURL(/#\/1$/)
-  await page.keyboard.press('ArrowRight')
-  await expect(page).toHaveURL(/#\/2$/)
-  await page.keyboard.press('Escape')
-  await expect(page).not.toHaveURL(/#\//)
-  await expect(page.locator('[data-strip-thumb][aria-current="true"]')).toHaveCount(1)
-  expect(await page.evaluate(() => window.__journey?.current)).toBe(1)
+  const show = await opened
+  await expect(show).toHaveURL(/\/present\?k=\w+#\/1$/)
+  await expect(show.locator('.slide .title')).toHaveText('Acme')
+  await show.keyboard.press('ArrowRight')
+  await expect(show).toHaveURL(/#\/2$/)
+  await expect(show.locator('.slide .title')).toHaveText('Second')
+  // The editor's tab is still the editor, and an edit made there shows in the presentation at once.
+  await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
+  await load(page, [COVER, { ...COVER, title: 'Edited second' }])
+  await expect(show.locator('.slide .title')).toHaveText('Edited second')
 })
 
 test('chart marks do not inherit the app layout strokes', async ({ page }) => {

@@ -196,14 +196,14 @@
      "facts": 0
     },
     {
-     "icon": "wallet",
+     "icon": "layers",
      "hasValue": false,
      "hasText": false,
      "bullets": 2,
      "facts": 0
     },
     {
-     "icon": "refresh-cw",
+     "icon": "shield-check",
      "hasValue": false,
      "hasText": false,
      "bullets": 2,
@@ -1422,6 +1422,185 @@
      "bullets": 0,
      "facts": 0
     }
+   ]
+  }
+ },
+ {
+  "name": "Picture · screenshot with notes",
+  "consulting": {
+   "template": "image",
+   "variant": "split",
+   "keys": [
+    "caption",
+    "image",
+    "notes",
+    "template",
+    "title"
+   ],
+   "notes": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "pitch": {
+   "template": "image",
+   "variant": "full",
+   "keys": [
+    "image",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
+ },
+ {
+  "name": "Team · photos and proof",
+  "consulting": {
+   "template": "team",
+   "variant": "row",
+   "keys": [
+    "people",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "team",
+   "variant": "row",
+   "keys": [
+    "people",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
+ },
+ {
+  "name": "Logo wall",
+  "consulting": {
+   "template": "logos",
+   "variant": "wall",
+   "keys": [
+    "caption",
+    "logos",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "logos",
+   "variant": "wall",
+   "keys": [
+    "logos",
+    "subtitle",
+    "template",
+    "title"
+   ]
+  }
+ },
+ {
+  "name": "Text · three paragraphs",
+  "consulting": {
+   "template": "cards",
+   "variant": "numbered",
+   "keys": [
+    "cards",
+    "lead",
+    "template",
+    "title"
+   ],
+   "cards": [
+    {
+     "hasValue": false,
+     "hasText": false,
+     "bullets": 2,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": false,
+     "bullets": 2,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": false,
+     "bullets": 2,
+     "facts": 0
+    }
+   ]
+  },
+  "pitch": {
+   "template": "cards",
+   "variant": "numbered",
+   "keys": [
+    "cards",
+    "lead",
+    "subtitle",
+    "template",
+    "title"
+   ],
+   "cards": [
+    {
+     "hasValue": false,
+     "hasText": true,
+     "bullets": 0,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": true,
+     "bullets": 0,
+     "facts": 0
+    },
+    {
+     "hasValue": false,
+     "hasText": true,
+     "bullets": 0,
+     "facts": 0
+    }
+   ]
+  }
+ },
+ {
+  "name": "Agenda",
+  "consulting": {
+   "template": "agenda",
+   "variant": "agenda",
+   "keys": [
+    "template"
+   ]
+  },
+  "pitch": {
+   "template": "agenda",
+   "variant": "agenda",
+   "keys": [
+    "template"
+   ]
+  }
+ },
+ {
+  "name": "Pair · number and chart",
+  "consulting": {
+   "template": "pair",
+   "variant": "pair",
+   "keys": [
+    "halves",
+    "kicker",
+    "source",
+    "template",
+    "title"
+   ]
+  },
+  "pitch": {
+   "template": "pair",
+   "variant": "pair",
+   "keys": [
+    "halves",
+    "subtitle",
+    "template",
+    "title"
    ]
   }
  }

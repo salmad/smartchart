@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { TourShow } from './tour'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
-import { Present } from './components/Present'
+import { newLiveKey, openPresentation, usePublishDeck } from './presenter-channel'
 import { PrintDeck, pdfName } from './components/PrintDeck'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
@@ -13,10 +14,15 @@ import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
 import { deckOf, editKey, locked, toSaved } from './state'
 import { saveEdit } from './edit/save'
-import { deckName, newDeckId, type DeckRepo, type Item, type SavedDeck } from './store'
+import { deckName, newDeckId, type DeckRepo, type Item, type SaveMeta, type SavedDeck } from './store'
+import { useVersions } from './useVersions'
+import { authorOf, useComments } from './useComments'
+import { useTour } from './useTour'
+import { usePresence } from './usePresence'
+import { Tour, TourNudge } from './components/Tour'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
-import { go, takePendingPrompt, type Route } from './route'
+import { go, parsePending, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
 import { STALE, findDeck } from './remote'
 import { useLiveDeck } from './live'
@@ -46,18 +52,32 @@ export function App({ route, account, repo, backup }: Props) {
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), warned = useRef(false), bootStarted = useRef(false)
   const retry = useRef({ timer: 0, wait: 0 })
-  const [presenting, setPresenting] = useState(false), [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
+  // Who wrote the next save, for its version: the agent right after a turn, or a restore. Kept until a save lands.
+  const author = useRef<SaveMeta | null>(null)
+  // Counts saves that landed, so the Versions panel knows to read the list again.
+  const [saves, setSaves] = useState(0)
+  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
   // laptop-width window, where the slide needs the room, until the maker opens them.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
-  const deck = deckOf(s)
+  // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
+  const [tourShow, setTourShow] = useState<TourShow | null>(null)
+  useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
+  // The same deck object until a slide or the look changes: it is what the presentation tab follows.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deckOf reads only these four
+  const deck = useMemo(() => deckOf(s), [s.items, s.style, s.theme, s.accent])
+  const liveKey = useMemo(newLiveKey, [])
+  usePublishDeck(deck.slides.length ? deck : null, liveKey)
 
   const measurer = useCallback((): Measurer => {
     if (!frame.current) throw new Error('the measuring frame is not mounted')
     return (measurerRef.current ??= createMeasurer(frame.current))
   }, [])
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
+  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
+  const tour = useTour(app, recheck)
+  const offerTour = tour.offer
 
   // The deck as last saved (or opened): a save happens only when this changes, so opening a deck or selecting a
   // slide does not stamp it as edited and move it up the list.
@@ -121,8 +141,11 @@ export function App({ route, account, repo, backup }: Props) {
   const persist = useCallback(async (saved: SavedDeck) => {
     const r = retry.current
     clearTimeout(r.timer)
-    const why = await repo.save(saved)
+    const meta = author.current ?? undefined
+    const why = await repo.save(saved, meta)
     if (!why) {
+      if (author.current === meta) author.current = null
+      setSaves((n) => n + 1)
       savedKey.current = editKey(saved)
       if (r.wait) void backup?.remove(saved.id)
       r.wait = 0; warned.current = false
@@ -151,22 +174,7 @@ export function App({ route, account, repo, backup }: Props) {
     return () => clearTimeout(t)
   }, [s, loaded, app, persist])
 
-  // Who is working on the deck, for a writer elsewhere to see: a turn running, or a slide open for hand editing.
-  // Entries expire on the server, so both are renewed while they last and cleared when they end.
-  const sent = useRef<{ id: string; active: boolean } | null>(null)
-  useEffect(() => {
-    const id = s.deckId
-    if (!id || !repo.presence) return
-    if (sent.current && sent.current.id !== id && sent.current.active) void repo.presence(sent.current.id, {})
-    const active = s.busy || s.editing !== null
-    if (!active && !(sent.current?.id === id && sent.current.active)) { sent.current = { id, active }; return }
-    const send = () => void repo.presence?.(id, { ...(s.busy ? { busy: true } : {}), ...(s.editing ? { editing: s.editing } : {}) })
-    sent.current = { id, active }
-    send()
-    if (!active) return
-    const t = window.setInterval(send, 30_000)
-    return () => window.clearInterval(t)
-  }, [s.deckId, s.busy, s.editing, repo])
+  usePresence(repo, s.deckId, s.busy, s.editing)
 
   // Another deck picked in the sidebar (or Back/Forward): open it, or start a new one at /new. Boot handles the
   // route the page opened on; a pick made while it runs is acted on as soon as boot is done, never dropped.
@@ -203,9 +211,12 @@ export function App({ route, account, repo, backup }: Props) {
 
   const send = useCallback(async (text: string, files: Attached[] = []) => {
     const r = await sendTurn(text, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }, files)
+    // The save after the turn is the agent's: its version carries the turn and the request in the user's words.
+    if (r.turn) author.current = { by: 'agent', turn: r.turn, label: text.trim().slice(0, 300) || 'Files' }
+    if (r.written?.length) offerTour()
     turns.current.push(r)
     return r
-  }, [app, measurer])
+  }, [app, measurer, offerTour])
   const setStyle = useCallback((style: Style) => app.dispatch({ type: 'set', patch: { style } }), [app])
   const load = useCallback((slides: Slide[], style: Style) => {
     turns.current = []
@@ -215,7 +226,8 @@ export function App({ route, account, repo, backup }: Props) {
 
   useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
-  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) setPresenting(true) }, [app])
+  // The presentation opens in its own tab and follows this deck as it is edited.
+  const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
     onTheme: (theme: Theme) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { theme } }),
@@ -224,6 +236,7 @@ export function App({ route, account, repo, backup }: Props) {
     onAdd: () => { if (!locked(app.getState()) && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks, chatOpen, onToggleChat: toggleChat,
     onSite: () => leaveTo('/home'),
+    onTour: tour.start,
     // A share link lives on the server copy: the dev account keeps its decks in this browser.
     shareId: backup ? s.deckId : null,
     onPdf: () => { if (app.getState().items.length) setPrinting(true) },
@@ -233,6 +246,12 @@ export function App({ route, account, repo, backup }: Props) {
     account,
   }
 
+  const flush = useCallback(async () => {
+    const saved = toSaved(app.getState())
+    if (saved && unsaved(saved)) await persist(saved)
+  }, [app, persist])
+  const { versions, undoTurn } = useVersions({ app, repo, author, flush, recheck, say })
+
   const onClear = useCallback(() => {
     if (locked(app.getState())) return
     app.dispatch({ type: 'set', patch: { history: [], working: new Set(), messages: [{ kind: 'bot', text: '', sub: CLEARED }] } })
@@ -241,6 +260,8 @@ export function App({ route, account, repo, backup }: Props) {
   const edit = useMemo(() => ({ measurer, save: (id: string, draft: Slide) => saveEdit(id, draft, { measurer: measurer(), dispatch: app.dispatch, getState: app.getState }) }), [app, measurer])
   const onSelect = useCallback((index: number) => app.dispatch({ type: 'select', index }), [app])
   const onMove = useCallback((id: string, to: number) => app.dispatch({ type: 'moveSlide', id, to }), [app])
+  // Speaker notes change nothing on the slide, so they are written straight to it: no checks or measuring to rerun.
+  const onTalk = useCallback((id: string, talk: string) => app.dispatch({ type: 'items', items: app.getState().items.map((it) => (it.id === id && it.slide ? { ...it, slide: { ...it.slide, talk } } : it)) }), [app])
   const onRemove = useCallback((id: string) => app.dispatch({ type: 'removeSlide', id }), [app])
   const onRestore = useCallback(() => app.dispatch({ type: 'restoreSlide' }), [app])
   // A prompt from the landing (or Add slide) builds the slide in the editor.
@@ -249,10 +270,15 @@ export function App({ route, account, repo, backup }: Props) {
     void send(text, files)
   }, [app, send])
   sendRef.current = onSend
+  const commentActions = useComments(app, authorOf(account), onSend)
+  // Rebuild in Occam: a new deck in the reviewed deck's style, written by the agent from its text and the review.
+  const rebuild = useCallback((brief: string, file: Attached, style: Style) => {
+    if (locked(app.getState())) return
+    newDeck(); app.dispatch({ type: 'set', patch: { style } }); onSend(brief, [file])
+  }, [app, newDeck, onSend])
   // A double click or a click while busy is ignored by the reducer: one deck, one slide (Review Focus 3).
   // Inserted after the current slide and selected; numbering follows from position (Review Focus 4).
   // A starter's checks run as it lands, so its check line is never empty.
-  const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
   const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
@@ -264,23 +290,14 @@ export function App({ route, account, repo, backup }: Props) {
 
   return (
     <TooltipProvider delayDuration={400}>
-      {presenting
-        ? <Present deck={deck} start={s.current} onExit={(i) => { app.dispatch({ type: 'select', index: i }); setPresenting(false) }} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit}
-            decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }} busy={locked(s)}
-              onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />}
+      <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild}
+        decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }} busy={locked(s)}
+          onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />
+      {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
+      {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
       {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>
   )
-}
-
-function parsePending(raw: string | null): { text: string; style: Style } | null {
-  if (!raw) return null
-  try {
-    const p = JSON.parse(raw) as { text?: unknown; style?: unknown }
-    if (typeof p.text === 'string' && p.text.trim()) return { text: p.text, style: p.style === 'pitch' ? 'pitch' : 'consulting' }
-  } catch { /* a bare string from an older page */ }
-  return { text: raw, style: 'consulting' }
 }

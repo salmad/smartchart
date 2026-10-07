@@ -50,9 +50,11 @@ export default {
         // A turn at work: gold stars fading in and out around the slide, and a star turning in the status line.
         twinkle: { '0%, 100%': { opacity: '0', transform: 'scale(.2) rotate(0deg)' }, '50%': { opacity: '1', transform: 'scale(1) rotate(90deg)' } },
         glint: { '0%, 100%': { opacity: '.7', transform: 'scale(.8) rotate(0deg)' }, '50%': { opacity: '1', transform: 'scale(1.1) rotate(90deg)' } },
+        // The tour's mark on what was just clicked: a gold ring breathing out and back.
+        beacon: { '0%, 100%': { opacity: '1', transform: 'scale(1)' }, '50%': { opacity: '.35', transform: 'scale(1.12)' } },
         sheen: { from: { transform: 'translateX(-120%) skewX(-20deg)' }, to: { transform: 'translateX(220%) skewX(-20deg)' } },
       },
-      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
+      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', beacon: 'beacon 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
     },
   },
   plugins: [animate],

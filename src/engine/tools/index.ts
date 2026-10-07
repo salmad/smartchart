@@ -2,12 +2,15 @@
 import { accountTools } from "./account.js";
 import { checkTools } from "./checks.js";
 import { choiceTools } from "./choice.js";
+import { commentTools } from "./comments.js";
+import { versionTools } from "./versions.js";
 import { deckTools } from "./decks.js";
 import { guideTools } from "./guide.js";
+import { imageTools } from "./images.js";
 import { slideTools } from "./slides.js";
 import type { AnyTool } from "./types.js";
 
-export const TOOLS: readonly AnyTool[] = [...accountTools, ...guideTools, ...deckTools, ...choiceTools, ...slideTools, ...checkTools];
+export const TOOLS: readonly AnyTool[] = [...accountTools, ...guideTools, ...deckTools, ...choiceTools, ...imageTools, ...slideTools, ...checkTools, ...commentTools, ...versionTools];
 const BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 export const toolByName = (name: string): AnyTool | undefined => BY_NAME.get(name);
 

@@ -17,11 +17,13 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
   const frame = useRef<HTMLDivElement>(null), editRef = useRef(edit)
   editRef.current = edit
   const { style, theme, accent } = deck
+  // The agenda draws the deck's chapters; a new deck object with the same chapters must not redraw under the cursor.
+  const chapters = JSON.stringify(ctx.sections ?? [])
 
   useLayoutEffect(() => {
     const el = frame.current
     if (!el) return
-    const s = mountSlide(el, edit.shown, { page: ctx.page, section: ctx.section, kicker: ctx.kicker, footer: ctx.footer }, { style, theme, accent })
+    const s = mountSlide(el, edit.shown, { page: ctx.page, section: ctx.section, kicker: ctx.kicker, footer: ctx.footer, sections: JSON.parse(chapters) }, { style, theme, accent })
     s.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => {
       f.contentEditable = 'true'; f.spellcheck = true; f.dataset.hint = hint(f.dataset.path ?? '')
       if (editRef.current.samples.has(f.dataset.path ?? '')) f.dataset.sample = ''
@@ -40,7 +42,7 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
     onSlide(s)
     return () => { ro.disconnect(); onSlide(null) }
     // Primitives only: a new ctx object on each render must not remount the slide under the cursor.
-  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, style, theme, accent, onSlide])
+  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, chapters, style, theme, accent, onSlide])
 
   // While a save runs, the fields stop taking text: what is typed now would be lost when edit mode closes.
   useEffect(() => { frame.current?.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => { f.contentEditable = edit.saving ? 'false' : 'true' }) }, [edit.saving, edit.shown])
@@ -80,7 +82,7 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
       // Enter in a list item adds the next item; anywhere else it does nothing.
       const itemEl = f.closest<HTMLElement>('[data-item]'), cur = editRef.current
       const hit = itemEl && listOf(listOps(cur.draft, style), itemEl.dataset.item ?? '')
-      if (!hit || hit.op.length >= hit.op.max) return
+      if (!hit || hit.op.length >= hit.op.max || hit.op.picture) return
       const set = newItem(cur.draft, style, hit.op, hit.index + 1)
       const tail = (f.dataset.path ?? '').slice((itemEl.dataset.item ?? '').length)
       cur.patch(set, `${hit.op.path}[${hit.index + 1}]${tail}`)

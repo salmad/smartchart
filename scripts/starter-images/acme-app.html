@@ -1,0 +1,85 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=block" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1200px; height: 750px; font: 400 13px/1.4 Geist, sans-serif; color: #101418; background: #f6f7f9; display: grid; grid-template-columns: 208px 1fr; -webkit-font-smoothing: antialiased; }
+  nav { background: #fff; border-right: 1px solid #e7e9ee; padding: 20px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 16px; letter-spacing: -.02em; padding: 2px 8px 22px; }
+  .brand i { width: 22px; height: 22px; border-radius: 6px; background: #2f4bd8; display: grid; place-items: center; }
+  .brand i::after { content: ""; width: 9px; height: 9px; border-radius: 2px; background: #fff; }
+  nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: #59616d; font-weight: 500; }
+  nav a b { width: 14px; height: 14px; border-radius: 4px; border: 1.6px solid currentColor; opacity: .8; }
+  nav a.on { background: #eef1fd; color: #2f4bd8; }
+  nav .foot { margin-top: auto; padding: 12px 10px; border-top: 1px solid #eef0f3; color: #59616d; display: flex; gap: 10px; align-items: center; }
+  nav .foot span { width: 26px; height: 26px; border-radius: 50%; background: #dfe3ea; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: #3a414c; }
+  main { padding: 22px 26px; display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; gap: 18px; min-width: 0; }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+  .seg { margin-left: auto; display: flex; background: #eceef2; border-radius: 8px; padding: 3px; }
+  .seg span { padding: 5px 11px; border-radius: 6px; color: #59616d; font-weight: 500; }
+  .seg span.on { background: #fff; color: #101418; box-shadow: 0 1px 2px rgba(16,20,24,.08); }
+  .btn { padding: 7px 12px; border-radius: 8px; background: #2f4bd8; color: #fff; font-weight: 600; }
+  .card { background: #fff; border: 1px solid #e7e9ee; border-radius: 12px; padding: 18px 20px; }
+  .forecast { display: flex; flex-direction: column; min-height: 0; }
+  .k { font: 500 11px/1 "Geist Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #8a919c; }
+  .big { display: flex; align-items: baseline; gap: 10px; margin-top: 10px; }
+  .big b { font-size: 34px; font-weight: 600; letter-spacing: -.03em; }
+  .big span { color: #59616d; }
+  .chart { position: relative; flex: 1; margin-top: 14px; }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .tag { position: absolute; font: 500 11px/1 "Geist Mono", monospace; color: #59616d; background: #fff; padding: 4px 6px; border: 1px solid #e7e9ee; border-radius: 6px; white-space: nowrap; }
+  .dot { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #fff; border: 2.5px solid #2f4bd8; }
+  .axis { position: absolute; left: 0; right: 0; bottom: -20px; display: flex; justify-content: space-between; font: 500 11px/1 "Geist Mono", monospace; color: #9aa1ab; }
+  aside { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .meter { margin-top: 12px; height: 8px; border-radius: 4px; background: #eceef2; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 80%; background: #2f4bd8; border-radius: 4px; }
+  .row2 { display: flex; justify-content: space-between; margin-top: 8px; color: #59616d; }
+  .tip { background: #f3f5fe; border-color: #dfe5fb; }
+  .tip p { margin-top: 8px; font-size: 13.5px; line-height: 1.45; color: #2a3140; }
+  .tip .btn { display: inline-block; margin-top: 12px; }
+  ul { list-style: none; margin-top: 10px; }
+  li { display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid #f0f1f4; }
+  li:first-child { border-top: 0; }
+  li em { font-style: normal; color: #8a919c; font-size: 12px; display: block; margin-top: 1px; }
+  li b { font: 500 13px/1.4 "Geist Mono", monospace; }
+  li b.in { color: #11804a; }
+</style></head>
+<body>
+  <nav>
+    <div class="brand"><i></i>acme</div>
+    <a><b></b>Home</a><a class="on"><b></b>Cash flow</a><a><b></b>Cards</a><a><b></b>Credit line</a><a><b></b>Payments</a><a><b></b>Receipts</a><a><b></b>Team</a>
+    <div class="foot"><span>HC</span>Halden Coffee Ltd</div>
+  </nav>
+  <main>
+    <header><h1>Cash flow</h1><div class="seg"><span>30 days</span><span class="on">90 days</span><span>12 months</span></div><span class="btn">Draw funds</span></header>
+    <section class="card forecast">
+      <span class="k">Forecast balance · next 90 days</span>
+      <div class="big"><b>£14,820</b><span>lowest point, 7 Nov — after VAT and payroll</span></div>
+      <div class="chart">
+        <svg viewBox="0 0 600 300" preserveAspectRatio="none">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f4bd8" stop-opacity=".16"/><stop offset="1" stop-color="#2f4bd8" stop-opacity="0"/></linearGradient></defs>
+          <g stroke="#eef0f3" stroke-width="1"><path d="M0 60H600M0 135H600M0 210H600"/></g>
+          <path d="M0 140 L40 128 L80 120 L120 132 L150 150 L190 146 L220 175 L250 228 L270 236 L300 214 L340 190 L380 170 L420 150 L460 126 L500 110 L540 96 L600 80 L600 300 L0 300 Z" fill="url(#g)"/>
+          <path d="M0 140 L40 128 L80 120 L120 132 L150 150" fill="none" stroke="#2f4bd8" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M150 150 L190 146 L220 175 L250 228 L270 236 L300 214 L340 190 L380 170 L420 150 L460 126 L500 110 L540 96 L600 80" fill="none" stroke="#2f4bd8" stroke-width="2.5" stroke-dasharray="5 5" stroke-linejoin="round"/>
+          <path d="M150 20V300" stroke="#c7ccd5" stroke-width="1"/>
+          <path d="M0 255H600" stroke="#e4572e" stroke-width="1.2" stroke-dasharray="3 4"/>
+        </svg>
+        <span class="tag" style="left:22%;top:2%">Today</span>
+        <span class="tag" style="left:80%;top:88%;color:#c2410c;border-color:#fbd5c8">Buffer £10,000</span>
+        <span class="dot" style="left:45%;top:78.7%"></span><span class="tag" style="left:49%;top:76%">Lowest · VAT £18,400 due 7 Nov</span>
+        <div class="axis"><span>30 Sep</span><span>14 Oct</span><span>28 Oct</span><span>11 Nov</span><span>25 Nov</span><span>9 Dec</span><span>23 Dec</span></div>
+      </div>
+    </section>
+    <aside>
+      <div class="card"><span class="k">Credit line</span><div class="big"><b>£60,000</b><span>available</span></div><div class="meter"><i></i></div><div class="row2"><span>£15,000 drawn</span><span>of £75,000</span></div></div>
+      <div class="card tip"><span class="k">Suggested</span><p>Draw <b>£12,000</b> on 3 Nov to stay above your buffer through VAT. Repaid from Halden Hotels’ invoice on 21 Nov.</p><span class="btn">Schedule draw</span></div>
+      <div class="card"><span class="k">Coming up</span><ul>
+        <li><span>Payroll<em>31 Oct</em></span><b>−£21,300</b></li>
+        <li><span>VAT return<em>7 Nov</em></span><b>−£18,400</b></li>
+        <li><span>Halden Hotels<em>21 Nov · invoice 0412</em></span><b class="in">+£32,000</b></li>
+      </ul></div>
+    </aside>
+  </main>
+</body></html>

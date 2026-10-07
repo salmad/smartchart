@@ -22,7 +22,7 @@ describe('judge', () => {
     expect([s.properties?.generic.minItems, s.properties?.case.maxItems]).toEqual([2, 3])
     expect(s.properties?.confusedBy.items?.properties?.source.enum).toContain('template card')
   })
-  it('the transcript shows every call with SmartChart’s issues and Jev’s verdicts, then the reply', () => {
+  it('the transcript shows every call with Occam’s issues and Jev’s verdicts, then the reply', () => {
     const x = transcriptText(t)
     for (const s of ['1. create_slide', 'title: too long', '2. check_slide', 'J9', 'REPLY']) expect(x).toContain(s)
   })

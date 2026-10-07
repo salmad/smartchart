@@ -55,6 +55,8 @@ dist-ssr
 
 # Data files
 *.csv
+# The MCP eval's case files are fixtures, not data.
+!tests/mcp-eval/files/*.csv
 
 # Windsurf rules
 .windsurfrules

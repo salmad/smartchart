@@ -7,17 +7,19 @@ interface Props { slide: Slide; deck: Pick<Deck, 'style' | 'theme' | 'accent'>; 
 /** One slide drawn by the engine into a frame, scaled to the frame's width (1920 px = 1). */
 export function SlideView({ slide, deck, ctx, className }: Props) {
   const frame = useRef<HTMLDivElement>(null)
-  const { style, theme, accent } = deck, { page, section, kicker, footer } = ctx
+  const { style, theme, accent } = deck, { page, section, kicker, footer, sections } = ctx
+  // The agenda draws the deck's chapters: a retitled divider redraws it.
+  const chapters = JSON.stringify(sections ?? [])
 
   useLayoutEffect(() => {
     const el = frame.current
     if (!el) return
-    const s = mountSlide(el, slide, { page, section, kicker, footer }, { style, theme, accent })
+    const s = mountSlide(el, slide, { page, section, kicker, footer, sections: JSON.parse(chapters) }, { style, theme, accent })
     const fit = () => s.style.setProperty('--s', String(el.clientWidth / 1920))
     const ro = new ResizeObserver(fit)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [slide, style, theme, accent, page, section, kicker, footer])
+  }, [slide, style, theme, accent, page, section, kicker, footer, chapters])
 
   return <div ref={frame} className={className} />
 }

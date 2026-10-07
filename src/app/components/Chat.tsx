@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
+import { Undo2 } from 'lucide-react'
 import type { TraceStep } from '@/engine/agent/agent'
 import type { Message } from '@/app/store'
 import { WORKING } from '@/app/turn'
@@ -10,10 +11,18 @@ import { Glint, Thinking } from './Working'
 
 const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
 
-interface Props { messages: Message[]; offline: boolean }
+interface Props {
+  messages: Message[]; offline: boolean
+  /** Undo an agent turn (back to the deck before it); null when the decks' store keeps no versions. */
+  onUndo: ((turn: string) => void) | null
+  /** A turn runs or a slide is being edited: Undo waits. */
+  busy: boolean
+  /** Opens the red-pen review of a deck made elsewhere. */
+  onReview?: () => void
+}
 
 /** The conversation, newest at the bottom. */
-export function Chat({ messages, offline }: Props) {
+export function Chat({ messages, offline, onUndo, busy, onReview }: Props) {
   const thread = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, offline])
 
@@ -23,16 +32,17 @@ export function Chat({ messages, offline }: Props) {
       {!messages.length && (
         <div className="grid gap-1.5">
           <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>
-          <p className="text-ink-2">Paste your numbers or notes, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>
+          <p className="text-ink-2">Paste your numbers or notes or a link, or drop in a doc or spreadsheet, and say what the room should take away. Or start from a slide on the right.</p>
+          {onReview && <button type="button" onClick={onReview} className="mt-1 w-fit cursor-pointer text-left text-[13px] text-ink-2 underline decoration-line-2 underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-3">Have a deck already? Get a red-pen review</button>}
         </div>
       )}
-      {messages.map((m, k) => <Bubble key={k} m={m} />)}
+      {messages.map((m, k) => <Bubble key={k} m={m} onUndo={onUndo} busy={busy} />)}
       {offline && <p className="text-[13px] text-ink-2">{OFFLINE}</p>}
     </div>
   )
 }
 
-function Bubble({ m }: { m: Message }) {
+function Bubble({ m, onUndo, busy }: { m: Message; onUndo: Props['onUndo']; busy: boolean }) {
   if (m.kind === 'user') {
     return (
       <div className="flex max-w-[88%] flex-col items-end gap-1.5 self-end">
@@ -48,6 +58,13 @@ function Bubble({ m }: { m: Message }) {
       {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={cn('whitespace-pre-line', m.kind === 'error' ? 'text-bad' : 'text-ink')}>{p.trim()}</p>)}
       {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="flex items-center gap-2 text-[13px] text-ink-2">{working && <Glint />}{working ? <Thinking lines={phaseLinesOf(m.trace)} /> : m.sub}</p>}
       {trace.length > 0 && <Trace trace={trace} pending={working} />}
+      {/* As Cursor's checkpoints: the deck as it was before this request, one click away. Versions keeps the rest. */}
+      {m.turn && onUndo && (m.undone
+        ? <p className="text-[12.5px] text-ink-3">Undone</p>
+        : <button type="button" disabled={busy} onClick={() => m.turn && onUndo(m.turn)} title="Put the slides back as they were before this request"
+            className="flex w-fit cursor-pointer items-center gap-1.5 text-[12.5px] text-ink-3 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-45">
+            <Undo2 aria-hidden className="size-3.5" strokeWidth={1.75} />Undo
+          </button>)}
     </div>
   )
 }
