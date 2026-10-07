@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 interface Props {
   repo: DeckRepo
   /** The open deck: its name is live (it follows its first title), and it is listed before its first save. */
-  current: { id: string | null; name: string; hasSlides: boolean }
+  current: { id: string | null; name: string; slides: number }
   busy: boolean
   onOpen: (id: string) => void; onNew: () => void; onDeleted: (id: string) => void
 }
@@ -30,8 +30,8 @@ export function Decks({ repo, current, busy, onOpen, onNew, onDeleted }: Props) 
 
   // The open deck first appears here before its first save, and always under its live name.
   const listed = rows ?? []
-  const all = current.id && current.hasSlides && !listed.some((r) => r.id === current.id)
-    ? [{ id: current.id, name: current.name, updated: Date.now(), slides: 0 }, ...listed]
+  const all = current.id && current.slides && !listed.some((r) => r.id === current.id)
+    ? [{ id: current.id, name: current.name, updated: Date.now(), slides: current.slides }, ...listed]
     : listed
 
   const remove = async () => {
@@ -54,6 +54,7 @@ export function Decks({ repo, current, busy, onOpen, onNew, onDeleted }: Props) 
       <ul className="grid min-h-0 flex-1 content-start gap-px overflow-y-auto px-2 pb-4">
         {rows === null && !error && [0, 1, 2].map((k) => <li key={k} className="mx-2 my-2 h-4 animate-pulse rounded bg-line" />)}
         {error && <li className="px-2 py-2 text-[12.5px] text-ink-3">Couldn’t load your decks.</li>}
+        {rows !== null && !error && !all.length && <li className="px-2.5 py-2 text-[12.5px] text-ink-3">No decks yet.</li>}
         {all.map((r) => {
           const open = r.id === current.id
           return (
@@ -62,7 +63,7 @@ export function Decks({ repo, current, busy, onOpen, onNew, onDeleted }: Props) 
                 className={cn('grid w-full cursor-pointer gap-0.5 rounded-lg py-2 pl-2.5 pr-9 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-line-2 disabled:cursor-not-allowed disabled:opacity-45',
                   open ? 'bg-raise shadow-[0_0_0_1px_theme(colors.line)]' : 'hover:bg-panel')}>
                 <span className={cn('truncate text-[13px]', open ? 'text-ink' : 'text-ink-2')}>{open ? current.name : r.name}</span>
-                <span className="text-[11.5px] text-ink-3">{open ? 'Open' : `${r.slides} slide${r.slides === 1 ? '' : 's'} · ${ago(r.updated)}`}</span>
+                <span className="text-[11.5px] text-ink-3">{meta(open ? current.slides : r.slides, r.updated)}</span>
               </button>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger aria-label={`More for ${r.name}`} disabled={busy}
@@ -82,6 +83,9 @@ export function Decks({ repo, current, busy, onOpen, onNew, onDeleted }: Props) 
     </nav>
   )
 }
+
+/** A row's second line: "12 slides · 5 min ago". The open deck shows its live count, highlighted rather than labelled. */
+const meta = (n: number, updated: number) => `${n} slide${n === 1 ? '' : 's'} · ${ago(updated)}`
 
 /** "just now", "5 min ago", "2 h ago", "yesterday", "3 days ago", then the date. */
 export function ago(ms: number, now = Date.now()): string {

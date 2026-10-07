@@ -20,7 +20,7 @@ export function Tile({ starter, deckStyle: style, theme, accent, onPick, onConfi
         className={cn('relative aspect-video w-full overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] transition-shadow',
           'group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-focus-visible:shadow-[0_0_0_2px_theme(colors.ink)]',
           selected && 'shadow-[0_0_0_2px_theme(colors.ink)] group-hover:shadow-[0_0_0_2px_theme(colors.ink)]')} />
-      <span className="truncate font-mono text-[11px] font-medium leading-none text-ink-3">{starter.label}</span>
+      <span className="truncate text-[12px] leading-none text-ink-2 group-aria-pressed:text-ink">{starter.label}</span>
     </button>
   )
 }

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
 import type { Deck, Slide, Style } from '@/engine/types'
-import { SLIDE_W, SlideFrame } from '@/app/components/Stage'
+import { SLIDE_W, SlideFrame, UNDER_SLIDE } from '@/app/components/Stage'
 import type { Measurer } from '../measure'
 import type { Item } from '../store'
 import { EditBar } from './EditBar'
@@ -75,7 +75,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
           </EditMenu>
         </SlideFrame>
       </div>
-      <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 max-[900px]:order-2 max-[900px]:max-w-full max-[900px]:px-4 ${SLIDE_W}`}>
+      <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 max-[900px]:order-2 max-[900px]:max-w-full max-[900px]:px-4 ${SLIDE_W} ${UNDER_SLIDE}`}>
         <EditTalk edit={edit} />
         <EditBar edit={edit} deckStyle={style} onDiscard={discard} />
       </section>

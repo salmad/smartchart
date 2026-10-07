@@ -93,6 +93,12 @@ A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonne
 
 The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.
 
+## 12. A red-pen review of any deck, in 20 seconds, no signup
+Drop in a PPTX, PDF or Google Slides link, even one not made in Occam, and get the partner review: titles that don't make a point, charts that don't prove the claim, slides that repeat each other. Then one button: **Rebuild in Occam**, the same story with every flaw fixed.
+- Why: it meets makers where their decks already are, and the before/after is the demo. A shareable review gives people a reason to pass it on. The checks already exist; this puts them in front of people before signup.
+- Open questions: reading other formats (text, charts and order from PPTX/PDF), what a guest gets before an account (the review free, the rebuild after signup?), what is shareable without exposing the deck itself, and abuse limits on a public model-backed endpoint.
+- Builds on #8 and #9 (checks and softer checks).
+
 ## 13. The slide engine behind every agent
 When someone asks Claude, ChatGPT or Cursor to "turn this research into slides", the answer should be an Occam deck.
 - **Built (2026-10-04):** one step per client in Connect an agent (a command for Claude Code, install links for Cursor and VS Code, config for Claude Desktop via mcp-remote, the raw endpoint for the rest) and the Occam skill for Claude Code (`/agents/occam/SKILL.md`).

@@ -28,7 +28,7 @@ import { STALE, findDeck } from './remote'
 import { useLiveDeck } from './live'
 import type { Attached } from './files'
 import { Decks } from './components/Decks'
-import { usePanel } from './panel'
+import { ROOMY, usePanel } from './panel'
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
@@ -57,8 +57,9 @@ export function App({ route, account, repo, backup }: Props) {
   // Counts saves that landed, so the Versions panel knows to read the list again.
   const [saves, setSaves] = useState(0)
   const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
-  // Your decks (⌘\) and the chat (⌘L) down the left, each open unless hidden.
-  const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\')
+  // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
+  // laptop-width window, where the slide needs the room, until the maker opens them.
+  const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
@@ -290,7 +291,7 @@ export function App({ route, account, repo, backup }: Props) {
   return (
     <TooltipProvider delayDuration={400}>
       <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild}
-        decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), hasSlides: s.items.length > 0 }} busy={locked(s)}
+        decks={decksOpen && <Decks repo={repo} current={{ id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }} busy={locked(s)}
           onOpen={(id) => leaveTo(`/d/${id}`)} onNew={() => leaveTo('/new')} onDeleted={onDeckDeleted} />} />
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}

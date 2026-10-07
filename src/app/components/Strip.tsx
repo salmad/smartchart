@@ -1,9 +1,10 @@
-import { useEffect, useState, type DragEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
 import { ArrowLeft, ArrowRight, MessageSquare, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { contexts } from '@/engine/slides/render'
 import type { Deck } from '@/engine/types'
 import type { Item } from '@/app/store'
 import { cn } from '@/app/lib/utils'
+import { useEdgeFade } from '@/app/fade'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { SlideView } from './SlideView'
 import { MENU_ICON, MENU_ITEM } from './menu'
@@ -40,6 +41,12 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
     return () => { clearTimeout(t); document.removeEventListener('keydown', key) }
   }, [removed, onRestore])
 
+  // The filmstrip fades where it has more slides, and keeps the current one in view as the arrows move through the deck.
+  const fade = useEdgeFade(), row = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (layout === 'row') row.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [current, layout, items.length])
+
   if (!items.length && !undo) return null
   const ctx = contexts(deck), grid = layout === 'grid'
   const thumb = grid ? 'w-full' : 'w-28 max-[900px]:w-24'
@@ -72,7 +79,7 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
           <button type="button" onClick={onRestore} disabled={busy} className="cursor-pointer font-medium text-ink underline-offset-2 hover:underline disabled:opacity-45">Undo</button>
         </p>
       )}
-      <div aria-label="Slides" role="group" className={grid ? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-6 gap-y-5 p-0.5' : 'flex gap-2.5 overflow-x-auto px-0.5 pb-1.5 pt-0.5'} onDragOver={(e) => { if (dragged) e.preventDefault() }} onDrop={drop}>
+      <div ref={(el) => { row.current = el; fade(grid ? null : el) }} aria-label="Slides" role="group" className={grid ? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-6 gap-y-5 p-0.5' : 'edge-fade flex gap-2.5 overflow-x-auto px-0.5 pb-1.5 pt-0.5'} onDragOver={(e) => { if (dragged) e.preventDefault() }} onDrop={drop}>
         {items.map((it, i) => (
           <div key={it.id} data-strip-item draggable={!busy} onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragged(it.id) }}
             onDragEnd={() => { setDragged(null); setGap(null) }} onDragOver={(e) => over(e, i)}
