@@ -185,7 +185,7 @@ export async function fetchPublicFull(url: string, deps: { fetch?: typeof fetch;
     const addrs = isIP(host) ? [{ address: host }] : await lookup(host).catch(() => [])
     if (!addrs.length) throw new ImageError(`url: ${host} could not be found.`, 'Check the link.')
     if (addrs.some((a) => isPrivateAddress(a.address))) throw new ImageError('url: that address is not public.', 'Pass a link anyone on the internet can open.')
-    const init: RequestInit = { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'Occam/1 (+https://smartchart-six.vercel.app)' } }
+    const init: RequestInit = { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'Occam/1 (+https://www.occamslides.com)' } }
     let res: Response
     try { res = deps.fetch ? await deps.fetch(at, init) : await pinnedFetch(at, init, addrs[0].address) }
     catch { throw new ImageError(`url: the ${noun} could not be fetched (no answer within 10 seconds).`, 'Check the link.') }
