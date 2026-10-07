@@ -1,4 +1,5 @@
 // Scores (spec §5): a run's checks with the judge's verdict folded in, the magic bar, and the summary a report compares.
+import { createHash } from 'node:crypto'
 import { contentSlide } from './checks'
 import type { Case, Check, Run } from './types'
 
@@ -31,13 +32,18 @@ export interface Summary {
   done: number; limited: number; errors: number; judged: number
   magic: Rate; fatal: Rate; checks: Record<string, Rate>; groups: Record<string, Rate>; cases: Record<string, Rate>
   versions: string[]; judges: string[]
+  /** Each case's fingerprint: a before/after comparison is only fair on cases that did not change. */
+  caseHashes: Record<string, string>
 }
+/** What the agent was asked and how it is judged; a different fingerprint means a different test, not a different result. */
+export const caseHash = (c: Case): string => createHash('sha1')
+  .update(JSON.stringify([c.prompt, c.style, c.files, c.gold, c.acceptable, c.ask, c.facts, c.questions])).digest('hex').slice(0, 8)
 const bump = (m: Record<string, Rate>, k: string, hit: boolean) => { const r = (m[k] ??= { n: 0, of: 0 }); r.of++; if (hit) r.n++ }
 
 /** Rates over finished runs of the given cases; `fatal.n` counts runs with any fatal failure. */
 export function summarize(runs: Run[], cases: Case[]): Summary {
   const byId = new Map(cases.map((c) => [c.id, c])), versions = new Set<string>(), judges = new Set<string>()
-  const s: Summary = { done: 0, limited: 0, errors: 0, judged: 0, magic: { n: 0, of: 0 }, fatal: { n: 0, of: 0 }, checks: {}, groups: {}, cases: {}, versions: [], judges: [] }
+  const s: Summary = { done: 0, limited: 0, errors: 0, judged: 0, magic: { n: 0, of: 0 }, fatal: { n: 0, of: 0 }, checks: {}, groups: {}, cases: {}, versions: [], judges: [], caseHashes: Object.fromEntries(cases.map((c) => [c.id, caseHash(c)])) }
   for (const r of runs) {
     const c = byId.get(r.caseId)
     if (!c) continue

@@ -81,17 +81,17 @@ Non-blocking suggestions on top of today's checks: things a partner would say in
 - Open question: one source per slide, or one per figure (footnote markers ¹ ² tied to specific numbers).
 
 ## 11. Fix what the MCP eval found (2026-10-04)
-A first pass of the MCP bug hunt: the first MCP eval run (Claude Code with Sonnet 5 making slides through `/mcp/v1`; `tests/mcp-eval/`) traced each miss to the SmartChart text or code that caused it. The list, with quotes and a proposed fix for each, is the "What confused the agent" section of `tests/mcp-eval/baselines/2026-10-04-pass1.md`. In short:
-- **Checks that push agents into wrong edits:** R11 ignores a figure written with its unit in the subtitle ("18 months"); R4 forces the highlight into a pitch topic title; R13 flags comparison tables whose rows differ in unit by nature; R8's wording invites invented sources (the guide forbids them).
-- **Checks that pass what they shouldn't:** J2 approves a causal title the data doesn't carry, and a "most efficient" focus row that loses in other columns; R4/J4 approve a highlight on a row when the title names a column.
-- **Code overriding the agent silently:** an explicit `stacking: "stacked"` came back side by side with no warning (against "checks warn, never silently rewrite"); `auto` focus picks a row when the title highlights a column.
-- **Cards:** the line chart's "values are written on the data" (only the last point is labelled).
-- **J5's message** ("Takeaway restates the slide") led an agent to swap a true takeaway for a false one; offer removing the optional takeaway.
-- **Wiring:** agents skip `get_guide`, edit after `check_slide`, and once asked for a deck name and style instead of creating the deck.
+A first pass of the MCP bug hunt (#7). The MCP eval (`tests/mcp-eval/`: Claude Code with Sonnet 5 making slides through `/mcp/v1`, judged by Opus) traces each miss to the SmartChart text or code that caused it. **Current baseline: `tests/mcp-eval/baselines/2026-10-04-v2.md`** (28 cases × 3): magic 35%, fatal 10%. Its "What confused the agent" section is the fix list, with a quote and a proposed fix for each. Most often blamed:
+- **Check messages (tool results), 94 times.** R8 "say where they come from" (34: invites invented sources; the guide forbids them), R12 (17), R11 (12: misses a figure written with its unit, "18 months"), J2 (11: approves causal or "most efficient" titles the data doesn't carry), R13 (comparison tables with a different unit per row), R4 (forces the highlight into a pitch topic title), J5 (a true takeaway swapped for a false one).
+- **Template cards (22).** For example, the line chart's "values are written on the data" (only the last point is labelled).
+- **Empty account:** the agent asks "create a deck? which style?" instead of creating one (n02 and p02, 6 of 6 runs). The instructions should say to pick the style from the request.
+- **Code overriding the agent silently:** an explicit `stacking: "stacked"` came back side by side with no warning; `auto` focus picks a row when the title highlights a column.
+- **Wiring:** `check_slide` skipped after the last write (P3 80%); replies without the editor link (P6 62%).
+- **Routing:** with no "slide" or "deck" in the request, Claude made a slide in 1 of 9 runs (r01–r03). Whether that is wrong is a product question.
 
 **Done (2026-10-04):** R8's wording no longer invites invented sources; R11 ignores spans of time ("18 months") and says how to fix; the chart card says a line labels only its last point; overridden stacking and marks warn. Also done: `auto` focus picks the item whose exact name the title highlights (FY25, a column) without asking Jev; R4's message names the subtitle for pitch; R13 reads a table the way it is most consistent, so criteria tables pass. **Still open:** R4/J4 when the highlight and the focused item disagree, J2 causal and focus-row checks, J5's message, and the wiring (agents skip get_guide, edit after check_slide).
 
-The run's own caveat: 14 of its prompts didn't ask for a slide, so Claude Code answered in chat and those cases say nothing about SmartChart (being rewritten). Fix in small batches, then rerun `npm run eval:mcp -- --against=2026-10-04-pass1` to see the effect.
+Measure each batch of fixes against the baseline, as the eval README's "Before and after" says: `npm run eval:mcp -- --n=3 --against=2026-10-04-v2`. t02 changed after the baseline (its prompt lacked the "fit" ratings, so the agent rightly asked), so it reads as a changed case.
 
 ## 12. A red-pen review of any deck, in 20 seconds, no signup
 Drop in a PPTX, PDF or Google Slides link, even one not made in Occam, and get the partner review: titles that don't make a point, charts that don't prove the claim, slides that repeat each other. Then one button: **Rebuild in Occam**, the same story with every flaw fixed.

@@ -9,7 +9,9 @@ export interface Measurer { measure(slideId: string, slide: Slide, style: Style,
 
 export async function openMeasurer(app: string): Promise<Measurer> {
   const browser = await chromium.launch(), page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
-  await page.goto(`${app}/src/dev/fixture.html`)
+  await page.goto(`${app}/src/dev/fixture.html`).catch((e: unknown) => {
+    throw new Error(`Cannot open ${app}/src/dev/fixture.html: is npm run dev running? (${e instanceof Error ? e.message.split('\n')[0] : String(e)})`)
+  })
   await page.waitForFunction(() => window.ready)
   let queue: Promise<unknown> = Promise.resolve()
   const one = async (slideId: string, slide: Slide, style: Style, png: string): Promise<Measured> => {

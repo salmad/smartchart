@@ -38,7 +38,18 @@ Output, in `out/<label>/`: `report.md` (headline, by group, per check, for revie
 - **What confused the agent:** the judge's diagnoses grouped by where to fix them (server instructions, tool descriptions, template cards, the guide), each with the exact text quoted. This is the fix list.
 - **Fatal rate:** a figure dropped or invented, or the slide overflows.
 - **`P` checks** show whether the server's instructions landed (guide and card read first, issues fixed, `check_slide` run, request passed, look left alone, short reply with the link).
-- **Compare like with like:** the same cases and `--n`, and the same Claude Code version (the report flags a version change).
+- **Routing cases** (`r…`) never say "slide" or "deck": they measure whether Claude reaches for SmartChart unasked.
+
+## Before and after (did a SmartChart change help?)
+
+1. **Freeze the cases.** Each run's summary fingerprints every case. Against a baseline, the report marks each case as changed, new or the same, and warns when the headline mixes a change in the tests with a change in SmartChart. Change cases and SmartChart in separate steps.
+2. **Baseline at `--n=3`** on the current cases, before the change: `npm run eval:mcp -- --n=3 --label=<date>-before --save-baseline`.
+3. **Make the change, then rerun the same way:** `npm run eval:mcp -- --n=3 --label=<date>-after --against=<date>-before`.
+4. **Read it:**
+   - Magic and fatal rate first, against the report's noise band. A change inside the band proves nothing; run more (`--n=5`) or look at the specific cases.
+   - Then the per-case table: which unchanged cases moved.
+   - Then the fix list: did the confusion you targeted disappear?
+5. **Same Claude Code version and judge on both sides.** The report flags a change in either.
 
 ## Adding a case
 

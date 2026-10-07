@@ -23,12 +23,29 @@ export function reportMd(label: string, s: Summary, runs: Run[], cases: Case[], 
     `${s.versions.join('; ') || 'No agent runs'}. Judge: ${s.judges.join(', ') || 'none yet'}. ${s.done} runs done (${s.judged} judged), ${s.limited} limited, ${s.errors} errors.`,
     ...(base && base.s.versions.join() !== s.versions.join() ? ['', `Note: the baseline ran on ${base.s.versions.join('; ')}. Differences may come from Claude Code, not Occam.`] : []),
     '', `| Measure | Result${vs} |`, sep, row('Magic rate', s.magic, base?.s.magic), row('Fatal rate', s.fatal, base?.s.fatal),
+    '', noise(s, base?.s), ...(base ? changed(s, base.s) : []),
     '', '## By group', '', `| Group | Magic${vs} |`, sep, ...Object.keys(s.groups).map((g) => row(g, s.groups[g], base?.s.groups[g])),
     '', '## Per check', '', `| Check | Pass${vs} |`, sep, ...Object.keys(s.checks).sort(byCheck).map((k) => row(k, s.checks[k], base?.s.checks[k])),
-    '', '## Runs at magic, per case', '', Object.entries(s.cases).map(([id, r]) => `${id} ${r.n}/${r.of}`).join(' · '),
+    '', '## Runs at magic, per case', '', ...(base
+      ? [`| Case | Magic | ${base.label} | Points | |`, '|---|---|---|---|---|', ...Object.keys(s.cases).map((id) => `| ${id} | ${cell(s.cases[id])} | ${cell(base.s.cases[id])} | ${delta(s.cases[id], base.s.cases[id])} | ${caseNote(id, s, base.s)} |`)]
+      : [Object.entries(s.cases).map(([id, r]) => `${id} ${r.n}/${r.of}`).join(' · ')]),
     '', '## What confused the agent, by where to fix it', '', ...confusions(runs),
     '', '## For review', '', ...review,
   ].join('\n')
+}
+
+/** How far the magic rate moves by chance at these run counts (two standard errors); smaller changes prove nothing. */
+function noise(s: Summary, b?: Summary): string {
+  const v = (r: Rate) => { const p = Math.min(0.9, Math.max(0.1, r.of ? r.n / r.of : 0.5)); return r.of ? (p * (1 - p)) / r.of : 0 }
+  const band = Math.round(200 * Math.sqrt(v(s.magic) + (b ? v(b.magic) : 0)))
+  return `Noise: a magic-rate change under ±${band} points can be chance at ${s.magic.of}${b ? ` and ${b.magic.of}` : ''} runs. One case's runs move by chance even more: read per-case changes as hints, with --n=3 or more.`
+}
+const caseNote = (id: string, s: Summary, b: Summary) =>
+  !b.cases[id] ? 'new case' : !b.caseHashes?.[id] ? 'not fingerprinted' : b.caseHashes[id] !== s.caseHashes[id] ? 'case changed' : ''
+/** Warns when the baseline ran different tests: then only the unchanged cases compare like with like. */
+function changed(s: Summary, b: Summary): string[] {
+  const ids = Object.keys(s.cases), moved = ids.filter((id) => caseNote(id, s, b))
+  return moved.length ? ['', `**${moved.length} of ${ids.length} cases are new, changed or not fingerprinted since the baseline.** The headline mixes a change in the tests with a change in SmartChart; compare the unchanged cases in the per-case table.`] : []
 }
 
 /** The judge's diagnoses grouped by source: the fix list. */

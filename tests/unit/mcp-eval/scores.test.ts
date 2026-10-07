@@ -44,6 +44,20 @@ describe('scores', () => {
   it('a failed generic question blocks magic', () => {
     expect(isMagic(run({ verdict: verdict({ generic: [{ id: 'G1', yes: false, why: 'topic label' }, { id: 'G2', yes: true, why: '' }] }) }), c)).toBe(false)
   })
+  it('summary fingerprints each case, so a changed case is told apart from a changed result', () => {
+    const a = summarize([run()], [c]).caseHashes.t01, b = summarize([run()], [{ ...c, prompt: 'p, now asking for a slide' }]).caseHashes.t01
+    expect(a).toMatch(/^[0-9a-f]{8}$/)
+    expect(summarize([run()], [c]).caseHashes.t01).toBe(a)
+    expect(b).not.toBe(a)
+  })
+  it('report: per-case before/after, marking changed and new cases, and the noise band', () => {
+    const now = summarize([run()], [c]), base = { ...now, cases: { t01: { n: 0, of: 1 } }, caseHashes: { t01: 'deadbeef' } }
+    const md = reportMd('now', now, [run()], [c], { label: 'old', s: base })
+    expect(md).toContain('| t01 | 100% (1/1) | 0% (0/1) | +100 | case changed |')
+    expect(md).toMatch(/noise/i)
+    const fresh = reportMd('now', now, [run()], [c], { label: 'old', s: { ...base, cases: {}, caseHashes: {} } })
+    expect(fresh).toContain('| t01 | 100% (1/1) | – |  | new case |')
+  })
   it('report: headline, deltas against a baseline, failures listed, confusions grouped by source; gallery escapes text', () => {
     const runs = [run()], s = summarize(runs, [c]), base = { ...s, magic: { n: 0, of: 2 } }
     const md = reportMd('abc-2026-10-03', s, runs, [c], { label: 'old', s: base })

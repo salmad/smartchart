@@ -1,7 +1,7 @@
 // Shapes of the MCP slide eval (docs/superpowers/specs/2026-10-03-mcp-slide-eval-design.md).
 import type { Slide, Style, TemplateId } from '@/engine/types'
 
-export type Group = 'criteria' | 'figures' | 'positions' | 'actions' | 'stress' | 'near-miss' | 'ask'
+export type Group = 'criteria' | 'figures' | 'positions' | 'actions' | 'stress' | 'near-miss' | 'ask' | 'routing'
 export interface Case {
   id: string; group: Group; style: Style; prompt: string
   gold: TemplateId | null; acceptable: TemplateId[]; ask: boolean; files: string[]
