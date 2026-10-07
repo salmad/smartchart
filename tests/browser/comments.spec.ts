@@ -53,3 +53,19 @@ test('click a part of the slide to comment on it; C opens the panel; Esc goes ba
   await box.press('Escape')
   await expect(panel).toContainText('Whole slide')
 })
+
+test('a linked source opens its page, but while picking a part a click on it picks the source line', async ({ page, context }) => {
+  const linked = { ...deck, items: [{ id: 's', slide: { template: 'number', title: 'Revenue reached [[£9.4m]] in 2025', number: { value: '£9.4m', caption: 'Revenue, 2025' }, source: '[Company accounts](https://example.com/accounts)' }, status: 'ok', errors: [], warnings: [], checks: [] }] }
+  await page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify({ active: 'cm', decks: { cm: linked } })] as const)
+  await page.goto('/d/cm')
+  const link = page.locator('[data-tour="stage"] .slide a')
+  await expect(link).toHaveCSS('pointer-events', 'auto')
+  await page.getByRole('button', { name: 'Comment', exact: true }).click()
+  const panel = page.getByRole('complementary', { name: 'Comments on slide 1' })
+  await expect(link).toHaveCSS('pointer-events', 'none')
+  let opened = false
+  context.on('page', () => { opened = true })
+  await link.click({ force: true }) // at the link's place: the click lands on the source line under it
+  await expect(panel).toContainText('Source')
+  expect(opened).toBe(false)
+})

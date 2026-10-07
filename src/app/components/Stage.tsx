@@ -54,7 +54,8 @@ export function Stage({ deck, current, onPresent, pick, slideId, phase }: Props)
   if (slideId) seen.current.add(slideId)
 
   return (
-    <div data-links className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4 max-[900px]:pb-3 max-[900px]:pt-4">
+    // Links in the source open on a click, except while a part is being picked for a comment: then the click picks the line.
+    <div data-links={pick ? undefined : true} className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4 max-[900px]:pb-3 max-[900px]:pt-4">
       {/* The second click of a double click (e.g. on a gallery tile that just became this slide) does not present. */}
       <SlideFrame tour="stage" frame={frame}
         onClick={(e) => {
