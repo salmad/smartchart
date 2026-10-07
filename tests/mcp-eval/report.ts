@@ -21,7 +21,7 @@ export function reportMd(label: string, s: Summary, runs: Run[], cases: Case[], 
   return [
     `# MCP slide eval: ${label}`, '',
     `${s.versions.join('; ') || 'No agent runs'}. Judge: ${s.judges.join(', ') || 'none yet'}. ${s.done} runs done (${s.judged} judged), ${s.limited} limited, ${s.errors} errors.`,
-    ...(base && base.s.versions.join() !== s.versions.join() ? ['', `Note: the baseline ran on ${base.s.versions.join('; ')}. Differences may come from Claude Code, not SmartChart.`] : []),
+    ...(base && base.s.versions.join() !== s.versions.join() ? ['', `Note: the baseline ran on ${base.s.versions.join('; ')}. Differences may come from Claude Code, not Occam.`] : []),
     '', `| Measure | Result${vs} |`, sep, row('Magic rate', s.magic, base?.s.magic), row('Fatal rate', s.fatal, base?.s.fatal),
     '', '## By group', '', `| Group | Magic${vs} |`, sep, ...Object.keys(s.groups).map((g) => row(g, s.groups[g], base?.s.groups[g])),
     '', '## Per check', '', `| Check | Pass${vs} |`, sep, ...Object.keys(s.checks).sort(byCheck).map((k) => row(k, s.checks[k], base?.s.checks[k])),

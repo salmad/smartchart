@@ -282,7 +282,7 @@ test("comments: the deck state lists open ones, resolve_comment is offered and r
   ]);
   await runTurn({ ...ctx, text: "Address the comments", selection: null, models: { agentStep, jev: fakeJev({ intent: ["other", 0.9] }) } });
   assert.ok(seen[0].includes("resolve_comment"));
-  assert.deepEqual(ctx.deck.comments?.[0].done && { by: ctx.deck.comments[0].done.by, reply: ctx.deck.comments[0].done.reply }, { by: "SmartChart", reply: "Cut the title to four words." });
+  assert.deepEqual(ctx.deck.comments?.[0].done && { by: ctx.deck.comments[0].done.by, reply: ctx.deck.comments[0].done.reply }, { by: "Occam", reply: "Cut the title to four words." });
 });
 
 test("comments: with none open, resolve_comment is not offered", async () => {

@@ -5,7 +5,7 @@
 import type { Slide, Style, Theme } from "./types.js";
 
 export interface Tree { style: Style; theme: Theme; accent: string | null; slides: [id: string, hash: string][] }
-/** A version as a list shows it. `by` is who wrote it (You, SmartChart, or an agent's client name); `turn` groups the
+/** A version as a list shows it. `by` is who wrote it (You, Occam, or an agent's client name); `turn` groups the
     saves of one agent turn or one request; `label` is the request in the user's words, when there was one. */
 export interface Version { n: number; rev: number; by: string; turn: string | null; label: string | null; at: number; tree: Tree }
 /** `hashes`: the slide blobs the head names, already stored, so a save sends only new ones. */

@@ -45,7 +45,7 @@ export function mcpHandler(deps: { userFrom: UserFrom; db: () => Db | null; jev?
     const db = deps.db()
     if (!db) return new Response('Not set up on this server.', { status: 503 })
     const user = await deps.userFrom(request)
-    if (!user) return Response.json({ error: 'Send Authorization: Bearer <your SmartChart agent key>.' }, { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } })
+    if (!user) return Response.json({ error: 'Send Authorization: Bearer <your Occam agent key>.' }, { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } })
 
     const msg = (await request.json().catch(() => null)) as RpcRequest | null
     if (!msg || Array.isArray(msg) || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(null, -32600, 'Invalid request')
@@ -56,7 +56,7 @@ export function mcpHandler(deps: { userFrom: UserFrom; db: () => Db | null; jev?
       case 'initialize': {
         const asked = String(p.protocolVersion ?? '')
         return rpc(msg.id, { protocolVersion: VERSIONS.includes(asked) ? asked : VERSIONS[0], capabilities: { tools: { listChanged: false }, resources: { listChanged: false } },
-          serverInfo: { name: 'smartchart', title: 'SmartChart', version: CONTRACT }, instructions: INSTRUCTIONS })
+          serverInfo: { name: 'smartchart', title: 'Occam', version: CONTRACT }, instructions: INSTRUCTIONS })
       }
       case 'ping': return rpc(msg.id, {})
       case 'tools/list': return rpc(msg.id, { tools: TOOLS.map(mcpView) })

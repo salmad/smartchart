@@ -178,7 +178,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
     },
 
     async resolve_comment({ commentId = "", reply }) {
-      const next = resolveComment(deck.comments ?? [], commentId, "SmartChart", typeof reply === "string" ? reply : undefined, Date.now());
+      const next = resolveComment(deck.comments ?? [], commentId, "Occam", typeof reply === "string" ? reply : undefined, Date.now());
       if (typeof next === "string") return { error: next };
       deck.comments = next;
       onChange?.(deck);

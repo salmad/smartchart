@@ -18,7 +18,7 @@ interface Props {
   onClose: () => void
 }
 
-const icon = (by: string): LucideIcon => (by === 'You' ? User : by === 'SmartChart' ? Sparkles : Bot)
+const icon = (by: string): LucideIcon => (by === 'You' ? User : by === 'Occam' ? Sparkles : Bot)
 
 export function VersionsPanel({ api, saves, selected, onPreview, onClose }: Props) {
   const [list, setList] = useState<Version[] | null>(null)

@@ -24,7 +24,7 @@ describe('the server repo and versions', () => {
     await repo.save(deck(['Before']))
     await repo.save(deck(['After', 'New']), { by: 'agent', turn: 't1', label: 'Rewrite it' })
     const list = await repo.versions?.('d_1') ?? []
-    expect(list.map((v) => [v.by, v.label])).toEqual([['SmartChart', 'Rewrite it'], ['You', null]])
+    expect(list.map((v) => [v.by, v.label])).toEqual([['Occam', 'Rewrite it'], ['You', null]])
     const items = await itemsOf(repo, 'd_1', list[1].tree)
     expect(items?.map((it) => it.slide.title)).toEqual(['Before'])
   })
@@ -38,7 +38,7 @@ describe('the dev account keeps versions in this browser', () => {
     await repo.save(deck(['AB'], 5))
     await repo.save(deck(['ABC']), { by: 'agent', turn: 't1', label: 'Add C' })
     const list = await repo.versions?.('d_1') ?? []
-    expect(list.map((v) => [v.n, v.by, v.label])).toEqual([[2, 'SmartChart', 'Add C'], [1, 'You', null]])
+    expect(list.map((v) => [v.n, v.by, v.label])).toEqual([[2, 'Occam', 'Add C'], [1, 'You', null]])
     expect((await itemsOf(repo, 'd_1', list[1].tree))?.[0].slide.title).toBe('AB')
   })
   it('keeps LOCAL_KEEP versions and drops their unused slides; removing the deck drops them all', async () => {
@@ -55,7 +55,7 @@ describe('the dev account keeps versions in this browser', () => {
 
 describe('Undo on an agent turn', () => {
   const v = (n: number, turn: string | null, slides: number): Version =>
-    ({ n, rev: n, by: turn ? 'SmartChart' : 'You', turn, label: turn && `ask ${turn}`, at: n, tree: { style: 'consulting', theme: 'ink', accent: null, slides: Array.from({ length: slides }, (_, i): [string, string] => [`s${i}`, `h${n}${i}`]) } })
+    ({ n, rev: n, by: turn ? 'Occam' : 'You', turn, label: turn && `ask ${turn}`, at: n, tree: { style: 'consulting', theme: 'ink', accent: null, slides: Array.from({ length: slides }, (_, i): [string, string] => [`s${i}`, `h${n}${i}`]) } })
   const list = [v(4, null, 3), v(3, 't2', 3), v(2, 't1', 2), v(1, null, 1)]
   it('goes back to the version before the turn, and counts what came after', () => {
     expect(undoTarget(list, 't2')).toMatchObject({ before: list[2].tree, later: 1, label: 'ask t2' })

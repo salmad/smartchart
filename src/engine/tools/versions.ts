@@ -1,4 +1,4 @@
-/* list_versions and restore_version: an agent can see every change to a deck (by the user, SmartChart or an agent)
+/* list_versions and restore_version: an agent can see every change to a deck (by the user, Occam or an agent)
    and put an earlier state back. A restore is a new version on top; nothing is lost. */
 import { describeDiff, diffTrees, slidesOf } from "../versions.js";
 import { READ, ToolError, WRITE, tool, type DeckDoc } from "./types.js";
@@ -8,7 +8,7 @@ const DECK = { type: "string", description: "The deck id." } as const;
 
 export const versionTools = [
   tool<{ deckId: string; limit?: number }>({ name: "list_versions", title: "List versions", group: "versions", scope: "deck", annotations: READ,
-    description: "Every saved state of the deck, newest first: its number, who wrote it (the user, SmartChart or an agent), the request in the user's words, what changed and when. The first is the deck as it is now.",
+    description: "Every saved state of the deck, newest first: its number, who wrote it (the user, Occam or an agent), the request in the user's words, what changed and when. The first is the deck as it is now.",
     input: { type: "object", additionalProperties: false, required: ["deckId"], properties: { deckId: DECK, limit: { type: "integer", minimum: 1, maximum: 100 } } },
     run: async (ctx, { deckId, limit = 20 }) => {
       const list = await ctx.port.versions(deckId);

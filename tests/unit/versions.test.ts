@@ -43,7 +43,7 @@ describe('when a save becomes a version', () => {
   it('nothing shown changed: skip', () => expect(nextStep(head, { by: 'You', turn: null, label: null }, 'k1', 2000)).toBe('skip'))
   it('same writer, same turn, soon after: fold in', () => expect(nextStep(head, { by: 'You', turn: null, label: null }, 'k2', 2000)).toBe('replace'))
   it('another writer, another turn, or later: a new version', () => {
-    expect(nextStep(head, { by: 'SmartChart', turn: 't1', label: 'x' }, 'k2', 2000)).toBe('add')
+    expect(nextStep(head, { by: 'Occam', turn: 't1', label: 'x' }, 'k2', 2000)).toBe('add')
     expect(nextStep(head, { by: 'You', turn: 'restore:1', label: null }, 'k2', 2000)).toBe('add')
     expect(nextStep(head, { by: 'You', turn: null, label: null }, 'k2', 1000 + GROUP_MS)).toBe('add')
     expect(nextStep(null, { by: 'You', turn: null, label: null }, 'k2', 0)).toBe('add')
@@ -67,7 +67,7 @@ describe('versions through the decks API', () => {
     await save(deck(['s1', titled('Churn halves by Q3')]))
     await save({ ...deck(['s1', titled('Churn halves by Q3')]), current: 0 })
     const list = (await (await call(h, 'GET', '?id=d_1&versions')).json()) as Version[]
-    expect(list.map((v) => [v.n, v.by, v.label])).toEqual([[2, 'You', null], [1, 'SmartChart', 'Make a slide on churn']])
+    expect(list.map((v) => [v.n, v.by, v.label])).toEqual([[2, 'You', null], [1, 'Occam', 'Make a slide on churn']])
     expect(db.blobStore.size).toBe(3)
     const hash = list[1].tree.slides[0][1]
     const blobs = (await (await call(h, 'GET', `?id=d_1&blobs=${hash}`)).json()) as { slide: Slide }[]

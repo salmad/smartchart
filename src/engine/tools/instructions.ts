@@ -1,5 +1,5 @@
 /* What every MCP client keeps in context (layer 1). Everything else is fetched when needed. */
-export const INSTRUCTIONS = `SmartChart makes consulting and pitch slides. You write slide content as JSON; SmartChart's code owns layout, colours and sizes, and checks every write.
+export const INSTRUCTIONS = `Occam makes consulting and pitch slides. You write slide content as JSON; Occam's code owns layout, colours and sizes, and checks every write.
 
 Start: list_decks. If the user has none, create_deck. Give the user the deck's editor link (links.edit from get_deck or create_deck) so they can watch it change live.
 

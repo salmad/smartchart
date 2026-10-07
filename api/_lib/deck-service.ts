@@ -85,6 +85,6 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
   } catch (e) {
     if (e instanceof ToolError) return fail(e.code, e.message, e.fix)
     console.error('tool failed', name, e)
-    return fail('upstream', 'Something went wrong on SmartChart’s side.', 'Try again; if it repeats, tell the user.')
+    return fail('upstream', 'Something went wrong on Occam’s side.', 'Try again; if it repeats, tell the user.')
   }
 }

@@ -8,9 +8,9 @@ export async function recordVersion(db: Db, userId: string, deckId: string, data
   } catch (e) { console.error('version not recorded', deckId, e) }
 }
 
-/** The app's save says who wrote it: the maker by hand, or SmartChart's own agent (with the turn and the request). */
+/** The app's save says who wrote it: the maker by hand, or Occam's own agent (with the turn and the request). */
 export function appMeta(v: unknown): VersionMeta {
   const o = (v && typeof v === 'object' ? v : {}) as { by?: unknown; turn?: unknown; label?: unknown }
   const str = (x: unknown, max: number) => (typeof x === 'string' && x.trim() ? x.trim().slice(0, max) : null)
-  return { by: o.by === 'agent' ? 'SmartChart' : 'You', turn: str(o.turn, 80), label: str(o.label, 300) }
+  return { by: o.by === 'agent' ? 'Occam' : 'You', turn: str(o.turn, 80), label: str(o.label, 300) }
 }

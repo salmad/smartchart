@@ -13,7 +13,7 @@ const versions = { v: {
   blobs: { h1: section('Before'), h2: section('Now') },
   versions: [
     { n: 1, rev: 0, by: 'You', turn: null, label: null, at: Date.now() - 60_000, key: 'k1', tree: tree('h1') },
-    { n: 2, rev: 0, by: 'SmartChart', turn: 't1', label: 'Retitle it', at: Date.now() - 30_000, key: 'k2', tree: tree('h2') },
+    { n: 2, rev: 0, by: 'Occam', turn: 't1', label: 'Retitle it', at: Date.now() - 30_000, key: 'k2', tree: tree('h2') },
   ],
 } }
 

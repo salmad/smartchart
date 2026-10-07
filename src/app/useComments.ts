@@ -1,4 +1,4 @@
-/* The maker's own comment actions: leave a note on a slide, resolve it, delete it, or ask SmartChart to address the
+/* The maker's own comment actions: leave a note on a slide, resolve it, delete it, or ask Occam to address the
    open ones. Like every other write, they wait while a turn runs or a slide is being edited. */
 import { useMemo } from 'react'
 import { MAX_COMMENT, newCommentId, openComments, resolveComment } from '@/engine/comments'

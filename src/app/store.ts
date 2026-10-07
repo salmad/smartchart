@@ -49,10 +49,10 @@ export interface DeckRepo {
   blobs?(id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>
 }
 
-/** Who wrote a save: the maker by hand, or SmartChart's agent; `turn` groups one turn's (or one restore's) saves. */
+/** Who wrote a save: the maker by hand, or Occam's agent; `turn` groups one turn's (or one restore's) saves. */
 export interface SaveMeta { by: 'you' | 'agent'; turn?: string; label?: string }
 /** The server's version rule, applied in this browser: the writer's name as the list shows it. */
-export const metaOf = (m: SaveMeta | undefined): VersionMeta => ({ by: m?.by === 'agent' ? 'SmartChart' : 'You', turn: m?.turn ?? null, label: m?.label ?? null })
+export const metaOf = (m: SaveMeta | undefined): VersionMeta => ({ by: m?.by === 'agent' ? 'Occam' : 'You', turn: m?.turn ?? null, label: m?.label ?? null })
 
 /** { active, decks }; an empty store when storage is missing, blocked or corrupt. */
 export function loadStore(storage?: Pick<Storage, 'getItem'>): Store {

@@ -9,13 +9,13 @@ const TEMPLATE = { type: "string", enum: [...OFFERED], description: "A template 
 
 export const guideTools = [
   tool<{ style: Style }>({ name: "get_guide", title: "Writing guide", group: "guide", scope: "account", annotations: READ,
-    description: "The rules for writing SmartChart slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
+    description: "The rules for writing Occam slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },
     run: async (_ctx, { style }) => ({ result: { style, guide: guideText(style) } }) }),
   tool<{ style: Style }>({ name: "list_templates", title: "List templates", group: "guide", scope: "account", annotations: READ,
-    description: "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have SmartChart choose from the content.",
+    description: "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have Occam choose from the content.",
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },
-    run: async () => ({ result: { templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: "get_template for the one you pick; suggest_template to have SmartChart choose from the content." } }) }),
+    run: async () => ({ result: { templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: "get_template for the one you pick; suggest_template to have Occam choose from the content." } }) }),
   tool<{ template: TemplateId; style: Style }>({ name: "get_template", title: "Template card", group: "guide", scope: "account", annotations: READ,
     description: "One template's card (every field with its type, limits and description, the template's rules, and its capabilities and shapes: marks, icons, notes… and when to use each) and a worked example. Fetch it once per template before writing or reviewing that kind of slide; cards don't change within a session.",
     input: { type: "object", additionalProperties: false, required: ["template", "style"], properties: { template: TEMPLATE, style: STYLE } },

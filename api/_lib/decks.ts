@@ -30,7 +30,7 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     }
     if (request.method === 'PUT' && id && q.get('presence')) {
       const b = (await request.json().catch(() => ({}))) as { busy?: unknown; editing?: unknown }, now = Date.now(), p: Presence = {}
-      if (b.busy === true) p.busy = { by: 'SmartChart', until: now + 90_000 }
+      if (b.busy === true) p.busy = { by: 'Occam', until: now + 90_000 }
       if (typeof b.editing === 'string') p.editing = { slideId: b.editing, until: now + 60_000 }
       return (ID.test(id) && await db.setPresence(user.id, id, p)) ? Response.json({ ok: true }) : Response.json({ error: 'No such deck.' }, { status: 404 })
     }

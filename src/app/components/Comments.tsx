@@ -1,6 +1,6 @@
 /* The comments panel, on the right like Versions: the notes people left on the current slide, whole-slide or on a part,
    in one list, and a composer for the next. While it is open the stage lets you pick a part of the slide to comment on.
-   Resolve or delete a note, or ask SmartChart to address them all (the agent makes each change, then resolves the
+   Resolve or delete a note, or ask Occam to address them all (the agent makes each change, then resolves the
    comment with a reply). Resolved ones fold away, each with what was done. */
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Check, Sparkles, Trash2, X } from 'lucide-react'

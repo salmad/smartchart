@@ -11,7 +11,7 @@ test('a stored picture carries its kind and size in its name', () => {
   expect(imageMeta('/starters/img/maya-photo-800x800.webp')?.kind).toBe('photo')
 })
 
-test('only SmartChart pictures are pictures: no hotlinks, no other paths, no tricks', () => {
+test('only Occam pictures are pictures: no hotlinks, no other paths, no tricks', () => {
   expect(isImageSrc(BLOB)).toBe(true)
   expect(isImageSrc('/starters/img/acme-app-screenshot-2400x1500.webp')).toBe(true)
   for (const bad of [

@@ -1,4 +1,4 @@
-// Pictures in: whatever an agent points at becomes a SmartChart picture. Fetched safely, read for what it really is,
+// Pictures in: whatever an agent points at becomes an Occam picture. Fetched safely, read for what it really is,
 // prepared for its kind (a logo keyed off its background and trimmed to its ink) and stored under a name that carries
 // its kind and size (src/engine/slides/images.ts), so slides render it without loading it first.
 import { createHash } from 'node:crypto'
@@ -34,7 +34,7 @@ export interface Prepared { bytes: Buffer; w: number; h: number; ext: 'png' | 'w
 /** Decode, then prepare by kind. Photos and screenshots are fitted and re-encoded; a logo is keyed and trimmed. */
 export async function prepare(input: Uint8Array, kind: ImageKind): Promise<Prepared> {
   const format = sniff(input)
-  if (!format) throw new ImageError('That is not a picture SmartChart can read.', 'Pass a PNG, JPEG, WebP, GIF, AVIF or SVG.')
+  if (!format) throw new ImageError('That is not a picture Occam can read.', 'Pass a PNG, JPEG, WebP, GIF, AVIF or SVG.')
   let img = await decode(input, format, kind)
   const meta = await img.metadata()
   if (!meta.width || !meta.height) throw new ImageError('The picture has no size.', 'Pass another file.')
@@ -185,7 +185,7 @@ export async function fetchPublicFull(url: string, deps: { fetch?: typeof fetch;
     const addrs = isIP(host) ? [{ address: host }] : await lookup(host).catch(() => [])
     if (!addrs.length) throw new ImageError(`url: ${host} could not be found.`, 'Check the link.')
     if (addrs.some((a) => isPrivateAddress(a.address))) throw new ImageError('url: that address is not public.', 'Pass a link anyone on the internet can open.')
-    const init: RequestInit = { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'SmartChart/1 (+https://smartchart.app)' } }
+    const init: RequestInit = { redirect: 'manual', signal, headers: { accept: 'image/*,*/*;q=0.5', 'user-agent': 'Occam/1 (+https://smartchart-six.vercel.app)' } }
     let res: Response
     try { res = deps.fetch ? await deps.fetch(at, init) : await pinnedFetch(at, init, addrs[0].address) }
     catch { throw new ImageError(`url: the ${noun} could not be fetched (no answer within 10 seconds).`, 'Check the link.') }

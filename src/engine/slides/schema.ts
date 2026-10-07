@@ -691,7 +691,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       for (const k of Object.keys(v)) if (!allowed.includes(k)) out.errors.push(`${path}.${k}: not a picture field here. Allowed: ${allowed.join(", ")}.`);
       const meta = imageMeta(v.src);
       if (v.src === undefined || v.src === "") out.errors.push(`${path}.src: required. Add the picture with add_image and use the src it returns.`);
-      else if (!meta) out.errors.push(`${path}.src: not a SmartChart picture. Add it with add_image (a public URL or the bytes) and use the src it returns.`);
+      else if (!meta) out.errors.push(`${path}.src: not an Occam picture. Add it with add_image (a public URL or the bytes) and use the src it returns.`);
       else if (def.kinds && !def.kinds.includes(meta.kind)) out.errors.push(`${path}.src: a ${meta.kind}, but this takes ${def.kinds.join(" or ")}. Add the picture with add_image and kind "${def.kinds[0]}"${def.kinds.includes("logo") ? "" : ", or use another template"}.`);
       if (def.alt) {
         if (typeof v.alt !== "string" || !v.alt.trim()) out.errors.push(`${path}.alt: required. What the picture shows, in one plain sentence.`);
