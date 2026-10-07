@@ -1,5 +1,7 @@
 import { resolveAccent } from "../slides/colours.js";
 import type { Style, Theme } from "../types.js";
+import { getAt } from "../slides/edit.js";
+import { openComments } from "../comments.js";
 import { storylineRows } from "./doc.js";
 import { IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types.js";
 
@@ -12,7 +14,14 @@ export function deckView(ctx: ToolContext, doc: DeckDoc, rev: number): Record<st
   const links = ctx.links ?? { edit: "", share: null };
   return { deckId: doc.id, name: doc.name, style: doc.style, theme: doc.theme, accent: doc.accent, rev,
     links: links.share ? links : { edit: links.edit }, ...(ctx.presence.busy || ctx.presence.editing ? { presence: ctx.presence } : {}),
-    slides: storylineRows(doc) };
+    slides: storylineRows(doc), ...commentsView(doc) };
+}
+
+/** Open comments, as an agent reads them; left out when there are none. */
+export function commentsView(doc: DeckDoc, slideId?: string): { comments?: { commentId: string; slideId: string; text: string; by: string; at: number; path?: string; quote?: string; partGone?: true }[] } {
+  const open = openComments(doc.comments, slideId);
+  const gone = (c: (typeof open)[number]) => { const sl = doc.slides.find((s) => s.id === c.slideId)?.slide; return !!c.path && !!sl && getAt(sl, c.path) === undefined; };
+  return open.length ? { comments: open.map((c) => ({ commentId: c.id, slideId: c.slideId, text: c.text, by: c.by, at: c.at, ...(c.path ? { path: c.path } : {}), ...(c.quote ? { quote: c.quote } : {}), ...(gone(c) ? { partGone: true as const } : {}) })) } : {};
 }
 
 function checkAccent(theme: Theme, accent: string | null | undefined) {
@@ -33,12 +42,12 @@ export const deckTools = [
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE, name: { type: "string" }, theme: THEME, accent: ACCENT } },
     run: async (ctx, { style, name, theme = "ink", accent }) => {
       checkAccent(theme, accent);
-      const doc: DeckDoc = { id: ctx.port.newDeckId(), name: name?.trim().slice(0, 200) || "Untitled deck", style, theme, accent: accent ?? null, slides: [] };
+      const doc: DeckDoc = { id: ctx.port.newDeckId(), name: name?.trim().slice(0, 200) || "Untitled deck", style, theme, accent: accent ?? null, slides: [], comments: [] };
       return { result: deckView(ctx, doc, 1), deck: doc, named: !!name, events: [{ slideId: null, what: "deck", paths: ["created"] }] };
     } }),
 
   tool<{ deckId: string }>({ name: "get_deck", title: "Open a deck", group: "decks", scope: "deck", annotations: READ,
-    description: "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order. Use slide ids from here in every slide call.",
+    description: "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Use slide ids from here in every slide call.",
     input: { type: "object", additionalProperties: false, required: ["deckId"], properties: { deckId: DECK_ID } },
     run: async (ctx) => ({ result: deckView(ctx, ctx.deck as DeckDoc, ctx.rev) }) }),
 

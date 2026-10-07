@@ -50,7 +50,7 @@ function sourceCheck(s: Slide): Check | null {
   if (s.template === "quote" || s.template === "cover" || s.template === "section") return null;
   if (!hasFigures(s) && !numbersIn(claimText(s)).length) return null;
   const ok = !!(s.source || s.footnote);
-  return { id: "R8", ok, msg: ok ? "Figures say where they come from" : "Figures with no source or footnote: say where they come from" };
+  return { id: "R8", ok, msg: ok ? "Figures say where they come from" : "Figures with no source or footnote: add the source the user gave, or ask them for one; never invent one" };
 }
 
 // "2019–20" and "2019–2020" name a period: only the year counts, not the shorthand end.
@@ -59,6 +59,7 @@ const YEAR = (n: number, raw: string) => Number.isInteger(n) && n >= 1900 && n <
 /** Figures in a text: "£9,400k" → 9400, "4.5×" → 4.5; four-digit years are left out. */
 // Thousands separators only between digit groups: "2030," at the end of a clause is the year 2030.
 export const numbersIn = (text: unknown): number[] => [...String(text).replace(YEAR_RANGE, "$1").matchAll(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g)].map((m): [number, string] => [parseFloat(m[0].replace(/,/g, "")), m[0]]).filter(([n, raw]) => !YEAR(n, raw)).map(([n]) => n);
+const HORIZON = /\b\d+(?:\.\d+)?\s*-?\s*(?:months?|mo|years?|yrs?|weeks?|wks?|days?|quarters?)\b/gi;
 const close = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.051, Math.abs(b) * 0.02);
 
 function bodyText(s: Slide): string {
@@ -102,7 +103,7 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const head = style === "pitch" ? `${s.title} ${s.subtitle || ""}` : s.title;
     // A framed contrast can carry its point in the negative or positive colour instead.
     const titled = hasFocusSpan(head) || (!!s.framed && /\[-.+?-\]|\[\+.+?\+\]/.test(head));
-    add("R4", fc === 1 && titled, fc !== 1 ? `${fc} focus elements; exactly one should stand out` : titled ? "One focus element, highlighted in the title" : "Focus element is not highlighted in the title with [[…]]");
+    add("R4", fc === 1 && titled, fc !== 1 ? `${fc} focus elements; exactly one should stand out` : titled ? "One focus element, highlighted in the title" :  style === "pitch" ? "Focus element is not highlighted with [[…]] in the title or subtitle" : "Focus element is not highlighted in the title with [[…]]");
   }
   if (s.template === "chart" && !isTimeline(s)) add("R5", UNIT.test(s.chart?.format || "") || (s.chart?.series || []).some((x) => UNIT.test(x.format || "")), "Chart values carry a unit");
   if (s.template === "number") add("R5", UNIT.test(s.number?.value || "") || /\d/.test(s.number?.value || "") === false, UNIT.test(s.number?.value || "") ? "The big number carries a unit" : "The big number has no unit");
@@ -130,11 +131,12 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
     const n = (s.cards || []).length;
     if (n) add("R10", n <= 3, n <= 3 ? `${n} parallel items` : `${n} parallel items; 3 reads best: merge or cut to 3`);
   }
-  const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" "));
+  // A span of time ("18 months", "3-year") frames the claim; it is not a figure the body has to show.
+  const heads = numbersIn([s.title, s.subtitle, s.takeaway].filter(Boolean).map(plain).join(" ").replace(HORIZON, " "));
   if (heads.length) {
     // Figures code computed (a CAGR, a difference, a waterfall total, a 100% share) count as on the slide.
     const nums = [...numbersIn(bodyText(s)), ...derivedFigures(s.template === "chart" ? s.chart : null)], missing = heads.filter((h) => !derivable(h, nums));
-    add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide` : "Headline figures are on the slide");
+    add("R11", !missing.length, missing.length ? `Headline figure ${missing.join(", ")} is not on the slide: show it (in the data, an annotation, a note or the takeaway) or reword the headline to a figure the slide shows; keep the so-what` : "Headline figures are on the slide");
   }
   if (style === "consulting" && hasFigures(s)) add("R12", numbersIn(plain(s.title)).length > 0, numbersIn(plain(s.title)).length ? "The title quantifies the so-what" : "The title has no figure; quantify the so-what");
   // Tables: one unit and precision per column, or per row when rows are the metrics (columns are periods).
@@ -144,8 +146,10 @@ export function ruleChecks(s: Slide, style: Style, lines: number): Check[] {
   // Value cards are independent numbers: only false precision applies to them.
   const values = s.template === "cards" ? (s.cards || []).map((c) => c.value).filter((v): v is string => !!v) : [];
   if (body.length || values.length) {
-    const rows = body.map(figs), byRow = rows.some((g) => g.length > 1) && !rows.some(mixedGroup);
-    const bad = byRow ? null : cols.find(mixedGroup);
+    // Read the table the way it is most consistent: rows as metrics (periods across) or columns as metrics (options
+    // across, criteria down). A criteria table's columns mix units by nature; only a row that mixes is a problem.
+    const rows = body.map(figs), mixedRows = rows.filter(mixedGroup), mixedCols = cols.filter(mixedGroup);
+    const bad = rows.some((g) => g.length > 1) && mixedRows.length < mixedCols.length ? mixedRows[0] ?? null : mixedCols[0] ?? null;
     const precise = [...body.flat(), ...values].find(tooPrecise);
     add("R13", !bad && !precise, bad ? `Mixed units or decimals: ${bad.join(", ")}` : precise ? `False precision: ${precise}; round to 3 significant digits` : "Consistent units and precision");
   }
@@ -210,7 +214,8 @@ const NUDGE_MAX = 2;
 
 /** One sentence pointing the user at the failed checks worth fixing (judgment first, at most 2), or "". */
 export function nudge(checks: Check[]): string {
-  const failed = checks.filter((c) => !c.ok && /^[JR]\d/.test(c.id));
+  // Checks from several slides: the same message once.
+  const failed = checks.filter((c, i) => !c.ok && /^[JR]\d/.test(c.id) && checks.findIndex((x) => !x.ok && x.msg === c.msg) === i);
   const ids = new Set(failed.map((c) => c.id));
   const picked = [...failed.filter((c) => c.id.startsWith("J")), ...failed.filter((c) => c.id.startsWith("R") && !ids.has(SAME_AS[c.id]))].slice(0, NUDGE_MAX);
   if (!picked.length) return "";

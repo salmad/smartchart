@@ -17,6 +17,8 @@ export interface BarProps {
   /** Null before the deck is saved. */
   onDelete: (() => void) | null
   onLook: () => void
+  /** Null when the decks' store keeps no versions. */
+  onVersions: (() => void) | null
   /** The view switch; null when the stage shows something else (the starter picker, edit mode). */
   view: DeckView | null; onView: (v: DeckView) => void
   onPresent: () => void
@@ -28,6 +30,10 @@ export interface BarProps {
   shareId: string | null
   onPdf: () => void
   account: Account
+  /** Starts the tour; null where there is no deck to show it on. */
+  onTour: (() => void) | null
+  /** Opens the red-pen review of a deck made elsewhere. */
+  onReview?: () => void
 }
 
 const VIEWS: [DeckView, string, LucideIcon][] = [['slide', 'Slide', RectangleHorizontal], ['grid', 'Grid', LayoutGrid], ['story', 'Storyline', ListOrdered]]
@@ -53,18 +59,18 @@ export function Bar(p: BarProps) {
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-ink-3">/</span>
           <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
-          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onLook={p.onLook} onDelete={p.onDelete} />
+          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onLook={p.onLook} onVersions={p.onVersions} onDelete={p.onDelete} />
         </nav>
       </div>
-      <div className="max-[900px]:hidden">
+      <div data-tour="views" className="max-[900px]:hidden">
         {p.view && <Seg label="View" value={p.view} onChange={p.onView} options={views}
           className="flex rounded-[9px] border border-line bg-panel p-[3px]" />}
       </div>
       <div className="flex items-center justify-end gap-2.5 max-[900px]:gap-2">
         {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
-        {p.hasSlides && <div className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} deckId={p.shareId} onPdf={p.onPdf} /></div>}
+        {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} deckId={p.shareId} onPdf={p.onPdf} /></div>}
         {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
-        <AccountMenu account={p.account} />
+        <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
       </div>
     </header>
   )

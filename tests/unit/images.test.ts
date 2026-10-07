@@ -11,7 +11,7 @@ test('a stored picture carries its kind and size in its name', () => {
   expect(imageMeta('/starters/img/maya-photo-800x800.webp')?.kind).toBe('photo')
 })
 
-test('only SmartChart pictures are pictures: no hotlinks, no other paths, no tricks', () => {
+test('only Occam pictures are pictures: no hotlinks, no other paths, no tricks', () => {
   expect(isImageSrc(BLOB)).toBe(true)
   expect(isImageSrc('/starters/img/acme-app-screenshot-2400x1500.webp')).toBe(true)
   for (const bad of [
@@ -41,7 +41,7 @@ test('checks read a picture as words, never its file name', () => {
   expect(JSON.stringify({ logo: { src: BLOB }, name: 'Northwind' }, pictureAsWords)).toBe('{"logo":"[logo]","name":"Northwind"}')
   expect(pictureAsWords('image', { src: '/starters/img/acme-app-screenshot-2400x1500.webp', alt: 'The cash screen' })).toBe('[screenshot: The cash screen]')
   // The file name's size (2400x1500) is not a figure on the slide.
-  const s: Slide = { template: 'image', title: 'Owners see 2400 days of cash ahead', image: { src: '/starters/img/acme-app-screenshot-2400x1500.webp', alt: 'The Acme cash flow screen' } }
+  const s: Slide = { template: 'image', title: 'Owners see 2400 invoices ahead', image: { src: '/starters/img/acme-app-screenshot-2400x1500.webp', alt: 'The Acme cash flow screen' } }
   expect(ruleChecks(s, 'consulting', 1).find((c) => c.id === 'R11')?.ok).toBe(false)
 })
 

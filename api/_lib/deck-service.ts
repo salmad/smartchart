@@ -9,6 +9,7 @@ import type { Db } from './db.js'
 import { serverJev } from './models.js'
 import { DAILY_CALLS } from './quota.js'
 import { overRate } from './rate.js'
+import { recordVersion } from './versions.js'
 import { addImage, blobStore, DAILY_IMAGES, ImageError, type StoreFn } from './images.js'
 
 export interface Caller { user: { id: string; email: string }; client: string; key: string }
@@ -39,6 +40,8 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       return tok ? `${origin}/s/${tok}` : null
     },
     newDeckId,
+    versions: (deckId) => db.listVersions(uid, deckId),
+    blobs: (deckId, hashes) => db.blobs(uid, deckId, hashes),
     addImage: async (img) => {
       const store = deps.store === undefined ? blobStore() : deps.store
       if (!store) throw new ToolError('refused', 'Pictures are not set up on this server.', 'Tell the user; slides without pictures still work.')
@@ -52,7 +55,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
 
   try {
     for (let attempt = 0; ; attempt++) {
-      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, port, jev, now }
+      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, port, jev, now, client: caller.client }
       let row: Awaited<ReturnType<Db['getDeck']>> = null
       if (t.scope === 'deck') {
         row = deckId ? await db.getDeck(uid, deckId) : null
@@ -65,9 +68,14 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const out = await t.run(ctx, input)
       if (!out.deck) return { ok: true, result: out.result }
       const base = row?.rev ?? 0, chat = (row?.chat as object | null) ?? { history: [], messages: [], working: [] }
-      const put = await db.putDeck(uid, out.deck.id, out.deck.name, dataFromDoc(out.deck, row?.data), chat, base, { named: !!out.named })
+      const data = dataFromDoc(out.deck, row?.data)
+      const put = await db.putDeck(uid, out.deck.id, out.deck.name, data, chat, base, { named: !!out.named })
       if (put === 'foreign') return fail('not_found', `No deck ${out.deck.id}.`)
       if (put === 'conflict') { if (attempt === 0) continue; return fail('conflict', 'The deck changed while this ran.', 'Call it again.') }
+      // One version per request: an agent's writes for the same words, close together, group into one.
+      // A write with no request (a move, a delete, a resolve) is its own version, named by the tool.
+      const request = (input as { request?: unknown }).request, asked = out.label ?? (typeof request === 'string' && request.trim() ? request.trim().slice(0, 300) : null)
+      await recordVersion(db, uid, out.deck.id, data, { by: caller.client, turn: asked ? `mcp:${asked}` : `mcp-op:${name}:${now()}`, label: asked ?? t.title }, put.rev, now())
       if (out.events?.length) await db.addEvents(uid, out.deck.id, out.events.map((e) => ({ ...e, rev: put.rev, by: caller.client })))
       const result = { ...out.result }
       if ('rev' in result) result.rev = put.rev
@@ -77,6 +85,6 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
   } catch (e) {
     if (e instanceof ToolError) return fail(e.code, e.message, e.fix)
     console.error('tool failed', name, e)
-    return fail('upstream', 'Something went wrong on SmartChart’s side.', 'Try again; if it repeats, tell the user.')
+    return fail('upstream', 'Something went wrong on Occam’s side.', 'Try again; if it repeats, tell the user.')
   }
 }

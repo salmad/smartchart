@@ -2,7 +2,7 @@
    deck. One Jev call; a check fails only when a failing value has p ≥ 0.7, as for the slide checks. */
 import { headline, plain } from "../slides/schema.js";
 import type { Slide, Style } from "../types.js";
-import { jev as jevCall, type JevFn } from "./llm.js";
+import { jev as jevCall, type JevAnswer, type JevFn } from "./llm.js";
 
 /** One line of the storyline: a content slide's headline, or a cover or section as a heading. */
 export interface StoryLine { id: string; page: number; kind: "cover" | "section" | "content"; title: string; claim?: string }
@@ -23,8 +23,16 @@ export function storyline(slides: { id: string; slide: Slide }[], style: Style):
 interface Q { instructions: string; options: Record<string, string>; pass: string | ((choice: string) => boolean) }
 
 export async function storyChecks(slides: { id: string; slide: Slide }[], style: Style, jev: JevFn = jevCall): Promise<{ checks: StoryCheck[]; ms: number }> {
-  const lines = storyline(slides, style), content = lines.filter((l) => l.kind === "content");
-  if (content.length < 2) return { checks: [], ms: 0 };
+  const { checks, ms } = await lineChecks(storyline(slides, style), style, jev, (l) => slides[l.page - 1].slide.template);
+  return { checks, ms };
+}
+
+/** The deck checks on storyline lines, from any source (an Occam deck, or a deck read from a file). `label` names a
+    content line's kind in the prompt; `extra` questions ride in the same Jev call and come back in `answers`. */
+export async function lineChecks(lines: StoryLine[], style: Style, jev: JevFn, label: (l: StoryLine) => string,
+  extra: Record<string, { instructions: string; options: Record<string, string> }> = {}): Promise<{ checks: StoryCheck[]; ms: number; answers: Record<string, JevAnswer> }> {
+  const content = lines.filter((l) => l.kind === "content");
+  if (content.length < 2) return { checks: [], ms: 0, answers: {} };
   const n = (id: string) => lines.find((l) => l.id === id)?.page ?? 0;
   const perSlide = (what: string) => Object.fromEntries(content.map((l) => [l.id, `Slide ${l.page} ${what}`]));
   const first = content[0];
@@ -40,8 +48,8 @@ export async function storyChecks(slides: { id: string; slide: Slide }[], style:
     : { instructions: "Does the deck end on what to do: a recommendation, a decision to take or next steps?", options: { ends: "It ends on what to do.", open: "It ends on evidence; the room is not told what to do." }, pass: "ends" };
 
   const state = [`Deck style: ${style}.`, `The deck as the room skims it (page, id, kind, ${style === "pitch" ? "topic — claim" : "title"}):`,
-    ...lines.map((l) => `${l.page}. ${l.id} [${l.kind === "content" ? slides[l.page - 1].slide.template : l.kind}] ${l.title}${l.claim ? ` — ${l.claim}` : ""}`)].join("\n");
-  const r = await jev(state, Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, { instructions: q.instructions, options: q.options }])));
+    ...lines.map((l) => `${l.page}. ${l.id} [${l.kind === "content" ? label(l) : l.kind}] ${l.title}${l.claim ? ` — ${l.claim}` : ""}`)].join("\n");
+  const r = await jev(state, { ...Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, { instructions: q.instructions, options: q.options }])), ...extra });
 
   const checks = Object.entries(qs).map(([id, q]): StoryCheck | null => {
     const a = r[id]; if (!a) return null;
@@ -53,7 +61,8 @@ export async function storyChecks(slides: { id: string; slide: Slide }[], style:
     return { id, ok, p, ...(slideId ? { slideId } : {}), ...failed(id, fail, page, slideId, style, lines) };
   }).filter((c): c is StoryCheck => c !== null);
   const d6 = sectionCheck(lines, style);
-  return { checks: d6 ? [...checks, d6] : checks, ms: r._ms };
+  const answers = Object.fromEntries(Object.keys(extra).filter((k) => r[k]).map((k) => [k, r[k]]));
+  return { checks: d6 ? [...checks, d6] : checks, ms: r._ms, answers };
 }
 
 /** D6, in code: a consulting deck of 8+ slides is read in parts, so it has section dividers (the picking guide's rule). */

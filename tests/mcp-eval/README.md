@@ -44,4 +44,4 @@ Output, in `out/<label>/`: `report.md` (headline, by group, per check, for revie
 
 Add it to `cases.json`. `facts` lists only figures and names the request states exactly. Anything about the slide's details (what is highlighted, which marks, a total row) is a yes/no question for the judge, with `must: true` when the slide fails the user without it. `npx vitest run tests/unit/mcp-eval` checks that the case is honest.
 
-The eval changes no product code. SmartChart's own verdicts (write issues, `check_slide`'s J-checks) reach the judge through the transcript.
+The eval changes no product code. Occam's own verdicts (write issues, `check_slide`'s J-checks) reach the judge through the transcript.

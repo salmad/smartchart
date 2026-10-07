@@ -1,4 +1,4 @@
-/* Pictures on slides. A picture is always a SmartChart picture: copied into our Blob store by add_image, or bundled with
+/* Pictures on slides. A picture is always an Occam picture: copied into our Blob store by add_image, or bundled with
    the starters. Its file name carries its kind and pixel size (`<hash>-<kind>-<w>x<h>.<ext>`), so a slide renders and
    validates without loading it, and the same picture added twice is one file. */
 

@@ -5,7 +5,7 @@ import { describe as card, MENU, OFFERED } from '../../src/engine/slides/schema'
 import { exampleFor } from '../../src/engine/agent/prompts'
 
 const tokens = (s: string) => Math.ceil(s.length / 4)
-const list = JSON.stringify({ templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: 'get_template for the one you pick; suggest_template to have SmartChart choose from the content.' })
+const list = JSON.stringify({ templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: 'get_template for the one you pick; suggest_template to have Occam choose from the content.' })
 
 describe('context budgets (tokens ≈ chars / 4)', () => {
   it('instructions ≤ 400', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(400))

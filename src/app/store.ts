@@ -5,14 +5,18 @@ import type { Check } from '@/engine/agent/checks'
 import { plain } from '@/engine/slides/schema'
 import type { ChatMessage } from '@/engine/agent/llm'
 import type { TraceStep } from '@/engine/agent/agent'
+import { record, type Version, type VersionMeta } from '@/engine/versions'
+import { mergeComments, type DeckComment } from '@/engine/comments'
 
 export const KEY = 'smartchart.journey.decks.v1'
 
 export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors: string[]; warnings: string[]; checks: Check[]; checksPending?: boolean }
 /** `files`: what the user attached to the message, as its chips show them; their text went to the agent. */
-export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[] }
+/** `turn`: set on an agent reply that wrote slides, so Undo can find the version before it; `undone` once it was. */
+export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[]; turn?: string; undone?: boolean }
 /** `name`: what the maker called the deck; null while it follows its first title. */
-export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number }
+/** `comments`: notes people left on slides (src/engine/comments.ts); missing on decks saved before comments. */
+export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number; comments?: DeckComment[] }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
@@ -28,8 +32,9 @@ export interface DeckEvent { rev: number; by: string; slideId: string | null; wh
 export interface DeckRepo {
   list(): Promise<DeckSummary[]>
   get(id: string): Promise<SavedDeck | null>
-  /** Null when saved; otherwise why not, as a sentence (storage full, offline, what the server said). */
-  save(deck: SavedDeck): Promise<string | null>
+  /** Null when saved; otherwise why not, as a sentence (storage full, offline, what the server said). `meta` says who
+      wrote this save, for its version (by hand unless said otherwise). */
+  save(deck: SavedDeck, meta?: SaveMeta): Promise<string | null>
   remove(id: string): Promise<boolean>
   /* Live view of a deck other writers may change (an agent over MCP, another tab). The local repo leaves these out. */
   rev?(id: string): Promise<{ rev: number; presence: Presence } | null>
@@ -39,7 +44,15 @@ export interface DeckRepo {
   base?(id: string): SavedDeck | null
   /** The revision this tab holds. */
   known?(id: string): number
+  /* Versions (src/engine/versions.ts): newest first, and the slides their trees name, by hash. */
+  versions?(id: string): Promise<Version[]>
+  blobs?(id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>
 }
+
+/** Who wrote a save: the maker by hand, or Occam's agent; `turn` groups one turn's (or one restore's) saves. */
+export interface SaveMeta { by: 'you' | 'agent'; turn?: string; label?: string }
+/** The server's version rule, applied in this browser: the writer's name as the list shows it. */
+export const metaOf = (m: SaveMeta | undefined): VersionMeta => ({ by: m?.by === 'agent' ? 'Occam' : 'You', turn: m?.turn ?? null, label: m?.label ?? null })
 
 /** { active, decks }; an empty store when storage is missing, blocked or corrupt. */
 export function loadStore(storage?: Pick<Storage, 'getItem'>): Store {
@@ -56,14 +69,54 @@ export function saveStore(store: Store, storage?: Pick<Storage, 'setItem'>): boo
   try { (storage ?? localStorage).setItem(KEY, JSON.stringify(store)); return true } catch { return false }
 }
 
-/** Decks in this browser: copies kept while a save to the account fails, and the dev account's decks. */
-export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): DeckRepo {
+export const VERSIONS_KEY = 'smartchart.versions.v1'
+/** The dev account keeps fewer versions than the server: they share this browser's storage with the decks. */
+export const LOCAL_KEEP = 30
+interface LocalVersions { [deckId: string]: { versions: (Version & { key: string })[]; blobs: Record<string, Slide> } }
+
+/** Decks in this browser: copies kept while a save to the account fails, and the dev account's decks. The dev account
+    (`versions: true`) also keeps versions, by the server's rule, so the feature works without accounts. */
+export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>, opts: { versions?: boolean } = {}): DeckRepo {
   const read = () => loadStore(storage), write = (s: Store) => saveStore(s, storage)
+  const readV = (): LocalVersions => {
+    try { return (JSON.parse((storage ?? localStorage).getItem(VERSIONS_KEY) ?? 'null') as LocalVersions | null) ?? {} } catch { return {} }
+  }
+  const writeV = (v: LocalVersions) => { try { (storage ?? localStorage).setItem(VERSIONS_KEY, JSON.stringify(v)) } catch { /* full: versions are a convenience here */ } }
+  const recordLocal = async (deck: SavedDeck, meta: SaveMeta | undefined) => {
+    const all = readV(), mine = (all[deck.id] ??= { versions: [], blobs: {} })
+    await record({
+      head: async () => { const v = mine.versions.at(-1); return v ? { n: v.n, by: v.by, turn: v.turn, at: v.at, key: v.key, hashes: v.tree.slides.map(([, h]) => h) } : null },
+      write: async (_step, v) => {
+        for (const [h, sl] of v.blobs) mine.blobs[h] ??= sl
+        const top = mine.versions.at(-1)
+        if (v.replace !== null && top) Object.assign(top, { key: v.key, tree: v.tree, at: v.at, label: top.label ?? v.meta.label })
+        else mine.versions.push({ n: (top?.n ?? 0) + 1, rev: v.rev, by: v.meta.by, turn: v.meta.turn, label: v.meta.label, at: v.at, key: v.key, tree: v.tree })
+        mine.versions = mine.versions.slice(-LOCAL_KEEP)
+        // Blobs no kept version names go with the versions that named them.
+        const used = new Set(mine.versions.flatMap((x) => x.tree.slides.map(([, h]) => h)))
+        mine.blobs = Object.fromEntries(Object.entries(mine.blobs).filter(([h]) => used.has(h)))
+      },
+    }, deck, metaOf(meta), 0, Date.now())
+    writeV(all)
+  }
   return {
     list: async () => deckList(read()).map(summaryOf),
     get: async (id) => read().decks[id] ?? null,
-    save: async (deck) => { const s = read(); s.decks[deck.id] = deck; s.active = deck.id; return write(s) ? null : 'This browser’s storage is full.' },
-    remove: async (id) => { const s = read(); if (!s.decks[id]) return false; delete s.decks[id]; if (s.active === id) s.active = null; return write(s) },
+    save: async (deck, meta) => {
+      const s = read(); s.decks[deck.id] = deck; s.active = deck.id
+      if (!write(s)) return 'This browser’s storage is full.'
+      if (opts.versions) await recordLocal(deck, meta)
+      return null
+    },
+    remove: async (id) => {
+      const s = read(); if (!s.decks[id]) return false; delete s.decks[id]; if (s.active === id) s.active = null
+      if (opts.versions) { const v = readV(); delete v[id]; writeV(v) }
+      return write(s)
+    },
+    ...(opts.versions ? {
+      versions: async (id: string) => (readV()[id]?.versions ?? []).map(({ key: _k, ...v }) => v).reverse(),
+      blobs: async (id: string, hashes: string[]) => { const b = readV()[id]?.blobs ?? {}; return hashes.filter((h) => b[h]).map((h) => ({ hash: h, slide: b[h] })) },
+    } : {}),
   }
 }
 
@@ -116,5 +169,6 @@ export function mergeDecks(local: SavedDeck, server: SavedDeck, base: SavedDeck 
   }
   // The look follows the same rule as slides: a field changed here since `base` is kept, otherwise the server's is taken.
   const take = <K extends 'name' | 'style' | 'theme' | 'accent'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
-  return { deck: { ...local, name: take('name'), style: take('style'), theme: take('theme'), accent: take('accent'), items }, changed }
+  return { deck: { ...local, name: take('name'), style: take('style'), theme: take('theme'), accent: take('accent'), items,
+    comments: mergeComments(local.comments ?? [], server.comments ?? [], base ? base.comments ?? [] : null) }, changed }
 }

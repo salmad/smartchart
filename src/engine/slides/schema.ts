@@ -163,7 +163,7 @@ export const KIND_FIELDS: Record<Kind, string[]> = {
 };
 const idx = (what: string) => f("number", `0-based index into ${what}.`);
 
-const CHART = f("object", "A chart. Values are written on the data; there is no y-axis to configure. `kind` sets which fields it takes.", {
+const CHART = f("object", "A chart. Values are written on the data (bars: every value; a line: its last point only, so name any other point in an annotation or a note); there is no y-axis to configure. `kind` sets which fields it takes.", {
   required: true,
   fields: {
     kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt). `ranked`: horizontal bars by named item. `matrix`: a 2×2.", { values: KINDS, default: "bars" }),
@@ -623,7 +623,10 @@ export function describe(id: TemplateId, style: Style = "consulting"): TemplateC
 /** The slide's line in the storyline: its title, or (no title) the number's caption or the quote. */
 export const headline = (s: Partial<Slide> | null | undefined): string => plain(s?.title || s?.number?.caption || s?.quote || "");
 
-export const plain = (s: unknown): string => String(s).replace(/\[([^\][]+)\]\(https?:\/\/[^\s)]+\)/g, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
+/** A link in a source or footnote: [label](https://…). Only its label counts as text. */
+export const LINK_RE = /\[([^\][]+)\]\((https?:\/\/[^\s)]+)\)/g;
+const LINKED = new Set(["source", "footnote"]);
+export const plain = (s: unknown): string => String(s).replace(LINK_RE, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
 const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 
 type Out = Validation;
@@ -643,6 +646,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       if (typeof value !== "string") { out.errors.push(`${path}: must be a string.`); return; }
       if (/<[a-z/][^>]*>/i.test(value)) out.errors.push(`${path}: HTML is not allowed. Use the markup syntax instead.`);
       if (def.type === "text" && MARKUP_RE.test(value)) out.errors.push(`${path}: plain text only; remove the markup.`);
+      if (new RegExp(LINK_RE.source).test(value) && !LINKED.has(path.split(".").pop() ?? "")) out.errors.push(`${path}: links go in source or footnote, not here.`);
       const len = plain(value).length;
       if (max && len > max) out.errors.push(`${path}: ${len} characters, limit ${max} (${len - max} too many). Shorten this field only.`);
       break;
@@ -687,7 +691,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       for (const k of Object.keys(v)) if (!allowed.includes(k)) out.errors.push(`${path}.${k}: not a picture field here. Allowed: ${allowed.join(", ")}.`);
       const meta = imageMeta(v.src);
       if (v.src === undefined || v.src === "") out.errors.push(`${path}.src: required. Add the picture with add_image and use the src it returns.`);
-      else if (!meta) out.errors.push(`${path}.src: not a SmartChart picture. Add it with add_image (a public URL or the bytes) and use the src it returns.`);
+      else if (!meta) out.errors.push(`${path}.src: not an Occam picture. Add it with add_image (a public URL or the bytes) and use the src it returns.`);
       else if (def.kinds && !def.kinds.includes(meta.kind)) out.errors.push(`${path}.src: a ${meta.kind}, but this takes ${def.kinds.join(" or ")}. Add the picture with add_image and kind "${def.kinds[0]}"${def.kinds.includes("logo") ? "" : ", or use another template"}.`);
       if (def.alt) {
         if (typeof v.alt !== "string" || !v.alt.trim()) out.errors.push(`${path}.alt: required. What the picture shows, in one plain sentence.`);

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CircleAlert, CircleCheck } from 'lucide-react'
 import type { Item } from '@/app/store'
+import { softChecks } from '@/engine/agent/soft'
 import { config } from '@/app/config'
 import { cn } from '@/app/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
@@ -38,6 +39,8 @@ export function Checks({ item }: { item: Item | undefined }) {
 function CheckList({ item }: { item: Item }) {
   const [open, setOpen] = useState(false)
   const list = rowsOf(item), todo = list.filter((c) => !c.ok), passed = list.filter((c) => c.ok)
+  // Suggestions wait until the slide fits: first the problems, then what would make it better.
+  const better = item.errors?.length ? [] : softChecks(item.slide)
   return (
     <div>
       {(item.checksPending || todo.length > 0) && (
@@ -48,6 +51,14 @@ function CheckList({ item }: { item: Item }) {
       <ul className="grid gap-1.5">
         {todo.map((c, k) => <CheckRow key={k} c={c} />)}
       </ul>
+      {better.length > 0 && (
+        <div className={cn(todo.length > 0 && 'mt-3')}>
+          <h3 className="mb-1.5 text-[12.5px] font-medium text-ink-2">Could be better</h3>
+          <ul className="grid gap-1.5">
+            {better.map((c) => <li key={c.id} className="grid grid-cols-[14px_1fr] items-baseline gap-2 text-[13px] text-ink-2"><span aria-hidden className="text-ink-3">◦</span><span>{c.msg}</span></li>)}
+          </ul>
+        </div>
+      )}
       {passed.length > 0 && (
         <div className={cn(todo.length > 0 && 'mt-2')}>
           <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}

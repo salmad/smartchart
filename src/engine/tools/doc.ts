@@ -3,20 +3,22 @@
 import { headline, upgrade } from "../slides/schema.js";
 import type { Slide, Style, Theme } from "../types.js";
 import type { Check } from "../agent/checks.js";
+import { commentsOf } from "../comments.js";
 import { ToolError, type DeckDoc, type DocSlide } from "./types.js";
 
 interface SavedItem { id: string; slide: Slide; status?: string; errors?: string[]; warnings?: string[]; checks?: Check[] }
-interface SavedData { style?: Style; theme?: Theme; accent?: string | null; items?: SavedItem[] }
+interface SavedData { style?: Style; theme?: Theme; accent?: string | null; items?: SavedItem[]; comments?: unknown }
 
 export function docFromData(id: string, name: string, data: unknown): DeckDoc {
   const d = (data && typeof data === "object" ? data : {}) as SavedData;
   return { id, name, style: d.style === "pitch" ? "pitch" : "consulting", theme: d.theme === "paper" ? "paper" : "ink", accent: d.accent ?? null,
-    slides: (d.items ?? []).map((it) => ({ id: it.id, slide: upgrade(it.slide), issues: it.errors ?? [], warnings: it.warnings ?? [], checks: it.checks ?? [] })) };
+    slides: (d.items ?? []).map((it) => ({ id: it.id, slide: upgrade(it.slide), issues: it.errors ?? [], warnings: it.warnings ?? [], checks: it.checks ?? [] })),
+    comments: commentsOf(d.comments) };
 }
 
 export function dataFromDoc(doc: DeckDoc, previous: unknown): Record<string, unknown> {
   const prev = (previous && typeof previous === "object" ? previous : {}) as Record<string, unknown>;
-  return { ...prev, style: doc.style, theme: doc.theme, accent: doc.accent, updated: Date.now(),
+  return { ...prev, style: doc.style, theme: doc.theme, accent: doc.accent, updated: Date.now(), comments: doc.comments,
     items: doc.slides.map((s) => ({ id: s.id, slide: s.slide, status: "ok", errors: s.issues, warnings: s.warnings, checks: s.checks })) };
 }
 

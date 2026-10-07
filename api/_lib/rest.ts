@@ -13,7 +13,7 @@ export function restHandler(deps: { userFrom: UserFrom; db: () => Db | null; jev
     const db = deps.db()
     if (!db) return Response.json({ error: { code: 'upstream', message: 'Not set up on this server.' } }, { status: 503 })
     const user = await deps.userFrom(request)
-    if (!user) return Response.json({ error: { code: 'unauthorized', message: 'Send Authorization: Bearer <your SmartChart agent key>.' } }, { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } })
+    if (!user) return Response.json({ error: { code: 'unauthorized', message: 'Send Authorization: Bearer <your Occam agent key>.' } }, { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } })
     const url = new URL(request.url), name = url.searchParams.get('tool') ?? url.pathname.split('/').filter(Boolean).at(-1) ?? ''
     const input = await request.json().catch(() => null)
     const reply = await runTool(name, input ?? {}, { user, client: request.headers.get('x-client') ?? 'API', key: user.id }, { db, origin: url.origin, jev: deps.jev })

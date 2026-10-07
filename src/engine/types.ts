@@ -21,7 +21,7 @@ export interface Chart {
   axes?: { x: string; y: string }; quadrants?: string[]; points?: MatrixPoint[]
 }
 export interface Note { title: string; text?: string; point?: { series: number; index: number } }
-/** A SmartChart picture (slides/images.ts): `src` names its kind and size; `alt` is what it shows, in words. */
+/** An Occam picture (slides/images.ts): `src` names its kind and size; `alt` is what it shows, in words. */
 export interface ImageRef { src: string; alt?: string }
 export type Cell = string | { value?: string; note?: string; bullets?: string[]; status?: boolean; logo?: ImageRef }
 export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; bars?: boolean; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[] }

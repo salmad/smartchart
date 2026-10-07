@@ -6,7 +6,7 @@ import { READ, tool, type DeckDoc } from "./types.js";
 
 export const choiceTools = [
   tool<{ deckId: string; about: string; after?: string }>({ name: "suggest_template", title: "Suggest a template", group: "choice", scope: "deck", annotations: READ,
-    description: "Have SmartChart pick the template for some content (the user's words and figures). Returns the template, the probabilities of each, and values already decided (for cards: how they lead). Then get_template and create_slide. Costs one model call.",
+    description: "Have Occam pick the template for some content (the user's words and figures). Returns the template, the probabilities of each, and values already decided (for cards: how they lead). Then get_template and create_slide. Costs one model call.",
     input: { type: "object", additionalProperties: false, required: ["deckId", "about"], properties: {
       deckId: { type: "string" }, about: { type: "string", description: "The slide's content, in the user's words, with every figure." },
       after: { type: "string", description: "Where it would go: a slide id, \"start\" or \"end\"." } } },

@@ -1,9 +1,9 @@
 /* Test doubles for the model calls. */
-import type { AgentStepFn, ChatMessage, JevAnswer, JevFn, JevQuestion } from "../../src/engine/agent/llm";
+import type { AgentStepArgs, AgentStepFn, ChatMessage, JevAnswer, JevFn, JevQuestion } from "../../src/engine/agent/llm";
 
 export type FakeJev = JevFn & { calls: { state: string; questions: Record<string, JevQuestion> }[] };
 export type FakeAgent = AgentStepFn & { calls: ChatMessage[][] };
-export type Step = ChatMessage | ((messages: ChatMessage[]) => ChatMessage);
+export type Step = ChatMessage | ((messages: ChatMessage[], tools?: AgentStepArgs["tools"]) => ChatMessage);
 
 /** A Jev double: answers[questionId] = [choice, p]; unanswered questions take their first option at p 0.9. */
 export function fakeJev(answers: Record<string, [string, number]> = {}): FakeJev {
@@ -23,11 +23,11 @@ export function fakeJev(answers: Record<string, [string, number]> = {}): FakeJev
 /** A GLM agent-step double: each step is a message, or a function of the messages that returns one. */
 export function fakeAgent(steps: Step[]): FakeAgent {
   const calls: ChatMessage[][] = [];
-  const agentStep: AgentStepFn = async ({ messages }) => {
+  const agentStep: AgentStepFn = async ({ messages, tools }) => {
     calls.push(messages);
     const step = steps.shift();
     if (!step) throw new Error("the agent was called more times than scripted");
-    return { message: typeof step === "function" ? step(messages) : step, ms: 1 };
+    return { message: typeof step === "function" ? step(messages, tools) : step, ms: 1 };
   };
   return Object.assign(agentStep, { calls });
 }

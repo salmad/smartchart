@@ -5,7 +5,8 @@ import type { JevFn } from "./llm.js";
 import type { Chart, Series, Slide, Style } from "../types.js";
 
 export type Resolved = Record<string, { value: string; p: number }>;
-interface Question { id: string; path: string; instructions: string; options: Record<string, string>; min: number; fallback: string; apply: (choice: string) => void }
+/** `known`: the answer is already certain (the title's highlight is an item's exact name); Jev is not asked. */
+interface Question { id: string; path: string; instructions: string; options: Record<string, string>; min: number; fallback: string; apply: (choice: string) => void; known?: string }
 interface FocusItems { names: (string | undefined)[]; apply: (i: number) => void }
 
 export const P_AUTO = 0.6;
@@ -62,7 +63,9 @@ function collect(s: Slide): Question[] {
     if (f?.names.length) {
       const hl = (String(s.title || "").match(/\[\[(.+?)\]\]/) || [])[1]?.toLowerCase();
       const guess = Math.max(0, f.names.findIndex((n) => hl && String(n).toLowerCase().includes(hl)));
-      qs.push({ id: "focus", path: "focus", min: P_AUTO, fallback: `item${guess}`,
+      // The highlight is exactly one item's name ("FY25", a column): that item, whatever else the title says.
+      const exact = hl ? f.names.map((n, i) => [plain(String(n ?? "")).trim().toLowerCase(), i] as const).filter(([n]) => n === plain(hl).trim()) : [];
+      qs.push({ id: "focus", path: "focus", min: P_AUTO, fallback: `item${guess}`, ...(exact.length === 1 ? { known: `item${exact[0][1]}` } : {}),
         instructions: "Which one item is the slide's title (and subtitle) about? That item is highlighted.",
         options: Object.fromEntries(f.names.map((n, i) => [`item${i}`, String(n)])), apply: (v) => f.apply(Number(v.slice(4))) });
     }
@@ -77,11 +80,11 @@ function collect(s: Slide): Question[] {
 }
 
 export async function resolveAuto(slide: Slide, style: Style, jev: JevFn, request = ""): Promise<{ slide: Slide; resolved: Resolved; ms: number }> {
-  const out = structuredClone(slide), qs = collect(out);
+  const out = structuredClone(slide), qs = collect(out), asked = qs.filter((q) => !q.known);
   if (!qs.length) return { slide: out, resolved: {}, ms: 0 };
   // The user's words ("curves", "since launch", "each line") often settle a choice the slide alone does not.
-  const r = await jev(`Deck style: ${style}.${request ? `\nThe user's request: ${request}` : ""}\nSlide: ${slideText(out)}`, Object.fromEntries(qs.map((q) => [q.id, { instructions: q.instructions, options: q.options }])));
-  const picks = Object.fromEntries(qs.map((q) => { const a = r[q.id]; return [q.id, a && a.p >= q.min ? { value: a.choice, p: a.p } : { value: q.fallback, p: a?.p ?? 0 }]; }));
+  const r = asked.length ? await jev(`Deck style: ${style}.${request ? `\nThe user's request: ${request}` : ""}\nSlide: ${slideText(out)}`, Object.fromEntries(asked.map((q) => [q.id, { instructions: q.instructions, options: q.options }]))) : { _ms: 0 } as Awaited<ReturnType<JevFn>>;
+  const picks = Object.fromEntries(qs.map((q) => { if (q.known) return [q.id, { value: q.known, p: 1 }]; const a = r[q.id]; return [q.id, a && a.p >= q.min ? { value: a.choice, p: a.p } : { value: q.fallback, p: a?.p ?? 0 }]; }));
   // Comparable series (same unit) that were all auto get one mark: the most confident pick.
   // Mark questions exist only when the chart has series.
   if (out.template === "chart" && out.chart?.series) {
