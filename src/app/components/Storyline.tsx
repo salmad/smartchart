@@ -28,7 +28,7 @@ const reading = new Map<string, Promise<StoryCheck[]>>()
 export function Storyline({ items, deckStyle: style, live, busy, onOpen, onMove, onAsk, onTalk }: Props) {
   const slides = items.map(({ id, slide }) => ({ id, slide })), key = storyKey(slides, style)
   const lines = storyline(slides, style)
-  const [result, setResult] = useState<Result>({ state: 'checking' })
+  const [result, setResult] = useState<Result>({ state: 'checking' }), [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!live) return
@@ -47,7 +47,7 @@ export function Storyline({ items, deckStyle: style, live, busy, onOpen, onMove,
     return () => { current = false }
     // The key stands for the slides and style.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, key])
+  }, [live, key, attempt])
 
   const checks = result.state === 'done' ? result.checks : []
   const flagged = new Map(checks.filter((c) => !c.ok && c.slideId).map((c) => [c.slideId, c.msg]))
@@ -85,7 +85,7 @@ export function Storyline({ items, deckStyle: style, live, busy, onOpen, onMove,
           <section aria-label="Deck checks" className="mt-5 grid gap-2 border-t border-line pt-4">
             {!live ? <p className="text-[13px] text-ink-3">The deck checks run when the models are reachable.</p>
               : result.state === 'checking' ? <p role="status" className="flex items-center gap-2 text-[13px] text-ink-2"><i className="spinner" />Reading the story like a partner…</p>
-              : result.state === 'failed' ? <p className="text-[13px] text-ink-2">The deck checks couldn’t run. Open the storyline again to retry.</p>
+              : result.state === 'failed' ? <p className="flex items-center gap-3 text-[13px] text-ink-2">The deck checks couldn’t run.<Button size="sm" variant="outline" onClick={() => setAttempt((n) => n + 1)}>Try again</Button></p>
               : !checks.length ? <p className="text-[13px] text-ink-3">Deck checks start at two content slides.</p>
               : <>
                   <h3 className="text-[13px] font-medium text-ink">{todo.length ? `${todo.length} to look at` : 'The story holds'}</h3>

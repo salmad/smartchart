@@ -59,7 +59,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
         </div>
         <div className="flex w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] items-center gap-3 max-[900px]:w-full max-[900px]:flex-wrap">
           <p className="mr-auto text-ink-2">
-            {picked ? <><b className="font-medium text-ink">{picked.label}.</b> {picked.blurb}. <span className="text-ink-3">Change it in your own words once it’s in.</span></> : <span className="text-ink-3">{first ? 'Pick a starting slide to preview it.' : `Goes in after slide ${current + 1}.`}</span>}
+            {picked ? <><b className="font-medium text-ink">{picked.label}.</b> {picked.blurb}. <span className="text-ink-3">Change it in your own words once it’s in.</span></> : !first && <span className="text-ink-3">Goes in after slide {current + 1}.</span>}
           </p>
           {onCancel && <Button variant="outline" onClick={onCancel}>Cancel</Button>}
           <Button onClick={() => picked && onUse(picked)} disabled={!picked}>{first ? 'Start with this slide' : `Add as slide ${at + 1}`}</Button>

@@ -42,7 +42,7 @@ export function CommentsPanel({ n, comments, exists, busy, canAsk, target, onTar
       <header className="flex items-start justify-between gap-3 p-4 pb-3">
         <div className="grid gap-0.5">
           <h2 className="text-[14px] font-medium text-ink">Comments on slide {n}</h2>
-          <p className="text-[12.5px] text-ink-3">{open.length ? `${open.length} open · ` : ''}Click a part of the slide to comment on it.</p>
+          <p className="text-[12.5px] text-ink-3">{open.length ? `${open.length} open · ` : ''}Click a part of the slide, or comment on the whole slide.</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close comments"
           className="-mr-1 -mt-1 grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink">
@@ -50,9 +50,7 @@ export function CommentsPanel({ n, comments, exists, busy, canAsk, target, onTar
         </button>
       </header>
       <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto px-4 pb-4">
-        {open.length > 0
-          ? <ul className="grid gap-2">{open.map((c) => <Row key={c.id} c={c} gone={!!c.path && !exists(c.path)} busy={busy} onHover={onHover} onResolve={onResolve} onDelete={onDelete} />)}</ul>
-          : <p className="text-[13px] text-ink-3">No comments yet. Pick a part of the slide, or leave a note on the whole slide.</p>}
+        {open.length > 0 && <ul className="grid gap-2">{open.map((c) => <Row key={c.id} c={c} gone={!!c.path && !exists(c.path)} busy={busy} onHover={onHover} onResolve={onResolve} onDelete={onDelete} />)}</ul>}
         <div className="grid gap-2">
           <div className="flex items-center gap-1.5 text-[12px] text-ink-3">
             On
@@ -66,7 +64,7 @@ export function CommentsPanel({ n, comments, exists, busy, canAsk, target, onTar
           <div className="flex items-center justify-between gap-2">
             {open.length > 0 && canAsk
               ? <Button size="sm" variant="outline" disabled={busy} onClick={onAsk} className="gap-1.5"><Sparkles className="size-3.5" /> Ask Occam to address {open.length === 1 ? 'it' : 'all'}</Button>
-              : <span className="text-[12px] text-ink-3">Any agent can address it when you ask.</span>}
+              : <span />}
             <Button size="sm" disabled={busy || !text.trim()} onClick={add}>Comment</Button>
           </div>
         </div>

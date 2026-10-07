@@ -38,7 +38,7 @@ export function Rehearse({ slides, deckStyle: style, storyKey, live, busy, onOpe
       {!live ? <p className="text-[13px] text-ink-3">Rehearsing needs the models; they are not reachable right now.</p>
         : result.state === 'idle' || result.state === 'failed' ? (
           <div className="flex items-center gap-3">
-            <Button variant="outline" disabled={busy || slides.length < 2} onClick={run}><MessageCircleQuestion className="size-3.5" />Ask me the room’s questions</Button>
+            <Button variant="outline" disabled={busy || slides.length < 2} onClick={run}><MessageCircleQuestion className="size-3.5" />Ask me {room === 'investors' ? 'investors’' : 'the board’s'} questions</Button>
             {result.state === 'failed' && <span className="text-[12.5px] text-ink-2">That didn’t work. Try again.</span>}
           </div>
         )

@@ -13,6 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/too
 
 interface Props {
   chips: Pill[] | null; canSend: boolean; busy: boolean; onSend: (text: string, files?: Attached[]) => void; onClear: () => void
+  /** There is a chat to clear. */
+  canClear: boolean
   /** Shown instead of the usual placeholder, e.g. why sending is off. */
   hint?: string
   /** A new deck: the writing style to pick (it is set once the first slide is made) and example prompts to start from. */
@@ -30,7 +32,7 @@ type Pending = { id: number; name: string } & ({ state: 'reading' } | { state: '
 /** Prompt box with suggestion pills; in a new deck, the style and example prompts instead. Files dropped on it, or
     picked with the paperclip, go with the message. It refuses an empty message and a send while a turn runs or a
     file is still being read: sendTurn does not check. */
-export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }: Props) {
+export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint, start }: Props) {
   const [text, setText] = useState(''), [files, setFiles] = useState<Pending[]>([]), [over, setOver] = useState(false)
   const picker = useRef<HTMLInputElement>(null), nextId = useRef(0)
   const ready = files.flatMap((f) => (f.state === 'ready' ? [f.file] : []))
@@ -120,7 +122,8 @@ export function Composer({ chips, canSend, busy, onSend, onClear, hint, start }:
                   className="h-7 cursor-pointer rounded-md px-2.5 text-[12.5px] text-ink-3 transition-colors hover:text-ink-2 aria-pressed:bg-raise aria-pressed:text-ink aria-pressed:shadow-[0_0_0_1px_theme(colors.line-2)]">{label}</button>
               ))}
             </div>
-          : <Button type="button" variant="ghost" onClick={onClear} disabled={busy} className="mr-auto px-1 text-[12.5px] text-ink-3">Clear chat</Button>}
+          : canClear ? <Button type="button" variant="ghost" onClick={onClear} disabled={busy} className="mr-auto px-1 text-[12.5px] text-ink-3">Clear chat</Button>
+          : <span className="mr-auto" />}
         <input ref={picker} type="file" multiple accept={ACCEPT} hidden onChange={(e) => { add(e.target.files); e.target.value = '' }} />
         <Tooltip>
           <TooltipTrigger asChild>
