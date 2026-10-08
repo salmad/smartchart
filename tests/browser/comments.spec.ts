@@ -16,7 +16,7 @@ test('Comment sits beside Edit: leave a note on the slide, see it counted, resol
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Comment', exact: true }).click()
   const panel = page.getByRole('complementary', { name: 'Comments on slide 1' })
-  await expect(panel).toContainText('No comments yet')
+  await expect(panel).toContainText('Click a part of the slide, or comment on the whole slide.')
   await panel.getByRole('textbox', { name: 'New comment' }).fill('This number is from Q2, update it')
   await panel.getByRole('textbox', { name: 'New comment' }).press('Enter')
   await expect(panel).toContainText('This number is from Q2, update it')

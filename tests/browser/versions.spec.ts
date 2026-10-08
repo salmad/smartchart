@@ -31,8 +31,7 @@ const title = (page: Page) => page.evaluate(() => window.__journey?.items[0]?.sl
 
 test('preview an earlier version, then restore it as a new version on top', async ({ page }) => {
   await open(page)
-  await page.getByRole('button', { name: 'Deck menu' }).click()
-  await page.getByRole('menuitem', { name: 'Versions' }).click()
+  await page.getByRole('button', { name: 'Versions', exact: true }).click()
   const panel = page.getByRole('complementary', { name: 'Versions' })
   await expect(panel.getByRole('button')).toHaveCount(3) // close + two versions
   await expect(panel).toContainText('“Retitle it”')

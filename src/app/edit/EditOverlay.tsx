@@ -79,7 +79,7 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
           className={`${MARK} pointer-events-auto rounded-full bg-warn/70`} />
       ))}
       {hit && hover && (
-        <span ref={(m) => place(m, boxIn(hover, frame))} className={`${MARK} pointer-events-none rounded-md ring-1 ring-line-2`}>
+        <span ref={(m) => place(m, boxIn(hover, frame))} className={`${MARK} pointer-events-none rounded-md ring-1 ring-[rgb(var(--mark)/.45)]`}>
           {/* The strip between the item and its buttons belongs to the overlay, so the pointer never leaves it on the way. */}
           <span className="pointer-events-auto absolute left-full top-1/2 flex w-14 -translate-y-1/2 flex-col gap-1 pl-2">
             {hit.op.length > 1 && <button type="button" aria-label={`Move ${hit.op.path.split('.').at(-1)?.replace(/s$/, '')} ${hit.index + 1}`} onPointerDown={(e) => begin(e, { kind: 'item', list: hit.op.path, index: hit.index })} onMouseDown={keep}
@@ -97,12 +97,12 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
           ref={(m) => { const b = boxIn(heads[col], frame); place(m, { l: b.l + b.w / 2 - 12, t: b.t - 22, w: 24, h: 18 }) }}
           className={`${MARK} pointer-events-auto grid cursor-grab touch-none place-items-center rounded-md bg-raise text-ink-3 shadow-[0_0_0_1px_theme(colors.line-2)] hover:text-ink active:cursor-grabbing`}><GripHorizontal className="size-3.5" /></button>
       )}
-      {selected.map((b, i) => <span key={i} ref={(m) => place(m, b)} className={`${MARK} rounded-sm bg-ink/10 ring-1 ring-ink/30`} />)}
+      {selected.map((b, i) => <span key={i} ref={(m) => place(m, b)} className={`${MARK} rounded-sm bg-[rgb(var(--mark)/.1)] ring-1 ring-[rgb(var(--mark)/.5)]`} />)}
     </div>
   )
 }
 
 function DropLine({ line, frame }: { line: { left: number; right: number; top: number; bottom: number }; frame: Element }) {
   const f = frame.getBoundingClientRect()
-  return <span ref={(m) => place(m, { l: line.left - f.left, t: line.top - f.top, w: line.right - line.left, h: line.bottom - line.top })} className={`${MARK} rounded-full bg-ink`} />
+  return <span ref={(m) => place(m, { l: line.left - f.left, t: line.top - f.top, w: line.right - line.left, h: line.bottom - line.top })} className={`${MARK} rounded-full bg-[rgb(var(--mark))]`} />
 }

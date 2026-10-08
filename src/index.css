@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Marks drawn over a slide (edit outlines, selection, the drop line, the comment target) take the slide's palette:
+   light on Ink, dark on Paper, so they read on both. Outside a layer: the slide's theme class is built at runtime, so
+   Tailwind would drop a rule naming it. */
+[data-frame] { --mark: 237 237 239; }
+[data-frame]:has(.theme-paper) { --mark: 18 18 17; }
+
 @layer base {
   html, body, #root { height: 100%; }
   /* Site tokens (tailwind.config: paper, type, rule…), as RGB channels. Paper is the default everywhere;

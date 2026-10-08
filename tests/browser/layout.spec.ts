@@ -23,8 +23,7 @@ test('on a laptop the decks start hidden, and Look sends them aside until their 
   await expect(decks(page)).toHaveCount(0)
   await page.getByRole('button', { name: 'Show your decks' }).click()
   await expect(decks(page)).toBeVisible()
-  await page.getByRole('button', { name: 'Deck menu' }).click()
-  await page.getByRole('menuitem', { name: 'Look' }).click()
+  await page.getByRole('button', { name: 'Look', exact: true }).click()
   await expect(page.getByRole('complementary', { name: 'Deck look' })).toBeVisible()
   await expect(decks(page)).toHaveCount(0)
   await page.getByRole('button', { name: 'Show your decks' }).click()
@@ -35,8 +34,7 @@ test('on a laptop the decks start hidden, and Look sends them aside until their 
 test('a wide window opens with the decks, and keeps them beside Look', async ({ page }) => {
   await open(page, 1600)
   await expect(decks(page)).toBeVisible()
-  await page.getByRole('button', { name: 'Deck menu' }).click()
-  await page.getByRole('menuitem', { name: 'Look' }).click()
+  await page.getByRole('button', { name: 'Look', exact: true }).click()
   await expect(decks(page)).toBeVisible()
 })
 

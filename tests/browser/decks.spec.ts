@@ -26,8 +26,7 @@ test('opening decks from the sidebar does not reorder them; an edit moves the ed
   expect(await page.evaluate((k) => Object.values(JSON.parse(localStorage.getItem(k) ?? '{}').decks).map((d) => (d as { updated: number }).updated), KEY)).toEqual([3000, 2000, 1000])
 
   // An edit (the palette) is a real change: Beta saves and moves up.
-  await page.getByRole('button', { name: 'Deck menu' }).click()
-  await page.getByRole('menuitem', { name: 'Look' }).click()
+  await page.getByRole('button', { name: 'Look', exact: true }).click()
   await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Paper' }).click()
   await page.keyboard.press('Escape')
   await page.waitForTimeout(600)

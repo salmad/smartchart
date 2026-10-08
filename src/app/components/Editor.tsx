@@ -33,7 +33,7 @@ import type { Attached as File } from '@/app/files'
 
 export interface EditorProps {
   state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
-  bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onLook' | 'onVersions'> & {
+  bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onLook' | 'onVersions' | 'lookOpen' | 'versionsOpen'> & {
     onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void; onAdd: () => void
   }
   onSend: (text: string, files?: Attached[]) => void; onClear: () => void; onSelect: (index: number) => void
@@ -122,7 +122,8 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   return (
     <>
       <Bar {...bar} decksOpen={bar.decksOpen && !decksAside} onToggleDecks={decksAside ? () => { setSide(null); setPreview(null); setTarget(null); setRing(null) } : bar.onToggleDecks} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live}
-        view={shown || null} onView={setView} onLook={() => { setPreview(null); setSide('look') }} onVersions={versions && (() => setSide('versions'))} onReview={() => setReviewing(true)} />
+        view={shown || null} onView={setView} lookOpen={side === 'look'} onLook={() => { setPreview(null); setSide(side === 'look' ? null : 'look') }}
+        versionsOpen={side === 'versions'} onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
         {!decksAside && decks}
         {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}

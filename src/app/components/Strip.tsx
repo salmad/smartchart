@@ -79,7 +79,7 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
           <button type="button" onClick={onRestore} disabled={busy} className="cursor-pointer font-medium text-ink underline-offset-2 hover:underline disabled:opacity-45">Undo</button>
         </p>
       )}
-      <div ref={(el) => { row.current = el; fade(grid ? null : el) }} aria-label="Slides" role="group" className={grid ? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-6 gap-y-5 p-0.5' : 'edge-fade flex gap-2.5 overflow-x-auto px-0.5 pb-1.5 pt-0.5'} onDragOver={(e) => { if (dragged) e.preventDefault() }} onDrop={drop}>
+      <div ref={(el) => { row.current = el; fade(grid ? null : el) }} aria-label="Slides" role="group" className={grid ? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-6 gap-y-5 p-1' : 'edge-fade flex gap-2.5 overflow-x-auto px-1 pb-1 pt-1'} onDragOver={(e) => { if (dragged) e.preventDefault() }} onDrop={drop}>
         {items.map((it, i) => (
           <div key={it.id} data-strip-item draggable={!busy} onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragged(it.id) }}
             onDragEnd={() => { setDragged(null); setGap(null) }} onDragOver={(e) => over(e, i)}
@@ -89,7 +89,7 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
             <button type="button" data-strip-thumb aria-current={i === current} aria-label={`Slide ${i + 1}`} onClick={() => onSelect(i)} onDoubleClick={() => onOpen?.(i)} onKeyDown={(e) => keys(e, it, i)}
               className={cn('peer grid w-full cursor-pointer text-left outline-none', grid ? 'gap-2' : 'gap-1')}>
               <SlideView slide={it.slide} deck={deck} ctx={ctx[i]}
-                className={cn('pointer-events-none relative aspect-video overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-has-[[aria-current=true]]:shadow-[0_0_0_2px_theme(colors.ink)] group-has-[:focus-visible]:shadow-[0_0_0_2px_theme(colors.ink)]', thumb)} />
+                className={cn('pointer-events-none relative aspect-video overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-has-[[aria-current=true]]:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)] group-has-[:focus-visible]:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)]', thumb)} />
               <span className={cn('flex gap-2 font-mono font-medium leading-none text-ink-3', grid ? 'text-[11px]' : 'text-[10px]')}>
                 <b className="font-medium text-ink-2">{String(i + 1).padStart(2, '0')}</b>
                 {it.status === 'draft' && <i className="not-italic text-warn">draft</i>}

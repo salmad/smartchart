@@ -16,7 +16,7 @@ export const UNDER_SLIDE = 'min-[901px]:min-h-[146px]'
 /** The framed slide box: the largest 16:9 that fits, with its ring and shadow. Edit mode uses it too. */
 export function SlideFrame({ children, onClick, onPointerMove, onPointerLeave, frame, title, className, tour }: { children: ReactNode; onClick?: (e: React.MouseEvent) => void; onPointerMove?: (e: React.PointerEvent) => void; onPointerLeave?: () => void; frame?: Ref<HTMLDivElement>; title?: string; className?: string; tour?: string }) {
   return (
-    <div ref={frame} onClick={onClick} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave} title={title} data-tour={tour}
+    <div ref={frame} onClick={onClick} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave} title={title} data-tour={tour} data-frame
       className={cn('group relative aspect-video overflow-hidden', SLIDE_W, 'rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] max-[900px]:w-full max-[900px]:rounded-lg', className)}>
       {children}
     </div>
@@ -79,7 +79,7 @@ export function Stage({ deck, current, onPresent, pick, slideId, phase }: Props)
         {slide && phase !== null && <div aria-hidden className="absolute inset-0 bg-[rgba(10,10,11,.45)] transition-opacity" />}
         {phase !== null && <Stars />}
         {pick && (
-          <div ref={mark} aria-hidden className={cn('pointer-events-none absolute left-[var(--x)] top-[var(--y)] h-[var(--h)] w-[var(--w)] rounded-[4px] border border-ink-2 bg-white/[.06]', !label && 'hidden')}>
+          <div ref={mark} aria-hidden className={cn('pointer-events-none absolute left-[var(--x)] top-[var(--y)] h-[var(--h)] w-[var(--w)] rounded-[4px] border border-[rgb(var(--mark)/.6)] bg-[rgb(var(--mark)/.06)]', !label && 'hidden')}>
             <span className="absolute -top-5 left-0 whitespace-nowrap rounded bg-raise px-1.5 py-0.5 text-[11px] leading-none text-ink-2 shadow-[0_0_0_1px_theme(colors.line-2)]">{label}</span>
           </div>
         )}

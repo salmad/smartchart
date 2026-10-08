@@ -40,7 +40,7 @@ function One({ edit, path, index, deckStyle, box }: { edit: SlideEdit; path: str
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button ref={place} type="button" aria-label="Change icon" onMouseDown={(e) => e.preventDefault()}
-            className="pointer-events-auto absolute left-[var(--l)] top-[var(--t)] h-[var(--h)] w-[var(--w)] cursor-pointer rounded-md hover:ring-1 hover:ring-line-2" />
+            className="pointer-events-auto absolute left-[var(--l)] top-[var(--t)] h-[var(--h)] w-[var(--w)] cursor-pointer rounded-md hover:ring-1 hover:ring-[rgb(var(--mark)/.45)]" />
         </PopoverTrigger>
         <PopoverContent className="w-[19rem] p-3" onOpenAutoFocus={(e) => e.preventDefault()}>
           <Button size="sm" variant="outline" className="mb-2 w-full gap-1.5" disabled={busy} onClick={() => void ask()}>

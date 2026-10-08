@@ -1,20 +1,18 @@
-/* The deck's own menu, beside its name: rename it, open its look, or delete it. */
+/* The deck's own menu, beside its name: rename it or delete it, as its row in the decks list. */
 import { useRef, useState } from 'react'
-import { History, MoreHorizontal, Palette, Pencil, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { DeleteDeck } from './DeleteDeck'
 import { MENU_ICON, MENU_ITEM as ITEM } from './menu'
 
 interface Props {
   name: string; busy: boolean
-  onRename: () => void; onLook: () => void
-  /** Null when the decks' store keeps no versions. */
-  onVersions: (() => void) | null
+  onRename: () => void
   /** Null before the deck has been saved: there is nothing to delete yet. */
   onDelete: (() => void) | null
 }
 
-export function DeckMenu({ name, busy, onRename, onLook, onVersions, onDelete }: Props) {
+export function DeckMenu({ name, busy, onRename, onDelete }: Props) {
   const [confirm, setConfirm] = useState(false)
   // Rename puts the cursor in the name: the menu closing must not take focus back to its button.
   const renaming = useRef(false)
@@ -28,8 +26,6 @@ export function DeckMenu({ name, busy, onRename, onLook, onVersions, onDelete }:
         <DropdownMenuContent align="start" sideOffset={6} onCloseAutoFocus={(e) => { if (renaming.current) { e.preventDefault(); renaming.current = false } }}
           className="min-w-[180px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
           <DropdownMenuItem disabled={busy} onSelect={() => { renaming.current = true; onRename() }} className={ITEM}><Pencil {...MENU_ICON} />Rename</DropdownMenuItem>
-          <DropdownMenuItem onSelect={onLook} className={ITEM}><Palette {...MENU_ICON} />Look</DropdownMenuItem>
-          {onVersions && <DropdownMenuItem onSelect={onVersions} className={ITEM}><History {...MENU_ICON} />Versions</DropdownMenuItem>}
           {onDelete && <>
             <DropdownMenuSeparator className="bg-line" />
             <DropdownMenuItem disabled={busy} onSelect={() => setConfirm(true)} className={ITEM}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>

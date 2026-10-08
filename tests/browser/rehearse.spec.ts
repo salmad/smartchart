@@ -28,7 +28,7 @@ test('the room asks; an answer goes into the speaker notes; a gap asks for a bac
   await page.goto('/d/d_r')
   await page.getByRole('button', { name: 'Storyline' }).click()
   const view = page.getByRole('region', { name: 'Rehearse' })
-  await view.getByRole('button', { name: 'Ask me the room’s questions' }).click()
+  await view.getByRole('button', { name: /^Ask me the board’s questions|^Ask me investors’ questions/ }).click()
   await expect(view.getByText('“What if interchange rates are capped?”')).toBeVisible()
   await expect(view.getByText(/Not in the deck: The deck does not say/)).toBeVisible()
   await view.getByRole('button', { name: 'Add the answer to my notes' }).click()

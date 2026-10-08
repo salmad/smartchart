@@ -74,7 +74,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
             </button>
           ))}
         </div>
-        <div ref={(el) => { film.current = el; fadeFilm(el) }} role="tabpanel" className="edge-fade relative flex gap-6 overflow-x-auto px-0.5 pb-3 pt-0.5">
+        <div ref={(el) => { film.current = el; fadeFilm(el) }} role="tabpanel" className="edge-fade relative flex gap-6 overflow-x-auto px-1 pb-3 pt-1">
           {GROUPED.map((g) => (
             <div key={g.id} data-group={g.id} className="flex flex-none gap-3">
               {g.starters.map((s) => (

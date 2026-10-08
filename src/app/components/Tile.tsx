@@ -18,8 +18,8 @@ export function Tile({ starter, deckStyle: style, theme, accent, onPick, onConfi
       className="group grid w-[180px] flex-none cursor-pointer gap-1.5 text-left">
       <SlideView slide={slide} deck={{ style, theme, accent }} ctx={{ ...ctx, section: Math.max(ctx.section, 1) }}
         className={cn('relative aspect-video w-full overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] transition-shadow',
-          'group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-focus-visible:shadow-[0_0_0_2px_theme(colors.ink)]',
-          selected && 'shadow-[0_0_0_2px_theme(colors.ink)] group-hover:shadow-[0_0_0_2px_theme(colors.ink)]')} />
+          'group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-focus-visible:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)]',
+          selected && 'shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)] group-hover:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)]')} />
       <span className="truncate text-[12px] leading-none text-ink-2 group-aria-pressed:text-ink">{starter.label}</span>
     </button>
   )
