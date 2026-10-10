@@ -301,28 +301,46 @@ function drawIcons(root: HTMLElement) {
   });
 }
 
-/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. Every table on the
-   slide (a pair can have two). Group rows span the table, so they are not measured. A group column comes first and
-   takes its longest heading on one line. */
+/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. A column of
+   bullets takes a double share. One exception: when equal columns would wrap a cell or heading but every column fits
+   its heading and cells on one line at its natural width, each data column takes that width plus an even part of the
+   room left, so the table reads one line per row (class one-line). Every table on the slide (a pair can have two).
+   Group rows span the table, so they are not measured. A group column comes first and takes its longest heading on
+   one line. */
 function sizeTable(slide: HTMLElement) {
   const k = slide.getBoundingClientRect().width / 1920;
   slide.querySelectorAll<HTMLElement>(".tbl").forEach((tbl) => {
     const cols = [...tbl.querySelectorAll<HTMLElement>("col")], grp = tbl.classList.contains("by-group") ? 1 : 0, col = cols[grp];
     if (!col) return;
+    // A fit can run more than once: widths from the last one would measure as content.
+    cols.forEach((c) => { c.style.width = ""; });
+    tbl.classList.remove("one-line");
     const g = grp ? (Math.max(0, ...[...tbl.querySelectorAll("td.grp > span")].map((el) => el.getBoundingClientRect().width / k)) + 28) / tbl.clientWidth : 0;
     if (grp) cols[0].style.width = `${(g * 100).toFixed(2)}%`;
     tbl.classList.add("measuring");
     const natural = Math.max(...[...tbl.querySelectorAll(`tr:not(.group) > :nth-child(${grp + 1})`)].map((c) => c.scrollWidth));
-    tbl.classList.remove("measuring");
+    // Every column on one line, unconstrained: its heading's cell is as wide as the column.
+    tbl.classList.add("one-line-measure");
+    const line = [...tbl.querySelectorAll("thead th")].map((th) => th.getBoundingClientRect().width / k);
+    tbl.classList.remove("measuring", "one-line-measure");
+    const w = tbl.clientWidth;
     // +2px: at exactly its natural width, subpixel rounding can wrap the label.
-    const share = Math.min(.4, Math.max(.2, (natural + 2) / tbl.clientWidth));
+    const share = Math.min(.4, Math.max(.2, (natural + 2) / w));
     col.style.width = `${(share * 100).toFixed(2)}%`;
     // A column of bullets explains positions: it takes a double share of the rest, so its bullets keep to a line or two.
     const data = cols.slice(grp + 1), bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex - grp - 1));
     // Pitch hides bullets, so its columns stay equal.
     const shares = data.map((_, j) => (bul.has(j) && !slide.classList.contains("style-pitch") ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
+    const room = 1 - g - share, need = data.map((_, j) => (line[grp + 1 + j] ?? 0) + 2);
+    const wraps = data.some((_, j) => need[j] > room * w * shares[j] / total);
+    const spare = room * w - need.reduce((a, b) => a + b, 0);
+    if (!bul.size && wraps && line[grp] + 2 <= share * w && spare >= 0) {
+      tbl.classList.add("one-line");
+      data.forEach((c, j) => { c.style.width = `${((need[j] + spare / data.length) / w * 100).toFixed(2)}%`; });
+      return;
+    }
     if (!grp && total === data.length) return;
-    data.forEach((c, j) => { c.style.width = `${((1 - g - share) * shares[j] / total * 100).toFixed(2)}%`; });
+    data.forEach((c, j) => { c.style.width = `${(room * shares[j] / total * 100).toFixed(2)}%`; });
   });
 }
 

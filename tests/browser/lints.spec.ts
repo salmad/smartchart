@@ -28,6 +28,17 @@ test('a full 7-row table: equal columns (L1), gap right (L3), fills the body (L5
   expect([...full.issues, ...full.warnings]).toEqual([])
 })
 
+test('a table that wraps with equal columns but fits one line per row sizes its columns to fit (L1 one-line)', async ({ page }) => {
+  const lint = await open(page)
+  const places = ['Perast + Our Lady of the Rocks', 'Kotor old town', 'Kotor–Lovćen cable car', 'Porto Montenegro', 'Naval Heritage Museum', 'Plavi Horizonti beach']
+  const why = ['Boat ride Charles will love; UNESCO town', 'Walkable, cats everywhere, cafés', 'Gondola up the mountain; coaster for you', 'Superyachts, playground, dinner', 'Climb inside a real submarine', 'Soft sand, very gentle slope']
+  const rows = places.map((p, i) => ({ cells: [p, why[i], '~20 min', '[Open](https://maps.example/q)'] }))
+  const fit = await lint({ template: 'table', title: 'Eight places cover the trip; Castel Savina and Perast are the two not to miss', table: { columns: [{ label: 'Place' }, { label: 'Why it fits you' }, { label: 'From Tivat' }, { label: 'Map' }], rows } })
+  expect(fit.issues, JSON.stringify(fit)).toEqual([])
+  const oneLine = await page.$eval('.tbl', (t) => t.classList.contains('one-line') && [...t.querySelectorAll('tbody td')].every((td) => td.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(td).lineHeight) * (td.closest('.slide') as HTMLElement).getBoundingClientRect().width / 1920 + 20))
+  expect(oneLine).toBe(true)
+})
+
 test('pitch gap is 72 px: no L3 issue', async ({ page }) => {
   const lint = await open(page)
   const pitch = await lint({ template: 'steps', title: 'The plan', subtitle: 'Five million to a funded book.', steps: [
