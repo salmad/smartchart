@@ -289,7 +289,7 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
 } });
-const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
+const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
 
 /* A small table for half a slide: no icons, no group headings, no bullets in cells (checked in checkGrid). */
 const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns, at most 5 rows. Marks, cell notes and status labels work; bullets, icons and group headings do not.", { fields: {
@@ -623,9 +623,10 @@ export function describe(id: TemplateId, style: Style = "consulting"): TemplateC
 /** The slide's line in the storyline: its title, or (no title) the number's caption or the quote. */
 export const headline = (s: Partial<Slide> | null | undefined): string => plain(s?.title || s?.number?.caption || s?.quote || "");
 
-/** A link in a source or footnote: [label](https://…). Only its label counts as text. */
+/** A link: [label](https://…). Only its label counts as text. */
 export const LINK_RE = /\[([^\][]+)\]\((https?:\/\/[^\s)]+)\)/g;
-const LINKED = new Set(["source", "footnote"]);
+/** Fields that state the point or name a part: a link there would pull the eye off the claim. Links go anywhere else. */
+const UNLINKED = new Set(["title", "subtitle", "kicker", "takeaway", "caption", "notesTitle", "label"]);
 export const plain = (s: unknown): string => String(s).replace(LINK_RE, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");
 const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 
@@ -646,7 +647,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       if (typeof value !== "string") { out.errors.push(`${path}: must be a string.`); return; }
       if (/<[a-z/][^>]*>/i.test(value)) out.errors.push(`${path}: HTML is not allowed. Use the markup syntax instead.`);
       if (def.type === "text" && MARKUP_RE.test(value)) out.errors.push(`${path}: plain text only; remove the markup.`);
-      if (new RegExp(LINK_RE.source).test(value) && !LINKED.has(path.split(".").pop() ?? "")) out.errors.push(`${path}: links go in source or footnote, not here.`);
+      if (new RegExp(LINK_RE.source).test(value) && UNLINKED.has(path.split(".").pop() ?? "")) out.errors.push(`${path}: no links here. Link the words in the body, the source or the footnote.`);
       const len = plain(value).length;
       if (max && len > max) out.errors.push(`${path}: ${len} characters, limit ${max} (${len - max} too many). Shorten this field only.`);
       break;

@@ -12,15 +12,22 @@ export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, (c) => ENTITIES[c]);
+/** A link, in any text field: `[FCA report](https://…)` is the words with a small arrow (kept on the last word's line),
+    and a click goes to the page. */
+const EXT = `<svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>`;
 export const md = (s: unknown): string => esc(s)
   .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
   .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
-  .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>');
-/** A footnote or source line: `[FCA report](https://…)` is the words with a small arrow, and a click goes to the page. */
-const EXT = `<svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>`;
-export const mdLinked = (s: unknown): string => md(s).replace(/\[([^\][]+)\]\((https?:\/\/[^\s)<>]+)\)/g,
-  (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}${EXT}</a>`);
+  .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>')
+  .replace(/\[([^\][]+)\]\((https?:\/\/[^\s)<>]+)\)/g,
+    (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkWords(label)}</a>`);
+/** The arrow stays with the label's last word: a line never starts with it. A span adds no characters, so hand editing
+    reads the same text. */
+function linkWords(label: string): string {
+  const cut = label.search(/\S+\s*$/)
+  return `${label.slice(0, cut)}<span class="nw">${label.slice(cut)}${EXT}</span>`
+}
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
 const display = (s: string) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
@@ -246,7 +253,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
       + BODY[s.template as keyof typeof BODY](s, variant)
       + (s.takeaway ? `<div class="spacer"></div><p class="takeaway"${at("takeaway", "md")}>${md(s.takeaway)}</p>` : "");
   }
-  const fn = [s.footnote && `<p${at("footnote", "md")}>${mdLinked(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${mdLinked(s.source)}</span></p>`].filter(Boolean).join("");
+  const fn = [s.footnote && `<p${at("footnote", "md")}>${md(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${md(s.source)}</span></p>`].filter(Boolean).join("");
   const rail = s.template === "cover" ? "" : `<div class="rail"><div class="fn">${fn}</div><div class="pg">${esc(ctx.footer)}<b>${pad2(ctx.page)}</b></div></div>`;
   return `<section class="slide t-${s.template} v-${variant} style-${deck.style} theme-${deck.theme}">${body}${rail}</section>`;
 }
