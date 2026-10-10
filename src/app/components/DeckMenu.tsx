@@ -14,7 +14,8 @@ interface Props {
 
 export function DeckMenu({ name, busy, onRename, onDelete }: Props) {
   const [confirm, setConfirm] = useState(false)
-  // Rename puts the cursor in the name: the menu closing must not take focus back to its button.
+  // Rename puts the cursor in the name once the menu has gone: a menu still closing takes focus back from the field
+  // (to its button, or to itself when the field's width moves it from under the pointer) and the half-typed name is kept.
   const renaming = useRef(false)
   return (
     <>
@@ -23,9 +24,9 @@ export function DeckMenu({ name, busy, onRename, onDelete }: Props) {
           className="grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 outline-none transition-colors hover:bg-panel hover:text-ink focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel data-[state=open]:text-ink">
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" sideOffset={6} onCloseAutoFocus={(e) => { if (renaming.current) { e.preventDefault(); renaming.current = false } }}
+        <DropdownMenuContent align="start" sideOffset={6} onCloseAutoFocus={(e) => { if (renaming.current) { e.preventDefault(); renaming.current = false; onRename() } }}
           className="min-w-[180px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
-          <DropdownMenuItem disabled={busy} onSelect={() => { renaming.current = true; onRename() }} className={ITEM}><Pencil {...MENU_ICON} />Rename</DropdownMenuItem>
+          <DropdownMenuItem disabled={busy} onSelect={() => { renaming.current = true }} className={ITEM}><Pencil {...MENU_ICON} />Rename</DropdownMenuItem>
           {onDelete && <>
             <DropdownMenuSeparator className="bg-line" />
             <DropdownMenuItem disabled={busy} onSelect={() => setConfirm(true)} className={ITEM}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>
