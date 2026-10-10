@@ -1,3 +1,4 @@
+import { slideLinkOf } from '@/app/slide-link'
 import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { pathLabel } from '@/engine/comments'
 import { contexts } from '@/engine/slides/render'
@@ -29,6 +30,8 @@ export interface Pick { target: string | null; ring: string | null; onPick: (pat
 
 interface Props {
   deck: Deck; current: number; onPresent: () => void
+  /** A link on the slide to another slide: go there. */
+  onGo: (slideId: string) => void
   pick?: Pick
   /** The current slide's id: a slide the stage has not shown before comes into focus once. */
   slideId: string | undefined
@@ -37,7 +40,7 @@ interface Props {
 }
 
 /** The current slide at the largest size that leaves room for the checks and the strip; a click presents. */
-export function Stage({ deck, current, onPresent, pick, slideId, phase }: Props) {
+export function Stage({ deck, current, onPresent, onGo, pick, slideId, phase }: Props) {
   const slide = deck.slides[current]
   const frame = useRef<HTMLDivElement>(null), mark = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<string | null>(null), [label, setLabel] = useState<string | null>(null)
@@ -64,6 +67,8 @@ export function Stage({ deck, current, onPresent, pick, slideId, phase }: Props)
       <SlideFrame tour="stage" frame={frame}
         onClick={(e) => {
           if (pick) { pick.onPick(partAt(e.target)); return }
+          const to = slideLinkOf(e.target)
+          if (to) { e.preventDefault(); onGo(to); return }
           if (slide && e.detail < 2 && !(e.target instanceof Element && e.target.closest('a'))) onPresent()
         }}
         onPointerMove={pick ? (e) => setHover(partAt(e.target)) : undefined} onPointerLeave={pick ? () => setHover(null) : undefined}

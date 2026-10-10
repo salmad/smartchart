@@ -26,7 +26,7 @@ export function PrintDeck({ deck, name, onDone }: { deck: Deck; name: string; on
   const ctx = contexts(deck)
   return createPortal(
     <div className="print-deck" aria-hidden>
-      {deck.slides.map((slide, i) => <SlideView key={i} slide={slide} deck={deck} ctx={ctx[i]} className="print-slide" />)}
+      {deck.slides.map((slide, i) => <SlideView key={i} id={deck.ids?.[i]} slide={slide} deck={deck} ctx={ctx[i]} className="print-slide" />)}
     </div>,
     document.body,
   )

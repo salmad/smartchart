@@ -6,7 +6,7 @@ export interface Char { ch: string; marks: Mark[] }
 type Plain = "b" | "f" | "neg" | "pos";
 const ORDER: Plain[] = ["b", "f", "neg", "pos"];
 const TOKENS: Record<Plain, [string, string]> = { b: ["**", "**"], f: ["[[", "]]"], neg: ["[-", "-]"], pos: ["[+", "+]"] };
-const LINK = /\[([^\][]+)\]\((https?:\/\/[^\s)]+)\)/g;
+const LINK = /\[([^\][]+)\]\((https?:\/\/[^\s)]+|#[\w-]+)\)/g;
 const open = (m: Mark) => (m.startsWith("link:") ? "[" : TOKENS[m as Plain][0]);
 const close = (m: Mark) => (m.startsWith("link:") ? `](${m.slice(5)})` : TOKENS[m as Plain][1]);
 // The same pairs md() draws, so a string means the same thing here and on the slide.

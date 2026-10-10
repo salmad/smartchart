@@ -1,5 +1,6 @@
 /* The presentation (/present): full screen in its own tab, so the deck can be edited in another while this one runs.
    It shows the deck as the source tab last published it and keeps to one slide with the presenter view. */
+import { slideLinkOf } from '@/app/slide-link'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { contexts } from '@/engine/slides/render'
 import { SlideView } from './SlideView'
@@ -77,6 +78,7 @@ export function Present() {
   const ctx = deck ? contexts(deck) : []
   return (
     <div ref={rootRef} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => { press.current = null; ink.current?.up() }}
+      onClick={(e) => { const to = slideLinkOf(e.target); if (!to) return; e.preventDefault(); const i = deck?.ids?.indexOf(to) ?? -1; if (i >= 0) go(i) }}
       data-links className="fixed inset-0 z-10 grid cursor-none touch-none select-none place-items-center bg-black">
       {deck
         ? <SlideView

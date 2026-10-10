@@ -135,5 +135,5 @@ export const editKey = (d: SavedDeck): string =>
 export function deckOf(s: AppState): Deck {
   const cover = s.items.find((i) => i.slide.template === 'cover')
   const footer = cover ? plain(cover.slide.title) : ''
-  return { style: s.style, theme: s.theme, accent: s.accent, footer, slides: s.items.map((i) => i.slide) }
+  return { style: s.style, theme: s.theme, accent: s.accent, footer, slides: s.items.map((i) => i.slide), ids: s.items.map((i) => i.id) }
 }

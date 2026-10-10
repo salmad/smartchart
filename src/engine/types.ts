@@ -51,7 +51,9 @@ export interface Slide {
   talk?: string
 }
 
-export interface Deck { style: Style; theme: Theme; accent?: string | null; footer: string; slides: Slide[] }
+/** `ids`: each slide's id, in the slides' order, where the deck has them: a link to a slide names its id. */
+export interface Deck { style: Style; theme: Theme; accent?: string | null; footer: string; slides: Slide[]; ids?: string[] }
 /** `sections`: every chapter divider in the deck, in order (the agenda lists them). */
-export interface SlideContext { page: number; section: number; kicker: string; footer: string; sections?: { title: string; subtitle?: string }[] }
+/** `pages`: each slide id's page now, for links to a slide. */
+export interface SlideContext { page: number; section: number; kicker: string; footer: string; sections?: { title: string; subtitle?: string }[]; pages?: Record<string, number> }
 export interface Validation { errors: string[]; warnings: string[] }

@@ -21,7 +21,7 @@ interface Props {
 export function VersionPreview({ version: v, items, diff, current, busy, onRestore, onBack }: Props) {
   const slides = Array.isArray(items) ? items : []
   const cover = slides.find((it) => it.slide.template === 'cover')
-  const ctx = contexts({ footer: cover ? plain(cover.slide.title) : '', slides: slides.map((it) => it.slide) })
+  const ctx = contexts({ footer: cover ? plain(cover.slide.title) : '', slides: slides.map((it) => it.slide), ids: slides.map((it) => it.id) })
   const marked = new Set([...diff.added, ...diff.changed]), what = describeDiff(diff)
   const day = dayOf(v.at)
 

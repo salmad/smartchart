@@ -21,13 +21,19 @@ export const md = (s: unknown): string => esc(s)
   .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
   .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>')
   .replace(/\[([^\][]+)\]\((https?:\/\/[^\s)<>]+)\)/g,
-    (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkWords(label)}</a>`);
-/** The arrow stays with the label's last word: a line never starts with it. A span adds no characters, so hand editing
-    reads the same text. */
-function linkWords(label: string): string {
+    (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkWords(label, EXT)}</a>`)
+  // A link to a slide of the deck: the words, then the slide's page now (set by slideHTML, drawn by CSS so it is not text).
+  .replace(/\[([^\][]+)\]\(#([\w-]+)\)/g,
+    (_, label: string, id: string) => `<a href="#${id}" data-slide="${id}">${linkWords(label, `<span class="ref" data-ref="${id}"></span>`)}</a>`);
+/** The arrow (or page) stays with the label's last word: a line never starts with it. A span adds no characters, so
+    hand editing reads the same text. */
+function linkWords(label: string, tail: string): string {
   const cut = label.search(/\S+\s*$/)
-  return `${label.slice(0, cut)}<span class="nw">${label.slice(cut)}${EXT}</span>`
+  return `${label.slice(0, cut)}<span class="nw">${label.slice(cut)}${tail}</span>`
 }
+/** Each link to a slide gets that slide's page now; a link to a slide no longer in the deck shows its words alone. */
+const pageRefs = (html: string, pages: Record<string, number> | undefined) =>
+  html.replace(/<span class="ref" data-ref="([\w-]+)"><\/span>/g, (all, id: string) => (pages?.[id] ? `<span class="ref" data-ref="${id}" data-page="${pad2(pages[id])}"></span>` : all))
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
 const display = (s: string) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
@@ -213,12 +219,13 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" 
 };
 
 /** Deck context per slide: page number, section number and the default kicker. */
-export function contexts(deck: Pick<Deck, "slides" | "footer">): SlideContext[] {
+export function contexts(deck: Pick<Deck, "slides" | "footer" | "ids">): SlideContext[] {
   let section = 0, sectionTitle = "";
+  const pages = deck.ids?.length === deck.slides.length ? Object.fromEntries(deck.ids.map((id, i) => [id, i + 1])) : undefined;
   const sections = deck.slides.filter((s) => s.template === "section").map((s) => ({ title: s.title, ...(s.subtitle ? { subtitle: s.subtitle } : {}) }));
   return deck.slides.map((s, i) => {
     if (s.template === "section") { section += 1; sectionTitle = s.title; }
-    return { page: i + 1, section, kicker: sectionTitle ? `${pad2(section)} · ${sectionTitle}` : "", footer: deck.footer || "", sections };
+    return { page: i + 1, section, kicker: sectionTitle ? `${pad2(section)} · ${sectionTitle}` : "", footer: deck.footer || "", sections, ...(pages ? { pages } : {}) };
   });
 }
 
@@ -255,7 +262,7 @@ export function slideHTML(s: Slide, ctx: SlideContext, deck: Pick<Deck, "style" 
   }
   const fn = [s.footnote && `<p${at("footnote", "md")}>${md(s.footnote)}</p>`, s.source && `<p>Source: <span${at("source", "md")}>${md(s.source)}</span></p>`].filter(Boolean).join("");
   const rail = s.template === "cover" ? "" : `<div class="rail"><div class="fn">${fn}</div><div class="pg">${esc(ctx.footer)}<b>${pad2(ctx.page)}</b></div></div>`;
-  return `<section class="slide t-${s.template} v-${variant} style-${deck.style} theme-${deck.theme}">${body}${rail}</section>`;
+  return pageRefs(`<section class="slide t-${s.template} v-${variant} style-${deck.style} theme-${deck.theme}">${body}${rail}</section>`, ctx.pages);
 }
 
 /** Render one slide into a frame element, scaled to the frame's width. */

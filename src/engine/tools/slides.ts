@@ -37,6 +37,12 @@ function withNotes(w: Written, { notes, written }: { notes: string[]; written: R
   const all = [...notes, ...marks];
   return all.length ? { ...w, warnings: [...all, ...w.warnings] } : w;
 }
+/** A link to a slide names a slide of this deck: one that does not is said, and draws as its words alone. */
+function withLinks(w: Written, doc: DeckDoc): Written {
+  const ids = new Set(doc.slides.map((s) => s.id));
+  const gone = [...JSON.stringify(w.slide ?? {}).matchAll(/\[([^\][]+)\]\(#([\w-]+)\)/g)].filter((m) => !ids.has(m[2]));
+  return gone.length ? { ...w, warnings: [...gone.map((m) => `[${m[1]}](#${m[2]}): no slide ${m[2]} in this deck. Link a slideId from get_deck.`), ...w.warnings] } : w;
+}
 const parsed = (v: unknown) => { if (typeof v === "string" && /^\s*[[{]/.test(v)) { try { return JSON.parse(v) as unknown; } catch { /* keep */ } } return v; };
 const docOf = (ctx: ToolContext) => structuredClone(ctx.deck as DeckDoc);
 
@@ -48,7 +54,7 @@ export const slideTools = [
       const doc = docOf(ctx), choices = choicesToCode(parsed(slide), request), input = choices.input;
       if (slideId && (!/^s_[\w-]{1,32}$/.test(slideId) || doc.slides.some((s) => s.id === slideId)))
         throw new ToolError("bad_input", `slideId: ${slideId} is taken or malformed.`, "Leave slideId out; it is only for restoring a deleted slide.");
-      const at = insertIndex(doc, after), w = withNotes(await writeSlide(ctx, input, request), choices), id = slideId ?? newSlideId(doc);
+      const at = insertIndex(doc, after), w = withLinks(withNotes(await writeSlide(ctx, input, request), choices), doc), id = slideId ?? newSlideId(doc);
       doc.slides.splice(at, 0, { id, slide: w.slide, issues: w.issues, warnings: w.warnings, checks: [] });
       return { result: writeResult(ctx, doc, id, w, {}, true), deck: doc, events: [{ slideId: id, what: "created", paths: [] }] };
     } }),
@@ -75,7 +81,7 @@ export const slideTools = [
       const p = applyPatch(current, patch);
       if (p.errors) throw new ToolError("bad_input", p.errors.join(" | "), "read_slide shows the slide's paths.");
       if (!NAMED_MARK.test(request)) matchNewSeries(current, p.slide);
-      const w = await writeSlide(ctx, p.slide, request);
+      const w = withLinks(await writeSlide(ctx, p.slide, request), doc);
       doc.slides[index] = { ...item, slide: w.slide, issues: w.issues, warnings: w.warnings };
       const mine = w.issues.filter((i) => touches(i, p.changed)), elsewhere = w.issues.filter((i) => !touches(i, p.changed));
       return { result: writeResult(ctx, doc, slideId, { ...w, issues: mine }, { changed: p.changed, ...(elsewhere.length ? { elsewhere } : {}) }),
@@ -87,7 +93,7 @@ export const slideTools = [
     input: { type: "object", additionalProperties: false, required: ["deckId", "slideId", "slide"], properties: { deckId: DECK, slideId: SLIDE_ID, slide: SLIDE, request: REQUEST } },
     run: async (ctx, { slideId, slide, request = "" }) => {
       const doc = docOf(ctx), { item, index } = slideAt(doc, slideId), choices = choicesToCode(parsed(slide), request);
-      const w = withNotes(await writeSlide(ctx, choices.input, request), choices);
+      const w = withLinks(withNotes(await writeSlide(ctx, choices.input, request), choices), doc);
       doc.slides[index] = { ...item, slide: w.slide, issues: w.issues, warnings: w.warnings, checks: [] };
       return { result: writeResult(ctx, doc, slideId, w), deck: doc, events: [{ slideId, what: "template", paths: [] }] };
     } }),

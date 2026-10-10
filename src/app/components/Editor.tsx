@@ -151,7 +151,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
                 onMove={(id, to) => { onMove(id, to); onSelect(to) }} onAsk={(prompt) => onSend(prompt)} onTalk={onTalk} />
             </main>
           : <main className="flex min-h-0 min-w-0 flex-1 flex-col justify-center max-[900px]:contents">
-              <Stage deck={deck} current={current} pick={side === 'comments' && !lock && items[current] ? { target, ring, onPick: setTarget } : undefined} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
+              <Stage deck={deck} current={current} onGo={(id) => { const i = items.findIndex((it) => it.id === id); if (i >= 0) onSelect(i) }} pick={side === 'comments' && !lock && items[current] ? { target, ring, onPick: setTarget } : undefined} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
               {/* Under the slide and as wide as it: how its checks stand, then the deck as a filmstrip. */}
               <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W} ${UNDER_SLIDE}`}>
                 <div className="flex h-7 items-center justify-between gap-4 max-[900px]:order-1 max-[900px]:px-4">

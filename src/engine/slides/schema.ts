@@ -125,7 +125,7 @@ const FRAME: Record<string, FieldDef> = {
     desc: { consulting: "The action title: a full sentence stating the so-what. At most 2 lines.", pitch: "The topic, 1–3 words: 'Unit economics'. Exactly 1 line. No markup needed." } }),
   subtitle: f("markup", "The claim in one short sentence, ending with a full stop. Required; one line.", { required: true, max: 60, styles: PITCH }),
   takeaway: f("markup", "Optional one-line conclusion at the bottom. Must fit on ONE line.", { max: { consulting: 75, pitch: 42 } }),
-  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions. Link words with [words](https://address): they show as the words with a small arrow and open the page on a click.", { max: 110 }),
+  footnote: f("markup", "Optional footnote: definitions, caveats, assumptions. Link words with [words](https://address): they show as the words with a small arrow and open the page on a click. [words](#slideId) links another slide of the deck (a slideId from get_deck): it shows that slide's page and goes there on a click.", { max: 110 }),
   source: f("markup", "Optional source line, rendered as 'Source: …'. Do not write the prefix. Link the report by name when you know its page: `FCA report` becomes [FCA report](https://…), shown as the words with a small arrow (never paste a bare address). Several sources can each be linked.", { max: 110 }),
 };
 
@@ -289,7 +289,7 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
 } });
-const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
+const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
 
 /* A small table for half a slide: no icons, no group headings, no bullets in cells (checked in checkGrid). */
 const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns, at most 5 rows. Marks, cell notes and status labels work; bullets, icons and group headings do not.", { fields: {
@@ -623,8 +623,8 @@ export function describe(id: TemplateId, style: Style = "consulting"): TemplateC
 /** The slide's line in the storyline: its title, or (no title) the number's caption or the quote. */
 export const headline = (s: Partial<Slide> | null | undefined): string => plain(s?.title || s?.number?.caption || s?.quote || "");
 
-/** A link: [label](https://…). Only its label counts as text. */
-export const LINK_RE = /\[([^\][]+)\]\((https?:\/\/[^\s)]+)\)/g;
+/** A link: [label](https://…) to a page, or [label](#s_id) to a slide of the deck. Only its label counts as text. */
+export const LINK_RE = /\[([^\][]+)\]\((https?:\/\/[^\s)]+|#[\w-]+)\)/g;
 /** Fields that state the point or name a part: a link there would pull the eye off the claim. Links go anywhere else. */
 const UNLINKED = new Set(["title", "subtitle", "kicker", "takeaway", "caption", "notesTitle", "label"]);
 export const plain = (s: unknown): string => String(s).replace(LINK_RE, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[\[(.+?)\]\]/g, "$1").replace(/\[-(.+?)-\]/g, "$1").replace(/\[\+(.+?)\+\]/g, "$1");

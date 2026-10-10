@@ -27,12 +27,13 @@ export async function loadShared(token: string, fetcher: typeof fetch = (...a) =
   const slides = Array.isArray(d.slides) ? (d.slides as Slide[]).map(upgrade) : []
   // The footer is the cover's title, as in the editor.
   const cover = slides.find((s) => s.template === 'cover')
+  const ids = Array.isArray(d.ids) ? d.ids.filter((x): x is string => typeof x === 'string') : []
   return {
-    rev: typeof d.rev === 'number' ? d.rev : 0, ids: Array.isArray(d.ids) ? d.ids.filter((x): x is string => typeof x === 'string') : [],
+    rev: typeof d.rev === 'number' ? d.rev : 0, ids,
     name: typeof d.name === 'string' && d.name ? d.name : 'Untitled deck',
     deck: {
       style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink',
-      accent: typeof d.accent === 'string' ? d.accent : null, footer: cover ? plain(cover.title) : '', slides,
+      accent: typeof d.accent === 'string' ? d.accent : null, footer: cover ? plain(cover.title) : '', slides, ids,
     },
   }
 }
