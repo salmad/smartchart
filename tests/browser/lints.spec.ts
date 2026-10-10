@@ -28,15 +28,27 @@ test('a full 7-row table: equal columns (L1), gap right (L3), fills the body (L5
   expect([...full.issues, ...full.warnings]).toEqual([])
 })
 
-test('a table that wraps with equal columns but fits one line per row sizes its columns to fit (L1 one-line)', async ({ page }) => {
+test('a table that wraps with equal columns but fits one line per row sizes its columns to fit (L1 fitted)', async ({ page }) => {
   const lint = await open(page)
   const places = ['Perast + Our Lady of the Rocks', 'Kotor old town', 'Kotor–Lovćen cable car', 'Porto Montenegro', 'Naval Heritage Museum', 'Plavi Horizonti beach']
   const why = ['Boat ride Charles will love; UNESCO town', 'Walkable, cats everywhere, cafés', 'Gondola up the mountain; coaster for you', 'Superyachts, playground, dinner', 'Climb inside a real submarine', 'Soft sand, very gentle slope']
   const rows = places.map((p, i) => ({ cells: [p, why[i], '~20 min', '[Open](https://maps.example/q)'] }))
   const fit = await lint({ template: 'table', title: 'Eight places cover the trip; Castel Savina and Perast are the two not to miss', table: { columns: [{ label: 'Place' }, { label: 'Why it fits you' }, { label: 'From Tivat' }, { label: 'Map' }], rows } })
   expect(fit.issues, JSON.stringify(fit)).toEqual([])
-  const oneLine = await page.$eval('.tbl', (t) => t.classList.contains('one-line') && [...t.querySelectorAll('tbody td')].every((td) => td.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(td).lineHeight) * (td.closest('.slide') as HTMLElement).getBoundingClientRect().width / 1920 + 20))
+  const oneLine = await page.$eval('.tbl', (t) => t.classList.contains('fitted') && [...t.querySelectorAll('tbody td')].every((td) => td.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(td).lineHeight) * (td.closest('.slide') as HTMLElement).getBoundingClientRect().width / 1920 + 20))
   expect(oneLine).toBe(true)
+})
+
+test('a table whose prose must wrap anyway still gives short columns their one-line width, so the prose wraps less', async ({ page }) => {
+  const lint = await open(page)
+  const long = 'A long reason that cannot fit on one line in any column of this table, however the widths are split'
+  const rows = Array.from({ length: 3 }, (_, i) => ({ cells: [`Place ${i + 1}`, long, '~20 min', '[Open](https://maps.example/q)'] }))
+  const fit = await lint({ template: 'table', title, table: { columns: [{ label: 'Place' }, { label: 'Why' }, { label: 'From Tivat' }, { label: 'Map' }], rows } })
+  expect(fit.issues, JSON.stringify(fit)).toEqual([])
+  const widths = await page.$eval('.tbl', (t) => [t.classList.contains('fitted'), ...[...t.querySelectorAll('thead th')].map((th) => Math.round(th.getBoundingClientRect().width))])
+  expect(widths[0]).toBe(true)
+  // The prose column is wider than the time and link columns together.
+  expect((widths[2] as number) > (widths[3] as number) + (widths[4] as number)).toBe(true)
 })
 
 test('pitch gap is 72 px: no L3 issue', async ({ page }) => {

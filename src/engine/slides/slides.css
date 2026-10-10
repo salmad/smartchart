@@ -214,8 +214,8 @@
 .tbl.measuring { table-layout: auto; width: auto; }
 .tbl.measuring tr > :first-child { white-space: nowrap; }
 /* Measuring every column on one line, with nothing constraining the table: a column is its widest heading or cell. */
-.tbl.one-line-measure { width: max-content; }
-.tbl.one-line-measure :is(th, td) { white-space: nowrap; }
+.tbl.line-measure { width: max-content; }
+.tbl.line-measure :is(th, td) { white-space: nowrap; }
 .tbl th { font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 28px 18px 0; border-bottom: 1px solid var(--line); vertical-align: bottom; }
 .tbl td { font-size: 28px; line-height: 1.2; padding: 8px 28px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 /* L2: alignment is derived from the column's content; numbers use tabular figures so digits line up. */

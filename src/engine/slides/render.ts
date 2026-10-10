@@ -302,9 +302,11 @@ function drawIcons(root: HTMLElement) {
 }
 
 /* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. A column of
-   bullets takes a double share. One exception: when equal columns would wrap a cell or heading but every column fits
-   its heading and cells on one line at its natural width, each data column takes that width plus an even part of the
-   room left, so the table reads one line per row (class one-line). Every table on the slide (a pair can have two).
+   bullets takes a double share. Where equal columns would wrap a cell or heading, the widths lean towards fewer
+   lines, a preference rather than a rule (rows of two lines are fine, they only cost height): a column that fits on
+   one line in less than its share takes just that, and the room goes to the columns that wrap; when every column
+   fits on one line, each takes its width plus an even part of what is left (class fitted). Every table on the slide
+   (a pair can have two).
    Group rows span the table, so they are not measured. A group column comes first and takes its longest heading on
    one line. */
 function sizeTable(slide: HTMLElement) {
@@ -314,15 +316,15 @@ function sizeTable(slide: HTMLElement) {
     if (!col) return;
     // A fit can run more than once: widths from the last one would measure as content.
     cols.forEach((c) => { c.style.width = ""; });
-    tbl.classList.remove("one-line");
+    tbl.classList.remove("fitted");
     const g = grp ? (Math.max(0, ...[...tbl.querySelectorAll("td.grp > span")].map((el) => el.getBoundingClientRect().width / k)) + 28) / tbl.clientWidth : 0;
     if (grp) cols[0].style.width = `${(g * 100).toFixed(2)}%`;
     tbl.classList.add("measuring");
     const natural = Math.max(...[...tbl.querySelectorAll(`tr:not(.group) > :nth-child(${grp + 1})`)].map((c) => c.scrollWidth));
     // Every column on one line, unconstrained: its heading's cell is as wide as the column.
-    tbl.classList.add("one-line-measure");
+    tbl.classList.add("line-measure");
     const line = [...tbl.querySelectorAll("thead th")].map((th) => th.getBoundingClientRect().width / k);
-    tbl.classList.remove("measuring", "one-line-measure");
+    tbl.classList.remove("measuring", "line-measure");
     const w = tbl.clientWidth;
     // +2px: at exactly its natural width, subpixel rounding can wrap the label.
     const share = Math.min(.4, Math.max(.2, (natural + 2) / w));
@@ -332,11 +334,15 @@ function sizeTable(slide: HTMLElement) {
     // Pitch hides bullets, so its columns stay equal.
     const shares = data.map((_, j) => (bul.has(j) && !slide.classList.contains("style-pitch") ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
     const room = 1 - g - share, need = data.map((_, j) => (line[grp + 1 + j] ?? 0) + 2);
-    const wraps = data.some((_, j) => need[j] > room * w * shares[j] / total);
-    const spare = room * w - need.reduce((a, b) => a + b, 0);
-    if (!bul.size && wraps && line[grp] + 2 <= share * w && spare >= 0) {
-      tbl.classList.add("one-line");
-      data.forEach((c, j) => { c.style.width = `${((need[j] + spare / data.length) / w * 100).toFixed(2)}%`; });
+    const fits = data.map((_, j) => need[j] <= room * w * shares[j] / total);
+    if (!bul.size && fits.some((f) => !f)) {
+      tbl.classList.add("fitted");
+      const spare = room * w - need.reduce((a, b) => a + b, 0);
+      // Every column on one line: each its width and an even part of the rest.
+      if (spare >= 0) { data.forEach((c, j) => { c.style.width = `${((need[j] + spare / data.length) / w * 100).toFixed(2)}%`; }); return; }
+      // Some text wraps anyway: the short columns take their one-line width, the wrapping ones share the rest evenly.
+      const short = data.reduce((a, _, j) => a + (fits[j] ? need[j] : 0), 0), wrapping = fits.filter((f) => !f).length;
+      data.forEach((c, j) => { c.style.width = `${((fits[j] ? need[j] : (room * w - short) / wrapping) / w * 100).toFixed(2)}%`; });
       return;
     }
     if (!grp && total === data.length) return;
