@@ -5,6 +5,10 @@ import { getDb } from './_lib/db.js'
 import { modelGate } from './_lib/quota.js'
 
 const GLM_URL = 'https://api.z.ai/api/coding/paas/v4/chat/completions'
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+// The app asks for GLM 5.3 by name; with LLM_PROVIDER=openrouter (the default) the call is metered on OpenRouter
+// and answered by OPENROUTER_MODEL. Set LLM_PROVIDER=glm to go back to the GLM subscription.
+const OPENROUTER_MODEL_DEFAULT = 'anthropic/claude-haiku-5.5'
 const GLM_MODELS = new Set(['glm-5.3-flash', 'glm-5.3'])
 
 interface GlmRequest {
@@ -24,15 +28,18 @@ export async function POST(request: Request): Promise<Response> {
   const p = (await request.json().catch(() => ({}))) as GlmRequest
   if (!p.model || !GLM_MODELS.has(p.model)) return Response.json({ error: `model ${p.model} is not allowed` }, { status: 400 })
   const { model, messages, thinking = false, temperature = 0.3, max_tokens = 4000, response_format, tools, tool_choice } = p
+  const viaOpenRouter = (process.env.LLM_PROVIDER || 'openrouter') === 'openrouter'
   const t0 = performance.now()
   // An unreachable or hung upstream answers JSON, which the app turns into a plain sentence.
   let r: Response
   try {
-    r = await fetch(GLM_URL, {
+    r = await fetch(viaOpenRouter ? OPENROUTER_URL : GLM_URL, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.GLM_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${viaOpenRouter ? process.env.OPENROUTER_API_KEY : process.env.GLM_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model, messages, temperature, max_tokens, thinking: { type: thinking ? 'enabled' : 'disabled' },
+        model: viaOpenRouter ? process.env.OPENROUTER_MODEL || OPENROUTER_MODEL_DEFAULT : model,
+        messages, temperature, max_tokens,
+        ...(viaOpenRouter ? { reasoning: { enabled: thinking }, usage: { include: true } } : { thinking: { type: thinking ? 'enabled' : 'disabled' } }),
         ...(response_format ? { response_format } : {}), ...(tools ? { tools, tool_choice } : {}),
       }),
       signal: AbortSignal.timeout(55_000),
