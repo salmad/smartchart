@@ -15,7 +15,7 @@
   --fg: #16140F; --fg-2: #453F36; --muted: #776E61; --neutral: #CFC6B6;
   --focus: #2447D1; --on-focus: #FFFFFF; --neg: #D2402C; --pos: #1C8248;
 }
-.slide, .fig { --display: "Archivo", sans-serif; --text: "Geist", system-ui, sans-serif; --mono: "Geist Mono", monospace; }
+.slide, .fig, .doc { --display: "Archivo", sans-serif; --text: "Geist", system-ui, sans-serif; --mono: "Geist Mono", monospace; }
 .style-consulting { --t-size: 74px; --body: 30px; --pull: 40px; --lbl: 26px; --lbl-s: 22px; }
 .style-pitch      { --t-size: 150px; --body: 38px; --pull: 50px; --lbl: 30px; --lbl-s: 24px; }
 /* ═════════════ Reset and text ═════════════ */

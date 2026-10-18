@@ -104,12 +104,13 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
   return { issues: out, warnings };
 }
 
-/* Chart labels (spec 4.2a): none leaves the chart area, no two overlap, and no mark runs into the category labels. */
-export function chartLabelLints(slide: HTMLElement): string[] {
-  return [...slide.querySelectorAll("[data-chart]")].flatMap((host) => hostLabelLints(slide, host));
+/* Chart labels (spec 4.2a): none leaves the chart area, no two overlap, and no mark runs into the category labels.
+   `width` is the root's design width (a slide's 1920, a doc figure's canvas), so distances read in design pixels. */
+export function chartLabelLints(slide: HTMLElement, width = 1920): string[] {
+  return [...slide.querySelectorAll("[data-chart]")].flatMap((host) => hostLabelLints(slide, host, width));
 }
-function hostLabelLints(slide: HTMLElement, host: Element): string[] {
-  const R = slide.getBoundingClientRect(), k = R.width / 1920;
+function hostLabelLints(slide: HTMLElement, host: Element, width: number): string[] {
+  const R = slide.getBoundingClientRect(), k = R.width / width;
   const box = (el: Element) => { const r = el.getBoundingClientRect(); return { l: (r.left - R.left) / k, r: (r.right - R.left) / k, t: (r.top - R.top) / k, b: (r.bottom - R.top) / k }; };
   const H = box(host), out: string[] = [], labels = [...host.querySelectorAll(".plot > .lbl")].map((el) => ({ el, r: box(el) }));
   const what = (el: Element) => `“${(el.textContent ?? "").trim().slice(0, 20)}”`;

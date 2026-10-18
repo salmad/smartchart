@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Doc review · Occam dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=block" rel="stylesheet" />
+<style>
+/* Review page chrome (not part of the product). */
+html, body { margin: 0; background: #050404; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; padding: 14px 24px; font: 500 13px/1.4 "Geist Mono", monospace; color: #EDE8DE; border-bottom: 1px solid rgba(255,255,255,.08); }
+.bar a { color: inherit; opacity: .55; text-decoration: none; }
+.bar a[aria-current="page"] { opacity: 1; text-decoration: underline; }
+.bar .summary { margin-left: auto; }
+.bar ul { flex-basis: 100%; margin: 0; padding: 0; list-style: none; color: #FF5A45; }
+</style>
+</head>
+<body>
+<nav class="bar" id="bar"></nav>
+<div id="doc"></div>
+<script type="module" src="./docs.ts"></script>
+</body>
+</html>

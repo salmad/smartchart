@@ -19,6 +19,10 @@ import type { CodeBlock, FigureBlock, FigureKind } from './types.js'
 
 /** The slide body's width (1920 − 2 × 128): a figure is laid out as it would be on a slide. */
 export const FIG_WIDTH = 1664
+/** A callout or code sits in the text column, so its canvas is narrower: at full width both scale alike (720 / 1152 =
+    1040 / 1664), and their words read at a figure's size. */
+export const TEXT_WIDTH = 1152
+export const widthOf = (kind: string): number => (kind === 'callout' || kind === 'code' ? TEXT_WIDTH : FIG_WIDTH)
 /** Design heights for the kinds that fill a box (a slide body gives a chart about 640px); the rest take their content's. */
 export const FIXED_HEIGHT: Partial<Record<FigureKind, number>> = { chart: 640, pair: 640, image: 640 }
 /** The extra split class per kind, as the slide body sets it. */
@@ -53,7 +57,7 @@ export function figureCanvasHTML(f: FigureBlock, beside: boolean): string {
   return `${b.caption ? capHTML(b.caption, '', 'caption') : ''}${main}`
 }
 
-const canvas = (kind: string, theme: Theme, inner: string) => `<div class="fig-frame"><div class="fig style-consulting theme-${theme} k-${kind}">${inner}</div></div>`
+export const canvas = (kind: string, theme: Theme, inner: string): string => `<div class="fig-frame"><div class="fig style-consulting theme-${theme} k-${kind}">${inner}</div></div>`
 
 export function figureHTML(f: FigureBlock, theme: Theme, beside = true): string {
   const b = f.body

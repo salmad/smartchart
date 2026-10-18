@@ -1,0 +1,126 @@
+/* The doc's frame, as slides.css is the slide's: the page, its type, the contents, folding, and the box each figure's
+   canvas sits in. Components are styled by components.css alone; nothing here reaches inside a canvas. */
+
+/* ═════════════ Page: a 720px measure for text, figures up to 1040px, the contents beside ═════════════ */
+.doc {
+  --measure: 720px;
+  display: grid; grid-template-columns: minmax(16px, 1fr) minmax(0, var(--doc-wide, 1040px)) minmax(16px, 1fr); align-content: start;
+  padding: 72px 0 160px; min-height: 100%;
+  background: var(--bg); color: var(--fg); font-family: var(--text); font-size: 17px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased; font-kerning: normal; text-align: left;
+}
+.doc *, .doc *::before, .doc *::after { box-sizing: border-box; }
+.doc-head, .doc-body { grid-column: 2; min-width: 0; }
+.doc-head, .doc-sec > h2, .doc-body > :not(.doc-sec, .doc-fig), .sec-body > :not(.doc-fig) { max-width: var(--measure); margin-inline: auto; }
+.doc-toc { display: none; }
+@media (min-width: 1180px) {
+  .doc { grid-template-columns: minmax(32px, 1fr) minmax(0, var(--doc-wide, 1040px)) 220px minmax(32px, 1fr); column-gap: 64px; }
+  .doc-toc { display: block; grid-column: 3; grid-row: 1 / span 2; align-self: start; position: sticky; top: 72px; }
+  .doc-toc-mini { display: none; }
+}
+
+/* ═════════════ Type ═════════════ */
+.doc-title { margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1.05; letter-spacing: -.012em; text-wrap: balance; }
+.doc-sub { margin: 12px auto 0; font-size: 20px; line-height: 1.4; color: var(--fg-2); text-wrap: balance; }
+.doc-head { margin-bottom: 48px; }
+.doc-sec > h2 { margin-top: 64px; margin-bottom: 0; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 30px; line-height: 1.1; letter-spacing: -.008em; }
+:is(.doc-body, .sec-body) > h3 { margin: 32px auto 0; font-size: 19px; font-weight: 600; line-height: 1.3; }
+/* Text rules name the doc's own blocks (links stay at low specificity under the contents' own): a canvas's words are the components' alone. */
+:is(.doc-body, .sec-body) > :is(p, .doc-list, blockquote) { margin-top: 16px; margin-bottom: 0; }
+.doc-sec > h2 + .sec-body > :first-child, :is(.doc-body, .sec-body) > h3 + p { margin-top: 12px; }
+:where(.doc) a:not(.fig *) { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 2px; }
+:where(.doc) a:not(.fig *):hover { text-decoration-color: currentColor; }
+:where(.doc) a:not(.fig *) .ext { display: inline-block; width: .8em; height: .8em; margin-left: .25em; vertical-align: -.05em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.doc-sec > h2 > a { text-decoration: none; }
+.doc-list { padding: 0; list-style: none; display: grid; gap: 8px; }
+ul.doc-list > li { position: relative; padding-left: 28px; }
+ul.doc-list > li::before { content: "—"; position: absolute; left: 0; color: var(--muted); }
+ol.doc-list { counter-reset: n; }
+ol.doc-list > li { position: relative; padding-left: 36px; counter-increment: n; }
+ol.doc-list > li::before { content: counter(n, decimal-leading-zero); position: absolute; left: 0; top: .12em; font: 500 13px/1.6 var(--mono); color: var(--focus); }
+:is(.doc-body, .sec-body) > blockquote { padding-left: 24px; border-left: 3px solid var(--focus); font-size: 19px; line-height: 1.5; }
+:is(.doc-body, .sec-body) > blockquote p { margin: 0; }
+:is(.doc-body, .sec-body) > hr { margin-top: 48px; margin-bottom: 48px; border: 0; border-top: 1px solid var(--line); }
+.doc-raw { margin-top: 16px; padding: 16px; font: 400 13px/1.5 var(--mono); white-space: pre-wrap; color: var(--neg); border: 1px dashed var(--neg); }
+
+/* ═════════════ Contents: beside the text on a wide screen, a folded list above it on a narrow one ═════════════ */
+.doc-toc ol, .doc-toc-mini ol { margin: 0; padding: 0; list-style: none; }
+.toc-h, .doc-toc-mini summary { margin: 0 0 12px; font: 500 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.doc-toc li a, .doc-toc-mini li a { display: block; padding: 5px 0 5px 12px; border-left: 1px solid var(--line); font-size: 14px; line-height: 1.35; color: var(--fg-2); text-decoration: none; }
+.doc-toc li.l3 a, .doc-toc-mini li.l3 a { padding-left: 24px; font-size: 13px; color: var(--muted); }
+.doc-toc a:hover, .doc-toc-mini a:hover { color: var(--fg); }
+.doc-toc a[aria-current="true"], .doc-toc-mini a[aria-current="true"] { color: var(--fg); border-left-color: var(--focus); box-shadow: inset 1px 0 0 var(--focus); }
+.doc-toc-mini { margin-bottom: 40px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.doc-toc-mini summary { margin: 0; cursor: pointer; list-style: none; }
+.doc-toc-mini summary::-webkit-details-marker { display: none; }
+.doc-toc-mini[open] summary { margin-bottom: 12px; }
+
+/* ═════════════ Folding: the control hangs in the gutter, so headings line up with the text ═════════════ */
+.doc-sec > h2 { position: relative; }
+.fold {
+  position: absolute; left: -36px; top: 2px; width: 28px; height: 28px; display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer;
+}
+.fold:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 6%, transparent); }
+.fold:focus-visible, .fig-expand:focus-visible, .fig-close:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fold svg { width: 18px; height: 18px; transition: transform .15s ease; }
+.doc-sec.folded > h2 .fold svg { transform: rotate(-90deg); }
+.doc-sec.folded > .sec-body { display: none; }
+@media (max-width: 819px) {
+  .doc-sec > h2 { display: flex; align-items: center; gap: 6px; }
+  .fold { position: static; flex: none; margin-left: -6px; }
+}
+
+/* ═════════════ Figures: a canvas the width of a slide's body, scaled to its frame by mount.ts ═════════════ */
+.doc-fig { position: relative; margin: 40px 0 0; }
+.doc-fig:is([data-kind="callout"], [data-kind="code"]) { max-width: var(--measure); margin-inline: auto; margin-top: 24px; }
+.fig-frame { position: relative; overflow: hidden; }
+.fig {
+  position: absolute; top: 0; left: 0; width: 1664px; transform-origin: 0 0; transform: scale(var(--s, .625));
+  display: flex; flex-direction: column; background: var(--bg); color: var(--fg); font-family: var(--text); font-size: var(--body);
+  line-height: 1.38; text-align: left; -webkit-font-smoothing: antialiased; font-kerning: normal; font-variant-ligatures: none; font-synthesis: none;
+}
+.fig.k-callout, .fig.k-code { width: 1152px; }
+.fig.k-chart, .fig.k-pair, .fig.k-image { height: 640px; }
+.fig:is(.k-chart, .k-pair, .k-image) > .grow { flex: 1; min-height: 0; }
+.fig-take { max-width: var(--measure); margin: 20px auto 0; padding: 2px 0 2px 20px; border-left: 4px solid var(--focus); font-size: 18px; font-weight: 600; line-height: 1.35; }
+.fig-take strong { color: var(--focus); font-weight: 600; }
+.fig-src { margin: 12px 0 0; font: 400 12px/1.5 var(--mono); color: var(--muted); }
+.fig-src > span + span { margin-left: .6em; }
+/* On a narrow frame the notes leave the canvas: a numbered list in the doc's type, as the slide numbers them. */
+.fig-notes { display: none; margin: 16px 0 0; padding: 0; list-style: none; counter-reset: n; }
+.doc-fig.narrow .fig-notes { display: grid; gap: 12px; }
+.fig-notes li { position: relative; padding-left: 32px; counter-increment: n; font-size: 15px; line-height: 1.45; color: var(--fg-2); }
+.fig-notes li::before { content: counter(n, decimal-leading-zero); position: absolute; left: 0; top: .15em; font: 600 12px/1.45 var(--mono); color: var(--focus); }
+.fig-notes b { font-weight: 600; color: var(--fg); }
+
+/* Expand: a narrow frame's figure opens at desktop size, in a dialog that scrolls sideways. */
+.fig-expand { display: none; }
+.doc-fig.narrow .fig-expand {
+  position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--bg) 88%, transparent); color: var(--fg-2);
+}
+.fig-expand svg, .fig-close svg { width: 16px; height: 16px; }
+.fig-dialog { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--bg); color: var(--fg); }
+.fig-dialog::backdrop { background: var(--bg); }
+.fig-scroll { height: 100%; overflow: auto; padding: 64px 16px 32px; }
+.fig-dialog .fig-frame { width: 1040px; }
+.fig-close {
+  position: fixed; top: 12px; right: 12px; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg);
+}
+
+@media (max-width: 640px) {
+  .doc { padding-top: 40px; }
+  .doc-title { font-size: 34px; }
+  .doc-sub { font-size: 18px; }
+  .doc-sec > h2 { margin-top: 48px; font-size: 26px; }
+}
+
+/* ═════════════ Print: every section open, no controls ═════════════ */
+@media print {
+  .doc { display: block; padding: 0; }
+  .doc-toc, .doc-toc-mini, .fold, .fig-expand { display: none !important; }
+  .doc-sec.folded > .sec-body { display: block; }
+  .doc-fig { break-inside: avoid; }
+}
