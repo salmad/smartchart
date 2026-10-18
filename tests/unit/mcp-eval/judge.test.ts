@@ -4,7 +4,7 @@ import type { Slide } from '@/engine/types'
 import { genericQuestions, judgePrompt, judgeSchema, transcriptText } from '../../mcp-eval/judge'
 import type { Case, Transcript } from '../../mcp-eval/types'
 
-const scoring = starters.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
+const scoring = starters.slides.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
 const c: Case = { id: 't', group: 'criteria', style: 'consulting', prompt: 'p', gold: 'table', acceptable: [], ask: false, files: [], facts: { numbers: [], names: [] },
   questions: [{ q: 'Is Acme highlighted?', must: true }, { q: 'Are marks used?', must: false }] }
 const t: Transcript = { init: null, finalText: 'REPLY', outcome: null, calls: [

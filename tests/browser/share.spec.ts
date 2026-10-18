@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 import starters from '../../src/engine/starters/starters.json' with { type: 'json' }
 
-const slides = (starters as { consulting?: unknown }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
+const slides = (starters.slides as { consulting?: unknown }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
 const shared = { name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides }
 
 test('a shared deck opens for a signed-out visitor, every slide in order, and presents from the slide clicked', async ({ page, context }) => {

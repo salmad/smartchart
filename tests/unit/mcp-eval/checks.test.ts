@@ -5,7 +5,7 @@ import { choiceChecks, contentSlide, factChecks, figures, renderChecks, slideTex
 import type { Case, Deck, ToolCall, Transcript } from '../../mcp-eval/types'
 
 const key = (s: string) => figures(s).map((f) => f.key)
-const scoring = starters.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
+const scoring = starters.slides.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
 const kase = (over: Partial<Case> = {}): Case => ({ id: 'c', group: 'criteria', style: 'consulting', prompt: 'Score the providers; Acme comes out on top', gold: 'table', acceptable: [], ask: false, files: [], facts: { numbers: [], names: [] }, questions: [], ...over })
 const call = (tool: string, input: Record<string, unknown> = {}, result = '{}', isError = false): ToolCall => ({ name: `mcp__smartchart__${tool}`, input, result, isError })
 const transcript = (calls: ToolCall[], finalText = '', denials: string[] = []): Transcript =>

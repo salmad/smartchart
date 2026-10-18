@@ -11,7 +11,7 @@ const WORKERS = Number(args.workers || 4);
 const { single, warmup } = JSON.parse(readFileSync("requests.json", "utf8"));
 const edits = JSON.parse(readFileSync("edits.json", "utf8"));
 // The approved gallery; edits start from a starter by id.
-const STARTERS = JSON.parse(readFileSync("../../src/engine/starters/starters.json", "utf8"));
+const STARTERS = JSON.parse(readFileSync("../../src/engine/starters/starters.json", "utf8")).slides;
 const results = existsSync("results.json") ? JSON.parse(readFileSync("results.json", "utf8")) : {};
 results.agent ||= {}; results.long ||= {}; results.edits ||= {};
 const save = () => writeFileSync("results.json", JSON.stringify(results, null, 1));

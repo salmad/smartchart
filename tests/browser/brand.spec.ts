@@ -5,7 +5,7 @@ import starters from '../../src/engine/starters/starters.json' with { type: 'jso
 import { signInAsDev } from './dev-account'
 
 signInAsDev()
-const slide = (starters as { id: string; consulting: Record<string, unknown> }[]).find((s) => s.id === 'chart-notes')?.consulting
+const slide = (starters.slides as { id: string; consulting: Record<string, unknown> }[]).find((s) => s.id === 'chart-notes')?.consulting
 const deck = { id: 'd_b', style: 'consulting', theme: 'ink', accent: null, current: 0, updated: 1, history: [], working: [], messages: [], items: [{ id: 's_0', slide, status: 'ok', errors: [], warnings: [], checks: [] }] }
 
 test('the site’s colours are offered with where they come from; the one picked is the accent', async ({ page }) => {

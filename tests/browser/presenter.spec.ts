@@ -3,7 +3,7 @@
 import { test, expect } from '@playwright/test'
 import starters from '../../src/engine/starters/starters.json' with { type: 'json' }
 
-const slides = (starters as { consulting?: Record<string, unknown> }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
+const slides = (starters.slides as { consulting?: Record<string, unknown> }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
   .map((s, i) => (i === 0 ? { ...s, talk: 'Open on the problem: founders fund the business on their own cards.\nThen hand over to the numbers.' } : s))
 const shared = { name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides }
 

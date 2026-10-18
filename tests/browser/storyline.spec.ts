@@ -5,7 +5,7 @@ import { signInAsDev } from './dev-account'
 
 signInAsDev()
 const KEY = 'smartchart.journey.decks.v1'
-const pick = (id: string) => (starters as { id: string; consulting: Record<string, unknown> }[]).find((s) => s.id === id)?.consulting ?? {}
+const pick = (id: string) => (starters.slides as { id: string; consulting: Record<string, unknown> }[]).find((s) => s.id === id)?.consulting ?? {}
 const slides = [pick('cover'), { ...pick('chart-cagr'), title: 'Revenue grew [[4.5×]] in three years' }, { ...pick('table'), title: 'Option C is the only one that keeps the top customers' }, { ...pick('cards-icon'), title: 'Approve [[option C]] now' }]
 const deck = { id: 'd_s', style: 'consulting', theme: 'ink', accent: null, current: 0, updated: 1, history: [], working: [], messages: [{ kind: 'bot', text: 'Hi.' }],
   items: slides.map((slide, i) => ({ id: `s_${i}`, slide, status: 'ok', errors: [], warnings: [], checks: [] })) }

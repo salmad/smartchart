@@ -5,7 +5,7 @@ import { galleryHtml, reportMd } from '../../mcp-eval/report'
 import { allChecks, isMagic, summarize } from '../../mcp-eval/scores'
 import type { Case, Run, Verdict } from '../../mcp-eval/types'
 
-const scoring = starters.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
+const scoring = starters.slides.find((x) => x.id === 'scoring')?.consulting as unknown as Slide
 const c: Case = { id: 't01', group: 'criteria', style: 'consulting', prompt: 'p', gold: 'table', acceptable: [], ask: false, files: [], facts: { numbers: [], names: [] },
   questions: [{ q: 'Is Acme highlighted?', must: true }, { q: 'Nice icons?', must: false }] }
 const ask: Case = { ...c, id: 'q01', group: 'ask', gold: null, ask: true, questions: [] }
