@@ -165,3 +165,9 @@ Still the Acme lending story, to rewrite around Occam or a neutral product compa
 - The terms to hunt for: loan book, lender, warehouse, interchange, borrowers, underwriting, APR, SME card spend.
 Rules: claims stay checkable and about the product (what it does, how it checks), no invented statistics or named competitors; comparisons use categories (blank canvas, generic AI slide makers). Do it one slide at a time and review each at full size in both styles; relock `tests/fixtures/example-lines.json` for what rewraps.
 Open: whether Acme stays as the sample company for the data slides (it shows a real deck) while the framing slides are Occam, or the whole gallery tells one Occam story.
+
+## 21. Docs: in-app chat agent (2026-10-19)
+Occam Docs v1 is MCP plus hand editing (spec: `docs/superpowers/specs/2026-10-19-occam-docs-design.md`). Next: a chat panel in the doc editor, like decks, running GLM on the doc's Markdown through the same doc tools (`create_block`, `update_block`, `write_doc_text`, `check_doc`).
+
+## 22. Docs and decks: live multiplayer (2026-10-19)
+v1 keeps one writer at a time (presence, a revision on every save, a stale save refused). Live co-editing, with two people typing at once and seeing each other's cursors, needs a real-time sync layer (a CRDT such as Yjs). Brainstorm it once teams use workspaces daily.
