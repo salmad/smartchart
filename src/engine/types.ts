@@ -31,6 +31,10 @@ export interface Point { title: string; text: string }
 export interface Person { photo?: ImageRef; name: string; role: string; text?: string }
 export interface LogoItem { logo: ImageRef; name: string }
 /** One half of a pair: a caption and exactly one body (a chart with optional bullets, a table, a number or points). */
+/** A callout: one line of label and text, for a note, a decision or a risk (docs: PRDs and legal memos). */
+export type CalloutTone = 'note' | 'decision' | 'risk'
+export interface Callout { tone: CalloutTone; label?: string; text: string }
+
 export interface Half { caption?: string; chart?: Chart; bullets?: string[]; table?: Table; number?: { value: string; caption: string; tone?: Tone }; points?: string[] }
 
 export interface Slide {
