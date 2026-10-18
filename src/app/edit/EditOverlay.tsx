@@ -29,21 +29,27 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
   const [col, setCol] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!slide) return
+    // Listen on the surface around the slide, not on the slide: each remount replaces the slide element, and a move
+    // that lands before the new element reaches this effect would be lost (the grip or × never appears). Only moves
+    // over the mounted slide count, as before; the overlay's own buttons are outside it.
+    const frame = host.current?.parentElement, mount = frame?.firstElementChild
+    if (!slide || !frame || !mount) return
+    const over = (e: Event) => e.target instanceof Element && mount.contains(e.target)
     // The ring and buttons stay while the pointer travels from the item to its buttons: it only drops an item
     // when another item is entered, or the pointer is well away from it (the gap in between belongs to it).
     // The column grip sits just above its header: the way up to it still belongs to the column.
     const move = (e: PointerEvent) => {
+      if (!over(e)) return
       const c = e.target instanceof Element ? cellAt(e.target)?.c : undefined
       if (c !== undefined) { setCol(c); return }
       setCol((cur) => {
-        const th = cur === null ? null : slide.querySelectorAll('th[data-path^="table.columns["]')[cur]
+        const th = cur === null ? null : mount.querySelectorAll('th[data-path^="table.columns["]')[cur]
         if (!th) return null
         const b = th.getBoundingClientRect()
         return e.clientX >= b.left - 8 && e.clientX <= b.right + 8 && e.clientY >= b.top - 40 && e.clientY <= b.bottom ? cur : null
       })
     }
-    const moveItem = (e: PointerEvent) => setHover((cur) => {
+    const moveItem = (e: PointerEvent) => over(e) && setHover((cur) => {
       const next = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-item]') : null
       if (!cur || !cur.isConnected) return next
       const b = cur.getBoundingClientRect(), near = 56
@@ -53,12 +59,12 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
       return e.clientX < b.left - near || e.clientX > b.right + near || e.clientY < b.top - near || e.clientY > b.bottom + near ? null : cur
     })
     // The wrapper around the slide and the overlay: leaving the slide onto an overlay button is not leaving.
-    const leave = () => { setHover(null); setCol(null) }, frame = slide.parentElement?.parentElement
+    const leave = () => { setHover(null); setCol(null) }
     // A pair's charts are numbered (data-chart="0", "1"); a chart slide's one host has no number.
-    const click = (e: MouseEvent) => { const host = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null; if (host) onChart(Number(host.dataset.chart || 0)) }
+    const click = (e: MouseEvent) => { if (!over(e)) return; const host = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null; if (host) onChart(Number(host.dataset.chart || 0)) }
     const ro = new ResizeObserver(() => setTick((n) => n + 1))
-    slide.addEventListener('pointermove', move); slide.addEventListener('pointermove', moveItem); slide.addEventListener('click', click); frame?.addEventListener('pointerleave', leave); ro.observe(slide)
-    return () => { slide.removeEventListener('pointermove', move); slide.removeEventListener('pointermove', moveItem); frame?.removeEventListener('pointerleave', leave); slide.removeEventListener('click', click); ro.disconnect() }
+    frame.addEventListener('pointermove', move); frame.addEventListener('pointermove', moveItem); frame.addEventListener('click', click); frame.addEventListener('pointerleave', leave); ro.observe(slide)
+    return () => { frame.removeEventListener('pointermove', move); frame.removeEventListener('pointermove', moveItem); frame.removeEventListener('pointerleave', leave); frame.removeEventListener('click', click); ro.disconnect() }
   }, [slide, onChart])
 
   if (!slide || !host.current?.parentElement) return <div ref={host} className="pointer-events-none absolute inset-0" />
