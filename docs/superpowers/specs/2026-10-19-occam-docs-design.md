@@ -82,7 +82,7 @@ The doc's block kinds:
 **Sharing, concretely** (an engine-level refactor; slides must render pixel-identical before and after):
 - `src/engine/components/`: the body renderers move here out of `render.ts`: `tableHTML`, `cardHTML`, `notesHTML`, marks, logos and pictures, plus `drawChart` and `charts/`. Each takes its data, a `room` (its width class) and a base path for `data-path`. `render.ts` keeps the slide frame (head, rail, footer, template layout) and calls the components.
 - `components.css`: the component styles come out of `slides.css` with their tokens. `slides.css` imports it and keeps the frame. `doc.css` lays out the doc page: column width, the type scale, the TOC, folding, and figure spacing. Neither the app chrome nor `doc.css` styles inside a component, except through tokens the component exposes (the type scale and the room width).
-- Charts already draw into any host (`drawChart(host, spec)`, `charts/chart.ts`). Docs give the host a doc-sized box and the doc type scale. Labels are never a scaled-down slide.
+- **The figure canvas (decided 2026-10-19).** Each figure is laid out at a fixed design width (about 1200 px, with its own height) using `components.css` unchanged, and the whole canvas is scaled to the column, as a slide is scaled to its frame. One layout and one set of fitters serve both, and a figure looks the same in a doc as on a slide. On phones, a wide table gets a tap-to-expand view instead of shrinking below reading size. Charts draw into the canvas as into any host (`drawChart(host, spec)`, `components/charts/chart.ts`).
 - Colour: `colours.ts` (the allocator) runs per figure. Theme and accent are set per doc, as on a deck (`update_doc`), and default to the workspace's brand colours (`api/_lib/brand.ts`).
 
 ### 3. The doc page (layout)
@@ -143,7 +143,7 @@ There are five milestones. Each one gets its own detailed plan (`superpowers:wri
 
 **M0. Write the spec.** Commit this design as `docs/superpowers/specs/2026-10-19-occam-docs-design.md`, and add "in-app doc chat agent" and "live multiplayer" to `docs/product/FUTURE.md`.
 
-**M1. Extract the shared components (no change users can see).** Move the component renderers and their CSS into `src/engine/components/` and `components.css`. `render.ts` and `slides.css` keep only the frame.
+**M1. Extract the shared components (no change users can see).** *Built 2026-10-19, commits `015dd4a..` (see the M1 plan); the look lock showed 344 of 344 slides pixel-identical.* Move the component renderers and their CSS into `src/engine/components/` and `components.css`. `render.ts` and `slides.css` keep only the frame.
 - *Done when:* the review page (`/src/dev/review.html`, including `?stress=1` and `?theme=paper`) shows zero diffs from a baseline taken before the move, and `npm test` and `npm run test:browser` pass.
 
 **M2. The doc format and the read view.** Build `src/engine/docs/`: the parser and serializer (round-trip tests), validation (block bodies validated by the slide schema, plus the doc rules), the doc renderer (`doc.css`, TOC, folding, figure frame), and the `callout` and `code` blocks. Add a dev review page, `src/dev/docs.html`, that renders the doc starters (a competitor teardown, a PRD and a legal memo) in both themes.
@@ -160,7 +160,7 @@ There are five milestones. Each one gets its own detailed plan (`superpowers:wri
 
 ## Critical files
 
-- Reused as they are: `src/engine/slides/charts/*`, `colours.ts`, `marks.ts`, `markup.ts`, `sheet.ts`, `src/engine/agent/patch.ts`, `checks.ts`, `soft.ts`, `src/engine/comments.ts`, `versions.ts`, `api/_lib/share.ts`, `api/_lib/brand.ts`, `api/_lib/mcp.ts`, `src/engine/tools/index.ts`
+- Reused as they are: `src/engine/components/charts/*`, `colours.ts`, `marks.ts`, `markup.ts`, `sheet.ts`, `src/engine/agent/patch.ts`, `checks.ts`, `soft.ts`, `src/engine/comments.ts`, `versions.ts`, `api/_lib/share.ts`, `api/_lib/brand.ts`, `api/_lib/mcp.ts`, `src/engine/tools/index.ts`
 - Split: `src/engine/slides/render.ts` → `src/engine/components/*`; `slides.css` → `components.css` + frame
 - Generalised: `src/engine/slides/edit.ts` (any schema root), `api/_lib/db.ts` (workspace membership), `src/app/components/Decks.tsx` → workspace sidebar
 - New: `src/engine/docs/` (format, validate, render, checks), `src/app/components/docs/`, `api/docs.ts`, `src/engine/tools/docs.ts`, `src/dev/docs.html`
@@ -181,4 +181,4 @@ There are five milestones. Each one gets its own detailed plan (`superpowers:wri
 - Docs are stored as Markdown text in Postgres, with no git and no files on disk.
 - Fold state is per viewer, and print unfolds everything.
 - Agent keys span all of a user's workspaces, and tools take an optional `workspaceId`.
-- The doc type scale is new, but charts are drawn natively at doc size, never scaled-down slides.
+- The doc's text has its own type scale. Figures are drawn on a fixed-width canvas (about 1200 px) with the slide CSS and scaled to the column, and wide tables tap to expand on phones (the user chose this on 2026-10-19, revising "never scaled-down slides").
