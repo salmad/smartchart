@@ -25,8 +25,8 @@ test("palette set: greys ≥ 3:1, ≥ 14 L* apart, and distinct from focus, neg 
   }
 });
 
-test("palette values match slides.css", () => {
-  const css = readFileSync(new URL("../../src/engine/slides/slides.css", import.meta.url), "utf8");
+test("palette values match components.css", () => {
+  const css = readFileSync(new URL("../../src/engine/components/components.css", import.meta.url), "utf8");
   for (const t of THEMES) {
     const block = css.match(new RegExp(`\\.theme-${t} \\{([^}]+)\\}`))?.[1] ?? "", P = PALETTES[t];
     for (const k of ["bg", "fg", "focus", "neg", "pos"] as const) assert.ok(block.includes(`--${k}: ${P[k]}`), `${t} --${k}`);

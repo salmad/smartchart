@@ -1,0 +1,467 @@
+/* Components: what slides and docs share, the palettes and tokens, the text bits, and every body a figure is made of
+   (captions and notes, cards, tables and marks, steps, pairs, summaries, charts, pictures). Laid out at the slide's design
+   size; a host scales it. slides.css imports this and adds the frame. The reset comes first: every component rule
+   follows it. */
+
+/* ═════════════ Palettes ═════════════
+   Semantic tokens only: focus = the point, neg = the problem, pos = money made. */
+.theme-ink {
+  --bg: #0B0A09; --surface: #13110F; --line: #2A2621; --line-2: #3A352E;
+  --fg: #F3EEE4; --fg-2: #CFC8BB; --muted: #A39B8E; --neutral: #4A443B;
+  --focus: #E8B94A; --on-focus: #0B0A09; --neg: #FF5A45; --pos: #7BD88F;
+}
+.theme-paper {
+  --bg: #F6F3EC; --surface: #FFFFFF; --line: #E0D9CC; --line-2: #C4BBAA;
+  --fg: #16140F; --fg-2: #453F36; --muted: #776E61; --neutral: #CFC6B6;
+  --focus: #2447D1; --on-focus: #FFFFFF; --neg: #D2402C; --pos: #1C8248;
+}
+.slide { --display: "Archivo", sans-serif; --text: "Geist", system-ui, sans-serif; --mono: "Geist Mono", monospace; }
+.style-consulting { --t-size: 74px; --body: 30px; --pull: 40px; --lbl: 26px; --lbl-s: 22px; }
+.style-pitch      { --t-size: 150px; --body: 38px; --pull: 50px; --lbl: 30px; --lbl-s: 24px; }
+/* ═════════════ Reset and text ═════════════ */
+.slide, .slide * { box-sizing: border-box; margin: 0; padding: 0; }
+/* A link reads as the text around it does, underlined, with a small arrow; it is live only where the slide is shown whole.
+   The arrow is inline whatever the host page's reset says about svg. */
+.slide a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 2px; pointer-events: none; }
+[data-links] .slide a { pointer-events: auto; }
+.slide a .ext { display: inline-block; width: .85em; height: .85em; margin-left: .3em; vertical-align: -.08em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[data-links] .slide a:hover { text-decoration-color: currentColor; }
+/* A link to a slide: the words, then that slide's page in the mono of the page numbers. */
+.slide a .ref[data-page]::after { content: "\2192\2009" attr(data-page); margin-left: .3em; font: 500 .72em/1 var(--mono); letter-spacing: .02em; color: var(--muted); text-decoration: none; display: inline-block; }
+.shout { font-family: var(--display); font-weight: 900; font-stretch: 62%; text-transform: uppercase; line-height: .86; }
+.nw { white-space: nowrap; }
+.hl-focus { color: var(--focus); } .hl-neg { color: var(--neg); } .hl-pos { color: var(--pos); }
+.slide strong { font-weight: 700; }
+:where(.slide) :is(p, h4, li) { text-wrap: pretty; } /* no specificity: a block's own text-wrap (the subtitle's balance) wins */
+.bullets { list-style: none; display: grid; gap: 14px; }
+.bullets li { padding-left: 40px; position: relative; }
+.bullets li::before { content: "—"; position: absolute; left: 0; color: var(--muted); }
+/* ═════════════ Split layout: main ⅔ + side ⅓ (chart/table + notes, text + number) ═════════════ */
+.split { display: grid; grid-template-columns: 1.3fr .7fr; gap: 88px; }
+.notes { display: flex; flex-direction: column; min-height: 0; }
+/* Notes share the column's height in equal bands, so a short set never leaves the lower half empty beside the
+   body; a band grows past its share only when its note needs it. */
+.note { flex: 1 1 0; display: grid; grid-template-columns: 76px 1fr; align-content: start; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.note:first-child { padding-top: 0; }
+.note:last-child { border-bottom: 0; padding-bottom: 0; }
+.note .n { font: 600 30px/1.2 var(--mono); color: var(--focus); }
+.note h4 { font-size: 32px; font-weight: 600; line-height: 1.2; }
+.note p { margin-top: 8px; font-size: 25px; line-height: 1.4; color: var(--fg-2); }
+.style-pitch .note h4 { font-size: 40px; }
+/* Beside notes, a short table shares their height: rows grow evenly instead of leaving a hole below. */
+.split.with-table > .main .tbl { height: 100%; }
+.split > .main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.split > .main > .chart { flex: 1; min-height: 0; }
+/* Exhibit caption: what the chart or table shows, over a hairline. With notes, a header row on one line. */
+.cap { font-size: 26px; line-height: 1.2; font-weight: 600; color: var(--fg); padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.cap span { font-weight: 400; color: var(--muted); }
+.cap.blank { border-bottom: 0; padding: 0; }
+.style-pitch .cap { font-size: 30px; }
+.cap + .chart, .cap + .tbl { margin-top: 28px; }
+.split.has-head { grid-template-rows: auto 1fr; row-gap: 28px; }
+.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > .notes { grid-column: 2; grid-row: 1 / span 2; }
+.big-v { font-size: 420px; line-height: .8; color: var(--focus); white-space: nowrap; }
+.big-v.neg { color: var(--neg); } .big-v.pos { color: var(--pos); }
+.style-consulting .big-v { font-weight: 800; font-stretch: 78%; font-size: 360px; }
+/* ═════════════ Cards: icon lead, value lead, or two framed cards ═════════════ */
+.cards { display: grid; }
+.n-2 { grid-template-columns: repeat(2, 1fr); } .n-3 { grid-template-columns: repeat(3, 1fr); } .n-4 { grid-template-columns: repeat(4, 1fr); }
+.card { padding: 0 56px; border-left: 1px solid var(--line); min-width: 0; }
+.card:first-child { padding-left: 0; border-left: 0; }
+.n-4 .card { padding: 0 44px; }
+.n-4 .card:first-child { padding-left: 0; }
+.card .ic { color: var(--focus); }
+/* Number lead: 01, 02, 03 in the icon's place, the same height, so the row below starts at one line. */
+.card .num { height: 52px; display: flex; align-items: center; font: 600 34px/1 var(--mono); letter-spacing: .02em; color: var(--focus); }
+/* A number is a small label, not an icon: the title sits close under it. */
+.cards.numbered .num { height: auto; }
+.cards.numbered .card > h3 { margin-top: 14px; }
+/* Every card's lead, title and body sit on shared rows (the card is a subgrid), so the titles share a line and the text
+   under them starts at one level whatever the titles' lengths. Extra height goes to the body row. */
+.cards:not(.framed) { grid-template-rows: auto auto 1fr; }
+.cards:not(.framed) .card { display: grid; grid-row: span 3; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+.cards:not(.framed) .card > :is(h3, .bullets, p) { align-self: start; }
+/* Numbered and plain pitch cards have little to say and the whole slide to say it on: set larger. */
+.style-pitch .cards:is(.numbered, .plain):not(.n-4, .g-2x2) h3 { font-size: 54px; } .style-pitch .cards:is(.numbered, .plain):not(.n-4, .g-2x2) p { font-size: 38px; }
+.style-pitch .cards.numbered:not(.n-4, .g-2x2) .num { font-size: 44px; }
+.cards.plain, .cards.numbered.inline { grid-template-rows: auto 1fr; }
+/* Short of room, the number shares its line with the title: one row less per card. */
+.cards.numbered.inline .card { grid-row: span 2; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; align-items: baseline; }
+.cards.numbered.inline .num { height: auto; }
+.cards.numbered.inline .card > h3 { margin-top: 0; }
+.cards.numbered.inline .card > :is(.bullets, p) { grid-column: 1 / -1; }
+.cards.numbered.inline.g-2x2 { grid-template-rows: repeat(2, auto 1fr); } .cards.plain .card { grid-row: span 2; }
+.cards.plain .card h3 { margin-top: 0; }
+.cards.g-2x2 { grid-template-rows: repeat(2, auto auto 1fr); row-gap: 28px; }
+.cards.g-2x2.plain { grid-template-rows: repeat(2, auto 1fr); }
+.cards.g-2x2 .card { padding: 0 56px; }
+/* Two over two has half the height per row: the lead, title and bullets are set a size down. */
+.cards.g-2x2 .num { font-size: 28px; } .cards.g-2x2 .ic svg { width: 40px; height: 40px; }
+.cards.g-2x2 h3 { margin-top: 14px; font-size: 40px; } .cards.g-2x2 .bullets { margin-top: 12px; font-size: 26px; gap: 8px; } .cards.g-2x2 p { font-size: 26px; }
+.style-pitch .cards.g-2x2 h3 { font-size: 36px; } .style-pitch .cards.g-2x2 p { font-size: 28px; }
+.cards.g-2x2 .card:nth-child(odd) { padding-left: 0; border-left: 0; }
+.cards.g-2x2 .card:nth-child(even) { padding-left: 56px; }
+/* Two cards read as two halves: wide columns with the room a pair has, no rules between. */
+.cards.n-2:not(.framed):not(.g-2x2) { column-gap: 96px; }
+.cards.n-2:not(.framed):not(.g-2x2) .card { padding: 0; border: 0; }
+.card .ic svg { width: 52px; height: 52px; stroke-width: 1.5; }
+.card h3 { margin-top: 24px; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 50px; line-height: 1; }
+.card .bullets { margin-top: 20px; font-size: 28px; }
+.card p { margin-top: 14px; font-size: 28px; line-height: 1.38; color: var(--fg-2); }
+.style-pitch .card h3 { font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 40px; line-height: 1.15; }
+.style-pitch .card p { font-size: 32px; }
+.card.focus h3 { color: var(--focus); } .card.neg h3 { color: var(--neg); }
+/* Value lead: the number is the card. No rules between cards, so wide values keep their room. */
+.cards.value { gap: 48px; }
+.cards.value .card, .n-4.value .card { padding: 0; border: 0; }
+.cards.value .v { font-size: 128px; white-space: nowrap; }
+.style-pitch .cards.value .v { font-size: 158px; }
+/* Pitch is big numbers: up to three values have the width to be drawn larger (fitValues still shrinks a wide one). */
+.style-pitch .cards.value:not(.n-4) .v { font-size: 200px; }
+.cards.value .card.focus .v { color: var(--focus); } .cards.value .card.neg .v { color: var(--neg); }
+.cards.value h3 { margin-top: 22px; font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 32px; line-height: 1.2; }
+.cards.value .card.focus h3, .cards.value .card.neg h3 { color: inherit; }
+.style-pitch .cards.value h3 { font-size: 36px; }
+.cards.value p { font-size: 26px; }
+.style-pitch .cards.value p { font-size: 30px; }
+/* Framed: a two-way contrast. */
+.cards.framed { grid-template-columns: 1fr 1fr; gap: 48px; }
+.cards.framed .card { border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 36px 48px; display: flex; flex-direction: column; min-height: 0; }
+.cards.framed .card.focus { border-color: color-mix(in srgb, var(--focus) 55%, transparent); }
+.cards.framed .who { font: 500 20px/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cards.framed h3 { margin-top: 12px; font-family: var(--display); font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 86px; line-height: .86; }
+.cards.framed .bullets { margin-top: 22px; margin-bottom: 20px; gap: 10px; font-size: 29px; }
+.cards.framed p { margin-top: 24px; margin-bottom: 20px; font-size: 38px; line-height: 1.3; color: var(--fg); }
+.style-pitch .cards.framed h3 { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 130px; line-height: .86; margin-top: auto; }
+.style-pitch.t-cards:has(.takeaway) .cards.framed h3 { font-size: 96px; }
+.facts { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.facts .k { font: 500 18px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.card.neg .facts .k { color: var(--neg); } .card.focus .facts .k { color: var(--focus); }
+.facts .v { margin-top: 12px; font-size: 28px; line-height: 1.25; font-weight: 600; }
+
+/* ═════════════ Table ═════════════ */
+.tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.tbl.narrow { width: 66.667%; }
+.tbl.measuring { table-layout: auto; width: auto; }
+.tbl.measuring tr > :first-child { white-space: nowrap; }
+/* Measuring every column on one line, with nothing constraining the table: a column is its widest heading or cell. */
+.tbl.line-measure { width: max-content; }
+.tbl.line-measure :is(th, td) { white-space: nowrap; }
+.tbl th { font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 28px 18px 0; border-bottom: 1px solid var(--line); vertical-align: bottom; }
+.tbl td { font-size: 28px; line-height: 1.2; padding: 8px 28px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+/* L2: alignment is derived from the column's content; numbers use tabular figures so digits line up. */
+.tbl .al-text { text-align: left; }
+.tbl .al-num { text-align: right; }
+.tbl td.al-num { font-family: var(--mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbl .al-sym { text-align: center; }
+.tbl th:last-child, .tbl td:last-child { padding-right: 0; }
+/* A highlighted column is a quiet band (on the column, so it runs unbroken through group headings), with its header in the
+   focus colour; its body stays in ink, so the one cell the title is about ([[…]]) still stands out. Cells in the band are
+   inset so text never touches its edge; the band reaches above the header label without growing the row. */
+.tbl col.focus { background: color-mix(in srgb, var(--focus) 5%, transparent); }
+.tbl :is(th, td).focus { padding-left: 20px; }
+.tbl :is(th, td).focus:last-child { padding-right: 20px; }
+.tbl th.focus { color: var(--focus); box-shadow: 0 -16px 0 color-mix(in srgb, var(--focus) 5%, var(--bg)); }
+.tbl th.muted, .tbl td.muted { color: var(--muted); }
+.tbl .bold { font-weight: 700; }
+.tbl .italic { font-style: italic; }
+.tbl td small { display: block; margin-top: 2px; font: 400 17px/1.2 var(--mono); color: var(--muted); }
+/* A note under text (an action and its detail) is a sentence, not a working: set as body text under a headline. */
+.tbl td.al-text:has(small) > span { font-weight: 600; }
+.tbl td.al-text small { margin-top: 6px; font: 400 23px/1.35 var(--text); color: var(--fg-2); }
+.tbl tr:has(td.al-text small) td { padding-top: 20px; padding-bottom: 20px; }
+/* Header icons: above the label, quiet, aligned with the column. */
+/* Header icons: inline, left of the label, so the header keeps one line. When an icon and its label would not fit across
+   a column (render.ts measures), every icon in the table goes above its label instead. */
+.tbl th.has-ic svg { display: inline-block; width: 22px; height: 22px; margin: 0 10px 0 0; vertical-align: -5px; color: var(--muted); }
+.tbl th.has-ic > span { white-space: nowrap; }
+.tbl.ic-above th.has-ic > span { white-space: normal; }
+.tbl.ic-above th.has-ic svg { display: block; width: 28px; height: 28px; margin: 0 0 10px; vertical-align: 0; }
+.tbl.ic-above th.al-sym.has-ic svg { margin-inline: auto; }
+.tbl.ic-above th.al-num.has-ic svg { margin-left: auto; }
+/* A mark with a note: the mark centred, the note under it. */
+.tbl td.score.has-note small { text-align: center; margin-top: 6px; }
+/* Status: a neutral outline label. The value is the information, never a colour. */
+.tbl td.status > .pill { display: inline-block; padding: 7px 14px 6px; border: 1.5px solid var(--line); border-radius: 999px; font: 500 18px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); white-space: nowrap; }
+.tbl td.focus.status > .pill, .tbl tr.focus td.status > .pill { color: var(--focus); border-color: currentColor; }
+.tbl td.status small { margin-top: 8px; }
+/* Bullets in a cell: the position's lead in semibold, the reasons as small bullets under it. */
+.tbl td.has-bul > span { font-weight: 600; }
+.tbl td.has-bul .bullets { margin-top: 8px; font-size: 23px; line-height: 1.35; gap: 6px; color: var(--fg-2); }
+.tbl td.has-bul > .bullets:first-child { margin-top: 0; }
+/* Group heading: a spanning label in the header's voice, a hairline above, no fill. */
+/* One cell per column (not a spanning cell), so a highlighted column's band runs through it; the label runs on over
+   the empty cells beside it. */
+.tbl tr.group td:first-child { white-space: nowrap; overflow: visible; }
+.tbl tr.group td { padding: 26px 0 10px; border-bottom: 1px solid var(--line); font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.tbl tbody tr.group:first-child td { padding-top: 14px; }
+/* Groups as a first column (groups.ts picks it when every heading is short): the heading in the header's voice beside its
+   first row, on one line; hairlines run only beside the rows, and a firmer rule closes each group. */
+.tbl.by-group tr > td.grp { font: 500 19px/1.25 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; vertical-align: top; padding-top: 14px; }
+.tbl.by-group tr:has(td.score) > td.grp { padding-top: 18px; vertical-align: top; }
+.tbl.by-group tr:not(.grp-end) > td.grp { border-bottom-color: transparent; }
+.tbl.by-group tr.grp-end > td { border-bottom-color: var(--line-2); }
+.tbl.by-group.measuring tr > :nth-child(2) { white-space: nowrap; }
+.tbl tr.muted td { color: var(--muted); }
+.tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
+.tbl tr.total td:first-child { color: var(--fg); }
+/* A highlighted row reads in the focus colour, a total row included; its notes stay quiet. */
+.tbl tr.focus td, .tbl tr.focus.total td:first-child { color: var(--focus); }
+/* Scores: Harvey balls and ticks drawn as one set; a highlighted row or column draws them in the focus colour. */
+.tbl td.score { text-align: center; vertical-align: middle; }
+.tbl tr:has(td.score) td { padding-top: 12px; padding-bottom: 12px; vertical-align: middle; }
+/* A row that explains a position reads from the top: its lead, marks and labels line up with the first bullet's line. */
+.tbl tr:has(td.has-bul) td { vertical-align: top; }
+.mk-ball { display: inline-block; width: 32px; height: 32px; vertical-align: middle; }
+.mk-ball circle { fill: none; stroke: var(--fg-2); stroke-width: 2.5; }
+.mk-ball path, .mk-ball .full { fill: var(--fg-2); stroke: none; }
+.mk-tick { font: 600 32px/1 var(--text); }
+.mk-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.mk-tick.no { color: var(--muted); font-weight: 400; }
+.tbl :is(tr.focus, td.focus) .mk-ball circle { stroke: var(--focus); }
+.tbl :is(tr.focus, td.focus) :is(.mk-ball path, .mk-ball .full) { fill: var(--focus); }
+.tbl :is(tr.focus, td.focus) .mk-tick { color: var(--focus); }
+.style-pitch .mk-ball { width: 44px; height: 44px; }
+.mk-key { display: flex; gap: 32px; align-items: center; margin-top: 18px; font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mk-key span { display: inline-flex; align-items: center; gap: 12px; }
+.mk-key .mk-ball { width: 24px; height: 24px; }
+.style-pitch .mk-key { display: none; }
+.split.with-table > .main:has(.mk-key) .tbl { height: calc(100% - 60px); }
+.style-pitch .tbl td small, .style-pitch .tbl tr.muted { display: none; }
+.style-pitch .tbl td.has-bul .bullets { display: none; }
+.style-pitch .tbl td { font-size: 34px; padding-top: 13px; padding-bottom: 13px; }
+.style-pitch .tbl.by-group tr > td.grp, .style-pitch .tbl.by-group tr:has(td.score) > td.grp { font-size: 19px; padding-top: 22px; }
+.style-pitch .split .tbl td { font-size: 30px; }
+.style-pitch .tbl td.al-num { font-size: 32px; }
+
+/* ═════════════ Steps ═════════════ */
+.steps { display: grid; grid-template-columns: 230px 1fr; grid-auto-rows: 1fr; column-gap: 40px; }
+.steps .t { font: 600 32px/1.25 var(--mono); color: var(--focus); padding: 22px 0; border-bottom: 1px solid var(--line); }
+.steps .d { padding: 22px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 260px 1fr; gap: 32px; align-items: baseline; }
+.steps .h { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1; }
+.steps .row-focus .h { color: var(--focus); }
+.steps > :nth-last-child(-n+2) { border-bottom: 0; }
+.style-pitch .steps .h { font-weight: 900; font-stretch: 62%; text-transform: uppercase; font-size: 80px; line-height: .86; }
+.style-pitch .steps .t { font-size: 34px; padding-top: 28px; }
+.style-pitch .steps .d { padding: 20px 0; }
+
+/* ═════════════ Pair: two halves side by side, each a chart, a table, a number or points ═════════════ */
+.pair { display: grid; grid-template-columns: 1fr 1fr; column-gap: 96px; }
+.pair > .half { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.pair > .half > .chart { flex: 1; min-height: 0; }
+.pair .bullets { margin-top: 24px; font-size: 26px; gap: 10px; }
+.style-pitch .pair .bullets { font-size: 30px; }
+/* A half table fills its half: the two-column "narrow" rule is for full-width tables. */
+.pair .tbl, .pair .tbl.narrow { width: 100%; }
+/* A number half: the value at half size, its sentence under it, both from the top like a chart. */
+.half-num { display: flex; flex-direction: column; gap: 28px; }
+.half-num .big-v { font-size: 300px; }
+.style-consulting .half-num .big-v { font-size: 250px; }
+.half-num p { font-size: 34px; line-height: 1.3; color: var(--fg-2); max-width: 24ch; }
+.style-pitch .half-num p { font-size: 40px; }
+/* Mixed halves share a floor (render.ts alignHalves): a number sits on it, points are equal bands down to it. */
+.cap.ghost { color: transparent; }
+.cap.ghost + .half-num, .cap.ghost + .bullets.points { margin-top: 28px; }
+.pair > .half > .half-num { justify-content: flex-end; }
+.pair > .half > .bullets.points { display: flex; flex-direction: column; gap: 0; }
+.pair > .half > .bullets.points li { flex: 1 1 0; padding: 20px 0 20px 40px; border-bottom: 1px solid var(--line); }
+.pair > .half > .bullets.points li:first-child { padding-top: 0; }
+.pair > .half > .bullets.points li::before { top: 20px; }
+.pair > .half > .bullets.points li:first-child::before { top: 0; }
+.cap + .bullets.points, .cap + .half-num { margin-top: 28px; }
+/* Points: the half's own list, larger than the bullets under a chart. */
+.pair .bullets.points { margin-top: 0; font-size: 32px; line-height: 1.35; gap: 22px; }
+.style-pitch .pair .bullets.points { font-size: 36px; }
+
+/* ═════════════ Summary: the answer in the title, the points that prove it as numbered rows ═════════════ */
+.sum { display: grid; grid-auto-rows: 1fr; }
+.sum .row { display: grid; grid-template-columns: 76px 600px 1fr; column-gap: 48px; align-items: baseline; padding: 20px 0; border-top: 1px solid var(--line); }
+.sum .row:last-child { border-bottom: 1px solid var(--line); }
+.sum .n { font: 600 30px/1.2 var(--mono); color: var(--focus); }
+.sum .lead { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 46px; line-height: 1.02; }
+.sum .why { font-size: 28px; line-height: 1.38; color: var(--fg-2); }
+.style-pitch .sum .lead { font-size: 48px; }
+
+/* ═════════════ Charts (SVG for shapes, HTML for every label) ═════════════ */
+/* Chart text per style: --lbl for values and categories (13 pt consulting), --lbl-s for legend, ticks and captions. */
+.chart { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.legend { display: flex; gap: 36px; font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
+.legend span { display: inline-flex; align-items: center; gap: 12px; }
+.legend i { width: 16px; height: 16px; border-radius: 4px; background: var(--c); }
+.legend i.line { height: 4px; width: 26px; border-radius: 2px; }
+.plot { position: relative; flex: 1; min-height: 0; }
+.plot svg { position: absolute; inset: 0; overflow: visible; }
+/* Colour slots: values are set on the slide by the allocator (colours.js); --on-* is text on that fill. */
+/* --t is the series' own text colour: its mark colour lifted to 4.5:1 (colours.js textColours). */
+.c-focus { --c: var(--focus); --on-c: var(--on-focus); --t: var(--focus-text, var(--focus)); } .c-quiet { --c: var(--quiet, var(--neutral)); --on-c: var(--fg); --t: var(--quiet-text, var(--muted)); }
+.c-ctx1 { --c: var(--ctx1); --on-c: var(--on-ctx1); --t: var(--ctx1-text); } .c-ctx2 { --c: var(--ctx2); --on-c: var(--on-ctx2); --t: var(--ctx2-text); } .c-ctx3 { --c: var(--ctx3); --on-c: var(--on-ctx3); --t: var(--ctx3-text); }
+.c-alt1 { --c: var(--alt1); --on-c: var(--on-alt1); --t: var(--alt1-text); } .c-alt2 { --c: var(--alt2); --on-c: var(--on-alt2); --t: var(--alt2-text); }
+.c-pos { --c: var(--pos); --t: var(--pos-text, var(--pos)); } .c-total { --t: var(--fg); } .c-neg { --c: var(--neg); --t: var(--neg-text, var(--neg)); }
+.lbl { position: absolute; white-space: nowrap; line-height: 1; }
+.a-bc { transform: translate(-50%, -100%); } .a-tc { transform: translate(-50%, 0); } .a-mc { transform: translate(-50%, -50%); }
+.a-tl { transform: translate(0, -100%); } .a-tc0 { transform: none; } .a-br { transform: translate(-100%, -100%); } .a-tr { transform: translate(-100%, 0); }
+/* Value labels carry a halo in the background colour: a target line behind one is cut, never crossed. */
+.v-lbl { font: 500 var(--lbl)/1 var(--mono); color: var(--muted); background: var(--bg); padding: 3px 5px; border-radius: 4px; }
+.v-lbl[class*=" c-"] { color: var(--t); }
+.seg-lbl { font: 500 var(--lbl)/1 var(--mono); color: var(--on-c); }
+.v-lbl.c-total { color: var(--fg); font-weight: 600; }
+.cat { font: 500 var(--lbl)/1 var(--mono); color: var(--muted); letter-spacing: .06em; }
+.tick { font: 500 var(--lbl-s)/1 var(--mono); color: var(--muted); }
+.end { display: grid; gap: 8px; transform: translate(0, -50%); }
+.end b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 64px; line-height: .86; color: var(--t); }
+.end.compact { gap: 6px; } .end.compact b { font-size: 46px; }
+.end span { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--t); opacity: .85; }
+.mk { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--focus); color: var(--on-focus); font: 700 21px/1 var(--mono); }
+.bar { fill: var(--c); }
+.base { stroke: var(--line-2); stroke-width: 2; }
+/* Zero inside the plot (values below it): the zero line, the one line a reader measures against. */
+.base.zero { stroke: var(--muted); }
+.gridline { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 8; }
+.ln { fill: none; stroke: var(--c); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+.ln:not(.c-focus) { stroke-width: 3.5; }
+.ln.dashed { stroke-dasharray: 3 12; stroke-width: 4; }
+.pt { fill: var(--bg); stroke: var(--c); stroke-width: 3; }
+.pt.solid { fill: var(--c); stroke: var(--bg); stroke-width: 5; }
+.leader { stroke: var(--focus); stroke-width: 2; }
+/* Annotations: computed by code (chart-math.js), drawn in the text colours so they never read as a series. */
+.arrow { fill: none; stroke: var(--muted); stroke-width: 1.75; }
+.arrow-head, .arrow-dot { fill: var(--muted); }
+/* The computed figure is a hero number in the display face; the unit is a small caption beside it. */
+.ann { display: inline-flex; align-items: baseline; gap: 10px; padding: 10px 20px 9px; border-radius: 999px; background: var(--bg); border: 1.5px solid var(--line-2); }
+.ann b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 44px; line-height: .86; color: var(--fg); }
+.ann span { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ann.focus b { color: var(--focus); } .ann.pos b { color: var(--pos); } .ann.neg b { color: var(--neg); }
+.target { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 8 8; }
+.tgt { display: grid; justify-items: end; gap: 6px; padding-bottom: 8px; }
+.tgt span { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.tgt b { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 40px; line-height: .86; color: var(--fg); }
+.brk { stroke: var(--bg); stroke-width: 7; fill: none; }
+/* Waterfall */
+.wf { fill: var(--c); }
+.wf.c-pos { fill: var(--pos-fill); } .wf.c-neg { fill: var(--neg-fill); }
+.conn { stroke: var(--line-2); stroke-width: 1.5; }
+.wf-lbl { font-size: calc(var(--lbl) + 2px); }
+.wf-lbl.c-ctx2 { color: var(--fg); font-weight: 600; }
+.cat.wrap { white-space: normal; overflow-wrap: anywhere; text-align: center; line-height: 1.2; }
+/* Timeline */
+.grid-v { stroke: var(--line); stroke-width: 1.5; }
+.row-rule { stroke: var(--line); stroke-width: 1.5; }
+.tl-bar { fill: var(--c); }
+.row-lbl { transform: translate(0, -50%); white-space: normal; font: 500 26px/1.2 var(--text); color: var(--fg-2); }
+.row-lbl.focus { color: var(--fg); font-weight: 600; }
+.row-lbl.group { color: var(--fg); font-weight: 700; }
+.ms { fill: var(--fg); }
+.ms-line { stroke: var(--fg-2); stroke-width: 1.5; stroke-dasharray: 3 6; }
+.ms-lbl { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
+/* Ranked bars: labels right-aligned in their column, values at the bar ends. */
+.a-ml { transform: translate(0, -50%); }
+.rk-lbl { transform: translate(0, -50%); white-space: normal; text-align: right; font: 500 calc(var(--lbl) + 2px)/1.2 var(--text); color: var(--fg-2); }
+.rk-lbl.focus { color: var(--fg); font-weight: 600; }
+.rk-val.c-focus { font-weight: 600; }
+/* Matrix: a cross at the middle, the focus quadrant tinted, quiet dots, one focus dot with a halo. */
+.mx-axis { fill: none; stroke: var(--line-2); stroke-width: 2; }
+.mx-mid { stroke: var(--line); stroke-width: 1.5; }
+.mx-tint { fill: color-mix(in srgb, var(--focus) 8%, transparent); }
+.mx-dot { fill: var(--muted); }
+.mx-dot.focus { fill: var(--focus); }
+.mx-halo { fill: color-mix(in srgb, var(--focus) 22%, transparent); }
+.mx-q { font: 500 var(--lbl-s)/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.mx-q.focus { color: var(--focus-text, var(--focus)); }
+.mx-ax { font: 500 var(--lbl-s)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mx-ax.name { font-weight: 600; color: var(--fg-2); }
+.mx-lbl { font: 500 var(--lbl)/1.1 var(--text); color: var(--fg-2); }
+.mx-lbl.focus { font-size: calc(var(--lbl) + 4px); font-weight: 700; color: var(--fg); }
+.area-top { stop-color: var(--focus); stop-opacity: .28; } .area-bot { stop-color: var(--focus); stop-opacity: 0; }
+.theme-paper .area-top { stop-opacity: .16; }
+
+/* ═════════════ Pictures: a picture, the team, a wall of logos, logos by names ═════════════ */
+/* A logo is its shape in one colour: the picture is a mask over the text colour, so every logo reads on both themes.
+   Optical size from its aspect (--a): every logo covers the area of a square --b wide, then fits --mw × --mh. */
+.brand {
+  --b: 1.5em; --mw: 9em; --mh: 1.3em;
+  --h: min(calc(var(--b) / sqrt(var(--a))), var(--mh), calc(var(--mw) / var(--a)));
+  display: inline-block; flex: none; height: var(--h); width: calc(var(--h) * var(--a)); vertical-align: middle;
+  background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat;
+}
+/* By a name in a table: a symbol sits before the name; a wordmark stands in for it. */
+.tbl td.has-lg { white-space: nowrap; }
+.tbl td.has-lg > .brand { margin-right: .45em; vertical-align: -.28em; }
+.tbl td.has-lg > .brand.word { --b: 2.2em; --mh: 1.4em; --mw: 6.2em; margin-right: 0; vertical-align: -.2em; }
+.tbl tr:has(td.has-lg) td { padding-top: 12px; padding-bottom: 12px; }
+.tbl th.has-lg { color: var(--muted); }
+.tbl th.has-lg > .brand { --b: 46px; --mh: 40px; --mw: 180px; display: block; margin-bottom: 12px; color: var(--fg-2); }
+.tbl th.has-lg > .brand.word { --b: 84px; --mh: 44px; --mw: 190px; margin-bottom: 0; }
+.tbl th.al-num.has-lg > .brand { margin-left: auto; } .tbl th.al-sym.has-lg > .brand { margin-inline: auto; }
+.tbl th.focus.has-lg > .brand { color: var(--focus); }
+.tbl tr.focus td.has-lg > .brand, .tbl tr.muted td.has-lg > .brand { color: inherit; }
+/* A card led by a logo: on the icon's line, the same height band. */
+.card .lead { height: 64px; display: flex; align-items: center; }
+.card .lead .brand { --b: 64px; --mh: 60px; --mw: 280px; }
+.card .lead .brand.word { --b: 112px; --mh: 52px; }
+.card.focus .lead .brand { color: var(--focus); }
+
+/* One picture. A screenshot is fitted whole on a quiet panel (render.ts sizes it); a photo fills its frame. */
+/* The picture is out of flow: the frame's size comes from the layout alone, never from the file's pixels. */
+.pic { position: relative; min-height: 0; }
+.split .pic { flex: 1; }
+.pic img { position: absolute; top: 0; display: block; border-radius: 16px; }
+.pic.k-screenshot img { left: 50%; transform: translateX(-50%); max-width: 100%; max-height: 100%; background: var(--surface); outline: 1px solid var(--line); outline-offset: -1px; object-fit: contain; }
+.split .pic.k-screenshot img { left: 0; transform: none; }
+.pic.k-photo img { inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; }
+.cap + .pic { margin-top: 32px; }
+
+/* The team: up to 4 in a row, photo above; 5–6 as two rows of 3, photo beside. Photos square and greyscale, so five
+   sources read as one set; no photo, the initials. */
+.team { display: grid; column-gap: 56px; }
+.team.row { grid-template-columns: repeat(var(--n), 1fr); } .team.n-2 { --n: 2; } .team.n-3 { --n: 3; } .team.n-4 { --n: 4; }
+.team.rows { grid-template-columns: repeat(3, 1fr); row-gap: 56px; }
+.person { min-width: 0; }
+.team .ph { position: relative; width: min(100%, var(--pw)); aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--surface); }
+.team { --pw: 330px; } .style-pitch .team { --pw: 280px; } .style-pitch .team.n-2 { --pw: 340px; }
+.team .ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.06); border-radius: 0; }
+.theme-ink .team .ph img { filter: grayscale(1) contrast(1.06) brightness(.94); }
+.team .ini { display: grid; place-items: center; outline: 1px solid var(--line); outline-offset: -1px;
+  font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 96px; letter-spacing: .02em; color: var(--muted); }
+.team .who { margin-top: 28px; }
+.team h3 { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1; }
+.team .role { margin-top: 12px; font: 500 20px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--focus); }
+.team .bio { margin-top: 12px; font-size: 27px; line-height: 1.35; color: var(--fg-2); max-width: 30ch; }
+.team.no-ph .who { margin-top: 0; padding-top: 28px; border-top: 1px solid var(--line); }
+.team.rows .person { display: grid; grid-template-columns: 168px 1fr; column-gap: 32px; align-items: start; }
+.team.rows .ph { width: 168px; }
+.team.rows .ini { font-size: 60px; }
+.team.rows .who { margin-top: 4px; }
+.team.rows h3 { font-size: 40px; }
+.team.rows .role { margin-top: 12px; font-size: 18px; }
+.team.rows .bio { margin-top: 12px; font-size: 24px; }
+.team.rows.no-ph .person { display: block; }
+.style-pitch .team h3 { font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 42px; line-height: 1.1; }
+.style-pitch .team.rows h3 { font-size: 36px; }
+.style-pitch .team .bio { font-size: 30px; }
+.style-pitch .team.rows .bio { font-size: 26px; }
+
+/* The wall: equal cells on one grid, hairlines between them (consulting) or space alone (pitch); every logo the same
+   visual weight, centred in its cell. */
+/* Rows grow towards the bottom of the body, up to a third more, like a table's (L5). */
+.wall { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--c), 1fr); grid-auto-rows: minmax(var(--rh), calc(var(--rh) * 1.33)); align-content: start; }
+.wall.c-3 { --c: 3; } .wall.c-4 { --c: 4; } .wall.c-5 { --c: 5; } .wall.c-6 { --c: 6; }
+.wall { --rh: 220px; } .wall.r-1 { --rh: 300px; } .wall.r-3 { --rh: 200px; }
+.wall .cell { display: grid; place-items: center; min-width: 0; padding: 24px; color: var(--fg); container-type: inline-size; }
+.wall .brand { --b: 132px; --mw: 78cqw; --mh: 124px; font-size: 26px; }
+.wall.c-5 .brand, .wall.c-6 .brand { --b: 108px; --mh: 100px; }
+.wall .brand.word { --b: 156px; }
+.wall.c-5 .brand.word, .wall.c-6 .brand.word { --b: 128px; }
+.style-consulting .wall .cell { border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+.style-consulting .wall .cell.fl { border-left: 0; } .style-consulting .wall .cell.ft { border-top: 0; }
+.cap + .wall { margin-top: 28px; }
+.lg-name { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 44px; color: var(--muted); }
+
+/* ═════════════ Bars in table cells: a figure's size beside it, measured from one edge per column ═════════════ */
+.tbl td.has-bar { white-space: nowrap; }
+.tbl td.has-bar > .cbar { display: inline-block; width: calc(100% - var(--vc) * 1ch - 20px); height: .36em; margin-right: 20px; vertical-align: .2em; }
+.tbl td.has-bar > .cbar > i { display: block; height: 100%; min-width: 2px; border-radius: 2px; background: var(--neutral); }
+.tbl td.has-bar > .cbar + span { display: inline-block; min-width: calc(var(--vc) * 1ch); text-align: right; }
+.tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
+.tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
+.tbl tr.total td.has-bar > .cbar { visibility: hidden; }
