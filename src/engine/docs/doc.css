@@ -1,7 +1,7 @@
 /* The doc's frame, as slides.css is the slide's: the page, its type, the contents, folding, and the box each figure's
    canvas sits in. Components are styled by components.css alone; nothing here reaches inside a canvas. */
 
-/* ═════════════ Page: a 720px measure for text, figures up to 1040px, the contents beside ═════════════ */
+/* ═════════════ Page: one left edge; text keeps a 720px measure, figures run on to 1040px, the contents beside ═════════════ */
 .doc {
   --measure: 720px;
   display: grid; grid-template-columns: minmax(16px, 1fr) minmax(0, var(--doc-wide, 1040px)) minmax(16px, 1fr); align-content: start;
@@ -11,20 +11,24 @@
 }
 .doc *, .doc *::before, .doc *::after { box-sizing: border-box; }
 .doc-head, .doc-body { grid-column: 2; min-width: 0; }
-.doc-head, .doc-sec > h2, .doc-body > :not(.doc-sec, .doc-fig), .sec-body > :not(.doc-fig) { max-width: var(--measure); margin-inline: auto; }
+.doc-head, .doc-sec > h2, .doc-body > :not(.doc-sec, .doc-fig), .sec-body > :not(.doc-fig) { max-width: var(--measure); }
 .doc-toc { display: none; }
+/* Room on the left for the fold control that hangs beside each heading. */
+@media (min-width: 820px) { .doc { grid-template-columns: minmax(56px, 1fr) minmax(0, var(--doc-wide, 1040px)) minmax(32px, 1fr); } }
 @media (min-width: 1180px) {
-  .doc { grid-template-columns: minmax(32px, 1fr) minmax(0, var(--doc-wide, 1040px)) 220px minmax(32px, 1fr); column-gap: 64px; }
+  .doc { grid-template-columns: minmax(0, 1fr) minmax(0, var(--doc-wide, 1040px)) 220px minmax(0, 1fr); column-gap: 64px; }
   .doc-toc { display: block; grid-column: 3; grid-row: 1 / span 2; align-self: start; position: sticky; top: 72px; }
   .doc-toc-mini { display: none; }
 }
 
 /* ═════════════ Type ═════════════ */
 .doc-title { margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1.05; letter-spacing: -.012em; text-wrap: balance; }
-.doc-sub { margin: 12px auto 0; font-size: 20px; line-height: 1.4; color: var(--fg-2); text-wrap: balance; }
-.doc-head { margin-bottom: 48px; }
+.doc-sub { margin: 12px 0 0; font-size: 20px; line-height: 1.4; color: var(--fg-2); text-wrap: balance; }
+/* The first words follow the title closely: no section's top margin stacks on the head's. */
+.doc-head { margin-bottom: 40px; }
+.doc-body > :is(:first-child, .doc-toc-mini + *), .doc-body > .doc-toc-mini + .doc-sec > h2 { margin-top: 0; }
 .doc-sec > h2 { margin-top: 64px; margin-bottom: 0; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 30px; line-height: 1.1; letter-spacing: -.008em; }
-:is(.doc-body, .sec-body) > h3 { margin: 32px auto 0; font-size: 19px; font-weight: 600; line-height: 1.3; }
+:is(.doc-body, .sec-body) > h3 { margin: 32px 0 0; font-size: 19px; font-weight: 600; line-height: 1.3; }
 /* Text rules name the doc's own blocks (links stay at low specificity under the contents' own): a canvas's words are the components' alone. */
 :is(.doc-body, .sec-body) > :is(p, .doc-list, blockquote) { margin-top: 16px; margin-bottom: 0; }
 .doc-sec > h2 + .sec-body > :first-child:not(.doc-fig), :is(.doc-body, .sec-body) > h3 + p { margin-top: 12px; }
@@ -77,7 +81,7 @@ ol.doc-list > li::before { content: counter(n, decimal-leading-zero); font: 500 
 
 /* ═════════════ Figures: a canvas the width of a slide's body, scaled to its frame by mount.ts ═════════════ */
 .doc-fig { position: relative; margin: 40px 0 0; }
-.doc-fig:is([data-kind="callout"], [data-kind="code"]) { max-width: var(--measure); margin-inline: auto; margin-top: 24px; }
+.doc-fig:is([data-kind="callout"], [data-kind="code"]) { max-width: var(--measure); margin-top: 24px; }
 .fig-frame { position: relative; overflow: hidden; }
 .fig {
   position: absolute; top: 0; left: 0; width: 1664px; transform-origin: 0 0; transform: scale(var(--s, .625));
@@ -89,7 +93,7 @@ ol.doc-list > li::before { content: counter(n, decimal-leading-zero); font: 500 
 .fig:is(.k-chart, .k-pair, .k-image) > .grow { flex: 1; min-height: 0; }
 /* The caption's hairline keeps the slide's gap above whatever follows it, not only a chart or a table. */
 .fig > .cap + :not(.chart, .tbl) { margin-top: 28px; }
-.fig-take { max-width: var(--measure); margin: 20px auto 0; padding: 2px 0 2px 20px; border-left: 4px solid var(--focus); font-size: 18px; font-weight: 600; line-height: 1.35; }
+.fig-take { max-width: var(--measure); margin: 20px 0 0; padding: 2px 0 2px 20px; border-left: 4px solid var(--focus); font-size: 18px; font-weight: 600; line-height: 1.35; }
 .fig-take strong { color: var(--focus); font-weight: 600; }
 .fig-src { margin: 12px 0 0; font: 400 12px/1.5 var(--mono); color: var(--muted); }
 .fig-src > span + span { margin-left: .6em; }
