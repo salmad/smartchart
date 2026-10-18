@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { timelineLines } from '@/engine/slides/charts/timeline-rows'
+import { timelineLines } from '@/engine/components/charts/timeline-rows'
 import type { TimelineRow } from '@/engine/types'
 
 const rows: TimelineRow[] = [

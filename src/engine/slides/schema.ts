@@ -10,8 +10,8 @@
    or a number. Prototype limits are hand-tuned and proven by the stress deck;
    the product computes them from geometry (spec 4.3).
    ═══════════════════════════════════════════════════════════════════════════ */
-import { timelineLines } from "./charts/timeline-rows.js";
-import { waterfall } from "./charts/chart-math.js";
+import { timelineLines } from "../components/charts/timeline-rows.js";
+import { waterfall } from "../components/charts/chart-math.js";
 import { markKinds, markOf } from "./marks.js";
 import { groupLayout, roomOf } from "./groups.js";
 import { iconsMayStack } from "./head-icons.js";

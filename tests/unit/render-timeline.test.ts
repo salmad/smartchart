@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { test, expect } from 'vitest'
 import { allocate } from '@/engine/slides/colours'
-import { barTone, timelineChart } from '@/engine/slides/charts/chart-timeline'
-import { timelineLines } from '@/engine/slides/charts/timeline-rows'
+import { barTone, timelineChart } from '@/engine/components/charts/chart-timeline'
+import { timelineLines } from '@/engine/components/charts/timeline-rows'
 import type { Chart, Slide } from '@/engine/types'
 
 const grouped: Chart = { kind: 'timeline', periods: ['Q1', 'Q2', 'Q3', 'Q4'], rows: [

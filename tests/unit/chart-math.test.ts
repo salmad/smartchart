@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { annotationLabel, axisBreak, cagr, derivedFigures, fmt, shares, signed, waterfall } from "../../src/engine/slides/charts/chart-math";
+import { annotationLabel, axisBreak, cagr, derivedFigures, fmt, shares, signed, waterfall } from "../../src/engine/components/charts/chart-math";
 import type { Annotation, Chart, Series } from "../../src/engine/types";
 
 const label = (c: Chart, a: Annotation) => annotationLabel(c, a)?.text;

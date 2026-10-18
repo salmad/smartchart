@@ -1,7 +1,7 @@
 /* Design checks (spec 6): rule checks in code, judgment checks as one Jev call.
    They are advisory: shown on the slide, never blocking. */
 import { MENU, plain } from "../slides/schema.js";
-import { derivedFigures } from "../slides/charts/chart-math.js";
+import { derivedFigures } from "../components/charts/chart-math.js";
 import { pictureAsWords } from "../slides/images.js";
 import { jev as jevCall, type JevFn } from "./llm.js";
 import type { Slide, Style } from "../types.js";

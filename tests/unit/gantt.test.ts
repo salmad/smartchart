@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest'
 import { applyPatch } from '@/engine/agent/patch'
 import { ganttFor } from '@/engine/slides/gantt'
-import { timelineLines } from '@/engine/slides/charts/timeline-rows'
+import { timelineLines } from '@/engine/components/charts/timeline-rows'
 import type { Slide } from '@/engine/types'
 
 const must = <T>(v: T | null | undefined): T => { if (v === null || v === undefined) throw new Error('missing'); return v }

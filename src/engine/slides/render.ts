@@ -3,12 +3,11 @@ import { createElement, icons } from "lucide";
 import { MENU, NOTE_POINTS, plain } from "./schema.js";
 import type { Card, Cell, Deck, Half, ImageRef, Note, Person, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { imageMeta, isWordmark } from "./images.js";
-import { drawChart } from "./charts/chart.js";
+import { drawChart } from "../components/charts/chart.js";
 import { allocate } from "./colours.js";
 import { markKinds, markOf, type Mark } from "./marks.js";
 import { columnAlign, figureOf } from "./align.js";
 import { groupLayout, roomOf, type TableRoom } from "./groups.js";
-export { drawChart };
 
 const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, (c) => ENTITIES[c]);

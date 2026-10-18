@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import { STARTERS, FOOTER } from '@/engine/starters'
-import { shares } from '@/engine/slides/charts/chart-math'
+import { shares } from '@/engine/components/charts/chart-math'
 
 const DENY = /finbridge|amex|american express|barclaycard|barclays|lloyds|natwest|hsbc|santander|monzo|revolut|starling|\btide\b|shopify|stripe|\bvisa\b|mastercard|british business bank|uk finance|ondeck|kabbage|silvr|capital on tap|youlend/i
 const strings = (v: unknown): string[] => typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(strings) : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : []

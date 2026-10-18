@@ -1,6 +1,6 @@
 /* The timeline as a gantt (spec 4.3): bars painted across period columns, milestones placed on a period. Pure patches for
    applyPatch, the same path the agent writes on; limits come from the schema. Period indices shift with the periods. */
-import { timelineLines } from "./charts/timeline-rows.js";
+import { timelineLines } from "../components/charts/timeline-rows.js";
 import { describe, type FieldView } from "./schema.js";
 import type { Chart, Slide, Style, TimelineRow } from "../types.js";
 

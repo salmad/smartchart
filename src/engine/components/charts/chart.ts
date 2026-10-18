@@ -2,8 +2,8 @@
    series, stacked, 100% or side by side, with computed annotations), waterfall, timeline, ranked or matrix.
    Colours come from the allocator (colours.js) as slots; this file never picks a colour. */
 import { annotationLabel, annotationSeries, axisBreak, fmt, shares } from "./chart-math.js";
-import { seriesSlots } from "../colours.js";
-import type { Slot } from "../colours.js";
+import { seriesSlots } from "../../slides/colours.js";
+import type { Slot } from "../../slides/colours.js";
 import type { Chart, Series } from "../../types.js";
 import { esc, hits, labelPx, lbl, plotRects, thinCategories, topRounded } from "./chart-parts.js";
 import type { Rect } from "./chart-parts.js";
