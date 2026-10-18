@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { md } from '../../src/engine/slides/render'
+import { md } from '@/engine/components/text'
 import { plain, validate } from '../../src/engine/slides/schema'
 import { STARTERS, starterSlide } from '../../src/engine/starters'
 

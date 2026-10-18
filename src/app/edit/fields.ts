@@ -1,6 +1,6 @@
 /* A slide field as an editable element: its text in plain-text offsets, the cursor kept across a redraw. The field's
    markup string is the truth (spec 4.1); the element is always redrawn from it, so nothing the browser inserts stays. */
-import { FIELD_HTML, type FieldKind } from '@/engine/slides/render'
+import { FIELD_HTML, type FieldKind } from '@/engine/components/text'
 import { applyText } from '@/engine/slides/markup'
 
 const kindOf = (el: HTMLElement): FieldKind => (el.dataset.kind as FieldKind | undefined) ?? 'esc'

@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import { applyText, hasMark, parse, plainOf, serialize, toggle } from '@/engine/slides/markup'
-import { md } from '@/engine/slides/render'
+import { md } from '@/engine/components/text'
 import { STARTERS } from '@/engine/starters'
 import type { Slide } from '@/engine/types'
 

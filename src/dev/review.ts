@@ -2,7 +2,8 @@
    Query: style=both|consulting|pitch, theme=ink|paper, stress=1, only=<index>, full=1. Sets window.__fit. */
 import '@/engine/slides/slides.css'
 import { MENU, catalogue, describe, validateDeck } from '@/engine/slides/schema'
-import { contexts, esc, mountSlide } from '@/engine/slides/render'
+import { contexts, mountSlide } from '@/engine/slides/render'
+import { esc } from '@/engine/components/text'
 import { fitIssues, layoutLints } from '@/engine/slides/lints'
 import { FOOTER, STARTERS } from '@/engine/starters'
 import type { Slide, Style, Theme } from '@/engine/types'

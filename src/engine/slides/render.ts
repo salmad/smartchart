@@ -1,60 +1,23 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
 import { createElement, icons } from "lucide";
 import { MENU, NOTE_POINTS, plain } from "./schema.js";
-import type { Card, Cell, Deck, Half, ImageRef, Note, Person, Slide, SlideContext, Table, TemplateId } from "../types.js";
-import { imageMeta, isWordmark } from "./images.js";
+import type { Card, Cell, Deck, Half, Note, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { drawChart } from "../components/charts/chart.js";
 import { allocate } from "./colours.js";
-import { markKinds, markOf, type Mark } from "./marks.js";
+import { markKinds, markOf } from "./marks.js";
 import { columnAlign, figureOf } from "./align.js";
 import { groupLayout, roomOf, type TableRoom } from "./groups.js";
+import { at, capHTML, display, esc, item, list, md, pad2 } from "../components/text.js";
+import { ballKey, markHTML } from "../components/scores.js";
+import { imgHTML, logoHTML, named, teamHTML, wallHTML } from "../components/pictures.js";
 
-const ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
-export const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, (c) => ENTITIES[c]);
-/** A link, in any text field: `[FCA report](https://…)` is the words with a small arrow (kept on the last word's line),
-    and a click goes to the page. */
-const EXT = `<svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>`;
-export const md = (s: unknown): string => esc(s)
-  .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-  .replace(/\[\[(.+?)\]\]/g, '<span class="hl-focus">$1</span>')
-  .replace(/\[-(.+?)-\]/g, '<span class="hl-neg">$1</span>')
-  .replace(/\[\+(.+?)\+\]/g, '<span class="hl-pos">$1</span>')
-  .replace(/\[([^\][]+)\]\((https?:\/\/[^\s)<>]+)\)/g,
-    (_, label: string, url: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkWords(label, EXT)}</a>`)
-  // A link to a slide of the deck: the words, then the slide's page now (set by slideHTML, drawn by CSS so it is not text).
-  .replace(/\[([^\][]+)\]\(#([\w-]+)\)/g,
-    (_, label: string, id: string) => `<a href="#${id}" data-slide="${id}">${linkWords(label, `<span class="ref" data-ref="${id}"></span>`)}</a>`);
-/** The arrow (or page) stays with the label's last word: a line never starts with it. A span adds no characters, so
-    hand editing reads the same text. */
-function linkWords(label: string, tail: string): string {
-  const cut = label.search(/\S+\s*$/)
-  return `${label.slice(0, cut)}<span class="nw">${label.slice(cut)}${tail}</span>`
-}
 /** Each link to a slide gets that slide's page now; a link to a slide no longer in the deck shows its words alone. */
 const pageRefs = (html: string, pages: Record<string, number> | undefined) =>
   html.replace(/<span class="ref" data-ref="([\w-]+)"><\/span>/g, (all, id: string) => (pages?.[id] ? `<span class="ref" data-ref="${id}" data-page="${pad2(pages[id])}"></span>` : all))
-const pad2 = (n: number) => String(n).padStart(2, "0");
-/** Display text: hyphenated compounds ("5-hospital", "well-known") never break at the hyphen. Text only, not tags. */
-const display = (s: string) => md(s).split(/(<[^>]+>)/).map((part) => (part.startsWith("<") ? part
-  : part.replace(/[\p{L}\p{N}£$€%]+(?:[-‑][\p{L}\p{N}%]+)+/gu, (w) => `<span class="nw">${w}</span>`))).join("");
-/** How a field's string is drawn; hand editing redraws one field with the same function. */
-export type FieldKind = "md" | "display" | "esc" | "cap";
-/* Exhibit caption: the unit after the last " · " is set quieter. */
-const capInner = (text: string) => { const i = text.lastIndexOf(" · "); return i > 0 ? `${esc(text.slice(0, i))}<span> · ${esc(text.slice(i + 3))}</span>` : esc(text); };
-export const FIELD_HTML: Record<FieldKind, (s: string) => string> = { md, display, esc, cap: capInner };
-/** The field's JSON path and kind, as attributes: what hand editing reads. They change nothing on screen. */
-const at = (path: string, kind: FieldKind) => ` data-path="${path}" data-kind="${kind}"`;
-const item = (path: string) => ` data-item="${path}"`;
-const list = (items: string[], path: string) => `<ul class="bullets">${items.map((b, j) => `<li${item(`${path}[${j}]`)}${at(`${path}[${j}]`, "md")}>${md(b)}</li>`).join("")}</ul>`;
 
 const notesHTML = (notes: Note[]) => `<div class="notes">${notes.map((n, i) => `<div class="note"${item(`notes[${i}]`)}><span class="n">${pad2(i + 1)}</span>
   <div><h4${at(`notes[${i}].title`, "md")}>${md(n.title)}</h4>${n.text ? `<p${at(`notes[${i}].text`, "md")}>${md(n.text)}</p>` : ""}</div></div>`).join("")}</div>`;
 
-/* Exhibit caption: what the chart or table shows; the unit after the last " · " is set quieter. */
-const capHTML = (text: string | undefined, cls = "", path = "") => {
-  if (!text) return `<p class="cap blank ${cls}"></p>`;
-  return `<p class="cap ${cls}"${path ? at(path, "cap") : ""}>${capInner(text)}</p>`;
-};
 /* Split body: main ⅔ + notes ⅓. With a notes heading, both columns get a header row on one line (a missing
    caption stays blank). With a caption alone, the notes keep the column's full height from the body line. */
 const splitHTML = (s: Slide, main: string, extra = "") => {
@@ -62,47 +25,6 @@ const splitHTML = (s: Slide, main: string, extra = "") => {
   const cls = s.notesTitle ? "has-head" : s.caption ? "has-head cap-only" : "";
   return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${notesHTML(s.notes ?? [])}</div>`;
 };
-
-const ball = (v: number) => {
-  if (v >= 4) return `<svg class="mk-ball" viewBox="0 0 40 40" aria-hidden="true"><circle class="full" cx="20" cy="20" r="18"/></svg>`;
-  const a = v / 4 * 2 * Math.PI, x = 20 + 18 * Math.sin(a), y = 20 - 18 * Math.cos(a);
-  return `<svg class="mk-ball" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18"/>${v ? `<path d="M20,20V2A18,18 0 ${v > 2 ? 1 : 0},1 ${x},${y}Z"/>` : ""}</svg>`;
-};
-/* The cell keeps its own character as text (hidden under a drawn ball), so the field still reads as what was written. */
-const markHTML = (m: Mark, raw: string) => (m.kind === "ball" ? `${ball(m.v)}<span class="mk-txt">${esc(raw)}</span>` : `<span class="mk-tick${m.kind === "cross" ? " no" : ""}">${esc(raw)}</span>`);
-/** The key under a table of Harvey balls: what empty and full mean. Consulting only (pitch hides it in CSS). */
-const ballKey = () => `<div class="mk-key"><span>${ball(0)}None</span>${[1, 2, 3].map((v) => `<span>${ball(v)}</span>`).join("")}<span>${ball(4)}Full</span></div>`;
-
-/* Pictures. A logo is its shape drawn in one colour (a mask over currentColor), sized by CSS from its aspect (`--a`) so
-   every logo carries the same weight; a wordmark spells the name, so the name beside it is kept as hidden text. */
-const cssUrl = (src: string) => `url(&quot;${esc(src).replace(/[()\\]/g, (c) => `\\${c}`)}&quot;)`;
-/** `path` is the picture field's JSON path: what edit mode replaces. */
-const pic = (path: string) => (path ? ` data-pic="${path}"` : "");
-const logoHTML = (ref: ImageRef | undefined, name: string, path = "") => {
-  const m = imageMeta(ref?.src);
-  if (!ref || !m) return "";
-  return `<span class="brand${isWordmark(m.aspect) ? " word" : ""}"${pic(path)} role="img" aria-label="${esc(name)}" style="--a:${+m.aspect.toFixed(4)};--src:${cssUrl(ref.src)}"></span>`;
-};
-/** A logo standing in for a name: a wordmark replaces the visible name, a symbol sits before it. */
-const named = (ref: ImageRef | undefined, nameHTML: string, name: string, path: string) => {
-  const m = imageMeta(ref?.src);
-  if (!m) return nameHTML;
-  return logoHTML(ref, name, path) + (isWordmark(m.aspect) ? `<span class="mk-txt">${nameHTML}</span>` : nameHTML);
-};
-const imgHTML = (ref: ImageRef | undefined, cls: string, path: string) => {
-  const m = imageMeta(ref?.src);
-  if (!ref || !m) return `<div class="${cls} missing"></div>`;
-  return `<div class="${cls} k-${m.kind}"${pic(path)} style="--a:${+m.aspect.toFixed(4)}"><img src="${esc(ref.src)}" alt="${esc(ref.alt ?? "")}" width="${m.w}" height="${m.h}" decoding="sync" draggable="false"></div>`;
-};
-const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-/* A team with photos keeps every tile (initials stand in for one that is missing); a team without is text over a rule. */
-function personHTML(p: Person, i: number, photos: boolean) {
-  const at0 = `people[${i}]`;
-  const photo = !photos ? "" : p.photo && imageMeta(p.photo.src) ? imgHTML({ src: p.photo.src, alt: p.name }, "ph", `${at0}.photo`) : `<div class="ph ini" aria-hidden="true">${esc(initials(p.name ?? ""))}</div>`;
-  return `<div class="person"${item(at0)}>${photo}<div class="who"><h3${at(`${at0}.name`, "esc")}>${esc(p.name ?? "")}</h3><p class="role"${at(`${at0}.role`, "esc")}>${esc(p.role ?? "")}</p>${p.text ? `<p class="bio"${at(`${at0}.text`, "md")}>${md(p.text)}</p>` : ""}</div></div>`;
-}
-/* The wall's grid: 3–4 in a row, then rows of 3, 4, 5 and 6 as the count grows. */
-const wallColumns = (n: number) => (n <= 4 ? n : n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : 6);
 
 function tableHTML(t: Table, base = "table", key = true, room: TableRoom = "full") {
   const al = columnAlign(t), n = t.columns.length, byColumn = groupLayout(t, room) === "column";
@@ -208,10 +130,8 @@ const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" 
   image: (s, v) => v === "split"
     ? splitHTML(s, imgHTML(s.image, "pic", "image"), "grow with-pic")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "pic grow", "image")}`,
-  team: (s, v) => { const people = s.people ?? [], photos = people.some((p) => p?.photo);
-    return `<div class="team ${v} n-${people.length}${photos ? "" : " no-ph"}">${people.map((p, i) => personHTML(p ?? { name: "", role: "" }, i, photos)).join("")}</div>`; },
-  logos: (s) => { const logos = s.logos ?? [], cols = wallColumns(logos.length);
-    return `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="wall c-${cols} r-${Math.ceil(logos.length / cols)}">${logos.map((l, i) => `<div class="cell${i % cols ? "" : " fl"}${i < cols ? " ft" : ""}"${item(`logos[${i}]`)}>${logoHTML(l?.logo, l?.name ?? "", `logos[${i}].logo`) || `<span class="lg-name"${at(`logos[${i}].name`, "esc")}>${esc(l?.name ?? "")}</span>`}</div>`).join("")}</div>`; },
+  team: (s, v) => teamHTML(s.people ?? [], v, ""),
+  logos: (s) => `${s.caption ? capHTML(s.caption, "", "caption") : ""}${wallHTML(s.logos ?? [], "")}`,
   cards: (s, v) => { const cards = s.cards ?? [], grid = v !== "framed" && cards.length === 4 && s.arrange === "grid";
     // Four cards two over two are laid out as two columns; their rows line up like any other cards'.
     return `<div class="cards ${v} ${v === "framed" ? "grow" : grid ? "n-2 g-2x2" : `n-${cards.length}`}">${cards.map((c, i) => cardHTML(c, v, i)).join("")}</div>`; },
