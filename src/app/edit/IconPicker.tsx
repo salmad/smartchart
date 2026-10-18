@@ -11,6 +11,7 @@ import { ICONS } from '@/engine/slides/schema'
 import type { Style } from '@/engine/types'
 import { pickIcon } from './icon'
 import type { SlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 
 export const glyph = (name: string) => icons[name.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('') as keyof typeof icons]
 
@@ -59,7 +60,8 @@ function One({ edit, path, index, deckStyle, box }: { edit: SlideEdit; path: str
   )
 }
 
-export function IconPicker({ edit, slide, deckStyle }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style }) {
+export function IconPicker({ edit, surface, deckStyle }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style }) {
+  const slide = surface?.slide
   const host = useRef<HTMLDivElement>(null)
   const items = slide ? [...slide.querySelectorAll<HTMLElement>('[data-item^="cards["] > .ic')] : []
   return (

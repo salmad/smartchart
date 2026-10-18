@@ -8,6 +8,7 @@ import type { Style } from '@/engine/types'
 import type { SlideEdit } from './useSlideEdit'
 import { useCellRange } from './useCellRange'
 import { useDragMove, type Thing } from './useDragMove'
+import type { Surface } from './surface'
 
 interface Box { l: number; t: number; w: number; h: number }
 const boxIn = (el: Element, host: Element): Box => { const a = el.getBoundingClientRect(), b = host.getBoundingClientRect(); return { l: a.left - b.left, t: a.top - b.top, w: a.width, h: a.height } }
@@ -16,7 +17,7 @@ const place = (el: HTMLElement | null, b: Box) => { if (!el) return; for (const 
 const MARK = 'absolute left-[var(--l)] top-[var(--t)] w-[var(--w)] h-[var(--h)]'
 
 /** `onAddPicture`: adding to a list whose items carry a picture picks the picture first (EditPictures). */
-export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPicture }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void; onAddPicture: (op: ListOp, index: number) => void }) {
+export function EditOverlay({ edit, surface, deckStyle: style, onChart, onAddPicture }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style; onChart: (which: number) => void; onAddPicture: (op: ListOp, index: number) => void }) {
   const host = useRef<HTMLDivElement>(null), [hover, setHover] = useState<HTMLElement | null>(null), [, setTick] = useState(0)
   // A press on a grip that does not move selects the thing: a table row is its cells, anything else is the item.
   const select = (t: Thing) => {
@@ -24,22 +25,18 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
     const row = /^table\.rows\[(\d+)\]$/.exec(`${t.list}[${t.index}]`)
     edit.setTarget(row ? { kind: 'cells', r0: t.index, c0: 0, r1: t.index, c1: (edit.draft.table?.columns.length ?? 1) - 1 } : { kind: 'item', item: `${t.list}[${t.index}]` })
   }
-  const { drag, begin } = useDragMove(edit, slide, select)
-  useCellRange(edit, slide)
+  const { drag, begin } = useDragMove(edit, surface, select)
+  useCellRange(edit, surface)
   const [col, setCol] = useState<number | null>(null)
 
   useEffect(() => {
-    // Listen on the surface around the slide, not on the slide: each remount replaces the slide element, and a move
-    // that lands before the new element reaches this effect would be lost (the grip or × never appears). Only moves
-    // over the mounted slide count, as before; the overlay's own buttons are outside it.
-    const frame = host.current?.parentElement, mount = frame?.firstElementChild
-    if (!slide || !frame || !mount) return
-    const over = (e: Event) => e.target instanceof Element && mount.contains(e.target)
+    // On the mount, not the slide element: a move landing before a replaced slide reached this effect was lost (surface.ts).
+    const mount = surface?.mount, slide = surface?.slide, frame = mount?.parentElement
+    if (!mount || !slide || !frame) return
     // The ring and buttons stay while the pointer travels from the item to its buttons: it only drops an item
     // when another item is entered, or the pointer is well away from it (the gap in between belongs to it).
     // The column grip sits just above its header: the way up to it still belongs to the column.
     const move = (e: PointerEvent) => {
-      if (!over(e)) return
       const c = e.target instanceof Element ? cellAt(e.target)?.c : undefined
       if (c !== undefined) { setCol(c); return }
       setCol((cur) => {
@@ -49,7 +46,7 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
         return e.clientX >= b.left - 8 && e.clientX <= b.right + 8 && e.clientY >= b.top - 40 && e.clientY <= b.bottom ? cur : null
       })
     }
-    const moveItem = (e: PointerEvent) => over(e) && setHover((cur) => {
+    const moveItem = (e: PointerEvent) => setHover((cur) => {
       const next = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-item]') : null
       if (!cur || !cur.isConnected) return next
       const b = cur.getBoundingClientRect(), near = 56
@@ -61,12 +58,13 @@ export function EditOverlay({ edit, slide, deckStyle: style, onChart, onAddPictu
     // The wrapper around the slide and the overlay: leaving the slide onto an overlay button is not leaving.
     const leave = () => { setHover(null); setCol(null) }
     // A pair's charts are numbered (data-chart="0", "1"); a chart slide's one host has no number.
-    const click = (e: MouseEvent) => { if (!over(e)) return; const host = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null; if (host) onChart(Number(host.dataset.chart || 0)) }
+    const click = (e: MouseEvent) => { const host = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-chart]') : null; if (host) onChart(Number(host.dataset.chart || 0)) }
     const ro = new ResizeObserver(() => setTick((n) => n + 1))
-    frame.addEventListener('pointermove', move); frame.addEventListener('pointermove', moveItem); frame.addEventListener('click', click); frame.addEventListener('pointerleave', leave); ro.observe(slide)
-    return () => { frame.removeEventListener('pointermove', move); frame.removeEventListener('pointermove', moveItem); frame.removeEventListener('pointerleave', leave); frame.removeEventListener('click', click); ro.disconnect() }
-  }, [slide, onChart])
+    mount.addEventListener('pointermove', move); mount.addEventListener('pointermove', moveItem); mount.addEventListener('click', click); frame.addEventListener('pointerleave', leave); ro.observe(slide)
+    return () => { mount.removeEventListener('pointermove', move); mount.removeEventListener('pointermove', moveItem); frame.removeEventListener('pointerleave', leave); mount.removeEventListener('click', click); ro.disconnect() }
+  }, [surface, onChart])
 
+  const slide = surface?.slide
   if (!slide || !host.current?.parentElement) return <div ref={host} className="pointer-events-none absolute inset-0" />
   const frame = host.current.parentElement, ops = listOps(edit.draft, style)
   const hit = hover && listOf(ops, hover.dataset.item ?? '')

@@ -3,12 +3,15 @@
 import { useEffect, useRef } from 'react'
 import { cellAt } from './selection'
 import type { SlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 
-export function useCellRange(edit: SlideEdit, slide: HTMLElement | null) {
+export function useCellRange(edit: SlideEdit, surface: Surface | null) {
   const ref = useRef(edit)
   ref.current = edit
+  // Keyed on the mount, which stays for the whole edit: re-attaching on each remount reset a press mid-drag, and the range was lost.
+  const mount = surface?.mount
   useEffect(() => {
-    if (!slide) return
+    if (!mount) return
     let anchor: { r: number; c: number } | null = null, last: { r: number; c: number } | null = null, ranging = false
     const select = (a: { r: number; c: number }, b: { r: number; c: number }) =>
       ref.current.setTarget({ kind: 'cells', r0: Math.min(a.r, b.r), c0: Math.min(a.c, b.c), r1: Math.max(a.r, b.r), c1: Math.max(a.c, b.c) })
@@ -30,7 +33,7 @@ export function useCellRange(edit: SlideEdit, slide: HTMLElement | null) {
     }
     const up = () => { anchor = null; ranging = false }
     const start = (e: Event) => { if (ranging) e.preventDefault() }
-    slide.addEventListener('pointerdown', down); slide.addEventListener('pointermove', move); document.addEventListener('pointerup', up); slide.addEventListener('selectstart', start)
-    return () => { slide.removeEventListener('pointerdown', down); slide.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); slide.removeEventListener('selectstart', start) }
-  }, [slide])
+    mount.addEventListener('pointerdown', down); mount.addEventListener('pointermove', move); document.addEventListener('pointerup', up); mount.addEventListener('selectstart', start)
+    return () => { mount.removeEventListener('pointerdown', down); mount.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); mount.removeEventListener('selectstart', start) }
+  }, [mount])
 }

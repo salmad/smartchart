@@ -16,13 +16,14 @@ import { IconPicker } from './IconPicker'
 import { ChartGrid } from './ChartGrid'
 import { actionsFor } from '@/engine/slides/actions'
 import { useSlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 
 interface Props { item: Item; index: number; deck: Deck; deckStyle: Style; measurer: () => Measurer; save: (id: string, draft: Slide) => Promise<string | null>; onDone: () => void }
 
 export function EditMode({ item, index, deck, deckStyle: style, measurer, save, onDone }: Props) {
   const saveDraft = useCallback((d: Slide) => save(item.id, d), [save, item.id])
   const edit = useSlideEdit({ item, index, deck, style, measurer, save: saveDraft, onDone })
-  const [slideEl, setSlideEl] = useState<HTMLElement | null>(null), [grid, setGrid] = useState<number | null>(null)
+  const [surface, setSurface] = useState<Surface | null>(null), [grid, setGrid] = useState<number | null>(null)
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this slide?')) edit.discard() }, [edit])
 
   // ⌘S / ⌘↵ save; ⌘Z undoes; Bold, Focus, move and delete come from the same actions as the menu. Esc peels back one layer
@@ -64,12 +65,12 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
     <>
       <div className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4">
         <SlideFrame>
-          <EditMenu edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)}>
-            <EditSurface edit={edit} deck={deck} ctx={ctx} onSlide={setSlideEl}>
-              <EditOverlay edit={edit} slide={slideEl} deckStyle={style} onChart={(which) => setGrid(which)} onAddPicture={pictures.add} />
-              <PictureButtons slide={slideEl} pictures={pictures} />
-              <ActionBar edit={edit} slide={slideEl} deckStyle={style} />
-              <IconPicker edit={edit} slide={slideEl} deckStyle={style} />
+          <EditMenu edit={edit} surface={surface} deckStyle={style} onChart={(which) => setGrid(which)}>
+            <EditSurface edit={edit} deck={deck} ctx={ctx} onSurface={setSurface}>
+              <EditOverlay edit={edit} surface={surface} deckStyle={style} onChart={(which) => setGrid(which)} onAddPicture={pictures.add} />
+              <PictureButtons surface={surface} pictures={pictures} />
+              <ActionBar edit={edit} surface={surface} deckStyle={style} />
+              <IconPicker edit={edit} surface={surface} deckStyle={style} />
               {grid !== null && (edit.draft.chart || edit.draft.table || edit.draft.halves) && <ChartGrid edit={edit} deckStyle={style} which={grid} onClose={() => setGrid(null)} />}
             </EditSurface>
           </EditMenu>

@@ -8,6 +8,7 @@ import type { Style } from '@/engine/types'
 import { selectRange } from './fields'
 import { targetAt } from './selection'
 import type { SlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 
 const GROUPS: { id: Action['group']; label: string }[] = [
   { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Format' }, { id: 'mark', label: 'Score' },
@@ -16,7 +17,7 @@ const SYMBOLS: Record<string, string> = { Mod: '⌘', Shift: '⇧', Alt: '⌥', 
 const keys = (s?: string) => s?.split('+').map((k) => SYMBOLS[k] ?? k).join('')
 
 /** Cut, copy and paste inside the field the menu was opened on: the field takes focus back first. */
-function clip(slide: HTMLElement | null, t: Target, what: 'cut' | 'copy' | 'paste') {
+function clip(slide: HTMLElement | null | undefined, t: Target, what: 'cut' | 'copy' | 'paste') {
   if (t.kind !== 'text' || !slide) return
   const f = slide.querySelector<HTMLElement>(`[data-path="${t.path}"]`)
   if (!f) return
@@ -25,7 +26,7 @@ function clip(slide: HTMLElement | null, t: Target, what: 'cut' | 'copy' | 'past
   void navigator.clipboard.readText().then((text) => { f.focus(); selectRange(f, t.from, t.to); document.execCommand('insertText', false, text.replace(/\s+/g, ' ')) }).catch(() => { /* clipboard blocked */ })
 }
 
-export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style; onChart: (which: number) => void; children: ReactNode }) {
+export function EditMenu({ edit, surface, deckStyle, onChart, children }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style; onChart: (which: number) => void; children: ReactNode }) {
   const [target, setTarget] = useState<Target>({ kind: 'slide' }), [chartAt, setChartAt] = useState(0)
   const half = edit.draft.halves?.[chartAt]
   const actions = actionsFor(target, edit.draft, deckStyle)
@@ -46,9 +47,9 @@ export function EditMenu({ edit, slide, deckStyle, onChart, children }: { edit: 
       </ContextMenuTrigger>
       <ContextMenuContent data-edit-chrome className="min-w-52" onCloseAutoFocus={(e) => e.preventDefault()}>
         {field && (<>
-          <ContextMenuItem onSelect={() => clip(slide, target, 'cut')} disabled={target.kind === 'text' && target.from === target.to}>Cut<ContextMenuShortcut>⌘X</ContextMenuShortcut></ContextMenuItem>
-          <ContextMenuItem onSelect={() => clip(slide, target, 'copy')} disabled={target.kind === 'text' && target.from === target.to}>Copy<ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>
-          <ContextMenuItem onSelect={() => clip(slide, target, 'paste')}>Paste<ContextMenuShortcut>⌘V</ContextMenuShortcut></ContextMenuItem>
+          <ContextMenuItem onSelect={() => clip(surface?.slide, target, 'cut')} disabled={target.kind === 'text' && target.from === target.to}>Cut<ContextMenuShortcut>⌘X</ContextMenuShortcut></ContextMenuItem>
+          <ContextMenuItem onSelect={() => clip(surface?.slide, target, 'copy')} disabled={target.kind === 'text' && target.from === target.to}>Copy<ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>
+          <ContextMenuItem onSelect={() => clip(surface?.slide, target, 'paste')}>Paste<ContextMenuShortcut>⌘V</ContextMenuShortcut></ContextMenuItem>
           {actions.length > 0 && <ContextMenuSeparator />}
         </>)}
         {GROUPS.map((g, gi) => {

@@ -6,13 +6,15 @@ import { actionsFor } from '@/engine/slides/actions'
 import type { Style } from '@/engine/types'
 import { rectOf } from './selection'
 import type { SlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 
 const ICON = { bold: Bold, focus: Highlighter } as const
 
-export function ActionBar({ edit, slide, deckStyle }: { edit: SlideEdit; slide: HTMLElement | null; deckStyle: Style }) {
-  if (!slide) return null
+export function ActionBar({ edit, surface, deckStyle }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style }) {
+  const slide = surface?.slide
+  if (!surface || !slide) return null
   const box = rectOf(edit.target, slide), actions = actionsFor(edit.target, edit.draft, deckStyle).filter((a) => a.bar)
-  const frame = slide.parentElement?.getBoundingClientRect()
+  const frame = surface.mount.getBoundingClientRect()
   if (!box || !frame || !actions.length) return null
   const place = (m: HTMLElement | null) => { if (!m) return; m.style.setProperty('--x', `${box.left - frame.left + box.width / 2}px`); m.style.setProperty('--y', `${box.top - frame.top - (edit.target.kind === 'cells' ? 30 : 8)}px`) }
   return (

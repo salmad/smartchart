@@ -7,6 +7,7 @@ import { getAt, newItem, type ListOp } from '@/engine/slides/edit'
 import type { Style } from '@/engine/types'
 import { pickPicture } from '@/app/pictures'
 import type { SlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 
 type State = { state: 'idle' } | { state: 'busy' } | { state: 'failed'; why: string }
 
@@ -31,15 +32,17 @@ export function usePictures(edit: SlideEdit, style: Style) {
 }
 
 /** A "Replace" button over the picture under the pointer, and what went wrong, if anything. */
-export function PictureButtons({ slide, pictures }: { slide: HTMLElement | null; pictures: ReturnType<typeof usePictures> }) {
+export function PictureButtons({ surface, pictures }: { surface: Surface | null; pictures: ReturnType<typeof usePictures> }) {
   const [hover, setHover] = useState<HTMLElement | null>(null), host = useRef<HTMLDivElement>(null)
+  const mount = surface?.mount
   useEffect(() => {
-    if (!slide) return
+    const frame = mount?.parentElement
+    if (!mount || !frame) return
     const move = (e: PointerEvent) => { const el = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-pic]') : null; if (el) setHover(el) }
     const leave = () => setHover(null)
-    slide.addEventListener('pointermove', move); slide.parentElement?.parentElement?.addEventListener('pointerleave', leave)
-    return () => { slide.removeEventListener('pointermove', move); slide.parentElement?.parentElement?.removeEventListener('pointerleave', leave) }
-  }, [slide])
+    mount.addEventListener('pointermove', move); frame.addEventListener('pointerleave', leave)
+    return () => { mount.removeEventListener('pointermove', move); frame.removeEventListener('pointerleave', leave) }
+  }, [mount])
   useEffect(() => {
     const el = host.current?.querySelector<HTMLElement>('[data-replace]'), frame = host.current?.parentElement
     if (!el || !hover || !frame) return

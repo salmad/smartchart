@@ -6,14 +6,15 @@ import { getAt, listOf, listOps, newItem } from '@/engine/slides/edit'
 import type { Deck, SlideContext } from '@/engine/types'
 import { caretRange, redraw, selectRange, setCaret, typed } from './fields'
 import type { SlideEdit } from './useSlideEdit'
+import { surfaceOf, type Surface } from './surface'
 import './edit.css'
 
-interface Props { edit: SlideEdit; deck: Pick<Deck, 'style' | 'theme' | 'accent'>; ctx: SlideContext; onSlide: (el: HTMLElement | null) => void; children?: ReactNode }
+interface Props { edit: SlideEdit; deck: Pick<Deck, 'style' | 'theme' | 'accent'>; ctx: SlideContext; onSurface: (s: Surface) => void; children?: ReactNode }
 
 const hint = (path: string) => { const k = path.replace(/\[\d+\]/g, '').split('.').at(-1) ?? ''; return k.charAt(0).toUpperCase() + k.slice(1) }
 const fieldOf = (t: EventTarget | null) => (t instanceof Element ? t.closest<HTMLElement>('[data-path]') : null)
 
-export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
+export function EditSurface({ edit, deck, ctx, onSurface, children }: Props) {
   const frame = useRef<HTMLDivElement>(null), editRef = useRef(edit)
   editRef.current = edit
   const { style, theme, accent } = deck
@@ -39,10 +40,11 @@ export function EditSurface({ edit, deck, ctx, onSlide, children }: Props) {
     const fit = () => s.style.setProperty('--s', String(el.clientWidth / 1920))
     const ro = new ResizeObserver(fit)
     ro.observe(el)
-    onSlide(s)
-    return () => { ro.disconnect(); onSlide(null) }
+    // No null between remounts: the mount stays, and a render without a surface would drop the tools' listeners.
+    onSurface(surfaceOf(el))
+    return () => ro.disconnect()
     // Primitives only: a new ctx object on each render must not remount the slide under the cursor.
-  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, chapters, style, theme, accent, onSlide])
+  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, chapters, style, theme, accent, onSurface])
 
   // While a save runs, the fields stop taking text: what is typed now would be lost when edit mode closes.
   useEffect(() => { frame.current?.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => { f.contentEditable = edit.saving ? 'false' : 'true' }) }, [edit.saving, edit.shown])

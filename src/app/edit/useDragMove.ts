@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { moveColumn, moveItem } from '@/engine/slides/edit'
 import type { SlideEdit } from './useSlideEdit'
+import type { Surface } from './surface'
 import { axisOf, dropIndex, dropLine, type Box } from './drag'
 
 export type Thing = { kind: 'item'; list: string; index: number } | { kind: 'column'; index: number }
@@ -10,17 +11,18 @@ export interface DragState { line: Box | null; from: number; to: number }
 
 const rect = (el: Element): Box => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } }
 
-export function useDragMove(edit: SlideEdit, slide: HTMLElement | null, onSelect: (t: Thing) => void) {
+export function useDragMove(edit: SlideEdit, surface: Surface | null, onSelect: (t: Thing) => void) {
   const [drag, setDrag] = useState<DragState | null>(null)
 
   const begin = useCallback((e: React.PointerEvent<HTMLElement>, thing: Thing) => {
-    if (!slide || e.button !== 0) return
+    if (!surface || e.button !== 0) return
     e.preventDefault(); e.stopPropagation()
     const grip = e.currentTarget, id = e.pointerId, sx = e.clientX, sy = e.clientY
     grip.setPointerCapture(id)
+    // Read from the slide mounted now, on every move: a structural edit during the drag replaces it.
     const pick = () => thing.kind === 'column'
-      ? [...slide.querySelectorAll('th[data-path^="table.columns["]')]
-      : [...slide.querySelectorAll<HTMLElement>('[data-item]')].filter((el) => new RegExp(`^${thing.list.replace(/[.[\]]/g, '\\$&')}\\[\\d+\\]$`).test(el.dataset.item ?? ''))
+      ? [...surface.mount.querySelectorAll('th[data-path^="table.columns["]')]
+      : [...surface.mount.querySelectorAll<HTMLElement>('[data-item]')].filter((el) => new RegExp(`^${thing.list.replace(/[.[\]]/g, '\\$&')}\\[\\d+\\]$`).test(el.dataset.item ?? ''))
     let active = false, to = thing.index
     const at = (ev: PointerEvent) => {
       const boxes = pick().map(rect), axis = thing.kind === 'column' ? 'x' : axisOf(boxes)
@@ -39,7 +41,7 @@ export function useDragMove(edit: SlideEdit, slide: HTMLElement | null, onSelect
     const cancel = () => stop()
     const esc = (ev: KeyboardEvent) => { if (ev.key === 'Escape') { ev.stopPropagation(); ev.preventDefault(); active = false; stop() } }
     grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', cancel); document.addEventListener('keydown', esc, true)
-  }, [edit, slide, onSelect])
+  }, [edit, surface, onSelect])
 
   return { drag, begin }
 }
