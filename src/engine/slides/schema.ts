@@ -858,7 +858,7 @@ function checkNotes(s: Slide, style: Style, out: Out): void {
 
 /* Rules every table shares, the table template's and a half table's: cells per column, column flags, marks,
    header icons, bullets, status labels and group headings. `half`: no bullets at half width. */
-function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half = false): void {
+function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half = false, limits: Limits = SLIDE_LIMITS): void {
   const cols = Array.isArray(t.columns) ? t.columns : [], rows = Array.isArray(t.rows) ? t.rows : [], n = cols.length;
   const obj = (c: Cell | undefined) => (c && typeof c === "object" ? c : null);
   rows.forEach((r, i) => {
@@ -874,7 +874,7 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
   cols.forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`${base}.columns[${j}]: muted or focus, not both.`); });
   cols.forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`${base}.columns[${j}].label: required. Header text.`); });
   const data = rows.filter((r) => r?.style !== "group").length;
-  if (data > 8) out.errors.push(`${base}.rows: ${data} rows; at most 8 (group headings not counted). Cut or merge rows.`);
+  if (data > limits.tableRows) out.errors.push(`${base}.rows: ${data} rows; at most ${limits.tableRows} (group headings not counted). Cut or merge rows.`);
   if (markKinds(t).size > 1) out.warnings.push(`${base}: mixes Harvey balls and ticks. Score with one kind of mark per table.`);
   // Header icons: all columns after the first, or none.
   if (cols[0]?.icon) out.errors.push(`${base}.columns[0].icon: the label column has no icon.`);
@@ -932,7 +932,7 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
   }
 }
 
-function checkRules(s: Slide, style: Style, out: Out): void {
+function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMITS): void {
   switch (s.template) {
     case "chart": {
       checkChart(s.chart, "chart", out, s.focus === "auto");
@@ -963,7 +963,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
     }
     case "table": {
       const t: Partial<Table> = s.table || {}, n = (t.columns || []).length;
-      checkGrid(t, "table", style, out);
+      checkGrid(t, "table", style, out, false, limits);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       // Short group headings sit in a first column beside their rows and cost no height; long ones are heading rows.
       const byColumn = groupLayout(t, roomOf(t, !!s.notes?.length)) === "column";
@@ -983,7 +983,7 @@ function checkRules(s: Slide, style: Style, out: Out): void {
       };
       const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = iconsMayStack(t, roomOf(t, !!s.notes?.length)) ? 1 : 0;
       const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
-      if (cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
+      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
       if (s.notes?.length) {
         checkNotes(s, style, out);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
@@ -1103,6 +1103,35 @@ function checkRules(s: Slide, style: Style, out: Out): void {
     if (style === "consulting" && words < 5) out.warnings.push("title: consulting titles are full-sentence action titles (usually 8–16 words). This reads like a topic.");
     if (style === "pitch" && words > 3) out.warnings.push(`title: ${words} words; a pitch title is the topic in 1–3 words. Move the claim to the subtitle.`);
   }
+}
+
+/** What a host has room for. A slide is 1080px tall, so a table's rows are budgeted; a doc figure takes its own height. */
+export interface Limits { tableRows: number; fixedHeight: boolean }
+export const SLIDE_LIMITS: Limits = { tableRows: 8, fixedHeight: true };
+
+/** Check an object against a set of fields: each field, then any key that is not one. */
+export function checkFields(fields: Record<string, FieldDef>, obj: unknown, style: Style): Validation {
+  const out: Out = { errors: [], warnings: [] };
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return { errors: ["must be a JSON object."], warnings: [] };
+  const v = fieldsOf(obj), own = Object.fromEntries(Object.entries(fields).filter(([, d]) => inStyle(d, style)));
+  for (const [k, def] of Object.entries(own)) check(def, v[k], k, style, out);
+  for (const k of Object.keys(v)) if (!own[k]) out.errors.push(`${k}: not a field here. Allowed: ${Object.keys(own).join(", ")}.`);
+  return out;
+}
+
+/* A component outside a slide (a doc figure): the template's body fields with the figure furniture every figure
+   carries (a chart's caption and notes, the frame's source, footnote and takeaway), never the slide's head. */
+const HEAD = ["title", "subtitle", "kicker", "talk"], FURNITURE = ["caption", "notes", "notesTitle", "source", "footnote", "takeaway"];
+export function validateComponent(template: TemplateId, body: unknown, style: Style, limits: Limits = SLIDE_LIMITS): Validation {
+  const chart = fieldsFor("chart", style), own = fieldsFor(template, style);
+  const fields: Record<string, FieldDef> = { ...Object.fromEntries(FURNITURE.filter((k) => chart[k]).map((k) => [k, chart[k]])), ...Object.fromEntries(Object.entries(own).filter(([k]) => !HEAD.includes(k))) };
+  const table = fields.table?.fields;
+  // A doc table may run longer than a slide's: the row cap moves with the limit, group headings on top as before.
+  if (template === "table" && table?.rows && limits.tableRows !== SLIDE_LIMITS.tableRows)
+    fields.table = { ...fields.table, fields: { ...table, rows: { ...table.rows, items: { ...table.rows.items, max: limits.tableRows + 6 } } } };
+  const out = checkFields(fields, body, style);
+  if (body && typeof body === "object" && !Array.isArray(body)) checkRules({ ...(body as Partial<Slide>), template, title: "" } as Slide, style, out, limits);
+  return out;
 }
 
 /** Validate one slide for the deck style. The slide is unvalidated input (usually model output). */
