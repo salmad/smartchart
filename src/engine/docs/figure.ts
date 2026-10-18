@@ -19,10 +19,12 @@ import type { CodeBlock, FigureBlock, FigureKind } from './types.js'
 
 /** The slide body's width (1920 − 2 × 128): a figure is laid out as it would be on a slide. */
 export const FIG_WIDTH = 1664
-/** A callout or code sits in the text column, so its canvas is narrower: at full width both scale alike (720 / 1152 =
-    1040 / 1664), and their words read at a figure's size. */
-export const TEXT_WIDTH = 1152
-export const widthOf = (kind: string): number => (kind === 'callout' || kind === 'code' ? TEXT_WIDTH : FIG_WIDTH)
+/** A figure's scale at full width (1040 / 1664). A callout or code is words that wrap, not a layout: its canvas takes
+    whatever width gives its frame this scale, so it reads at a figure's size in the text column and on a phone alike. */
+export const TEXT_SCALE = 0.625
+export const isText = (kind: string): boolean => kind === 'callout' || kind === 'code'
+/** The canvas's design width for a frame: a figure's is fixed; words take the frame's width at TEXT_SCALE. */
+export const widthOf = (kind: string, frame: number): number => (isText(kind) ? frame / TEXT_SCALE : FIG_WIDTH)
 /** Design heights for the kinds that fill a box (a slide body gives a chart about 640px); the rest take their content's. */
 export const FIXED_HEIGHT: Partial<Record<FigureKind, number>> = { chart: 640, pair: 640, image: 640 }
 /** The extra split class per kind, as the slide body sets it. */
@@ -38,7 +40,7 @@ function component(f: FigureBlock): string {
   switch (f.kind) {
     case 'chart': return '<div class="chart full grow" data-chart></div>'
     case 'table': { const t = b.table ?? { columns: [], rows: [] }; return tableHTML(t, 'table', true, roomOf(t, false)) }
-    case 'number': return numberHTML(b.number ?? { value: '', caption: '' }, '')
+    case 'number': return numberHTML(b.number ?? { value: '', caption: '' }, '', true)
     case 'cards': return cardsHTML(b.cards ?? [], s ? MENU.cards.variant(s) : 'icon', b.arrange, '')
     case 'steps': return stepsHTML(b.steps ?? [], '')
     case 'summary': return summaryHTML(b.points ?? [], '')
@@ -61,7 +63,7 @@ export const canvas = (kind: string, theme: Theme, inner: string): string => `<d
 
 export function figureHTML(f: FigureBlock, theme: Theme, beside = true): string {
   const b = f.body
-  const notes = b.notes?.length ? `<ol class="fig-notes">${b.notes.map((n) => `<li><b>${md(n.title)}</b>${n.text ? ` ${md(n.text)}` : ''}</li>`).join('')}</ol>` : ''
+  const notes = b.notes?.length ? `<ol class="fig-notes">${b.notes.map((n) => `<li><span><b>${md(n.title)}</b>${n.text ? ` ${md(n.text)}` : ''}</span></li>`).join('')}</ol>` : ''
   const take = b.takeaway ? `<p class="fig-take"${at('takeaway', 'md')}>${md(b.takeaway)}</p>` : ''
   const src = [b.footnote && `<span${at('footnote', 'md')}>${md(b.footnote)}</span>`, b.source && `<span>Source: <span${at('source', 'md')}>${md(b.source)}</span></span>`].filter(Boolean).join(' ')
   return `<figure class="doc-fig" id="${f.id}" data-block="${f.id}" data-kind="${f.kind}">${canvas(f.kind, theme, figureCanvasHTML(f, beside))}${notes}${take}${src ? `<p class="fig-src">${src}</p>` : ''}</figure>`

@@ -264,6 +264,10 @@
 .cap.ghost { color: transparent; }
 .cap.ghost + .half-num, .cap.ghost + .bullets.points { margin-top: 28px; }
 .pair > .half > .half-num { justify-content: flex-end; }
+/* Beside its sentence (a doc's key figure): a size down, the sentence on the number's baseline. */
+.half-num.row { flex-direction: row; align-items: flex-end; gap: 56px; }
+.style-consulting .half-num.row .big-v { font-size: 168px; }
+.half-num.row p { max-width: 30ch; padding-bottom: 6px; }
 .pair > .half > .bullets.points { display: flex; flex-direction: column; gap: 0; }
 .pair > .half > .bullets.points li { flex: 1 1 0; padding: 20px 0 20px 40px; border-bottom: 1px solid var(--line); }
 .pair > .half > .bullets.points li:first-child { padding-top: 0; }

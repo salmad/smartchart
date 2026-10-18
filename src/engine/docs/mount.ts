@@ -5,7 +5,7 @@ import type { Theme } from '../types.js'
 import { allocate } from '../slides/colours.js'
 import { alignHalves, drawIcons, fitPictures, fitValues, sizeTable, stackIcons } from '../components/fit.js'
 import { drawCharts } from '../components/charts/hosts.js'
-import { asSlide, canvas, figureCanvasHTML, widthOf } from './figure.js'
+import { asSlide, canvas, figureCanvasHTML, isText, widthOf } from './figure.js'
 import { DEFAULT_THEME, docHTML } from './render.js'
 import type { Doc, FigureBlock } from './types.js'
 
@@ -13,8 +13,9 @@ import type { Doc, FigureBlock } from './types.js'
 const NARROW = 600
 
 /** Scale the canvas to its frame, and give the frame the canvas's height at that scale. */
-function size(frame: HTMLElement, fig: HTMLElement, width: number) {
-  const k = frame.clientWidth / width
+function size(frame: HTMLElement, fig: HTMLElement, kind: string) {
+  const width = widthOf(kind, frame.clientWidth), k = frame.clientWidth / width
+  if (isText(kind)) fig.style.setProperty('--w', `${width}px`)
   fig.style.setProperty('--s', String(k))
   frame.style.setProperty('height', `${fig.offsetHeight * k}px`)
 }
@@ -24,10 +25,11 @@ function size(frame: HTMLElement, fig: HTMLElement, width: number) {
 export function mountFigure(frame: HTMLElement, f: FigureBlock | null, theme: Theme, accent: string | undefined): void {
   const fig = frame.querySelector<HTMLElement>(':scope > .fig'), w = frame.clientWidth
   if (!fig || !w) return
-  const width = widthOf(f?.kind ?? 'code'), k = w / width, beside = w >= NARROW
+  const kind = f?.kind ?? 'code', k = w / widthOf(kind, w), beside = w >= NARROW
   if (f?.body.notes?.length) fig.innerHTML = figureCanvasHTML(f, beside)
   frame.dataset.mode = beside ? 'beside' : 'narrow'
   frame.closest('.doc-fig')?.classList.toggle('narrow', !beside)
+  if (isText(kind)) fig.style.setProperty('--w', `${w / k}px`)
   fig.style.setProperty('--s', String(k))
   const s = f ? asSlide(f) : null, colours = allocate(s, theme, accent)
   for (const [key, v] of Object.entries(colours.vars)) fig.style.setProperty(`--${key}`, v)
@@ -35,7 +37,7 @@ export function mountFigure(frame: HTMLElement, f: FigureBlock | null, theme: Th
   sizeTable(fig, k); stackIcons(fig, k)
   if (s) drawCharts(fig, s, theme, accent, colours)
   drawIcons(fig); fitPictures(fig, k); alignHalves(fig, k)
-  size(frame, fig, width)
+  size(frame, fig, kind)
 }
 
 const load = (key: string): string[] => { try { const v: unknown = JSON.parse(localStorage.getItem(key) ?? '[]'); return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [] } catch { return [] } }
@@ -47,7 +49,6 @@ export function mountDoc(root: HTMLElement, doc: Doc, key: string): { destroy():
   root.innerHTML = docHTML(doc)
   root.querySelectorAll<HTMLElement>('.fold').forEach(drawIcons)
   const blockOf = (frame: HTMLElement) => blocks.get(frame.closest<HTMLElement>('.doc-fig')?.dataset.block ?? '') ?? null
-  const widthFor = (frame: HTMLElement) => widthOf(blockOf(frame)?.kind ?? 'code')
 
   // Each frame mounts when it has a width (a figure in a folded section waits) and again when it crosses NARROW;
   // otherwise a resize only rescales: the fitters measure in design pixels, so their work holds at any scale.
@@ -56,13 +57,14 @@ export function mountDoc(root: HTMLElement, doc: Doc, key: string): { destroy():
     const w = frame.clientWidth, fig = frame.querySelector<HTMLElement>(':scope > .fig')
     if (!w || !fig) return
     if (frame.dataset.mode !== (w >= NARROW ? 'beside' : 'narrow')) mountFigure(frame, blockOf(frame), theme, doc.accent)
-    else size(frame, fig, widthFor(frame))
+    else size(frame, fig, blockOf(frame)?.kind ?? 'code')
   }
   const sizes = new ResizeObserver((entries) => entries.forEach((e) => fit(e.target as HTMLElement)))
   frames.forEach((frame) => { fit(frame); sizes.observe(frame) })
 
   // Expand: on a narrow frame a figure opens at a desktop figure's size, in a dialog that scrolls sideways.
   root.querySelectorAll<HTMLElement>('.doc-fig').forEach((el) => {
+    if (isText(el.dataset.kind ?? '')) return
     el.insertAdjacentHTML('beforeend', '<button class="fig-expand" type="button" aria-label="Expand figure"><i data-lucide="maximize-2"></i></button>')
   })
   root.querySelectorAll<HTMLElement>('.fig-expand').forEach(drawIcons)

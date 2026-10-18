@@ -87,3 +87,14 @@ test('on a phone, a figure expands', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(page.locator('dialog[open]')).toHaveCount(0)
 })
+
+test('every doc starter is clean at three widths', async ({ page }) => {
+  test.setTimeout(120_000)
+  const found: string[] = []
+  for (const s of DOC_STARTERS) for (const theme of ['paper', 'ink']) for (const width of [343, 720, 1040]) {
+    await open(page, s.id, `&theme=${theme}&width=${width}`)
+    const issues = await page.evaluate(() => window.__docs?.issues ?? ['no result'])
+    found.push(...issues.map((i) => `${s.id} ${theme} ${width}: ${i}`))
+  }
+  expect(found).toEqual([])
+})

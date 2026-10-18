@@ -14,7 +14,7 @@ function blockHTML(b: Block, theme: Theme): string {
     case 'heading': return `<h3 id="${b.id}">${md(b.text)}</h3>`
     case 'paragraph': return `<p>${md(b.text)}</p>`
     case 'bullets': return `<ul class="doc-list">${b.items.map((x) => `<li>${md(x)}</li>`).join('')}</ul>`
-    case 'numbered': return `<ol class="doc-list">${b.items.map((x) => `<li>${md(x)}</li>`).join('')}</ol>`
+    case 'numbered': return `<ol class="doc-list">${b.items.map((x) => `<li><span>${md(x)}</span></li>`).join('')}</ol>`
     case 'quote': return `<blockquote><p>${md(b.text)}</p></blockquote>`
     case 'divider': return '<hr>'
     case 'code': return codeFigureHTML(b, theme)
