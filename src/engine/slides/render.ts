@@ -1,7 +1,7 @@
 /* Renderer: slide JSON -> HTML at 1920×1080. Shared by the app, the review page and the tests. */
-import { MENU, NOTE_POINTS } from "./schema.js";
+import { MENU } from "./schema.js";
 import type { Deck, Slide, SlideContext, Table, TemplateId } from "../types.js";
-import { drawChart } from "../components/charts/chart.js";
+import { drawCharts } from "../components/charts/hosts.js";
 import { allocate } from "./colours.js";
 import { roomOf } from "./groups.js";
 import { at, capHTML, display, esc, md, pad2 } from "../components/text.js";
@@ -98,14 +98,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   fitValues(slide);
   sizeTable(slide, k); stackIcons(slide, k); growTable(slide);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
-  slide.querySelectorAll<HTMLElement>("[data-chart]").forEach((host) => {
-    const i = host.dataset.chart, spec = i ? s.halves?.[Number(i)]?.chart : s.chart;
-    if (!spec) return;
-    if (!i) return drawChart(host, spec, NOTE_POINTS ? (s.notes || []).flatMap((n, k) => (n.point ? [{ n: k + 1, ...n.point }] : [])) : [], colours);
-    const own = allocate({ ...s, template: "chart", chart: spec }, deck.theme, deck.accent);
-    for (const [k, v] of Object.entries(own.vars)) host.style.setProperty(`--${k}`, v);
-    drawChart(host, spec, [], own);
-  });
+  drawCharts(slide, s, deck.theme, deck.accent, colours);
   drawIcons(slide); growCards(slide); fitPictures(slide, k); alignHalves(slide, k);
   return slide;
 }

@@ -1,6 +1,6 @@
 /* Components: what slides and docs share, the palettes and tokens, the text bits, and every body a figure is made of
    (captions and notes, cards, tables and marks, steps, pairs, summaries, charts, pictures). Laid out at the slide's design
-   size; a host scales it. slides.css imports this and adds the frame. The reset comes first: every component rule
+   size; a host scales it: a slide (`.slide`) or a doc figure's canvas (`.fig`). slides.css imports this and adds the frame. The reset comes first: every component rule
    follows it. */
 
 /* ═════════════ Palettes ═════════════
@@ -15,24 +15,24 @@
   --fg: #16140F; --fg-2: #453F36; --muted: #776E61; --neutral: #CFC6B6;
   --focus: #2447D1; --on-focus: #FFFFFF; --neg: #D2402C; --pos: #1C8248;
 }
-.slide { --display: "Archivo", sans-serif; --text: "Geist", system-ui, sans-serif; --mono: "Geist Mono", monospace; }
+.slide, .fig { --display: "Archivo", sans-serif; --text: "Geist", system-ui, sans-serif; --mono: "Geist Mono", monospace; }
 .style-consulting { --t-size: 74px; --body: 30px; --pull: 40px; --lbl: 26px; --lbl-s: 22px; }
 .style-pitch      { --t-size: 150px; --body: 38px; --pull: 50px; --lbl: 30px; --lbl-s: 24px; }
 /* ═════════════ Reset and text ═════════════ */
-.slide, .slide * { box-sizing: border-box; margin: 0; padding: 0; }
+.slide, .slide *, .fig, .fig * { box-sizing: border-box; margin: 0; padding: 0; }
 /* A link reads as the text around it does, underlined, with a small arrow; it is live only where the slide is shown whole.
    The arrow is inline whatever the host page's reset says about svg. */
-.slide a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 2px; pointer-events: none; }
-[data-links] .slide a { pointer-events: auto; }
-.slide a .ext { display: inline-block; width: .85em; height: .85em; margin-left: .3em; vertical-align: -.08em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-[data-links] .slide a:hover { text-decoration-color: currentColor; }
+.slide a, .fig a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 2px; pointer-events: none; }
+[data-links] .slide a, [data-links] .fig a { pointer-events: auto; }
+.slide a .ext, .fig a .ext { display: inline-block; width: .85em; height: .85em; margin-left: .3em; vertical-align: -.08em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[data-links] .slide a:hover, [data-links] .fig a:hover { text-decoration-color: currentColor; }
 /* A link to a slide: the words, then that slide's page in the mono of the page numbers. */
-.slide a .ref[data-page]::after { content: "\2192\2009" attr(data-page); margin-left: .3em; font: 500 .72em/1 var(--mono); letter-spacing: .02em; color: var(--muted); text-decoration: none; display: inline-block; }
+.slide a .ref[data-page]::after, .fig a .ref[data-page]::after { content: "\2192\2009" attr(data-page); margin-left: .3em; font: 500 .72em/1 var(--mono); letter-spacing: .02em; color: var(--muted); text-decoration: none; display: inline-block; }
 .shout { font-family: var(--display); font-weight: 900; font-stretch: 62%; text-transform: uppercase; line-height: .86; }
 .nw { white-space: nowrap; }
 .hl-focus { color: var(--focus); } .hl-neg { color: var(--neg); } .hl-pos { color: var(--pos); }
-.slide strong { font-weight: 700; }
-:where(.slide) :is(p, h4, li) { text-wrap: pretty; } /* no specificity: a block's own text-wrap (the subtitle's balance) wins */
+.slide strong, .fig strong { font-weight: 700; }
+:where(.slide, .fig) :is(p, h4, li) { text-wrap: pretty; } /* no specificity: a block's own text-wrap (the subtitle's balance) wins */
 .bullets { list-style: none; display: grid; gap: 14px; }
 .bullets li { padding-left: 40px; position: relative; }
 .bullets li::before { content: "—"; position: absolute; left: 0; color: var(--muted); }
@@ -465,3 +465,14 @@
 .tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
 .tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
 .tbl tr.total td.has-bar > .cbar { visibility: hidden; }
+
+/* ═════════════ Callout: a note, a decision or a risk, one labelled line over a rule ═════════════ */
+/* The rule and label carry the tone; the words stay in the text colour. */
+.callout { border-left: 6px solid var(--line-2); padding: 6px 0 6px 36px; }
+.callout .co-l { display: block; margin-bottom: 12px; font: 500 20px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.callout p { font-size: var(--body); line-height: 1.38; color: var(--fg); }
+.callout.t-decision { border-left-color: var(--focus); } .callout.t-decision .co-l { color: var(--focus); }
+.callout.t-risk { border-left-color: var(--neg); } .callout.t-risk .co-l { color: var(--neg); }
+
+/* ═════════════ Code: as written, mono on a quiet panel ═════════════ */
+.code { font: 400 22px/1.5 var(--mono); color: var(--fg-2); background: var(--surface); padding: 28px 32px; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
