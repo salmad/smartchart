@@ -23,7 +23,8 @@ export interface DocEdit {
   /** A mark or link: one undo step, the field redrawn in place by the caller. */
   mark(key: string | HeadField, markup: string, item?: number): void
   takeFocus(): Focus | null
-  undo(): void; redo(): void; canUndo: boolean; canRedo: boolean
+  /** Back or forward one step, the page redrawn; the cursor goes to `focus` (the field it was in). */
+  undo(focus?: Focus): void; redo(focus?: Focus): void; canUndo: boolean; canRedo: boolean
   save(): Promise<void>
   discard(): void
   /** The figure open in place, by key. Opening another, or saving, first runs the open one's Done: if that refuses
@@ -66,7 +67,9 @@ export function useDocEdit({ doc, save, onDone }: Options): DocEdit {
   const record = useCallback(() => { past.current.push(draft.current); future.current = []; setDepth({ past: past.current.length, future: 0 }) }, [])
   const typedIn = useCallback((field: string) => { if (lastTyped.current !== field) record(); lastTyped.current = field }, [record])
   const write = useCallback((next: Draft) => { draft.current = next; setVersion((v) => v + 1) }, [])
-  const restore = useCallback((d: Draft) => { draft.current = d; lastTyped.current = null; setVersion((v) => v + 1); setShown(d) }, [])
+  // A copy, not `d` itself: typing never redraws, so `shown` can already be `d`, and the same object would skip the redraw
+  // and leave the page showing words the draft no longer has.
+  const restore = useCallback((d: Draft, at?: Focus) => { draft.current = d; lastTyped.current = null; focus.current = at ?? null; setVersion((v) => v + 1); setShown({ ...d }) }, [])
   const text = useCallback((key: string, markup: string, item?: number) => {
     const d = draft.current
     write({ ...d, blocks: d.blocks.map((k) => (k.key === key ? { key, block: withText(k.block, markup, item) } : k)) })
@@ -87,8 +90,8 @@ export function useDocEdit({ doc, save, onDone }: Options): DocEdit {
       if (key === 'title' || key === 'subtitle') write({ ...draft.current, [key]: markup }); else text(key, markup, item)
     },
     takeFocus: () => { const f = focus.current; focus.current = null; return f },
-    undo: () => { const prev = past.current.pop(); if (!prev) return; future.current.push(draft.current); setDepth({ past: past.current.length, future: future.current.length }); restore(prev) },
-    redo: () => { const next = future.current.pop(); if (!next) return; past.current.push(draft.current); setDepth({ past: past.current.length, future: future.current.length }); restore(next) },
+    undo: (at) => { const prev = past.current.pop(); if (!prev) return; future.current.push(draft.current); setDepth({ past: past.current.length, future: future.current.length }); restore(prev, at) },
+    redo: (at) => { const next = future.current.pop(); if (!next) return; past.current.push(draft.current); setDepth({ past: past.current.length, future: future.current.length }); restore(next, at) },
     canUndo: depth.past > 0, canRedo: depth.future > 0,
     figure,
     openFigure: (key) => { if (key !== figure && closeFigure()) setFigureKey(key) },

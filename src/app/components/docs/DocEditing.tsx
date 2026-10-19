@@ -4,7 +4,9 @@ import { DEFAULT_THEME } from '@/engine/docs/render'
 import type { Doc } from '@/engine/docs/types'
 import { DocEditor } from './DocEditor'
 import { EditBar } from './DocBar'
-import { docOf, useDocEdit } from './useDocEdit'
+import { caretRange } from '@/app/edit/fields'
+import { fieldOf } from './editorKeys'
+import { docOf, useDocEdit, type Focus } from './useDocEdit'
 import { serializeDoc } from '@/engine/docs/serialize'
 
 interface Props {
@@ -33,7 +35,11 @@ export function DocEditing({ doc, save, onDone, stale, comments, children }: Pro
       const mod = e.metaKey || e.ctrlKey
       if (mod && e.key === 's') { e.preventDefault(); void edit.save(); return }
       // An open figure has its own history (useEditKeys).
-      if (mod && e.key.toLowerCase() === 'z' && !edit.figure) { e.preventDefault(); if (e.shiftKey) edit.redo(); else edit.undo() }
+      if (mod && e.key.toLowerCase() === 'z' && !edit.figure) { e.preventDefault(); 
+        // The cursor stays in the field it was in, at the same place (the page is redrawn, which would drop it).
+        const f = fieldOf(e.target), range = f ? caretRange(f.el) : null, at: Focus | undefined = f?.key && range ? { key: f.key, item: f.item, at: range[0] } : undefined
+        if (e.shiftKey) edit.redo(at); else edit.undo(at)
+      }
     }
     const leave = (e: BeforeUnloadEvent) => { if (edit.dirty) e.preventDefault() }
     document.addEventListener('keydown', key); window.addEventListener('beforeunload', leave)

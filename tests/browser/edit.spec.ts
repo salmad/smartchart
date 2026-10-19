@@ -40,6 +40,19 @@ test('edit mode locks the deck, keeps the words, and saves them', async ({ page 
   expect((await saved(page)).title).toContain('every year we can see')
 })
 
+test('⌘Z after typing takes the words off the page and out of the saved slide', async ({ page }) => {
+  await open(page)
+  await page.keyboard.press('e')
+  await title(page).click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' KEEPME')
+  await page.keyboard.press('Control+z')
+  await expect(title(page)).not.toContainText('KEEPME')
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0)
+  expect((await saved(page)).title).not.toContain('KEEPME')
+})
+
 test('Bold over a selection, and the cursor stays put while typing inside a mark', async ({ page }) => {
   await open(page)
   await page.keyboard.press('e')

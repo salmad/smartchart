@@ -69,7 +69,8 @@ export function useSlideEdit({ slide, check, save, onDone }: Options): SlideEdit
     return true
   }, [])
 
-  const restore = useCallback((slide: Slide) => { draft.current = slide; lastTyped.current = null; setVersion((v) => v + 1); setShown(slide); setTargetState({ kind: 'slide' }) }, [])
+  // `shown` is set to a copy: typing never redraws, so it can already be `slide`, and the same object would skip the redraw and leave the page showing words the draft no longer has.
+  const restore = useCallback((slide: Slide) => { draft.current = slide; lastTyped.current = null; setVersion((v) => v + 1); setShown({ ...slide }); setTargetState({ kind: 'slide' }) }, [])
 
   // Issues on the draft, plus sample text as a count.
   useEffect(() => {

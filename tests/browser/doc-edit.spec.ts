@@ -33,6 +33,23 @@ test('edits a paragraph and saves', async ({ page }) => {
   await expect(page.locator('.doc .sec-body p').first()).toHaveText('First paragraph here. And more words.')
 })
 
+test('undo takes typed words off the page and out of the saved file, and the cursor stays', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await para(page).click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' KEEPME')
+  await page.keyboard.press(`${mod}+z`)
+  await expect(para(page)).toHaveText('First paragraph here.')
+  await page.keyboard.type('!')
+  await expect(para(page)).toBeFocused()
+  await page.keyboard.press(`${mod}+z`)
+  await page.keyboard.press(`${mod}+Shift+z`)
+  await page.keyboard.press(`${mod}+s`)
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  expect((await saved(page)).text).not.toContain('KEEPME')
+})
+
 test('enter splits, backspace joins, and the saved paragraph is the original', async ({ page }) => {
   await seed(page)
   await edit(page)
