@@ -93,6 +93,9 @@ export function DocEditor({ edit, theme, accent }: Props) {
     const onKey = (e: KeyboardEvent) => {
       // Enter and Escape while composing confirm or cancel the candidate; they are not ours.
       if (e.isComposing || e.keyCode === 229) return
+      // A figure's checks badge is a native <details>: its own keys (Enter, Space, Esc) are not the figure's.
+      const badge = e.target instanceof Element ? e.target.closest<HTMLDetailsElement>('details.fig-checks') : null
+      if (badge) { if (e.key === 'Escape' && badge.open) { badge.open = false; badge.querySelector('summary')?.focus() } return }
       const f = fieldOf(e.target)
       if (f && slashRef.current.key(e)) return
       if (f && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -112,6 +115,7 @@ export function DocEditor({ edit, theme, accent }: Props) {
     const onFocus = (e: FocusEvent) => { const b = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-key]') : null; focused.current = b?.dataset.key ?? null }
     // A click on a figure opens it in place (a callout too); dividers and code stay selected whole.
     const onClick = (e: MouseEvent) => {
+      if (e.target instanceof Element && e.target.closest('.fig-checks')) return
       const b = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-key][data-block-select]') : null, key = b?.dataset.key
       if (key && editRef.current.draft.blocks.find((k) => k.key === key)?.block.type === 'figure') editRef.current.openFigure(key)
     }

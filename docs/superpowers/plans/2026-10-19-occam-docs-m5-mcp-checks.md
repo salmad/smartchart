@@ -157,7 +157,7 @@
 - [ ] **Step 4:** Run `npm test` and `npm run lint` and `npm run build`. Expected: PASS.
 - [ ] **Step 5:** Commit: "Docs M5: the doc tools, the guide and check_doc".
 
-### Task 5: The checks in the app (main model)
+### Task 5: The checks in the app (main model)  — done
 
 **Files:**
 - Modify: `src/app/components/docs/docs-edit.css` (the badge inside an editor figure), `src/app/components/docs/DocEditor.tsx` only if the badge needs a redraw hook
