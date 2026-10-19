@@ -47,7 +47,7 @@
 
 ---
 
-### Task 1: Block ids and the edit operations (Sonnet)
+### Task 1: Block ids and the edit operations (Sonnet)  — done
 
 **Files:**
 - Create: `src/engine/docs/ops.ts`
