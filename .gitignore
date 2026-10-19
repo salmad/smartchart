@@ -84,3 +84,4 @@ playwright-report/
 
 # MCP slide eval runs (baselines/ is committed)
 tests/mcp-eval/out/
+tests/browser/*-snapshots/

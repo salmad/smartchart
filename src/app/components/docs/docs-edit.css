@@ -1,6 +1,11 @@
 /* Doc edit mode only: the cursor's chrome around the page. The page's own type and column stay in doc.css; nothing here
    reaches inside a figure's canvas (.fig). The page is the editor (ProseMirror's root is the .doc-body). */
 .doc-editing :focus { outline: none; }
+/* ProseMirror's own stylesheet turns ligatures off for its page; the read view has them. */
+.doc-editing .ProseMirror { font-variant-ligatures: inherit; font-feature-settings: inherit; }
+/* ProseMirror sets break-spaces, where a space at the end of a line takes room and moves words down; pre-wrap lets it
+   hang, as the read page's lines do, and still keeps the space a person has typed. */
+.doc-editing .ProseMirror { white-space: pre-wrap; }
 /* A list item draws its words in a paragraph, set flush as the read view's bare text is. */
 .doc-editing li > p { margin: 0; }
 /* An empty title, subtitle or heading shows what it is; an empty paragraph says so only while it has the cursor, and
@@ -8,8 +13,8 @@
 .doc-editing .is-empty::before { content: attr(data-placeholder); color: var(--muted); float: left; height: 0; pointer-events: none; }
 .doc-editing .doc-sub.is-empty::before { opacity: .6; }
 /* The title and subtitle are the page's first two nodes, so the head's gap is the subtitle's, and the first section
-   starts where the head ends. */
-.doc-editing .doc-sub { margin-bottom: 40px; }
+   starts where the head ends. (The subtitle is a p in the body here, so doc.css's body-paragraph margin would win over its own.) */
+.doc-editing .doc-sub { margin: 12px 0 40px; }
 .doc-editing .doc-sub + .doc-sec > h2 { margin-top: 0; }
 /* A figure, divider or code block is selected whole. */
 .doc-editing .ProseMirror-selectednode { outline: 2px solid var(--focus); outline-offset: 6px; border-radius: 4px; }
