@@ -12,7 +12,7 @@ import type { SlideEdit } from './useSlideEdit'
 import type { Surface } from './surface'
 
 const GROUPS: { id: Action['group']; label: string }[] = [
-  { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Format' }, { id: 'mark', label: 'Score' },
+  { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Format' }, { id: 'mark', label: 'Score' }, { id: 'chart', label: 'Chart' },
 ]
 const SYMBOLS: Record<string, string> = { Mod: '⌘', Shift: '⇧', Alt: '⌥', Up: '↑', Down: '↓', Left: '←', Right: '→', Backspace: '⌫' }
 const keys = (s?: string) => s?.split('+').map((k) => SYMBOLS[k] ?? k).join('')

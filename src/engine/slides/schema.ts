@@ -178,7 +178,7 @@ const CHART = f("object", "A chart. Values are written on the data (bars: every 
         mark: f("enum", "`bar` or `line` for this series. \"auto\": code decides by the chart guide. Write bar or line only when the user named it.", { required: true, values: ["bar", "line", "auto"] }),
         color: f("enum", "`focus`: the series the slide is about. `neutral`: context. `contrast`: a secondary series that must still read clearly. Leave it out when the slide has focus \"auto\".", { values: ["focus", "neutral", "contrast"] }),
         format: f("text", "Overrides the chart format for this series (a % line over £ bars)."),
-        area: f("boolean", "Line series in a chart of only lines: shade the area under it. Focus series only.", { default: false }),
+        area: f("boolean", "Lines-only chart: the focus series is shaded under its line; false for a plain line. Never with bars.", { default: true }),
         dashed: f("boolean", "Line series only: dashed, for a forecast, a scenario or a reference (target, average).", { default: false }),
       } }),
     }),

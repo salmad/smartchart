@@ -4,6 +4,7 @@
 import { addColumn, getAt, listOf, listOps, moveColumn, moveItem, newItem, removeColumn, removeItem } from "./edit.js";
 import { hasMark, plainOf, toggleSpans, type Mark } from "./markup.js";
 import { BALLS, CROSS, TICK } from "./marks.js";
+import { drawsAsLines } from "../components/charts/chart.js";
 import type { Slide, Style } from "../types.js";
 
 /** What is selected, in model coordinates (never DOM nodes: the slide is redrawn under it). A table's header row is -1. */
@@ -15,7 +16,7 @@ export type Target =
 
 export interface Result { set: Record<string, unknown>; focus?: string; target?: Target }
 export interface Action {
-  id: string; label: string; group: "text" | "item" | "row" | "column" | "format" | "mark";
+  id: string; label: string; group: "text" | "item" | "row" | "column" | "format" | "mark" | "chart";
   /** Shown on the floating bar as well as in the menu. */
   bar?: boolean; checked?: boolean; shortcut?: string;
   run(): Result;
@@ -117,12 +118,20 @@ function scoreActions(slide: Slide, t: Extract<Target, { kind: "cells" }>): Acti
   });
 }
 
+/** Chart settings by hand: the focus line's fill, offered only where the chart draws as lines and has a focus. */
+function chartActions(slide: Slide): Action[] {
+  const c = slide.chart, i = c ? c.series?.findIndex((s) => s.color === "focus") ?? -1 : -1;
+  if (!c || i < 0 || !drawsAsLines(c)) return [];
+  const on = c.series?.[i].area !== false;
+  return [{ id: "chart-area", label: "Fill under the line", group: "chart", checked: on, run: () => ({ set: { [`chart.series[${i}].area`]: on ? false : null } }) }];
+}
+
 export function actionsFor(target: Target, slide: Slide, style: Style): Action[] {
   switch (target.kind) {
     case "text": return markActions(slide, target);
     case "item": return itemActions(slide, style, target.item);
     // A selection that includes the header is a column (or more): it takes the column format, not text marks.
     case "cells": return [...(Math.min(target.r0, target.r1) < 0 ? [] : markActions(slide, target)), ...tableActions(slide, style, target), ...scoreActions(slide, target)];
-    default: return [];
+    default: return chartActions(slide);
   }
 }
