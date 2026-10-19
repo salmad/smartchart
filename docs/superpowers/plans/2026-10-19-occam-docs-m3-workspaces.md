@@ -334,7 +334,7 @@ The design follows the existing sidebar's tokens and type: 248 px wide, mono sec
 - [x] **Step 5: Look at it.** Check the Members dialog and the view-only deck in both app themes. Critique, then fix.
 - [x] **Step 6: Commit.** Message: "Members and invite links; a viewer reads a deck and cannot edit it".
 
-### Task 9: Done-when, docs and the spec
+### Task 9: Done-when, docs and the spec (done)
 
 **Files:**
 - Modify:

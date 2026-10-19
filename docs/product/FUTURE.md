@@ -174,3 +174,6 @@ v1 keeps one writer at a time (presence, a revision on every save, a stale save 
 
 ## 23. Move a deck or doc to another workspace (2026-10-19)
 M3 puts every deck and doc in exactly one workspace, and a save never moves it: a deck made in your personal workspace stays there. Next: "Move to…" in a deck's or doc's sidebar menu, listing the workspaces where you are an editor or owner. Moving needs edit rights in both places. Its versions, events and share link go with it. Members of the old workspace lose access, so the dialog says who will stop seeing it.
+
+## 24. Workspace invites by email (2026-10-19)
+M3 invites by link: the owner creates it in Members, copies it and sends it however they like. It works only for the invited email once signed in, for 7 days. Next: Occam sends the email itself (a transactional email service, a sender domain, and a plain message naming the workspace and who invited you), plus "Copy link" again on an open invite, which today shows only when it is made.
