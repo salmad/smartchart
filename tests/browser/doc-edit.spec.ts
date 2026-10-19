@@ -88,7 +88,7 @@ test('enter on an empty list item ends the list', async ({ page }) => {
   expect((await saved(page)).text).toContain('- one\n- two\n\nAfter the list.\n')
 })
 
-test('"## " makes a section heading; pasted "## x" stays words and is saved escaped', async ({ page }) => {
+test('"## " makes a section heading; a pasted \\## x stays words, and is saved escaped', async ({ page }) => {
   await seed(page)
   await edit(page)
   await para(page).click()
@@ -97,7 +97,7 @@ test('"## " makes a section heading; pasted "## x" stays words and is saved esca
   await page.keyboard.type('## Risks')
   await expect(page.locator('.doc-editing h2')).toHaveText(['Plan', 'Risks'])
   await page.keyboard.press('Enter')
-  await paste(page, '## not a heading')
+  await paste(page, '\\## not a heading')
   await page.keyboard.press(`${mod}+s`)
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
   expect((await saved(page)).text).toContain('\\## not a heading')
@@ -490,15 +490,15 @@ test('rich text pasted from elsewhere comes in as the doc’s own blocks and mar
   expect(t).toContain('- a\n  - b')
 })
 
-test('a typed [-x-] would be read as formatting once saved, so Save says so and keeps the page open', async ({ page }) => {
+test('typing [-x-] makes the red mark as it is typed, so what is on screen is what is saved', async ({ page }) => {
   await seed(page)
   await edit(page)
   await para(page).click()
   await page.keyboard.press('End')
   await page.keyboard.type(' costs [-more-] now')
-  await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('alert')).toContainText('formatting')
-  await expect(page.locator('.doc-editing')).toBeVisible()
+  await expect(page.locator('.doc-editing .hl-neg')).toHaveText('more')
+  await saveDoc(page)
+  expect((await saved(page)).text).toContain('costs [-more-] now')
 })
 
 test('an open figure keeps its unsaved edit while the text around it changes shape', async ({ page }) => {
@@ -521,4 +521,44 @@ test('an open figure keeps its unsaved edit while the text around it changes sha
   await page.locator('[data-figure-edit]').getByRole('button', { name: 'Done' }).click()
   await saveDoc(page)
   expect((await saved(page)).text).toContain('Revolut Business Ltd')
+})
+
+test('"## " typed in a list item or a quote leaves the list and the quote alone', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await page.locator('.doc-editing li').nth(1).click()
+  await page.keyboard.press('End'); await page.keyboard.press('Enter')
+  await page.keyboard.type('## ')
+  await expect(page.locator('.doc-editing h2')).toHaveCount(1)
+  await expect(page.locator('.doc-editing li')).toHaveText(['one', 'two', '## '])
+})
+
+test('Markdown pasted as text comes in as lists, quotes, bold and links; typing [+x+] and [a](https://b.co) makes marks', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await para(page).click()
+  await page.keyboard.press('End'); await page.keyboard.press('Enter')
+  await paste(page, 'Intro with **bold** and [a link](https://example.com).\n\n- item\n  - child\n\n> said\n\n### Sub heading')
+  await expect(page.locator('.doc-editing strong')).toHaveText('bold')
+  await expect(page.locator('.doc-editing li li')).toHaveText('child')
+  await expect(page.locator('.doc-editing blockquote')).toHaveText('said')
+  await expect(page.locator('.doc-editing h3')).toHaveText('Sub heading')
+  await page.keyboard.press('Enter'); await page.keyboard.press('Enter')
+  await page.keyboard.type('good [+gain+] and [a](https://b.co)')
+  await expect(page.locator('.doc-editing .hl-pos')).toHaveText('gain')
+  await expect(page.locator('.doc-editing a[href="https://b.co"]')).toHaveText(/^a\u2060?$/)
+  await saveDoc(page)
+  const t = (await saved(page)).text
+  expect(t).toContain('[a link](https://example.com)')
+  expect(t).toContain('good [+gain+] and [a](https://b.co)')
+})
+
+test('a bolded word in the title is plain words: the doc keeps a plain name', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await page.locator('.doc-editing .doc-title').click()
+  await page.keyboard.press('Home')
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+ArrowRight')
+  await page.keyboard.press(`${mod}+b`)
+  await expect(page.locator('.doc-editing .doc-title strong')).toHaveCount(0)
 })

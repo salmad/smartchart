@@ -3,6 +3,9 @@
 import { Extension, type Editor } from '@tiptap/core'
 import { Plugin, TextSelection } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
+import { Fragment, Node as PMNode, Slice } from '@tiptap/pm/model'
+import { parseText } from '@/engine/docs/ops'
+import { toNode } from '@/engine/docs/prose'
 import { convert, insertAfter, mergeBack, moveBlock, removeBlock, splitText, type Keyed } from '@/engine/docs/blocks'
 import type { Block } from '@/engine/docs/types'
 import { applyBlocks, caretIn, type Op } from './structure'
@@ -48,7 +51,8 @@ export const Behaviour = Extension.create<BehaviourOptions>({
         handleTextInput(view, _from, _to, text) {
           if (text !== ' ') return false
           const { $from } = view.state.selection, before = $from.parent.textContent.slice(0, $from.parentOffset)
-          if (!/^#{1,2}$/.test(before) || $from.parent.type.name !== 'paragraph' || $from.parent.textContent !== before || $from.parentOffset !== before.length) return false
+          // Only in a paragraph of a section (or before the first one): not in a list item or a quote, which are bigger blocks.
+          if (!/^#{1,2}$/.test(before) || $from.parent.type.name !== 'paragraph' || !['doc', 'sectionBody'].includes($from.node(-1)?.type.name ?? '') || $from.parent.textContent !== before || $from.parentOffset !== before.length) return false
           const at = caretIn(ed())
           if (!at) return false
           return applyBlocks(ed(), o().originals(), (list, i): Op | null => {
@@ -60,6 +64,16 @@ export const Behaviour = Extension.create<BehaviourOptions>({
         },
         // The browser tells the editor about a moved cursor a moment after the key that moved it: a key that follows at
         // once (a fast typist, a test) must see where the cursor is now, before any key handler reads it.
+        // Plain text is pasted as the doc's own Markdown (what a person copies from a chat or a note): lists, quotes,
+        // bold, links and `\## x` as written. A heading in it is a subheading (a section is made with `## ` in an empty line).
+        clipboardTextParser(text, $context, _plain, view) {
+          const schema = view.state.schema, name = $context.parent.type.name
+          if (name === 'docTitle' || name === 'docSubtitle') return new Slice(Fragment.from(schema.text(text.replace(/\s+/g, ' ').trim() || ' ')), 0, 0)
+          const blocks = parseText(text.replace(/\r/g, ''))
+          if (typeof blocks === 'string') return Slice.empty
+          const nodes = blocks.filter((b) => b.type !== 'figure' && b.type !== 'raw').map((b) => PMNode.fromJSON(schema, toNode(b.type === 'heading' && b.level === 2 ? { ...b, level: 3 } : b, () => '')))
+          return Slice.maxOpen(Fragment.fromArray(nodes))
+        },
         handleDOMEvents: { keydown: (view, e) => { syncSelection(view); return o().slash(e as KeyboardEvent) } },
       },
     })]

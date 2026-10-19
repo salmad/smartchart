@@ -1,7 +1,7 @@
 /* The doc editor's schema: exactly what the format can hold, drawn as the read view draws it (section.doc-sec > h2 +
    div.sec-body), so doc.css and components.css apply unchanged. Every container says what the Block union says it may
    hold, and nothing the file cannot write is offered: no italic, no code marks, no hard breaks, one quote text. */
-import { Mark, markInputRule, Node, textblockTypeInputRule } from '@tiptap/core'
+import { InputRule, Mark, markInputRule, Node, textblockTypeInputRule } from '@tiptap/core'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -24,10 +24,11 @@ const span = (name: string, cls: string, rule?: RegExp, key?: string) => Mark.cr
 })
 /** `[[words]]`, typed, becomes the Focus mark at once, so what is on screen is what the file will say. */
 export const Focus = span('focus', 'hl-focus', /(?:\[\[)([^\]]+)(?:\]\])$/, 'Mod-Shift-h')
-export const Neg = span('neg', 'hl-neg')
-export const Pos = span('pos', 'hl-pos')
+export const Neg = span('neg', 'hl-neg', /(?:\[-)([^\]]+?)(?:-\])$/)
+export const Pos = span('pos', 'hl-pos', /(?:\[\+)([^\]]+?)(?:\+\])$/)
 
-export const DocTitle = Node.create({ name: 'docTitle', content: 'inline*', marks: '_', defining: true, parseHTML: () => [{ tag: 'h1.doc-title' }], renderHTML: () => ['h1', { class: 'doc-title' }, 0] })
+// The title is the doc's name (the sidebar, the breadcrumb, the doc list): plain words.
+export const DocTitle = Node.create({ name: 'docTitle', content: 'inline*', marks: '', defining: true, parseHTML: () => [{ tag: 'h1.doc-title' }], renderHTML: () => ['h1', { class: 'doc-title' }, 0] })
 export const DocSubtitle = Node.create({ name: 'docSubtitle', content: 'inline*', marks: '_', defining: true, parseHTML: () => [{ tag: 'p.doc-sub' }], renderHTML: () => ['p', { class: 'doc-sub' }, 0] })
 
 export const SectionHead = Node.create({
@@ -42,7 +43,14 @@ export const Section = Node.create({ name: 'section', content: 'sectionHead sect
 export const schemaExtensions = () => [
   Document.extend({ content: 'docTitle docSubtitle block* section*' }),
   Paragraph, Text, Bold, Focus, Neg, Pos,
-  Link.configure({ autolink: false, linkOnPaste: false, openOnClick: false, isAllowedUri: (url) => LINK_URI.test(url), HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' } }),
+  Link.configure({ autolink: false, linkOnPaste: false, openOnClick: false, isAllowedUri: (url) => LINK_URI.test(url), HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' } }).extend({
+    // `[words](address)`, typed, becomes the link at once.
+    addInputRules() {
+      return [new InputRule({ find: /\[([^\][]+)\]\((https?:\/\/[^\s)]+|#[\w-]+)\)$/, handler: ({ state, range, match }) => {
+        state.tr.replaceWith(range.from, range.to, state.schema.text(match[1], [this.type.create({ href: match[2] })]))
+      } })]
+    },
+  }),
   // Subheadings only: a section's own heading is its sectionHead.
   Heading.configure({ levels: [3] }).extend({
     addAttributes: () => ({ level: { default: 3 }, id: { default: '', rendered: false } }),

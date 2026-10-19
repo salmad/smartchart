@@ -6,7 +6,7 @@ import { Node } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { Editor } from '@tiptap/core'
-import { fitFigures } from '@/engine/docs/mount'
+import { fitFigures, loadFaces } from '@/engine/docs/mount'
 import { blockHTML } from '@/engine/docs/render'
 import type { Block, FigureBlock } from '@/engine/docs/types'
 import type { Theme } from '@/engine/types'
@@ -64,12 +64,17 @@ export const Figure = Node.create<{ host: FigureHost | null }>({
       tmp.innerHTML = blockHTML(block, theme)
       const dom = tmp.firstElementChild as HTMLElement
       const isOpen = (d: readonly Decoration[]) => d.some((x) => (x.spec as { open?: boolean } | undefined)?.open)
+      let drawn = 0
       const draw = () => {
         fit?.disconnect(); fit = null
-        const html = document.createElement('div')
+        const html = document.createElement('div'), id = ++drawn
         html.innerHTML = blockHTML(block, host?.theme() ?? 'paper')
         dom.innerHTML = (html.firstElementChild as HTMLElement).innerHTML
-        fit = fitFigures(dom, () => (block.type === 'figure' ? (block as FigureBlock) : null), host?.theme() ?? 'paper', host?.accent())
+        // Figures measure text, as slides do: the fonts first (the read page waits for them too).
+        void loadFaces().then(() => {
+          if (id !== drawn || open) return
+          fit = fitFigures(dom, () => (block.type === 'figure' ? (block as FigureBlock) : null), host?.theme() ?? 'paper', host?.accent())
+        })
       }
       const show = (now: boolean) => {
         if (now === open) return

@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 import { DOC_STARTERS, starterDoc } from '@/engine/starters'
 import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
-import { fromProse, inline, markupOf, toProse, type ProseNode } from '@/engine/docs/prose'
+import { fromProse, inline, literalMarkup, markupOf, toProse, type ProseNode } from '@/engine/docs/prose'
 import type { Block, Doc } from '@/engine/docs/types'
 
 const roundTrip = (doc: Doc, withOriginals = true): Doc => {
@@ -56,4 +56,12 @@ test('markup that is not in the format\'s own order is kept as written when the 
   const doc = parseDoc(['---', 'title: T', '---', '', '[[**x**]] y.', ''].join('\n')).doc
   const out = roundTrip(doc)
   expect(out.blocks[0]).toBe(doc.blocks[0])
+})
+
+test('words typed as formatting that the editor did not turn into a mark are caught before they are saved', () => {
+  const doc = (text: string, marks?: { type: string }[]): ProseNode => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text, ...(marks ? { marks } : {}) }] }] })
+  expect(literalMarkup(doc('a [-red-] word'))).toBe('[-red-]')
+  expect(literalMarkup(doc('see [x](https://a.co) now'))).toBe('[x](https://a.co)')
+  expect(literalMarkup(doc('a [-red-] word', [{ type: 'bold' }]))).toBeNull()
+  expect(literalMarkup(doc('plain words, [brackets] and (parens)'))).toBeNull()
 })

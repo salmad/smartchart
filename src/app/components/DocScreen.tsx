@@ -1,9 +1,9 @@
 import '@/engine/docs/doc.css'
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DocComment } from '@/engine/comments'
 import { PanelLeft } from 'lucide-react'
 import { parseDoc } from '@/engine/docs/parse'
-import { mountDoc } from '@/engine/docs/mount'
+import { loadFaces, mountDoc } from '@/engine/docs/mount'
 import { serializeDoc } from '@/engine/docs/serialize'
 import { describeDocDiff, docFrom } from '@/engine/docs/versions'
 import { plainOf } from '@/engine/slides/markup'
@@ -19,7 +19,6 @@ import { anchorsOf } from './docs/anchors'
 import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
 import { ReadBar } from './docs/DocBar'
-import { DocEditing } from './docs/DocEditing'
 import { DocMenu } from './docs/DocMenu'
 import { DocPreview } from './docs/DocPreview'
 import { useDocLive } from './docs/useDocLive'
@@ -43,6 +42,9 @@ interface Props {
 }
 
 /** A doc in the workspace shell: the sidebar, a quiet bar, and the doc, read (M2) or edited (M4). */
+// The editor (Tiptap and ProseMirror) loads when a doc is first edited, not with the app.
+const DocEditing = lazy(() => import('./docs/DocEditing').then((m) => ({ default: m.DocEditing })))
+
 export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account }: Props) {
   const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
@@ -73,7 +75,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     if (!record || !shown || editing) return
     let go = true, mounted: { destroy(): void } | null = null
     // Figures measure text, as slides do: the fonts first.
-    void document.fonts.ready.then(() => { if (go && page.current) { mounted = mountDoc(page.current, shown, record.id); setPageEl(page.current) } })
+    void loadFaces().then(() => { if (go && page.current) { mounted = mountDoc(page.current, shown, record.id); setPageEl(page.current) } })
     return () => { go = false; mounted?.destroy() }
   }, [record, shown, editing])
   // The page redrawn gives a ring a new element to wear.
@@ -159,10 +161,12 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
 
   if (editing && parsed) {
     return (
-      <DocEditing doc={parsed} save={save} onDone={() => setEditing(false)} comments={commenting}
-        stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
-        {(bar, editor) => <>{header(bar)}{body(editor)}</>}
-      </DocEditing>
+      <Suspense fallback={<>{header(null)}{body(null)}</>}>
+        <DocEditing doc={parsed} save={save} onDone={() => setEditing(false)} comments={commenting}
+          stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
+          {(bar, editor) => <>{header(bar)}{body(editor)}</>}
+        </DocEditing>
+      </Suspense>
     )
   }
   return (

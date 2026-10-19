@@ -101,3 +101,19 @@ Other findings, each a task 4 item:
 - Headings (level 3) carry their id as a node attribute; a section heading carries the section's id.
 - Not yet proven: the figure NodeView hosting `FigureEdit` (React), the heading transform, undo across them, `pre-wrap` effects while typing. These are task 4's first checks.
 - Licences: `@tiptap/core`, `react`, `pm`, `extensions`, `extension-drag-handle`, list, link, bold, heading and the rest are MIT, so the drag handle is not a paid extension.
+
+## Task 4 result (2026-10-19)
+
+Built and tested; not deployed (nested lists wait for it, so both ship together).
+
+What it is: `src/engine/docs/prose.ts` (the doc as the editor's document, `toProse` and `fromProse`, a block the editor did not change comes back as the very Block it started from, so opening a doc and saving it writes the same bytes), `src/app/components/docs/editor/` (schema, figure atom, keys and rules, structural ops, link tails and unique ids), `useDocEdit.ts` (Save), `DocEditor.tsx`, `SelectionBar.tsx`, `BlockHandle.tsx`, `useSlash.ts`. The old editor, its redraw and caret code and the list ops are deleted. The editor loads as its own chunk when a doc is first edited.
+
+Calls made, to check:
+- **Section edges are made on the flat list of blocks** with the same pure ops the doc tools use (`engine/docs/blocks.ts`), and only the top-level nodes that changed are replaced. Everything inside a block is ProseMirror's own. A figure open in place keeps its slot (one element per figure, outliving its node view), so its unsaved edit survives a move or a paragraph becoming a heading.
+- **A heading moves alone and deleting a heading keeps what is under it** (the doc tools' rule, and the old editor's). Backspace at a heading turns it into a paragraph (no literal `##` comes back); at the first paragraph under it, it joins the heading's words.
+- **`## ` and `# `** in an empty paragraph of a section make a section heading (not in a list item or a quote). `### ` makes a subheading. `[[x]]`, `[-x-]`, `[+x+]`, `**x**` and `[x](https://…)` become marks as they are typed.
+- **Paste:** plain text is read as the doc's own Markdown (`\## x` stays words); rich text keeps bold, links and lists, drops italic, code, tables and images, and a pasted h1 to h6 is a subheading.
+- **Save:** nothing changed writes nothing; otherwise the gate the doc tools use (`refusal`: no new error, and the text survives being saved) plus a check that no words typed as formatting would be read as it (`literalMarkup`). It refuses with a sentence, never rewriting.
+- **The title takes no marks** (it is the doc's name). Shift+Enter does nothing (no line breaks in a block). ⌘I and ⌘U do nothing.
+- **The look lock** is `tests/browser/doc-look.spec.ts`: every doc starter, both themes, the editor's whole page against the read page, a few pixels at link underlines allowed. Its first form compared only the first screen; the full one found that the read page measured figures before the display faces were loaded, which is fixed (`loadFaces`).
+- Not done: a number under a number restarts at 01 (options with the user); hover comment buttons are still the read view's, not in edit mode.

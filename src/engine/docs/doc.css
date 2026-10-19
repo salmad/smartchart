@@ -47,8 +47,9 @@ ol.doc-list > li::before { content: counter(n, decimal-leading-zero); font: 500 
 /* A list under an item sits in that item, one step in (the item's own padding, or its number's column). */
 .doc-list .doc-list { margin-top: 8px; }
 ol.doc-list > li > .doc-list { grid-column: 2; }
-ul.doc-list ul.doc-list > li::before { content: "–"; }
-ul.doc-list ul.doc-list ul.doc-list > li::before { content: "·"; }
+/* The marker follows the depth, not the kind of the list around it. */
+.doc-list ul.doc-list > li::before { content: "–"; }
+.doc-list .doc-list ul.doc-list > li::before { content: "·"; }
 :is(.doc-body, .sec-body) > blockquote { padding-left: 24px; border-left: 3px solid var(--focus); font-size: 19px; line-height: 1.5; }
 :is(.doc-body, .sec-body) > blockquote p { margin: 0; }
 :is(.doc-body, .sec-body) > hr { margin-top: 48px; margin-bottom: 48px; border: 0; border-top: 1px solid var(--line); }

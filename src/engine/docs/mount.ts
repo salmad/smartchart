@@ -9,6 +9,10 @@ import { asSlide, canvas, figureCanvasHTML, isText, widthOf } from './figure.js'
 import { DEFAULT_THEME, docHTML } from './render.js'
 import type { Doc, FigureBlock } from './types.js'
 
+/** Every face a figure measures with, loaded (a face nothing has drawn yet is not loaded by `document.fonts.ready`, and a
+    figure laid out on a fallback face keeps the wrong height). */
+export const loadFaces = (): Promise<unknown> => Promise.all(['800 100px Archivo', '900 100px Archivo', '400 30px Geist', '600 30px Geist', "500 20px 'Geist Mono'"].map((f) => document.fonts.load(f))).then(() => document.fonts.ready)
+
 /** Under this frame width the notes leave the canvas, and the figure can be expanded. */
 const NARROW = 600
 

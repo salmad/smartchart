@@ -14,10 +14,10 @@ Tiptap with the schema of the `Block` union only (StarterKit extras off), figure
 ## Task 3. Nested lists in the format (done 2026-10-19, not deployed: see below)
 Item depth in `types.ts`, `parse.ts`, `serialize.ts`, `validate.ts`, `render.ts`, `doc.css` (what level 2 and nested numbers use for markers: shown on the docs dev page, full size, both themes), `ops.ts`/`write_doc_text`, the doc guide (token budget), round-trip tests. Does not deploy before Task 4.
 
-## Task 4. The editor
+## Task 4. The editor (done 2026-10-19; see the spec's Task 4 result)
 ProseMirror ↔ `Block[]` through `markup.ts` and the existing serializer (no Tiptap Markdown serializer), ids as node attrs with `keepOnSplit: false`, input rules (`# `, `## `, `### `, `- `, `* `, `1. `, `> `, `---`), slash menu as a suggestion, floating toolbar (bold, Focus, link), Tab and Shift-Tab, drag handle, paste mapping, undo grouping, caret. `useDocEdit` shrinks to: state is the draft, Save closes the open figure, runs `accept()`, writes. Presence, 409, versions, comments unchanged. Port `doc-edit`, `doc-done`, `doc-collab` specs; add the new probes (select across blocks and delete, undo typing, every shortcut, Google Docs paste, no duplicate ids after a heading split, starters round-trip). Delete the old editor (`editorKeys.ts`, `editorHTML.ts`, redraw and focus code) with no shims.
 
-## Task 5. Look review
+## Task 5. Look review (done 2026-10-19, logged in docs/temp/apple-bar-review.md)
 Full-size screenshots, both themes: nested markers and indent, the new chart entries, section spacing in edit mode. Advisor review; critique logged in `docs/temp/apple-bar-review.md`.
 
 ## After
