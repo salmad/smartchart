@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TourShow } from './tour'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
@@ -6,7 +6,7 @@ import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
 import { newLiveKey, openPresentation, usePublishDeck } from './presenter-channel'
-import { PrintDeck, pdfName } from './components/PrintDeck'
+import { pdfName } from './pdf-name'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
 import { installDebug } from './debug'
@@ -30,11 +30,14 @@ import { usePersist } from './usePersist'
 import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { useWorkspace } from './components/sidebar/useWorkspace'
-import { DocScreen } from './components/DocScreen'
-import { ViewDeck } from './components/ViewDeck'
 import type { DocRepo } from './docs'
 import type { WorkspaceRepo } from './workspaces'
 import { ROOMY, usePanel } from './panel'
+
+// Screens not needed for the first paint load when they are first shown.
+const DocScreen = lazy(() => import('./components/DocScreen').then((m) => ({ default: m.DocScreen })))
+const ViewDeck = lazy(() => import('./components/ViewDeck').then((m) => ({ default: m.ViewDeck })))
+const PrintDeck = lazy(() => import('./components/PrintDeck').then((m) => ({ default: m.PrintDeck })))
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
@@ -289,14 +292,14 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   return (
     <TooltipProvider delayDuration={400}>
       {route.name !== 'doc' && readOnly
-        ? <ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
-          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} />
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
+          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} /></Suspense>
         : route.name === 'doc'
-        ? <DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} />
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} /></Suspense>
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
-      {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
+      {printing && <Suspense fallback={null}><PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} /></Suspense>}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>

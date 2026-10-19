@@ -1,23 +1,30 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { App } from './App'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from './auth'
-import { Shared } from './components/Shared'
-import { Invite } from './components/Invite'
-import { SignIn } from './components/SignIn'
-import { Site } from './components/landing/Site'
 import { devAccount } from './dev-account'
 import { remoteDeckRepo } from './remote'
 import { go, useRoute } from './route'
-import { Present } from './components/Present'
-import { Presenter } from './components/Presenter'
 import { localDeckRepo } from './store'
 import { localDocRepo, remoteDocRepo } from './docs'
 import { localWorkspaceRepo, remoteWorkspaceRepo } from './workspaces'
+
+// One screen per route: the site, the editor and the shared views load only when they are shown.
+const App = lazy(() => import('./App').then((m) => ({ default: m.App })))
+const Shared = lazy(() => import('./components/Shared').then((m) => ({ default: m.Shared })))
+const Invite = lazy(() => import('./components/Invite').then((m) => ({ default: m.Invite })))
+const SignIn = lazy(() => import('./components/SignIn').then((m) => ({ default: m.SignIn })))
+const Site = lazy(() => import('./components/landing/Site').then((m) => ({ default: m.Site })))
+const Present = lazy(() => import('./components/Present').then((m) => ({ default: m.Present })))
+const Presenter = lazy(() => import('./components/Presenter').then((m) => ({ default: m.Presenter })))
 
 /** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
     on the site waits through sign-in). Signed in: the editor, at / on the deck worked on last; the site stays at
     /home, reached from Occam in the editor's bar, with Open app in place of sign-in. */
 export function Root() {
+  const route = useRoute()
+  return <Suspense fallback={<div className={route.name === 'home' || route.name === 'site' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />}><Screens /></Suspense>
+}
+
+function Screens() {
   const route = useRoute(), live = useSession(), dev = useMemo(devAccount, [])
   const session = dev ?? live
   const [signingIn, setSigningIn] = useState(false), [ended, setEnded] = useState(false)

@@ -20,6 +20,7 @@ test('a pasted link becomes an attachment, read in the browser, and goes to the 
   await page.route('**/api/jev', (r) => { sent.push(r.request().postData() ?? ''); return r.fulfill({ status: 503, json: { error: 'down' } }) })
   await page.route('**/api/glm', (r) => { sent.push(r.request().postData() ?? ''); return r.fulfill({ status: 503, json: { error: 'down' } }) })
   await page.goto('/new')
+  await page.locator('textarea').waitFor() // the editor loads on its own, after the page
   await page.evaluate(paste, 'https://research.example/sme-credit-2026')
   const chips = page.getByRole('list', { name: 'Attached files' })
   await expect(chips).toContainText('SME credit in 2026 · Example Research · research.example')
