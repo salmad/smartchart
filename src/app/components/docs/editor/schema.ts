@@ -1,7 +1,7 @@
 /* The doc editor's schema: exactly what the format can hold, drawn as the read view draws it (section.doc-sec > h2 +
    div.sec-body), so doc.css and components.css apply unchanged. Every container says what the Block union says it may
    hold, and nothing the file cannot write is offered: no italic, no code marks, no hard breaks, one quote text. */
-import { Mark, markInputRule, Node } from '@tiptap/core'
+import { Mark, markInputRule, Node, textblockTypeInputRule } from '@tiptap/core'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -47,7 +47,8 @@ export const schemaExtensions = () => [
   Heading.configure({ levels: [3] }).extend({
     addAttributes: () => ({ level: { default: 3 }, id: { default: '', rendered: false } }),
     renderHTML: ({ node }) => ['h3', node.attrs.id ? { id: node.attrs.id as string } : {}, 0],
-    addInputRules: () => [],
+    // Only `### `: a `# ` or `## ` is a section heading, made by the editor's own rule (behaviour.ts).
+    addInputRules() { return [textblockTypeInputRule({ find: /^###\s$/, type: this.type, getAttributes: { level: 3 } })] },
   }),
   // A quote is one text; a list item is its words and at most one list under it.
   Blockquote.extend({ content: 'paragraph' }),

@@ -16,7 +16,10 @@ export interface FigureHost {
   accent(): string | undefined
   /** A click on a figure. */
   open(key: string): void
-  /** The open figure's slot appeared (an element) or went (null). */
+  /** The element the open figure's edit surface is drawn into: one per figure for as long as it is open, so the surface
+      (and its unsaved edits) outlives its node view when a move rebuilds the node. */
+  slotFor(key: string): HTMLElement
+  /** The figure was opened (with its slot) or closed (null). */
   slot(key: string, el: HTMLElement | null): void
 }
 
@@ -72,7 +75,7 @@ export const Figure = Node.create<{ host: FigureHost | null }>({
         if (now === open) return
         open = now
         // React draws into a child of its own, which is only let go of (never emptied), so it can unmount its tree cleanly.
-        if (now) { fit?.disconnect(); fit = null; dom.innerHTML = ''; slotEl = document.createElement('div'); dom.appendChild(slotEl); host?.slot(key, slotEl) } else { host?.slot(key, null); slotEl?.remove(); slotEl = null; draw() }
+        if (now) { fit?.disconnect(); fit = null; dom.innerHTML = ''; slotEl = host?.slotFor(key) ?? document.createElement('div'); dom.appendChild(slotEl); host?.slot(key, slotEl) } else { slotEl?.remove(); slotEl = null; host?.slot(key, null); draw() }
       }
       requestAnimationFrame(() => { if (!open) draw() })
       // A click inside the figure's own edit surface is the editor's (Done closes it; the click must not reopen it).
@@ -108,7 +111,8 @@ export const Figure = Node.create<{ host: FigureHost | null }>({
         // While open, every event in the slot is the figure editor's; the checks badge (a <details>) keeps its own keys too.
         stopEvent: (e) => open || (e.target instanceof Element && !!e.target.closest('.fig-checks')),
         ignoreMutation: () => true,
-        destroy: () => { fit?.disconnect(); if (open) host?.slot(key, null) },
+        // A moved figure is destroyed and made again: its slot is only taken out of this node, and the next one takes it.
+        destroy: () => { fit?.disconnect(); slotEl?.remove() },
       }
     }
   },

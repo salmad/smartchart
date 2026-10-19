@@ -58,9 +58,10 @@ export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEd
   const host = useMemo<FigureHost>(() => ({
     theme: () => look.current.theme, accent: () => look.current.accent,
     open: (key) => open.current(key),
-    slot: (_key, el) => setSlot(el),
+    slotFor: (key) => { let el = slots.current.get(key); if (!el) { el = document.createElement('div'); slots.current.set(key, el) } return el },
+    slot: (key, el) => { setSlot(el); if (!el) slots.current.delete(key) },
   }), [])
-  const open = useRef<(key: string | null) => void>(() => {})
+  const open = useRef<(key: string | null) => void>(() => {}), slots = useRef(new Map<string, HTMLElement>())
 
   const editor = useEditor({
     extensions: docExtensions(host, { originals: () => doc.blocks, slash: (e) => onKey.current(e) }),
@@ -74,7 +75,7 @@ export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEd
   editorRef.current = editor
   // A figure deleted while it was open is no longer open.
   useEffect(() => {
-    if (editor && figure && !findFigure(editor, figure)) { done.current = null; setFigureKey(null); setSlot(null); setOpenKey(editor, null) }
+    if (editor && figure && !findFigure(editor, figure)) { done.current = null; slots.current.delete(figure); setFigureKey(null); setSlot(null); setOpenKey(editor, null) }
   }, [editor, figure, tick])
   useEffect(() => { editor?.setEditable(!saving) }, [editor, saving])
 
