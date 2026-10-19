@@ -7,7 +7,9 @@ import { BLOCK_STARTERS } from '@/engine/starters'
 import type { Block, FigureKind } from '@/engine/docs/types'
 import type { Where } from './editor/structure'
 
-export interface SlashChoice { id: string; group: 'Text' | 'Figures'; label: string; blurb: string; icon: LucideIcon; block: () => Block }
+export interface SlashChoice { id: string; group: 'Text' | 'Figures'; label: string; blurb: string; icon: LucideIcon; block: () => Block
+  /** What else it is found by: a figure's kind (every chart form answers to "chart"). */
+  also?: string }
 
 /** Icons by kind; a chart starter that draws differently has its own, by id. */
 const BY_ID: Record<string, LucideIcon> = { 'line-chart': ChartLine, 'horizontal-bars': ChartBarBig, waterfall: ChartNoAxesGantt, timeline: ChartGantt, matrix: ChartScatter }
@@ -26,14 +28,14 @@ export const CHOICES: readonly SlashChoice[] = [
   { id: 'quote', group: 'Text', label: 'Quote', blurb: 'Words set apart, in someone’s voice', icon: Quote, block: () => ({ type: 'quote', text: '' }) },
   { id: 'divider', group: 'Text', label: 'Divider', blurb: 'A line between two parts', icon: Minus, block: () => ({ type: 'divider' }) },
   ...(callout ? [{ id: callout.id, group: 'Text' as const, label: callout.label, blurb: callout.blurb, icon: StickyNote, block: figure(callout.id) }] : []),
-  ...BLOCK_STARTERS.filter((s) => s.kind !== 'callout').map((s) => ({ id: s.id, group: 'Figures' as const, label: s.label, blurb: s.blurb, icon: BY_ID[s.id] ?? ICONS[s.kind] ?? LayoutGrid, block: figure(s.id) })),
+  ...BLOCK_STARTERS.filter((s) => s.kind !== 'callout').map((s) => ({ id: s.id, group: 'Figures' as const, label: s.label, blurb: s.blurb, also: s.kind, icon: BY_ID[s.id] ?? ICONS[s.kind] ?? LayoutGrid, block: figure(s.id) })),
 ]
 
 /** The choices whose name (or id) has a word starting with the query; all of them for an empty query. */
 export function matching(query: string): SlashChoice[] {
   const q = query.trim().toLowerCase()
   if (!q) return [...CHOICES]
-  return CHOICES.filter((c) => [c.label, c.id].some((s) => s.toLowerCase().split(/[\s-]+/).some((w) => w.startsWith(q)) || s.toLowerCase().startsWith(q)))
+  return CHOICES.filter((c) => [c.label, c.id, c.also ?? ''].some((s) => s.toLowerCase().split(/[\s-]+/).some((w) => w.startsWith(q)) || s.toLowerCase().startsWith(q)))
 }
 
 /** The paragraph `key` becomes the choice. Text gets the cursor; a figure is selected, with a paragraph after it when it ends the doc. */

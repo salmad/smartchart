@@ -29,7 +29,7 @@ export function DocEditor({ edit, theme, accent }: Props) {
       </article>
       {editor && page && frame && <BlockHandle edit={edit} page={page} frame={frame} theme={theme} />}
       {editor && frame && <SelectionBar editor={editor} frame={frame} theme={theme} />}
-      {slash.slash && <SlashMenu x={slash.slash.x} y={slash.slash.y} choices={slash.slash.choices} active={slash.slash.active} onPick={slash.choose} onHover={slash.hover} />}
+      {slash.slash && <SlashMenu x={slash.slash.x} y={slash.slash.y} above={slash.slash.above} choices={slash.slash.choices} active={slash.slash.active} onPick={slash.choose} onHover={slash.hover} />}
       {edit.slot && open?.block.type === 'figure' && edit.figure && createPortal(<FigureEdit key={edit.figure} doc={edit} at={edit.figure} block={open.block} theme={theme} accent={accent} />, edit.slot)}
     </div>
   )

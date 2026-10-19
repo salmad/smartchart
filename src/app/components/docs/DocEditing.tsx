@@ -25,7 +25,7 @@ export function DocEditing({ doc, save, onDone, stale, comments, children }: Pro
   // The words as they would be saved, for the clipboard.
   const copyText = useCallback(async () => {
     try { const d = edit.current(); if (!d) return false; await navigator.clipboard.writeText(serializeDoc(d)); return true } catch { return false }
-  }, [doc, edit])
+  }, [edit])
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {

@@ -6,9 +6,9 @@ import { cn } from '@/app/lib/utils'
 import { surface, tintOnFocus } from './chrome'
 import type { SlashChoice } from './slash'
 
-interface Props { x: number; y: number; choices: SlashChoice[]; active: string | null; onPick: (c: SlashChoice) => void; onHover: (id: string) => void }
+interface Props { x: number; y: number; above?: boolean; choices: SlashChoice[]; active: string | null; onPick: (c: SlashChoice) => void; onHover: (id: string) => void }
 
-export function SlashMenu({ x, y, choices, active, onPick, onHover }: Props) {
+export function SlashMenu({ x, y, above, choices, active, onPick, onHover }: Props) {
   const box = useRef<HTMLDivElement | null>(null)
   const place = (m: HTMLDivElement | null) => { box.current = m; m?.style.setProperty('--x', `${x}px`); m?.style.setProperty('--y', `${y}px`) }
   // The choice moved to by the keys stays in view.
@@ -16,7 +16,7 @@ export function SlashMenu({ x, y, choices, active, onPick, onHover }: Props) {
   const groups = (['Text', 'Figures'] as const).map((g) => [g, choices.filter((c) => c.group === g)] as const).filter(([, cs]) => cs.length)
   return (
     <div ref={place} data-edit-chrome onMouseDown={(e) => e.preventDefault()}
-      className={cn("absolute left-[var(--x)] top-[var(--y)] z-30 w-[300px] overflow-hidden rounded-[10px]", surface)}>
+      className={cn("absolute left-[var(--x)] top-[var(--y)] z-30 w-[300px] overflow-hidden rounded-[10px]", above && "-translate-y-full", surface)}>
       <Command shouldFilter={false} value={active ?? ''} onValueChange={onHover} className="bg-transparent text-[var(--fg)]">
         <CommandList label="Insert a block" className="max-h-[320px] p-1">
           <CommandEmpty className="px-3 py-3 text-[13px] text-[var(--muted)]">No block by that name.</CommandEmpty>

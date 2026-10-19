@@ -36,3 +36,9 @@ test('text kinds turn the paragraph, empty, and keep the cursor in it', () => {
   const d = pick(keyed([p('/d'), p('x')]), 'b1', choice('divider'))
   expect(unkeyed(d.list)).toEqual([{ type: 'divider' }, p(''), p('x')])
 })
+
+test('typing "chart" finds every chart form, and "bar" the horizontal ones too', async () => {
+  const { matching } = await import('@/app/components/docs/slash')
+  expect(matching('chart').map((c) => c.id)).toEqual(['chart', 'line-chart', 'horizontal-bars', 'waterfall', 'timeline', 'matrix'])
+  expect(matching('bar').map((c) => c.id)).toEqual(['chart', 'horizontal-bars'])
+})

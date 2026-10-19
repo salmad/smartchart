@@ -5,7 +5,7 @@ import { applyBlocks } from './editor/structure'
 import { matching, pick, type SlashChoice } from './slash'
 import type { DocEdit } from './useDocEdit'
 
-export interface Slash { query: string; x: number; y: number; choices: SlashChoice[]; active: string | null }
+export interface Slash { query: string; x: number; y: number; /** Opens above the line when there is no room below it. */ above: boolean; choices: SlashChoice[]; active: string | null }
 
 export function useSlash(edit: DocEdit, frame: () => HTMLElement | null) {
   const { editor } = edit
@@ -15,14 +15,17 @@ export function useSlash(edit: DocEdit, frame: () => HTMLElement | null) {
   /** After every change: open, filter or close. */
   useEffect(() => {
     if (!editor) return
-    const update = () => {
+    const update = ({ transaction }: { transaction: { docChanged: boolean } }) => {
       const { $from, empty } = editor.state.selection, p = $from.parent, cur = live.current, start = $from.start()
       const ok = empty && p.type.name === 'paragraph' && ['sectionBody', 'doc'].includes($from.node(-1)?.type.name ?? '') && /^\/\S*$/.test(p.textContent)
       if (!ok) { dismissed.current = null; if (cur) set(null); return }
-      if (dismissed.current === start || (!cur && p.textContent !== '/')) return
+      // It opens when words are typed into such a paragraph (all at once, as a paste or a fast typist does), not when the
+      // cursor merely arrives in one.
+      if (dismissed.current === start || (!cur && !transaction.docChanged)) return
       const box = frame()?.getBoundingClientRect(), at = editor.view.coordsAtPos($from.pos), choices = matching(p.textContent.slice(1))
       const active = cur && choices.some((c) => c.id === cur.active) ? cur.active : choices[0]?.id ?? null
-      set({ query: p.textContent.slice(1), x: at.left - (box?.left ?? 0) - 4, y: at.bottom - (box?.top ?? 0) + 6, choices, active })
+      const above = window.innerHeight - at.bottom < 340 && at.top > 340
+      set({ query: p.textContent.slice(1), x: at.left - (box?.left ?? 0) - 4, y: (above ? at.top - 6 : at.bottom + 6) - (box?.top ?? 0), above, choices, active })
     }
     editor.on('transaction', update)
     return () => { editor.off('transaction', update) }

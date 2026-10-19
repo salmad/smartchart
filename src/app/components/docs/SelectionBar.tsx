@@ -2,7 +2,7 @@
    page), in the page's own colours, and never takes the selection from the editor. ⌘B, ⌘⇧H and ⌘K do the same. */
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Editor } from '@tiptap/react'
-import { Bold, Link2 } from 'lucide-react'
+import { Bold, Highlighter, Link2 } from 'lucide-react'
 import type { Theme } from '@/engine/types'
 import { cn } from '@/app/lib/utils'
 import { LinkBox, type LinkAt } from './LinkBox'
@@ -51,7 +51,7 @@ export function SelectionBar({ editor, frame, theme }: Props) {
         <div ref={(m) => { m?.style.setProperty('--x', `${spot.x}px`); m?.style.setProperty('--y', `${spot.y}px`) }} data-edit-chrome role="toolbar" aria-label="Format"
           className={cn(`theme-${theme} absolute left-[var(--x)] top-[var(--y)] z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-[10px] p-1`, spot.below ? '' : '-translate-y-full', surface)}>
           {button('bold', 'Bold', '⌘B', () => editor.chain().focus().toggleBold().run(), <Bold className="size-4" strokeWidth={2} />)}
-          {button('focus', 'Focus colour', '⌘⇧H', () => editor.chain().focus().toggleMark('focus').run(), <span className="font-mono text-[12px] font-medium text-[var(--focus)]">[[ ]]</span>)}
+          {button('focus', 'Focus colour', '⌘⇧H', () => editor.chain().focus().toggleMark('focus').run(), <Highlighter className="size-4 text-[var(--focus)]" strokeWidth={1.75} />)}
           {button('link', 'Link', '⌘K', openLink, <Link2 className="size-4" strokeWidth={1.75} />)}
         </div>
       )}
