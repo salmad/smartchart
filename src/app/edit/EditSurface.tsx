@@ -3,28 +3,36 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { mountSlide } from '@/engine/slides/render'
 import { getAt, listOf, listOps, newItem } from '@/engine/slides/edit'
-import type { Deck, SlideContext } from '@/engine/types'
+import type { Deck, Slide, SlideContext, Style } from '@/engine/types'
 import { caretRange, redraw, selectRange, setCaret, typed } from './fields'
 import type { SlideEdit } from './useSlideEdit'
 import { surfaceOf, type Surface } from './surface'
 import './edit.css'
 
-interface Props { edit: SlideEdit; deck: Pick<Deck, 'style' | 'theme' | 'accent'>; ctx: SlideContext; onSurface: (s: Surface) => void; children?: ReactNode }
+/** Draws the shown slide into `el` and returns its root, with how to fit it to `el`'s width. A deck slide and a doc figure differ only here. */
+export type SurfaceRender = (el: HTMLElement, shown: Slide) => { node: HTMLElement; fit(): void }
+interface Props { edit: SlideEdit; deckStyle: Style; render: SurfaceRender; onSurface: (s: Surface) => void; children?: ReactNode }
+
+/** A deck slide: mounted with its page context, scaled from 1920 px. Memoise it on primitives, so a new ctx object never
+    remounts the slide under the cursor. */
+export function slideRender(ctx: SlideContext, deck: Pick<Deck, 'style' | 'theme' | 'accent'>): SurfaceRender {
+  return (el, shown) => {
+    const node = mountSlide(el, shown, ctx, deck)
+    return { node, fit: () => node.style.setProperty('--s', String(el.clientWidth / 1920)) }
+  }
+}
 
 const hint = (path: string) => { const k = path.replace(/\[\d+\]/g, '').split('.').at(-1) ?? ''; return k.charAt(0).toUpperCase() + k.slice(1) }
 const fieldOf = (t: EventTarget | null) => (t instanceof Element ? t.closest<HTMLElement>('[data-path]') : null)
 
-export function EditSurface({ edit, deck, ctx, onSurface, children }: Props) {
+export function EditSurface({ edit, deckStyle: style, render, onSurface, children }: Props) {
   const frame = useRef<HTMLDivElement>(null), editRef = useRef(edit)
   editRef.current = edit
-  const { style, theme, accent } = deck
-  // The agenda draws the deck's chapters; a new deck object with the same chapters must not redraw under the cursor.
-  const chapters = JSON.stringify(ctx.sections ?? [])
 
   useLayoutEffect(() => {
     const el = frame.current
     if (!el) return
-    const s = mountSlide(el, edit.shown, { page: ctx.page, section: ctx.section, kicker: ctx.kicker, footer: ctx.footer, sections: JSON.parse(chapters) }, { style, theme, accent })
+    const { node: s, fit } = render(el, edit.shown)
     s.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => {
       f.contentEditable = 'true'; f.spellcheck = true; f.dataset.hint = hint(f.dataset.path ?? '')
       if (editRef.current.samples.has(f.dataset.path ?? '')) f.dataset.sample = ''
@@ -37,14 +45,12 @@ export function EditSurface({ edit, deck, ctx, onSurface, children }: Props) {
       const f = s.querySelector<HTMLElement>(`[data-path="${want}"]`) ?? s.querySelector<HTMLElement>(`[data-item="${want}"] [data-path]`)
       if (f) { f.focus(); setCaret(f, 0) }
     }
-    const fit = () => s.style.setProperty('--s', String(el.clientWidth / 1920))
     const ro = new ResizeObserver(fit)
     ro.observe(el)
     // No null between remounts: the mount stays, and a render without a surface would drop the tools' listeners.
     onSurface(surfaceOf(el))
     return () => ro.disconnect()
-    // Primitives only: a new ctx object on each render must not remount the slide under the cursor.
-  }, [edit.shown, ctx.page, ctx.section, ctx.kicker, ctx.footer, chapters, style, theme, accent, onSurface])
+  }, [edit.shown, render, onSurface])
 
   // While a save runs, the fields stop taking text: what is typed now would be lost when edit mode closes.
   useEffect(() => { frame.current?.querySelectorAll<HTMLElement>('[data-path]').forEach((f) => { f.contentEditable = edit.saving ? 'false' : 'true' }) }, [edit.saving, edit.shown])

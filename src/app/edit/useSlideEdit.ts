@@ -2,13 +2,9 @@
    structural changes and when a field is left), and the issues measured on the draft, 300 ms after the last change. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { applyPatch } from '@/engine/agent/patch'
-import { ruleChecks } from '@/engine/agent/checks'
-import { validate } from '@/engine/slides/schema'
-import { getAt, issuePath } from '@/engine/slides/edit'
+import { getAt } from '@/engine/slides/edit'
 import type { Result, Target } from '@/engine/slides/actions'
-import type { Deck, Slide, Style } from '@/engine/types'
-import type { Measurer } from '../measure'
-import type { Item } from '../store'
+import type { Slide } from '@/engine/types'
 
 export interface Issue { msg: string; path?: string }
 export interface SlideEdit {
@@ -33,16 +29,17 @@ export interface SlideEdit {
   save(): Promise<void>
   discard(): void
 }
-interface Options { item: Item; index: number; deck: Deck; style: Style; measurer: () => Measurer; save: (draft: Slide) => Promise<string | null>; onDone: () => void }
+/** `check` gives the draft's issues (a deck slide's: schema, fit and rules; a doc figure's: its own); sample text is counted here. */
+interface Options { slide: Slide; check: (draft: Slide) => Issue[]; save: (draft: Slide) => Promise<string | null>; onDone: () => void }
 
 const MEASURE_MS = 300
 
-export function useSlideEdit({ item, index, deck, style, measurer, save, onDone }: Options): SlideEdit {
-  const draft = useRef(item.slide), focus = useRef<string | null>(null), select = useRef<{ path: string; from: number; to: number } | null>(null)
+export function useSlideEdit({ slide, check, save, onDone }: Options): SlideEdit {
+  const draft = useRef(slide), focus = useRef<string | null>(null), select = useRef<{ path: string; from: number; to: number } | null>(null)
   // History: the drafts before each change (they are immutable, so keeping them is cheap). Typing in one field is one step.
   const past = useRef<Slide[]>([]), future = useRef<Slide[]>([]), lastTyped = useRef<string | null>(null)
   const [target, setTargetState] = useState<Target>({ kind: 'slide' }), [depth, setDepth] = useState({ past: 0, future: 0 })
-  const [version, setVersion] = useState(0), [shown, setShown] = useState(item.slide)
+  const [version, setVersion] = useState(0), [shown, setShown] = useState(slide)
   const [issues, setIssues] = useState<Issue[]>([]), [samples, setSamples] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null)
 
@@ -74,19 +71,14 @@ export function useSlideEdit({ item, index, deck, style, measurer, save, onDone 
 
   const restore = useCallback((slide: Slide) => { draft.current = slide; lastTyped.current = null; setVersion((v) => v + 1); setShown(slide); setTargetState({ kind: 'slide' }) }, [])
 
-  // Issues on the draft: limits from the schema, fit from the measurer, rules and sample text as counts.
+  // Issues on the draft, plus sample text as a count.
   useEffect(() => {
     const t = setTimeout(() => {
-      const d = draft.current, m = measurer()
-      let fit: Issue[] = []
-      try { m.measure(d, deck, index); fit = m.located } catch (e) { fit = [{ msg: `slide could not be rendered: ${e instanceof Error ? e.message : String(e)}` }] }
-      const limits = validate(d, style).errors.map((msg) => ({ msg, path: issuePath(msg) }))
-      const rules = ruleChecks(d, style, m.lines).filter((c) => !c.ok).map((c) => ({ msg: `${c.id}: ${c.msg}` }))
       const sample = samples.size ? [{ msg: `${samples.size} field${samples.size === 1 ? '' : 's'} still ${samples.size === 1 ? 'has' : 'have'} sample text` }] : []
-      setIssues([...limits, ...fit, ...rules, ...sample])
+      setIssues([...check(draft.current), ...sample])
     }, MEASURE_MS)
     return () => clearTimeout(t)
-  }, [version, samples, deck, index, style, measurer])
+  }, [version, samples, check])
 
   const dirty = version > 0
   return useMemo<SlideEdit>(() => ({
