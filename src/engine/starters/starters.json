@@ -3134,8 +3134,8 @@
   {
    "id": "chart",
    "kind": "chart",
-   "label": "Chart",
-   "blurb": "Bars or lines over categories or time",
+   "label": "Bar chart",
+   "blurb": "Columns over categories or time",
    "body": {
     "caption": "SME card revenue, 2022–2026 · £m",
     "chart": {
@@ -3163,6 +3163,73 @@
      ]
     },
     "source": "Company filings; Finbridge estimates (illustrative)."
+   }
+  },
+  {
+   "id": "line-chart",
+   "kind": "chart",
+   "label": "Line chart",
+   "blurb": "A trend over time",
+   "body": {
+    "caption": "Gross margin, 2022–2026 · %",
+    "chart": {
+     "categories": [
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+      "2026"
+     ],
+     "format": "{v}%",
+     "series": [
+      {
+       "name": "Gross margin",
+       "mark": "line",
+       "color": "focus",
+       "values": [
+        12,
+        24,
+        31,
+        36,
+        38
+       ]
+      }
+     ]
+    },
+    "source": "Company filings; Finbridge estimates (illustrative)."
+   }
+  },
+  {
+   "id": "horizontal-bars",
+   "kind": "chart",
+   "label": "Horizontal bars",
+   "blurb": "Named items ranked by one measure",
+   "body": {
+    "caption": "Reasons for turning down a card · % of founders",
+    "chart": {
+     "kind": "ranked",
+     "format": "{v}%",
+     "ranking": [
+      {
+       "label": "Limit too low",
+       "value": 46,
+       "focus": true
+      },
+      {
+       "label": "Annual fee",
+       "value": 38
+      },
+      {
+       "label": "Personal guarantee",
+       "value": 31
+      },
+      {
+       "label": "Slow approval",
+       "value": 19
+      }
+     ]
+    },
+    "source": "Finbridge founder survey, 2026 (illustrative)."
    }
   },
   {
