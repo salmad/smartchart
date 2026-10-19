@@ -15,6 +15,12 @@ const NO_DOC = () => err(404, 'No such doc.')
 /** A refused write on a doc: a viewer (who can still open it) is told so; anyone else hears it doesn't exist. */
 const refusedDoc = async (db: Db, userId: string, id: string) => (await db.getDoc(userId, id) ? err(403, 'You can view this doc, not edit it.') : NO_DOC())
 
+/** The label a save carries (a restore says what it restored), or null. */
+const versionLabel = (v: unknown): string | null => {
+  const l = (v && typeof v === 'object' ? (v as { label?: unknown }).label : null)
+  return typeof l === 'string' && l.trim() ? l.trim().slice(0, 300) : null
+}
+
 /** A comment operation from a request body, or null when it is not one. */
 function commentOp(v: unknown): CommentOp | null {
   const o = (v && typeof v === 'object' ? v : {}) as { add?: Record<string, unknown>; resolve?: Record<string, unknown>; remove?: Record<string, unknown> }
@@ -86,7 +92,7 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
     if (request.method === 'PUT') {
       const text = await request.text()
       if (text.length > MAX_BYTES) return err(413, 'This doc is too large to save.')
-      let b: { id?: unknown; name?: unknown; text?: unknown; baseRev?: unknown; workspaceId?: unknown }
+      let b: { id?: unknown; name?: unknown; text?: unknown; baseRev?: unknown; workspaceId?: unknown; version?: unknown }
       try { b = JSON.parse(text) as typeof b } catch { return err(400, 'Bad doc.') }
       if (typeof b.id !== 'string' || !ID.test(b.id) || typeof b.name !== 'string' || typeof b.text !== 'string'
         || typeof b.baseRev !== 'number' || !Number.isInteger(b.baseRev) || b.baseRev < 0
@@ -99,7 +105,7 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
           return err(403, 'You can view this workspace, not add to it.')
         return refusedDoc(db, user.id, b.id)
       }
-      await recordDocVersion(db, user.id, b.id, b.text, user.name, put.rev)
+      await recordDocVersion(db, user.id, b.id, b.text, user.name, put.rev, versionLabel(b.version))
       return Response.json({ ok: true, rev: put.rev })
     }
     return err(405, 'method not allowed')

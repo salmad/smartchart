@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { docFrom, docTree } from '../../src/engine/docs/versions'
+import { describeDocDiff, docFrom, docTree } from '../../src/engine/docs/versions'
 import { DOC_STARTERS, starterDoc } from '../../src/engine/starters'
 import type { Doc } from '../../src/engine/docs/types'
 
@@ -24,5 +24,18 @@ describe('doc versions', () => {
     const { tree } = docTree(doc)
     expect(tree).toMatchObject({ title: 'T', subtitle: 'S', theme: 'paper', accent: '#123456' })
     expect(docFrom(tree, {})).toBeNull()
+  })
+})
+
+describe('describeDocDiff', () => {
+  const tree = (...blocks: string[]) => ({ title: 'T', blocks })
+  it('says edits, additions, removals and reorders in a few words', () => {
+    expect(describeDocDiff(null, tree('a'))).toBe('')
+    expect(describeDocDiff(tree('a', 'b'), tree('a', 'b'))).toBe('')
+    expect(describeDocDiff(tree('a', 'b'), tree('a', 'c'))).toBe('Edited 1 block')
+    expect(describeDocDiff(tree('a'), tree('a', 'b', 'c'))).toBe('Added 2 blocks')
+    expect(describeDocDiff(tree('a', 'b', 'c'), tree('a'))).toBe('Removed 2 blocks')
+    expect(describeDocDiff(tree('a', 'b'), tree('b', 'a'))).toBe('Reordered blocks')
+    expect(describeDocDiff(tree('a', 'b'), { ...tree('a', 'x', 'y'), title: 'U' })).toBe('Renamed · edited 1 block · added 1 block')
   })
 })

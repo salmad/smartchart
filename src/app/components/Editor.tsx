@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { TourShow } from '@/app/tour'
-import { diffTrees, type TreeDiff, type Version } from '@/engine/versions'
+import { describeDiff, diffTrees, type TreeDiff, type Version } from '@/engine/versions'
 import type { VersionsApi } from '@/app/useVersions'
 import type { CommentActions } from '@/app/useComments'
 import { openComments, quoteOf } from '@/engine/comments'
@@ -162,7 +162,7 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
                 {strip('row')}
               </section>
             </main>}
-        {side === 'versions' && versions && <VersionsPanel api={versions.api} saves={versions.saves} selected={preview?.v.n ?? null}
+        {side === 'versions' && versions && <VersionsPanel list={versions.api.list} describe={(v, before) => describeDiff(diffTrees(before?.tree ?? null, v.tree))} noun="deck" saves={versions.saves} selected={preview?.v.n ?? null}
           onPreview={showVersion} onClose={closeVersions} />}
         {side === 'comments' && items[current] && !editing && !preview && (
           <CommentsPanel key={items[current].id} n={current + 1} comments={s.comments.filter((c) => c.slideId === items[current].id)} busy={lock} canAsk={s.live}

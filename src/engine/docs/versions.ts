@@ -32,3 +32,27 @@ export function docFrom(tree: DocTree, blobs: Record<string, Block>): Doc | null
   const { blocks: _b, ...front } = tree
   return { ...front, blocks }
 }
+
+const count = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
+
+/** What changed from `a` to `b`, in a few words ("Edited 2 blocks · added 1 block"); empty when nothing a reader would see. */
+export function describeDocDiff(a: DocTree | null, b: DocTree): string {
+  if (!a) return ''
+  const was = new Map<string, number>(), now = new Map<string, number>()
+  for (const h of a.blocks) was.set(h, (was.get(h) ?? 0) + 1)
+  for (const h of b.blocks) now.set(h, (now.get(h) ?? 0) + 1)
+  let gone = 0, fresh = 0
+  for (const [h, n] of was) gone += Math.max(0, n - (now.get(h) ?? 0))
+  for (const [h, n] of now) fresh += Math.max(0, n - (was.get(h) ?? 0))
+  const edited = Math.min(gone, fresh)
+  const parts = [
+    a.title !== b.title && 'renamed',
+    (a.subtitle ?? '') !== (b.subtitle ?? '') && 'changed the subtitle',
+    edited > 0 && `edited ${count(edited, 'block')}`,
+    fresh > edited && `added ${count(fresh - edited, 'block')}`,
+    gone > edited && `removed ${count(gone - edited, 'block')}`,
+    !edited && fresh === gone && a.blocks.join() !== b.blocks.join() && 'reordered blocks',
+  ].filter((p): p is string => !!p)
+  const text = parts.join(' · ')
+  return text ? text[0].toUpperCase() + text.slice(1) : ''
+}

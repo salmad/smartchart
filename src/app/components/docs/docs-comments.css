@@ -1,0 +1,4 @@
+/* Comments over the read view: the anchor a hovered comment points at gets the page's focus ring. It never reaches
+   inside a figure's canvas (.fig). */
+.doc-ring { outline: 2px solid var(--focus); outline-offset: 6px; border-radius: 4px; }
+@media print { [data-print-hide] { display: none; } }

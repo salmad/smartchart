@@ -1,17 +1,29 @@
 import '@/engine/docs/doc.css'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import type { DocComment } from '@/engine/comments'
 import { PanelLeft } from 'lucide-react'
 import { parseDoc } from '@/engine/docs/parse'
 import { mountDoc } from '@/engine/docs/mount'
 import { serializeDoc } from '@/engine/docs/serialize'
+import { describeDocDiff, docFrom } from '@/engine/docs/versions'
 import { plainOf } from '@/engine/slides/markup'
-import type { Doc } from '@/engine/docs/types'
+import type { Block, Doc } from '@/engine/docs/types'
 import type { Account } from '@/app/auth'
-import type { Doc as DocRecord, DocRepo } from '@/app/docs'
+import { DOC_STALE, type Doc as DocRecord, type DocRepo, type DocVersionRow } from '@/app/docs'
+import { authorOf } from '@/app/useComments'
+import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
 import { Toggle } from './Bar'
+import { VersionsPanel } from './VersionsPanel'
+import { anchorsOf } from './docs/anchors'
+import { CommentTriggers } from './docs/CommentTriggers'
+import { DocComments, type CommentTarget } from './docs/DocComments'
 import { ReadBar } from './docs/DocBar'
 import { DocEditing } from './docs/DocEditing'
+import { DocMenu } from './docs/DocMenu'
+import { DocPreview } from './docs/DocPreview'
+import { useDocLive } from './docs/useDocLive'
+import './docs/docs-comments.css'
 
 interface Props {
   id: string
@@ -32,35 +44,84 @@ interface Props {
 
 /** A doc in the workspace shell: the sidebar, a quiet bar, and the doc, read (M2) or edited (M4). */
 export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account }: Props) {
-  const page = useRef<HTMLDivElement>(null)
-  const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(null), [editing, setEditing] = useState(false)
+  const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
+  const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
   const parsed = useMemo(() => (record ? parseDoc(record.text).doc : null), [record])
+  const me = authorOf(account), live = useDocLive(docs, id, editing, me)
+  const [side, setSide] = useState<'comments' | 'versions' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
+  const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
+  const [comments, setComments] = useState<DocComment[]>([]), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
+  const blocks = useRef(new Map<string, Block>())
+  const shown = preview?.doc && preview.doc !== 'missing' && !preview.current ? preview.doc : parsed
 
-  useEffect(() => { setEditing(false); setState(null) }, [id])
+  useEffect(() => { setEditing(false); setState(null); setPreview(null); setSide(null); setComments([]); blocks.current = new Map() }, [id])
   useEffect(() => {
     if (editing) return
-    let live = true
-    void docs.get(id).then((d) => { if (live) setState(d ?? 'missing') }, () => { if (live) setState('failed') })
-    return () => { live = false }
-  }, [id, docs, tick]) // eslint-disable-line react-hooks/exhaustive-deps -- a rename while editing waits for the next read
+    let go = true
+    void docs.get(id).then((d) => { if (go) setState(d ?? 'missing') }, () => { if (go) setState('failed') })
+    return () => { go = false }
+  }, [id, docs, tick, reload]) // eslint-disable-line react-hooks/exhaustive-deps -- a rename while editing waits for the next read
+  // Someone saved while this tab was only reading: show what they wrote.
+  useEffect(() => { if (live.newer && !editing && record) setReload((n) => n + 1) }, [live.newer]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Editing starts from the current doc: a version preview, and Versions, are for reading.
+  useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' ? null : s)); setRefused(false) } }, [editing])
+  useEffect(() => { let go = true; void docs.comments(id).then((c) => { if (go) setComments(c) }); return () => { go = false } }, [docs, id, live.tick])
 
-  // The read view, drawn from the record's text; again after each save.
+  // The read view, drawn from the doc shown (a version, while one is previewed); again after each save.
   useEffect(() => {
-    if (!record || !parsed || editing) return
-    let live = true, mounted: { destroy(): void } | null = null
+    if (!record || !shown || editing) return
+    let go = true, mounted: { destroy(): void } | null = null
     // Figures measure text, as slides do: the fonts first.
-    void document.fonts.ready.then(() => { if (live && page.current) mounted = mountDoc(page.current, parsed, record.id) })
-    return () => { live = false; mounted?.destroy() }
-  }, [record, parsed, editing])
+    void document.fonts.ready.then(() => { if (go && page.current) { mounted = mountDoc(page.current, shown, record.id); setPageEl(page.current) } })
+    return () => { go = false; mounted?.destroy() }
+  }, [record, shown, editing])
+  // The page redrawn gives a ring a new element to wear.
+  useEffect(() => {
+    const el = ring && pageEl ? pageEl.querySelector<HTMLElement>(`[id="${CSS.escape(ring)}"]`) : null, on = el?.matches('.doc-sec') ? el.querySelector<HTMLElement>(':scope > h2') : el
+    on?.classList.add('doc-ring')
+    return () => on?.classList.remove('doc-ring')
+  }, [ring, pageEl, shown])
 
-  const save = useCallback(async (doc: Doc) => {
+  const save = useCallback(async (doc: Doc, opts?: { label?: string }) => {
     if (!record) return 'This doc is gone.'
     const next = { id: record.id, name: plainOf(doc.title).trim(), text: serializeDoc(doc), workspaceId: record.workspaceId }
-    const why = await docs.save(next)
-    if (!why) { setState({ ...next, updated: Date.now() }); onSaved() }
+    const why = await docs.save(next, opts)
+    setRefused(why === DOC_STALE)
+    if (!why) { setState({ ...next, updated: Date.now() }); setSaves((n) => n + 1); onSaved() }
     return why
   }, [record, docs, onSaved])
+
+  // A version previewed: its blocks fetched once per hash.
+  const showVersion = useCallback(async (v: DocVersionRow, before: DocVersionRow | null, current: boolean) => {
+    setPreview({ v, before, current, doc: current ? parsed : null })
+    if (current) return
+    const want = [...new Set(v.tree.blocks)].filter((h) => !blocks.current.has(h))
+    if (want.length) for (const [h, b] of Object.entries(await docs.blobs(id, want).catch(() => ({})))) blocks.current.set(h, b)
+    const doc = docFrom(v.tree, Object.fromEntries(blocks.current))
+    setPreview((p) => (p?.v.n === v.n ? { ...p, doc: doc ?? 'missing' } : p))
+  }, [docs, id, parsed])
+  const restore = async () => {
+    if (!preview || !preview.doc || preview.doc === 'missing' || preview.current) return
+    setRestoring(true)
+    const why = await save(preview.doc, { label: `Restored the version from ${timeOf(preview.v.at)}` })
+    setRestoring(false)
+    if (why) window.alert(why); else setPreview(null)
+  }
+
+  const comment = async (op: Parameters<DocRepo['comment']>[1]) => {
+    const r = await docs.comment(id, op)
+    if (typeof r === 'string') setCommentError(r); else { setCommentError(null); setComments(r) }
+  }
+  const mine = (c: DocComment) => c.userId === account.id || c.userId === 'local'
+  const reveal = (anchor: string) => {
+    const el = pageEl?.querySelector<HTMLElement>(`[id="${CSS.escape(anchor)}"]`), sec = el?.closest<HTMLElement>('.doc-sec')
+    if (sec?.classList.contains('folded')) sec.querySelector<HTMLElement>(':scope > h2 > .fold')?.click()
+    el?.scrollIntoView({ block: 'center' })
+  }
+  const pick = useCallback((t: CommentTarget) => { setTarget(t); setSide('comments') }, [])
+  const toggleComments = () => setSide((s) => (s === 'comments' ? null : 'comments'))
+  const commenting = { open: side === 'comments', count: comments.filter((c) => !c.done).length, onToggle: toggleComments }
 
   const header = (bar: ReactNode) => (
     <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
@@ -71,6 +132,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
         <span aria-hidden className="text-ink-3">/</span>
         <span className="truncate text-ink-2">{record?.name ?? ''}</span>
+        {record && !editing && <DocMenu onVersions={() => setSide('versions')} />}
       </nav>
       {bar}
       <AccountMenu account={account} />
@@ -80,19 +142,33 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto">
       {sidebar}
       <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg">
+        {!editing && preview && record && shown && <DocPreview version={preview.v} current={preview.current} ready={preview.doc === 'missing' ? 'missing' : !!preview.doc} busy={restoring}
+          what={describeDocDiff(preview.before?.tree ?? null, preview.v.tree)} onRestore={() => void restore()} onBack={() => setPreview(null)} />}
         {state === 'missing' && <p className="px-8 py-10 text-[13.5px] text-ink-2">That doc isn’t in this workspace.</p>}
         {state === 'failed' && <p className="px-8 py-10 text-[13.5px] text-ink-2">Couldn’t open the doc. Reload to try again.</p>}
         {content}
       </main>
+      {!editing && side === 'versions' && <VersionsPanel list={() => docs.versions(id)} describe={(v, before) => describeDocDiff(before?.tree ?? null, v.tree)} noun="doc"
+        saves={saves} selected={preview?.v.n ?? null} onPreview={(v, before, current) => void showVersion(v, before, current)} onClose={() => { setSide(null); setPreview(null) }} />}
+      {side === 'comments' && parsed && <DocComments comments={comments} anchors={anchorsOf(parsed)} target={target} onTarget={setTarget} error={commentError}
+        canResolve={(c) => canEdit || mine(c)} canDelete={mine} onShow={reveal} onHover={setRing} onClose={() => { setSide(null); setTarget(null); setRing(null) }}
+        onAdd={(text) => { void comment({ add: { text, anchor: target?.anchor ?? 'doc', ...(target?.quote ? { quote: target.quote } : {}) } }); setTarget(null) }}
+        onResolve={(cid) => void comment({ resolve: { id: cid } })} onDelete={(cid) => void comment({ remove: { id: cid } })} />}
     </div>
   )
 
   if (editing && parsed) {
     return (
-      <DocEditing doc={parsed} save={save} onDone={() => setEditing(false)}>
+      <DocEditing doc={parsed} save={save} onDone={() => setEditing(false)} comments={commenting}
+        stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
         {(bar, editor) => <>{header(bar)}{body(editor)}</>}
       </DocEditing>
     )
   }
-  return <>{header(record && <ReadBar canEdit={canEdit} onEdit={() => setEditing(true)} />)}{body(<div ref={page} />)}</>
+  return (
+    <>
+      {header(record && <ReadBar canEdit={canEdit && !preview} onEdit={() => setEditing(true)} others={live.others} comments={commenting} />)}
+      {body(<><div ref={page} />{record && <CommentTriggers page={pageEl} theme={shown?.theme ?? 'paper'} onPick={pick} />}</>)}
+    </>
+  )
 }

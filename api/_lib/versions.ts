@@ -18,10 +18,12 @@ export function appMeta(v: unknown): VersionMeta {
 }
 
 /** After a doc save that landed: the doc's text as a version. Like a deck's, a failure is logged and never fails the save. */
-export async function recordDocVersion(db: Db, userId: string, docId: string, text: string, by: string, rev: number, now = Date.now()): Promise<void> {
+export async function recordDocVersion(db: Db, userId: string, docId: string, text: string, by: string, rev: number, label: string | null = null, now = Date.now()): Promise<void> {
   try {
-    const { tree, blobs } = docTree(parseDoc(text).doc), key = hash(JSON.stringify(tree)), meta: VersionMeta = { by, turn: null, label: null }
-    const head = await db.docVersionHead(userId, docId), step = nextStep(head, meta, key, now)
+    const { tree, blobs } = docTree(parseDoc(text).doc), key = hash(JSON.stringify(tree)), meta: VersionMeta = { by, turn: null, label }
+    const head = await db.docVersionHead(userId, docId)
+    // A restore (it carries a label) stands alone; other saves by the same writer fold together within GROUP_MS.
+    const step = label ? (head?.key === key ? 'skip' : 'add') : nextStep(head, meta, key, now)
     if (step === 'skip') return
     const stored = new Set(head?.hashes ?? []), fresh = new Map(Object.entries(blobs).filter(([h]) => !stored.has(h)))
     await db.writeDocVersion(userId, docId, { replace: step === 'replace' ? (head as { n: number }).n : null, rev, meta, tree, key, blobs: fresh, at: now })

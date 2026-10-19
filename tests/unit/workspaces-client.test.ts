@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { currentWorkspace, localWorkspaceRepo, remoteWorkspaceRepo, LOCAL_WORKSPACE } from '@/app/workspaces'
 import { localDocRepo, remoteDocRepo } from '@/app/docs'
 import { remoteDeckRepo } from '@/app/remote'
@@ -108,6 +108,51 @@ describe('doc repos', () => {
     expect(await docs.get('doc_a')).toMatchObject({ name: 'A', text: '# A' })
     expect(await docs.remove('doc_a')).toBe(true)
     expect(await docs.get('doc_a')).toBeNull()
+  })
+})
+
+describe('doc repos: live state, versions and comments', () => {
+  it('remote: comment sends the op; meta, presence, versions and blobs ask the routes', async () => {
+    const { calls, fetcher } = stub((c) => c.url.includes('&comment=1') ? (c.body as { resolve?: unknown }).resolve ? [403, { error: 'Only an editor or the author can resolve a comment.' }] : [200, [{ id: 'c_1' }]]
+      : c.url.includes('&rev=1') ? [200, { rev: 3, presence: {}, role: 'viewer' }] : c.url.includes('&blobs=') ? [200, [{ hash: 'h1', block: { type: 'divider' } }]] : [200, []])
+    const docs = remoteDocRepo({ fetcher })
+    expect(await docs.comment('x', { add: { text: 'Hi', anchor: 'intro' } })).toEqual([{ id: 'c_1' }])
+    expect(await docs.comment('x', { resolve: { id: 'c_1' } })).toBe('Only an editor or the author can resolve a comment.')
+    expect(await docs.meta('x')).toEqual({ rev: 3, presence: {}, role: 'viewer' })
+    await docs.presence('x', true)
+    expect(await docs.versions('x')).toEqual([])
+    expect(await docs.blobs('x', ['h1'])).toEqual({ h1: { type: 'divider' } })
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
+      'PUT /api/docs?id=x&comment=1', 'PUT /api/docs?id=x&comment=1', 'GET /api/docs?id=x&rev=1', 'PUT /api/docs?id=x&presence=1', 'GET /api/docs?id=x&versions', 'GET /api/docs?id=x&blobs=h1'])
+    expect(calls[0].body).toEqual({ add: { text: 'Hi', anchor: 'intro' } })
+    expect(calls[3].body).toEqual({ editing: true })
+  })
+  it('remote: a restore label goes with the save', async () => {
+    const { calls, fetcher } = stub(() => [200, { ok: true, rev: 1 }])
+    await remoteDocRepo({ fetcher }).save({ id: 'd', name: 'N', text: 'T', workspaceId: 'w' }, { label: 'Restored the version from 14:02' })
+    expect(calls[0].body).toMatchObject({ version: { label: 'Restored the version from 14:02' } })
+  })
+  it('local: versions come newest first, at most 30, a restore stands alone; comments keep in the doc', async () => {
+    const docs = localDocRepo(memory()), now = vi.spyOn(Date, 'now'), save = (text: string, label?: string) => docs.save({ id: 'd', name: 'D', text, workspaceId: LOCAL_WORKSPACE }, { label })
+    let t = 1_000_000
+    now.mockImplementation(() => (t += 120_000)) // each save a pause after the last: its own version
+    for (const n of [1, 2, 3]) await save(`---\ntitle: D\n---\n\nText ${n}\n`)
+    expect((await docs.versions('d')).map((v) => v.n)).toEqual([3, 2, 1])
+    expect((await docs.meta('d'))?.rev).toBe(3)
+    const first = (await docs.versions('d')).at(-1)
+    expect(Object.keys(await docs.blobs('d', first?.tree.blocks ?? []))).toHaveLength(1)
+    await save('---\ntitle: D\n---\n\nText 1\n', 'Restored the version from 14:02')
+    expect((await docs.versions('d')).map((v) => [v.n, v.label])).toEqual([[4, 'Restored the version from 14:02'], [3, null], [2, null], [1, null]])
+    for (let i = 0; i < 40; i++) await save(`---\ntitle: D\n---\n\nMore ${i}\n`)
+    expect((await docs.versions('d')).length).toBe(30)
+    const made = await docs.comment('d', { add: { text: 'Check', anchor: 'intro', quote: 'More' } })
+    expect(made).toMatchObject([{ anchor: 'intro', text: 'Check', by: 'You' }])
+    await save('---\ntitle: D\n---\n\nAfter\n')
+    const [c] = await docs.comments('d')
+    expect(await docs.comment('d', { resolve: { id: c.id, reply: 'Done' } })).toMatchObject([{ done: { reply: 'Done' } }])
+    expect(await docs.comment('d', { remove: { id: c.id } })).toEqual([])
+    expect(typeof await docs.comment('d', { remove: { id: 'c_nope' } })).toBe('string')
+    now.mockRestore()
   })
 })
 

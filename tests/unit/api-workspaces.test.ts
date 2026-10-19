@@ -229,5 +229,12 @@ describe('docs API', () => {
     // Another editor save is a new version (a pause past GROUP_MS is not needed: a changed doc by a new key is added or folded).
     expect((await A.docs('PUT', '', { ...doc, text: doc.text + '\nMore.\n', baseRev: 1 })).status).toBe(200)
     expect((await json<unknown[]>(A.docs('GET', '?id=doc_2&versions'))).length).toBeGreaterThanOrEqual(1)
+
+    // A save with a label (a restore) stands alone, though it follows another save at once.
+    const before = (await json<unknown[]>(A.docs('GET', '?id=doc_2&versions'))).length
+    expect((await A.docs('PUT', '', { ...doc, text: doc.text, baseRev: 2, version: { label: 'Restored the version from 14:02' } })).status).toBe(200)
+    const after = await json<{ label: string | null }[]>(A.docs('GET', '?id=doc_2&versions'))
+    expect(after).toHaveLength(before + 1)
+    expect(after[0].label).toBe('Restored the version from 14:02')
   })
 })
