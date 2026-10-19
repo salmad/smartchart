@@ -5,11 +5,14 @@ import type { Check } from "../agent/checks.js";
 import type { JevFn } from "../agent/llm.js";
 import type { DeckComment } from "../comments.js";
 import type { Version } from "../versions.js";
+import type { Doc } from "../docs/types.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };
 export interface DocSlide { id: string; slide: Slide; issues: string[]; warnings: string[]; checks: Check[] }
 export interface DeckDoc { id: string; name: string; style: Style; theme: Theme; accent: string | null; slides: DocSlide[]; comments: DeckComment[] }
+/** A doc as the tools read and write it: its id, its name (its title as plain text) and the doc. */
+export interface DocFile { id: string; name: string; doc: Doc }
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
 export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck" | "comment";
 export interface DeckEvent { slideId: string | null; what: EventWhat; paths: string[] }
@@ -24,6 +27,9 @@ export interface AccountPort {
   listDecks(limit: number, cursor: number, workspaceId?: string): Promise<{ workspaceId: string; decks: DeckListItem[]; next?: number }>;
   share(deckId: string, on: boolean): Promise<string | null>;
   newDeckId(): string;
+  newDocId(): string;
+  /** One workspace's docs: the one named, else the one most recently used. */
+  listDocs(limit: number, cursor: number, workspaceId?: string): Promise<{ workspaceId: string; docs: { docId: string; name: string; updated: number }[]; next?: number }>;
   /** The deck's versions, newest first, and the slides their trees name. */
   versions(deckId: string): Promise<Version[]>;
   blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;
@@ -35,17 +41,21 @@ export interface ToolContext {
   rev: number;                       // the deck's revision when loaded (0 for scope "create")
   links: { edit: string; share: string | null } | null;
   presence: Presence;
+  /** Set for scope "doc": the doc as loaded, and who is editing it by hand (expires at `until`). */
+  file: DocFile | null;
+  docPresence: { editing?: { by: string; until: number } };
   port: AccountPort;
   jev: JevFn;
   now(): number;
   /** Who is calling, as the user knows them ("Claude Code"): signs what the agent resolves. */
   client?: string;
 }
-export type Scope = "account" | "deck" | "create";
+export type Scope = "account" | "deck" | "create" | "doc" | "createDoc";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
 /** `label`: the version's label when the write is not a user request (a restore). `workspaceId`: where a new deck goes
-    (scope "create"; else the workspace most recently used). */
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string }
+    (scope "create" or "createDoc"; else the workspace most recently used). `file`: the doc to save (scopes "doc" and "createDoc"); `what`: a version's label when
+    the write is not a user request, so it stands alone in Versions. */
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";

@@ -10,6 +10,7 @@ import { serverJev } from './models.js'
 import { DAILY_CALLS } from './quota.js'
 import { overRate } from './rate.js'
 import { recordVersion } from './versions.js'
+import { runDocTool } from './doc-service.js'
 import { addImage, blobStore, DAILY_IMAGES, ImageError, type StoreFn } from './images.js'
 
 /** `name`: the user's Neon Auth name, for their personal workspace when this is their first request ('' over a key). */
@@ -53,6 +54,13 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       return tok ? `${origin}/s/${tok}` : null
     },
     newDeckId,
+    newDocId: () => `doc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    listDocs: async (limit, cursor, workspaceId) => {
+      const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
+      if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
+      const all = await db.listDocs(uid, ws), page = all.slice(cursor, cursor + limit)
+      return { workspaceId: ws, docs: page.map((d) => ({ docId: d.id, name: d.name, updated: d.updated })), ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
+    },
     versions: (deckId) => db.listVersions(uid, deckId),
     blobs: (deckId, hashes) => db.blobs(uid, deckId, hashes),
     addImage: async (img) => {
@@ -67,8 +75,9 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
   const deckId = (input as { deckId?: string }).deckId
 
   try {
+    if (t.scope === 'doc' || t.scope === 'createDoc') return await runDocTool({ tool: t, input, uid, client: caller.client, db, origin, now, port, jev, workspaces })
     for (let attempt = 0; ; attempt++) {
-      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, port, jev, now, client: caller.client }
+      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, file: null, docPresence: {}, port, jev, now, client: caller.client }
       let row: Awaited<ReturnType<Db['getDeck']>> = null
       if (t.scope === 'deck') {
         row = deckId ? await db.getDeck(uid, deckId) : null

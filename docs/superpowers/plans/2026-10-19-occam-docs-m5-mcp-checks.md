@@ -102,7 +102,7 @@
 - [ ] **Step 4:** Run the unit and browser tests, then every doc starter through the review page: if a starter shows a badge, fix the starter's content in `starters.json` (a missing caption or source), never the check. Expected: PASS, no starter with a badge. Log a look at the badge in both themes in `docs/temp/apple-bar-review.md`.
 - [ ] **Step 5:** Commit: "Docs M5: figure checks, check_doc's engine, and the badge".
 
-### Task 3: Docs through the tool service (main model)
+### Task 3: Docs through the tool service (main model)  — done
 
 **Files:**
 - Modify: `src/engine/tools/types.ts`, `api/_lib/deck-service.ts` (split the doc path into `api/_lib/doc-service.ts` if the file passes 300 lines), `api/_lib/db.ts` is not changed
