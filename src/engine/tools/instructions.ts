@@ -1,7 +1,7 @@
 /* What every MCP client keeps in context (layer 1). Everything else is fetched when needed. */
 export const INSTRUCTIONS = `Occam makes consulting and pitch slides. You write slide content as JSON; Occam's code owns layout, colours and sizes, and checks every write.
 
-Start: list_decks. If the user has none, create_deck. Give the user the deck's editor link (links.edit from get_deck or create_deck) so they can watch it change live.
+Start: list_decks. If the user has none, create_deck. Decks live in workspaces (list_workspaces). Give the user the deck's editor link (links.edit from get_deck or create_deck) so they can watch it change live.
 
 Before writing or reviewing: get_guide once per style (the rules), get_template once per template (its fields, limits, capabilities and an example; cards don't change within a session). A review weighs the capabilities the slide does not use yet (marks, icons, notes…), not only its words.
 

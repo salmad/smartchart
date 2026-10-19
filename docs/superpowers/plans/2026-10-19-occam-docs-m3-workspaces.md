@@ -245,7 +245,7 @@ Answers:
 - [x] **Step 4: Run** `npm test`. Expected: PASS, including the old `never shows, overwrites or deletes another user's deck` test.
 - [x] **Step 5: Commit.** Message: "Workspaces API: members, roles and invite links; decks and docs listed by workspace; viewers refused writes".
 
-### Task 5: Agent tools across workspaces
+### Task 5: Agent tools across workspaces (done)
 
 **Files:**
 - Modify:
@@ -255,15 +255,15 @@ Answers:
   - `src/engine/tools/instructions.ts`: one sentence on workspaces.
 - Test: extend `tests/unit/deck-service.test.ts` and `mcp.test.ts`.
 
-- [ ] **Step 1: Write the failing tests:**
+- [x] **Step 1: Write the failing tests:**
   - `list_workspaces` returns `[{ workspaceId, name, role }]`, most recently used first;
   - `create_deck` without `workspaceId` lands in the most recently used workspace, and with one lands there;
   - `create_deck` into a workspace where the key's user is a viewer gives `refused` with the fix "Pick a workspace where you are an editor (list_workspaces).";
   - `update_slide` on a deck where the user is a viewer gives `refused`.
-- [ ] **Step 2: Run them.** Expected: FAIL.
-- [ ] **Step 3: Implement.** Map `'foreign'` to `not_found` when the user has no role, and to `refused` when the user is a viewer, using `deckRole`.
-- [ ] **Step 4: Run** `npm test`. Expected: PASS. The MCP tool listing snapshot changes by the one new tool, and nothing else.
-- [ ] **Step 5: Commit.** Message: "Agent keys act across a user's workspaces: list_workspaces, and a workspaceId on list and create".
+- [x] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 3: Implement.** Map `'foreign'` to `not_found` when the user has no role, and to `refused` when the user is a viewer, using `deckRole`.
+- [x] **Step 4: Run** `npm test`. Expected: PASS. The MCP tool listing snapshot changes by the one new tool, and nothing else.
+- [x] **Step 5: Commit.** Message: "Agent keys act across a user's workspaces: list_workspaces, and a workspaceId on list and create".
 
 ### Task 6: The app's workspace client and the dev account's workspace
 

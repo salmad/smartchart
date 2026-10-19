@@ -14,10 +14,14 @@ export interface Presence { busy?: { by: string; until: number }; editing?: { sl
 export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck" | "comment";
 export interface DeckEvent { slideId: string | null; what: EventWhat; paths: string[] }
 export interface DeckListItem { deckId: string; name: string; style: Style; slides: number; updated: number; shared: boolean }
+export interface WorkspaceItem { workspaceId: string; name: string; role: "owner" | "editor" | "viewer" }
 export interface AccountPort {
   email: string;
   callsLeftToday(): Promise<number>;
-  listDecks(limit: number, cursor: number): Promise<{ decks: DeckListItem[]; next?: number }>;
+  /** The user's workspaces, most recently used first. */
+  workspaces(): Promise<WorkspaceItem[]>;
+  /** One workspace's decks: the one named, else the one most recently used. */
+  listDecks(limit: number, cursor: number, workspaceId?: string): Promise<{ workspaceId: string; decks: DeckListItem[]; next?: number }>;
   share(deckId: string, on: boolean): Promise<string | null>;
   newDeckId(): string;
   /** The deck's versions, newest first, and the slides their trees name. */
@@ -39,8 +43,9 @@ export interface ToolContext {
 }
 export type Scope = "account" | "deck" | "create";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
-/** `label`: the version's label when the write is not a user request (a restore). */
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean; label?: string }
+/** `label`: the version's label when the write is not a user request (a restore). `workspaceId`: where a new deck goes
+    (scope "create"; else the workspace most recently used). */
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";

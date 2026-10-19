@@ -31,6 +31,10 @@ describe('MCP host', () => {
     expect(r.structuredContent).toMatchObject({ email: 'a@b.c' })
     expect(r.content).toEqual([{ type: 'text', text: expect.any(String) }])
   })
+  it('a key lists its user’s workspaces; their first call makes the personal one', async () => {
+    const r = await (await connect()).callTool({ name: 'list_workspaces', arguments: {} })
+    expect(r.structuredContent).toMatchObject({ workspaces: [{ name: 'a’s workspace', role: 'owner' }] })
+  })
   it('the text block carries the whole result, for clients that read only text', async () => {
     // A long result (a template card is thousands of characters) must not be cut: an agent reading text saw
     // get_deck stop after slide 2 and could not address the rest.

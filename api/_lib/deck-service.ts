@@ -1,4 +1,4 @@
-// Runs one tool for one caller: check input, load the deck (scoped to the user), run the handler, save with rev
+// Runs one tool for one caller: check input, load the deck (by the user's role in its workspace), run the handler, save with rev
 // (a conflict reloads and runs again once), record events. Hosts (REST, MCP) only translate in and out.
 import { checkInput } from '../../src/engine/tools/input.js'
 import { dataFromDoc, docFromData } from '../../src/engine/tools/doc.js'
@@ -12,11 +12,15 @@ import { overRate } from './rate.js'
 import { recordVersion } from './versions.js'
 import { addImage, blobStore, DAILY_IMAGES, ImageError, type StoreFn } from './images.js'
 
-export interface Caller { user: { id: string; email: string }; client: string; key: string }
+/** `name`: the user's Neon Auth name, for their personal workspace when this is their first request ('' over a key). */
+export interface Caller { user: { id: string; email: string; name?: string }; client: string; key: string }
 export type ToolReply = { ok: true; result: Record<string, unknown> } | { ok: false; error: { code: ErrorCode; message: string; fix?: string } }
 
 const fail = (code: ErrorCode, message: string, fix?: string): ToolReply => ({ ok: false, error: { code, message, ...(fix ? { fix } : {}) } })
 const newDeckId = () => `d_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+const VIEW_DECK = new ToolError('refused', 'You can view this deck, not edit it.', 'Ask an owner of its workspace to make you an editor.')
+const VIEW_WORKSPACE = new ToolError('refused', 'You can view this workspace, not add to it.', 'Pick a workspace where you are an editor (list_workspaces).')
+const noWorkspace = (id: string) => new ToolError('not_found', `No workspace ${id}.`, 'list_workspaces shows your workspaces.')
 
 export async function runTool(name: string, input: unknown, caller: Caller, deps: { db: Db; origin: string; jev?: JevFn; now?: () => number; store?: StoreFn | null; fetch?: typeof fetch }): Promise<ToolReply> {
   const { db, origin } = deps, now = deps.now ?? Date.now, uid = caller.user.id
@@ -25,18 +29,27 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
   const problems = checkInput(t.input, input ?? {})
   if (problems.length) return fail('bad_input', problems.join(' | '))
   if (await overRate(db, caller.key, now())) return fail('rate', 'Too many calls this minute.', 'Wait a minute, then continue.')
+  // A key acts across all of its user's workspaces; their first request makes their personal one.
+  await db.ensureWorkspace({ ...caller.user, name: caller.user.name ?? '' })
+  /** Most recently used first: the first is the default. */
+  const workspaces = () => db.listWorkspaces(uid)
+  /** Why a write on a deck was refused: a viewer is told so; anyone else hears it doesn't exist. */
+  const refusal = async (deckId: string) => await db.deckRole(uid, deckId) === 'viewer' ? VIEW_DECK : new ToolError('not_found', `No deck ${deckId}.`, 'list_decks shows your decks.')
 
   const port: AccountPort = {
     email: caller.user.email,
     callsLeftToday: async () => Math.max(0, DAILY_CALLS - await db.callsToday(uid)),
-    listDecks: async (limit, cursor) => {
-      const all = await db.listDecks(uid), page = all.slice(cursor, cursor + limit)
-      return { decks: page.map((d) => ({ deckId: d.id, name: d.name, style: d.style === 'pitch' ? 'pitch' : 'consulting', slides: d.slides, updated: d.updated, shared: !!d.shared })),
+    workspaces: async () => (await workspaces()).map((w) => ({ workspaceId: w.id, name: w.name, role: w.role })),
+    listDecks: async (limit, cursor, workspaceId) => {
+      const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
+      if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
+      const all = await db.listDecks(uid, ws), page = all.slice(cursor, cursor + limit)
+      return { workspaceId: ws, decks: page.map((d) => ({ deckId: d.id, name: d.name, style: d.style === 'pitch' ? 'pitch' : 'consulting', slides: d.slides, updated: d.updated, shared: !!d.shared })),
         ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
     },
     share: async (deckId, on) => {
       const tok = await db.shareDeck(uid, deckId, on)
-      if (tok === undefined) throw new ToolError('not_found', `No deck ${deckId}.`, 'list_decks shows your decks.')
+      if (tok === undefined) throw await refusal(deckId)
       return tok ? `${origin}/s/${tok}` : null
     },
     newDeckId,
@@ -69,8 +82,13 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       if (!out.deck) return { ok: true, result: out.result }
       const base = row?.rev ?? 0, chat = (row?.chat as object | null) ?? { history: [], messages: [], working: [] }
       const data = dataFromDoc(out.deck, row?.data)
-      const put = await db.putDeck(uid, out.deck.id, out.deck.name, data, chat, base, { named: !!out.named })
-      if (put === 'foreign') return fail('not_found', `No deck ${out.deck.id}.`)
+      const workspaceId = t.scope === 'create' ? out.workspaceId ?? (await workspaces())[0]?.id : undefined
+      const put = await db.putDeck(uid, out.deck.id, out.deck.name, data, chat, base, { named: !!out.named, workspaceId })
+      if (put === 'foreign') {
+        if (t.scope !== 'create') throw await refusal(out.deck.id)
+        const role = (await workspaces()).find((w) => w.id === workspaceId)?.role
+        throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(workspaceId ?? '')
+      }
       if (put === 'conflict') { if (attempt === 0) continue; return fail('conflict', 'The deck changed while this ran.', 'Call it again.') }
       // One version per request: an agent's writes for the same words, close together, group into one.
       // A write with no request (a move, a delete, a resolve) is its own version, named by the tool.

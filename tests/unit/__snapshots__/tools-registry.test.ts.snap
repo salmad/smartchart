@@ -25,6 +25,23 @@ exports[`registry > the three views agree (published contract: only additions al
       "idempotentHint": true,
       "openWorldHint": false,
       "readOnlyHint": true,
+      "title": "List workspaces",
+    },
+    "description": "The workspaces the user belongs to, most recently used first, with their role in each (owner, editor, viewer; a viewer can only read). Decks live in a workspace; list_decks and create_deck use the first one unless given a workspaceId.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_workspaces",
+    "title": "List workspaces",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
       "title": "Writing guide",
     },
     "description": "The rules for writing Occam slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
@@ -135,7 +152,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List decks",
     },
-    "description": "The user's decks, newest first: id, name, style, number of slides, last change and whether a share link is on. Start here, then open one with get_deck.",
+    "description": "A workspace's decks, newest first: id, name, style, number of slides, last change and whether a share link is on. Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -147,6 +164,10 @@ exports[`registry > the three views agree (published contract: only additions al
           "maximum": 100,
           "minimum": 1,
           "type": "integer",
+        },
+        "workspaceId": {
+          "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
+          "type": "string",
         },
       },
       "type": "object",
@@ -162,7 +183,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create a deck",
     },
-    "description": "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. Returns the deck with its editor link: give it to the user so they can watch.",
+    "description": "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. Returns the deck with its editor link: give it to the user so they can watch.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -186,6 +207,10 @@ exports[`registry > the three views agree (published contract: only additions al
             "ink",
             "paper",
           ],
+          "type": "string",
+        },
+        "workspaceId": {
+          "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
           "type": "string",
         },
       },

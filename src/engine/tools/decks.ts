@@ -6,6 +6,7 @@ import { storylineRows } from "./doc.js";
 import { IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types.js";
 
 const DECK_ID = { type: "string", description: "The deck id from list_decks or create_deck." } as const;
+const WORKSPACE_ID = { type: "string", description: "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently." } as const;
 const STYLE = { type: "string", enum: ["consulting", "pitch"] } as const;
 const THEME = { type: "string", enum: ["ink", "paper"], description: "ink: dark slides; paper: light slides." } as const;
 const ACCENT = { type: "string", description: "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain." } as const;
@@ -32,18 +33,18 @@ function checkAccent(theme: Theme, accent: string | null | undefined) {
 }
 
 export const deckTools = [
-  tool<{ limit?: number; cursor?: number }>({ name: "list_decks", title: "List decks", group: "decks", scope: "account", annotations: READ,
-    description: "The user's decks, newest first: id, name, style, number of slides, last change and whether a share link is on. Start here, then open one with get_deck.",
-    input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 } } },
-    run: async (ctx, { limit = 25, cursor = 0 }) => ({ result: await ctx.port.listDecks(limit, cursor) }) }),
+  tool<{ limit?: number; cursor?: number; workspaceId?: string }>({ name: "list_decks", title: "List decks", group: "decks", scope: "account", annotations: READ,
+    description: "A workspace's decks, newest first: id, name, style, number of slides, last change and whether a share link is on. Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
+    run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDecks(limit, cursor, workspaceId) }) }),
 
-  tool<{ style: Style; name?: string; theme?: Theme; accent?: string }>({ name: "create_deck", title: "Create a deck", group: "decks", scope: "create", annotations: WRITE,
-    description: "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. Returns the deck with its editor link: give it to the user so they can watch.",
-    input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE, name: { type: "string" }, theme: THEME, accent: ACCENT } },
-    run: async (ctx, { style, name, theme = "ink", accent }) => {
+  tool<{ style: Style; name?: string; theme?: Theme; accent?: string; workspaceId?: string }>({ name: "create_deck", title: "Create a deck", group: "decks", scope: "create", annotations: WRITE,
+    description: "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. Returns the deck with its editor link: give it to the user so they can watch.",
+    input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE, name: { type: "string" }, theme: THEME, accent: ACCENT, workspaceId: WORKSPACE_ID } },
+    run: async (ctx, { style, name, theme = "ink", accent, workspaceId }) => {
       checkAccent(theme, accent);
       const doc: DeckDoc = { id: ctx.port.newDeckId(), name: name?.trim().slice(0, 200) || "Untitled deck", style, theme, accent: accent ?? null, slides: [], comments: [] };
-      return { result: deckView(ctx, doc, 1), deck: doc, named: !!name, events: [{ slideId: null, what: "deck", paths: ["created"] }] };
+      return { result: deckView(ctx, doc, 1), deck: doc, named: !!name, workspaceId, events: [{ slideId: null, what: "deck", paths: ["created"] }] };
     } }),
 
   tool<{ deckId: string }>({ name: "get_deck", title: "Open a deck", group: "decks", scope: "deck", annotations: READ,
