@@ -10,7 +10,7 @@ const store = { active: 'a', decks: { a: deck('a', 'Alpha', 3000), b: deck('b', 
 
 test('opening decks from the sidebar does not reorder them; an edit moves the edited one to the top', async ({ page }) => {
   await page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify(store)] as const)
-  const sidebar = page.getByRole('navigation', { name: 'Your decks' })
+  const sidebar = page.getByRole('navigation', { name: 'Workspace' }).getByRole('list', { name: 'Decks' })
   const order = () => sidebar.getByRole('listitem').locator('button[aria-current], button:not([aria-label])').allInnerTexts()
   await page.goto('/d/a')
   await expect(sidebar.getByRole('listitem')).toHaveCount(3)

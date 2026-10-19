@@ -107,7 +107,7 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
   await expect(page).toHaveURL(/\/d\/d_a$/)
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
   expect(fullReads).toEqual(['d_a']) // only the deck being opened is read in full
-  const sidebar = page.getByRole('navigation', { name: 'Your decks' })
+  const sidebar = page.getByRole('navigation', { name: 'Workspace' }).getByRole('list', { name: 'Decks' })
   await expect(sidebar.getByRole('listitem')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Account: Ann' })).toBeVisible()
   await sidebar.getByText('Plan').click()

@@ -53,7 +53,7 @@ export function Bar(p: BarProps) {
       <div className="flex min-w-0 items-center gap-3 max-[900px]:flex-1">
         {/* The layout toggles, together as in Cursor's title bar: each shows whether its panel is open. */}
         <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
-          <Toggle open={p.decksOpen} onClick={p.onToggleDecks} label={`${p.decksOpen ? 'Hide' : 'Show'} your decks`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
+          <Toggle open={p.decksOpen} onClick={p.onToggleDecks} label={`${p.decksOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
           <Toggle open={p.chatOpen} onClick={p.onToggleChat} label={`${p.chatOpen ? 'Hide' : 'Show'} the chat`} keys="⌘L"><MessageSquare className="size-[17px]" strokeWidth={1.75} /></Toggle>
         </div>
         <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
@@ -82,7 +82,7 @@ export function Bar(p: BarProps) {
 }
 
 /** A panel's toggle: pressed while its panel is open. */
-function Toggle({ open, onClick, label, keys, children }: { open: boolean; onClick: () => void; label: string; keys?: string; children: ReactNode }) {
+export function Toggle({ open, onClick, label, keys, children }: { open: boolean; onClick: () => void; label: string; keys?: string; children: ReactNode }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} aria-pressed={open} title={keys ? `${label} (${keys})` : label}
       className="grid size-8 cursor-pointer place-items-center rounded-lg text-ink-3 transition-colors hover:bg-panel hover:text-ink aria-pressed:bg-panel aria-pressed:text-ink">

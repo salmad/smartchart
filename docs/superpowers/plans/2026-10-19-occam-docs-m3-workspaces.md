@@ -286,7 +286,7 @@ Answers:
 - [x] **Step 4: Run** `npm test && npm run build`. Expected: PASS.
 - [x] **Step 5: Commit.** Message: "The app knows its workspace: workspace and doc clients, invite and doc routes".
 
-### Task 7: The sidebar shell
+### Task 7: The sidebar shell (done)
 
 **Files:**
 - Create in `src/app/components/sidebar/`:
@@ -301,17 +301,17 @@ Answers:
 
 The design follows the existing sidebar's tokens and type: 248 px wide, mono section labels, 13 px rows. The switcher sits at the top as Linear's and Notion's do: the name, a chevron, the role in muted text for non-owners. There is no new colour, and design calls stay with the main model.
 
-- [ ] **Step 1: Write the failing browser tests** (`workspace.spec.ts`, dev account):
+- [x] **Step 1: Write the failing browser tests** (`workspace.spec.ts`, dev account):
   - the sidebar shows "Dev's workspace", with a Docs section and a Decks section;
   - a deck seeded in localStorage lists under Decks;
   - "New doc" from a starter lists it under Docs and opens the read view (`.doc` visible);
   - renaming a deck changes its row;
   - ⌘\ hides and shows the sidebar.
-- [ ] **Step 2: Run them** (`npx playwright test -c tests/browser/playwright.config.ts tests/browser/workspace.spec.ts`). Expected: FAIL.
-- [ ] **Step 3: Implement.** Keep every file under 300 lines.
-- [ ] **Step 4: Run** `npm run lint && npm run build && npm test && npm run test:browser`. Expected: PASS. If `edit.spec.ts` fails on hover, re-run it once before calling it flaky.
-- [ ] **Step 5: Look at it** at 1440 px and 900 px, in ink and paper app themes. Write a short critique in `docs/temp/apple-bar-review.md`, and fix anything below the bar before committing.
-- [ ] **Step 6: Commit.** Message: "A workspace sidebar: switch workspaces, docs and decks newest first, hide it with ⌘\\".
+- [x] **Step 2: Run them** (`npx playwright test -c tests/browser/playwright.config.ts tests/browser/workspace.spec.ts`). Expected: FAIL.
+- [x] **Step 3: Implement.** Keep every file under 300 lines.
+- [x] **Step 4: Run** `npm run lint && npm run build && npm test && npm run test:browser`. Expected: PASS. If `edit.spec.ts` fails on hover, re-run it once before calling it flaky.
+- [x] **Step 5: Look at it** at 1440 px and 900 px, in ink and paper app themes. Write a short critique in `docs/temp/apple-bar-review.md`, and fix anything below the bar before committing.
+- [x] **Step 6: Commit.** Message: "A workspace sidebar: switch workspaces, docs and decks newest first, hide it with ⌘\\".
 
 ### Task 8: Members, invites and the viewer's view
 

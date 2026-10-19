@@ -16,17 +16,17 @@ async function open(page: Page, width: number, height = 900) {
   await page.evaluate((s) => window.__journey?.load(s as never, 'consulting'), [COVER, { ...COVER, title: 'Second' }])
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
 }
-const decks = (page: Page) => page.getByRole('navigation', { name: 'Your decks' })
+const decks = (page: Page) => page.getByRole('navigation', { name: 'Workspace' })
 
 test('on a laptop the decks start hidden, and Look sends them aside until their button closes it', async ({ page }) => {
   await open(page, 1440)
   await expect(decks(page)).toHaveCount(0)
-  await page.getByRole('button', { name: 'Show your decks' }).click()
+  await page.getByRole('button', { name: 'Show the sidebar' }).click()
   await expect(decks(page)).toBeVisible()
   await page.getByRole('button', { name: 'Look', exact: true }).click()
   await expect(page.getByRole('complementary', { name: 'Deck look' })).toBeVisible()
   await expect(decks(page)).toHaveCount(0)
-  await page.getByRole('button', { name: 'Show your decks' }).click()
+  await page.getByRole('button', { name: 'Show the sidebar' }).click()
   await expect(page.getByRole('complementary', { name: 'Deck look' })).toHaveCount(0)
   await expect(decks(page)).toBeVisible()
 })

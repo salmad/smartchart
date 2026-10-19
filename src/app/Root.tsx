@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { App } from './App'
 import { useSession } from './auth'
 import { Shared } from './components/Shared'
@@ -10,6 +10,8 @@ import { go, useRoute } from './route'
 import { Present } from './components/Present'
 import { Presenter } from './components/Presenter'
 import { localDeckRepo } from './store'
+import { localDocRepo, remoteDocRepo } from './docs'
+import { localWorkspaceRepo, remoteWorkspaceRepo } from './workspaces'
 
 /** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
     on the site waits through sign-in). Signed in: the editor, at / on the deck worked on last; the site stays at
@@ -20,7 +22,11 @@ export function Root() {
   const [signingIn, setSigningIn] = useState(false), [ended, setEnded] = useState(false)
   // Decks live in the account; a 401 from the decks API means the session ended: ask to sign in again, over
   // whatever screen is open. The dev account keeps its decks in this browser, with nothing to back them up to.
-  const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  // The workspace open in the app, where a new deck is saved; App keeps it current.
+  const workspace = useRef<string | null>(null)
+  const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true), workspace: () => workspace.current })), [dev])
+  const workspaces = useMemo(() => (dev ? localWorkspaceRepo() : remoteWorkspaceRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
 
@@ -46,7 +52,7 @@ export function Root() {
   // Keyed by account, not by deck: a new deck's URL becoming /d/:id after its first save must not restart it.
   return (
     <>
-      <App key={session.id} route={route} account={session} repo={repo} backup={backup} />
+      <App key={session.id} route={route} account={session} repo={repo} backup={backup} workspaces={workspaces} docs={docs} onWorkspace={(id) => { workspace.current = id }} />
       <SignIn open={ended} onOpenChange={setEnded} returnTo={location.pathname} title="Sign in again"
         lede="Your session ended. Your deck is kept in this browser until you sign in and it saves to your account." />
     </>

@@ -63,7 +63,8 @@ export function localWorkspaceRepo(): WorkspaceRepo {
   const no = async (): Promise<never> => { throw new Error(SIGN_IN) }
   return {
     list: async () => [{ id: LOCAL_WORKSPACE, name: 'Dev’s workspace', role: 'owner', personal: true, members: 1, usedAt: null }],
-    create: no, rename: no, setRole: no, invite: no, revoke: no, accept: no,
+    create: async () => { throw new Error('Sign in to make another workspace.') },
+    rename: no, setRole: no, invite: no, revoke: no, accept: no,
     use: async () => undefined,
     members: async () => ({ members: [{ userId: 'dev', email: '', name: 'Dev', role: 'owner' }], invites: [] }),
   }
