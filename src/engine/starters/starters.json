@@ -3236,14 +3236,14 @@
    "label": "Cards",
    "blurb": "Three options or findings side by side",
    "body": {
-    "caption": "Three issuers, three positions",
+    "caption": "Three issuers, three limits",
     "cards": [
      {
-      "value": "4.3×",
+      "value": "£50k",
       "title": "Revolut Business",
       "bullets": [
-       "Card revenue growth in four years",
-       "Lends little against revenue"
+       "Limit tied to the balance held",
+       "Approval in minutes"
       ]
      },
      {
@@ -3304,12 +3304,12 @@
     "caption": "What the research shows",
     "points": [
      {
-      "title": "Growth sits with account owners",
+      "title": "Growth follows the account",
       "text": "Revolut Business grew card revenue 4.3× in four years."
      },
      {
       "title": "Limits are the gap",
-      "text": "No issuer pairs a real limit with approval in a day."
+      "text": "Only Revolut pairs £50k or more with approval the same day."
      },
      {
       "title": "Rewards do not decide",
@@ -3363,25 +3363,39 @@
         },
         {
          "label": "Limit"
+        },
+        {
+         "label": "Approval"
         }
        ],
        "rows": [
         {
          "cells": [
           "Revolut Business",
-          "£50k"
-         ]
+          "£50k",
+          "Minutes"
+         ],
+         "focus": true
         },
         {
          "cells": [
           "Tide",
-          "£10k"
+          "£10k",
+          "Same day"
          ]
         },
         {
          "cells": [
           "Capital on Tap",
-          "£100k"
+          "£100k",
+          "2 days"
+         ]
+        },
+        {
+         "cells": [
+          "Finbridge",
+          "£100k",
+          "Same day"
          ]
         }
        ]
@@ -3398,7 +3412,7 @@
    "blurb": "A note set apart from the text",
    "body": {
     "tone": "note",
-    "text": "Scores here come from published terms only; issuers may price differently once an application is made."
+    "text": "Limits here are published terms only; issuers may offer less once an application is made."
    }
   }
  ]
