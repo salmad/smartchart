@@ -139,7 +139,7 @@ Each milestone ends with its own plan and stops at the boundary (memory: inline 
 
 - A parent can be a doc or a deck, and any kind can be under any kind.
 - Two columns on each table, not a `pages` table; the id check decides whether `parent_kind` is needed.
-- Fractional `sort_key`; new pages at the bottom; the first tree keeps today's newest-first order.
+- Fractional `sort_key`; new pages at the bottom; the first tree keeps today's newest-first order. The user confirmed (2026-10-19) that the default order doesn't matter much because they can reset it by moving a page; so there is no "sort by…" control and no automatic re-sorting.
 - Depth cap 6.
 - Delete removes the subtree, with a count in the dialog (the recommendation; B and C above are the alternatives).
 - The sidebar row loses its second line (slide count and time) to fit nesting.
