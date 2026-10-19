@@ -20,7 +20,7 @@ export function focusCount(s: Slide): number | null {
       if (kind === "timeline") return (s.chart?.rows || []).filter((x) => x?.focus).length;
       if (kind === "ranked") return (s.chart?.ranking || []).filter((x) => x?.focus).length;
       if (kind === "matrix") return (s.chart?.points || []).filter((x) => x?.focus).length;
-      return (s.chart?.series || []).filter((x) => x.color === "focus").length;
+      return s.chart?.highlight ? 1 : (s.chart?.series || []).filter((x) => x.color === "focus").length;
     }
     case "pair": return (s.halves || []).reduce((sum, h) => sum + (h?.chart ? focusCount({ template: "chart", title: "", chart: h.chart }) ?? 0 : 0)
       + (h?.table ? focusCount({ template: "table", title: "", table: h.table }) ?? 0 : 0), 0);

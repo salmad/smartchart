@@ -14,7 +14,7 @@ export interface MatrixPoint { label: string; x: number; y: number; focus?: bool
 export interface Chart {
   kind?: 'bars' | 'waterfall' | 'timeline' | 'ranked' | 'matrix'
   stacking?: 'none' | 'stacked' | 'percent' | 'auto'
-  categories?: string[]; format?: string; series?: Series[]; annotations?: Annotation[]
+  categories?: string[]; format?: string; series?: Series[]; highlight?: { series: number; index: number }; annotations?: Annotation[]
   items?: WaterfallItem[]
   periods?: string[]; rows?: TimelineRow[]; milestones?: Milestone[]
   ranking?: RankItem[]
