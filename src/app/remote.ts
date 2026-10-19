@@ -2,20 +2,25 @@
    a 401 means the session ended, and `onSignedOut` hears about it. */
 import type { Slide } from '@/engine/types'
 import type { Version } from '@/engine/versions'
+import type { Role } from './workspaces'
 import { deckName, localDeckRepo, type DeckEvent, type DeckRepo, type DeckSummary, type Presence, type SavedDeck } from './store'
 
 /** What the chat says when the server refuses a save because the deck moved on since this tab read it. */
 export const STALE = 'This deck was changed in another tab or window. Reload to see the latest.'
 
+/** What the chat says when a viewer's save is refused; the server's own sentence wins when it gives one. */
+export const VIEW_ONLY = 'You can view this deck, not edit it.'
+
 /** Why a save failed, by status, as the chat says it. */
 const SAVE_FAILED: Record<number, string> = {
-  401: 'Your session ended.', 404: 'This deck belongs to another account.', 409: STALE, 413: 'This deck is too large to save.', 503: 'Saving isn’t set up on this server.',
+  401: 'Your session ended.', 403: VIEW_ONLY, 404: 'This deck belongs to another account.', 409: STALE, 413: 'This deck is too large to save.', 503: 'Saving isn’t set up on this server.',
 }
 
 /** A deck saved before chats were kept apart has `chat: null` and its conversation inside `data`. */
-interface Row { id: string; name: string; named?: boolean; updated: number; rev?: number; data: SavedDeck; chat?: Partial<SavedDeck> | null }
+interface Row { id: string; name: string; named?: boolean; updated: number; rev?: number; role?: Role; data: SavedDeck; chat?: Partial<SavedDeck> | null }
 
-export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: { fetcher?: typeof fetch; onSignedOut?: () => void } = {}): DeckRepo {
+/** `workspace`: the workspace open in the app, where a new deck is saved (the server ignores it for a deck that exists). */
+export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, workspace }: { fetcher?: typeof fetch; onSignedOut?: () => void; workspace?: () => string | null } = {}): DeckRepo {
   const call = async (query: string, init?: RequestInit) => {
     const r = await fetcher(`/api/decks${query}`, { credentials: 'same-origin', ...init })
     if (r.status === 401) onSignedOut?.()
@@ -25,6 +30,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
   const revs = new Map<string, number>()
   // The deck as last read or written: the common ancestor when this tab's copy is merged with the server's.
   const bases = new Map<string, SavedDeck>()
+  const roles = new Map<string, Role>()
   // One request per deck at a time: autosave, leaving the page and the retry timer can overlap, and a second save
   // sent before the first one answers would carry the old revision and be refused as stale.
   const lines = new Map<string, Promise<unknown>>()
@@ -34,8 +40,8 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     return next
   }
   return {
-    list: async () => {
-      const r = await call('')
+    list: async (ws) => {
+      const r = await call(ws ? `?workspace=${encodeURIComponent(ws)}` : '')
       if (!r.ok) throw new Error(`decks: ${r.status}`)
       // A missing look falls back to the defaults, so a deck saved before a field existed still lists.
       return ((await r.json()) as Partial<DeckSummary>[]).map((d) => ({
@@ -49,6 +55,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
       if (!r.ok) throw new Error(`deck: ${r.status}`)
       const row = (await r.json()) as Row
       revs.set(id, row.rev ?? 0)
+      if (row.role) roles.set(id, row.role)
       // `chat` wins when present; an older deck has the conversation in `data`.
       // The name lives on the row: set by the maker here, or by an agent, it is `named`; otherwise it follows the cover.
       const got: SavedDeck = { ...row.data, ...(row.chat ?? {}), id: row.id, name: row.named ? row.name : null }
@@ -57,9 +64,10 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     }),
     save: (deck, meta) => inOrder(deck.id, async () => {
       try {
-        const { history, messages, working, name: _name, ...look } = deck
+        const { history, messages, working, name: _name, ...look } = deck, ws = workspace?.()
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0, ...(meta ? { version: meta } : {}) }) })
+          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0,
+            ...(ws ? { workspaceId: ws } : {}), ...(meta ? { version: meta } : {}) }) })
         if (r.ok) {
           revs.set(deck.id, ((await r.json().catch(() => null)) as { rev?: number } | null)?.rev ?? (revs.get(deck.id) ?? 0) + 1)
           bases.set(deck.id, structuredClone(deck))
@@ -74,6 +82,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
         }
         const said = ((await r.json().catch(() => null)) as { error?: unknown } | null)?.error
         console.warn('deck save failed', r.status, said)
+        if (r.status === 403 && typeof said === 'string') return said
         return SAVE_FAILED[r.status] ?? `The server answered ${r.status}${typeof said === 'string' ? `: ${said}` : '.'}`
       } catch { return 'You’re offline, or the server can’t be reached.' }
     }),
@@ -95,6 +104,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
     },
     base: (id) => bases.get(id) ?? null,
     known: (id) => revs.get(id) ?? 0,
+    role: (id) => roles.get(id) ?? null,
   }
 }
 

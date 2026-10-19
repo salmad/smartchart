@@ -109,3 +109,8 @@ test('opening or starting another deck is ignored while a slide is being edited'
   expect(reducer(s, { type: 'open', deck: other })).toBe(s)
   expect(reducer(s, { type: 'new' })).toBe(s)
 })
+
+test('a new deck stays in the workspace that is open', () => {
+  const s = reducer({ ...initialState(), workspaceId: 'ws_1', role: 'editor' }, { type: 'new' })
+  expect([s.workspaceId, s.role]).toEqual(['ws_1', 'editor'])
+})

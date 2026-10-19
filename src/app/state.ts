@@ -5,6 +5,7 @@ import type { Pill } from '@/engine/agent/suggest'
 import { plain } from '@/engine/slides/schema'
 import { commentsOf, type DeckComment } from '@/engine/comments'
 import { newDeckId, type Item, type Message, type SavedDeck } from './store'
+import type { Role } from './workspaces'
 
 export type View = 'landing' | 'editor' | 'add'
 export interface AppState {
@@ -23,6 +24,9 @@ export interface AppState {
   edited: string[]
   /** Notes people left on slides; agents address them when asked. */
   comments: DeckComment[]
+  /** The workspace open in the app (the first in the list, the most recently used) and the user's role in it. */
+  workspaceId: string | null
+  role: Role | null
 }
 export type Action =
   | { type: 'open'; deck: SavedDeck } | { type: 'new' } | { type: 'set'; patch: Partial<AppState> }
@@ -38,6 +42,7 @@ export function initialState(): AppState {
     deckId: null, name: null, style: 'consulting', theme: 'ink', accent: null,
     items: [], current: 0, history: [], working: new Set(), messages: [],
     busy: false, live: false, view: 'landing', pills: {}, removed: null, editing: null, edited: [], comments: [],
+    workspaceId: null, role: null,
   }
 }
 
@@ -61,7 +66,7 @@ export function reducer(s: AppState, a: Action): AppState {
     }
     case 'new':
       if (s.editing) return s
-      return { ...initialState(), deckId: newDeckId(), live: s.live, style: s.style, theme: s.theme, accent: s.accent, view: 'landing' }
+      return { ...initialState(), deckId: newDeckId(), live: s.live, style: s.style, theme: s.theme, accent: s.accent, view: 'landing', workspaceId: s.workspaceId, role: s.role }
     case 'set':
       return { ...s, ...a.patch }
     case 'edit':

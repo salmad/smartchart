@@ -265,7 +265,7 @@ Answers:
 - [x] **Step 4: Run** `npm test`. Expected: PASS. The MCP tool listing snapshot changes by the one new tool, and nothing else.
 - [x] **Step 5: Commit.** Message: "Agent keys act across a user's workspaces: list_workspaces, and a workspaceId on list and create".
 
-### Task 6: The app's workspace client and the dev account's workspace
+### Task 6: The app's workspace client and the dev account's workspace (done)
 
 **Files:**
 - Create: `src/app/workspaces.ts`. It holds `WorkspaceRepo` (list, create, rename, use, members, setRole, invite, revoke, accept), `remoteWorkspaceRepo`, and `localWorkspaceRepo` (one personal workspace, "Dev's workspace", owner, no members, in this browser).
@@ -277,14 +277,14 @@ Answers:
 - Create, for docs: `src/app/docs.ts` (`DocRepo`: remote and local, the same shape as `DeckRepo`'s list, get, save and remove).
 - Test: `tests/unit/workspaces-client.test.ts` (the remote repo against a stub fetcher), and `route.test.ts`.
 
-- [ ] **Step 1: Write the failing tests:**
+- [x] **Step 1: Write the failing tests:**
   - the remote repo's calls and error sentences;
   - `parseRoute('/i/abc')` and `parseRoute('/doc/x_1')`;
   - the local repo lists the dev account's existing localStorage decks under its one workspace.
-- [ ] **Step 2: Run them.** Expected: FAIL.
-- [ ] **Step 3: Implement.** The current workspace is the first entry in the list (the most recently used); switching calls `use`.
-- [ ] **Step 4: Run** `npm test && npm run build`. Expected: PASS.
-- [ ] **Step 5: Commit.** Message: "The app knows its workspace: workspace and doc clients, invite and doc routes".
+- [x] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 3: Implement.** The current workspace is the first entry in the list (the most recently used); switching calls `use`.
+- [x] **Step 4: Run** `npm test && npm run build`. Expected: PASS.
+- [x] **Step 5: Commit.** Message: "The app knows its workspace: workspace and doc clients, invite and doc routes".
 
 ### Task 7: The sidebar shell
 

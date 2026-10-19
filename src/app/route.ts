@@ -1,9 +1,11 @@
-/* Five routes on the History API: the site or your decks at /, the site for everyone at /home, a new deck at /new,
-   a saved deck at /d/:id, and a deck shared by link at /s/:token (for anyone, signed in or not). */
+/* Routes on the History API: the site or your workspace at /, the site for everyone at /home, a new deck at /new,
+   a saved deck at /d/:id, a deck shared by link at /s/:token (for anyone, signed in or not), a doc at /doc/:id,
+   and a workspace invite at /i/:token. */
 import { useSyncExternalStore } from 'react'
 import type { Style } from '@/engine/types'
 
 export type Route = { name: 'home' } | { name: 'site' } | { name: 'new' } | { name: 'deck'; id: string } | { name: 'shared'; token: string } | { name: 'present' } | { name: 'presenter' }
+  | { name: 'doc'; id: string } | { name: 'invite'; token: string }
 
 export function parseRoute(path: string): Route {
   if (path === '/new') return { name: 'new' }
@@ -12,6 +14,10 @@ export function parseRoute(path: string): Route {
   if (path === '/presenter') return { name: 'presenter' }
   const shared = /^\/s\/([\w-]+)$/.exec(path)
   if (shared) return { name: 'shared', token: shared[1] }
+  const invite = /^\/i\/([\w-]+)$/.exec(path)
+  if (invite) return { name: 'invite', token: invite[1] }
+  const doc = /^\/doc\/([\w-]+)$/.exec(path)
+  if (doc) return { name: 'doc', id: doc[1] }
   const m = /^\/d\/([\w-]+)$/.exec(path)
   return m ? { name: 'deck', id: m[1] } : { name: 'home' }
 }

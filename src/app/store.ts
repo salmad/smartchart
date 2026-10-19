@@ -7,6 +7,7 @@ import type { ChatMessage } from '@/engine/agent/llm'
 import type { TraceStep } from '@/engine/agent/agent'
 import { record, type Version, type VersionMeta } from '@/engine/versions'
 import { mergeComments, type DeckComment } from '@/engine/comments'
+import type { Role } from './workspaces'
 
 export const KEY = 'smartchart.journey.decks.v1'
 
@@ -30,7 +31,8 @@ export interface Presence { busy?: { by: string; until: number }; editing?: { sl
 export interface DeckEvent { rev: number; by: string; slideId: string | null; what: string }
 
 export interface DeckRepo {
-  list(): Promise<DeckSummary[]>
+  /** One workspace's decks; without one, every deck the user can open. This browser's decks are all in one. */
+  list(workspaceId?: string): Promise<DeckSummary[]>
   get(id: string): Promise<SavedDeck | null>
   /** Null when saved; otherwise why not, as a sentence (storage full, offline, what the server said). `meta` says who
       wrote this save, for its version (by hand unless said otherwise). */
@@ -44,6 +46,8 @@ export interface DeckRepo {
   base?(id: string): SavedDeck | null
   /** The revision this tab holds. */
   known?(id: string): number
+  /** The user's role on the deck as last opened (a viewer can only read it). */
+  role?(id: string): Role | null
   /* Versions (src/engine/versions.ts): newest first, and the slides their trees name, by hash. */
   versions?(id: string): Promise<Version[]>
   blobs?(id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>
