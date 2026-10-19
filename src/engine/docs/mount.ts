@@ -40,6 +40,20 @@ export function mountFigure(frame: HTMLElement, f: FigureBlock | null, theme: Th
   size(frame, fig, kind)
 }
 
+/** Every figure under `root` laid out once it has a width, again when it crosses NARROW, and otherwise only rescaled: the
+    fitters measure in design pixels, so their work holds at any scale (a figure in a folded section waits). */
+export function fitFigures(root: HTMLElement, blockOf: (frame: HTMLElement) => FigureBlock | null, theme: Theme, accent: string | undefined): { disconnect(): void } {
+  const fit = (frame: HTMLElement) => {
+    const w = frame.clientWidth, fig = frame.querySelector<HTMLElement>(':scope > .fig')
+    if (!w || !fig) return
+    if (frame.dataset.mode !== (w >= NARROW ? 'beside' : 'narrow')) mountFigure(frame, blockOf(frame), theme, accent)
+    else size(frame, fig, blockOf(frame)?.kind ?? 'code')
+  }
+  const sizes = new ResizeObserver((entries) => entries.forEach((e) => fit(e.target as HTMLElement)))
+  root.querySelectorAll<HTMLElement>('.doc-fig > .fig-frame').forEach((frame) => { fit(frame); sizes.observe(frame) })
+  return sizes
+}
+
 const load = (key: string): string[] => { try { const v: unknown = JSON.parse(localStorage.getItem(key) ?? '[]'); return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [] } catch { return [] } }
 const save = (key: string, ids: string[]) => { try { localStorage.setItem(key, JSON.stringify(ids)) } catch { /* private window: folds last this visit */ } }
 
@@ -50,17 +64,7 @@ export function mountDoc(root: HTMLElement, doc: Doc, key: string): { destroy():
   root.querySelectorAll<HTMLElement>('.fold').forEach(drawIcons)
   const blockOf = (frame: HTMLElement) => blocks.get(frame.closest<HTMLElement>('.doc-fig')?.dataset.block ?? '') ?? null
 
-  // Each frame mounts when it has a width (a figure in a folded section waits) and again when it crosses NARROW;
-  // otherwise a resize only rescales: the fitters measure in design pixels, so their work holds at any scale.
-  const frames = [...root.querySelectorAll<HTMLElement>('.doc-fig > .fig-frame')]
-  const fit = (frame: HTMLElement) => {
-    const w = frame.clientWidth, fig = frame.querySelector<HTMLElement>(':scope > .fig')
-    if (!w || !fig) return
-    if (frame.dataset.mode !== (w >= NARROW ? 'beside' : 'narrow')) mountFigure(frame, blockOf(frame), theme, doc.accent)
-    else size(frame, fig, blockOf(frame)?.kind ?? 'code')
-  }
-  const sizes = new ResizeObserver((entries) => entries.forEach((e) => fit(e.target as HTMLElement)))
-  frames.forEach((frame) => { fit(frame); sizes.observe(frame) })
+  const sizes = fitFigures(root, blockOf, theme, doc.accent)
 
   // Expand: on a narrow frame a figure opens at a desktop figure's size, in a dialog that scrolls sideways.
   root.querySelectorAll<HTMLElement>('.doc-fig').forEach((el) => {

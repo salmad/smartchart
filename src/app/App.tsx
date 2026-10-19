@@ -278,11 +278,13 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
 
+  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
+  const [docTick, setDocTick] = useState(0)
   // The workspace down the left (⌘\), beside the editor or a doc.
   const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, workspaces }} busy={locked(s)}
-    open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }, doc: route.name === 'doc' ? route.id : null }}
+    open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }, doc: route.name === 'doc' ? route.id : null, docTick }}
     onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={() => leaveTo('/new')} onDeckDeleted={onDeckDeleted}
-    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onRenameOpenDeck={bar.onRename} me={account.id} />
+    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onDocRenamed={() => setDocTick((t) => t + 1)} onRenameOpenDeck={bar.onRename} me={account.id} />
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -290,7 +292,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
         ? <ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} />
         : route.name === 'doc'
-        ? <DocScreen id={route.id} docs={docs} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} />
+        ? <DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} />
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { starterDoc, type DocStarter } from '@/engine/starters'
+import { parseDoc } from '@/engine/docs/parse'
+import { serializeDoc } from '@/engine/docs/serialize'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
 import type { WorkspaceRepo } from '@/app/workspaces'
@@ -16,10 +18,10 @@ interface Props {
   ws: WorkspaceState
   repos: { decks: DeckRepo; docs: DocRepo; workspaces: WorkspaceRepo }
   /** The deck held in the editor (its name is live, and it lists before its first save), and the doc on screen. */
-  open: { deck: { id: string | null; name: string; slides: number }; doc: string | null }
+  open: { deck: { id: string | null; name: string; slides: number }; doc: string | null; docTick: number }
   busy: boolean
   onOpenDeck: (id: string) => void; onNewDeck: () => void; onDeckDeleted: (id: string) => void
-  onOpenDoc: (id: string) => void; onDocDeleted: (id: string) => void
+  onOpenDoc: (id: string) => void; onDocDeleted: (id: string) => void; onDocRenamed: () => void
   /** The open deck is renamed through the editor, so its live state and its next save agree. */
   onRenameOpenDeck: (name: string) => void
   /** The signed-in user's id, for their own row in Members. */
@@ -32,7 +34,7 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its docs and its decks, newest
     first. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens. */
-export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onRenameOpenDeck, me }: Props) {
+export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onDocRenamed, onRenameOpenDeck, me }: Props) {
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [decks, setDecks] = useState<ListRow[] | null>(null), [docs, setDocs] = useState<ListRow[] | null>(null)
   const [failed, setFailed] = useState<Record<Kind, boolean>>({ deck: false, doc: false })
@@ -54,7 +56,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   }, [repos.docs, wsId])
   // Read again when the open deck or doc changes, so one saved for the first time shows with its real time.
   useEffect(() => { void loadDecks() }, [loadDecks, open.deck.id])
-  useEffect(() => { void loadDocs() }, [loadDocs, open.doc])
+  useEffect(() => { void loadDocs() }, [loadDocs, open.doc, open.docTick])
 
   // The open deck lists before its first save, and always under its live name.
   const { deck } = open, onDeck = open.doc === null
@@ -88,10 +90,11 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       await loadDecks()
       return
     }
+    // A doc's name is its title: renaming rewrites the title, so the two never drift apart.
     const d = await repos.docs.get(row.id)
-    const why = d ? await repos.docs.save({ id: d.id, name, text: d.text, workspaceId: d.workspaceId }) : 'That doc is gone.'
+    const why = d ? await repos.docs.save({ id: d.id, name, text: serializeDoc({ ...parseDoc(d.text).doc, title: name }), workspaceId: d.workspaceId }) : 'That doc is gone.'
     if (why) throw new Error(why)
-    await loadDocs()
+    onDocRenamed()
   }
   const remove = async () => {
     if (!doomed) return

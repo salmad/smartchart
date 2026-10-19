@@ -88,3 +88,9 @@ export function toggleSpans(spans: { markup: string; from: number; to: number }[
     return has === on ? s.markup : toggle(s.markup, s.from, s.to, mark);
   });
 }
+
+/** A link over a plain-text range, or none (`url` null): the range's old link goes, its other marks stay. */
+export function setLink(markup: string, from: number, to: number, url: string | null): string {
+  const [a, b] = from <= to ? [from, to] : [to, from];
+  return serialize(parse(markup).map((c, i) => (i < a || i >= b ? c : { ch: c.ch, marks: [...c.marks.filter((m) => !m.startsWith("link:")), ...(url ? [`link:${url}` as Mark] : [])] })));
+}
