@@ -3,7 +3,7 @@
 import { describe as card, OFFERED } from '../../src/engine/slides/schema.js'
 import { exampleFor } from '../../src/engine/agent/prompts.js'
 import { TOOLS, mcpView } from '../../src/engine/tools/index.js'
-import { guideText } from '../../src/engine/tools/guide-text.js'
+import { docGuideText, guideText } from '../../src/engine/tools/guide-text.js'
 import { CONTRACT } from '../../src/engine/tools/account.js'
 import { INSTRUCTIONS } from '../../src/engine/tools/instructions.js'
 import type { JevFn } from '../../src/engine/agent/llm.js'
@@ -22,10 +22,12 @@ const rpcError = (id: RpcRequest['id'] | null, code: number, message: string) =>
 function resources() {
   return [
     ...STYLES.map((s) => ({ uri: `smartchart://guide/${s}`, name: `Writing guide (${s})`, mimeType: 'text/markdown' })),
+    { uri: 'smartchart://guide/doc', name: 'Writing guide (docs)', mimeType: 'text/markdown' },
     ...STYLES.flatMap((s) => OFFERED.map((t) => ({ uri: `smartchart://template/${s}/${t}`, name: `${t} template (${s})`, mimeType: 'application/json' }))),
   ]
 }
 function readResource(uri: string): { uri: string; mimeType: string; text: string } | null {
+  if (uri === 'smartchart://guide/doc') return { uri, mimeType: 'text/markdown', text: docGuideText() }
   const g = /^smartchart:\/\/guide\/(consulting|pitch)$/.exec(uri)
   if (g) return { uri, mimeType: 'text/markdown', text: guideText(g[1] as Style) }
   const t = /^smartchart:\/\/template\/(consulting|pitch)\/(\w+)$/.exec(uri)

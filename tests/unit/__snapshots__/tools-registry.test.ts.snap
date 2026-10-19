@@ -49,10 +49,11 @@ exports[`registry > the three views agree (published contract: only additions al
       "additionalProperties": false,
       "properties": {
         "style": {
-          "description": "The deck's style (get_deck shows it).",
+          "description": "The deck's style (get_deck shows it), or "doc" for writing docs.",
           "enum": [
             "consulting",
             "pitch",
+            "doc",
           ],
           "type": "string",
         },
@@ -78,10 +79,11 @@ exports[`registry > the three views agree (published contract: only additions al
       "additionalProperties": false,
       "properties": {
         "style": {
-          "description": "The deck's style (get_deck shows it).",
+          "description": "The deck's style (get_deck shows it), or "doc" for writing docs.",
           "enum": [
             "consulting",
             "pitch",
+            "doc",
           ],
           "type": "string",
         },
@@ -107,15 +109,16 @@ exports[`registry > the three views agree (published contract: only additions al
       "additionalProperties": false,
       "properties": {
         "style": {
-          "description": "The deck's style (get_deck shows it).",
+          "description": "The deck's style (get_deck shows it), or "doc" for writing docs.",
           "enum": [
             "consulting",
             "pitch",
+            "doc",
           ],
           "type": "string",
         },
         "template": {
-          "description": "A template id from list_templates.",
+          "description": "A template id from list_templates (a figure kind, with style "doc").",
           "enum": [
             "chart",
             "pair",
@@ -131,6 +134,7 @@ exports[`registry > the three views agree (published contract: only additions al
             "agenda",
             "cover",
             "section",
+            "callout",
           ],
           "type": "string",
         },
@@ -773,6 +777,389 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "restore_version",
     "title": "Restore a version",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List docs",
+    },
+    "description": "A workspace's docs, newest first: id, name and last change. Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "limit": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "workspaceId": {
+          "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_docs",
+    "title": "List docs",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create a doc",
+    },
+    "description": "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
+          "type": "string",
+        },
+        "subtitle": {
+          "type": "string",
+        },
+        "theme": {
+          "description": "ink: dark page; paper: light page (the default for reading).",
+          "enum": [
+            "ink",
+            "paper",
+          ],
+          "type": "string",
+        },
+        "title": {
+          "type": "string",
+        },
+        "workspaceId": {
+          "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "title",
+      ],
+      "type": "object",
+    },
+    "name": "create_doc",
+    "title": "Create a doc",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Open a doc",
+    },
+    "description": "A doc's look, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+      ],
+      "type": "object",
+    },
+    "name": "get_doc",
+    "title": "Open a doc",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Change the doc's title or look",
+    },
+    "description": "Rename the doc (its title is its name), set or clear its subtitle (null clears), or change its theme or accent colour.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "description": "#rrggbb, or null for the default",
+          "oneOf": [
+            {
+              "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+        "subtitle": {
+          "description": "text, or null to clear",
+          "oneOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "theme": {
+          "description": "ink: dark page; paper: light page (the default for reading).",
+          "enum": [
+            "ink",
+            "paper",
+          ],
+          "type": "string",
+        },
+        "title": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+      ],
+      "type": "object",
+    },
+    "name": "update_doc",
+    "title": "Change the doc's title or look",
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Rewrite a text block",
+    },
+    "description": "Replace one text block (a paragraph, list, quote, heading or code block) with Markdown: it becomes the block or blocks the Markdown is. A line starting \`## \` is a heading, \`- \` a list, \`> \` a quote; start a line with \\ to keep such words as plain text. Figures are not text: use update_block. Only the block named changes.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "blockId": {
+          "description": "A blockId from get_doc: a heading's or figure's own id, or a text block's t_… id. Read the doc again after any write.",
+          "type": "string",
+        },
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+        "markdown": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+        "blockId",
+        "markdown",
+      ],
+      "type": "object",
+    },
+    "name": "write_doc_text",
+    "title": "Rewrite a text block",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Add a block",
+    },
+    "description": "Add text or a figure after a block (or at the start or end). Text: give markdown. A figure: give figure { kind, body, id? } where body is the fields of that kind's card (get_template with style "doc"), with a caption and a source. Exactly one of markdown and figure. A new heading or figure gets its id from its words or kind.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "description": "A blockId, "start" or "end".",
+          "type": "string",
+        },
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+        "figure": {
+          "additionalProperties": false,
+          "properties": {
+            "body": {
+              "description": "The figure's fields, as the card gives them.",
+            },
+            "id": {
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "chart",
+                "table",
+                "number",
+                "cards",
+                "steps",
+                "summary",
+                "pair",
+                "image",
+                "team",
+                "logos",
+                "callout",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "body",
+          ],
+          "type": "object",
+        },
+        "markdown": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+        "after",
+      ],
+      "type": "object",
+    },
+    "name": "create_block",
+    "title": "Add a block",
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Edit a figure",
+    },
+    "description": "Change parts of a figure at exact paths; everything else stays. { "caption": "…", "chart.series[1].values[3]": 42, "cards[2]": null } — a value replaces, null removes an item, the next index appends. All or nothing. Text blocks are changed with write_doc_text.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "blockId": {
+          "description": "A blockId from get_doc: a heading's or figure's own id, or a text block's t_… id. Read the doc again after any write.",
+          "type": "string",
+        },
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+        "set": {
+          "additionalProperties": true,
+          "description": "{ path: value }",
+          "type": "object",
+        },
+      },
+      "required": [
+        "docId",
+        "blockId",
+        "set",
+      ],
+      "type": "object",
+    },
+    "name": "update_block",
+    "title": "Edit a figure",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Move a block",
+    },
+    "description": "Move one block to just after another, or to the start or end. A heading moves alone, not its section.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "description": "A blockId, "start" or "end".",
+          "type": "string",
+        },
+        "blockId": {
+          "description": "A blockId from get_doc: a heading's or figure's own id, or a text block's t_… id. Read the doc again after any write.",
+          "type": "string",
+        },
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+        "blockId",
+        "after",
+      ],
+      "type": "object",
+    },
+    "name": "move_block",
+    "title": "Move a block",
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete a block",
+    },
+    "description": "Remove one block. Only when the user asked to remove it. A heading goes alone; the text under it stays.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "blockId": {
+          "description": "A blockId from get_doc: a heading's or figure's own id, or a text block's t_… id. Read the doc again after any write.",
+          "type": "string",
+        },
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+        "blockId",
+      ],
+      "type": "object",
+    },
+    "name": "delete_block",
+    "title": "Delete a block",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Check the doc",
+    },
+    "description": "Judge the doc's figures: units, sources, one focus, sorted bars, figures the caption claims, table judgements that read faster as marks, a figure with no caption, an empty section. By blockId, failed checks first. Advice only: fix what a small edit fixes and tell the user about the rest; never invent a source or a figure to clear a check. Writes nothing. One model call when the doc has tables.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "docId": {
+          "description": "The doc id from list_docs or create_doc.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+      ],
+      "type": "object",
+    },
+    "name": "check_doc",
+    "title": "Check the doc",
   },
 ]
 `;

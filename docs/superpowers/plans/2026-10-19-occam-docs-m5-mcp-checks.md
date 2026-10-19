@@ -129,7 +129,7 @@
 - [ ] **Step 4:** Run `npm test` and `npm run lint`. Expected: PASS; every deck tool test unchanged.
 - [ ] **Step 5:** Commit: "Docs M5: docs run through the tool service".
 
-### Task 4: The doc tools (Sonnet)
+### Task 4: The doc tools (Sonnet)  — done
 
 **Files:**
 - Create: `src/engine/tools/docs.ts`

@@ -21,3 +21,29 @@ export function guideText(style: Style): string {
   return [`# Hard rules\n${HARD_RULES}`, `# How to write\n${TOOLS_OUTSIDE}`, `# Start plain\n${START_PLAIN}\n${START_PLAIN_OUTSIDE}`,
     `# When to stop and ask\n${ASK_OUTSIDE}`, `# Comments\n- ${COMMENTS_RULE}`, `# Writing slide JSON\n${WRITING_JSON()}`, `# Style\n${styleBlock(style)}`].join("\n\n");
 }
+
+/** get_guide with style "doc": how to write a doc, from the doc format's own words. */
+export function docGuideText(): string {
+  return [`# What a doc is
+A doc is a title, an optional subtitle, and blocks in order: headings (\`##\` sections and \`###\` subsections), paragraphs, lists, quotes, dividers, code, and figures. A figure is one of Occam's components (chart, table, number, cards, steps, summary, pair, image, team, logos) or a callout, with a caption, notes, a source and a takeaway. Occam draws the page: the contents on the side, sections that fold, figures on a canvas. You write content; you never set fonts, sizes or colours beyond the doc's theme and accent.`,
+  `# How to write
+- Start with create_doc (or get_doc for an existing one) and give the user links.edit so they can watch. get_template with style "doc" gives a figure's card and an example; read it once per kind before writing one.
+- Add text with create_block { after, markdown }; add a figure with create_block { after, figure: { kind, body } }. After a block's blockId, "start" or "end". Change a text block with write_doc_text and a figure with update_block at exact paths ({ "chart.series[0].values[3]": 42 }); null removes an item. Move and delete by blockId.
+- Every write returns blocks again. A text block's id is made from its words, so it changes when they do: use the ids from the last result, and read the doc again if a call says a block is not there.
+- Headings and figures keep their ids. A heading's id comes from its words when it is first written; link to it with [the plan](#plan).
+- Markdown here is small: \`## \` heading, \`### \` subheading, \`- \` bullets, \`1. \` numbers, \`> \` quote, \`---\` divider, **bold**, [[focus]], [links](https://…) and [section links](#id). A line that begins with one of those marks but is plain text starts with a backslash.
+- Write sections as short, argued paragraphs; put evidence in figures. One idea per section. Open each section with its answer.`,
+  `# Figures
+- Give every figure a caption that says what it shows, and a source in \`source\` (or a \`footnote\`) when it shows figures. Link the source: \`[FCA report](https://…)\`.
+- A chart, table or number figure carries the user's figures exactly as given. Never invent a figure or a source; leave \`source\` out and tell the user instead.
+- One element stands out per figure (a focus series, card, step, column or row). Bars sorted largest first unless the order means something; time runs oldest to newest. Units in \`format\`; at most two units on one chart.
+- A table may run to 20 rows. Has/lacks and degree judgements (Yes, No, Partly) read faster as marks (✓ ✗ or Harvey balls) than as words.
+- A callout is \`{ tone: "note" | "decision" | "risk", text }\`: one or two sentences, for what a reader must not miss.
+- Pictures (image, team, logos) need a src from add_image, and docs cannot take uploads yet: leave them out and say so.`,
+  `# When to stop and ask
+${ASK_OUTSIDE}`,
+  `# Checks
+- check_doc judges the figures and the structure: a figure with no caption, an empty section, units, sources, one focus, sorted bars, figures a caption claims that the data does not show. It reports; it never changes the doc. Fix what a small edit fixes and tell the user about the rest.
+- A write that breaks the schema is refused with the path and the fix, and changes nothing: correct it and write again.
+- Someone may be editing by hand: a result with a notice says so. Your change is saved; their next Save will be refused until they reload.`].join("\n\n");
+}
