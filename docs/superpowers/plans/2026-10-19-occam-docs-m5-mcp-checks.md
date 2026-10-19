@@ -173,7 +173,7 @@
 - [ ] **Step 4:** Run `npm run test:browser`. Expected: PASS. Look at the badge on a Paper and an Ink doc at full size and log the critique in `docs/temp/apple-bar-review.md`.
 - [ ] **Step 5:** Commit: "Docs M5: figure badges in the editor".
 
-### Task 6: The live run, the harness and the spec (main model; the run goes to Sonnet)
+### Task 6: The live run, the harness and the spec (main model; the run goes to Sonnet)  — done (run in-process)
 
 **Files:**
 - Create: `tests/agent-harness/docs.json` (three tasks: competitor research, a PRD, a legal memo, each with a prompt and what the doc must contain), `tests/agent-harness/docs-mcp.mjs`

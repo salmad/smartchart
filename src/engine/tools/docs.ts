@@ -83,7 +83,7 @@ export const docTools = [
     run: async (ctx, { blockId, markdown }) => written(ctx, fileOf(ctx), writeText(fileOf(ctx).doc, blockId, markdown)) }),
 
   tool<{ docId: string; after: string; markdown?: string; figure?: { kind: FigureKind; body: FigureBody; id?: string } }>({ name: "create_block", title: "Add a block", group: "docs", scope: "doc", annotations: WRITE,
-    description: "Add text or a figure after a block (or at the start or end). Text: give markdown. A figure: give figure { kind, body, id? } where body is the fields of that kind's card (get_template with style \"doc\"), with a caption and a source. Exactly one of markdown and figure. A new heading or figure gets its id from its words or kind.",
+    description: "Add text or a figure after a block (or at the start or end). Text: give markdown. A figure: give figure { kind, body, id? } where body is the fields of that kind's card (get_template with style \"doc\") and holds everything: the caption, source, notes and takeaway go inside body, not beside it. Exactly one of markdown and figure. A new heading or figure gets its id from its words or kind.",
     input: { type: "object", additionalProperties: false, required: ["docId", "after"], properties: { docId: DOC_ID, after: AFTER, markdown: { type: "string" },
       figure: { type: "object", additionalProperties: false, required: ["kind", "body"], properties: { kind: { type: "string", enum: [...FIGURE_KINDS] }, body: { description: "The figure's fields, as the card gives them." }, id: { type: "string" } } } } },
     run: async (ctx, { after, markdown, figure }) => {

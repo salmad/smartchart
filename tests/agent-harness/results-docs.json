@@ -1,0 +1,318 @@
+{
+ "competitor-research": {
+  "id": "competitor-research",
+  "model": "anthropic/claude-haiku-5.5",
+  "ms": 66623,
+  "steps": 13,
+  "toolErrors": [
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #scorecard.caption: 70 characters, limit 48 (22 too many). Shorten this field only. Fix it and call again; nothing was changed."
+   },
+   {
+    "tool": "update_block",
+    "error": true,
+    "said": "bad_input: #scorecard.table.rows: required. Rows, top to bottom: at most 8, plus group headings. Fix it and call again; nothing was changed."
+   }
+  ],
+  "calls": [
+   "get_guide",
+   "list_templates",
+   "get_template",
+   "get_template",
+   "list_workspaces",
+   "create_doc",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "write_doc_text",
+   "update_block",
+   "check_doc"
+  ],
+  "reply": "I've written the teardown doc with a summary, the revenue chart and the scorecard table. Here is the link so you can follow it as it builds:\n\nhttps://harness.test/doc/doc_mvfax50wx1ac\n\n**What's in it**\n- **Summary:** Revolut Business is pulling away. Its SME card revenue rose from \u00a3120m (2021) to \u00a3520m (2025), and its lead over Tide grew from \u00a380m to \u00a3320m. No issuer pairs a high limit with fast approval: Revolut is fast at \u00a350k, Capital on Tap offers \u00a3100k but takes 2 days, and Tide is same-day at \u00a310k.\n- **Revenue chart:** Revolut Business is the highlighted series, with Tide and Capital on Tap as context. The takeaway notes that Revolut added \u00a3400m over four years against Tide's \u00a3160m.\n- **Scorecard table:** Each issuer's 2025 revenue, average annual growth 2021\u201325, published limit and approval time. Growth is computed from your figures: Revolut 44%, Tide 50%, Capital on Tap 30%.\n\n**Points to check before this goes to the founders**\n- Tide's growth rate (50%) is higher than Revolut's (44%). The scorecard shows this, but the summary's framing of Revolut \"pulling away\" refers to absolute revenue, so the doc says that rather than claiming it leads on growth.\n- The \"space between them\" line in the summary is my inference from the terms you gave, not a figure. Edit it if you'd rather keep the summary to the evidence.\n- The source line reads \"Company filings; Finbridge estimates (illustrative)\", as you specified. The published terms are credited to issuer websites, which you didn't name, so please confirm that attribution or give me the exact source.",
+  "errors": [],
+  "figures": {
+   "chart": 1,
+   "table": 1
+  },
+  "headings": 1,
+  "met": true,
+  "checkDoc": {
+   "checks": [
+    {
+     "blockId": "revenue-chart",
+     "id": "R4",
+     "ok": true,
+     "msg": "At most one focus element"
+    },
+    {
+     "blockId": "revenue-chart",
+     "id": "R5",
+     "ok": true,
+     "msg": "Chart values carry a unit"
+    },
+    {
+     "blockId": "revenue-chart",
+     "id": "R8",
+     "ok": true,
+     "msg": "Figures say where they come from"
+    },
+    {
+     "blockId": "revenue-chart",
+     "id": "R9",
+     "ok": true,
+     "msg": "Chart follows the chart guide"
+    },
+    {
+     "blockId": "revenue-chart",
+     "id": "R11",
+     "ok": true,
+     "msg": "Headline figures are on the slide"
+    },
+    {
+     "blockId": "revenue-chart",
+     "id": "R14",
+     "ok": true,
+     "msg": "Time runs oldest to newest"
+    },
+    {
+     "blockId": "scorecard",
+     "id": "R4",
+     "ok": true,
+     "msg": "At most one focus element"
+    },
+    {
+     "blockId": "scorecard",
+     "id": "R8",
+     "ok": true,
+     "msg": "Figures say where they come from"
+    },
+    {
+     "blockId": "scorecard",
+     "id": "R11",
+     "ok": true,
+     "msg": "Headline figures are on the slide"
+    },
+    {
+     "blockId": "scorecard",
+     "id": "R13",
+     "ok": true,
+     "msg": "Consistent units and precision"
+    },
+    {
+     "blockId": "scorecard",
+     "id": "J9",
+     "ok": true,
+     "msg": "Cells suit words and figures"
+    }
+   ]
+  },
+  "checkDocLeftDocUntouched": true,
+  "markdown": "---\ntitle: SME card issuers: competitor teardown\nsubtitle: Prepared for the Finbridge founders\n---\n\n## Summary {#summary}\n\nRevolut Business is pulling away from the other SME card issuers. Its card revenue rose from \u00a3120m in 2021 to \u00a3520m in 2025, and its lead over Tide widened from \u00a380m to \u00a3320m in the same period.\n\nNo issuer pairs a high limit with fast approval. Capital on Tap offers \u00a3100k but takes 2 days, and Revolut Business approves in minutes but at \u00a350k. Tide approves the same day at only \u00a310k. Finbridge can own the space between them.\n\n```occam:chart {#revenue-chart}\n{\n  \"chart\": {\n    \"kind\": \"bars\",\n    \"stacking\": \"none\",\n    \"format\": \"\u00a3{v}m\",\n    \"categories\": [\n      \"2021\",\n      \"2022\",\n      \"2023\",\n      \"2024\",\n      \"2025\"\n    ],\n    \"series\": [\n      {\n        \"name\": \"Revolut Business\",\n        \"values\": [\n          120,\n          190,\n          280,\n          390,\n          520\n        ],\n        \"mark\": \"bar\",\n        \"color\": \"focus\"\n      },\n      {\n        \"name\": \"Tide\",\n        \"values\": [\n          40,\n          70,\n          105,\n          150,\n          200\n        ],\n        \"mark\": \"bar\",\n        \"color\": \"neutral\"\n      },\n      {\n        \"name\": \"Capital on Tap\",\n        \"values\": [\n          60,\n          85,\n          110,\n          140,\n          170\n        ],\n        \"mark\": \"bar\",\n        \"color\": \"neutral\"\n      }\n    ]\n  },\n  \"caption\": \"SME card revenue by issuer, 2021\u20132025 \u00b7 \u00a3m\",\n  \"takeaway\": \"Revolut added \u00a3400m of SME card revenue in four years; Tide added \u00a3160m.\",\n  \"source\": \"Company filings; Finbridge estimates (illustrative).\"\n}\n```\n\n```occam:table {#scorecard}\n{\n  \"table\": {\n    \"columns\": [\n      {\n        \"label\": \"Issuer\"\n      },\n      {\n        \"label\": \"2025 revenue\",\n        \"bars\": true\n      },\n      {\n        \"label\": \"Growth a year, 2021\u201325\"\n      },\n      {\n        \"label\": \"Published limit\"\n      },\n      {\n        \"label\": \"Approval\"\n      }\n    ],\n    \"rows\": [\n      {\n        \"cells\": [\n          \"Revolut Business\",\n          \"\u00a3520m\",\n          \"44%\",\n          \"\u00a350k\",\n          \"Minutes\"\n        ],\n        \"focus\": true\n      },\n      {\n        \"cells\": [\n          \"Tide\",\n          \"\u00a3200m\",\n          \"50%\",\n          \"\u00a310k\",\n          \"Same day\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Capital on Tap\",\n          \"\u00a3170m\",\n          \"30%\",\n          \"\u00a3100k\",\n          \"2 days\"\n        ]\n      }\n    ]\n  },\n  \"caption\": \"SME card issuers: revenue and terms \u00b7 \u00a3m, %\",\n  \"takeaway\": \"The \u00a3100k limit takes 2 days; the minutes approval comes at \u00a350k.\",\n  \"source\": \"Company filings; Finbridge estimates (illustrative). Published terms from issuer websites.\"\n}\n```\n"
+ },
+ "prd": {
+  "id": "prd",
+  "model": "anthropic/claude-haiku-5.5",
+  "ms": 69053,
+  "steps": 26,
+  "toolErrors": [
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: figure.source: not a known field (known: kind, body, id)"
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #requirements: used by more than one heading or figure. Fix it and call again; nothing was changed."
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #requirements-table.caption: 49 characters, limit 48 (1 too many). Shorten this field only. Fix it and call again; nothing was changed."
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #requirements-table.table.rows[1].cells[2]: 71 characters, limit 40. Fix it and call again; nothing was changed."
+   },
+   {
+    "tool": "read_slide",
+    "error": true,
+    "said": "not_found: No deck doc_mvfay9raoyik. list_decks shows your decks."
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #flow-steps.steps[1].title: 11 characters, limit 10 (1 too many). Shorten this field only. Fix it and call again; nothing was changed."
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #flow-steps.steps[1].text: 72 characters, limit 70 (2 too many). Shorten this field only. Fix it and call again; nothing was changed."
+   }
+  ],
+  "calls": [
+   "list_workspaces",
+   "get_guide",
+   "list_templates",
+   "get_template",
+   "get_template",
+   "create_doc",
+   "create_block",
+   "get_doc",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "update_block",
+   "read_slide",
+   "get_doc",
+   "update_block",
+   "get_template",
+   "update_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "check_doc"
+  ],
+  "reply": "The PRD is ready for engineers: https://harness.test/doc/doc_mvfay9raoyik\n\nIt has four sections:\n\n- **Goal:** what the PRD covers and how requirements are ranked.\n- **Requirements:** a table with Must, Should and Could priorities, each row showing its status (Built, In review, In design, Planned). The decline-reason row is the focus.\n- **Flow:** four steps from setup to a raised limit: set rules, check at authorisation (under 50 ms, per the rules-service design), explain the decline in a push, and approve a raise in one tap.\n- **Risk callout:** a slow rules service would slow every payment, because the check sits on the authorisation path.\n\nThe doc passed check_doc. Things to review:\n\n- The table source line reads \"Finbridge card controls scope; status as of this draft.\" I wrote it, so change it to the real source if you have one.\n- The callout wording is mine. The risk is that any delay above the 50 ms budget slows all cards, not just those with rules.\n- The requirement descriptions are one line each, so engineers will need acceptance criteria before build. I can add a section for those if you want.",
+  "errors": [],
+  "figures": {
+   "table": 1,
+   "steps": 1,
+   "callout": 1
+  },
+  "headings": 3,
+  "met": true,
+  "checkDoc": {
+   "checks": [
+    {
+     "blockId": "requirements-table",
+     "id": "R4",
+     "ok": true,
+     "msg": "At most one focus element"
+    },
+    {
+     "blockId": "requirements-table",
+     "id": "R8",
+     "ok": true,
+     "msg": "Figures say where they come from"
+    },
+    {
+     "blockId": "requirements-table",
+     "id": "R13",
+     "ok": true,
+     "msg": "Consistent units and precision"
+    },
+    {
+     "blockId": "requirements-table",
+     "id": "J9",
+     "ok": true,
+     "msg": "Cells suit words and figures"
+    },
+    {
+     "blockId": "flow-steps",
+     "id": "R4",
+     "ok": true,
+     "msg": "At most one focus element"
+    },
+    {
+     "blockId": "flow-steps",
+     "id": "R8",
+     "ok": true,
+     "msg": "Figures say where they come from"
+    }
+   ]
+  },
+  "checkDocLeftDocUntouched": true,
+  "markdown": "---\ntitle: Card controls PRD\nsubtitle: Finbridge: admin limits, merchant blocks and decline reasons\n---\n\n## Goal {#goal}\n\nAdmins at Finbridge control how each card can be spent. This PRD covers three things engineers build from: a monthly limit per card, blocks on merchant categories, and a decline reason the cardholder sees on the phone. Requirements are ranked Must, Should and Could. The flow runs from setup to the moment a raised limit is approved.\n\n## Requirements {#requirements}\n\nMust-haves come first. Status shows what is already built and what is still open, so engineering can see what to start and what to wait for.\n\n```occam:table {#requirements-table}\n{\n  \"caption\": \"Card controls requirements and status\",\n  \"source\": \"Finbridge card controls scope; status as of this draft.\",\n  \"table\": {\n    \"columns\": [\n      {\n        \"label\": \"Priority\"\n      },\n      {\n        \"label\": \"Requirement\"\n      },\n      {\n        \"label\": \"Status\"\n      },\n      {\n        \"label\": \"What it does\"\n      }\n    ],\n    \"rows\": [\n      {\n        \"cells\": [\n          \"Must\",\n          \"Monthly limit per card\",\n          {\n            \"value\": \"Built\",\n            \"status\": true\n          },\n          \"Admin caps monthly spend per card.\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Must\",\n          \"Block merchant categories\",\n          {\n            \"value\": \"In review\",\n            \"status\": true\n          },\n          \"Admin blocks chosen merchant categories.\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Must\",\n          \"Decline reason on the phone\",\n          {\n            \"value\": \"In design\",\n            \"status\": true\n          },\n          \"Push names the rule that declined it.\"\n        ],\n        \"focus\": true\n      },\n      {\n        \"cells\": [\n          \"Should\",\n          \"Request a higher limit\",\n          {\n            \"value\": \"In design\",\n            \"status\": true\n          },\n          \"Admin approves a raise in one tap.\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Should\",\n          \"Limits by team\",\n          {\n            \"value\": \"Planned\",\n            \"status\": true\n          },\n          \"One limit shared across a team's cards.\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Could\",\n          \"Weekly spend digest\",\n          {\n            \"value\": \"Planned\",\n            \"status\": true\n          },\n          \"Weekly summary of spend against limits.\"\n        ]\n      }\n    ]\n  }\n}\n```\n\n## Flow {#flow}\n\nA card's rules are set once, checked on every payment, and explained when a payment is declined. The four steps below cover one card from setup to a raised limit.\n\n```occam:steps {#flow-steps}\n{\n  \"caption\": \"One card from setup to a raised limit\",\n  \"steps\": [\n    {\n      \"when\": \"Setup\",\n      \"title\": \"Set rules\",\n      \"text\": \"Admin sets a monthly limit and blocked merchant categories.\"\n    },\n    {\n      \"when\": \"Tap\",\n      \"title\": \"Check\",\n      \"text\": \"Rules run at authorisation, in under 50 ms (rules-service design).\"\n    },\n    {\n      \"when\": \"Decline\",\n      \"title\": \"Explain\",\n      \"text\": \"A push tells the cardholder which rule declined the payment.\",\n      \"focus\": true\n    },\n    {\n      \"when\": \"After\",\n      \"title\": \"Approve\",\n      \"text\": \"Admin approves a higher limit in one tap.\"\n    }\n  ],\n  \"source\": \"Finbridge rules-service design.\"\n}\n```\n\n```occam:callout {#risk}\n{\n  \"tone\": \"risk\",\n  \"text\": \"A slow rules service would slow every payment. The check sits on the authorisation path, so any delay above the 50 ms budget delays every card, not just those with rules.\"\n}\n```\n"
+ },
+ "legal-memo": {
+  "id": "legal-memo",
+  "model": "anthropic/claude-haiku-5.5",
+  "ms": 27573,
+  "steps": 13,
+  "toolErrors": [
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: figure: must be an object"
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: figure: must be an object"
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #markets.caption: 55 characters, limit 48 (7 too many). Shorten this field only. Fix it and call again; nothing was changed."
+   },
+   {
+    "tool": "create_block",
+    "error": true,
+    "said": "bad_input: #markets.table.rows[3].cells[1]: 43 characters, limit 40. Fix it and call again; nothing was changed."
+   }
+  ],
+  "calls": [
+   "get_guide",
+   "get_template",
+   "get_template",
+   "create_doc",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "create_block",
+   "write_doc_text",
+   "check_doc"
+  ],
+  "reply": "I've written the memo with the four-market table and the decision callout. The doc is ready for you to review here: https://harness.test/doc/doc_mvfazqqg5npv\n\n**Answer:** The UK, Germany and France all need a licence or authorisation. Spain needs none if the card is issued through a partner bank. Spain is also the fastest, at 2 months, and Germany the slowest, at 6 to 9 months.\n\n**Table:** Licence position and launch time for each market, with Spain highlighted. Source: Counsel's note, October 2026 (illustrative).\n\n**Decision callout:** Launch in the UK and Spain first. Spain is the fastest route, and the UK needs authorisation, which takes 3 to 6 months.\n\nThe memo is labelled as placeholder positions, not legal advice.\n\nOne open point: the doc check flags mixed units in the time column (\"3 to 6 months\" alongside \"2 months to onboard\"). I kept your wording exactly, so the cells read as you gave them. If you want the column to be bare numbers with \"months\" only in the caption, I can make that change.",
+  "errors": [],
+  "figures": {
+   "table": 1,
+   "callout": 1
+  },
+  "headings": 1,
+  "met": true,
+  "checkDoc": {
+   "checks": [
+    {
+     "blockId": "markets",
+     "id": "R13",
+     "ok": false,
+     "msg": "Mixed units or decimals: 3 to 6 months, 6 to 9 months, 6 months, 2 months to onboard"
+    },
+    {
+     "blockId": "markets",
+     "id": "R4",
+     "ok": true,
+     "msg": "At most one focus element"
+    },
+    {
+     "blockId": "markets",
+     "id": "R8",
+     "ok": true,
+     "msg": "Figures say where they come from"
+    },
+    {
+     "blockId": "markets",
+     "id": "J9",
+     "ok": true,
+     "msg": "Cells suit words and figures"
+    }
+   ]
+  },
+  "checkDocLeftDocUntouched": true,
+  "markdown": "---\ntitle: Do we need a licence to launch a business credit card in four markets?\nsubtitle: Legal research memo for the co-founders. Placeholder positions, not legal advice.\n---\n\n## Answer {#answer}\n\nWhether we need a licence depends on the market. The UK, Germany and France all require a licence or authorisation. Spain needs no licence if we issue the card through a partner bank. Spain is also the fastest to launch, at 2 months, and Germany the slowest, at 6 to 9 months.\n\nThese are placeholder positions for testing the memo, not legal advice. They come from one source for all four markets.\n\n```occam:table {#markets}\n{\n  \"caption\": \"Licence and launch time, four markets \u00b7 months\",\n  \"table\": {\n    \"columns\": [\n      {\n        \"label\": \"Market\"\n      },\n      {\n        \"label\": \"Licence position\"\n      },\n      {\n        \"label\": \"Time to launch\"\n      }\n    ],\n    \"rows\": [\n      {\n        \"cells\": [\n          \"UK\",\n          \"Authorisation needed\",\n          \"3 to 6 months\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Germany\",\n          \"Licence needed\",\n          \"6 to 9 months\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"France\",\n          \"Licence needed\",\n          \"6 months\"\n        ]\n      },\n      {\n        \"cells\": [\n          \"Spain\",\n          \"No licence via partner bank\",\n          \"2 months to onboard\"\n        ],\n        \"focus\": true\n      }\n    ]\n  },\n  \"source\": \"Counsel's note, October 2026 (illustrative).\"\n}\n```\n\n```occam:callout {#decision}\n{\n  \"tone\": \"decision\",\n  \"text\": \"Launch in the UK and Spain first. Spain is the fastest route, at 2 months, with no licence if we issue through a partner bank. The UK needs authorisation, which takes 3 to 6 months.\"\n}\n```\n"
+ }
+}

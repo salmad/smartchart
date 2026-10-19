@@ -1,0 +1,38 @@
+{
+ "tasks": [
+  {
+   "id": "competitor-research",
+   "prompt": "Write a competitor teardown doc for the Finbridge founders on SME card issuers. Use only the figures here; they are illustrative and come from 'Company filings; Finbridge estimates (illustrative)'. SME card revenue in \u00a3m, 2021 to 2025: Revolut Business 120, 190, 280, 390, 520; Tide 40, 70, 105, 150, 200; Capital on Tap 60, 85, 110, 140, 170. Published terms: Revolut Business limit \u00a350k, approval in minutes; Tide limit \u00a310k, approval same day; Capital on Tap limit \u00a3100k, approval 2 days. Point out that Revolut pulls away, and that no issuer pairs a high limit with fast approval. Give it a summary up top, the revenue chart, and a scorecard table.",
+   "must": {
+    "figures": {
+     "chart": 1,
+     "table": 1
+    },
+    "headings": 1
+   }
+  },
+  {
+   "id": "prd",
+   "prompt": "Write a PRD for card controls at Finbridge that engineers can build from. Goals: let an admin set a monthly limit per card and block merchant categories, and explain a decline on the phone. Requirements by priority: Must: monthly limit per card (built), block merchant categories (in review), decline reason on the phone (in design). Should: request a higher limit (in design), limits by team (planned). Could: weekly spend digest (planned). Flow: setup, tap (rules run at authorisation in under 50 ms, from the rules-service design), decline (a push names the rule), after (approve a raise in one tap). Put the requirements in a table and the flow in steps. Add a risk callout: a slow rules service would slow every payment.",
+   "must": {
+    "figures": {
+     "table": 1,
+     "steps": 1,
+     "callout": 1
+    },
+    "headings": 1
+   }
+  },
+  {
+   "id": "legal-memo",
+   "prompt": "Write a short legal research memo for the co-founders on whether a business credit card needs a licence to launch in four markets. These are test placeholders, not real law, and the source for all of them is 'Counsel's note, October 2026 (illustrative)'. UK: authorisation needed, 3 to 6 months. Germany: licence needed, 6 to 9 months. France: licence needed, 6 months. Spain: no licence if the card is issued through a partner bank, 2 months to onboard. Put the four markets in a table with the licence position and the time to launch, and add a decision callout recommending the UK and Spain first.",
+   "must": {
+    "figures": {
+     "table": 1,
+     "callout": 1
+    },
+    "headings": 1
+   }
+  }
+ ]
+}

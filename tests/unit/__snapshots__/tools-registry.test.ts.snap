@@ -978,7 +978,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Add a block",
     },
-    "description": "Add text or a figure after a block (or at the start or end). Text: give markdown. A figure: give figure { kind, body, id? } where body is the fields of that kind's card (get_template with style "doc"), with a caption and a source. Exactly one of markdown and figure. A new heading or figure gets its id from its words or kind.",
+    "description": "Add text or a figure after a block (or at the start or end). Text: give markdown. A figure: give figure { kind, body, id? } where body is the fields of that kind's card (get_template with style "doc") and holds everything: the caption, source, notes and takeaway go inside body, not beside it. Exactly one of markdown and figure. A new heading or figure gets its id from its words or kind.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

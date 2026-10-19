@@ -180,3 +180,6 @@ M3 invites by link: the owner creates it in Members, copies it and sends it howe
 
 ## 25. Docs: pictures, merging, comment polish (2026-10-19)
 Left over from the doc editor (M4): image, team and logos figures in docs (they need picture upload for docs, as decks have); a block-level merge of two people's saves, where M4 refuses the second and offers Reload and Copy my text; a comment button in the tab order beside each heading and figure (M4 draws it as an overlay on hover); the comments and versions panels as a real bottom Sheet on a phone; and a selection popover that flips below when the selection is on a heading's line.
+
+## 26. Docs over MCP: what M5 left (2026-10-19)
+`list_versions`, `restore_version` and comment tools for docs (decks have them); a `deck_events` for docs so the editor can say which block an agent changed; judgment checks (J9, J10) in the page badge, not only in `check_doc`; R13 treating ranges such as "3 to 6 months" as one unit (a slide check, so a change for slides too); a person-voice wording for the badge's messages, which are written for agents today; and the live run against production once M5 is deployed.
