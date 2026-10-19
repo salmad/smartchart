@@ -8,7 +8,7 @@ In `useDocEdit.ts`: typing never calls `setShown`, so after `restore(prev)` the 
 ## Task 1. Chart starters
 Add bar chart (relabel), line chart and horizontal bars (ranked) to `blocks` in `starters.json`, with icons in `slash.ts`. Confirm on `/src/dev/docs.html` that ranked draws horizontal bars. Check each in both themes at three widths, `check_doc` clean. Offer waterfall, timeline, matrix, image, team and logos as numbered options; add none unasked.
 
-## Task 2. Editor spike and section decision
+## Task 2. Editor spike and section decision (done 2026-10-19; see the spec's Spike result)
 Tiptap with the schema of the `Block` union only (StarterKit extras off), figures as atom NodeViews hosting `FigureEdit`, code and raw as atoms. Decide section nodes vs a flat doc with adjacency selectors. Look lock: every doc starter, read view against edit mode, chrome hidden, pixel-compared; `pre-wrap` checked. Check the licence of any drag-handle extension. Throwaway until the look lock passes.
 
 ## Task 3. Nested lists in the format

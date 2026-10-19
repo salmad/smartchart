@@ -54,7 +54,7 @@ Not probed (to check in the plan's first task): pasting rich text from Google Do
 
 **Engine: Tiptap (ProseMirror), plain Tiptap, not BlockNote.** I recommend this over repairing the hand-rolled editor, because the problems above (selection across blocks, undo, input rules, paste, caret) are exactly what ProseMirror provides and what a field-per-block design cannot. This is my recommendation; the user has not yet chosen it.
 
-**One ProseMirror document is the draft.** Its schema mirrors the `Block` union in `src/engine/docs/types.ts`: paragraph, heading (levels 2 and 3), bullets, numbered, quote, divider, code, raw, and a `figure` node. Allowed inline marks are only what slide markup holds: bold, Focus, link. Tiptap's StarterKit extras (italic, strike, inline code, nested lists, hard breaks) are switched off.
+**One ProseMirror document is the draft.** Its schema mirrors the `Block` union in `src/engine/docs/types.ts`: paragraph, heading (levels 2 and 3), bullets, numbered, quote, divider, code, raw, and a `figure` node. Allowed inline marks are only what slide markup holds (`markup.ts`): bold, Focus, the red and green marks (`[-x-]`, `[+x+]`; no toolbar button, kept so they survive a Save), and link. Tiptap's StarterKit extras (italic, strike, inline code, nested lists, hard breaks) are switched off.
 
 **Reading and saving go through the existing engine.** Edit mode loads `Doc.blocks` into ProseMirror; Save converts ProseMirror to `Block[]` and calls the existing `docOf` and serializer. No Markdown serializer from a Tiptap package. A round-trip test (blocks → ProseMirror → blocks) over all doc starters must be identical.
 
@@ -86,3 +86,18 @@ Which Tiptap extensions to use for the drag handle and toolbar; the exact undo g
 ## Open from before
 
 The Neon contract for the M4 SQL (`TEST_DATABASE_URL`) was never run, and the M5 MCP run against production is now unblocked since M5 is deployed.
+
+## Spike result (plan task 2, 2026-10-19)
+
+Throwaway spike: `src/dev/editor-spike.html` and `tests/browser/editor-spike.spec.ts` (deleted when task 4 starts). The three doc starters, in both themes, drawn by a Tiptap document and by the read view, match element by element (left, top, width, height of every title, heading, paragraph, list item, quote, divider, figure and code block) with `doc.css` and `components.css` unchanged.
+
+**Decision: sections are nodes in the schema.** `doc: block* section*`, `section: sectionHead sectionBody` drawn as `section.doc-sec > h2 + div.sec-body`. `doc.css` is written in child combinators on exactly that shape (`.doc-sec > h2`, `.sec-body > :not(.doc-fig)`), so a flat document would need a second copy of about ten rules that could drift from the read view. The Tiptap root takes the class `doc-body` (a wrapper div would put the figures inside the measure's `max-width`). Consequence for task 4: a custom command is needed to turn a paragraph into a section heading (splitting the section) and back (merging it into the one before), and Enter and Backspace at a section's edges.
+
+Other findings, each a task 4 item:
+- Marks: five, not three (see above).
+- Lists draw `li > p`; `.doc-editing li > p { margin: 0 }` makes it identical. Nested lists will be `li > p + ul`.
+- A link's arrow and its "last word stays with the arrow" cannot be a mark (the read view wraps the last word in a span). A widget decoration at the end of each link run, inside the link, with a word joiner does it: the legal memo (which has links) matches to the pixel row.
+- Figures, code and raw are atom nodes whose view is the read view's own `blockHTML` and then `fitFigures`, so they cannot differ.
+- Headings (level 3) carry their id as a node attribute; a section heading carries the section's id.
+- Not yet proven: the figure NodeView hosting `FigureEdit` (React), the heading transform, undo across them, `pre-wrap` effects while typing. These are task 4's first checks.
+- Licences: `@tiptap/core`, `react`, `pm`, `extensions`, `extension-drag-handle`, list, link, bold, heading and the rest are MIT, so the drag handle is not a paid extension.
