@@ -1,11 +1,11 @@
 /* Keys in the doc editor that cross a field's edge: Enter splits, Backspace and Delete join, arrows move between fields,
    ⌘B and ⇧⌘H mark, a paste of several lines makes blocks. Every structural change is an op from blocks.ts or lists.ts,
    handed to edit.apply with where the cursor goes. A field is one block's text, or one item of a list. */
-import { convert, insertAfter, mergeBack, removeBlock, splitText, type Keyed } from '@/engine/docs/blocks'
+import { convert, insertAfter, mergeBack, moveBlock, removeBlock, splitText, type Keyed } from '@/engine/docs/blocks'
 import { endList, insertChunks, joinOntoList, mergeItem, splitItem, type Caret } from '@/engine/docs/lists'
 import { parse, toggle, type Mark } from '@/engine/slides/markup'
 import { caretRange, redraw, selectRange, setCaret, typed } from '@/app/edit/fields'
-import type { DocEdit, HeadField } from './useDocEdit'
+import type { DocEdit, Focus, HeadField } from './useDocEdit'
 
 export interface Field { el: HTMLElement; key: string | null; head: HeadField | null; item?: number }
 
@@ -48,6 +48,26 @@ function onEdgeLine(el: HTMLElement, edge: 'first' | 'last'): boolean {
 export const selectBlock = (root: HTMLElement, key: string) => root.querySelector<HTMLElement>(`[data-key="${key}"][data-block-select]`)?.focus()
 
 const MARKS: Record<string, Mark> = { b: 'b', h: 'f' }
+const textOf = (k: Keyed) => (k.block.type === 'paragraph' || k.block.type === 'heading' || k.block.type === 'quote' ? k.block.text : null)
+
+/** A block one place up or down; the cursor (or selection) goes with it. */
+export function moveBy(edit: DocEdit, key: string, dir: -1 | 1, focus?: Focus) {
+  const list = edit.draft.blocks, i = list.findIndex((k) => k.key === key), to = i + dir
+  if (i < 0 || to < 0 || to >= list.length) return
+  const k = list[i], first = k.block.type === 'bullets' || k.block.type === 'numbered' ? { key, item: 0, at: 0 } : textOf(k) === null ? { key, select: true as const } : { key, at: 0 }
+  edit.apply(moveBlock(list, key, to), focus ?? first)
+}
+
+/** A block removed: the cursor goes to the start of the next block, or the end of the one before (a block that is not
+    text is selected). The last block leaves an empty paragraph to write in. */
+export function removeAt(edit: DocEdit, key: string) {
+  const list = edit.draft.blocks, i = list.findIndex((k) => k.key === key), before = list[i - 1], after = list[i + 1]
+  const rest = removeBlock(list, key), target = after ?? before
+  if (!target) { const r = insertAfter(rest, null, { type: 'paragraph', text: '' }); edit.apply(r.list, { key: r.key, at: 0 }); return }
+  const items = target.block.type === 'bullets' || target.block.type === 'numbered' ? target.block.items : null, text = textOf(target)
+  edit.apply(rest, items ? (target === after ? { key: target.key, item: 0, at: 0 } : { key: target.key, item: items.length - 1, at: parse(items[items.length - 1] ?? '').length })
+    : text === null ? { key: target.key, select: true } : { key: target.key, at: target === after ? 0 : parse(text).length })
+}
 
 export function fieldKey(e: KeyboardEvent, f: Field, edit: DocEdit, root: HTMLElement): void {
   const list = edit.draft.blocks, i = list.findIndex((k) => k.key === f.key), block = list[i]?.block
@@ -64,6 +84,7 @@ export function fieldKey(e: KeyboardEvent, f: Field, edit: DocEdit, root: HTMLEl
     return
   }
   if (mod && ['i', 'u'].includes(e.key.toLowerCase())) { e.preventDefault(); return }
+  if (e.altKey && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && f.key) { e.preventDefault(); moveBy(edit, f.key, e.key === 'ArrowUp' ? -1 : 1, { key: f.key, item: f.item, at: from }); return }
   if (e.key === 'Escape') { e.preventDefault(); f.el.blur(); return }
 
   if (e.key === 'Enter' && !mod) {
@@ -112,7 +133,8 @@ export function fieldKey(e: KeyboardEvent, f: Field, edit: DocEdit, root: HTMLEl
     return
   }
 
-  // Arrows leave a field at its edge, into the field before or after.
+  // Plain arrows leave a field at its edge, into the field before or after (⌘, ⌥ and ⇧ arrows are the browser's).
+  if (mod || e.altKey || e.shiftKey) return
   if ((e.key === 'ArrowUp' && onEdgeLine(f.el, 'first')) || (e.key === 'ArrowLeft' && from === 0 && to === 0)) { if (focusAt(all[n - 1], 'end')) e.preventDefault(); return }
   if ((e.key === 'ArrowDown' && onEdgeLine(f.el, 'last')) || (e.key === 'ArrowRight' && from === len && to === len)) { if (focusAt(all[n + 1], 'start')) e.preventDefault() }
 }
@@ -120,7 +142,6 @@ export function fieldKey(e: KeyboardEvent, f: Field, edit: DocEdit, root: HTMLEl
 /** Keys on a selected block (a figure, a divider, code): Backspace removes it, Enter writes a paragraph after it, arrows leave. */
 export function blockKey(e: KeyboardEvent, key: string, edit: DocEdit, root: HTMLElement): void {
   const list = edit.draft.blocks, i = list.findIndex((k) => k.key === key), before = list[i - 1], after = list[i + 1]
-  const textOf = (k: Keyed) => (k.block.type === 'paragraph' || k.block.type === 'heading' || k.block.type === 'quote' ? k.block.text : null)
   // Into a neighbour: its first or last field, or the block itself when it is not text.
   const go = (k: Keyed | undefined, at: 'start' | 'end') => {
     if (!k) return false
@@ -128,15 +149,10 @@ export function blockKey(e: KeyboardEvent, key: string, edit: DocEdit, root: HTM
     if (els.length) return focusAt(at === 'end' ? els[els.length - 1] : els[0], at)
     selectBlock(root, k.key); return true
   }
-  if (e.key === 'Backspace' || e.key === 'Delete') {
-    e.preventDefault()
-    const rest = removeBlock(list, key), target = after ?? before
-    if (!target) { const r = insertAfter(rest, null, { type: 'paragraph', text: '' }); edit.apply(r.list, { key: r.key, at: 0 }); return }
-    const text = textOf(target)
-    edit.apply(rest, text === null ? { key: target.key, select: true } : { key: target.key, at: target === after ? 0 : parse(text).length })
-    return
-  }
+  if (e.altKey && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); moveBy(edit, key, e.key === 'ArrowUp' ? -1 : 1); return }
+  if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); removeAt(edit, key); return }
   if (e.key === 'Enter') { e.preventDefault(); const r = insertAfter(list, key, { type: 'paragraph', text: '' }); edit.apply(r.list, { key: r.key, at: 0 }); return }
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
   if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { if (go(before, 'end')) e.preventDefault(); return }
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { if (go(after, 'start')) e.preventDefault() }
 }

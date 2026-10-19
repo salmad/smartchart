@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
+import { cn } from '@/app/lib/utils'
+import { surface, tintOnHover } from './chrome'
 
 export interface LinkAt { x: number; y: number; url: string }
 interface Props { at: LinkAt; onSet: (url: string | null) => void; onClose: () => void }
@@ -22,10 +24,10 @@ export function LinkBox({ at, onSet, onClose }: Props) {
   }
   return (
     <form ref={place} onSubmit={submit} data-edit-chrome onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }}
-      className="fixed left-[var(--x)] top-[var(--y)] z-30 flex w-[320px] -translate-x-1/2 items-center gap-1.5 rounded-lg bg-raise p-1.5 shadow-[0_0_0_1px_theme(colors.line-2),0_8px_24px_rgba(0,0,0,.18)]">
+      className={cn("fixed left-[var(--x)] top-[var(--y)] z-30 flex w-[320px] -translate-x-1/2 items-center gap-1.5 rounded-[10px] p-1.5", surface)}>
       <Input autoFocus value={url} onChange={(e) => { setUrl(e.target.value); setBad(false) }} onBlur={onClose} placeholder="Paste a link, or #section"
-        aria-label="Link address" aria-invalid={bad} className="h-8 flex-1 border-line-2 bg-app-bg text-[13px] md:text-[13px]" />
-      {at.url && <Button type="button" size="sm" variant="ghost" onMouseDown={(e) => e.preventDefault()} onClick={() => onSet(null)}>Remove</Button>}
+        aria-label="Link address" aria-invalid={bad} className="h-8 flex-1 border-[var(--line-2)] bg-[var(--bg)] text-[13px] text-[var(--fg)] placeholder:text-[var(--muted)] focus-visible:ring-[var(--focus)] md:text-[13px]" />
+      {at.url && <Button type="button" size="sm" variant="ghost" className={cn("text-[var(--fg-2)]", tintOnHover)} onMouseDown={(e) => e.preventDefault()} onClick={() => onSet(null)}>Remove</Button>}
     </form>
   )
 }

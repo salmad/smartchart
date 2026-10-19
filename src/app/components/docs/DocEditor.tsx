@@ -1,7 +1,7 @@
 /* The doc in edit mode: the page drawn from the draft (editorHTML), every text field typed into in place. Typing redraws
    only its field; a structural change redraws the page and puts the cursor where the op said. Figures are drawn and
    scaled as when read. */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { fitFigures } from '@/engine/docs/mount'
 import { parse, setLink } from '@/engine/slides/markup'
 import type { Block } from '@/engine/docs/types'
@@ -10,6 +10,9 @@ import { caretRange, redraw, selectRange, setCaret } from '@/app/edit/fields'
 import { editorHTML } from './editorHTML'
 import { blockKey, fieldKey, fieldOf, markupOf, pasteInto, selectBlock, typeInto, type Field } from './editorKeys'
 import { LinkBox, type LinkAt } from './LinkBox'
+import { BlockHandle } from './BlockHandle'
+import { SlashMenu } from './SlashMenu'
+import { useSlash } from './useSlash'
 import type { DocEdit } from './useDocEdit'
 import './docs-edit.css'
 
@@ -20,6 +23,23 @@ export function DocEditor({ edit, theme, accent }: Props) {
   const root = useRef<HTMLDivElement>(null), editRef = useRef(edit)
   editRef.current = edit
   const [link, setLinkAt] = useState<(LinkAt & { f: Field; from: number; to: number }) | null>(null)
+  const frame = useRef<HTMLDivElement>(null), slash = useSlash(edit, useCallback(() => frame.current, [])), slashRef = useRef(slash)
+  slashRef.current = slash
+  // The block with the handle: the one under the pointer, else the one with the cursor; held while its menu is open.
+  const [handle, setHandle] = useState<{ key: string; x: number; y: number } | null>(null), menuOpen = useRef(false), focused = useRef<string | null>(null), held = useRef<string | null>(null)
+  const place = useCallback((key: string | null) => {
+    const el = key ? root.current?.querySelector<HTMLElement>(`[data-key="${key}"]`) : null, box = frame.current?.getBoundingClientRect()
+    held.current = el ? key : null
+    if (!key || !el || !box) { setHandle(null); return }
+    const r = el.getBoundingClientRect(), first = el.matches('[data-field]') ? el : el.querySelector<HTMLElement>('[data-field]'), lh = first ? parseFloat(getComputedStyle(first).lineHeight) : NaN
+    const next = { key, x: Math.round(r.left - box.left - 34), y: Math.round(r.top - box.top + (Number.isFinite(lh) ? Math.max(0, (lh - 24) / 2) : 0)) }
+    setHandle((h) => (h && h.key === next.key && h.x === next.x && h.y === next.y ? h : next))
+  }, [])
+  const hoverAt = (t: EventTarget | null) => {
+    if (menuOpen.current) return
+    const b = t instanceof Element && root.current?.contains(t) ? t.closest<HTMLElement>('[data-key]') : null
+    if (b) place(b.dataset.key ?? null)
+  }
 
   // Figures already drawn, by key: a redraw keeps a figure whose block is unchanged (blocks are immutable, so the same
   // object), with its charts and fitted sizes, instead of drawing it again.
@@ -49,6 +69,8 @@ export function DocEditor({ edit, theme, accent }: Props) {
     }
     return () => sizes.disconnect()
   }, [edit.shown, theme, accent])
+  // After a redraw the handle follows its block, or goes with it.
+  useLayoutEffect(() => { if (held.current) place(held.current) }, [edit.shown, place])
 
   // While a save runs, the fields stop taking text: what is typed now would be lost when edit mode closes.
   useEffect(() => { root.current?.querySelectorAll<HTMLElement>('[data-field], [data-head]').forEach((f) => { f.contentEditable = edit.saving ? 'false' : 'true' }) }, [edit.saving, edit.shown])
@@ -56,13 +78,14 @@ export function DocEditor({ edit, theme, accent }: Props) {
   useEffect(() => {
     const el = root.current
     if (!el) return
-    const onInput = (e: Event) => { const f = fieldOf(e.target); if (f && !(e as InputEvent).isComposing) typeInto(editRef.current, f) }
+    const onInput = (e: Event) => { const f = fieldOf(e.target); if (f && !(e as InputEvent).isComposing) { typeInto(editRef.current, f); slashRef.current.input(f) } }
     const onComposed = (e: Event) => { const f = fieldOf(e.target); if (f) typeInto(editRef.current, f) }
     const onPaste = (e: ClipboardEvent) => { const f = fieldOf(e.target); if (f) pasteInto(e, f, editRef.current) }
     const onKey = (e: KeyboardEvent) => {
       // Enter and Escape while composing confirm or cancel the candidate; they are not ours.
       if (e.isComposing || e.keyCode === 229) return
       const f = fieldOf(e.target)
+      if (f && slashRef.current.key(e)) return
       if (f && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         const [from, to] = caretRange(f.el) ?? [0, 0], box = window.getSelection()?.getRangeAt(0).getBoundingClientRect()
@@ -75,9 +98,15 @@ export function DocEditor({ edit, theme, accent }: Props) {
       const b = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-block-select]') : null
       if (b?.dataset.key) blockKey(e, b.dataset.key, editRef.current, el)
     }
+    // The menu closes when its paragraph loses the cursor (a click in the menu keeps it); the handle shows on the focused block.
+    const onBlur = () => slashRef.current.close()
+    const onFocus = (e: FocusEvent) => { const b = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-key]') : null; focused.current = b?.dataset.key ?? null }
     el.addEventListener('input', onInput); el.addEventListener('compositionend', onComposed)
-    el.addEventListener('paste', onPaste); el.addEventListener('keydown', onKey)
-    return () => { el.removeEventListener('input', onInput); el.removeEventListener('compositionend', onComposed); el.removeEventListener('paste', onPaste); el.removeEventListener('keydown', onKey) }
+    el.addEventListener('paste', onPaste); el.addEventListener('keydown', onKey); el.addEventListener('focusout', onBlur); el.addEventListener('focusin', onFocus)
+    return () => {
+      el.removeEventListener('input', onInput); el.removeEventListener('compositionend', onComposed); el.removeEventListener('paste', onPaste)
+      el.removeEventListener('keydown', onKey); el.removeEventListener('focusout', onBlur); el.removeEventListener('focusin', onFocus)
+    }
   }, [])
 
   const putLink = (url: string | null) => {
@@ -89,9 +118,12 @@ export function DocEditor({ edit, theme, accent }: Props) {
   }
 
   return (
-    <>
+    <div ref={frame} className={`relative theme-${theme}`} onMouseMove={(e) => hoverAt(e.target)} onMouseLeave={() => { if (!menuOpen.current) place(focused.current) }}>
       <div ref={root} data-editing />
+      {handle && root.current && frame.current && <BlockHandle edit={edit} page={root.current} frame={frame.current} theme={theme} block={handle}
+        onOpen={(o) => { menuOpen.current = o }} />}
+      {slash.slash && <SlashMenu x={slash.slash.x} y={slash.slash.y} choices={slash.slash.choices} active={slash.slash.active} onPick={slash.choose} onHover={slash.hover} />}
       {link && <LinkBox at={link} onSet={putLink} onClose={() => { setLinkAt(null); link.f.el.focus(); selectRange(link.f.el, link.from, link.to) }} />}
-    </>
+    </div>
   )
 }
