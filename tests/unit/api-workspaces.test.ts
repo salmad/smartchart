@@ -186,4 +186,48 @@ describe('docs API', () => {
     expect((await A.docs('DELETE', '?id=doc_1')).status).toBe(204)
     expect((await A.docs('GET', '?id=doc_1')).status).toBe(404)
   })
+
+  it('revision, presence, versions and comments: viewers comment and read, never write', async () => {
+    const { as } = world(), A = as(ann), C = as(cy), D = as(dee)
+    const ws = await personal(A)
+    const doc = { id: 'doc_2', name: 'Memo', text: '---\ntitle: Memo\n---\n\nHello.\n', baseRev: 0, workspaceId: ws }
+    expect((await A.docs('PUT', '', doc)).status).toBe(200)
+    await C.ws('POST', `?accept=${await invite(A, ws, cy.email, 'viewer')}`)
+
+    // An editor's save records a version; the viewer reads the list and the blobs.
+    const [v] = await json<{ n: number; tree: { title: string; blocks: string[] } }[]>(C.docs('GET', '?id=doc_2&versions'))
+    expect(v).toMatchObject({ n: 1, tree: { title: 'Memo' } })
+    const blobs = await json<{ hash: string; block: unknown }[]>(C.docs('GET', `?id=doc_2&blobs=${v.tree.blocks.join(',')}`))
+    expect(blobs.map((b) => b.block)).toEqual([{ type: 'paragraph', text: 'Hello.' }])
+    expect((await D.docs('GET', '?id=doc_2&versions')).status).toBe(404)
+
+    // The revision carries the role.
+    expect(await json(C.docs('GET', '?id=doc_2&rev=1'))).toEqual({ rev: 1, presence: {}, role: 'viewer' })
+    expect((await D.docs('GET', '?id=doc_2&rev=1')).status).toBe(404)
+
+    // Presence: editors only; the server stamps the name.
+    expect((await A.docs('PUT', '?id=doc_2&presence=1', { editing: true })).status).toBe(200)
+    expect(await json<{ presence: { editing: { by: string; until: number } } }>(C.docs('GET', '?id=doc_2&rev=1'))).toMatchObject({ presence: { editing: { by: 'Ann' } } })
+    expect((await C.docs('PUT', '?id=doc_2&presence=1', { editing: true })).status).toBe(403)
+    expect((await A.docs('PUT', '?id=doc_2&presence=1', { editing: false })).status).toBe(200)
+    expect((await json<{ presence: object }>(A.docs('GET', '?id=doc_2&rev=1'))).presence).toEqual({})
+
+    // A viewer's comment lands; the viewer's save is still refused.
+    const c = await C.docs('PUT', '?id=doc_2&comment=1', { add: { text: 'Check this', anchor: 'intro', quote: 'Hello' } })
+    expect(c.status).toBe(200)
+    expect(await json(c)).toMatchObject([{ anchor: 'intro', text: 'Check this', by: 'Cy' }])
+    const r = await C.docs('PUT', '', { ...doc, baseRev: 1 })
+    expect(r.status).toBe(403)
+    expect(await json(r)).toEqual({ error: 'You can view this doc, not edit it.' })
+    const [one] = await json<{ id: string }[]>(A.docs('GET', '?id=doc_2&comments'))
+    expect(await json(A.docs('PUT', '?id=doc_2&comment=1', { resolve: { id: one.id, reply: 'Done' } }))).toMatchObject([{ id: one.id, done: { by: 'Ann', reply: 'Done' } }])
+    expect((await A.docs('PUT', '?id=doc_2&comment=1', { add: { text: 'x'.repeat(1001), anchor: 'intro' } })).status).toBe(400)
+    expect((await A.docs('PUT', '?id=doc_2&comment=1', { add: { text: 'Hi', anchor: 'not an id!' } })).status).toBe(400)
+    expect((await D.docs('PUT', '?id=doc_2&comment=1', { add: { text: 'Hi', anchor: 'intro' } })).status).toBe(404)
+    expect((await C.docs('PUT', '?id=doc_2&comment=1', { resolve: { id: 'c_nope' } })).status).toBe(404)
+
+    // Another editor save is a new version (a pause past GROUP_MS is not needed: a changed doc by a new key is added or folded).
+    expect((await A.docs('PUT', '', { ...doc, text: doc.text + '\nMore.\n', baseRev: 1 })).status).toBe(200)
+    expect((await json<unknown[]>(A.docs('GET', '?id=doc_2&versions'))).length).toBeGreaterThanOrEqual(1)
+  })
 })

@@ -3,8 +3,12 @@
 import { neon } from '@neondatabase/serverless'
 import { type Tree, type Version, type VersionHead, type VersionMeta } from '../../src/engine/versions.js'
 import type { Slide } from '../../src/engine/types.js'
+import type { Block } from '../../src/engine/docs/types.js'
+import type { DocTree } from '../../src/engine/docs/versions.js'
+import type { CommentOp, DocComment } from '../../src/engine/comments.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
+import { docCalls } from './db-docs.js'
 import { workspaceCalls } from './db-workspaces.js'
 
 /** `rev` counts saves; `chat` is the conversation (agent history, messages), kept apart from the slides in `data`. A deck saved before
@@ -33,6 +37,12 @@ export type InviteResult = { workspaceId: string; role: Role } | 'gone' | { wron
 export interface DocSummary { id: string; name: string; updated: number; workspaceId: string }
 /** A doc is its Markdown text. */
 export interface DocRow extends DocSummary { text: string; rev: number }
+/** Who is editing a doc right now; it expires at `until` (ms). */
+export interface DocPresence { editing?: { by: string; until: number } }
+/** A doc version as a list shows it: the tree (front matter and block hashes), newest first. */
+export interface DocVersion { n: number; rev: number; by: string; label: string | null; at: number; tree: DocTree }
+/** A doc comment that can't be made, resolved or removed is answered with a sentence; this one means it isn't there. */
+export const NO_COMMENT = 'No such comment.'
 export type DbUser = { id: string; email: string; name: string }
 export const MAX_KEYS = 5
 export const keyId = (hash: string) => hash.slice(0, 12)
@@ -103,6 +113,21 @@ export interface Db {
   getDoc(userId: string, id: string): Promise<DocRow | null>
   putDoc(userId: string, id: string, name: string, text: string, baseRev: number, workspaceId?: string): Promise<PutResult>
   deleteDoc(userId: string, id: string): Promise<boolean>
+  getDocMeta(userId: string, id: string): Promise<{ rev: number; presence: DocPresence; role: Role } | null>
+  /** Editor and up. */
+  setDocPresence(userId: string, id: string, p: DocPresence): Promise<boolean>
+  /* Doc versions (src/engine/docs/versions.ts): a tree per save, each block's JSON stored once per hash. Readers read; editors write. */
+  docVersionHead(userId: string, id: string): Promise<VersionHead | null>
+  writeDocVersion(userId: string, id: string, v: { replace: number | null; rev: number; meta: VersionMeta; tree: DocTree; key: string; blobs: Map<string, Block>; at: number }): Promise<void>
+  /** Newest first. */
+  listDocVersions(userId: string, id: string): Promise<DocVersion[]>
+  docBlobs(userId: string, id: string, hashes: string[]): Promise<{ hash: string; block: Block }[]>
+  /** Null when the user may not read the doc. */
+  docComments(userId: string, id: string): Promise<DocComment[] | null>
+  /** One operation on the doc's comments, as one statement. Add: any member. Resolve: an editor or the author. Remove: the
+      author. `ctx` is who is asking, when, and the id a new comment takes. Answers the doc's comments, 'foreign' when the
+      user may not read the doc, or a sentence saying why not. */
+  docComment(userId: string, id: string, op: CommentOp, ctx: { id: string; by: string; now: number }): Promise<DocComment[] | 'foreign' | string>
 }
 
 const SCHEMA = [
@@ -137,6 +162,10 @@ const SCHEMA = [
   `create index if not exists decks_ws on decks (workspace_id, updated_at desc)`,
   `create table if not exists docs (id text primary key, workspace_id text not null, user_id text not null, name text not null, text text not null, rev integer not null default 1, presence jsonb not null default '{}'::jsonb, share_id text, updated_at timestamptz not null default now())`,
   `create index if not exists docs_ws on docs (workspace_id, updated_at desc)`,
+  // Doc versions and comments: as a deck's, with blocks for slides; comments are written by their own route.
+  `create table if not exists doc_versions (doc_id text not null, user_id text not null, n integer not null, rev integer not null, by_client text not null, label text, key text not null, tree jsonb not null, at timestamptz not null default now(), primary key (doc_id, n))`,
+  `create table if not exists doc_blobs (doc_id text not null, hash text not null, block jsonb not null, primary key (doc_id, hash))`,
+  `alter table docs add column if not exists comments jsonb not null default '[]'::jsonb`,
 ]
 
 /** One query; the schema is ready before the first. */
@@ -169,6 +198,7 @@ export function makeDb(url: string): Db {
   }
   return {
     ...deckCalls(q),
+    ...docCalls(q),
     ...workspaceCalls(q, tx),
     countCall: async (u) => Number((await q<{ calls: number }>(
       `insert into model_usage (user_id, day, calls) values ($1, current_date, 1)

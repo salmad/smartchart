@@ -10,7 +10,7 @@ import { shareToken, type Db, type DeckRow, type DeckSummary, type DocSummary, t
 export const may = (t: string, u: string, roles: string) => `(${t}.workspace_id is null and ${t}.user_id = ${u}
   or exists (select 1 from members m where m.workspace_id = ${t}.workspace_id and m.user_id = ${u} and m.role = any(${roles}::text[])))`
 /** The caller's role on a row of `t`, or null. */
-const roleOf = (t: string, u: string) => `coalesce((select m.role from members m where m.workspace_id = ${t}.workspace_id and m.user_id = ${u}),
+export const roleOf = (t: string, u: string) => `coalesce((select m.role from members m where m.workspace_id = ${t}.workspace_id and m.user_id = ${u}),
   case when ${t}.workspace_id is null and ${t}.user_id = ${u} then 'owner' end)`
 /** Where a new deck or doc goes: the workspace asked for, else the writer's personal one. */
 const home = (ws: string, u: string) => `(select coalesce(${ws}::text, (select id from workspaces where personal_of = ${u})) as ws)`
@@ -130,6 +130,10 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
          where h.ws is not null and ${editorIn('h.ws', '$2', '$6')} on conflict (id) do nothing returning rev`, [id, u, name, text, ws ?? null, R('write')])
       return ins[0] ? { rev: ins[0].rev } : refused('docs', u, id)
     },
-    deleteDoc: async (u, id) => (await q(`delete from docs where id = $2 and ${may('docs', '$1', '$3')} returning id`, [u, id, R('write')])).length > 0,
+    deleteDoc: async (u, id) => {
+      const gone = (await q(`delete from docs where id = $2 and ${may('docs', '$1', '$3')} returning id`, [u, id, R('write')])).length > 0
+      if (gone) { await q('delete from doc_versions where doc_id = $1', [id]); await q('delete from doc_blobs where doc_id = $1', [id]) }
+      return gone
+    },
   }
 }

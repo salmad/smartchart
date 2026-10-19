@@ -8,7 +8,7 @@ import { workspacesHandler } from '../../api/_lib/workspaces'
 import { dbContract } from './db-contract'
 
 const url = process.env.TEST_DATABASE_URL ?? ''
-const TABLES = ['decks', 'deck_events', 'deck_versions', 'deck_blobs', 'workspaces', 'members', 'invites', 'docs']
+const TABLES = ['decks', 'deck_events', 'deck_versions', 'deck_blobs', 'workspaces', 'members', 'invites', 'docs', 'doc_versions', 'doc_blobs']
 
 // M3's done-when, through the real API handlers. Signing in is the one step left out: each person is handed to the
 // handlers as the user Neon Auth would name.

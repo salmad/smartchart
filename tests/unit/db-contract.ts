@@ -5,6 +5,8 @@ import type { Db } from '../../api/_lib/db'
 import type { Role } from '../../api/_lib/access'
 import type { Slide } from '../../src/engine/types'
 import type { Tree } from '../../src/engine/versions'
+import type { DocTree } from '../../src/engine/docs/versions'
+import type { Block } from '../../src/engine/docs/types'
 import { seedUser, type SeedUser } from './fakes'
 
 const DAY = 86_400_000
@@ -31,6 +33,13 @@ const version = (rev: number) => ({
   meta: { by: 'Occam', turn: null, label: null },
   tree: { style: 'pitch', theme: 'paper', accent: null, slides: [['s_1', 'h1']] } as Tree,
   blobs: new Map<string, Slide>([['h1', { template: 'cover', title: 'Q3' } as unknown as Slide]]),
+})
+
+const docVersion = (rev: number) => ({
+  replace: null, rev, key: `k${rev}`, at: Date.now(),
+  meta: { by: 'Ann', turn: null, label: null },
+  tree: { title: 'Memo', blocks: ['h1'] } as DocTree,
+  blobs: new Map<string, Block>([['h1', { type: 'paragraph', text: 'Hello' }]]),
 })
 
 export function dbContract(name: string, make: () => Promise<Db>) {
@@ -223,6 +232,66 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.putDoc(ann.id, doc, 'Memo', '# Memo 2', 1)).toEqual({ rev: 2 })
       expect(await db.deleteDoc(ann.id, doc)).toBe(true)
       expect(await db.getDoc(ann.id, doc)).toBeNull()
+    })
+
+    it('doc versions follow the doc: members read them, editors write them, deleting the doc clears them', async () => {
+      const db = await make(), { ann, bob, cy, id } = people(), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      await db.putDoc(ann.id, doc, 'Memo', '# Memo', 0, ws)
+      await join(db, ann, ws, bob, 'viewer')
+      await seedUser(db, cy)
+      await db.writeDocVersion(ann.id, doc, docVersion(1))
+      await db.writeDocVersion(bob.id, doc, docVersion(2)) // a viewer writes nothing
+      await db.writeDocVersion(cy.id, doc, docVersion(3))
+      expect(await db.listDocVersions(ann.id, doc)).toMatchObject([{ n: 1, rev: 1, by: 'Ann', tree: { title: 'Memo', blocks: ['h1'] } }])
+      expect(await db.listDocVersions(bob.id, doc)).toHaveLength(1)
+      expect(await db.listDocVersions(cy.id, doc)).toEqual([])
+      expect(await db.docVersionHead(bob.id, doc)).toMatchObject({ n: 1, key: 'k1', hashes: ['h1'] })
+      expect(await db.docBlobs(bob.id, doc, ['h1', 'nope'])).toEqual([{ hash: 'h1', block: { type: 'paragraph', text: 'Hello' } }])
+      expect(await db.docBlobs(cy.id, doc, ['h1'])).toEqual([])
+      await db.writeDocVersion(ann.id, doc, { ...docVersion(2), replace: 1 })
+      expect(await db.listDocVersions(ann.id, doc)).toMatchObject([{ n: 1, rev: 2 }])
+      expect(await db.deleteDoc(ann.id, doc)).toBe(true)
+      expect(await db.listDocVersions(ann.id, doc)).toEqual([])
+      expect(await db.docBlobs(ann.id, doc, ['h1'])).toEqual([])
+    })
+
+    it('doc presence and revision: editors set it, members read it', async () => {
+      const db = await make(), { ann, bob, cy, id } = people(), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      await db.putDoc(ann.id, doc, 'Memo', '# Memo', 0, ws)
+      await join(db, ann, ws, bob, 'viewer')
+      await seedUser(db, cy)
+      expect(await db.setDocPresence(ann.id, doc, { editing: { by: 'Ann', until: 99 } })).toBe(true)
+      expect(await db.setDocPresence(bob.id, doc, { editing: { by: 'Bob', until: 99 } })).toBe(false)
+      expect(await db.setDocPresence(cy.id, doc, {})).toBe(false)
+      expect(await db.getDocMeta(bob.id, doc)).toEqual({ rev: 1, presence: { editing: { by: 'Ann', until: 99 } }, role: 'viewer' })
+      expect(await db.getDocMeta(cy.id, doc)).toBeNull()
+    })
+
+    it('doc comments: viewers add, editors and authors resolve, authors remove, strangers get foreign', async () => {
+      const db = await make(), { ann, bob, cy, id } = people(), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      await db.putDoc(ann.id, doc, 'Memo', '# Memo', 0, ws)
+      await join(db, ann, ws, bob, 'viewer')
+      await seedUser(db, cy)
+      const ctx = (n: number, by: string) => ({ id: `c_${n}`, by, now: 1000 + n })
+      const made = await db.docComment(bob.id, doc, { add: { text: 'Check this', anchor: 'intro', quote: 'the words' } }, ctx(1, 'Bob'))
+      expect(made).toMatchObject([{ id: 'c_1', anchor: 'intro', text: 'Check this', by: 'Bob', at: 1001, quote: 'the words', userId: bob.id }])
+      expect(await db.docComment(cy.id, doc, { add: { text: 'Hi', anchor: 'intro' } }, ctx(2, 'Cy'))).toBe('foreign')
+      expect(await db.docComments(cy.id, doc)).toBeNull()
+      await db.docComment(ann.id, doc, { add: { text: 'Mine', anchor: 'intro' } }, ctx(3, 'Ann'))
+      // Bob (a viewer) may not resolve Ann's, nor remove Bob's by anyone else; Ann (editor) resolves Bob's.
+      expect(typeof await db.docComment(bob.id, doc, { resolve: { id: 'c_3' } }, ctx(4, 'Bob'))).toBe('string')
+      expect(typeof await db.docComment(ann.id, doc, { remove: { id: 'c_1' } }, ctx(4, 'Ann'))).toBe('string')
+      const done = await db.docComment(ann.id, doc, { resolve: { id: 'c_1', reply: 'Fixed' } }, ctx(5, 'Ann'))
+      expect(done).toMatchObject([{ id: 'c_1', done: { by: 'Ann', at: 1005, reply: 'Fixed' } }, { id: 'c_3' }])
+      // An author resolves their own, even a viewer.
+      await db.docComment(bob.id, doc, { add: { text: 'Again', anchor: 'intro' } }, ctx(6, 'Bob'))
+      expect(await db.docComment(bob.id, doc, { resolve: { id: 'c_6' } }, ctx(7, 'Bob'))).toMatchObject([{ id: 'c_1' }, { id: 'c_3' }, { id: 'c_6', done: { by: 'Bob' } }])
+      expect(await db.docComment(bob.id, doc, { remove: { id: 'c_1' } }, ctx(8, 'Bob'))).toMatchObject([{ id: 'c_3' }, { id: 'c_6' }])
+      expect(typeof await db.docComment(bob.id, doc, { remove: { id: 'c_nope' } }, ctx(9, 'Bob'))).toBe('string')
+      expect((await db.docComments(bob.id, doc))?.map((c) => c.id)).toEqual(['c_3', 'c_6'])
     })
   })
 }

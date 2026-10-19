@@ -1,13 +1,15 @@
-import { keyId, MAX_KEYS, type Db, type DeckEventRow, type DeckRow, type KeyRow, type Presence } from '../../api/_lib/db'
+import { keyId, MAX_KEYS, NO_COMMENT, type Db, type DeckEventRow, type DeckRow, type DocPresence, type DocVersion, type KeyRow, type Presence } from '../../api/_lib/db'
 import { can, type Action, type Role } from '../../api/_lib/access'
 import { KEEP, type Version } from '../../src/engine/versions'
 import type { Slide } from '../../src/engine/types'
+import type { Block } from '../../src/engine/docs/types'
+import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
     deck from before workspaces, which only its maker can reach). */
 export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence }
-export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number }
+export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; presence?: DocPresence; comments?: DocComment[] }
 export type FakeDb = Db & FakeWorkspaces & {
   rows: Map<string, FakeRow>
   docs: Map<string, FakeDoc>
@@ -17,6 +19,8 @@ export type FakeDb = Db & FakeWorkspaces & {
   calls: Map<string, number>
   versions: (Version & { user: string; deck: string; key: string })[]
   blobStore: Map<string, Slide>
+  docVersions: (DocVersion & { user: string; doc: string; key: string })[]
+  docBlobStore: Map<string, Block>
 }
 
 export function fakeDb(): FakeDb {
@@ -28,6 +32,8 @@ export function fakeDb(): FakeDb {
   const calls = new Map<string, number>()
   const versions: FakeDb['versions'] = []
   const blobStore = new Map<string, Slide>()
+  const docVersions: FakeDb['docVersions'] = []
+  const docBlobStore = new Map<string, Block>()
   let n = 0, clock = 0
   const ws = fakeWorkspaces(rows)
   /** The one access check every deck call goes through. */
@@ -46,7 +52,7 @@ export function fakeDb(): FakeDb {
     return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null, shared: !!share }
   }
   return {
-    ...ws, rows, docs, events, keys, rate, calls, versions, blobStore,
+    ...ws, rows, docs, events, keys, rate, calls, versions, blobStore, docVersions, docBlobStore,
     deckRole: async (u, id) => role(u, rows.get(id)),
     versionHead: async (u, id) => {
       const v = deckIf(u, id, 'read') && versions.filter((x) => x.deck === id).at(-1)
@@ -126,6 +132,56 @@ export function fakeDb(): FakeDb {
       docs.set(id, { id, ws: where, user: d?.user ?? u, name, text, rev, updated: Date.now() + ++clock })
       return { rev }
     },
-    deleteDoc: async (u, id) => !!docIf(u, id, 'write') && docs.delete(id),
+    deleteDoc: async (u, id) => {
+      if (!docIf(u, id, 'write')) return false
+      for (let i = docVersions.length - 1; i >= 0; i--) if (docVersions[i].doc === id) docVersions.splice(i, 1)
+      for (const k of docBlobStore.keys()) if (k.startsWith(`${id}:`)) docBlobStore.delete(k)
+      return docs.delete(id)
+    },
+    getDocMeta: async (u, id) => { const d = docIf(u, id, 'read'); return d ? { rev: d.rev, presence: structuredClone(d.presence ?? {}), role: role(u, d) as Role } : null },
+    setDocPresence: async (u, id, p) => { const d = docIf(u, id, 'write'); if (!d) return false; d.presence = structuredClone(p); return true },
+    docVersionHead: async (u, id) => {
+      const v = docIf(u, id, 'read') && docVersions.filter((x) => x.doc === id).at(-1)
+      return v ? { n: v.n, by: v.by, turn: null, at: v.at, key: v.key, hashes: v.tree.blocks } : null
+    },
+    writeDocVersion: async (u, id, v) => {
+      if (!docIf(u, id, 'write')) return
+      for (const [h, b] of v.blobs) if (!docBlobStore.has(`${id}:${h}`)) docBlobStore.set(`${id}:${h}`, structuredClone(b))
+      const mine = docVersions.filter((x) => x.doc === id)
+      if (v.replace !== null) {
+        const x = mine.find((y) => y.n === v.replace)
+        if (x) Object.assign(x, { rev: v.rev, key: v.key, tree: structuredClone(v.tree), at: v.at, label: x.label ?? v.meta.label })
+        return
+      }
+      const top = Math.max(0, ...mine.map((x) => x.n)) + 1
+      docVersions.push({ user: u, doc: id, n: top, rev: v.rev, by: v.meta.by, label: v.meta.label, at: v.at, key: v.key, tree: structuredClone(v.tree) })
+      for (let i = docVersions.length - 1; i >= 0; i--) if (docVersions[i].doc === id && docVersions[i].n <= top - KEEP) docVersions.splice(i, 1)
+    },
+    listDocVersions: async (u, id) => docIf(u, id, 'read')
+      ? docVersions.filter((x) => x.doc === id).map(({ user: _u, doc: _d, key: _k, ...v }) => structuredClone(v)).reverse() : [],
+    docBlobs: async (u, id, hashes) => docIf(u, id, 'read') && docVersions.some((x) => x.doc === id)
+      ? hashes.filter((h) => docBlobStore.has(`${id}:${h}`)).map((h) => ({ hash: h, block: structuredClone(docBlobStore.get(`${id}:${h}`) as Block) })) : [],
+    docComments: async (u, id) => { const d = docIf(u, id, 'read'); return d ? structuredClone(d.comments ?? []) : null },
+    docComment: async (u, id, op, ctx) => {
+      const d = docIf(u, id, 'read')
+      if (!d) return 'foreign'
+      const list = d.comments ??= []
+      if ('add' in op) {
+        if (list.length >= MAX_DOC_COMMENTS) return 'This doc has too many comments.'
+        list.push({ id: ctx.id, anchor: op.add.anchor, text: op.add.text, by: ctx.by, at: ctx.now, userId: u, ...(op.add.quote ? { quote: op.add.quote } : {}) })
+        return structuredClone(list)
+      }
+      const resolve = 'resolve' in op, cid = resolve ? op.resolve.id : (op as { remove: { id: string } }).remove.id, c = list.find((x) => x.id === cid)
+      if (!c) return NO_COMMENT
+      if (resolve) {
+        if (c.done) return 'That comment is already resolved.'
+        if (c.userId !== u && !can(role(u, d), 'write')) return 'Only an editor or the author can resolve a comment.'
+        c.done = { by: ctx.by, at: ctx.now, ...(op.resolve.reply?.trim() ? { reply: op.resolve.reply.trim() } : {}) }
+      } else {
+        if (c.userId !== u) return 'Only the author can delete a comment.'
+        list.splice(list.indexOf(c), 1)
+      }
+      return structuredClone(list)
+    },
   }
 }
