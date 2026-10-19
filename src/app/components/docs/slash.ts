@@ -1,7 +1,7 @@
 /* The slash menu's choices and what each does to the paragraph it was typed in. Text kinds turn the paragraph into that
    kind; a divider or a figure takes its place (a figure from the figure starters, the one gallery). Code is left out:
    its block draws on a canvas and has no editor yet. */
-import { ChartBarBig, ChartColumn, ChartLine, Columns2, Hash, Heading2, Heading3, LayoutGrid, List, ListChecks, ListOrdered, Milestone, Minus, Quote, StickyNote, Table2, type LucideIcon } from 'lucide-react'
+import { ChartBarBig, ChartColumn, ChartGantt, ChartNoAxesGantt, ChartScatter, ChartLine, Columns2, Hash, Heading2, Heading3, LayoutGrid, List, ListChecks, ListOrdered, Milestone, Minus, Quote, StickyNote, Table2, type LucideIcon } from 'lucide-react'
 import { insertAfter, replaceBlock, type Keyed } from '@/engine/docs/blocks'
 import { BLOCK_STARTERS } from '@/engine/starters'
 import type { Block, FigureKind } from '@/engine/docs/types'
@@ -10,7 +10,7 @@ import type { Focus } from './useDocEdit'
 export interface SlashChoice { id: string; group: 'Text' | 'Figures'; label: string; blurb: string; icon: LucideIcon; block: () => Block }
 
 /** Icons by kind; a chart starter that draws differently has its own, by id. */
-const BY_ID: Record<string, LucideIcon> = { 'line-chart': ChartLine, 'horizontal-bars': ChartBarBig }
+const BY_ID: Record<string, LucideIcon> = { 'line-chart': ChartLine, 'horizontal-bars': ChartBarBig, waterfall: ChartNoAxesGantt, timeline: ChartGantt, matrix: ChartScatter }
 const ICONS: Partial<Record<FigureKind, LucideIcon>> = { chart: ChartColumn, table: Table2, number: Hash, cards: LayoutGrid, steps: Milestone, summary: ListChecks, pair: Columns2, callout: StickyNote }
 const figure = (id: string): (() => Block) => () => {
   const s = BLOCK_STARTERS.find((x) => x.id === id)

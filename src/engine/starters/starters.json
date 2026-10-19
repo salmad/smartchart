@@ -3233,6 +3233,113 @@
    }
   },
   {
+   "id": "waterfall",
+   "kind": "chart",
+   "label": "Waterfall",
+   "blurb": "A bridge from one total to another by driver",
+   "body": {
+    "caption": "Revenue bridge, FY24 to FY25 · £m",
+    "chart": {
+     "kind": "waterfall",
+     "format": "£{v}m",
+     "items": [
+      {
+       "label": "FY24",
+       "value": 40
+      },
+      {
+       "label": "Price",
+       "value": 6
+      },
+      {
+       "label": "Volume",
+       "value": 9
+      },
+      {
+       "label": "Churn",
+       "value": -3
+      },
+      {
+       "label": "FY25",
+       "total": true
+      }
+     ]
+    },
+    "source": "Company filings; Finbridge estimates (illustrative)."
+   }
+  },
+  {
+   "id": "timeline",
+   "kind": "chart",
+   "label": "Timeline",
+   "blurb": "Workstreams that run in parallel or overlap",
+   "body": {
+    "caption": "Launch plan, by quarter",
+    "chart": {
+     "kind": "timeline",
+     "periods": [
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4"
+     ],
+     "rows": [
+      {
+       "label": "Build",
+       "start": 0,
+       "end": 1
+      },
+      {
+       "label": "Pilot",
+       "start": 1,
+       "end": 2
+      },
+      {
+       "label": "Launch",
+       "start": 3,
+       "end": 3
+      }
+     ]
+    },
+    "source": "Finbridge plan (illustrative)."
+   }
+  },
+  {
+   "id": "matrix",
+   "kind": "chart",
+   "label": "Matrix",
+   "blurb": "Items placed on two judged dimensions",
+   "body": {
+    "caption": "Initiatives by effort and impact",
+    "chart": {
+     "kind": "matrix",
+     "axes": {
+      "x": "Effort",
+      "y": "Impact"
+     },
+     "points": [
+      {
+       "label": "Pricing",
+       "x": 20,
+       "y": 80,
+       "focus": true
+      },
+      {
+       "label": "Rewards",
+       "x": 70,
+       "y": 40
+      },
+      {
+       "label": "Onboarding",
+       "x": 35,
+       "y": 55
+      }
+     ]
+    },
+    "source": "Finbridge team assessment (illustrative)."
+   }
+  },
+  {
    "id": "table",
    "kind": "table",
    "label": "Table",
