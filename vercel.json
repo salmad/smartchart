@@ -5,6 +5,10 @@
     { "source": "/proto/v5/:path*", "destination": "/", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/api/keys", "destination": "/api/account?route=keys" },
+    { "source": "/api/share", "destination": "/api/account?route=share" },
+    { "source": "/api/docs", "destination": "/api/account?route=docs" },
+    { "source": "/api/workspaces", "destination": "/api/account?route=workspaces" },
     { "source": "/api/auth/:path*", "destination": "/api/auth" },
     { "source": "/api/v1/:tool*", "destination": "/api/v1?tool=:tool*" },
     { "source": "/mcp/v1", "destination": "/api/mcp" },
