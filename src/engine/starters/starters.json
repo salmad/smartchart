@@ -2965,6 +2965,8 @@
     "## Goals {#goals}",
     "",
     "- An admin sets a monthly limit and blocked categories for any card in under a minute.",
+    "  - A limit per card, per person or for the whole team.",
+    "  - A list of blocked merchant categories, such as gambling or travel.",
     "- An employee sees why a payment was declined, on their phone, at the till.",
     "- Support tickets about card spend fall by half within a quarter of launch.",
     "",
@@ -3036,6 +3038,8 @@
     "## Open questions {#questions}",
     "",
     "1. Do blocked categories apply to refunds?",
+    "   - Pending refunds, or only settled ones?",
+    "   - Refunds to a different card than the one charged?",
     "2. Who can raise a limit when the admin is away?",
     "3. Should limits reset on the calendar month or the billing cycle?"
    ]

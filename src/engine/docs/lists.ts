@@ -2,6 +2,7 @@
    where the caret goes (`item` set when it is in a list item). Text is cut and joined through markup.ts. */
 import { parse, plainOf, serialize, type Char } from '../slides/markup.js'
 import { newKey, type Keyed } from './blocks.js'
+import { tidyList } from './nest.js'
 import type { Block } from './types.js'
 
 export interface Caret { list: Keyed[]; key: string; item?: number; at: number }
@@ -87,7 +88,7 @@ const blank = (text: string) => plainOf(text).trim() === ''
 export function tidy(blocks: Block[]): Block[] {
   return blocks.flatMap((b): Block[] => {
     if (b.type === 'paragraph' || b.type === 'quote' || b.type === 'heading') return blank(b.text) ? [] : [b]
-    if (isList(b)) { const items = b.items.filter((x) => !blank(x)); return items.length ? [items.length === b.items.length ? b : { ...b, items }] : [] }
+    if (isList(b)) { const l = tidyList(b, blank); return l ? [l] : [] }
     return [b]
   })
 }

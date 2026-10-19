@@ -11,7 +11,7 @@ Add bar chart (relabel), line chart and horizontal bars (ranked) to `blocks` in 
 ## Task 2. Editor spike and section decision (done 2026-10-19; see the spec's Spike result)
 Tiptap with the schema of the `Block` union only (StarterKit extras off), figures as atom NodeViews hosting `FigureEdit`, code and raw as atoms. Decide section nodes vs a flat doc with adjacency selectors. Look lock: every doc starter, read view against edit mode, chrome hidden, pixel-compared; `pre-wrap` checked. Check the licence of any drag-handle extension. Throwaway until the look lock passes.
 
-## Task 3. Nested lists in the format
+## Task 3. Nested lists in the format (done 2026-10-19, not deployed: see below)
 Item depth in `types.ts`, `parse.ts`, `serialize.ts`, `validate.ts`, `render.ts`, `doc.css` (what level 2 and nested numbers use for markers: shown on the docs dev page, full size, both themes), `ops.ts`/`write_doc_text`, the doc guide (token budget), round-trip tests. Does not deploy before Task 4.
 
 ## Task 4. The editor
@@ -22,3 +22,6 @@ Full-size screenshots, both themes: nested markers and indent, the new chart ent
 
 ## After
 The nested page tree, its own spec. FUTURE: the Neon contract for M4 SQL, M5 MCP run against production.
+
+## Task 3 notes (2026-10-19)
+`ListBlock { items: string[]; nested?: (ListBlock | null)[] }`; `nest.ts` has `depthOf`, `textsOf`, `tidyList`. Parse (two or more spaces under an item; another marker kind at the same indent ends the list; an indented non-item line still continues the item above), serialize (two spaces a level, numbers counted per list), render (`listHTML`), validate (4 levels is an error), `doc.css` (level 2 en dash, level 3 middle dot, a list under a number sits in its text column), the doc guide (one sentence). The PRD starter shows both. Not pushed on purpose: the old editor draws no nested items (it keeps them when an existing item's words change, but Enter, Backspace and Tab in a list misalign them), so nothing is deployed until task 4 replaces it.

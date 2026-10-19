@@ -31,7 +31,7 @@ A doc is a title, an optional subtitle, and blocks in order: headings (\`##\` se
 - Add text with create_block { after, markdown }; add a figure with create_block { after, figure: { kind, body } }. After a block's blockId, "start" or "end". Change a text block with write_doc_text and a figure with update_block at exact paths ({ "chart.series[0].values[3]": 42 }); null removes an item. Move and delete by blockId.
 - Every write returns blocks again. A text block's id is made from its words, so it changes when they do: use the ids from the last result, and read the doc again if a call says a block is not there.
 - Headings and figures keep their ids. A heading's id comes from its words when it is first written; link to it with [the plan](#plan).
-- Markdown here is small: \`## \` heading, \`### \` subheading, \`- \` bullets, \`1. \` numbers, \`> \` quote, \`---\` divider, **bold**, [[focus]], [links](https://…) and [section links](#id). A line that begins with one of those marks but is plain text starts with a backslash.
+- Markdown here is small: \`## \` heading, \`### \` subheading, \`- \` bullets, \`1. \` numbers, \`> \` quote, \`---\` divider, **bold**, [[focus]], [links](https://…) and [section links](#id). Indent a list item two spaces to put it under the item above (three levels at most). A line that begins with one of those marks but is plain text starts with a backslash.
 - Write sections as short, argued paragraphs; put evidence in figures. One idea per section. Open each section with its answer.`,
   `# Figures
 - Give every figure a caption that says what it shows, and a source in \`source\` (or a \`footnote\`) when it shows figures. Link the source: \`[FCA report](https://…)\`.

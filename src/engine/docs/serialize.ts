@@ -1,15 +1,18 @@
 /* Doc → doc file. Blocks are separated by a blank line; ids are always written, so a file keeps the ids it was given. */
-import type { Block, Doc } from './types.js'
+import type { Block, Doc, ListBlock } from './types.js'
 
 /** A paragraph that would read as another block (or starts with the escape itself) is written after a \. */
 const LOOKS_LIKE = /^(- |\d+\. |#|>|```|---\s*$|\\)/
+
+/** A list's lines: two spaces of indent for each level it sits under, numbers counted within their own list. */
+const listLines = (l: ListBlock, level: number): string[] => l.items.flatMap((x, i) =>
+  [`${'  '.repeat(level)}${l.type === 'bullets' ? '-' : `${i + 1}.`} ${x}`, ...(l.nested?.[i] ? listLines(l.nested[i] as ListBlock, level + 1) : [])])
 
 function block(b: Block): string {
   switch (b.type) {
     case 'heading': return `${'#'.repeat(b.level)} ${b.text} {#${b.id}}`
     case 'paragraph': return LOOKS_LIKE.test(b.text) ? `\\${b.text}` : b.text
-    case 'bullets': return b.items.map((x) => `- ${x}`).join('\n')
-    case 'numbered': return b.items.map((x, i) => `${i + 1}. ${x}`).join('\n')
+    case 'bullets': case 'numbered': return listLines(b, 0).join('\n')
     case 'quote': return `> ${b.text}`
     case 'divider': return '---'
     case 'code': {

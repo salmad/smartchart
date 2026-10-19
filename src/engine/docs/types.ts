@@ -6,10 +6,15 @@ export const FIGURE_KINDS = ['chart', 'table', 'number', 'cards', 'steps', 'summ
 export type FigureKind = (typeof FIGURE_KINDS)[number]
 export type FigureBody = Omit<Partial<Slide>, 'template' | 'title' | 'subtitle' | 'kicker' | 'talk'> & Partial<Callout>
 
+/** A list. `nested[i]` is the list under item i, when it has one (a bullet list may sit under a numbered item and the
+    other way round); a list nests to `MAX_LIST_DEPTH` levels in all. */
+export interface ListBlock { type: 'bullets' | 'numbered'; items: string[]; nested?: (ListBlock | null)[] }
+export const MAX_LIST_DEPTH = 3
+
 export type Block =
   | { type: 'heading'; level: 2 | 3; id: string; text: string }
   | { type: 'paragraph'; text: string }
-  | { type: 'bullets' | 'numbered'; items: string[] }
+  | ListBlock
   | { type: 'quote'; text: string }
   | { type: 'divider' }
   | { type: 'code'; lang: string; text: string }

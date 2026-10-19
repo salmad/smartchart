@@ -1,11 +1,35 @@
 /* Doc file → Doc. Line-based, over the small Markdown subset docs use (see the M2 plan's grammar); blank lines separate
    blocks. Parsing never throws and never drops text: what does not parse is kept and reported with its line. */
 import { plain } from '../slides/schema.js'
-import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind, type Parsed } from './types.js'
+import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind, type ListBlock, type Parsed } from './types.js'
 
 const FRONT = ['title', 'subtitle', 'theme', 'accent'] as const
 const FENCE = /^(`{3,})(.*)$/, HEADING = /^(#+)\s+(.*?)(?:\s*\{#([\w-]+)\})?\s*$/, ITEM = /^- (.*)$/, NUM = /^\d+\. (.*)$/
 const isKind = (k: string): k is FigureKind => (FIGURE_KINDS as readonly string[]).includes(k)
+const LIST_LINE = /^( *)(?:- |(\d+)\. )(.*)$/
+
+/** The list whose first line is `lines[at]`, at that line's own indent: its items, and under an item the more
+    indented list that follows it. A line that is indented and no item continues the item before it. Another kind of
+    marker at the same indent, or a smaller indent, ends the list. */
+function parseList(lines: string[], at: number): { list: ListBlock; next: number } {
+  const first = lines[at].match(LIST_LINE) as RegExpMatchArray, indent = first[1].length, bullets = first[2] === undefined
+  const items: string[] = [], nested: (ListBlock | null)[] = []
+  let i = at
+  while (i < lines.length) {
+    const m = lines[i].match(LIST_LINE)
+    if (m && m[1].length === indent && (m[2] === undefined) === bullets) { items.push(m[3].trim()); nested.push(null); i++; continue }
+    if (m && m[1].length > indent && items.length) {
+      const child = parseList(lines, i)
+      if (nested[nested.length - 1]) break
+      nested[nested.length - 1] = child.list; i = child.next; continue
+    }
+    if (!m && /^\s{2,}\S/.test(lines[i]) && items.length) { items[items.length - 1] += ` ${lines[i].trim()}`; i++; continue }
+    break
+  }
+  const list: ListBlock = { type: bullets ? 'bullets' : 'numbered', items }
+  return { list: nested.some((n) => n) ? { ...list, nested } : list, next: i }
+}
+
 /** A line that starts a block of its own (so it ends a paragraph). */
 const starts = (l: string) => FENCE.test(l) || /^#/.test(l) || l.trim() === '---' || /^>/.test(l) || ITEM.test(l) || NUM.test(l)
 
@@ -71,17 +95,9 @@ export function parseDoc(text: string): Parsed {
       while (i < lines.length && /^>/.test(lines[i])) parts.push(lines[i++].replace(/^>\s?/, '').trim())
       doc.blocks.push({ type: 'quote', text: parts.join(' ') }); continue
     }
-    const list = !h && (ITEM.test(line) ? ITEM : NUM.test(line) ? NUM : null)
-    if (list) {
-      const items: string[] = []
-      while (i < lines.length) {
-        const m = lines[i].match(list)
-        if (m) items.push(m[1].trim())
-        else if (/^\s{2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += ` ${lines[i].trim()}`
-        else break
-        i++
-      }
-      doc.blocks.push({ type: list === ITEM ? 'bullets' : 'numbered', items }); continue
+    if (!h && (ITEM.test(line) || NUM.test(line))) {
+      const r = parseList(lines, i)
+      doc.blocks.push(r.list); i = r.next; continue
     }
     // A paragraph: its first line as written (a leading \ says "this is text"), then lines up to a blank or a block.
     const parts = [line.trim().replace(/^\\/, '')]

@@ -1,6 +1,7 @@
 /* Blocks in memory while editing: each carries a key that is never written to the file (the file has ids on headings
    and figures only). The ops are pure, return a new list, and work on text through markup.ts so a mark is never cut open. */
 import { parse, serialize } from '../slides/markup.js'
+import { textsOf } from './nest.js'
 import type { Block } from './types.js'
 
 export interface Keyed { key: string; block: Block }
@@ -54,7 +55,7 @@ export function mergeBack(list: Keyed[], key: string): { list: Keyed[]; key: str
   return { list: [...list.slice(0, i - 1), joined, ...list.slice(i + 1)], key: prev.key, at: head.length }
 }
 
-const textOf = (b: Block): string | null => (isText(b) ? b.text : b.type === 'bullets' || b.type === 'numbered' ? b.items.join(' ') : null)
+const textOf = (b: Block): string | null => (isText(b) ? b.text : b.type === 'bullets' || b.type === 'numbered' ? textsOf(b).join(' ') : null)
 
 /** Turns a text or list block into another kind of text block. A new heading has no id until Save (giveIds); a heading kept at its level keeps it. */
 export function convert(list: Keyed[], key: string, to: TextTarget): Keyed[] {

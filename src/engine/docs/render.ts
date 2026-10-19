@@ -5,7 +5,7 @@ import { esc, md } from '../components/text.js'
 import { outline } from './parse.js'
 import { codeFigureHTML, figureHTML } from './figure.js'
 import { figureChecks } from './checks.js'
-import type { Block, Doc } from './types.js'
+import type { Block, Doc, ListBlock } from './types.js'
 
 /** A doc's theme when it names none: paper suits long reading (M3 swaps in the workspace's brand). */
 export const DEFAULT_THEME: Theme = 'paper'
@@ -18,13 +18,21 @@ function badgeHTML(f: Extract<Block, { type: 'figure' }>): string {
   return `<details class="fig-checks"><summary>${failed.length} check${failed.length === 1 ? '' : 's'}</summary><ul>${failed.map((c) => `<li><b>${c.id}</b> ${esc(c.msg)}</li>`).join('')}</ul></details>`
 }
 
+/** A list; the list under an item is drawn inside that item's li. */
+export function listHTML(l: ListBlock): string {
+  const items = l.items.map((x, i) => {
+    const under = l.nested?.[i] ? listHTML(l.nested[i] as ListBlock) : ''
+    return l.type === 'bullets' ? `<li>${md(x)}${under}</li>` : `<li><span>${md(x)}</span>${under}</li>`
+  }).join('')
+  return `<${l.type === 'bullets' ? 'ul' : 'ol'} class="doc-list">${items}</${l.type === 'bullets' ? 'ul' : 'ol'}>`
+}
+
 /** One block as HTML. A ## heading is the bare <h2 id>: only docHTML wraps it in its section. */
 export function blockHTML(b: Block, theme: Theme): string {
   switch (b.type) {
     case 'heading': { const t = `h${b.level}`; return `<${t} id="${b.id}">${md(b.text)}</${t}>` }
     case 'paragraph': return `<p>${md(b.text)}</p>`
-    case 'bullets': return `<ul class="doc-list">${b.items.map((x) => `<li>${md(x)}</li>`).join('')}</ul>`
-    case 'numbered': return `<ol class="doc-list">${b.items.map((x) => `<li><span>${md(x)}</span></li>`).join('')}</ol>`
+    case 'bullets': case 'numbered': return listHTML(b)
     case 'quote': return `<blockquote><p>${md(b.text)}</p></blockquote>`
     case 'divider': return '<hr>'
     case 'code': return codeFigureHTML(b, theme)

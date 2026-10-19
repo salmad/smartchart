@@ -4,6 +4,7 @@
 import { checkDoc } from "../docs/checks.js";
 import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind } from "../docs/types.js";
 import { createFigure, createText, deleteBlock, identify, moveBlock, setLook, updateFigure, writeText, type Edit } from "../docs/ops.js";
+import { textsOf } from "../docs/nest.js";
 import { serializeDoc } from "../docs/serialize.js";
 import { validateDoc } from "../docs/validate.js";
 import { plain } from "../slides/schema.js";
@@ -20,7 +21,7 @@ const ACCENT = { type: "string", description: "The highlight colour as #rrggbb. 
 const preview = (b: Block): string => {
   switch (b.type) {
     case "figure": return plain(String(b.body.caption ?? b.body.text ?? "")).slice(0, 80);
-    case "bullets": case "numbered": return plain(b.items.join("; ")).slice(0, 80);
+    case "bullets": case "numbered": return plain(textsOf(b).join("; ")).slice(0, 80);
     case "divider": return "";
     default: return plain(b.text).slice(0, 80);
   }

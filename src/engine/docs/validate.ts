@@ -3,7 +3,9 @@
 import { checkFields, validateComponent, type FieldDef, type Limits } from '../slides/schema.js'
 import { resolveAccent } from '../slides/colours.js'
 import type { Validation } from '../types.js'
-import type { Doc } from './types.js'
+import { plain } from '../slides/schema.js'
+import { depthOf } from './nest.js'
+import { MAX_LIST_DEPTH, type Doc } from './types.js'
 
 /** A doc table may run to 20 rows (twelve markets need more than a slide's 8); a figure takes its own height. */
 export const DOC_LIMITS: Limits = { tableRows: 20, fixedHeight: false }
@@ -28,6 +30,7 @@ export function validateDoc(doc: Doc): Validation {
   const ids = doc.blocks.flatMap((b) => (b.type === 'heading' || b.type === 'figure' ? [b.id] : []))
   new Set(ids.filter((id, i) => ids.indexOf(id) !== i)).forEach((id) => out.errors.push(`#${id}: used by more than one heading or figure.`))
   for (const b of doc.blocks) {
+    if ((b.type === 'bullets' || b.type === 'numbered') && depthOf(b) > MAX_LIST_DEPTH) out.errors.push(`list "${plain(b.items[0] ?? '').slice(0, 30)}": nests ${depthOf(b)} levels; ${MAX_LIST_DEPTH} at most.`)
     if (b.type !== 'figure') continue
     const r = b.kind === 'callout' ? checkFields(CALLOUT_FIELDS, b.body, 'consulting') : validateComponent(b.kind, b.body, 'consulting', DOC_LIMITS)
     r.errors.forEach((e) => out.errors.push(`#${b.id}.${e}`))
