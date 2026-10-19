@@ -3169,34 +3169,58 @@
    "id": "line-chart",
    "kind": "chart",
    "label": "Line chart",
-   "blurb": "A trend over time",
+   "blurb": "Scenarios or a trend over time",
    "body": {
-    "caption": "Gross margin, 2022–2026 · %",
+    "caption": "Loan book, Q1 2027 to Q4 2028 · £m",
     "chart": {
      "categories": [
-      "2022",
-      "2023",
-      "2024",
-      "2025",
-      "2026"
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
+      "Q2",
+      "Q3",
+      "Q4"
      ],
-     "format": "{v}%",
+     "format": "£{v}m",
      "series": [
       {
-       "name": "Gross margin",
+       "name": "Base case",
        "mark": "line",
        "color": "focus",
+       "area": true,
        "values": [
-        12,
-        24,
-        31,
-        36,
-        38
+        1,
+        4,
+        10,
+        22,
+        40,
+        62,
+        88,
+        120
+       ]
+      },
+      {
+       "name": "Downside",
+       "mark": "line",
+       "color": "contrast",
+       "dashed": true,
+       "values": [
+        0.8,
+        3,
+        7,
+        15,
+        27,
+        41,
+        56,
+        72
        ]
       }
      ]
     },
-    "source": "Company filings; Finbridge estimates (illustrative)."
+    "source": "Acme model.",
+    "footnote": "Downside assumes 40% lower acquisition and twice the bad debt."
    }
   },
   {
@@ -3225,11 +3249,24 @@
       },
       {
        "label": "Slow approval",
+       "value": 27
+      },
+      {
+       "label": "Poor rewards",
        "value": 19
+      },
+      {
+       "label": "Separate from the bank account",
+       "value": 17
+      },
+      {
+       "label": "Other",
+       "value": 6
       }
      ]
     },
-    "source": "Finbridge founder survey, 2026 (illustrative)."
+    "source": "Acme founder survey, n = 1,200, August 2026.",
+    "footnote": "Multiple answers allowed."
    }
   },
   {
@@ -3238,34 +3275,39 @@
    "label": "Waterfall",
    "blurb": "A bridge from one total to another by driver",
    "body": {
-    "caption": "Revenue bridge, FY24 to FY25 · £m",
+    "caption": "ARR bridge, FY25 to FY26 · £m",
     "chart": {
      "kind": "waterfall",
      "format": "£{v}m",
      "items": [
       {
-       "label": "FY24",
-       "value": 40
+       "label": "FY25 ARR",
+       "value": 9.8
       },
       {
-       "label": "Price",
-       "value": 6
+       "label": "New",
+       "value": 6.2,
+       "focus": true
       },
       {
-       "label": "Volume",
-       "value": 9
+       "label": "Expansion",
+       "value": 2.1
       },
       {
        "label": "Churn",
-       "value": -3
+       "value": -1.4
       },
       {
-       "label": "FY25",
+       "label": "Pricing",
+       "value": 0.8
+      },
+      {
+       "label": "FY26 ARR",
        "total": true
       }
      ]
     },
-    "source": "Company filings; Finbridge estimates (illustrative)."
+    "source": "Acme model, base case."
    }
   },
   {
@@ -3274,34 +3316,59 @@
    "label": "Timeline",
    "blurb": "Workstreams that run in parallel or overlap",
    "body": {
-    "caption": "Launch plan, by quarter",
+    "caption": "Launch plan by workstream, 2027–2028",
     "chart": {
      "kind": "timeline",
      "periods": [
-      "Q1",
+      "Q1 ’27",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1 ’28",
       "Q2",
       "Q3",
       "Q4"
      ],
      "rows": [
       {
-       "label": "Build",
+       "label": "Core product",
        "start": 0,
-       "end": 1
-      },
-      {
-       "label": "Pilot",
-       "start": 1,
        "end": 2
       },
       {
-       "label": "Launch",
-       "start": 3,
+       "label": "Billing and plans",
+       "start": 1,
        "end": 3
+      },
+      {
+       "label": "Enterprise security",
+       "start": 2,
+       "end": 5,
+       "focus": true
+      },
+      {
+       "label": "Outbound sales",
+       "start": 4,
+       "end": 7
+      },
+      {
+       "label": "EU data region",
+       "start": 6,
+       "end": 7
+      }
+     ],
+     "milestones": [
+      {
+       "label": "First 100 teams",
+       "at": 2
+      },
+      {
+       "label": "£5m ARR",
+       "at": 5
       }
      ]
     },
-    "source": "Finbridge plan (illustrative)."
+    "source": "Acme operating plan."
    }
   },
   {
@@ -3310,33 +3377,55 @@
    "label": "Matrix",
    "blurb": "Items placed on two judged dimensions",
    "body": {
-    "caption": "Initiatives by effort and impact",
+    "caption": "SME business cards · placed on published terms",
     "chart": {
      "kind": "matrix",
      "axes": {
-      "x": "Effort",
-      "y": "Impact"
+      "x": "Rewards",
+      "y": "Limit"
      },
+     "quadrants": [
+      "Lenders",
+      "The gap",
+      "Basic cards",
+      "Rewards cards"
+     ],
      "points": [
       {
-       "label": "Pricing",
-       "x": 20,
-       "y": 80,
+       "label": "Lender-only fintech",
+       "x": 18,
+       "y": 78
+      },
+      {
+       "label": "Charge card",
+       "x": 40,
+       "y": 62
+      },
+      {
+       "label": "Retail bank",
+       "x": 22,
+       "y": 30
+      },
+      {
+       "label": "Neobank (debit)",
+       "x": 78,
+       "y": 16
+      },
+      {
+       "label": "Travel card",
+       "x": 84,
+       "y": 38
+      },
+      {
+       "label": "Acme",
+       "x": 82,
+       "y": 82,
        "focus": true
-      },
-      {
-       "label": "Rewards",
-       "x": 70,
-       "y": 40
-      },
-      {
-       "label": "Onboarding",
-       "x": 35,
-       "y": 55
       }
      ]
     },
-    "source": "Finbridge team assessment (illustrative)."
+    "source": "Provider websites, September 2026.",
+    "footnote": "Limit: highest published limit. Rewards: cashback or points value per £ spent."
    }
   },
   {
