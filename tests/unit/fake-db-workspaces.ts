@@ -8,7 +8,7 @@ export type FakeWorkspace = { id: string; name: string; personalOf: string | nul
 export type FakeWorkspaces = Pick<Db, Calls> & {
   workspaces: Map<string, FakeWorkspace>
   /** Keyed `${workspace}:${user}`. */
-  members: Map<string, MemberRow & { ws: string; usedAt: number | null; joined: number }>
+  members: Map<string, Omit<MemberRow, 'personal'> & { ws: string; usedAt: number | null; joined: number }>
   invites: Map<string, InviteRow & { ws: string; by: string }>
   roleIn(userId: string, ws: string): Role | null
   personalOf(userId: string): string | null
@@ -46,21 +46,23 @@ export function fakeWorkspaces(decks: Map<string, { user: string; ws: string | n
     renameWorkspace: async (u, id, name) => { const w = workspaces.get(id); if (!w || !can(roleIn(u, id), 'manage')) return false; w.name = name; return true },
     touchWorkspace: async (u, id) => { const m = members.get(`${id}:${u}`); if (m) m.usedAt = Date.now() + ++clock },
     listMembers: async (u, id) => can(roleIn(u, id), 'read')
-      ? inWs(id).sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || a.joined - b.joined).map(({ userId, email, name, role }) => ({ userId, email, name, role })) : null,
+      ? inWs(id).sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || a.joined - b.joined)
+        .map(({ userId, email, name, role }) => ({ userId, email, name, role, personal: workspaces.get(id)?.personalOf === userId })) : null,
     setRole: async (u, id, member, role) => {
       const m = members.get(`${id}:${member}`)
       const self = member === u && role === null
       if (!m || !(can(roleIn(u, id), 'manage') || self)) return 'denied'
-      if (role === null && workspaces.get(id)?.personalOf === member) return 'denied'
+      if (role !== 'owner' && workspaces.get(id)?.personalOf === member) return 'denied'
       if (m.role === 'owner' && role !== 'owner' && inWs(id).filter((x) => x.role === 'owner').length === 1) return 'last_owner'
       if (role === null) members.delete(`${id}:${member}`)
       else m.role = role
       return 'ok'
     },
     addInvite: async (u, id, email, role, token, expires) => {
-      if (!can(roleIn(u, id), 'manage')) return false
+      if (!can(roleIn(u, id), 'manage')) return 'denied'
+      if (inWs(id).some((m) => m.email.toLowerCase() === email.toLowerCase())) return 'member'
       invites.set(token, { token, ws: id, email: email.toLowerCase(), role, expires, by: u })
-      return true
+      return 'ok'
     },
     listInvites: async (u, id) => can(roleIn(u, id), 'manage')
       ? [...invites.values()].filter((i) => i.ws === id && i.expires > Date.now() && !inWs(id).some((m) => m.email.toLowerCase() === i.email)).map(({ token, email, role, expires }) => ({ token, email, role, expires })) : null,
@@ -69,8 +71,9 @@ export function fakeWorkspaces(decks: Map<string, { user: string; ws: string | n
       const i = invites.get(token)
       if (!i || i.expires <= now) return 'gone'
       if (i.email !== u.email.toLowerCase()) return { wrongEmail: i.email }
+      for (const [t, o] of invites) if (o.ws === i.ws && o.email === i.email) invites.delete(t)
       const had = roleIn(u.id, i.ws)
-      if (had) (members.get(`${i.ws}:${u.id}`) as MemberRow).role = stronger(had, i.role)
+      if (had) (members.get(`${i.ws}:${u.id}`) as { role: Role }).role = stronger(had, i.role)
       else join(i.ws, u, i.role)
       return { workspaceId: i.ws, role: roleIn(u.id, i.ws) as Role }
     },

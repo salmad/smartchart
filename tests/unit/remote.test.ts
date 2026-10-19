@@ -1,5 +1,5 @@
 import { test, expect, vi } from 'vitest'
-import { findDeck, remoteDeckRepo, STALE } from '@/app/remote'
+import { findDeck, remoteDeckRepo, STALE, VIEW_ONLY } from '@/app/remote'
 import { localDeckRepo, type SavedDeck } from '@/app/store'
 
 const deck = (id: string, updated: number, title = 'Acme'): SavedDeck => ({
@@ -151,4 +151,11 @@ test('after a get, the repo knows the deck it read and the revision it holds', a
   const got = await repo.get('d_1')
   expect(repo.base?.('d_1')).toEqual(got)
   expect(repo.known?.('d_1')).toBe(rows.get('d_1')?.rev)
+})
+
+test('a refused save says what the server said on a 403, and our own sentence when it said nothing', async () => {
+  const answer = (res: () => Response) => remoteDeckRepo({ fetcher: (async () => res()) as typeof fetch }).save(deck('d_1', 5))
+  expect(await answer(() => Response.json({ error: 'Ask an owner of Acme to make you an editor.' }, { status: 403 }))).toBe('Ask an owner of Acme to make you an editor.')
+  expect(await answer(() => new Response('nope', { status: 403 }))).toBe(VIEW_ONLY)
+  expect(await answer(() => Response.json({ error: 'busy' }, { status: 413 }))).toBe('This deck is too large to save.')
 })

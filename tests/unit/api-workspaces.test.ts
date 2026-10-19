@@ -125,8 +125,10 @@ describe('workspaces API', () => {
     expect(wrong.status).toBe(403)
     expect(await json(wrong)).toEqual({ error: `This invite is for another email. Sign in as ${bob.email} to accept it.` })
     expect((await B.ws('POST', `?accept=${t}`)).status).toBe(200)
-    expect((await B.ws('POST', `?accept=${t}`)).status).toBe(200)
-    expect(await json(B.ws('POST', `?accept=${await invite(A, ws, bob.email, 'viewer')}`))).toEqual({ workspaceId: ws, role: 'editor' })
+    expect((await B.ws('POST', `?accept=${t}`)).status).toBe(410)
+    const again = await A.ws('POST', `?id=${ws}&invite`, { email: bob.email, role: 'owner' })
+    expect(again.status).toBe(409)
+    expect(await json(again)).toEqual({ error: `${bob.email} is in this workspace already. Change their role in the list.` })
 
     const old = await invite(A, ws, cy.email, 'viewer')
     const i = db.invites.get(old)

@@ -21,7 +21,7 @@ function people() {
 /** `who` joins ann's workspace `ws` with `role`, through an invite as the app does it. */
 async function join(db: Db, owner: SeedUser, ws: string, who: SeedUser, role: Role) {
   const token = `t_${who.id}_${role}_${ws}`
-  expect(await db.addInvite(owner.id, ws, who.email, role, token, Date.now() + DAY)).toBe(true)
+  expect(await db.addInvite(owner.id, ws, who.email, role, token, Date.now() + DAY)).toBe('ok')
   expect(await db.acceptInvite(who, token, Date.now())).toMatchObject({ workspaceId: ws })
 }
 
@@ -121,29 +121,64 @@ export function dbContract(name: string, make: () => Promise<Db>) {
     it('invites', async () => {
       const db = await make(), { ann, bob, cy } = people()
       const ws = await seedUser(db, ann), now = Date.now()
-      expect(await db.addInvite(ann.id, ws, bob.email, 'editor', `t_bob_${ws}`, now + DAY)).toBe(true)
+      expect(await db.addInvite(ann.id, ws, bob.email, 'editor', `t_bob_${ws}`, now + DAY)).toBe('ok')
+      expect(await db.addInvite(ann.id, ws, bob.email.toUpperCase(), 'viewer', `t_bob2_${ws}`, now + DAY)).toBe('ok')
       expect(await db.acceptInvite(cy, `t_bob_${ws}`, now)).toEqual({ wrongEmail: bob.email })
       expect(await db.acceptInvite(bob, `t_bob_${ws}`, now)).toEqual({ workspaceId: ws, role: 'editor' })
-      expect(await db.acceptInvite(bob, `t_bob_${ws}`, now)).toEqual({ workspaceId: ws, role: 'editor' })
-      expect((await db.listMembers(ann.id, ws))?.map((m) => [m.userId, m.role])).toEqual([[ann.id, 'owner'], [bob.id, 'editor']])
+      // Accepting uses the invite up, and the other one to that email with it.
+      expect(await db.acceptInvite(bob, `t_bob_${ws}`, now)).toBe('gone')
+      expect(await db.acceptInvite(bob, `t_bob2_${ws}`, now)).toBe('gone')
+      expect((await db.listMembers(ann.id, ws))?.map((m) => [m.userId, m.role, m.personal])).toEqual([[ann.id, 'owner', true], [bob.id, 'editor', false]])
+      // A member gets no invite: their role changes in the list.
+      expect(await db.addInvite(ann.id, ws, bob.email, 'owner', `t_bob3_${ws}`, now + DAY)).toBe('member')
 
-      // Accepting a weaker invite never lowers a role the person already has.
-      expect(await db.addInvite(ann.id, ws, bob.email.toUpperCase(), 'viewer', `t_bob2_${ws}`, now + DAY)).toBe(true)
-      expect(await db.acceptInvite(bob, `t_bob2_${ws}`, now)).toEqual({ workspaceId: ws, role: 'editor' })
-
-      expect(await db.addInvite(ann.id, ws, cy.email, 'viewer', `t_old_${ws}`, now - 1)).toBe(true)
+      expect(await db.addInvite(ann.id, ws, cy.email, 'viewer', `t_old_${ws}`, now - 1)).toBe('ok')
       expect(await db.acceptInvite(cy, `t_old_${ws}`, now)).toBe('gone')
-      expect(await db.addInvite(ann.id, ws, cy.email, 'viewer', `t_cy_${ws}`, now + DAY)).toBe(true)
-      // Open invites only: not the accepted ones (bob is a member now), not the expired one.
+      expect(await db.addInvite(ann.id, ws, cy.email, 'viewer', `t_cy_${ws}`, now + DAY)).toBe('ok')
+      // Open invites only: not the expired one.
       expect((await db.listInvites(ann.id, ws))?.map((i) => i.token)).toEqual([`t_cy_${ws}`])
       expect(await db.revokeInvite(ann.id, ws, `t_cy_${ws}`)).toBe(true)
       expect(await db.acceptInvite(cy, `t_cy_${ws}`, now)).toBe('gone')
       expect(await db.acceptInvite(cy, `t_none_${ws}`, now)).toBe('gone')
 
       // Only an owner manages invites.
-      expect(await db.addInvite(bob.id, ws, cy.email, 'owner', `t_bobs_${ws}`, now + DAY)).toBe(false)
+      expect(await db.addInvite(bob.id, ws, cy.email, 'owner', `t_bobs_${ws}`, now + DAY)).toBe('denied')
       expect(await db.listInvites(bob.id, ws)).toBeNull()
-      expect(await db.revokeInvite(bob.id, ws, `t_bob2_${ws}`)).toBe(false)
+      expect(await db.revokeInvite(bob.id, ws, `t_old_${ws}`)).toBe(false)
+    })
+
+    it('an old invite never hands back a role after a demotion or a removal', async () => {
+      const db = await make(), { ann, bob } = people()
+      const ws = await seedUser(db, ann), now = Date.now()
+      await db.addInvite(ann.id, ws, bob.email, 'editor', `t_back_${ws}`, now + DAY)
+      await db.acceptInvite(bob, `t_back_${ws}`, now)
+      expect(await db.setRole(ann.id, ws, bob.id, 'viewer')).toBe('ok')
+      expect(await db.acceptInvite(bob, `t_back_${ws}`, now)).toBe('gone')
+      expect((await db.listMembers(ann.id, ws))?.find((m) => m.userId === bob.id)?.role).toBe('viewer')
+      expect(await db.setRole(ann.id, ws, bob.id, null)).toBe('ok')
+      expect(await db.acceptInvite(bob, `t_back_${ws}`, now)).toBe('gone')
+      expect(await db.listMembers(bob.id, ws)).toBeNull()
+    })
+
+    it('no one changes the owner of a personal workspace', async () => {
+      const db = await make(), { ann, cy } = people()
+      const ws = await seedUser(db, ann)
+      await join(db, ann, ws, cy, 'owner')
+      expect(await db.setRole(cy.id, ws, ann.id, 'viewer')).toBe('denied')
+      expect(await db.setRole(cy.id, ws, ann.id, null)).toBe('denied')
+      expect(await db.setRole(ann.id, ws, ann.id, 'editor')).toBe('denied')
+      expect(await db.setRole(ann.id, ws, ann.id, 'owner')).toBe('ok')
+      expect((await db.listMembers(ann.id, ws))?.find((m) => m.userId === ann.id)?.role).toBe('owner')
+      expect(await db.setRole(ann.id, ws, cy.id, 'editor')).toBe('ok')
+    })
+
+    it('two owners stepping down at once leave one owner', async () => {
+      const db = await make(), { ann, bob } = people()
+      const ws = await db.createWorkspace(ann.id, 'Acme')
+      await join(db, ann, ws, bob, 'owner')
+      const both = await Promise.all([db.setRole(ann.id, ws, ann.id, 'editor'), db.setRole(bob.id, ws, bob.id, 'editor')])
+      expect(both.sort()).toEqual(['last_owner', 'ok'])
+      expect((await db.listMembers(ann.id, ws))?.filter((m) => m.role === 'owner')).toHaveLength(1)
     })
 
     it('the last owner stays', async () => {

@@ -4,7 +4,8 @@
 export type Role = 'owner' | 'editor' | 'viewer'
 /** `personal`: the user's own, made on their first visit; it can't be left. Most recently used first. */
 export interface Workspace { id: string; name: string; role: Role; personal: boolean; members: number; usedAt: number | null }
-export interface Member { userId: string; email: string; name: string; role: Role }
+/** `personal`: the workspace is this member's own, so their role there is fixed. */
+export interface Member { userId: string; email: string; name: string; role: Role; personal: boolean }
 export interface Invite { token: string; email: string; role: Role; expires: number }
 
 export interface WorkspaceRepo {
@@ -66,7 +67,7 @@ export function localWorkspaceRepo(): WorkspaceRepo {
     create: async () => { throw new Error('Sign in to make another workspace.') },
     rename: no, setRole: no, invite: no, revoke: no, accept: no,
     use: async () => undefined,
-    members: async () => ({ members: [{ userId: 'dev', email: '', name: 'Dev', role: 'owner' }], invites: [] }),
+    members: async () => ({ members: [{ userId: 'dev', email: '', name: 'Dev', role: 'owner', personal: true }], invites: [] }),
   }
 }
 

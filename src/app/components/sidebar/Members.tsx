@@ -67,11 +67,11 @@ export function Members({ workspace, repo, me, onClose, onLeft }: Props) {
                   <span className="truncate text-[13.5px] text-ink">{m.name || m.email}{you && <span className="ml-1.5 text-ink-3">You</span>}</span>
                   {m.name && <span className={`truncate ${SMALL}`}>{m.email}</span>}
                 </div>
-                {owner ? <RolePick value={m.role} aria={`Role of ${m.name || m.email}`} onChange={(r) => void act(() => repo.setRole(id, m.userId, r))} />
+                {owner && !m.personal ? <RolePick value={m.role} aria={`Role of ${m.name || m.email}`} onChange={(r) => void act(() => repo.setRole(id, m.userId, r))} />
                   : <span className={`flex-none ${SMALL}`}>{label(m.role)}</span>}
                 {/* One slot for Leave or Remove, so the roles line up. */}
                 <div className="flex w-14 flex-none justify-end">
-                  {(owner || you) && !(you && workspace?.personal) && (
+                  {(owner || you) && !m.personal && (
                     you ? <Button variant="ghost" size="sm" onClick={() => void act(async () => { await repo.setRole(id, me, null); onLeft() })}>Leave</Button>
                       : <button type="button" aria-label={`Remove ${m.name || m.email}`} onClick={() => void act(() => repo.setRole(id, m.userId, null))}
                         className="grid size-7 cursor-pointer place-items-center rounded-md text-ink-3 hover:bg-panel hover:text-ink"><X className="size-3.5" strokeWidth={1.75} /></button>

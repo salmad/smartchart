@@ -93,9 +93,9 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   // slide does not stamp it as edited and move it up the list.
   const savedKey = useRef<string | null>(null)
   const unsaved = (d: SavedDeck) => editKey(d) !== savedKey.current
-  // A new deck asks its question in the chat, so the chat starts empty.
-  // A deck opened by a viewer of its workspace is read, never written: no chat, no edits, no saves.
+  // A deck opened by a viewer of its workspace is read, never written: no chat, no edits, no saves. A viewer with nothing open gets the same page, empty.
   const [viewOnly, setViewOnly] = useState(false)
+  const readOnly = viewOnly || (booted && s.role === 'viewer' && !s.items.length)
   const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null; setViewOnly(false) }, [app])
   const openDeck = useCallback((d: SavedDeck) => {
     turns.current = []
@@ -136,7 +136,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       // A prompt typed on the site sets the style picked there, and builds the first slide when the models are up.
       const pending = parsePending(takePendingPrompt())
       if (pending) app.dispatch({ type: 'set', patch: { style: pending.style } })
-      if (pending && live) void sendRef.current?.(pending.text)
+      if (pending && live && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
     })()
   }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready])
 
@@ -286,7 +286,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
 
   return (
     <TooltipProvider delayDuration={400}>
-      {route.name !== 'doc' && viewOnly
+      {route.name !== 'doc' && readOnly
         ? <ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} />
         : route.name === 'doc'

@@ -1,7 +1,7 @@
 // Workspaces, members and invites in Postgres. The role a call needs comes from access.ts; owner checks sit in the
 // writing query itself, so nothing is decided on a read that another request could change first.
 import { can, isRole, rolesFor, ROLES, type Role } from './access.js'
-import { shareToken, type Db, type DbUser, type InviteRow, type MemberRow, type Q, type WorkspaceRow } from './db.js'
+import { shareToken, type Db, type DbUser, type InviteRow, type MemberRow, type Q, type Tx, type WorkspaceRow } from './db.js'
 
 type Calls = 'ensureWorkspace' | 'listWorkspaces' | 'createWorkspace' | 'renameWorkspace' | 'touchWorkspace' | 'listMembers'
   | 'setRole' | 'addInvite' | 'listInvites' | 'revokeInvite' | 'acceptInvite'
@@ -11,7 +11,7 @@ const newId = () => `ws_${shareToken().slice(0, 16)}`
 const member = (ws: string, u: string, roles: string) => `exists (select 1 from members m where m.workspace_id = ${ws} and m.user_id = ${u} and m.role = any(${roles}::text[]))`
 const MANAGE = rolesFor('manage')
 
-export function workspaceCalls(q: Q): Pick<Db, Calls> {
+export function workspaceCalls(q: Q, tx: Tx): Pick<Db, Calls> {
   /** Once per user per cold start: after the first call it changes nothing. */
   const ensured = new Map<string, Promise<string>>()
   const ensure = async (u: DbUser): Promise<string> => {
@@ -47,28 +47,40 @@ export function workspaceCalls(q: Q): Pick<Db, Calls> {
     touchWorkspace: async (u, id) => { await q('update members set used_at = now() where workspace_id = $1 and user_id = $2', [id, u]) },
     // A member always sees at least themselves, so no rows means not a member.
     listMembers: async (u, id) => {
-      const r = await q<MemberRow>(`select user_id as "userId", email, name, role from members where workspace_id = $2 and ${member('$2', '$1', '$3')}
+      const r = await q<MemberRow>(`select user_id as "userId", email, name, role,
+        coalesce(user_id = (select personal_of from workspaces where id = $2), false) as personal from members where workspace_id = $2 and ${member('$2', '$1', '$3')}
         order by array_position($4::text[], role), joined, user_id`, [u, id, rolesFor('read'), ROLES])
       return r.length ? r : null
     },
+    // Every rule sits in the write, which runs under a per-workspace lock: two owners stepping down at once are
+    // taken one after the other, so the second sees the first's change. The read before only says why it was refused.
     setRole: async (u, id, who, role) => {
-      const s = (await q<{ me: string | null; them: string | null; owners: string; personal: string | null }>(
-        `select (select role from members where workspace_id = $1 and user_id = $2) as me, (select role from members where workspace_id = $1 and user_id = $3) as them,
-           (select count(*) from members where workspace_id = $1 and role = 'owner') as owners, (select personal_of from workspaces where id = $1) as personal`, [id, u, who]))[0]
-      const me = isRole(s.me) ? s.me : null
-      if (!s.them || !(can(me, 'manage') || (who === u && role === null))) return 'denied'
-      if (role === null && s.personal === who) return 'denied'
-      if (s.them === 'owner' && role !== 'owner' && Number(s.owners) <= 1) return 'last_owner'
-      // The last-owner guard is in the write too, for two owners stepping down at once.
-      const keepsOwner = `(members.role <> 'owner' or (select count(*) from members o where o.workspace_id = $1 and o.role = 'owner') > 1)`
-      const done = role === null
-        ? await q(`delete from members where workspace_id = $1 and user_id = $2 and ${keepsOwner} returning user_id`, [id, who])
-        : await q(`update members set role = $3 where workspace_id = $1 and user_id = $2 and ($3 = 'owner' or ${keepsOwner}) returning user_id`, [id, who, role])
-      return done.length ? 'ok' : 'last_owner'
+      const why = async (): Promise<'last_owner' | 'denied'> => {
+        const s = (await q<{ me: string | null; them: string | null; owners: string; personal: string | null }>(
+          `select (select role from members where workspace_id = $1 and user_id = $2) as me, (select role from members where workspace_id = $1 and user_id = $3) as them,
+             (select count(*) from members where workspace_id = $1 and role = 'owner') as owners, (select personal_of from workspaces where id = $1) as personal`, [id, u, who]))[0]
+        const me = isRole(s.me) ? s.me : null
+        if (!s.them || !(can(me, 'manage') || (who === u && role === null))) return 'denied'
+        if (s.personal === who && role !== 'owner') return 'denied'
+        return 'last_owner'
+      }
+      const allowed = `(${member('$1', '$2', '$5')} or ($2 = $3 and $4::text is null))
+        and not exists (select 1 from workspaces w where w.id = $1 and w.personal_of = $3 and $4::text is distinct from 'owner')
+        and (members.role <> 'owner' or $4::text = 'owner' or (select count(*) from members o where o.workspace_id = $1 and o.role = 'owner') > 1)`
+      const write = role === null
+        ? `delete from members where workspace_id = $1 and user_id = $3 and ${allowed} returning user_id`
+        : `update members set role = $4 where workspace_id = $1 and user_id = $3 and ${allowed} returning user_id`
+      const [, done] = await tx([['select pg_advisory_xact_lock(hashtext($1))', [`members:${id}`]], [write, [id, u, who, role, MANAGE]]])
+      return done.length ? 'ok' : why()
     },
-    addInvite: async (u, id, email, role, token, expires) => (await q(
-      `insert into invites (token, workspace_id, email, role, by_user, expires) select $3, $2, $4, $5, $1, $6 where ${member('$2', '$1', '$7')} returning token`,
-      [u, id, token, email.toLowerCase(), role, new Date(expires).toISOString(), MANAGE])).length > 0,
+    // An existing member gets no invite: one left open would hand back a role after a demotion.
+    addInvite: async (u, id, email, role, token, expires) => {
+      const made = await q(`insert into invites (token, workspace_id, email, role, by_user, expires) select $3, $2, $4, $5, $1, $6 where ${member('$2', '$1', '$7')}
+        and not exists (select 1 from members x where x.workspace_id = $2 and x.email = $4) returning token`,
+        [u, id, token, email.toLowerCase(), role, new Date(expires).toISOString(), MANAGE])
+      if (made.length) return 'ok'
+      return can(await roleIn(id, u), 'manage') ? 'member' : 'denied'
+    },
     listInvites: async (u, id) => {
       if (!can(await roleIn(id, u), 'manage')) return null
       return (await q<Omit<InviteRow, 'expires'> & { expires: string | Date }>(`select token, email, role, expires from invites i where workspace_id = $1 and expires > now()
@@ -76,16 +88,20 @@ export function workspaceCalls(q: Q): Pick<Db, Calls> {
         .map((i) => ({ ...i, expires: new Date(i.expires).getTime() }))
     },
     revokeInvite: async (u, id, token) => (await q(`delete from invites where token = $3 and workspace_id = $2 and ${member('$2', '$1', '$4')} returning token`, [u, id, token, MANAGE])).length > 0,
-    // An invite stays usable until it expires or is revoked; accepting again, or a weaker invite, never lowers a role.
+    // Accepting uses the invite up, with every other open one to that email there, in the same statement that joins:
+    // an old link can't hand back a role after a demotion or a removal. A weaker invite never lowers a role.
     acceptInvite: async (u, token, now) => {
       const i = (await q<{ ws: string; email: string; role: string; expires: string | Date }>('select workspace_id as ws, email, role, expires from invites where token = $1', [token]))[0]
       if (!i || new Date(i.expires).getTime() <= now || !isRole(i.role)) return 'gone'
       if (i.email !== u.email.toLowerCase()) return { wrongEmail: i.email }
       const r = await q<{ role: string }>(
-        `insert into members (workspace_id, user_id, email, name, role) values ($1, $2, $3, $4, $5)
-         on conflict (workspace_id, user_id) do update set role = case when array_position($6::text[], excluded.role) < array_position($6::text[], members.role) then excluded.role else members.role end
-         returning role`, [i.ws, u.id, u.email.toLowerCase(), u.name, i.role, ROLES])
-      return { workspaceId: i.ws, role: isRole(r[0]?.role) ? r[0].role : i.role }
+        `with used as (delete from invites where token = $1 and email = $3 and expires > $6::timestamptz returning workspace_id, role),
+              others as (delete from invites where workspace_id = (select workspace_id from used) and email = $3 and token <> $1)
+         insert into members (workspace_id, user_id, email, name, role) select workspace_id, $2, $3, $4, role from used
+         on conflict (workspace_id, user_id) do update set role = case when array_position($5::text[], excluded.role) < array_position($5::text[], members.role) then excluded.role else members.role end
+         returning role`, [token, u.id, u.email.toLowerCase(), u.name, ROLES, new Date(now).toISOString()])
+      if (!r.length) return 'gone'
+      return { workspaceId: i.ws, role: isRole(r[0].role) ? r[0].role : i.role }
     },
   }
 }

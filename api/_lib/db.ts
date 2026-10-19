@@ -24,7 +24,8 @@ export interface KeyInfo { id: string; prefix: string; created: number; lastUsed
 /* Workspaces (api/_lib/access.ts has the rule): decks and docs live in one, and its members' roles decide who may do what. */
 /** `personal`: the user's own workspace, made on their first request; it can't be left. `usedAt`: when they last opened it here. */
 export interface WorkspaceRow { id: string; name: string; role: Role; personal: boolean; members: number; usedAt: number | null }
-export interface MemberRow { userId: string; email: string; name: string; role: Role }
+/** `personal`: this workspace is the member's own, so their role there can't change. */
+export interface MemberRow { userId: string; email: string; name: string; role: Role; personal: boolean }
 export interface InviteRow { token: string; email: string; role: Role; expires: number }
 /** An accepted invite gives the role the person now holds there; `gone`: expired, revoked or never made; `wrongEmail`:
     the email it was made for, when someone else holds the link. */
@@ -51,13 +52,14 @@ export interface Db {
   /** Null when the user is not a member. */
   listMembers(userId: string, id: string): Promise<MemberRow[] | null>
   /** Changes a member's role, or removes them with null. An owner may change anyone; any member may remove themselves.
-      A workspace keeps at least one owner, and no one leaves their personal workspace. */
+      A workspace keeps at least one owner, and no one's role in their personal workspace changes. */
   setRole(userId: string, id: string, member: string, role: Role | null): Promise<'ok' | 'last_owner' | 'denied'>
-  addInvite(userId: string, id: string, email: string, role: Role, token: string, expires: number): Promise<boolean>
+  /** `member`: that email is in the workspace already; their role changes in the members list, not by invite. */
+  addInvite(userId: string, id: string, email: string, role: Role, token: string, expires: number): Promise<'ok' | 'denied' | 'member'>
   /** The open invites: not expired, for an email that isn't a member yet. Null when the user may not manage the workspace. */
   listInvites(userId: string, id: string): Promise<InviteRow[] | null>
   revokeInvite(userId: string, id: string, token: string): Promise<boolean>
-  /** Only for the invite's email; never lowers a role the person already holds, and accepting again changes nothing. */
+  /** Only for the invite's email, and only once: accepting uses up every invite to that email there. Never lowers a role. */
   acceptInvite(user: DbUser, token: string, now: number): Promise<InviteResult>
   deckRole(userId: string, deckId: string): Promise<Role | null>
   /** Without a workspace: every deck the user can read. */
@@ -139,6 +141,8 @@ const SCHEMA = [
 
 /** One query; the schema is ready before the first. */
 export type Q = <T>(text: string, params?: unknown[]) => Promise<T[]>
+/** Statements run in order in one transaction; each statement sees what the ones before it committed. */
+export type Tx = (statements: [string, unknown[]][]) => Promise<unknown[][]>
 
 let db: Db | null | undefined
 
@@ -153,15 +157,19 @@ export function getDb(): Db | null {
 export function makeDb(url: string): Db {
   const sql = neon(url)
   let ready: Promise<unknown> | null = null
+  // A failed setup is not kept: the next query tries again instead of failing until the next cold start.
+  const setup = () => (ready ??= SCHEMA.reduce<Promise<unknown>>((p, s) => p.then(() => sql.query(s)), Promise.resolve()).catch((e: unknown) => { ready = null; throw e }))
   const q = async <T>(text: string, params: unknown[] = []): Promise<T[]> => {
-    // A failed setup is not kept: the next query tries again instead of failing until the next cold start.
-    ready ??= SCHEMA.reduce<Promise<unknown>>((p, s) => p.then(() => sql.query(s)), Promise.resolve()).catch((e: unknown) => { ready = null; throw e })
-    await ready
+    await setup()
     return (await sql.query(text, params)) as T[]
+  }
+  const tx: Tx = async (statements) => {
+    await setup()
+    return (await sql.transaction(statements.map(([text, params]) => sql.query(text, params)))) as unknown[][]
   }
   return {
     ...deckCalls(q),
-    ...workspaceCalls(q),
+    ...workspaceCalls(q, tx),
     countCall: async (u) => Number((await q<{ calls: number }>(
       `insert into model_usage (user_id, day, calls) values ($1, current_date, 1)
        on conflict (user_id, day) do update set calls = model_usage.calls + 1 returning calls`, [u]))[0].calls),

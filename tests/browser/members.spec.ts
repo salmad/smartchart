@@ -42,6 +42,17 @@ test('a viewer reads the deck, with no way to change it', async ({ page }) => {
   expect(saves).toEqual([])
 })
 
+test('a viewer of a workspace with no decks sees an empty page, not the editor', async ({ page }) => {
+  const saves = await account(page, { who: { id: 'u_cy', email: 'cy@example.com', name: 'Cy' }, workspaces: () => [acme('viewer')], role: 'viewer' })
+  await page.route('**/api/decks**', (r) => r.request().method() === 'GET' && !new URL(r.request().url()).searchParams.get('id') ? r.fulfill({ json: [] }) : r.fallback())
+  await page.goto('/')
+  await expect(page.getByText('Nothing here yet.')).toBeVisible()
+  await expect(page.getByText('View only')).toBeVisible()
+  await expect(page.getByPlaceholder(/Describe a slide/)).toHaveCount(0)
+  await expect(page.getByRole('navigation', { name: 'Workspace' }).getByRole('button', { name: /^New (deck|doc)$/ })).toHaveCount(0)
+  expect(saves).toEqual([])
+})
+
 test('an owner sees the members, changes nothing by accident, and invites by link', async ({ page }) => {
   await account(page, { workspaces: () => [acme('owner')], role: 'owner' })
   const invites: unknown[] = []

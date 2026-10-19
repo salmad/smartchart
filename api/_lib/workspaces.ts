@@ -58,7 +58,9 @@ export function workspacesHandler(deps: { userFrom: UserFrom; db: () => Db | nul
       const b = await body(request), email = typeof b.email === 'string' ? b.email.trim().toLowerCase() : ''
       if (!EMAIL.test(email) || !isRole(b.role)) return err(400, 'An invite needs an email and a role.')
       const token = shareToken()
-      await db.addInvite(user.id, id, email, b.role as Role, token, Date.now() + INVITE_DAYS * 86_400_000)
+      const made = await db.addInvite(user.id, id, email, b.role as Role, token, Date.now() + INVITE_DAYS * 86_400_000)
+      if (made === 'member') return err(409, `${email} is in this workspace already. Change their role in the list.`)
+      if (made === 'denied') return err(403, 'Only an owner of this workspace can do that.')
       return Response.json({ link: `${new URL(request.url).origin}/i/${token}` })
     }
     if (m === 'DELETE' && q.has('invite')) {
