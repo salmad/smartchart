@@ -1,6 +1,6 @@
 # Page tree: docs and decks nested in the sidebar
 
-> Status: draft 2026-10-19, for the user's approval. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. Nothing is built.
+> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. Nothing is built.
 
 ## Why
 
@@ -34,11 +34,11 @@ The sidebar is flat: a Docs section and a Decks section, each newest first (`src
 
 ### 1. Data: two columns on each table
 
-`decks` and `docs` each get `parent_id text` (null at the top level) and `sort_key text not null`. No new table.
+`decks` and `docs` each get `parent_kind text`, `parent_id text` (both null at the top level) and `sort_key text not null`. No new table.
 
 I considered a single `pages` table holding kind, id, parent and order. It gives one place for the tree, but it would put a join in front of every access check and every list, and `may(...)` is written per table today. Two columns keep every existing query and test as they are, and the tree is read with one extra column.
 
-- **Ids.** A parent is named by its id alone, which works only if deck and doc ids never collide. Doc ids are `doc_…`; deck ids come from the app's own generator. **First task of the plan:** confirm the two id spaces are disjoint, and if they are not, add `parent_kind` (`'deck'|'doc'`) beside `parent_id`. Nothing else in the design changes.
+- **Ids.** Decks and docs have separate id spaces. The app makes `d_…` and `doc_…` ids, but `putDeck` and `putDoc` accept an id the client chose, and older decks may not follow the pattern, so nothing guarantees a deck id never equals a doc id. A parent is therefore named by kind and id: `parent_kind` (`'deck'|'doc'`) beside `parent_id`, both null at the top level (decided 2026-10-19, after checking the generators in `api/_lib/deck-service.ts` and `src/app/store.ts`).
 - **Order.** `sort_key` is a fractional index (a short string that sorts between its neighbours, as Figma and Linear do), so a move writes one row, not every sibling. Siblings are the pages with the same `workspace_id` and `parent_id`, across both tables, sorted by `sort_key` then `id`. Two pages can briefly share a key when two people move at once; the `id` tie-break keeps the order stable and the next move gives a fresh key.
 - **Migration** (the same idempotent style as `db.ts`): add the columns; give every existing page `parent_id` null and a key that preserves what the sidebar shows today. Decks and docs interleave by `updated_at` newest first, so the first tree is "everything at the top, newest first", not "docs then decks". The order is then the user's: an edit no longer moves a page up the list.
 - **New pages** go to the **bottom** of their siblings (Notion's rule, because order is now meaningful), under the parent they were made from, else the top level. "Newest first" stops being the sidebar's order; the doc list over MCP keeps `updated_at desc` (see section 5).
@@ -65,7 +65,7 @@ A parent with children is the one case that needs a decision. Options:
 | B. Lift the children to the deleted page's parent | Nothing but the one page is lost | The user said "delete this", not "reorganise my pages"; surprising order changes |
 | C. Refuse until the page is empty | Safest | Forces tedious moves |
 
-**Recommendation: A, with a count.** The confirm dialog (`DeleteDeck.tsx`'s pattern) names what goes: "Delete *Finbridge research* and its 6 subpages? This can't be undone." A page with no children keeps today's dialog. It matches how the user thinks of the tree, and because deletes are already permanent the dialog is the safeguard that exists. A trash is the real fix (a separate request).
+**Decided (2026-10-19): A, with a count.** The confirm dialog (`DeleteDeck.tsx`'s pattern) names what goes: "Delete *Finbridge research* and its 6 subpages? This can't be undone." A page with no children keeps today's dialog. It matches how the user thinks of the tree, and because deletes are already permanent the dialog is the safeguard that exists. A trash is the real fix (a separate request).
 
 The subtree delete is one statement (the descendants by the same recursive CTE), then the versions and blobs of each, as `deleteDeck` and `deleteDoc` do per page. It needs the write right on the workspace, so it can't delete a page the caller couldn't have deleted one by one.
 
@@ -138,10 +138,11 @@ Each milestone ends with its own plan and stops at the boundary (memory: inline 
 ## My calls (to check while reading)
 
 - A parent can be a doc or a deck, and any kind can be under any kind.
-- Two columns on each table, not a `pages` table; the id check decides whether `parent_kind` is needed.
+- Three columns on each table (`parent_kind`, `parent_id`, `sort_key`), not a `pages` table.
 - Fractional `sort_key`; new pages at the bottom; the first tree keeps today's newest-first order. The user confirmed (2026-10-19) that the default order doesn't matter much because they can reset it by moving a page; so there is no "sort by…" control and no automatic re-sorting.
 - Depth cap 6.
-- Delete removes the subtree, with a count in the dialog (the recommendation; B and C above are the alternatives).
+- Delete removes the subtree, with a count in the dialog, and is permanent (confirmed 2026-10-19; a Trash with restore, as Notion has, is a separate request).
+- Subpages show in the sidebar and the breadcrumb only, not as a link list inside the page (confirmed 2026-10-19).
 - The sidebar row loses its second line (slide count and time) to fit nesting.
 - A move is not a version and does not bump `rev`.
 - Sharing and access never inherit through the tree.
