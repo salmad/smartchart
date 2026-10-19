@@ -3,7 +3,7 @@
 import type { Cell, Table } from "../types.js";
 import { plain } from "../slides/schema.js";
 import { markKinds, markOf } from "../slides/marks.js";
-import { columnAlign, figureOf } from "../slides/align.js";
+import { columnAlign, figureOf, placeOf } from "../slides/align.js";
 import { groupLayout, type TableRoom } from "../slides/groups.js";
 import { at, esc, item, list, md } from "./text.js";
 import { ballKey, markHTML } from "./scores.js";
@@ -21,7 +21,7 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
     const p = b.max > 0 && v !== null && v > 0 ? Math.round((v / b.max) * 1000) / 10 : 0;
     return `<span class="cbar"><i style="width:${p}%"></i></span>${inner}`;
   };
-  const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
+  const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, placeOf(c) ? `pl-${placeOf(c)}` : "", c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
   const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
   const cell = (c: Cell, r: number, j: number) => {

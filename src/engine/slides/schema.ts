@@ -288,6 +288,7 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   bars: f("boolean", "A column of figures (0 or more): a small bar beside each figure, to scale with the column's largest, so the column can be scanned. Shares, scores, sizes. Not on marks or words.", { default: false }),
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
+  align: f("enum", "Text alignment; auto follows the content.", { values: ["left", "centre", "right", "auto"], default: "auto" }),
 } });
 const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
 

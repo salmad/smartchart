@@ -154,6 +154,7 @@
 .tbl .al-num { text-align: right; }
 .tbl td.al-num { font-family: var(--mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tbl .al-sym { text-align: center; }
+.tbl .pl-left { text-align: left; } .tbl .pl-centre { text-align: center; } .tbl .pl-right { text-align: right; }
 .tbl th:last-child, .tbl td:last-child { padding-right: 0; }
 /* A highlighted column is a quiet band (on the column, so it runs unbroken through group headings), with its header in the
    focus colour; its body stays in ink, so the one cell the title is about ([[…]]) still stands out. Cells in the band are
@@ -179,6 +180,7 @@
 .tbl.ic-above th.has-ic svg { display: block; width: 28px; height: 28px; margin: 0 0 10px; vertical-align: 0; }
 .tbl.ic-above th.al-sym.has-ic svg { margin-inline: auto; }
 .tbl.ic-above th.al-num.has-ic svg { margin-left: auto; }
+.tbl.ic-above th.pl-left.has-ic svg { margin: 0 0 10px; } .tbl.ic-above th.pl-centre.has-ic svg { margin-inline: auto; } .tbl.ic-above th.pl-right.has-ic svg { margin: 0 0 10px auto; }
 /* A mark with a note: the mark centred, the note under it. */
 .tbl td.score.has-note small { text-align: center; margin-top: 6px; }
 /* Status: a neutral outline label. The value is the information, never a colour. */
@@ -397,6 +399,7 @@
 .tbl th.has-lg > .brand { --b: 46px; --mh: 40px; --mw: 180px; display: block; margin-bottom: 12px; color: var(--fg-2); }
 .tbl th.has-lg > .brand.word { --b: 84px; --mh: 44px; --mw: 190px; margin-bottom: 0; }
 .tbl th.al-num.has-lg > .brand { margin-left: auto; } .tbl th.al-sym.has-lg > .brand { margin-inline: auto; }
+.tbl th.pl-left.has-lg > .brand { margin-inline: 0; } .tbl th.pl-centre.has-lg > .brand { margin-inline: auto; } .tbl th.pl-right.has-lg > .brand { margin: 0 0 12px auto; }
 .tbl th.focus.has-lg > .brand { color: var(--focus); }
 .tbl tr.focus td.has-lg > .brand, .tbl tr.muted td.has-lg > .brand { color: inherit; }
 /* A card led by a logo: on the icon's line, the same height band. */
