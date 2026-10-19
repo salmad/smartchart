@@ -76,7 +76,7 @@
 
 ---
 
-### Task 1: The access rule
+### Task 1: The access rule (done, `37b6b6d`)
 
 **Files:**
 - Create: `api/_lib/access.ts`
@@ -93,11 +93,11 @@ export function rolesFor(action: Action): Role[]
 export const isRole: (v: unknown) => v is Role
 ```
 
-- [ ] **Step 1: Write the failing test.** It checks the 3 × 3 table: a viewer can only read, an editor can read and write, an owner can do all three, and `null` can do nothing. It also checks that `rolesFor('write')` is `['owner', 'editor']`.
-- [ ] **Step 2: Run it** (`npx vitest run tests/unit/access.test.ts`). Expected: FAIL, because the module is missing.
-- [ ] **Step 3: Implement it.**
-- [ ] **Step 4: Run it.** Expected: PASS.
-- [ ] **Step 5: Commit.** Message: "Workspaces: one access rule, owner, editor and viewer".
+- [x] **Step 1: Write the failing test.** It checks the 3 × 3 table: a viewer can only read, an editor can read and write, an owner can do all three, and `null` can do nothing. It also checks that `rolesFor('write')` is `['owner', 'editor']`.
+- [x] **Step 2: Run it** (`npx vitest run tests/unit/access.test.ts`). Expected: FAIL, because the module is missing.
+- [x] **Step 3: Implement it.**
+- [x] **Step 4: Run it.** Expected: PASS.
+- [x] **Step 5: Commit.** Message: "Workspaces: one access rule, owner, editor and viewer".
 
 ### Task 2: The Db contract: workspaces, members, invites, docs; deck calls by membership (fake Db)
 
