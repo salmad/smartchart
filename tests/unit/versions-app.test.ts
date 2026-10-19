@@ -15,7 +15,7 @@ const mem = () => { const m: Record<string, string> = {}; return { getItem: (k: 
 describe('the server repo and versions', () => {
   // The real decks API over a fake database, as the app's fetch.
   const repoOn = () => {
-    const db = fakeDb(), h = decksHandler({ userFrom: async () => ({ id: 'u', email: 'u@x', via: 'session' }), db: () => db })
+    const db = fakeDb(), h = decksHandler({ userFrom: async () => ({ id: 'u', email: 'u@x', name: '', via: 'session' }), db: () => db })
     const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => h(new Request(new URL(String(input), 'http://x'), init))) as typeof fetch
     return remoteDeckRepo({ fetcher })
   }

@@ -4,7 +4,7 @@ import { imagesHandler, type UploadReply } from '../../api/_lib/images-route'
 import type { StoreFn } from '../../api/_lib/images'
 import { fakeDb } from './fake-db'
 
-const me = async () => ({ id: 'u1', email: 'u1@x.y', via: 'session' as const })
+const me = async () => ({ id: 'u1', email: 'u1@x.y', name: '', via: 'session' as const })
 const store: StoreFn = async (name) => `https://store1.public.blob.vercel-storage.com/${name}`
 const post = (body: BodyInit, kind = 'all') => new Request(`https://app.test/api/images?kind=${kind}`, { method: 'POST', body })
 const logo = () => sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300"><rect width="100%" height="100%" fill="#fff"/><rect x="100" y="100" width="600" height="100" fill="#123"/></svg>')).png().toBuffer()

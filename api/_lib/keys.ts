@@ -15,7 +15,7 @@ export async function bearerUser(request: Request, db: Db): Promise<User | null>
   const m = /^Bearer (sc_[\w-]+)$/.exec(request.headers.get('authorization') ?? '')
   if (!m) return null
   const row = await db.keyUser(hashKey(m[1])).catch(() => null)
-  return row ? { id: row.userId, email: row.email, via: 'key' } : null
+  return row ? { id: row.userId, email: row.email, name: '', via: 'key' } : null
 }
 
 /** GET: the user's keys (prefix, no secret). POST: a new key, shown only now; refused at five. DELETE ?id=: that key. */

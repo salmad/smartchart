@@ -8,7 +8,7 @@ import { modelGate } from '../../api/_lib/quota'
 import { routeFor } from '../../vite/api-dev'
 
 const as = (who: User | null) => async () => who
-const ann: User = { id: 'u_ann', email: 'ann@example.com', via: 'session' }, bob: User = { id: 'u_bob', email: 'bob@example.com', via: 'session' }
+const ann: User = { id: 'u_ann', email: 'ann@example.com', name: '', via: 'session' }, bob: User = { id: 'u_bob', email: 'bob@example.com', name: '', via: 'session' }
 /** A Db where ann and bob each have their personal workspace, so another user's deck is out of reach by membership. */
 const seeded = async () => {
   const db = fakeDb()
@@ -127,7 +127,8 @@ describe('model gate', () => {
 
 describe('session and routes', () => {
   it('reads the user from Better Auth’s get-session body', () => {
-    expect(sessionUser({ user: { id: 'u1', email: 'a@b.c' }, session: {} })).toEqual({ id: 'u1', email: 'a@b.c', via: 'session' })
+    expect(sessionUser({ user: { id: 'u1', email: 'a@b.c' }, session: {} })).toEqual({ id: 'u1', email: 'a@b.c', name: '', via: 'session' })
+    expect(sessionUser({ user: { id: 'u1', email: 'a@b.c', name: ' Ann Lee ' }, session: {} })?.name).toBe('Ann Lee')
     expect(sessionUser(null)).toBeNull()
     expect(sessionUser({ user: null })).toBeNull()
     expect(sessionUser({ user: { email: 'x' } })).toBeNull()
@@ -141,7 +142,7 @@ describe('session and routes', () => {
   })
 
   it('rev-only read, presence, events', async () => {
-    const db = fakeDb(), handle = decksHandler({ userFrom: async () => ({ id: 'u', email: 'a@b.c', via: 'session' }), db: () => db })
+    const db = fakeDb(), handle = decksHandler({ userFrom: async () => ({ id: 'u', email: 'a@b.c', name: '', via: 'session' }), db: () => db })
     await db.putDeck('u', 'd_1', 'x', { items: [] }, {}, 0)
     expect(await (await handle(new Request('http://x/api/decks?id=d_1&rev=1'))).json()).toEqual({ rev: 1, presence: {} })
     await handle(new Request('http://x/api/decks?id=d_1&presence=1', { method: 'PUT', body: JSON.stringify({ editing: 's_a' }) }))
@@ -151,7 +152,7 @@ describe('session and routes', () => {
     expect(await (await handle(new Request('http://x/api/decks?id=d_1&events=1'))).json()).toMatchObject([{ slideId: 's_a' }])
   })
   it('a deck renamed in the app keeps its name when later saves send the cover title', async () => {
-    const db = fakeDb(), handle = decksHandler({ userFrom: async () => ({ id: 'u', email: 'a@b.c', via: 'session' }), db: () => db })
+    const db = fakeDb(), handle = decksHandler({ userFrom: async () => ({ id: 'u', email: 'a@b.c', name: '', via: 'session' }), db: () => db })
     const put = (name: string, baseRev: number, named?: boolean) => handle(new Request('http://x/api/decks', { method: 'PUT',
       body: JSON.stringify({ id: 'd_1', name, data: { items: [] }, chat: {}, baseRev, ...(named === undefined ? {} : { named }) }) }))
     await put('Cover title', 0)

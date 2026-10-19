@@ -50,7 +50,7 @@ describe('when a save becomes a version', () => {
   })
 })
 
-const ann: User = { id: 'u_ann', email: 'ann@example.com', via: 'session' }, bob: User = { id: 'u_bob', email: 'bob@example.com', via: 'session' }
+const ann: User = { id: 'u_ann', email: 'ann@example.com', name: '', via: 'session' }, bob: User = { id: 'u_bob', email: 'bob@example.com', name: '', via: 'session' }
 const call = (h: ReturnType<typeof decksHandler>, method: string, query = '', body?: unknown) =>
   h(new Request(`http://x/api/decks${query}`, { method, body: body === undefined ? undefined : JSON.stringify(body) }))
 

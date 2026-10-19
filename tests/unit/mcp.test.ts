@@ -6,7 +6,7 @@ import { INSTRUCTIONS } from '../../src/engine/tools/instructions'
 import { fakeDb } from './fake-db'
 import { fakeJev } from './fakes'
 
-const handle = mcpHandler({ userFrom: async (r) => (r.headers.get('authorization') === 'Bearer sc_good' ? { id: 'u1', email: 'a@b.c', via: 'key' } : null), db: () => fakeDb(), jev: fakeJev() })
+const handle = mcpHandler({ userFrom: async (r) => (r.headers.get('authorization') === 'Bearer sc_good' ? { id: 'u1', email: 'a@b.c', name: '', via: 'key' } : null), db: () => fakeDb(), jev: fakeJev() })
 const fetcher: typeof fetch = async (input, init) => handle(new Request(input instanceof Request ? input : String(input), init))
 
 async function connect() {

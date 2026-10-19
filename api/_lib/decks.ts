@@ -5,6 +5,15 @@ import { appMeta, recordVersion } from './versions.js'
 
 const ID = /^[\w-]{1,64}$/
 const MAX_BYTES = 2_000_000
+const NO_DECK = () => Response.json({ error: 'No such deck.' }, { status: 404 })
+
+/** A refused write on a deck: a viewer is told they can only view it; anyone else hears it doesn't exist. */
+export async function refusedDeck(db: Db, userId: string, id: string): Promise<Response> {
+  return await db.deckRole(userId, id) === 'viewer' ? Response.json({ error: 'You can view this deck, not edit it.' }, { status: 403 }) : NO_DECK()
+}
+
+/** The user is a viewer (only) in the workspace. */
+export const viewerIn = async (db: Db, userId: string, ws: string) => (await db.listWorkspaces(userId)).some((w) => w.id === ws && w.role === 'viewer')
 
 export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
   return async (request: Request): Promise<Response> => {
@@ -12,6 +21,8 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (!db) return Response.json({ error: 'Saving is not set up on this server.' }, { status: 503 })
     const user = await deps.userFrom(request)
     if (!user) return Response.json({ error: 'Sign in to see your decks.' }, { status: 401 })
+    // A user's first request makes their personal workspace and moves their decks from before into it.
+    await db.ensureWorkspace(user)
     const q = new URL(request.url).searchParams, id = q.get('id')
 
     // Live view: the app asks for the revision (and who is working) every few seconds, and for what changed since.
@@ -32,31 +43,43 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
       const b = (await request.json().catch(() => ({}))) as { busy?: unknown; editing?: unknown }, now = Date.now(), p: Presence = {}
       if (b.busy === true) p.busy = { by: 'Occam', until: now + 90_000 }
       if (typeof b.editing === 'string') p.editing = { slideId: b.editing, until: now + 60_000 }
-      return (ID.test(id) && await db.setPresence(user.id, id, p)) ? Response.json({ ok: true }) : Response.json({ error: 'No such deck.' }, { status: 404 })
+      if (!ID.test(id)) return NO_DECK()
+      return await db.setPresence(user.id, id, p) ? Response.json({ ok: true }) : refusedDeck(db, user.id, id)
     }
 
-    if (request.method === 'GET' && !id) return Response.json(await db.listDecks(user.id))
+    // ?workspace= lists that workspace's decks; without it, every deck the user can open.
+    if (request.method === 'GET' && !id) {
+      const ws = q.get('workspace')
+      return Response.json(ws && !ID.test(ws) ? [] : await db.listDecks(user.id, ws ?? undefined))
+    }
     if (request.method === 'GET') {
       const d = ID.test(id ?? '') ? await db.getDeck(user.id, id ?? '') : null
       return d ? Response.json(d) : Response.json({ error: 'No such deck.' }, { status: 404 })
     }
     if (request.method === 'DELETE') {
-      return id && ID.test(id) && await db.deleteDeck(user.id, id) ? new Response(null, { status: 204 }) : Response.json({ error: 'No such deck.' }, { status: 404 })
+      if (!id || !ID.test(id)) return NO_DECK()
+      return await db.deleteDeck(user.id, id) ? new Response(null, { status: 204 }) : refusedDeck(db, user.id, id)
     }
     if (request.method === 'PUT') {
       const text = await request.text()
       if (text.length > MAX_BYTES) return Response.json({ error: 'This deck is too large to save.' }, { status: 413 })
-      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown; version?: unknown }
+      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown; version?: unknown; workspaceId?: unknown }
       try { body = JSON.parse(text) as typeof body } catch { return Response.json({ error: 'Bad deck.' }, { status: 400 }) }
-      const { id: deckId, name, named, data, chat, baseRev } = body
+      const { id: deckId, name, named, data, chat, baseRev, workspaceId } = body
       if (typeof deckId !== 'string' || !ID.test(deckId) || typeof name !== 'string' || !data || typeof data !== 'object'
-        || !chat || typeof chat !== 'object' || typeof baseRev !== 'number' || !Number.isInteger(baseRev) || baseRev < 0)
+        || !chat || typeof chat !== 'object' || typeof baseRev !== 'number' || !Number.isInteger(baseRev) || baseRev < 0
+        || (workspaceId !== undefined && (typeof workspaceId !== 'string' || !ID.test(workspaceId))))
         return Response.json({ error: 'Bad deck.' }, { status: 400 })
       // named: the maker renamed the deck; from then on its name stays put (as when an agent names it).
-      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true })
+      // workspaceId places a new deck; a save never moves one.
+      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true, workspaceId })
       if (put === 'conflict') return Response.json({ error: 'This deck changed somewhere else.' }, { status: 409 })
-      // 'foreign': the id is someone else's deck; answer as if it did not exist.
-      if (put === 'foreign') return Response.json({ error: 'No such deck.' }, { status: 404 })
+      // 'foreign': a viewer's save, a new deck where the writer may only view, or someone else's id (answered as if it did not exist).
+      if (put === 'foreign') {
+        if (await db.deckRole(user.id, deckId) === null && workspaceId && await viewerIn(db, user.id, workspaceId))
+          return Response.json({ error: 'You can view this workspace, not add to it.' }, { status: 403 })
+        return refusedDeck(db, user.id, deckId)
+      }
       await recordVersion(db, user.id, deckId, data, appMeta(body.version), put.rev)
       return Response.json({ ok: true, rev: put.rev })
     }

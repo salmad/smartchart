@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readHandler, DAILY_READS } from '../../api/_lib/read-route'
 import { fakeDb } from './fake-db'
 
-const me = async () => ({ id: 'u1', email: 'u1@x.y', via: 'session' as const })
+const me = async () => ({ id: 'u1', email: 'u1@x.y', name: '', via: 'session' as const })
 const lookup = async () => [{ address: '93.184.216.34' }]
 const post = (url: unknown) => new Request('https://app.test/api/read', { method: 'POST', body: JSON.stringify({ url }) })
 

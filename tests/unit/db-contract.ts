@@ -122,7 +122,7 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       const db = await make(), { ann, bob, cy } = people()
       const ws = await seedUser(db, ann), now = Date.now()
       expect(await db.addInvite(ann.id, ws, bob.email, 'editor', `t_bob_${ws}`, now + DAY)).toBe(true)
-      expect(await db.acceptInvite(cy, `t_bob_${ws}`, now)).toBe('wrong_email')
+      expect(await db.acceptInvite(cy, `t_bob_${ws}`, now)).toEqual({ wrongEmail: bob.email })
       expect(await db.acceptInvite(bob, `t_bob_${ws}`, now)).toEqual({ workspaceId: ws, role: 'editor' })
       expect(await db.acceptInvite(bob, `t_bob_${ws}`, now)).toEqual({ workspaceId: ws, role: 'editor' })
       expect((await db.listMembers(ann.id, ws))?.map((m) => [m.userId, m.role])).toEqual([[ann.id, 'owner'], [bob.id, 'editor']])
@@ -134,7 +134,8 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.addInvite(ann.id, ws, cy.email, 'viewer', `t_old_${ws}`, now - 1)).toBe(true)
       expect(await db.acceptInvite(cy, `t_old_${ws}`, now)).toBe('gone')
       expect(await db.addInvite(ann.id, ws, cy.email, 'viewer', `t_cy_${ws}`, now + DAY)).toBe(true)
-      expect((await db.listInvites(ann.id, ws))?.map((i) => i.token)).toContain(`t_cy_${ws}`)
+      // Open invites only: not the accepted ones (bob is a member now), not the expired one.
+      expect((await db.listInvites(ann.id, ws))?.map((i) => i.token)).toEqual([`t_cy_${ws}`])
       expect(await db.revokeInvite(ann.id, ws, `t_cy_${ws}`)).toBe(true)
       expect(await db.acceptInvite(cy, `t_cy_${ws}`, now)).toBe('gone')
       expect(await db.acceptInvite(cy, `t_none_${ws}`, now)).toBe('gone')

@@ -71,7 +71,8 @@ export function workspaceCalls(q: Q): Pick<Db, Calls> {
       [u, id, token, email.toLowerCase(), role, new Date(expires).toISOString(), MANAGE])).length > 0,
     listInvites: async (u, id) => {
       if (!can(await roleIn(id, u), 'manage')) return null
-      return (await q<Omit<InviteRow, 'expires'> & { expires: string | Date }>('select token, email, role, expires from invites where workspace_id = $1 order by expires', [id]))
+      return (await q<Omit<InviteRow, 'expires'> & { expires: string | Date }>(`select token, email, role, expires from invites i where workspace_id = $1 and expires > now()
+         and not exists (select 1 from members m where m.workspace_id = $1 and m.email = i.email) order by expires`, [id]))
         .map((i) => ({ ...i, expires: new Date(i.expires).getTime() }))
     },
     revokeInvite: async (u, id, token) => (await q(`delete from invites where token = $3 and workspace_id = $2 and ${member('$2', '$1', '$4')} returning token`, [u, id, token, MANAGE])).length > 0,
@@ -79,7 +80,7 @@ export function workspaceCalls(q: Q): Pick<Db, Calls> {
     acceptInvite: async (u, token, now) => {
       const i = (await q<{ ws: string; email: string; role: string; expires: string | Date }>('select workspace_id as ws, email, role, expires from invites where token = $1', [token]))[0]
       if (!i || new Date(i.expires).getTime() <= now || !isRole(i.role)) return 'gone'
-      if (i.email !== u.email.toLowerCase()) return 'wrong_email'
+      if (i.email !== u.email.toLowerCase()) return { wrongEmail: i.email }
       const r = await q<{ role: string }>(
         `insert into members (workspace_id, user_id, email, name, role) values ($1, $2, $3, $4, $5)
          on conflict (workspace_id, user_id) do update set role = case when array_position($6::text[], excluded.role) < array_position($6::text[], members.role) then excluded.role else members.role end

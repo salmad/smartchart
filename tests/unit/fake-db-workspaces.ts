@@ -63,12 +63,12 @@ export function fakeWorkspaces(decks: Map<string, { user: string; ws: string | n
       return true
     },
     listInvites: async (u, id) => can(roleIn(u, id), 'manage')
-      ? [...invites.values()].filter((i) => i.ws === id).map(({ token, email, role, expires }) => ({ token, email, role, expires })) : null,
+      ? [...invites.values()].filter((i) => i.ws === id && i.expires > Date.now() && !inWs(id).some((m) => m.email.toLowerCase() === i.email)).map(({ token, email, role, expires }) => ({ token, email, role, expires })) : null,
     revokeInvite: async (u, id, token) => can(roleIn(u, id), 'manage') && invites.get(token)?.ws === id && invites.delete(token),
     acceptInvite: async (u, token, now) => {
       const i = invites.get(token)
       if (!i || i.expires <= now) return 'gone'
-      if (i.email !== u.email.toLowerCase()) return 'wrong_email'
+      if (i.email !== u.email.toLowerCase()) return { wrongEmail: i.email }
       const had = roleIn(u.id, i.ws)
       if (had) (members.get(`${i.ws}:${u.id}`) as MemberRow).role = stronger(had, i.role)
       else join(i.ws, u, i.role)

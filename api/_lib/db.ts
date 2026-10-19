@@ -26,8 +26,9 @@ export interface KeyInfo { id: string; prefix: string; created: number; lastUsed
 export interface WorkspaceRow { id: string; name: string; role: Role; personal: boolean; members: number; usedAt: number | null }
 export interface MemberRow { userId: string; email: string; name: string; role: Role }
 export interface InviteRow { token: string; email: string; role: Role; expires: number }
-/** An accepted invite gives the role the person now holds there; `gone`: expired, revoked or never made. */
-export type InviteResult = { workspaceId: string; role: Role } | 'gone' | 'wrong_email'
+/** An accepted invite gives the role the person now holds there; `gone`: expired, revoked or never made; `wrongEmail`:
+    the email it was made for, when someone else holds the link. */
+export type InviteResult = { workspaceId: string; role: Role } | 'gone' | { wrongEmail: string }
 export interface DocSummary { id: string; name: string; updated: number; workspaceId: string }
 /** A doc is its Markdown text. */
 export interface DocRow extends DocSummary { text: string; rev: number }
@@ -53,7 +54,7 @@ export interface Db {
       A workspace keeps at least one owner, and no one leaves their personal workspace. */
   setRole(userId: string, id: string, member: string, role: Role | null): Promise<'ok' | 'last_owner' | 'denied'>
   addInvite(userId: string, id: string, email: string, role: Role, token: string, expires: number): Promise<boolean>
-  /** Null when the user may not manage the workspace. */
+  /** The open invites: not expired, for an email that isn't a member yet. Null when the user may not manage the workspace. */
   listInvites(userId: string, id: string): Promise<InviteRow[] | null>
   revokeInvite(userId: string, id: string, token: string): Promise<boolean>
   /** Only for the invite's email; never lowers a role the person already holds, and accepting again changes nothing. */

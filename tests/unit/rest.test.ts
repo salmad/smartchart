@@ -4,7 +4,7 @@ import { fakeDb } from './fake-db'
 import { fakeJev } from './fakes'
 
 const db = fakeDb()
-const handle = restHandler({ userFrom: async (r) => (r.headers.get('authorization') === 'Bearer sc_good' ? { id: 'u1', email: 'a@b.c', via: 'key' } : null), db: () => db, jev: fakeJev() })
+const handle = restHandler({ userFrom: async (r) => (r.headers.get('authorization') === 'Bearer sc_good' ? { id: 'u1', email: 'a@b.c', name: '', via: 'key' } : null), db: () => db, jev: fakeJev() })
 const post = (path: string, body: unknown, auth = 'Bearer sc_good') => handle(new Request(`https://app.test${path}`, { method: 'POST', headers: { authorization: auth, 'content-type': 'application/json' }, body: JSON.stringify(body) }))
 
 describe('REST host', () => {

@@ -2,6 +2,7 @@
 // The owner turns a deck's link on and off (?id=); anyone with the link reads the deck (?s=), and only its slides and look.
 import type { UserFrom } from './auth.js'
 import type { Db } from './db.js'
+import { refusedDeck } from './decks.js'
 
 const ID = /^[\w-]{1,64}$/
 
@@ -34,7 +35,8 @@ export function shareHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (!id || !ID.test(id)) return Response.json({ error: 'No such deck.' }, { status: 404 })
     const on = request.method === 'POST' ? true : request.method === 'DELETE' ? false : request.method === 'GET' ? undefined : null
     if (on === null) return Response.json({ error: 'method not allowed' }, { status: 405 })
+    await db.ensureWorkspace(user)
     const share = await db.shareDeck(user.id, id, on)
-    return share === undefined ? Response.json({ error: 'No such deck.' }, { status: 404 }) : Response.json({ share })
+    return share === undefined ? refusedDeck(db, user.id, id) : Response.json({ share })
   }
 }

@@ -202,7 +202,7 @@ exists (select 1 from members m where m.workspace_id = decks.workspace_id and m.
 - [x] **Step 4: Run** the SQL suite, then `npm test` and `npm run build`. Expected: PASS.
 - [x] **Step 5: Commit.** Message: "Workspaces in Postgres: membership checked in every query; existing decks move to their owner's personal workspace".
 
-### Task 4: The workspaces API, and the decks and docs APIs by workspace
+### Task 4: The workspaces API, and the decks and docs APIs by workspace (done)
 
 **Files:**
 - Create: `api/_lib/workspaces.ts` (`workspacesHandler`), `api/workspaces.ts`, `api/_lib/docs.ts` (`docsHandler`), `api/docs.ts`
@@ -232,7 +232,7 @@ Answers:
 - `wrong_email` gets 403: "This invite is for another email. Sign in as {email} to accept it."
 - `gone` gets 410: "This invite expired or was taken back."
 
-- [ ] **Step 1: Write the failing tests** (`api-workspaces.test.ts`). The headline test, `'two people share a workspace; the viewer can't edit'`:
+- [x] **Step 1: Write the failing tests** (`api-workspaces.test.ts`). The headline test, `'two people share a workspace; the viewer can't edit'`:
   1. Ann saves a deck, and it lists under her personal workspace.
   2. She invites bob as an editor and cy as a viewer. Both accept by token.
   3. Bob lists, opens and saves the deck (200).
@@ -240,10 +240,10 @@ Answers:
   5. A fourth user, dee, gets 404 on all of it.
 
   Then one test per row of the table: refused cases, the last owner, invite edge cases, and agent keys (`via: 'key'`) refused on POST, members and invite routes, because keys act on decks, not on who's in a workspace.
-- [ ] **Step 2: Run them.** Expected: FAIL.
-- [ ] **Step 3: Implement the handlers.** The invite token is `shareToken()`. `docsHandler` mirrors `decksHandler`'s list, get, put (rev, 409) and delete, and nothing more.
-- [ ] **Step 4: Run** `npm test`. Expected: PASS, including the old `never shows, overwrites or deletes another user's deck` test.
-- [ ] **Step 5: Commit.** Message: "Workspaces API: members, roles and invite links; decks and docs listed by workspace; viewers refused writes".
+- [x] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 3: Implement the handlers.** The invite token is `shareToken()`. `docsHandler` mirrors `decksHandler`'s list, get, put (rev, 409) and delete, and nothing more.
+- [x] **Step 4: Run** `npm test`. Expected: PASS, including the old `never shows, overwrites or deletes another user's deck` test.
+- [x] **Step 5: Commit.** Message: "Workspaces API: members, roles and invite links; decks and docs listed by workspace; viewers refused writes".
 
 ### Task 5: Agent tools across workspaces
 

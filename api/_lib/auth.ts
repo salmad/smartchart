@@ -4,8 +4,9 @@ import { handleAuthProxyRequest } from '@neondatabase/auth/server'
 import { getDb } from './db.js'
 import { bearerUser } from './keys.js'
 
-/** `via` is how they signed in: a browser session, or an agent key (which can act on decks but not manage keys). */
-export interface User { id: string; email: string; via: 'session' | 'key' }
+/** `via` is how they signed in: a browser session, or an agent key (which can act on decks but not manage keys or
+    members). `name` is their Neon Auth name, or '' (an agent key stores none). */
+export interface User { id: string; email: string; name: string; via: 'session' | 'key' }
 
 /** Null when accounts are not configured (no Neon Auth URL or cookie secret). */
 export function authConfig(): { baseUrl: string; cookieSecret: string; sameSite: 'lax' } | null {
@@ -44,6 +45,6 @@ export function sessionUser(body: unknown): User | null {
   if (!body || typeof body !== 'object' || !('user' in body)) return null
   const u = (body as { user: unknown }).user
   if (!u || typeof u !== 'object') return null
-  const { id, email } = u as { id?: unknown; email?: unknown }
-  return typeof id === 'string' && id ? { id, email: typeof email === 'string' ? email : '', via: 'session' } : null
+  const { id, email, name } = u as { id?: unknown; email?: unknown; name?: unknown }
+  return typeof id === 'string' && id ? { id, email: typeof email === 'string' ? email : '', name: typeof name === 'string' ? name.trim() : '', via: 'session' } : null
 }
