@@ -9,10 +9,9 @@ signInAsDev()
 const load = (page: Page, slides: object[]) => page.evaluate((s) => window.__journey?.load(s, 'consulting'), slides as Slide[])
 async function boot(page: Page) {
   await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
-  const health = page.waitForResponse('**/api/health')
   await page.goto('/new')
   await page.waitForFunction(() => window.__journey)
-  await health
+  await page.waitForFunction(() => window.__journey?.booted)
   await page.waitForTimeout(150)
 }
 const title = 'SMEs choose Acme because it solves three problems their bank leaves open for years on end'

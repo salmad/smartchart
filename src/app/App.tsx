@@ -67,7 +67,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   const author = useRef<SaveMeta | null>(null)
   // Counts saves that landed, so the Versions panel knows to read the list again.
   const [saves, setSaves] = useState(0)
-  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
+  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [healthKnown, setHealthKnown] = useState(false), [loaded, setLoaded] = useState(false)
   // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
   // laptop-width window, where the slide needs the room, until the maker opens them.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
@@ -126,10 +126,10 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       const id = route.name === 'deck' ? route.id : recent?.id
       const wanted = id ? await findDeck(id, repo, backup) : null
       setLoaded(true)
+      // Whether the models are up does not hold the deck back: the composer waits for the answer, the slides do not.
+      const health = fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()).then((j: { live?: unknown }) => !!j.live).catch(() => false)
+      void health.then((live) => { app.dispatch({ type: 'set', patch: { live } }); setHealthKnown(true) })
       await document.fonts.ready
-      let live = false
-      try { live = !!((await (await fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) })).json()) as { live?: unknown }).live } catch { /* offline */ }
-      app.dispatch({ type: 'set', patch: { live } })
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
@@ -139,7 +139,8 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       // A prompt typed on the site sets the style picked there, and builds the first slide when the models are up.
       const pending = parsePending(takePendingPrompt())
       if (pending) app.dispatch({ type: 'set', patch: { style: pending.style } })
-      if (pending && live && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
+      // Only a prompt waiting to be sent needs the answer first.
+      if (pending && (await health) && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
     })()
   }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready])
 
@@ -217,7 +218,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     app.dispatch({ type: 'set', patch: { style, history: [], working: new Set(), items, current: 0, view: 'editor' } })
   }, [app])
 
-  useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
+  useEffect(() => installDebug({ booted, live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
   // The presentation opens in its own tab and follows this deck as it is edited.
   const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
@@ -296,7 +297,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} /></Suspense>
         : route.name === 'doc'
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} /></Suspense>
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
+        : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
       {printing && <Suspense fallback={null}><PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} /></Suspense>}

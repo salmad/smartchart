@@ -11,12 +11,11 @@ const load = (page: Page, slides: object[], style: Style = 'consulting') =>
   page.evaluate(([s, st]) => window.__journey?.load(s, st), [slides as Slide[], style] as const)
 
 async function boot(page: Page, path = '/new') {
-  // Boot ends when the health check answers, and a deck loaded before then is replaced by the fresh one boot starts.
+  // A deck loaded before boot ends is replaced by the fresh one boot starts.
   await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
-  const health = page.waitForResponse('**/api/health')
   await page.goto(path)
   await page.waitForFunction(() => window.__journey)
-  await health
+  await page.waitForFunction(() => window.__journey?.booted)
   await page.waitForTimeout(150)
 }
 
