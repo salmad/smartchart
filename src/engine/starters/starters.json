@@ -3126,5 +3126,280 @@
     "Guidance from the [FCA](https://www.fca.org.uk), [DNB](https://www.dnb.nl/en) and [the EBA](https://www.eba.europa.eu); Finbridge counsel's notes of October 2026."
    ]
   }
+ ],
+ "blocks": [
+  {
+   "id": "chart",
+   "kind": "chart",
+   "label": "Chart",
+   "blurb": "Bars or lines over categories or time",
+   "body": {
+    "caption": "SME card revenue, 2022–2026 · £m",
+    "chart": {
+     "categories": [
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+      "2026"
+     ],
+     "format": "£{v}m",
+     "series": [
+      {
+       "name": "Revolut Business",
+       "mark": "bar",
+       "color": "focus",
+       "values": [
+        190,
+        280,
+        390,
+        520,
+        640
+       ]
+      }
+     ]
+    },
+    "source": "Company filings; Finbridge estimates (illustrative)."
+   }
+  },
+  {
+   "id": "table",
+   "kind": "table",
+   "label": "Table",
+   "blurb": "Exact figures in rows and columns",
+   "body": {
+    "caption": "SME card issuers · published terms, October 2026",
+    "table": {
+     "columns": [
+      {
+       "label": "Issuer"
+      },
+      {
+       "label": "Limit"
+      },
+      {
+       "label": "Approval"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Revolut Business",
+        "£50k",
+        "Minutes"
+       ]
+      },
+      {
+       "cells": [
+        "Tide",
+        "£10k",
+        "Same day"
+       ]
+      },
+      {
+       "cells": [
+        "Capital on Tap",
+        "£100k",
+        "2 days"
+       ]
+      },
+      {
+       "cells": [
+        "Finbridge",
+        "£100k",
+        "Same day"
+       ],
+       "focus": true
+      }
+     ]
+    },
+    "source": "Issuer websites, October 2026."
+   }
+  },
+  {
+   "id": "number",
+   "kind": "number",
+   "label": "Key number",
+   "blurb": "One figure to land, with its meaning",
+   "body": {
+    "caption": "The opening in one number",
+    "number": {
+     "value": "£1.4bn",
+     "caption": "of SME card spend sits with issuers that cap limits at the balance held."
+    },
+    "source": "Finbridge market model (illustrative)."
+   }
+  },
+  {
+   "id": "cards",
+   "kind": "cards",
+   "label": "Cards",
+   "blurb": "Three options or findings side by side",
+   "body": {
+    "caption": "Three issuers, three positions",
+    "cards": [
+     {
+      "value": "4.3×",
+      "title": "Revolut Business",
+      "bullets": [
+       "Card revenue growth in four years",
+       "Lends little against revenue"
+      ]
+     },
+     {
+      "value": "£10k",
+      "tone": "focus",
+      "title": "Tide",
+      "bullets": [
+       "Typical limit, bundled with the account",
+       "Free account drives volume"
+      ]
+     },
+     {
+      "value": "£100k",
+      "title": "Capital on Tap",
+      "bullets": [
+       "Highest limit in the group",
+       "No business account"
+      ]
+     }
+    ],
+    "source": "Company filings; issuer websites, October 2026."
+   }
+  },
+  {
+   "id": "steps",
+   "kind": "steps",
+   "label": "Steps",
+   "blurb": "A sequence over time or in order",
+   "body": {
+    "caption": "From interviews to a priced limit",
+    "steps": [
+     {
+      "when": "Week 1",
+      "title": "Interview",
+      "text": "Twelve SME finance leads who left an issuer this year."
+     },
+     {
+      "when": "Week 3",
+      "title": "Price",
+      "text": "A limit that grows with monthly revenue.",
+      "focus": true
+     },
+     {
+      "when": "Week 6",
+      "title": "Test",
+      "text": "Approval flow under one day, end to end."
+     }
+    ],
+    "source": "Finbridge research plan."
+   }
+  },
+  {
+   "id": "summary",
+   "kind": "summary",
+   "label": "Summary",
+   "blurb": "Three points that carry the argument",
+   "body": {
+    "caption": "What the research shows",
+    "points": [
+     {
+      "title": "Growth sits with account owners",
+      "text": "Revolut Business grew card revenue 4.3× in four years."
+     },
+     {
+      "title": "Limits are the gap",
+      "text": "No issuer pairs a real limit with approval in a day."
+     },
+     {
+      "title": "Rewards do not decide",
+      "text": "SMEs rank limit and approval above rewards."
+     }
+    ],
+    "source": "Company filings; Finbridge estimates (illustrative)."
+   }
+  },
+  {
+   "id": "pair",
+   "kind": "pair",
+   "label": "Pair",
+   "blurb": "A chart beside a table, one story",
+   "body": {
+    "caption": "Growth and terms side by side",
+    "halves": [
+     {
+      "caption": "SME card revenue · £m",
+      "chart": {
+       "categories": [
+        "2022",
+        "2023",
+        "2024",
+        "2025",
+        "2026"
+       ],
+       "format": "£{v}m",
+       "series": [
+        {
+         "name": "Revolut Business",
+         "mark": "bar",
+         "color": "focus",
+         "values": [
+          190,
+          280,
+          390,
+          520,
+          640
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "caption": "Published terms",
+      "table": {
+       "columns": [
+        {
+         "label": "Issuer"
+        },
+        {
+         "label": "Limit"
+        }
+       ],
+       "rows": [
+        {
+         "cells": [
+          "Revolut Business",
+          "£50k"
+         ]
+        },
+        {
+         "cells": [
+          "Tide",
+          "£10k"
+         ]
+        },
+        {
+         "cells": [
+          "Capital on Tap",
+          "£100k"
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "source": "Company filings; Finbridge estimates (illustrative)."
+   }
+  },
+  {
+   "id": "callout",
+   "kind": "callout",
+   "label": "Callout",
+   "blurb": "A note set apart from the text",
+   "body": {
+    "tone": "note",
+    "text": "Scores here come from published terms only; issuers may price differently once an application is made."
+   }
+  }
  ]
 }

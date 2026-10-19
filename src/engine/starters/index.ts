@@ -5,7 +5,8 @@ import type { Slide, Style } from '../types.js'
 import data from './starters.json' with { type: 'json' }
 import { parseDoc } from '../docs/parse.js'
 import { validateDoc } from '../docs/validate.js'
-import type { Doc } from '../docs/types.js'
+import type { Doc, FigureBody, FigureKind } from '../docs/types.js'
+import { FIGURE_KINDS } from '../docs/types.js'
 
 /** Starters are grouped by what the slide has to do for the person making it, not by what it is drawn with. */
 export type Group = 'trend' | 'change' | 'compare' | 'number' | 'case' | 'plan' | 'open'
@@ -38,4 +39,12 @@ export const starterDoc = (s: DocStarter): Doc => parseDoc(s.markdown.join('\n')
 for (const s of DOC_STARTERS) {
   const { doc, errors } = parseDoc(s.markdown.join('\n')), all = [...errors, ...validateDoc(doc).errors]
   if (all.length) throw new Error(`starters.json (doc ${s.id}): ${all.join('; ')}`)
+}
+
+/** A figure starter: what the slash menu inserts. The body is the figure's JSON, as in a doc file. */
+export interface BlockStarter { id: string; kind: FigureKind; label: string; blurb: string; body: FigureBody }
+export const BLOCK_STARTERS: readonly BlockStarter[] = data.blocks as unknown as BlockStarter[]
+for (const s of BLOCK_STARTERS) {
+  const errors = FIGURE_KINDS.includes(s.kind) ? validateDoc({ title: 'x', blocks: [{ type: 'figure', kind: s.kind, id: 'f', body: s.body }] }).errors : [`unknown kind ${s.kind}`]
+  if (errors.length) throw new Error(`starters.json (block ${s.id}): ${errors.join('; ')}`)
 }
