@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { App } from './App'
 import { useSession } from './auth'
 import { Shared } from './components/Shared'
+import { Invite } from './components/Invite'
 import { SignIn } from './components/SignIn'
 import { Site } from './components/landing/Site'
 import { devAccount } from './dev-account'
@@ -29,6 +30,7 @@ export function Root() {
   const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
+  const joined = useCallback(() => go('/', { replace: true }), [])
 
   // A deck shared by link is for anyone who has it: no session needed, nothing of the viewer's own is shown.
   if (route.name === 'shared') return <Shared token={route.token} />
@@ -49,6 +51,8 @@ export function Root() {
     )
   }
   if (route.name === 'site') return <Site signedIn onSignIn={() => go('/')} />
+  // An invite link: accepted as this account, then the app opens on its workspace.
+  if (route.name === 'invite') return <Invite token={route.token} repo={workspaces} onJoined={joined} />
   // Keyed by account, not by deck: a new deck's URL becoming /d/:id after its first save must not restart it.
   return (
     <>

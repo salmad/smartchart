@@ -6,6 +6,7 @@ import type { WorkspaceRepo } from '@/app/workspaces'
 import { DeleteDeck } from '../DeleteDeck'
 import { ago } from './ago'
 import { ItemList, type ListRow } from './ItemList'
+import { Members } from './Members'
 import { NewDoc } from './NewDoc'
 import { RenameItem } from './RenameItem'
 import type { WorkspaceState } from './useWorkspace'
@@ -21,6 +22,8 @@ interface Props {
   onOpenDoc: (id: string) => void; onDocDeleted: (id: string) => void
   /** The open deck is renamed through the editor, so its live state and its next save agree. */
   onRenameOpenDeck: (name: string) => void
+  /** The signed-in user's id, for their own row in Members. */
+  me: string
 }
 
 type Kind = 'deck' | 'doc'
@@ -29,12 +32,13 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its docs and its decks, newest
     first. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens. */
-export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onRenameOpenDeck }: Props) {
+export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onRenameOpenDeck, me }: Props) {
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [decks, setDecks] = useState<ListRow[] | null>(null), [docs, setDocs] = useState<ListRow[] | null>(null)
   const [failed, setFailed] = useState<Record<Kind, boolean>>({ deck: false, doc: false })
   const [renaming, setRenaming] = useState<{ kind: Kind | 'workspace'; row?: ListRow } | null>(null)
   const [doomed, setDoomed] = useState<{ kind: Kind; row: ListRow } | null>(null), [making, setMaking] = useState(false)
+  const [members, setMembers] = useState(false)
 
   // Without a workspace (the list failed, or a server without them), every deck the user can open is listed, and no docs.
   const loaded = ws.list !== null
@@ -113,7 +117,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
     <nav aria-label="Workspace" className="flex w-[248px] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
       <div className="h-12 px-2 pb-1 pt-2">
         {ws.current && <WorkspaceSwitcher list={ws.list} current={ws.current} busy={busy} onSwitch={(id) => void switchTo(id)}
-          onNew={() => setRenaming({ kind: 'workspace' })} onMembers={null} />}
+          onNew={() => setRenaming({ kind: 'workspace' })} onMembers={() => setMembers(true)} />}
       </div>
       <div className="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto pb-4">
         {(wsId || !loaded) && <ItemList title="Docs" rows={wsId ? docs : null} error={failed.doc} current={open.doc} canWrite={canWrite} busy={busy}
@@ -128,6 +132,9 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
         onSubmit={rename} onClose={() => setRenaming(null)} />
       <DeleteDeck name={doomed?.row.name ?? null} what={doomed?.kind ?? 'deck'} onCancel={() => setDoomed(null)} onConfirm={() => void remove()} />
       <NewDoc open={making} onCreate={createDoc} onClose={() => setMaking(false)} />
+      {/* Leaving opens the most recently used workspace that is left. */}
+      <Members workspace={members ? ws.current : null} repo={repos.workspaces} me={me} onClose={() => setMembers(false)}
+        onLeft={() => { setMembers(false); void ws.reload().then(onNewDeck) }} />
     </nav>
   )
 }

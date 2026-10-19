@@ -313,7 +313,7 @@ The design follows the existing sidebar's tokens and type: 248 px wide, mono sec
 - [x] **Step 5: Look at it** at 1440 px and 900 px, in ink and paper app themes. Write a short critique in `docs/temp/apple-bar-review.md`, and fix anything below the bar before committing.
 - [x] **Step 6: Commit.** Message: "A workspace sidebar: switch workspaces, docs and decks newest first, hide it with ⌘\\".
 
-### Task 8: Members, invites and the viewer's view
+### Task 8: Members, invites and the viewer's view (done)
 
 **Files:**
 - Create:
@@ -323,16 +323,16 @@ The design follows the existing sidebar's tokens and type: 248 px wide, mono sec
 - Modify: `App.tsx` and `Root.tsx`, to pick `ViewDeck` when `role === 'viewer'`, and to route `invite`.
 - Test: `tests/browser/workspace.spec.ts` (with the API mocked through `page.route`, since the browser tests run without a database).
 
-- [ ] **Step 1: Write the failing tests:**
+- [x] **Step 1: Write the failing tests:**
   - with `/api/workspaces` and `/api/decks` mocked as a viewer, opening `/d/d_1` shows the slides and "View only", with no composer, no edit affordances on hover, and no "Delete deck…";
   - with the members API mocked, the owner's Members dialog lists two members, and inviting shows a copyable `/i/…` link;
   - `/i/tok` with a mocked accept goes to `/` and selects the workspace;
   - a mocked 403 on save shows the viewer sentence.
-- [ ] **Step 2: Run them.** Expected: FAIL.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run** `npm run lint && npm run build && npm test && npm run test:browser`. Expected: PASS.
-- [ ] **Step 5: Look at it.** Check the Members dialog and the view-only deck in both app themes. Critique, then fix.
-- [ ] **Step 6: Commit.** Message: "Members and invite links; a viewer reads a deck and cannot edit it".
+- [x] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run** `npm run lint && npm run build && npm test && npm run test:browser`. Expected: PASS.
+- [x] **Step 5: Look at it.** Check the Members dialog and the view-only deck in both app themes. Critique, then fix.
+- [x] **Step 6: Commit.** Message: "Members and invite links; a viewer reads a deck and cannot edit it".
 
 ### Task 9: Done-when, docs and the spec
 

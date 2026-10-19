@@ -9,7 +9,7 @@ interface Props {
   busy: boolean
   onSwitch: (id: string) => void
   onNew: () => void
-  /** Owners manage members (Task 8 fills this in); null hides it. */
+  /** Who is in the workspace (owners manage them there); null hides it. */
   onMembers: (() => void) | null
 }
 

@@ -82,7 +82,6 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
         }
         const said = ((await r.json().catch(() => null)) as { error?: unknown } | null)?.error
         console.warn('deck save failed', r.status, said)
-        if (r.status === 403 && typeof said === 'string') return said
         return SAVE_FAILED[r.status] ?? `The server answered ${r.status}${typeof said === 'string' ? `: ${said}` : '.'}`
       } catch { return 'You’re offline, or the server can’t be reached.' }
     }),

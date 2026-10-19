@@ -1,20 +1,18 @@
 /* A deck shared by link, for the room: every slide full width, top to bottom, and Present for the meeting.
    Open to anyone with the link, signed in or not; it always shows the deck as last saved. */
-import { slideLinkOf } from '@/app/slide-link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { contexts } from '@/engine/slides/render'
 import { loadShared, type Shared as SharedDeck } from '@/app/share'
 import { Button } from './ui/button'
 import { newLiveKey, openPresentation, usePublishDeck } from '@/app/presenter-channel'
 import { PrintDeck, pdfName } from './PrintDeck'
-import { SlideView } from './SlideView'
+import { ReadSlides, type ReadSlidesHandle } from './ReadSlides'
 
 type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { state: 'ready'; shared: SharedDeck }
 
 export function Shared({ token }: { token: string }) {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [printing, setPrinting] = useState(false), liveKey = useMemo(newLiveKey, [])
-  const slideRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const slides = useRef<ReadSlidesHandle>(null)
   usePublishDeck(load.state === 'ready' ? load.shared.deck : null, liveKey)
 
   useEffect(() => {
@@ -27,9 +25,8 @@ export function Shared({ token }: { token: string }) {
   const wanted = new URLSearchParams(location.search).get('slide')
   useEffect(() => {
     if (load.state !== 'ready' || !wanted) return
-    const i = load.shared.ids.indexOf(wanted)
-    if (i >= 0) requestAnimationFrame(() => slideRefs.current[i]?.scrollIntoView({ block: 'center' }))
-  }, [load.state, wanted])  // eslint-disable-line react-hooks/exhaustive-deps -- once, when the deck first loads
+    requestAnimationFrame(() => slides.current?.show(wanted))
+  }, [load.state, wanted]) // once, when the deck first loads
 
   // A shared deck is for whoever has the link, not for search results.
   useEffect(() => {
@@ -49,7 +46,7 @@ export function Shared({ token }: { token: string }) {
 
   if (load.state === 'loading') return <div className="h-full bg-app-bg" />
   if (load.state !== 'ready') return <Gone error={load.state === 'error'} />
-  const { deck } = load.shared, ctx = contexts(deck)
+  const { deck } = load.shared
 
   const present = (from: number) => openPresentation(liveKey, from)
   return (
@@ -61,19 +58,7 @@ export function Shared({ token }: { token: string }) {
         {deck.slides.length > 0 && <Button variant="outline" onClick={() => setPrinting(true)} title="Download PDF (⌘P)">PDF</Button>}
         {deck.slides.length > 0 && <Button onClick={() => present(0)} title="Present in its own tab. In it, P opens the presenter view.">Present</Button>}
       </header>
-      <main data-links className="mx-auto grid w-full max-w-[1200px] gap-8 px-8 pb-16 pt-10 max-[900px]:gap-4 max-[900px]:px-4 max-[900px]:pb-10 max-[900px]:pt-4">
-        {deck.slides.map((slide, i) => (
-          <button key={i} ref={(el) => { slideRefs.current[i] = el }} type="button" onClick={(e) => {
-            const to = slideLinkOf(e.target)
-            if (to) { e.preventDefault(); slideRefs.current[load.shared.ids.indexOf(to)]?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return }
-            if (!(e.target as Element).closest('a')) present(i)
-          }} aria-label={`Present from slide ${i + 1}`}
-            className="relative mx-auto block aspect-video w-[min(100%,calc((100vh_-_56px_-_64px)*16/9))] cursor-zoom-in overflow-hidden rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] outline-none focus-visible:shadow-[0_0_0_2px_theme(colors.ink-3)] max-[900px]:w-full max-[900px]:rounded-lg">
-            <SlideView slide={slide} deck={deck} ctx={ctx[i]} className="absolute inset-0" />
-          </button>
-        ))}
-        {deck.slides.length === 0 && <p className="py-24 text-center text-ink-3">This deck has no slides yet.</p>}
-      </main>
+      <ReadSlides ref={slides} deck={deck} ids={load.shared.ids} onPresent={present} />
       {printing && <PrintDeck deck={deck} name={pdfName(load.shared.name)} onDone={() => setPrinting(false)} />}
       <footer className="border-t border-line py-6 text-center text-[12.5px] text-ink-3">
         Made with <a href="/home" className="text-ink-2 underline decoration-line-2 underline-offset-4 hover:text-ink">Occam</a>

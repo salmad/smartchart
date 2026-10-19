@@ -31,6 +31,7 @@ import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import { DocScreen } from './components/DocScreen'
+import { ViewDeck } from './components/ViewDeck'
 import type { DocRepo } from './docs'
 import type { WorkspaceRepo } from './workspaces'
 import { ROOMY, usePanel } from './panel'
@@ -93,9 +94,12 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   const savedKey = useRef<string | null>(null)
   const unsaved = (d: SavedDeck) => editKey(d) !== savedKey.current
   // A new deck asks its question in the chat, so the chat starts empty.
-  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null }, [app])
+  // A deck opened by a viewer of its workspace is read, never written: no chat, no edits, no saves.
+  const [viewOnly, setViewOnly] = useState(false)
+  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null; setViewOnly(false) }, [app])
   const openDeck = useCallback((d: SavedDeck) => {
     turns.current = []
+    setViewOnly(repo.role?.(d.id) === 'viewer')
     app.dispatch({ type: 'open', deck: d })
     // Rule checks re-run with the current code, on slides upgraded to the current schema.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
@@ -106,7 +110,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)
-  }, [app, measurer, say])
+  }, [app, measurer, say, repo])
 
   // Boot: the deck in the URL (nothing is saved before it is loaded, so an early pick cannot overwrite it),
   // then fonts (slides measure text) and whether the models are reachable.
@@ -149,7 +153,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
 
   // Save 250 ms after the last change, never mid-turn.
   useEffect(() => {
-    if (!loaded || s.busy || !s.deckId) return
+    if (!loaded || s.busy || !s.deckId || viewOnly) return
     const t = setTimeout(() => {
       const saved = toSaved(app.getState())
       if (!saved) return
@@ -158,7 +162,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       if (unsaved(saved)) void persist(saved)
     }, config.saveDelayMs)
     return () => clearTimeout(t)
-  }, [s, loaded, app, persist, route.name])
+  }, [s, loaded, app, persist, route.name, viewOnly])
 
   usePresence(repo, s.deckId, s.busy, s.editing)
 
@@ -278,11 +282,14 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, workspaces }} busy={locked(s)}
     open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }, doc: route.name === 'doc' ? route.id : null }}
     onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={() => leaveTo('/new')} onDeckDeleted={onDeckDeleted}
-    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onRenameOpenDeck={bar.onRename} />
+    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onRenameOpenDeck={bar.onRename} me={account.id} />
 
   return (
     <TooltipProvider delayDuration={400}>
-      {route.name === 'doc'
+      {route.name !== 'doc' && viewOnly
+        ? <ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
+          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} />
+        : route.name === 'doc'
         ? <DocScreen id={route.id} docs={docs} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} />
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}

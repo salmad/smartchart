@@ -2,7 +2,7 @@
    goes once a save succeeds. One chat warning per run of failures, saying why. */
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react'
 import { config } from './config'
-import { STALE } from './remote'
+import { STALE, VIEW_ONLY } from './remote'
 import { editKey, toSaved } from './state'
 import type { DeckRepo, SaveMeta, SavedDeck } from './store'
 import type { AppStore } from './useAppState'
@@ -43,6 +43,8 @@ export function usePersist({ app, repo, backup, syncNow, author, savedKey, onSav
     // The deck was changed elsewhere: read it, merge by slide id and save the merge (the autosave does that once the
     // state changes). Not copied to this browser, where the copy would win over the newer deck the next time this one is opened.
     if (why === STALE) { void syncNow(); return }
+    // The user may only view this deck now (their role changed, or a stale tab): say so once; a copy or a retry can't help.
+    if (why === VIEW_ONLY) { if (!warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: `Couldn’t save. ${why}` } }) } return }
     if (!warned.current) { warned.current = true; app.dispatch({ type: 'message', message: { kind: 'error', text: backup ? notSaved(why) : `Couldn’t save. ${why}` } }) }
     if (!backup) return
     void backup.save(deck)
