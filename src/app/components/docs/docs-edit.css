@@ -16,3 +16,19 @@
 .doc-editing .doc-body > .doc-sec:first-child > h2 { margin-top: 0; }
 /* The block being dragged stays in place, faded, until it lands. */
 .doc-editing [data-dragging] { opacity: .35; }
+/* A figure open in place: the slide's edit surface over the figure as read, its box as tall as the figure (set from code
+   as --fig-h), with Done and Discard under it. The figure inside keeps no page margin: the slot it sits in has it. */
+.doc-editing [data-figure-open] .doc-fig { margin: 0; }
+.fig-edit-box { position: relative; height: var(--fig-h, 320px); }
+/* Open: a thin bar in the page's focus colour in the left margin. Not a frame: the item buttons sit just past the
+   figure's right edge, and a frame would cut them; the canvas is opaque, so a wash would show only around it. */
+.fig-edit-box::before { content: ""; position: absolute; top: 0; bottom: 0; left: -8px; width: 2px; border-radius: 1px; background: var(--focus); pointer-events: none; }
+.fig-edit-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.fig-edit-why { margin-right: auto; font-size: 13px; line-height: 1.4; color: var(--fg); }
+/* The slide's edit marks and controls over an open figure take the page's colours: the selection mark (light on Ink,
+   dark on Paper, as on a slide) and the small buttons as page cards. */
+.theme-ink [data-figure-edit] { --mark: 237 237 239; }
+.theme-paper [data-figure-edit] { --mark: 18 18 17; }
+[data-figure-edit] [data-editing] { --chip: var(--surface); --chip-fg: var(--fg); --chip-fg-2: var(--fg-2); --chip-fg-3: var(--muted); --chip-line: var(--line-2); --chip-hover: color-mix(in srgb, var(--fg) 6%, transparent); }
+/* A callout has its own rule on the left: a second bar beside it would read as a double line. */
+[data-figure-open][data-kind="callout"] .fig-edit-box::before { display: none; }

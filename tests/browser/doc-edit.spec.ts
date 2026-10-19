@@ -214,3 +214,73 @@ test('dragging a block by its handle reorders it, and the saved order matches', 
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
   expect((await saved(page)).text).toMatch(/First paragraph here\.\n\n- one\n- two\n\n## Plan \{#plan\}\n$/)
 })
+
+/* Task 6: a figure edits in place with the slide's own tools; Done writes it into the doc, Save writes the doc. */
+const insert = async (page: Page, what: string) => { await newLine(page); await page.keyboard.type(`/${what}`); await page.keyboard.press('Enter') }
+const sheetCell = (page: Page, r: number, c: number) => page.locator(`[role=gridcell][data-r="${r}"][data-c="${c}"]`)
+const open = async (page: Page, kind: string) => {
+  await page.locator(`.doc-editing figure[data-kind="${kind}"]`).click()
+  await expect(page.locator('[data-figure-edit] [data-editing]')).toBeVisible()
+}
+
+test('a chart opens in place: its data grid changes a value, Done draws it, Save keeps it', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await insert(page, 'chart')
+  await open(page, 'chart')
+  await page.locator('[data-figure-edit] [data-chart]').click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Edit chart data…' }).click()
+  await sheetCell(page, 0, 1).click()
+  await page.keyboard.type('999')
+  await page.keyboard.press('Enter')
+  await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
+  await page.locator('[data-figure-edit]').getByRole('button', { name: 'Done' }).click()
+  await expect(page.locator('[data-figure-edit]')).toHaveCount(0)
+  await expect(page.locator('.doc-editing figure[data-kind="chart"]')).toContainText('999')
+  await page.keyboard.press(`${mod}+s`)
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  expect((await saved(page)).text).toContain('999')
+})
+
+test('a table cell is typed into in place, and Done, Save and a reload keep it', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await insert(page, 'table')
+  await open(page, 'table')
+  const cell = page.locator('[data-figure-edit] td[data-path]').first()
+  await cell.click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' Ltd')
+  await page.locator('[data-figure-edit]').getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.locator('.doc figure[data-kind="table"] td').first()).toHaveText('Revolut Business Ltd')
+})
+
+test('⌘S with a figure open and changed saves the figure too', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await insert(page, 'table')
+  await open(page, 'table')
+  await page.locator('[data-figure-edit] td[data-path]').first().click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' Ltd')
+  await page.keyboard.press(`${mod}+s`)
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  expect((await saved(page)).text).toContain('Revolut Business Ltd')
+})
+
+test('a figure with an error is not closed by Save: the doc stays in edit and says why', async ({ page }) => {
+  await seed(page)
+  await edit(page)
+  await insert(page, 'table')
+  await open(page, 'table')
+  await page.locator('[data-figure-edit] td[data-path]').first().click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' and a name long enough that no table cell takes it, however wide the column runs on the page')
+  await page.keyboard.press(`${mod}+s`)
+  await expect(page.locator('[data-figure-edit] [role="alert"]')).toBeVisible()
+  await expect(page.locator('.doc-editing')).toBeVisible()
+  expect((await saved(page)).text).not.toContain('long enough')
+})

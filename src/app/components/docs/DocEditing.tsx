@@ -23,7 +23,8 @@ export function DocEditing({ doc, save, onDone, children }: Props) {
       if (e.isComposing || e.keyCode === 229 || edit.saving) return
       const mod = e.metaKey || e.ctrlKey
       if (mod && e.key === 's') { e.preventDefault(); void edit.save(); return }
-      if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) edit.redo(); else edit.undo() }
+      // An open figure has its own history (useEditKeys).
+      if (mod && e.key.toLowerCase() === 'z' && !edit.figure) { e.preventDefault(); if (e.shiftKey) edit.redo(); else edit.undo() }
     }
     const leave = (e: BeforeUnloadEvent) => { if (edit.dirty) e.preventDefault() }
     document.addEventListener('keydown', key); window.addEventListener('beforeunload', leave)

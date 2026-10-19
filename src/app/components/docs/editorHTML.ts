@@ -1,6 +1,6 @@
 /* The doc in edit mode as HTML: the read view's structure and classes (so the text sits where it does when read), with
    every text field editable and every block tagged with its key. Sections keep their wrapper, without the fold control
-   or contents; figures are drawn as on the page and edit in place later (Task 6). */
+   or contents; figures are drawn as on the page, and the one open in place is an empty slot the editor fills. */
 import { md } from '@/engine/components/text'
 import { blockHTML } from '@/engine/docs/render'
 import type { Keyed } from '@/engine/docs/blocks'
@@ -13,7 +13,8 @@ const field = (key: string, hint: string, item?: number) =>
 /** A paragraph's hint shows only while it is focused and empty (Task 5 adds the slash menu to it). */
 const WRITE = 'Write something'
 
-function blockEdit({ key, block: b }: Keyed, theme: Theme): string {
+function blockEdit({ key, block: b }: Keyed, theme: Theme, open: string | null): string {
+  if (key === open && b.type === 'figure') return `<div class="doc-fig" data-kind="${b.kind}" data-key="${key}" data-figure-open></div>`
   switch (b.type) {
     case 'heading': return `<h${b.level}${b.id ? ` id="${b.id}"` : ''} data-key="${key}"${field(key, b.level === 2 ? 'Heading' : 'Subheading')}>${md(b.text)}</h${b.level}>`
     case 'paragraph': return `<p data-key="${key}"${field(key, WRITE)}>${md(b.text)}</p>`
@@ -25,11 +26,11 @@ function blockEdit({ key, block: b }: Keyed, theme: Theme): string {
   }
 }
 
-export function editorHTML(d: Draft, theme: Theme): string {
+export function editorHTML(d: Draft, theme: Theme, figure: string | null = null): string {
   let body = '', open = false
   for (const k of d.blocks) {
-    if (k.block.type === 'heading' && k.block.level === 2) { body += `${open ? '</div></section>' : ''}<section class="doc-sec">${blockEdit(k, theme)}<div class="sec-body">`; open = true; continue }
-    body += blockEdit(k, theme)
+    if (k.block.type === 'heading' && k.block.level === 2) { body += `${open ? '</div></section>' : ''}<section class="doc-sec">${blockEdit(k, theme, figure)}<div class="sec-body">`; open = true; continue }
+    body += blockEdit(k, theme, figure)
   }
   if (open) body += '</div></section>'
   const head = `<header class="doc-head"><h1 class="doc-title" data-head="title"${field('', 'Title').replace(' data-field=""', '')}>${md(d.title)}</h1>`

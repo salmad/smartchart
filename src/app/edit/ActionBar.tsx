@@ -19,12 +19,12 @@ export function ActionBar({ edit, surface, deckStyle }: { edit: SlideEdit; surfa
   const place = (m: HTMLElement | null) => { if (!m) return; m.style.setProperty('--x', `${box.left - frame.left + box.width / 2}px`); m.style.setProperty('--y', `${box.top - frame.top - (edit.target.kind === 'cells' ? 30 : 8)}px`) }
   return (
     <div ref={place} role="toolbar" aria-label="Text emphasis" data-edit-chrome
-      className="absolute left-[var(--x)] top-[var(--y)] z-10 flex -translate-x-1/2 -translate-y-full gap-0.5 rounded-lg bg-raise p-1 shadow-[0_0_0_1px_theme(colors.line-2),0_8px_24px_rgba(0,0,0,.4)]">
+      className="absolute left-[var(--x)] top-[var(--y)] z-10 flex -translate-x-1/2 -translate-y-full gap-0.5 rounded-lg bg-[var(--chip)] p-1 shadow-[0_0_0_1px_var(--chip-line),0_8px_24px_rgba(0,0,0,.4)]">
       {actions.map((a) => {
         const Icon = ICON[a.id as keyof typeof ICON]
         return (
           <button key={a.id} type="button" aria-label={a.label} aria-pressed={a.checked} onMouseDown={(e) => e.preventDefault()} onClick={() => edit.apply(a.run())}
-            className="grid size-7 place-items-center rounded-md text-ink-2 hover:bg-line aria-pressed:bg-line aria-pressed:text-ink">{Icon && <Icon className="size-4" />}</button>
+            className="grid size-7 place-items-center rounded-md text-[var(--chip-fg-2)] hover:bg-[var(--chip-hover)] aria-pressed:bg-[var(--chip-hover)] aria-pressed:text-[var(--chip-fg)]">{Icon && <Icon className="size-4" />}</button>
         )
       })}
     </div>

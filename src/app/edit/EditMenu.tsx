@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import { actionsFor, type Action, type Target } from '@/engine/slides/actions'
 import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from '@/app/components/ui/context-menu'
 import type { Style } from '@/engine/types'
+import { cn } from '@/app/lib/utils'
 import { selectRange } from './fields'
 import { targetAt } from './selection'
 import type { SlideEdit } from './useSlideEdit'
@@ -26,7 +27,10 @@ function clip(slide: HTMLElement | null | undefined, t: Target, what: 'cut' | 'c
   void navigator.clipboard.readText().then((text) => { f.focus(); selectRange(f, t.from, t.to); document.execCommand('insertText', false, text.replace(/\s+/g, ' ')) }).catch(() => { /* clipboard blocked */ })
 }
 
-export function EditMenu({ edit, surface, deckStyle, onChart, children }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style; onChart: (which: number) => void; children: ReactNode }) {
+/** The menu's colours where they differ from the app's: a doc figure's menu takes its page's (docs/chrome.ts). */
+export interface MenuLook { content: string; item: string; separator: string; label: string }
+
+export function EditMenu({ edit, surface, deckStyle, onChart, look, children }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style; onChart: (which: number) => void; look?: MenuLook; children: ReactNode }) {
   const [target, setTarget] = useState<Target>({ kind: 'slide' }), [chartAt, setChartAt] = useState(0)
   const half = edit.draft.halves?.[chartAt]
   const actions = actionsFor(target, edit.draft, deckStyle)
@@ -45,12 +49,12 @@ export function EditMenu({ edit, surface, deckStyle, onChart, children }: { edit
         }}>
         <div className="absolute inset-0">{children}</div>
       </ContextMenuTrigger>
-      <ContextMenuContent data-edit-chrome className="min-w-52" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <ContextMenuContent data-edit-chrome className={cn('min-w-52', look?.content)} onCloseAutoFocus={(e) => e.preventDefault()}>
         {field && (<>
-          <ContextMenuItem onSelect={() => clip(surface?.slide, target, 'cut')} disabled={target.kind === 'text' && target.from === target.to}>Cut<ContextMenuShortcut>⌘X</ContextMenuShortcut></ContextMenuItem>
-          <ContextMenuItem onSelect={() => clip(surface?.slide, target, 'copy')} disabled={target.kind === 'text' && target.from === target.to}>Copy<ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>
-          <ContextMenuItem onSelect={() => clip(surface?.slide, target, 'paste')}>Paste<ContextMenuShortcut>⌘V</ContextMenuShortcut></ContextMenuItem>
-          {actions.length > 0 && <ContextMenuSeparator />}
+          <ContextMenuItem className={look?.item} onSelect={() => clip(surface?.slide, target, 'cut')} disabled={target.kind === 'text' && target.from === target.to}>Cut<ContextMenuShortcut>⌘X</ContextMenuShortcut></ContextMenuItem>
+          <ContextMenuItem className={look?.item} onSelect={() => clip(surface?.slide, target, 'copy')} disabled={target.kind === 'text' && target.from === target.to}>Copy<ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>
+          <ContextMenuItem className={look?.item} onSelect={() => clip(surface?.slide, target, 'paste')}>Paste<ContextMenuShortcut>⌘V</ContextMenuShortcut></ContextMenuItem>
+          {actions.length > 0 && <ContextMenuSeparator className={look?.separator} />}
         </>)}
         {GROUPS.map((g, gi) => {
           const items = actions.filter((a) => a.group === g.id)
@@ -58,16 +62,16 @@ export function EditMenu({ edit, surface, deckStyle, onChart, children }: { edit
           const before = GROUPS.slice(0, gi).some((p) => actions.some((a) => a.group === p.id))
           return (
             <div key={g.id}>
-              {before && <ContextMenuSeparator />}
-              {(g.id === 'format' || g.id === 'mark') && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">{g.label}</ContextMenuLabel>}
+              {before && <ContextMenuSeparator className={look?.separator} />}
+              {(g.id === 'format' || g.id === 'mark') && <ContextMenuLabel className={cn('text-[11px] font-normal text-ink-3', look?.label)}>{g.label}</ContextMenuLabel>}
               {items.map((a) => a.checked !== undefined
-                ? <ContextMenuCheckboxItem key={a.id} checked={a.checked} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuCheckboxItem>
-                : <ContextMenuItem key={a.id} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuItem>)}
+                ? <ContextMenuCheckboxItem className={look?.item} key={a.id} checked={a.checked} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuCheckboxItem>
+                : <ContextMenuItem className={look?.item} key={a.id} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuItem>)}
             </div>
           )
         })}
-        {(edit.draft.chart || edit.draft.table || (half && (half.chart || half.table))) && <>{actions.length > 0 && <ContextMenuSeparator />}<ContextMenuItem onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table || half?.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
-        {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && !edit.draft.halves && <ContextMenuLabel className="text-[11px] font-normal text-ink-3">Right-click a card, row, column or text</ContextMenuLabel>}
+        {(edit.draft.chart || edit.draft.table || (half && (half.chart || half.table))) && <>{actions.length > 0 && <ContextMenuSeparator className={look?.separator} />}<ContextMenuItem className={look?.item} onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table || half?.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
+        {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && !edit.draft.halves && <ContextMenuLabel className={cn('text-[11px] font-normal text-ink-3', look?.label)}>Right-click a card, row, column or text</ContextMenuLabel>}
       </ContextMenuContent>
     </ContextMenu>
   )

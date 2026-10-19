@@ -87,11 +87,11 @@ export function EditOverlay({ edit, surface, deckStyle: style, onChart, onAddPic
           {/* The strip between the item and its buttons belongs to the overlay, so the pointer never leaves it on the way. */}
           <span className="pointer-events-auto absolute left-full top-1/2 flex w-14 -translate-y-1/2 flex-col gap-1 pl-2">
             {hit.op.length > 1 && <button type="button" aria-label={`Move ${hit.op.path.split('.').at(-1)?.replace(/s$/, '')} ${hit.index + 1}`} onPointerDown={(e) => begin(e, { kind: 'item', list: hit.op.path, index: hit.index })} onMouseDown={keep}
-              className="grid size-6 cursor-grab touch-none place-items-center rounded-full bg-raise text-ink-3 shadow-[0_0_0_1px_theme(colors.line-2)] hover:text-ink active:cursor-grabbing"><GripVertical className="size-3.5" /></button>}
+              className="grid size-6 cursor-grab touch-none place-items-center rounded-full bg-[var(--chip)] text-[var(--chip-fg-3)] shadow-[0_0_0_1px_var(--chip-line)] hover:text-[var(--chip-fg)] active:cursor-grabbing"><GripVertical className="size-3.5" /></button>}
             {hit.op.length < hit.op.max && <button type="button" aria-label="Add after" onMouseDown={keep} onClick={() => (hit.op.picture ? onAddPicture(hit.op, hit.index) : edit.patch(newItem(edit.draft, style, hit.op, hit.index + 1), `${hit.op.path}[${hit.index + 1}]`))}
-              className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><Plus className="size-3.5" /></button>}
+              className="grid size-6 place-items-center rounded-full bg-[var(--chip)] text-[var(--chip-fg)] shadow-[0_0_0_1px_var(--chip-line)]"><Plus className="size-3.5" /></button>}
             {(hit.op.length > hit.op.min || !hit.op.required) && <button type="button" aria-label="Remove" onMouseDown={keep} onClick={() => { setHover(null); edit.patch(removeItem(hit.op, hit.index)) }}
-              className="grid size-6 place-items-center rounded-full bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]"><X className="size-3.5" /></button>}
+              className="grid size-6 place-items-center rounded-full bg-[var(--chip)] text-[var(--chip-fg)] shadow-[0_0_0_1px_var(--chip-line)]"><X className="size-3.5" /></button>}
           </span>
         </span>
       )}
@@ -99,7 +99,7 @@ export function EditOverlay({ edit, surface, deckStyle: style, onChart, onAddPic
       {col !== null && heads[col] && t.kind !== 'cells' && (
         <button type="button" aria-label={`Move column ${col + 1}`} onPointerDown={(e) => begin(e, { kind: 'column', index: col })} onMouseDown={keep}
           ref={(m) => { const b = boxIn(heads[col], frame); place(m, { l: b.l + b.w / 2 - 12, t: b.t - 22, w: 24, h: 18 }) }}
-          className={`${MARK} pointer-events-auto grid cursor-grab touch-none place-items-center rounded-md bg-raise text-ink-3 shadow-[0_0_0_1px_theme(colors.line-2)] hover:text-ink active:cursor-grabbing`}><GripHorizontal className="size-3.5" /></button>
+          className={`${MARK} pointer-events-auto grid cursor-grab touch-none place-items-center rounded-md bg-[var(--chip)] text-[var(--chip-fg-3)] shadow-[0_0_0_1px_var(--chip-line)] hover:text-[var(--chip-fg)] active:cursor-grabbing`}><GripHorizontal className="size-3.5" /></button>
       )}
       {selected.map((b, i) => <span key={i} ref={(m) => place(m, b)} className={`${MARK} rounded-sm bg-[rgb(var(--mark)/.1)] ring-1 ring-[rgb(var(--mark)/.5)]`} />)}
     </div>

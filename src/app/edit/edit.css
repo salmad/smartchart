@@ -5,3 +5,6 @@
 [data-editing] [data-sample] { opacity: .45; }
 /* A space typed at the end of a field must stay a space until the next character arrives. */
 [data-editing] [contenteditable] { white-space: pre-wrap; }
+/* The small controls over a slide (item buttons, grips, the emphasis bar): the app's raised chrome. A doc figure gives
+   them its page's colours instead (docs-edit.css). */
+[data-editing] { --chip: #18181B; --chip-fg: #EDEDEF; --chip-fg-2: #A1A1AA; --chip-fg-3: #71717A; --chip-line: rgba(255,255,255,.14); --chip-hover: rgba(255,255,255,.08); }
