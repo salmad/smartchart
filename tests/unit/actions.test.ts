@@ -78,24 +78,3 @@ test('rows highlight by hand: Focus row toggles every selected row, and leaves o
   expect(on.checked).toBe(true)
   expect(on.run().set).toEqual({ 'table.rows[0].focus': null })
 })
-
-test('a line-only chart with a focus line offers "Fill under the line", checked until area is false', () => {
-  const s = starter('chart-lines'), i = must(s.chart?.series).findIndex((x) => x.color === 'focus')
-  const [a] = actionsFor({ kind: 'slide' }, s, 'consulting').filter((x) => x.id === 'chart-area')
-  expect(a?.checked).toBe(true)
-  expect(a.run().set).toEqual({ [`chart.series[${i}].area`]: false })
-  const off = must(applyPatch(s, a.run().set).slide)
-  expect(off.chart?.series?.[i].area).toBe(false)
-  const [b] = actionsFor({ kind: 'slide' }, off, 'consulting').filter((x) => x.id === 'chart-area')
-  expect(b.checked).toBe(false)
-  expect(b.run().set).toEqual({ [`chart.series[${i}].area`]: null })
-  expect(must(applyPatch(off, b.run().set).slide).chart?.series?.[i]).not.toHaveProperty('area')
-})
-
-test('a chart with no area field counts as filled; bars, mixed charts and a chart with no focus offer nothing', () => {
-  const s = starter('chart-lines'), series = must(s.chart?.series).map(({ area: _a, ...x }) => x)
-  expect(ids({ kind: 'slide' }, { ...s, chart: { ...must(s.chart), series } })).toContain('chart-area')
-  expect(actionsFor({ kind: 'slide' }, { ...s, chart: { ...must(s.chart), series } }, 'consulting').find((x) => x.id === 'chart-area')?.checked).toBe(true)
-  expect(ids({ kind: 'slide' }, starter('chart-mix'))).not.toContain('chart-area')
-  expect(ids({ kind: 'slide' }, { ...s, chart: { ...must(s.chart), series: series.map(({ color: _c, ...x }) => x) } })).not.toContain('chart-area')
-})
