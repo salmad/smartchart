@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sessionUser, type User } from '../../api/_lib/auth'
 import { fakeDb } from './fake-db'
+import { seedUser } from './fakes'
 import { decksHandler } from '../../api/_lib/decks'
 import { shareHandler } from '../../api/_lib/share'
 import { modelGate } from '../../api/_lib/quota'
@@ -8,6 +9,13 @@ import { routeFor } from '../../vite/api-dev'
 
 const as = (who: User | null) => async () => who
 const ann: User = { id: 'u_ann', email: 'ann@example.com', via: 'session' }, bob: User = { id: 'u_bob', email: 'bob@example.com', via: 'session' }
+/** A Db where ann and bob each have their personal workspace, so another user's deck is out of reach by membership. */
+const seeded = async () => {
+  const db = fakeDb()
+  await seedUser(db, { ...ann, name: 'Ann' })
+  await seedUser(db, { ...bob, name: 'Bob' })
+  return db
+}
 const req = (method: string, query = '', body?: unknown) =>
   new Request(`http://x/api/decks${query}`, { method, body: body === undefined ? undefined : JSON.stringify(body) })
 /** A deck save as the app sends it: `baseRev` is the revision it read (0 for a new deck). */
@@ -29,7 +37,7 @@ describe('decks API', () => {
     expect(await (await h(req('GET'))).json()).toEqual([])
   })
   it('never shows, overwrites or deletes another user’s deck', async () => {
-    const db = fakeDb()
+    const db = await seeded()
     await decksHandler({ userFrom: as(ann), db: () => db })(put('d_1', 'Ann’s', {}))
     const h = decksHandler({ userFrom: as(bob), db: () => db })
     expect(await (await h(req('GET'))).json()).toEqual([])
@@ -37,6 +45,7 @@ describe('decks API', () => {
     expect((await h(put('d_1', 'Bob’s', {}))).status).toBe(404)
     expect((await h(req('DELETE', '?id=d_1'))).status).toBe(404)
     expect(db.rows.get('d_1')?.name).toBe('Ann’s')
+    expect(db.rows.get('d_1')?.ws).toBe(db.personalOf(ann.id))
   })
   it('refuses a save made from a stale revision and keeps the newer deck', async () => {
     const db = fakeDb(), h = decksHandler({ userFrom: as(ann), db: () => db })
@@ -51,7 +60,7 @@ describe('decks API', () => {
     expect(await (await h(req('GET', '?id=d_1'))).json()).toMatchObject({ rev: 1, chat: { history: [1] } })
   })
   it('answers 404, never 409, to a save on another user’s deck', async () => {
-    const db = fakeDb()
+    const db = await seeded()
     await decksHandler({ userFrom: as(ann), db: () => db })(put('d_1', 'Ann’s', {}))
     expect((await decksHandler({ userFrom: as(bob), db: () => db })(put('d_1', 'Bob’s', {}, 5))).status).toBe(404)
   })
@@ -95,7 +104,7 @@ describe('share API', () => {
     expect((await anyone(sreq('GET', `?s=${share}`))).status).toBe(404)
   })
   it('never shares another user’s deck, and asks a signed-out visitor to sign in to share', async () => {
-    const db = fakeDb()
+    const db = await seeded()
     await decksHandler({ userFrom: as(ann), db: () => db })(put('d_1', 'Ann’s', deck))
     const bobs = shareHandler({ userFrom: as(bob), db: () => db })
     expect((await bobs(sreq('POST', '?id=d_1'))).status).toBe(404)

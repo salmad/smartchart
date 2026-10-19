@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { fakeDb } from './fake-db'
+import { dbContract } from './db-contract'
+
+dbContract('fake', async () => fakeDb())
 
 describe('fake Db (the contract the SQL one follows)', () => {
   it('keeps a named deck’s name on later saves', async () => {
@@ -17,6 +20,7 @@ describe('fake Db (the contract the SQL one follows)', () => {
   })
   it('events since a revision', async () => {
     const db = fakeDb()
+    await db.putDeck('u', 'd_1', 'x', { items: [] }, {}, 0)
     await db.addEvents('u', 'd_1', [{ rev: 2, by: 'Claude Code', slideId: 's_a', what: 'updated', paths: ['title'] }, { rev: 3, by: 'Claude Code', slideId: 's_b', what: 'created', paths: [] }])
     expect((await db.eventsSince('u', 'd_1', 2)).map((e) => e.slideId)).toEqual(['s_b'])
   })

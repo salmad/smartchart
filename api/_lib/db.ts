@@ -3,11 +3,13 @@
 import { neon } from '@neondatabase/serverless'
 import { KEEP, type Tree, type Version, type VersionHead, type VersionMeta } from '../../src/engine/versions.js'
 import type { Slide } from '../../src/engine/types.js'
+import type { Role } from './access.js'
 
 /** `rev` counts saves; `chat` is the conversation (agent history, messages), kept apart from the slides in `data`. A deck saved before
     chats were kept apart has rev 0 and no chat; its conversation is still inside `data`. */
 export interface DeckRow { id: string; name: string; updated: number; data: unknown; chat: unknown; rev: number; named: boolean }
-/** A save is written (with the new revision), refused because the deck moved on since the revision it read, or refused as another user's. */
+/** A save is written (with the new revision), refused because the deck moved on since the revision it read, or refused because
+    the writer may not edit it (not a member, a viewer, or another user's id). */
 export type PutResult = { rev: number } | 'conflict' | 'foreign'
 /** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
 export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown; shared: boolean }
@@ -17,17 +19,52 @@ export interface Presence { busy?: { by: string; until: number }; editing?: { sl
 export interface DeckEventRow { rev: number; by: string; slideId: string | null; what: string; paths: string[]; at: number }
 export interface KeyRow { userId: string; email: string; prefix: string }
 export interface KeyInfo { id: string; prefix: string; created: number; lastUsed: number | null }
+/* Workspaces (api/_lib/access.ts has the rule): decks and docs live in one, and its members' roles decide who may do what. */
+/** `personal`: the user's own workspace, made on their first request; it can't be left. `usedAt`: when they last opened it here. */
+export interface WorkspaceRow { id: string; name: string; role: Role; personal: boolean; members: number; usedAt: number | null }
+export interface MemberRow { userId: string; email: string; name: string; role: Role }
+export interface InviteRow { token: string; email: string; role: Role; expires: number }
+/** An accepted invite gives the role the person now holds there; `gone`: expired, revoked or never made. */
+export type InviteResult = { workspaceId: string; role: Role } | 'gone' | 'wrong_email'
+export interface DocSummary { id: string; name: string; updated: number; workspaceId: string }
+/** A doc is its Markdown text. */
+export interface DocRow extends DocSummary { text: string; rev: number }
+export type DbUser = { id: string; email: string; name: string }
 export const MAX_KEYS = 5
 export const keyId = (hash: string) => hash.slice(0, 12)
 
-/** Everything the API does with the database, so tests can swap in a fake. Every call is scoped to a user. */
+/** Everything the API does with the database, so tests can swap in a fake. Every call is scoped to a user, and a deck or
+    doc call checks the user's role in its workspace: a call they may not make answers as if the deck did not exist. A deck
+    from before workspaces (no workspace yet) is its maker's alone until `ensureWorkspace` moves it. */
 export interface Db {
-  listDecks(userId: string): Promise<DeckSummary[]>
-  getDeck(userId: string, id: string): Promise<DeckRow | null>
-  /** `baseRev` is the revision the caller read (0 for a new deck); a save from an older one is a conflict. */
-  putDeck(userId: string, id: string, name: string, data: unknown, chat: object, baseRev: number, opts?: { named?: boolean }): Promise<PutResult>
+  /** The user's personal workspace, made on first call with their membership as owner; their decks with no workspace move in. */
+  ensureWorkspace(user: DbUser): Promise<string>
+  /** Most recently used first. */
+  listWorkspaces(userId: string): Promise<WorkspaceRow[]>
+  createWorkspace(userId: string, name: string): Promise<string>
+  renameWorkspace(userId: string, id: string, name: string): Promise<boolean>
+  /** Marks the workspace as the user's most recently used. */
+  touchWorkspace(userId: string, id: string): Promise<void>
+  /** Null when the user is not a member. */
+  listMembers(userId: string, id: string): Promise<MemberRow[] | null>
+  /** Changes a member's role, or removes them with null. An owner may change anyone; any member may remove themselves.
+      A workspace keeps at least one owner, and no one leaves their personal workspace. */
+  setRole(userId: string, id: string, member: string, role: Role | null): Promise<'ok' | 'last_owner' | 'denied'>
+  addInvite(userId: string, id: string, email: string, role: Role, token: string, expires: number): Promise<boolean>
+  /** Null when the user may not manage the workspace. */
+  listInvites(userId: string, id: string): Promise<InviteRow[] | null>
+  revokeInvite(userId: string, id: string, token: string): Promise<boolean>
+  /** Only for the invite's email; never lowers a role the person already holds, and accepting again changes nothing. */
+  acceptInvite(user: DbUser, token: string, now: number): Promise<InviteResult>
+  deckRole(userId: string, deckId: string): Promise<Role | null>
+  /** Without a workspace: every deck the user can read. */
+  listDecks(userId: string, workspaceId?: string): Promise<DeckSummary[]>
+  getDeck(userId: string, id: string): Promise<(DeckRow & { role: Role }) | null>
+  /** `baseRev` is the revision the caller read (0 for a new deck); a save from an older one is a conflict. A new deck goes
+      into `workspaceId` (else the writer's personal workspace) only if they may edit there; a save never moves a deck. */
+  putDeck(userId: string, id: string, name: string, data: unknown, chat: object, baseRev: number, opts?: { named?: boolean; workspaceId?: string }): Promise<PutResult>
   /** The stored name is kept when the deck was named on purpose (named = true). */
-  getDeckMeta(userId: string, id: string): Promise<{ rev: number; share: string | null; presence: Presence; named: boolean } | null>
+  getDeckMeta(userId: string, id: string): Promise<{ rev: number; share: string | null; presence: Presence; named: boolean; role: Role } | null>
   sharedRev(token: string): Promise<{ rev: number } | null>
   setPresence(userId: string, id: string, presence: Presence): Promise<boolean>
   addEvents(userId: string, id: string, events: Omit<DeckEventRow, 'at'>[]): Promise<void>
@@ -45,7 +82,7 @@ export interface Db {
   /** Counts one model call for the user today (UTC) and returns today's total. */
   countCall(userId: string): Promise<number>
   /** The deck's share link token: made with `on` when missing, dropped with `on: false`. Undefined when the deck
-      is not the user's; null when it is not shared. Without `on`, only reads it. */
+      is not the user's to share (not a member, or a viewer); null when it is not shared. Without `on`, only reads it. */
   shareDeck(userId: string, id: string, on?: boolean): Promise<string | null | undefined>
   /** A shared deck by its link token, for anyone who has the link. */
   sharedDeck(token: string): Promise<{ name: string; data: unknown; rev: number } | null>
@@ -56,6 +93,11 @@ export interface Db {
   /** Newest first. */
   listVersions(userId: string, id: string): Promise<Version[]>
   blobs(userId: string, id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>
+  /* Docs mirror decks. */
+  listDocs(userId: string, workspaceId: string): Promise<DocSummary[]>
+  getDoc(userId: string, id: string): Promise<DocRow | null>
+  putDoc(userId: string, id: string, name: string, text: string, baseRev: number, workspaceId?: string): Promise<PutResult>
+  deleteDoc(userId: string, id: string): Promise<boolean>
 }
 
 const SCHEMA = [
@@ -106,7 +148,7 @@ export function getDb(): Db | null {
       `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
          share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first
        from decks where user_id = $1 order by updated_at desc limit 200`, [u])).map((r) => ({ ...r, slides: Number(r.slides), updated: new Date(r.updated).getTime() })),
-    getDeck: async (u, id) => { const r = await q<Row>('select id, name, named, updated_at as updated, data, chat, rev from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? row(r[0]) : null },
+    getDeck: async (u, id) => { const r = await q<Row>('select id, name, named, updated_at as updated, data, chat, rev from decks where user_id = $1 and id = $2', [u, id]); return r[0] ? { ...row(r[0]), role: 'owner' } : null },
     // A deck id belongs to whoever saved it first: another user's id is never overwritten. An existing deck is
     // written only when the save carries the revision it holds.
     putDeck: async (u, id, name, data, chat, baseRev, opts = {}) => {
@@ -140,8 +182,13 @@ export function getDb(): Db | null {
       return r[0] ? r[0].share : undefined
     },
     sharedDeck: async (t) => (await q<{ name: string; data: unknown; rev: number }>('select name, data, rev from decks where share_id = $1', [t]))[0] ?? null,
-    getDeckMeta: async (u, id) => (await q<{ rev: number; share: string | null; presence: Presence; named: boolean }>(
-      'select rev, share_id as share, presence, named from decks where user_id = $1 and id = $2', [u, id]))[0] ?? null,
+    getDeckMeta: async (u, id) => { const r = (await q<{ rev: number; share: string | null; presence: Presence; named: boolean }>(
+      'select rev, share_id as share, presence, named from decks where user_id = $1 and id = $2', [u, id]))[0]; return r ? { ...r, role: 'owner' } : null },
+    deckRole: async (u, id) => (await q('select 1 from decks where user_id = $1 and id = $2', [u, id])).length ? 'owner' : null,
+    // Until workspaces reach Postgres (M3 Task 3), every deck is its maker's alone, and nothing calls these yet.
+    ensureWorkspace: later, listWorkspaces: later, createWorkspace: later, renameWorkspace: later, touchWorkspace: later, listMembers: later,
+    setRole: later, addInvite: later, listInvites: later, revokeInvite: later, acceptInvite: later,
+    listDocs: later, getDoc: later, putDoc: later, deleteDoc: later,
     sharedRev: async (t) => (await q<{ rev: number }>('select rev from decks where share_id = $1', [t]))[0] ?? null,
     setPresence: async (u, id, p) => (await q<{ id: string }>('update decks set presence = $3 where user_id = $1 and id = $2 returning id', [u, id, JSON.stringify(p)])).length > 0,
     addEvents: async (u, id, evs) => { for (const e of evs) await q('insert into deck_events (deck_id, user_id, rev, by_client, slide_id, what, paths) values ($1, $2, $3, $4, $5, $6, $7)', [id, u, e.rev, e.by, e.slideId, e.what, JSON.stringify(e.paths)]) },
@@ -185,6 +232,8 @@ export function getDb(): Db | null {
       `insert into api_rate (key, minute, calls) values ($1, $2, 1) on conflict (key, minute) do update set calls = api_rate.calls + 1 returning calls`, [key, minute]))[0].calls),
   })
 }
+
+const later = async (): Promise<never> => { throw new Error('Workspaces are not in Postgres yet.') }
 
 /** 128 random bits, URL-safe: a link nobody can guess. */
 export function shareToken(): string {

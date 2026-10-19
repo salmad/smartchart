@@ -99,7 +99,7 @@ export const isRole: (v: unknown) => v is Role
 - [x] **Step 4: Run it.** Expected: PASS.
 - [x] **Step 5: Commit.** Message: "Workspaces: one access rule, owner, editor and viewer".
 
-### Task 2: The Db contract: workspaces, members, invites, docs; deck calls by membership (fake Db)
+### Task 2: The Db contract: workspaces, members, invites, docs; deck calls by membership (fake Db) (done)
 
 **Files:**
 - Modify: `api/_lib/db.ts` (the interface and row types only; the SQL comes in Task 3), `tests/unit/fake-db.ts`
@@ -132,7 +132,7 @@ deckRole(userId: string, deckId: string): Promise<Role | null>
 ```
 
 Contract tests (`db-contract.ts`). Each test makes its own users `ann`, `bob` and `cy`.
-- [ ] **Step 1: Write the failing tests:**
+- [x] **Step 1: Write the failing tests:**
   - `'a user's first workspace is personal and holds their decks'`:
     - put two decks for ann the old way, without a workspace (the fake allows a null `workspaceId`, as old rows have);
     - call `ensureWorkspace(ann)` twice: it returns the same id both times;
@@ -155,13 +155,13 @@ Contract tests (`db-contract.ts`). Each test makes its own users `ann`, `bob` an
     - only an owner can `addInvite`.
   - `'the last owner stays'`: `setRole(ann, ws, ann, 'editor')` and removing ann both give `'last_owner'`. Once bob is an owner, both work.
   - `'docs follow the same rules'`: a short version of the member, viewer and non-member tests, run on `putDoc`, `getDoc` and `deleteDoc`.
-- [ ] **Step 2: Run them** (`npx vitest run tests/unit/db-fake.test.ts`). Expected: FAIL.
-- [ ] **Step 3: Implement the fake.**
+- [x] **Step 2: Run them** (`npx vitest run tests/unit/db-fake.test.ts`). Expected: FAIL.
+- [x] **Step 3: Implement the fake.**
   - `fakeDb()` gains `workspaces`, `members`, `invites` and `docs` maps.
   - Every deck call goes through one `role(u, wsOfDeck)` helper that uses `can()` from Task 1.
   - Fix the existing fake-db callers (`api-*.test.ts`, `deck-service.test.ts`, `mcp*.test.ts`) by giving their users a workspace through `ensureWorkspace`. Do this in one helper, `seedUser(db, user)` in `tests/unit/fakes.ts`, so the tests don't each grow setup.
-- [ ] **Step 4: Run** `npm test`. Expected: PASS, with every existing test still green.
-- [ ] **Step 5: Commit.** Message: "Workspaces: the Db contract (members, invites, docs) and a fake that keeps it".
+- [x] **Step 4: Run** `npm test`. Expected: PASS, with every existing test still green.
+- [x] **Step 5: Commit.** Message: "Workspaces: the Db contract (members, invites, docs) and a fake that keeps it".
 
 ### Task 3: The SQL Db
 

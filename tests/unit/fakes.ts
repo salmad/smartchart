@@ -1,4 +1,5 @@
-/* Test doubles for the model calls. */
+/* Test doubles for the model calls, and test users for the Db. */
+import type { Db } from "../../api/_lib/db";
 import type { AgentStepArgs, AgentStepFn, ChatMessage, JevAnswer, JevFn, JevQuestion } from "../../src/engine/agent/llm";
 
 export type FakeJev = JevFn & { calls: { state: string; questions: Record<string, JevQuestion> }[] };
@@ -35,3 +36,8 @@ export function fakeAgent(steps: Step[]): FakeAgent {
 let n = 0;
 export const toolCall = (name: string, args: unknown): ChatMessage => ({ role: "assistant", content: "", tool_calls: [{ id: `call_${++n}`, type: "function", function: { name, arguments: JSON.stringify(args) } }] });
 export const say = (content: string): ChatMessage => ({ role: "assistant", content });
+
+/* Test users for the Db: a user with their personal workspace, as the API makes on their first request. */
+export type SeedUser = { id: string; email: string; name: string };
+/** Gives the user their personal workspace and returns its id. */
+export const seedUser = (db: Pick<Db, "ensureWorkspace">, user: SeedUser): Promise<string> => db.ensureWorkspace(user);
