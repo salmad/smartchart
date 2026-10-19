@@ -171,3 +171,6 @@ Occam Docs v1 is MCP plus hand editing (spec: `docs/superpowers/specs/2026-10-19
 
 ## 22. Docs and decks: live multiplayer (2026-10-19)
 v1 keeps one writer at a time (presence, a revision on every save, a stale save refused). Live co-editing, with two people typing at once and seeing each other's cursors, needs a real-time sync layer (a CRDT such as Yjs). Brainstorm it once teams use workspaces daily.
+
+## 23. Move a deck or doc to another workspace (2026-10-19)
+M3 puts every deck and doc in exactly one workspace, and a save never moves it: a deck made in your personal workspace stays there. Next: "Move to…" in a deck's or doc's sidebar menu, listing the workspaces where you are an editor or owner. Moving needs edit rights in both places. Its versions, events and share link go with it. Members of the old workspace lose access, so the dialog says who will stop seeing it.
