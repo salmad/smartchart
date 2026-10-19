@@ -16,7 +16,10 @@ async function seed(page: Page, text = DOC) {
 }
 const saved = (page: Page) => page.evaluate(() => (JSON.parse(localStorage.getItem('smartchart.docs.v1') ?? '{}') as Record<string, { text: string; name: string }>).doc_t)
 const edit = async (page: Page) => { await page.getByRole('button', { name: 'Edit', exact: true }).click(); await expect(page.locator('.doc-editing')).toBeVisible() }
-const para = (page: Page, n = 0) => page.locator('.doc-editing p[data-field]').nth(n)
+const para = (page: Page, n = 0) => page.locator('.doc-editing .sec-body > p').nth(n)
+/** The words of the block the cursor is in. */
+const cursorIn = (page: Page) => page.evaluate(() => { const a = getSelection()?.anchorNode, el = a instanceof Element ? a : a?.parentElement; return el?.closest('p, li, h1, h2, h3, .doc-sub')?.textContent ?? null })
+const paste = (page: Page, text: string) => page.evaluate((t) => { const dt = new DataTransfer(); dt.setData('text/plain', t); document.querySelector('.ProseMirror')?.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })) }, text)
 const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
 
 test.use({ viewport: { width: 1440, height: 900 } })
@@ -42,7 +45,7 @@ test('undo takes typed words off the page and out of the saved file, and the cur
   await page.keyboard.press(`${mod}+z`)
   await expect(para(page)).toHaveText('First paragraph here.')
   await page.keyboard.type('!')
-  await expect(para(page)).toBeFocused()
+  expect(await cursorIn(page)).toBe('First paragraph here.!')
   await page.keyboard.press(`${mod}+z`)
   await page.keyboard.press(`${mod}+Shift+z`)
   await page.keyboard.press(`${mod}+s`)
@@ -58,7 +61,7 @@ test('enter splits, backspace joins, and the saved paragraph is the original', a
   for (let i = 0; i < 'First '.length; i++) await page.keyboard.press('ArrowRight')
   await page.keyboard.press('Enter')
   await expect(page.locator('.doc-editing .sec-body > p')).toHaveText(['First ', 'paragraph here.'])
-  await expect(para(page, 1)).toBeFocused()
+  expect(await cursorIn(page)).toBe('paragraph here.')
   await page.keyboard.press('Backspace')
   await expect(page.locator('.doc-editing .sec-body > p')).toHaveText(['First paragraph here.'])
   await page.keyboard.type('X')
@@ -71,12 +74,12 @@ test('enter splits, backspace joins, and the saved paragraph is the original', a
 test('enter on an empty list item ends the list', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing li[data-field]').nth(1).click()
+  await page.locator('.doc-editing li').nth(1).click()
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
-  await expect(page.locator('.doc-editing li[data-field]')).toHaveCount(3)
+  await expect(page.locator('.doc-editing li')).toHaveCount(3)
   await page.keyboard.press('Enter')
-  await expect(page.locator('.doc-editing li[data-field]')).toHaveCount(2)
+  await expect(page.locator('.doc-editing li')).toHaveCount(2)
   await page.keyboard.type('After the list.')
   await expect(page.locator('.doc-editing .sec-body > :last-child')).toHaveText('After the list.')
   await expect(page.locator('.doc-editing .sec-body > :last-child')).toHaveJSProperty('tagName', 'P')
@@ -85,18 +88,22 @@ test('enter on an empty list item ends the list', async ({ page }) => {
   expect((await saved(page)).text).toContain('- one\n- two\n\nAfter the list.\n')
 })
 
-test('a paragraph typed as "## x" stays a paragraph after reload', async ({ page }) => {
+test('"## " makes a section heading; pasted "## x" stays words and is saved escaped', async ({ page }) => {
   await seed(page)
   await edit(page)
   await para(page).click()
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
-  await page.keyboard.type('## not a heading')
+  await page.keyboard.type('## Risks')
+  await expect(page.locator('.doc-editing h2')).toHaveText(['Plan', 'Risks'])
+  await page.keyboard.press('Enter')
+  await paste(page, '## not a heading')
   await page.keyboard.press(`${mod}+s`)
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  expect((await saved(page)).text).toContain('\\## not a heading')
   await page.reload()
-  await expect(page.locator('.doc .sec-body p').nth(1)).toHaveText('## not a heading')
-  await expect(page.locator('.doc h2')).toHaveCount(1)
+  await expect(page.locator('.doc h2')).toHaveCount(2)
+  await expect(page.locator('.doc .sec-body p').filter({ hasText: '## not a heading' })).toHaveCount(1)
 })
 
 test('bold, and a link from ⌘K', async ({ page }) => {
@@ -118,7 +125,7 @@ test('bold, and a link from ⌘K', async ({ page }) => {
 test('the title is the name: editing it renames the doc', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing [data-head="title"]').click()
+  await page.locator('.doc-editing .doc-title').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' two')
   await page.keyboard.press(`${mod}+s`)
@@ -155,9 +162,16 @@ test('a viewer sees no Edit', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0)
 })
 
-/** The doc's blocks in the editor, top to bottom: their tag and first words. */
-const order = (page: Page) => page.locator('.doc-editing [data-key]').evaluateAll((els) => els.map((e) => `${e.tagName.toLowerCase()}${e instanceof HTMLElement && e.tagName === 'FIGURE' ? `:${e.dataset.kind ?? ''}` : ''} ${(e.textContent ?? '').trim().slice(0, 12)}`.trim()))
-const newLine = async (page: Page) => { await para(page).click(); await page.keyboard.press(`${mod}+ArrowRight`); await page.keyboard.press('Enter') }
+/** The doc's blocks in the editor, top to bottom: their tag and first words (a heading counts as a block of its own). */
+const order = (page: Page) => page.locator('.doc-editing .ProseMirror').evaluate((root) => {
+  const out: string[] = [], line = (e: Element) => `${e.tagName.toLowerCase()}${e.tagName === 'FIGURE' ? `:${(e as HTMLElement).dataset.kind ?? ''}` : ''} ${(e.textContent ?? '').trim().slice(0, 12)}`.trim()
+  for (const c of root.children) {
+    if (c.matches('h1, .doc-sub')) continue
+    if (c.matches('section')) { out.push(line(c.querySelector('h2') as Element)); for (const b of c.querySelector('.sec-body')?.children ?? []) out.push(line(b)) } else out.push(line(c))
+  }
+  return out
+})
+const newLine = async (page: Page) => { await para(page).click(); await page.keyboard.press('End'); await page.keyboard.press('Enter') }
 
 test('/ then table then Enter puts a table where the empty paragraph was', async ({ page }) => {
   await seed(page)
@@ -195,15 +209,15 @@ test('/ then Esc leaves the / as text; a heading from the menu is a heading', as
 test('the handle moves a block up and down, and deletes it', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing ul[data-key]').hover()
+  await page.locator('.doc-editing ul').hover()
   await page.getByRole('button', { name: 'Block menu' }).click()
   await page.getByRole('menuitem', { name: 'Move up' }).click()
   await expect.poll(() => order(page)).toEqual(['h2 Plan', 'ul onetwo', 'p First paragr'])
-  await page.locator('.doc-editing ul[data-key]').hover()
+  await page.locator('.doc-editing ul').hover()
   await page.getByRole('button', { name: 'Block menu' }).click()
   await page.getByRole('menuitem', { name: 'Delete' }).click()
   await expect.poll(() => order(page)).toEqual(['h2 Plan', 'p First paragr'])
-  await expect(para(page)).toBeFocused()
+  expect(await cursorIn(page)).toBe('First paragraph here.')
 })
 
 test('Alt+Shift+↓ moves the block with the cursor one place down', async ({ page }) => {
@@ -212,14 +226,14 @@ test('Alt+Shift+↓ moves the block with the cursor one place down', async ({ pa
   await para(page).click()
   await page.keyboard.press('Alt+Shift+ArrowDown')
   await expect.poll(() => order(page)).toEqual(['h2 Plan', 'ul onetwo', 'p First paragr'])
-  await expect(para(page)).toBeFocused()
+  expect(await cursorIn(page)).toBe('First paragraph here.')
 })
 
 test('dragging a block by its handle reorders it, and the saved order matches', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing h2[data-key]').hover()
-  const grip = page.getByRole('button', { name: 'Block menu' }), box = await grip.boundingBox(), ul = await page.locator('.doc-editing ul[data-key]').boundingBox()
+  await page.locator('.doc-editing h2').hover()
+  const grip = page.getByRole('button', { name: 'Block menu' }), box = await grip.boundingBox(), ul = await page.locator('.doc-editing ul').boundingBox()
   if (!box || !ul) throw new Error('no handle')
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()

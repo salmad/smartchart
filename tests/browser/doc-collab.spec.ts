@@ -20,7 +20,7 @@ const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
 /** Appends words to the first paragraph and saves. */
 async function append(page: Page, words: string) {
   await edit(page)
-  await page.locator('.doc-editing p[data-field]').first().click()
+  await page.locator('.doc-editing .sec-body > p').first().click()
   await page.keyboard.press('End')
   await page.keyboard.type(words)
   await page.keyboard.press(`${mod}+s`)
@@ -79,7 +79,7 @@ test('a stale save: the newer-version bar appears, and Save is refused with the 
   })
   await page.clock.runFor(16_000)
   await expect(page.getByText('saved a newer version.')).toBeVisible()
-  await page.locator('.doc-editing p[data-field]').first().click()
+  await page.locator('.doc-editing .sec-body > p').first().click()
   await page.keyboard.type('x')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('Not saved')

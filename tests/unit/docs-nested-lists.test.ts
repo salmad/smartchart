@@ -5,7 +5,7 @@ import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
 import { validateDoc } from '@/engine/docs/validate'
 import { blockHTML } from '@/engine/docs/render'
-import { tidy } from '@/engine/docs/lists'
+import { tidy } from '@/engine/docs/tidy'
 import { identify, writeText } from '@/engine/docs/ops'
 import type { Block, ListBlock } from '@/engine/docs/types'
 

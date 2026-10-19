@@ -43,8 +43,9 @@ const slot = (doc: Doc, after: string): number | string => {
   return i < 0 ? GONE(after) : i + 1
 }
 
-/** Accepts the new doc unless it adds an error the old one did not have, or would not survive saving as written. */
-function accept(before: Doc, next: Doc, ids: (d: Doc) => string[]): Edit {
+/** Why the new doc must not be written, or null: it adds an error the old one did not have, or would not survive saving as
+    written. The agent's ops and a person's Save go through the same gate; it refuses, it never rewrites. */
+export function refusal(before: Doc, next: Doc): string | null {
   let fresh: string | undefined
   try {
     const was = new Set(validateDoc(before).errors)
@@ -55,7 +56,12 @@ function accept(before: Doc, next: Doc, ids: (d: Doc) => string[]): Edit {
   }
   if (fresh) return fresh
   if (JSON.stringify(parseDoc(serializeDoc(next)).doc) !== JSON.stringify(next)) return 'That text would not survive being saved as written; rewrite it.'
-  return { doc: next, ids: ids(next) }
+  return null
+}
+
+/** Accepts the new doc unless the gate refuses it. */
+function accept(before: Doc, next: Doc, ids: (d: Doc) => string[]): Edit {
+  return refusal(before, next) ?? { doc: next, ids: ids(next) }
 }
 const idsAt = (from: number, n: number) => (d: Doc) => identify(d).slice(from, from + n).map((x) => x.id)
 

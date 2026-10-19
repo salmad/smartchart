@@ -28,7 +28,7 @@ test('creates a doc, writes a section, inserts and edits a chart and a table, an
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await expect(page.locator('.doc-editing')).toBeVisible()
   // A new section at the end: a heading from the slash menu, then a paragraph under it.
-  const last = page.locator('.doc-editing p[data-field]').last()
+  const last = page.locator('.doc-editing .sec-body > p').last()
   await last.click()
   await page.keyboard.press(`${mod}+ArrowRight`)
   await page.keyboard.press('Enter')
@@ -48,7 +48,7 @@ test('creates a doc, writes a section, inserts and edits a chart and a table, an
   await page.keyboard.type(' Ltd')
   await doneInPlace(page)
 
-  await page.locator('.doc-editing p[data-field]', { hasText: 'We start with five percent' }).click()
+  await page.locator('.doc-editing .sec-body > p', { hasText: 'We start with five percent' }).click()
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
   await page.keyboard.type('/chart')

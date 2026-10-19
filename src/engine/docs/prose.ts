@@ -56,9 +56,10 @@ export function toNode(b: Block, key: () => string): ProseNode {
   }
 }
 
-export function toProse(d: Head): ProseNode {
+/** `keyFor` names a figure's atom: a figure keeps its key across a rebuild, so the one open in place stays open. */
+export function toProse(d: Head, keyFor?: (b: Block) => string | undefined): ProseNode {
   let n = 0
-  const key = () => `f${++n}`, content: ProseNode[] = [
+  const fresh = () => `f${++n}`, content: ProseNode[] = [
     { type: 'docTitle', ...(d.title ? { content: inline(d.title) } : {}) },
     { type: 'docSubtitle', ...(d.subtitle ? { content: inline(d.subtitle) } : {}) },
   ]
@@ -67,7 +68,7 @@ export function toProse(d: Head): ProseNode {
     if (b.type === 'heading' && b.level === 2) {
       body = []
       content.push({ type: 'section', content: [{ type: 'sectionHead', attrs: { id: b.id }, ...(b.text ? { content: inline(b.text) } : {}) }, { type: 'sectionBody', content: body }] })
-    } else (body ?? content).push(toNode(b, key))
+    } else (body ?? content).push(toNode(b, () => keyFor?.(b) ?? fresh()))
   }
   return { type: 'doc', content }
 }
@@ -112,4 +113,18 @@ export function fromProse(doc: ProseNode, originals: readonly Block[] = []): Hea
     } else blocks.push(reuse(n, () => fromNode(n)))
   }
   return { title: title ? textOf(title) : '', subtitle: subtitle ? textOf(subtitle) : '', blocks }
+}
+
+const TOKENS = /\*\*.+?\*\*|\[\[.+?\]\]|\[-.+?-\]|\[\+.+?\+\]|\[[^\][]+\]\((?:https?:\/\/[^\s)]+|#[\w-]+)\)/
+
+/** The first words typed as plain text that the file would read as formatting (the format has no escape for these), or
+    null. The editor turns `**x**` and `[[x]]` into marks as they are typed; this is for the rest. */
+export function literalMarkup(doc: ProseNode): string | null {
+  const walk = (n: ProseNode): string | null => {
+    if (n.type === 'text') return !n.marks?.length && n.text && TOKENS.test(n.text) ? (n.text.match(TOKENS) as RegExpMatchArray)[0] : null
+    if (n.type === 'figure') return null
+    for (const c of n.content ?? []) { const r = walk(c); if (r) return r }
+    return null
+  }
+  return walk(doc)
 }

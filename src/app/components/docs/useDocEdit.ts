@@ -1,114 +1,124 @@
-/* The doc being edited: the draft (the truth, changed on every keystroke) and the shown draft (redrawn only on structural
-   changes: a split, a join, a new block). Blocks carry keys in memory only; Save tidies, names new headings and writes
-   the file. Typing in one field is one undo step, as in slide edit mode. */
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { keyed, unkeyed, type Keyed } from '@/engine/docs/blocks'
-import { tidy } from '@/engine/docs/lists'
+/* The doc being edited: a Tiptap editor holds the draft (the truth), Save turns it into the file. Opening a doc and
+   saving it with nothing changed writes nothing; a change goes through the same gate the doc tools use, and the gate
+   refuses with a sentence, never rewriting. One figure at a time is open in place and closes first, on Save. */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEditor, type Editor } from '@tiptap/react'
+import { Node as PMNode } from '@tiptap/pm/model'
 import { giveIds } from '@/engine/docs/parse'
+import { tidy } from '@/engine/docs/tidy'
+import { refusal } from '@/engine/docs/ops'
+import { fromProse, literalMarkup, toProse, type ProseNode } from '@/engine/docs/prose'
 import { plainOf } from '@/engine/slides/markup'
 import type { Block, Doc, FigureBody } from '@/engine/docs/types'
-
-export interface Draft { title: string; subtitle: string; blocks: Keyed[] }
-/** Where the cursor goes after a redraw: a field (a block, or one of a list's items) at a plain-text offset, or a block selected. */
-export type Focus = { key: string; item?: number; at: number } | { key: string; select: true }
-export type HeadField = 'title' | 'subtitle'
+import type { Theme } from '@/engine/types'
+import { docExtensions } from './editor'
+import { findFigure, setOpenKey, type FigureHost } from './editor/figure'
 
 export interface DocEdit {
-  draft: Draft; shown: Draft; dirty: boolean; saving: boolean; error: string | null
-  /** Typing: one block's markup (or one item's), no redraw. */
-  setText(key: string, markup: string, item?: number): void
-  setHead(field: HeadField, markup: string): void
-  /** A structural change: the new list is drawn, then the cursor goes to `focus`. */
-  apply(list: Keyed[], focus?: Focus): void
-  /** A mark or link: one undo step, the field redrawn in place by the caller. */
-  mark(key: string | HeadField, markup: string, item?: number): void
-  takeFocus(): Focus | null
-  /** Back or forward one step, the page redrawn; the cursor goes to `focus` (the field it was in). */
-  undo(focus?: Focus): void; redo(focus?: Focus): void; canUndo: boolean; canRedo: boolean
+  editor: Editor | null
+  /** The blocks the editor opened with (an unchanged block is written back as it was). */
+  originals: readonly Block[]
+  dirty: boolean; saving: boolean; error: string | null
+  canUndo: boolean; canRedo: boolean
+  undo(): void; redo(): void
+  /** The doc as Save would write it, or null before the editor exists. */
+  current(): Doc | null
   save(): Promise<void>
   discard(): void
   /** The figure open in place, by key. Opening another, or saving, first runs the open one's Done: if that refuses
       (the figure has an error), nothing else happens. */
   figure: string | null
+  /** Where the open figure's edit surface goes (its element), when it is open. */
+  slot: HTMLElement | null
   openFigure(key: string | null): void
   /** The open figure's Done, held while it is open: it writes the figure back (or not) and says why not, or null.
       Discard lets go of it (null), then closes the figure. */
   holdFigure(done: (() => string | null) | null): void
-  /** Done on a changed figure: its new body, one undo step, the page redrawn. */
+  /** Done on a changed figure: its new body, one undo step. */
   setFigure(key: string, body: FigureBody): void
+  /** For the slash menu: the editor hands it every key first. */
+  onKey: { current: (e: KeyboardEvent) => boolean }
 }
-interface Options { doc: Doc; save: (doc: Doc) => Promise<string | null>; onDone: () => void }
+interface Options { doc: Doc; theme: Theme; accent: string | undefined; save: (doc: Doc) => Promise<string | null>; onDone: () => void }
 
-const withText = (b: Block, markup: string, item?: number): Block =>
-  (b.type === 'bullets' || b.type === 'numbered') && item !== undefined ? { ...b, items: b.items.map((x, i) => (i === item ? markup : x)) }
-    : 'text' in b && b.type !== 'code' && b.type !== 'raw' ? { ...b, text: markup } : b
-
-/** The doc to save: the draft's words, tidied (no empty blocks), new headings and figures named. */
-export function docOf(base: Doc, d: Draft): Doc {
-  const subtitle = plainOf(d.subtitle).trim() ? d.subtitle : undefined
-  return { ...base, title: d.title, subtitle, blocks: giveIds(tidy(unkeyed(d.blocks))) }
+/** The doc to save: the editor's words, empty blocks gone, new headings and figures named. */
+export function docOf(base: Doc, json: ProseNode): Doc {
+  const h = fromProse(json, base.blocks)
+  const subtitle = plainOf(h.subtitle).trim() ? h.subtitle : undefined
+  return { ...base, title: h.title, subtitle, blocks: giveIds(tidy(h.blocks)) }
 }
 
-export function useDocEdit({ doc, save, onDone }: Options): DocEdit {
-  const start = useMemo<Draft>(() => ({ title: doc.title, subtitle: doc.subtitle ?? '', blocks: keyed(doc.blocks) }), [doc])
-  const draft = useRef(start), focus = useRef<Focus | null>(null)
-  const past = useRef<Draft[]>([]), future = useRef<Draft[]>([]), lastTyped = useRef<string | null>(null)
-  const [shown, setShown] = useState(start), [version, setVersion] = useState(0), [depth, setDepth] = useState({ past: 0, future: 0 })
-  const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null)
-  const [figure, setFigureKey] = useState<string | null>(null), figureDone = useRef<(() => string | null) | null>(null)
-  // The open figure closes first: Done, which refuses while it has an error. True when nothing is open any more.
+export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEdit {
+  const [figure, setFigureKey] = useState<string | null>(null), [slot, setSlot] = useState<HTMLElement | null>(null)
+  const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null), [tick, setTick] = useState(0)
+  const done = useRef<(() => string | null) | null>(null), initial = useRef<PMNode | null>(null), look = useRef({ theme, accent }), onKey = useRef<(e: KeyboardEvent) => boolean>(() => false)
+  look.current = { theme, accent }
+  const editorRef = useRef<Editor | null>(null)
+
+  const host = useMemo<FigureHost>(() => ({
+    theme: () => look.current.theme, accent: () => look.current.accent,
+    open: (key) => open.current(key),
+    slot: (_key, el) => setSlot(el),
+  }), [])
+  const open = useRef<(key: string | null) => void>(() => {})
+
+  const editor = useEditor({
+    extensions: docExtensions(host, { originals: () => doc.blocks, slash: (e) => onKey.current(e) }),
+    content: toProse({ title: doc.title, subtitle: doc.subtitle ?? '', blocks: doc.blocks }),
+    editorProps: { attributes: { class: 'doc-body', spellcheck: 'true' } },
+    shouldRerenderOnTransaction: false,
+    onCreate: ({ editor: e }) => { initial.current = e.state.doc },
+    onTransaction: () => setTick((t) => t + 1),
+  }, [doc])
+
+  editorRef.current = editor
+  // A figure deleted while it was open is no longer open.
+  useEffect(() => {
+    if (editor && figure && !findFigure(editor, figure)) { done.current = null; setFigureKey(null); setSlot(null); setOpenKey(editor, null) }
+  }, [editor, figure, tick])
+  useEffect(() => { editor?.setEditable(!saving) }, [editor, saving])
+
   const closeFigure = useCallback(() => {
-    const done = figureDone.current
-    if (done && done() !== null) return false
-    figureDone.current = null; setFigureKey(null)
+    const d = done.current
+    if (d && d() !== null) return false
+    done.current = null; setFigureKey(null); setSlot(null)
+    if (editorRef.current) setOpenKey(editorRef.current, null)
     return true
   }, [])
+  open.current = (key) => { if (key !== figure && closeFigure() && key && editorRef.current) { setFigureKey(key); setOpenKey(editorRef.current, key) } }
 
-  const record = useCallback(() => { past.current.push(draft.current); future.current = []; setDepth({ past: past.current.length, future: 0 }) }, [])
-  const typedIn = useCallback((field: string) => { if (lastTyped.current !== field) record(); lastTyped.current = field }, [record])
-  const write = useCallback((next: Draft) => { draft.current = next; setVersion((v) => v + 1) }, [])
-  // A copy, not `d` itself: typing never redraws, so `shown` can already be `d`, and the same object would skip the redraw
-  // and leave the page showing words the draft no longer has.
-  const restore = useCallback((d: Draft, at?: Focus) => { draft.current = d; lastTyped.current = null; focus.current = at ?? null; setVersion((v) => v + 1); setShown({ ...d }) }, [])
-  const text = useCallback((key: string, markup: string, item?: number) => {
-    const d = draft.current
-    write({ ...d, blocks: d.blocks.map((k) => (k.key === key ? { key, block: withText(k.block, markup, item) } : k)) })
-  }, [write])
+  const current = useCallback((): Doc | null => (editor ? docOf(doc, editor.getJSON() as ProseNode) : null), [editor, doc])
 
   return useMemo<DocEdit>(() => ({
-    // Read through, not copied: two keystrokes before React re-renders must both see the latest draft.
-    get draft() { return draft.current }, shown, dirty: version > 0, saving, error,
-    setText: (key, markup, item) => { typedIn(`${key}:${item ?? ''}`); text(key, markup, item) },
-    setHead: (field, markup) => { typedIn(field); write({ ...draft.current, [field]: markup }) },
-    apply: (list, at) => {
-      record(); lastTyped.current = null; focus.current = at ?? null; write({ ...draft.current, blocks: list }); setShown(draft.current)
-      // A deleted figure is no longer open.
-      if (figure && !list.some((k) => k.key === figure)) { figureDone.current = null; setFigureKey(null) }
-    },
-    mark: (key, markup, item) => {
-      record(); lastTyped.current = null
-      if (key === 'title' || key === 'subtitle') write({ ...draft.current, [key]: markup }); else text(key, markup, item)
-    },
-    takeFocus: () => { const f = focus.current; focus.current = null; return f },
-    undo: (at) => { const prev = past.current.pop(); if (!prev) return; future.current.push(draft.current); setDepth({ past: past.current.length, future: future.current.length }); restore(prev, at) },
-    redo: (at) => { const next = future.current.pop(); if (!next) return; past.current.push(draft.current); setDepth({ past: past.current.length, future: future.current.length }); restore(next, at) },
-    canUndo: depth.past > 0, canRedo: depth.future > 0,
-    figure,
-    openFigure: (key) => { if (key !== figure && closeFigure()) setFigureKey(key) },
-    holdFigure: (done) => { figureDone.current = done },
+    editor, originals: doc.blocks,
+    dirty: !!editor && !!initial.current && !editor.state.doc.eq(initial.current), saving, error,
+    canUndo: !!editor?.can().undo(), canRedo: !!editor?.can().redo(),
+    undo: () => { editor?.commands.undo() }, redo: () => { editor?.commands.redo() },
+    current, figure, slot, onKey,
+    openFigure: (key) => open.current(key),
+    holdFigure: (d) => { done.current = d },
     setFigure: (key, body) => {
-      record(); lastTyped.current = null
-      write({ ...draft.current, blocks: draft.current.blocks.map((k) => (k.key === key && k.block.type === 'figure' ? { key, block: { ...k.block, body } } : k)) })
-      setShown(draft.current)
+      const f = editor && findFigure(editor, key)
+      if (!editor || !f || f.block.type !== 'figure') return
+      const n = editor.state.doc.nodeAt(f.pos)
+      if (n) editor.view.dispatch(editor.state.tr.setNodeMarkup(f.pos, undefined, { ...n.attrs, block: { ...f.block, body } }))
     },
     save: async () => {
-      if (!closeFigure()) return
-      if (!plainOf(draft.current.title).trim()) { setError('A doc needs a title.'); return }
+      if (!editor || !closeFigure()) return
+      const json = editor.getJSON() as ProseNode, next = docOf(doc, json)
+      if (!plainOf(next.title).trim()) { setError('A doc needs a title.'); return }
+      const typed = literalMarkup(json)
+      if (typed) { setError(`“${typed.slice(0, 40)}” would be read as formatting once saved. Reword it.`); return }
+      // Nothing changed: nothing is written, and no version is made.
+      if (initial.current && editor.state.doc.eq(initial.current)) { onDone(); return }
+      const why = refusal(doc, next)
+      if (why) { setError(why); return }
       setSaving(true); setError(null)
-      const reason = await save(docOf(doc, draft.current))
+      const reason = await save(next)
       setSaving(false)
       if (reason) setError(reason); else onDone()
     },
     discard: onDone,
-  }), [shown, version, saving, error, depth, typedIn, text, write, record, restore, save, doc, onDone, figure, closeFigure])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tick: the editor's state changed; the memo reads it
+  }), [editor, doc, tick, saving, error, figure, slot, current, closeFigure, save, onDone]) as DocEdit
 }

@@ -1,19 +1,19 @@
 /* Doc edit mode only: the cursor's chrome around the page. The page's own type and column stay in doc.css; nothing here
-   reaches inside a figure's canvas (.fig). */
-.doc-editing [contenteditable]:focus { outline: none; }
-/* A space typed at the end of a field must stay a space until the next character arrives. */
-.doc-editing [contenteditable] { white-space: pre-wrap; }
-/* An empty title, subtitle, heading or item shows what it is; an empty paragraph says so only while it has the cursor,
-   and otherwise keeps its line. */
-.doc-editing [data-hint]:empty::before { content: attr(data-hint); color: var(--muted); }
-.doc-editing p[data-field]:empty:not(:focus)::before { content: "\200b"; }
-.doc-editing .doc-sub:empty:not(:focus)::before { opacity: .6; }
+   reaches inside a figure's canvas (.fig). The page is the editor (ProseMirror's root is the .doc-body). */
+.doc-editing :focus { outline: none; }
+/* A list item draws its words in a paragraph, set flush as the read view's bare text is. */
+.doc-editing li > p { margin: 0; }
+/* An empty title, subtitle or heading shows what it is; an empty paragraph says so only while it has the cursor, and
+   otherwise keeps its line. */
+.doc-editing .is-empty::before { content: attr(data-placeholder); color: var(--muted); float: left; height: 0; pointer-events: none; }
+.doc-editing .doc-sub.is-empty::before { opacity: .6; }
+/* The title and subtitle are the page's first two nodes, so the head's gap is the subtitle's, and the first section
+   starts where the head ends. */
+.doc-editing .doc-sub { margin-bottom: 40px; }
+.doc-editing .doc-sub + .doc-sec > h2 { margin-top: 0; }
 /* A figure, divider or code block is selected whole. */
-.doc-editing [data-block-select] { cursor: default; border-radius: 4px; }
-.doc-editing [data-block-select]:focus { outline: 2px solid var(--focus); outline-offset: 6px; }
-.doc-editing hr[data-block-select]:focus { outline-offset: 10px; }
-/* The page has no contents while edited: the first section's heading starts at the top, as it does when read. */
-.doc-editing .doc-body > .doc-sec:first-child > h2 { margin-top: 0; }
+.doc-editing .ProseMirror-selectednode { outline: 2px solid var(--focus); outline-offset: 6px; border-radius: 4px; }
+.doc-editing hr.ProseMirror-selectednode { outline-offset: 10px; }
 /* The block being dragged stays in place, faded, until it lands. */
 .doc-editing [data-dragging] { opacity: .35; }
 /* A figure open in place: the slide's edit surface over the figure as read, its box as tall as the figure (set from code

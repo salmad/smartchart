@@ -5,7 +5,7 @@ import { ChartBarBig, ChartColumn, ChartGantt, ChartNoAxesGantt, ChartScatter, C
 import { insertAfter, replaceBlock, type Keyed } from '@/engine/docs/blocks'
 import { BLOCK_STARTERS } from '@/engine/starters'
 import type { Block, FigureKind } from '@/engine/docs/types'
-import type { Focus } from './useDocEdit'
+import type { Where } from './editor/structure'
 
 export interface SlashChoice { id: string; group: 'Text' | 'Figures'; label: string; blurb: string; icon: LucideIcon; block: () => Block }
 
@@ -37,7 +37,7 @@ export function matching(query: string): SlashChoice[] {
 }
 
 /** The paragraph `key` becomes the choice. Text gets the cursor; a figure is selected, with a paragraph after it when it ends the doc. */
-export function pick(list: Keyed[], key: string, c: SlashChoice): { list: Keyed[]; focus: Focus } {
+export function pick(list: Keyed[], key: string, c: SlashChoice): { list: Keyed[]; focus: Where } {
   const block = c.block(), next = replaceBlock(list, key, block), last = next[next.length - 1]?.key === key
   if (block.type === 'bullets' || block.type === 'numbered') return { list: next, focus: { key, item: 0, at: 0 } }
   if (block.type === 'heading' || block.type === 'quote' || block.type === 'paragraph') return { list: next, focus: { key, at: 0 } }
