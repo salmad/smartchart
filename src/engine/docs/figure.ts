@@ -61,12 +61,13 @@ export function figureCanvasHTML(f: FigureBlock, beside: boolean): string {
 
 export const canvas = (kind: string, theme: Theme, inner: string): string => `<div class="fig-frame"><div class="fig style-consulting theme-${theme} k-${kind}">${inner}</div></div>`
 
-export function figureHTML(f: FigureBlock, theme: Theme, beside = true): string {
+/** `after` is more furniture for the foot of the figure (the checks badge). */
+export function figureHTML(f: FigureBlock, theme: Theme, beside = true, after = ''): string {
   const b = f.body
   const notes = b.notes?.length ? `<ol class="fig-notes">${b.notes.map((n) => `<li><span><b>${md(n.title)}</b>${n.text ? ` ${md(n.text)}` : ''}</span></li>`).join('')}</ol>` : ''
   const take = b.takeaway ? `<p class="fig-take"${at('takeaway', 'md')}>${md(b.takeaway)}</p>` : ''
   const src = [b.footnote && `<span${at('footnote', 'md')}>${md(b.footnote)}</span>`, b.source && `<span>Source: <span${at('source', 'md')}>${md(b.source)}</span></span>`].filter(Boolean).join(' ')
-  return `<figure class="doc-fig" id="${f.id}" data-block="${f.id}" data-kind="${f.kind}">${canvas(f.kind, theme, figureCanvasHTML(f, beside))}${notes}${take}${src ? `<p class="fig-src">${src}</p>` : ''}</figure>`
+  return `<figure class="doc-fig" id="${f.id}" data-block="${f.id}" data-kind="${f.kind}">${canvas(f.kind, theme, figureCanvasHTML(f, beside))}${notes}${take}${src ? `<p class="fig-src">${src}</p>` : ''}${after}</figure>`
 }
 
 /** Code is a figure without an id: the shared code component on a canvas. */

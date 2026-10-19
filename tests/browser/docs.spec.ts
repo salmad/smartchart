@@ -98,3 +98,29 @@ test('every doc starter is clean at three widths', async ({ page }) => {
   }
   expect(found).toEqual([])
 })
+
+test('no doc starter shows a checks badge', async ({ page }) => {
+  for (const s of DOC_STARTERS) {
+    await open(page, s.id)
+    await expect(page.locator('.fig-checks'), s.id).toHaveCount(0)
+  }
+})
+
+test('a figure with a failed check has a badge that opens, closes on Esc, and is not printed', async ({ page }) => {
+  const text = ['---', 'title: Badge doc', '---', '', '## Numbers {#numbers}', '', '```occam:chart {#rev}',
+    JSON.stringify({ caption: 'Revenue · £m', chart: { categories: ['2024', '2025'], format: '£{v}m', series: [{ name: 'R', mark: 'bar', color: 'focus', values: [18, 25] }] } }), '```', ''].join('\n')
+  await page.addInitScript((t) => {
+    localStorage.setItem('smartchart.devAccount', '1')
+    localStorage.setItem('smartchart.docs.v1', JSON.stringify({ doc_b: { id: 'doc_b', name: 'Badge doc', text: t, updated: 1, workspaceId: 'ws_local' } }))
+  }, text)
+  await page.goto('/doc/doc_b')
+  const badge = page.locator('.doc .fig-checks')
+  await expect(badge).toHaveCount(1)
+  await expect(badge.locator('summary')).toHaveText('1 check')
+  await badge.locator('summary').click()
+  await expect(badge.locator('li')).toContainText('R8')
+  await page.keyboard.press('Escape')
+  await expect(badge).not.toHaveAttribute('open', '')
+  await page.emulateMedia({ media: 'print' })
+  await expect(badge).toBeHidden()
+})

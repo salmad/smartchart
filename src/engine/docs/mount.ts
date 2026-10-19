@@ -113,6 +113,9 @@ export function mountDoc(root: HTMLElement, doc: Doc, key: string): { destroy():
     if (a && reveal(a.getAttribute('href')?.slice(1) ?? '')) { e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')) }
   }
   root.addEventListener('click', click)
+  // Esc closes a figure's checks.
+  const esc = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; const d = (e.target instanceof Element ? e.target : null)?.closest<HTMLDetailsElement>('details.fig-checks[open]'); if (d) { d.open = false; d.querySelector('summary')?.focus() } }
+  root.addEventListener('keydown', esc)
   for (const id of load(store)) { const sec = root.querySelector<HTMLElement>(`.doc-sec[id="${CSS.escape(id)}"]`); if (sec) setFold(sec, true) }
   if (location.hash) reveal(decodeURIComponent(location.hash.slice(1)))
 
@@ -128,5 +131,5 @@ export function mountDoc(root: HTMLElement, doc: Doc, key: string): { destroy():
   window.addEventListener('scroll', onScroll, { passive: true })
   spy()
 
-  return { destroy() { sizes.disconnect(); root.removeEventListener('click', click); window.removeEventListener('scroll', onScroll); if (frame) cancelAnimationFrame(frame) } }
+  return { destroy() { sizes.disconnect(); root.removeEventListener('click', click); root.removeEventListener('keydown', esc); window.removeEventListener('scroll', onScroll); if (frame) cancelAnimationFrame(frame) } }
 }

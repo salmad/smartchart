@@ -50,3 +50,12 @@ test('a doc theme reaches the canvas', () => {
   expect(html).toContain('class="doc theme-ink"')
   expect(html).not.toContain('theme-paper')
 })
+
+test('a figure with failed code checks has a badge that lists them; a clean one has none', () => {
+  const clean: FigureBlock = { type: 'figure', kind: 'chart', id: 'ok', body: { caption: 'Revenue · £m', source: 'Filings', chart: { categories: ['2024', '2025'], format: '£{v}m', series: [{ name: 'R', mark: 'bar', color: 'focus', values: [18, 25] }] } } }
+  const noSource: FigureBlock = { ...clean, id: 'no', body: { ...clean.body, source: undefined } }
+  const html = docHTML({ title: 'T', blocks: [{ type: 'heading', level: 2, id: 'a', text: 'A' }, clean, noSource, { type: 'figure', kind: 'callout', id: 'c', body: { tone: 'note', text: 'x' } }] })
+  expect(html.match(/class="fig-checks"/g)).toHaveLength(1)
+  expect(html).toMatch(/<details class="fig-checks"><summary>1 check<\/summary><ul><li><b>R8<\/b> Figures with no source/)
+  expect(html.indexOf('fig-checks')).toBeGreaterThan(html.indexOf('id="no"'))
+})

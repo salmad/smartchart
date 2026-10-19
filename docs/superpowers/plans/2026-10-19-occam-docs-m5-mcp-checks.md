@@ -77,7 +77,7 @@
 - [ ] **Step 4:** Run the tests. Expected: PASS. Run `npm run lint`.
 - [ ] **Step 5:** Commit: "Docs M5: block ids and edit operations".
 
-### Task 2: The doc checks and the badge (main model)
+### Task 2: The doc checks and the badge (main model)  — done
 
 **Files:**
 - Create: `src/engine/docs/checks.ts`

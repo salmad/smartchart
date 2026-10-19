@@ -4,10 +4,19 @@ import type { Theme } from '../types.js'
 import { esc, md } from '../components/text.js'
 import { outline } from './parse.js'
 import { codeFigureHTML, figureHTML } from './figure.js'
+import { figureChecks } from './checks.js'
 import type { Block, Doc } from './types.js'
 
 /** A doc's theme when it names none: paper suits long reading (M3 swaps in the workspace's brand). */
 export const DEFAULT_THEME: Theme = 'paper'
+
+/** The figure's failed code checks as a native <details>: a count, and the messages when opened. Nothing when none fail. */
+function badgeHTML(f: Extract<Block, { type: 'figure' }>): string {
+  let failed: ReturnType<typeof figureChecks>
+  try { failed = figureChecks(f).filter((c) => !c.ok) } catch { return '' }
+  if (!failed.length) return ''
+  return `<details class="fig-checks"><summary>${failed.length} check${failed.length === 1 ? '' : 's'}</summary><ul>${failed.map((c) => `<li><b>${c.id}</b> ${esc(c.msg)}</li>`).join('')}</ul></details>`
+}
 
 /** One block as HTML. A ## heading is the bare <h2 id>: only docHTML wraps it in its section. */
 export function blockHTML(b: Block, theme: Theme): string {
@@ -19,7 +28,7 @@ export function blockHTML(b: Block, theme: Theme): string {
     case 'quote': return `<blockquote><p>${md(b.text)}</p></blockquote>`
     case 'divider': return '<hr>'
     case 'code': return codeFigureHTML(b, theme)
-    case 'figure': return figureHTML(b, theme)
+    case 'figure': return figureHTML(b, theme, true, badgeHTML(b))
     case 'raw': return `<pre class="doc-raw">${esc(b.text)}</pre>`
   }
 }

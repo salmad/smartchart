@@ -12,7 +12,7 @@ const words = (s: string | undefined): string[] => plain(s || "").toLowerCase().
 const hasFocusSpan = (s: string | undefined) => /\[\[.+?\]\]/.test(s || "");
 const UNIT = /[%£$€×]|\dx\b|\d\s?(k|m|bn|mn|pp|h|hrs?|min|s)\b|\b(bps|hours?|days?|weeks?|months?|years?|mins?)\b/i;
 
-function focusCount(s: Slide): number | null {
+export function focusCount(s: Slide): number | null {
   switch (s.template) {
     case "chart": {
       const kind = s.chart?.kind || "bars";
@@ -175,7 +175,8 @@ const slideText = (s: Slide) => JSON.stringify({ ...s, talk: undefined }, (k, v)
 /** Judgment checks J1–J10: one Jev call; a check fails only when a failing value has p ≥ 0.7. */
 interface Judgment { instructions: string; options: Record<string, string>; pass: string; label: Record<string, string> }
 
-export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall): Promise<{ checks: Check[]; ms: number }> {
+/** `only` asks just those questions (a doc asks J9 and J10 of its tables and nothing else). */
+export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCall, only?: readonly string[]): Promise<{ checks: Check[]; ms: number }> {
   if (MENU[s.template].frame === false) return { checks: [], ms: 0 };
   const qs: Record<string, Judgment> = {}, add = (id: string, styles: Style[], instructions: string, options: Record<string, string>, pass: string, label: Record<string, string>) => { if (styles.includes(style)) qs[id] = { instructions, options, pass, label }; };
   add("J1", ["consulting"], "Is the title an action title that states a so-what, or a topic label?", { action: "States a conclusion or so-what.", topic: "Names a topic without a claim." }, "action", { action: "Title states a so-what", topic: "Title reads like a topic label" });
@@ -197,6 +198,8 @@ export async function judgmentChecks(s: Slide, style: Style, jev: JevFn = jevCal
   if (s.template === "table" && s.table?.columns?.some((c) => c?.icon)) add("J10", ["consulting", "pitch"], "The table's columns carry header icons. Do they help the reader scan columns that are categories or criteria (mainly columns of marks), or are they decoration over the things being compared (a bank, a product) or over columns of words and figures?",
     { help: "The columns are categories scanned across; the icons help.", decorative: "The icons decorate entities or columns of words and figures." }, "help",
     { help: "Header icons help the scan", decorative: "Header icons look decorative; consider removing them" });
+  if (only) for (const id of Object.keys(qs)) if (!only.includes(id)) delete qs[id];
+  if (!Object.keys(qs).length) return { checks: [], ms: 0 };
   const r = await jev(`Deck style: ${style}.\nSlide JSON: ${slideText(s)}`, Object.fromEntries(Object.entries(qs).map(([id, q]) => [id, { instructions: q.instructions, options: q.options }])));
   const checks = Object.entries(qs).map(([id, q]): Check | null => {
     const a = r[id]; if (!a) return null;

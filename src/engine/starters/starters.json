@@ -2871,6 +2871,7 @@
     "  \"caption\": \"SME card revenue, 2021–2025 · £m\",",
     "  \"chart\": {",
     "    \"categories\": [\"2021\", \"2022\", \"2023\", \"2024\", \"2025\"],",
+    "    \"format\": \"£{v}m\",",
     "    \"series\": [",
     "      { \"name\": \"Revolut Business\", \"mark\": \"bar\", \"color\": \"focus\", \"values\": [120, 190, 280, 390, 520] },",
     "      { \"name\": \"Tide\", \"mark\": \"bar\", \"values\": [40, 70, 105, 150, 200] },",
@@ -2989,7 +2990,8 @@
     "      { \"cells\": [\"Limits by team\", \"Should\", { \"value\": \"Planned\", \"status\": true }] },",
     "      { \"cells\": [\"Weekly spend digest\", \"Could\", { \"value\": \"Planned\", \"status\": true }] }",
     "    ]",
-    "  }",
+    "  },",
+    "  \"footnote\": \"Status as of the last design review.\"",
     "}",
     "```",
     "",
@@ -3003,7 +3005,8 @@
     "    { \"when\": \"Tap\", \"title\": \"Check\", \"text\": \"Rules run at authorisation, **in under 50 ms**.\", \"focus\": true },",
     "    { \"when\": \"Decline\", \"title\": \"Explain\", \"text\": \"A push names the rule and the admin to ask.\" },",
     "    { \"when\": \"After\", \"title\": \"Decide\", \"text\": \"Approve a raise in one tap, or keep the rule.\" }",
-    "  ]",
+    "  ],",
+    "  \"footnote\": \"Target from the rules-service design; to be confirmed in the load test.\"",
     "}",
     "```",
     "",
@@ -3374,8 +3377,7 @@
           "Revolut Business",
           "£50k",
           "Minutes"
-         ],
-         "focus": true
+         ]
         },
         {
          "cells": [
