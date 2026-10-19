@@ -177,3 +177,6 @@ M3 puts every deck and doc in exactly one workspace, and a save never moves it: 
 
 ## 24. Workspace invites by email (2026-10-19)
 M3 invites by link: the owner creates it in Members, copies it and sends it however they like. It works only for the invited email once signed in, for 7 days. Next: Occam sends the email itself (a transactional email service, a sender domain, and a plain message naming the workspace and who invited you), plus "Copy link" again on an open invite, which today shows only when it is made.
+
+## 25. Docs: pictures, merging, comment polish (2026-10-19)
+Left over from the doc editor (M4): image, team and logos figures in docs (they need picture upload for docs, as decks have); a block-level merge of two people's saves, where M4 refuses the second and offers Reload and Copy my text; a comment button in the tab order beside each heading and figure (M4 draws it as an overlay on hover); the comments and versions panels as a real bottom Sheet on a phone; and a selection popover that flips below when the selection is on a heading's line.
