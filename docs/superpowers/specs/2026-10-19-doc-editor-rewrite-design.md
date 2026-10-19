@@ -11,7 +11,7 @@ The user writes documents the way Linear's issues work: click in, type, and the 
 Reproduced with real keystrokes:
 
 - **Cross-block selection does not work.** Dragging from one paragraph into the next stays inside the first field; ⌘A selects nothing; so copy, cut and delete across blocks are impossible. This is the shape of the design (one editable field per block), not a bug to patch.
-- **Undo does not undo typing.** Type into a paragraph, press ⌘Z: the text stays. Undo does work for structural changes (a paste). After an undo the caret is lost (focus returns to the page).
+- **Undo after typing loses the words on Save (a live bug, 2026-10-19).** Type " KEEPME" in a paragraph, press ⌘Z: the page still shows it, but Save writes the doc without it (checked in `localStorage`). Cause: typing never redraws (`setShown`), the first keystroke records the draft that `shown` still points at, and `restore` reverts the draft without redrawing. Undo of a paste (a structural change) works; after an undo the caret is lost. Fixed first, on its own (plan task 0). Not yet checked in slide edit mode, which this code follows.
 - **No Markdown shortcuts.** `## `, `- ` and `/` : only `/` works (it opens the slash menu). `## Heading` stays as typed text.
 - Works: Enter, Backspace, ArrowUp across blocks, multi-paragraph paste (becomes blocks), the slash menu, the drag handle.
 
@@ -21,9 +21,9 @@ Not probed (to check in the plan's first task): pasting rich text from Google Do
 
 1. Selecting, copying, cutting, deleting and pasting across blocks behaves as in any good editor.
 2. Undo and redo follow what a writer expects: typing groups by pause or word, structure is its own step, and the caret returns where it was.
-3. Markdown shortcuts as you type: `# `, `## `, `### ` (headings), `- ` or `* ` (bullets), `1. ` (numbered), `> ` (quote), `---` (divider). `/` stays.
+3. Markdown shortcuts as you type: `# ` and `## ` (heading, level 2), `### ` (subheading, level 3: the format has only 2 and 3), `- ` or `* ` (bullets), `1. ` (numbered), `> ` (quote), `---` (divider). `/` stays.
 4. A floating toolbar over a selection (bold, Focus, link) and ⌘B, ⌘K as now.
-5. Smooth Enter, Backspace, Tab-free list behaviour, paste cleaning (rich text in, our marks out), drag handles that reorder blocks.
+5. Smooth Enter and Backspace, Tab and Shift-Tab to indent and outdent a list item, paste cleaning (rich text in, our marks out), drag handles that reorder blocks.
 6. Edit and Save are unchanged to the user: click Edit, write, ⌘S or Save writes the file, Discard drops the draft. Presence, the 409 stale-save refusal, versions and comments are unchanged.
 
 ## Non-goals
@@ -31,8 +31,19 @@ Not probed (to check in the plan's first task): pasting rich text from Google Do
 - A different doc format. The file is still Markdown with JSON component blocks, parsed and written by `src/engine/docs/`.
 - Autosave or always-on editing. The user wants Edit and Save kept.
 - Live multi-cursor editing (FUTURE #22). Tiptap with Yjs is the likely path later; this spec only avoids closing it off.
+- Slides: they keep the hand edit surface (below).
 - Checklists (`[]`). The format has no checklist block; adding one is a format change and its own request.
 - Pictures in docs (FUTURE #25), and the nested page tree.
+
+## Added 2026-10-19 after the user's review
+
+**Nested lists are required.** Today `items: string[]` is flat, so this is a format change (doc text only; slides and `components.css` untouched). Items carry a depth: Markdown's 2-space indent, capped at 3 levels (my call). A nested list may mix bullets and numbers (my call, as Markdown does). Parse, serialize, validate, render (`doc.css`), the checks, the MCP `write_doc_text` text and one line in the doc guide (within the 470-token budget) all take it from the `Block` union, so the agent and the human get it from one source. The format does not ship before an editor that keeps it: the flat editor would flatten an agent's nested list on the next human Save. Land it with the new editor, or show nested lists read-only in between.
+
+**The look must not change, and nothing may appear that we cannot render.** The schema offers only the `Block` union and the marks above; paste is mapped to it: h1 and h2 → level 2, h3 to h6 → level 3, italic, strike and inline code → plain text, images and tables dropped or plain text; a test checks the output is inside `Block` and round-trips. Read and edit views both nest blocks in `.sec-body`; a flat ProseMirror document cannot make wrappers, so the plan's first editor task decides between section nodes in the schema and a flat document with `doc.css` on adjacency selectors, proven with a look lock (every doc starter, read view and edit mode, chrome hidden, pixel-compared, and ProseMirror's `white-space: pre-wrap` checked). Code and raw blocks are atom nodes that render as the read view does.
+
+**Slash menu.** It has one chart entry today. The engine already draws bars, lines and ranked (horizontal) bars; they get entries (bar chart, line chart, horizontal bars) in `starters.json`, the one gallery, checked clean in both themes and three widths. Waterfall, timeline, matrix, image, team and logos are offered as options, not added unasked.
+
+**Agent and human: one path where it counts.** Hand edits to a slide are patch sets through `applyPatch`, the same path the agent uses, and a doc figure opened in place already uses the deck's own edit surface, so figures are one editor. Doc prose is the one split, and it should be: it needs selection across blocks, flowing undo and nested lists, which a bounded slide field never does. Decks keep the hand edit surface; moving them to Tiptap would risk the 344-slide look lock for nothing a user would notice. Shared and named: one inline grammar (`markup.ts` is the only converter between Tiptap marks and stored text), one figure editor (`app/edit`), and one write gate: a human Save runs the same `accept()` as the agent's ops (`docs/ops.ts`) and refuses with a reason, never rewriting. Parity of capabilities comes from the `Block` union. Known gaps, not scope: doc versions and comment tools are deck-only over MCP (FUTURE #26). One real break remains: an agent write while someone is in Edit makes their Save a 409 (Reload or Copy my text); a block-level rebase is FUTURE #25.
 
 ## Anti-goals
 
