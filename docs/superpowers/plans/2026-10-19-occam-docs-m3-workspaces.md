@@ -163,7 +163,7 @@ Contract tests (`db-contract.ts`). Each test makes its own users `ann`, `bob` an
 - [x] **Step 4: Run** `npm test`. Expected: PASS, with every existing test still green.
 - [x] **Step 5: Commit.** Message: "Workspaces: the Db contract (members, invites, docs) and a fake that keeps it".
 
-### Task 3: The SQL Db
+### Task 3: The SQL Db (done; Neon branch `m3-contract-tests`, schema only, expires 2026-10-26)
 
 **Files:**
 - Modify: `api/_lib/db.ts` (split into `api/_lib/db.ts` with the interface, `getDb` and the schema, `db-decks.ts`, and `db-workspaces.ts`, if it grows past about 300 lines)
@@ -193,14 +193,14 @@ exists (select 1 from members m where m.workspace_id = decks.workspace_id and m.
   3. `update decks set workspace_id = $ws where user_id = $u and workspace_id is null`.
   The result is memoised per user in the module.
 
-- [ ] **Step 1: Ask the user** before creating a Neon branch for `TEST_DATABASE_URL` (call 10). If they say no, this task ships with the fake contract only, and the SQL is reviewed by reading it against the contract. Say so in the report.
-- [ ] **Step 2: Run** `TEST_DATABASE_URL=… npx vitest run tests/unit/db-sql.test.ts`. Expected: FAIL, because the queries still check `user_id`.
-- [ ] **Step 3: Implement it.**
+- [x] **Step 1: Ask the user** before creating a Neon branch for `TEST_DATABASE_URL` (call 10). If they say no, this task ships with the fake contract only, and the SQL is reviewed by reading it against the contract. Say so in the report.
+- [x] **Step 2: Run** `TEST_DATABASE_URL=… npx vitest run tests/unit/db-sql.test.ts`. Expected: FAIL, because the queries still check `user_id`.
+- [x] **Step 3: Implement it.**
   - Convert each query. `getDeck` and `getDeckMeta` also return the caller's `role`.
   - `putDeck`'s insert path becomes an `insert … select … where exists (editor membership on $workspace)`. Its update path checks membership on the row's own workspace.
   - `deleteDeck` removes versions by `deck_id` only, now that versions carry the writer and not the owner.
-- [ ] **Step 4: Run** the SQL suite, then `npm test` and `npm run build`. Expected: PASS.
-- [ ] **Step 5: Commit.** Message: "Workspaces in Postgres: membership checked in every query; existing decks move to their owner's personal workspace".
+- [x] **Step 4: Run** the SQL suite, then `npm test` and `npm run build`. Expected: PASS.
+- [x] **Step 5: Commit.** Message: "Workspaces in Postgres: membership checked in every query; existing decks move to their owner's personal workspace".
 
 ### Task 4: The workspaces API, and the decks and docs APIs by workspace
 
