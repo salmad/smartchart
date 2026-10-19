@@ -33,10 +33,10 @@ export default {
       // ease-[cubic-bezier(…)] is ambiguous and silently dropped, and the transition snaps at the 150ms default.
       transitionDuration: { 120: '120ms' },
       fontFamily: {
-        sans: ['Geist', 'system-ui', 'sans-serif'],
-        mono: ['"Geist Mono"', 'monospace'],
-        display: ['Archivo', 'sans-serif'],
-        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+        sans: ['Geist', '"Geist Fallback"', 'system-ui', 'sans-serif'],
+        mono: ['"Geist Mono"', '"Geist Mono Fallback"', 'monospace'],
+        display: ['Archivo', '"Archivo Fallback"', 'sans-serif'],
+        serif: ['"Instrument Serif"', '"Instrument Serif Fallback"', 'Georgia', 'serif'],
       },
       keyframes: {
         spin: { to: { transform: 'rotate(360deg)' } },
