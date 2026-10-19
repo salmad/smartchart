@@ -9,9 +9,10 @@ import type { Block, Doc } from './types.js'
 /** A doc's theme when it names none: paper suits long reading (M3 swaps in the workspace's brand). */
 export const DEFAULT_THEME: Theme = 'paper'
 
-function blockHTML(b: Block, theme: Theme): string {
+/** One block as HTML. A ## heading is the bare <h2 id>: only docHTML wraps it in its section. */
+export function blockHTML(b: Block, theme: Theme): string {
   switch (b.type) {
-    case 'heading': return `<h3 id="${b.id}">${md(b.text)}</h3>`
+    case 'heading': { const t = `h${b.level}`; return `<${t} id="${b.id}">${md(b.text)}</${t}>` }
     case 'paragraph': return `<p>${md(b.text)}</p>`
     case 'bullets': return `<ul class="doc-list">${b.items.map((x) => `<li>${md(x)}</li>`).join('')}</ul>`
     case 'numbered': return `<ol class="doc-list">${b.items.map((x) => `<li><span>${md(x)}</span></li>`).join('')}</ol>`

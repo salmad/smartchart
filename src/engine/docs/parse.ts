@@ -35,7 +35,6 @@ export function parseDoc(text: string): Parsed {
     }
     i = end < 0 ? lines.length : end + 1
   }
-  const ids: (string | undefined)[] = []
   while (i < lines.length) {
     const line = lines[i]
     if (!line.trim()) { i++; continue }
@@ -48,7 +47,7 @@ export function parseDoc(text: string): Parsed {
       if (j >= lines.length) err(open, 'this block has no closing fence.')
       i = j + 1
       const occam = info.match(/^occam:(\w+)(?:\s*\{#([\w-]+)\})?$/)
-      if (!occam) { doc.blocks.push({ type: 'code', lang: info, text: inner }); ids.push(undefined); continue }
+      if (!occam) { doc.blocks.push({ type: 'code', lang: info, text: inner }); continue }
       const [, kind, id] = occam
       let body: unknown
       try { body = JSON.parse(inner || '{}') } catch (e) { body = e instanceof Error ? e : null }
@@ -56,21 +55,21 @@ export function parseDoc(text: string): Parsed {
       else if (body instanceof Error) err(open, `occam:${kind}: the JSON does not parse (${body.message}).`)
       else if (!body || typeof body !== 'object' || Array.isArray(body)) err(open, `occam:${kind}: the body must be a JSON object.`)
       if (!isKind(kind) || !body || typeof body !== 'object' || Array.isArray(body) || body instanceof Error) {
-        doc.blocks.push({ type: 'raw', text: whole }); ids.push(undefined); continue
+        doc.blocks.push({ type: 'raw', text: whole }); continue
       }
-      doc.blocks.push({ type: 'figure', kind, id: id ?? '', body: body as FigureBody }); ids.push(id)
+      doc.blocks.push({ type: 'figure', kind, id: id ?? '', body: body as FigureBody })
       continue
     }
     const h = line.match(HEADING)
     if (h && (h[1].length === 2 || h[1].length === 3)) {
-      doc.blocks.push({ type: 'heading', level: h[1].length as 2 | 3, id: h[3] ?? '', text: h[2] }); ids.push(h[3]); i++; continue
+      doc.blocks.push({ type: 'heading', level: h[1].length as 2 | 3, id: h[3] ?? '', text: h[2] }); i++; continue
     }
     if (h) err(i, h[1].length === 1 ? 'a # heading: the title lives in the front matter; sections are ## and ###.' : 'headings go to ### at most.')
-    if (!h && line.trim() === '---') { doc.blocks.push({ type: 'divider' }); ids.push(undefined); i++; continue }
+    if (!h && line.trim() === '---') { doc.blocks.push({ type: 'divider' }); i++; continue }
     if (!h && /^>/.test(line)) {
       const parts: string[] = []
       while (i < lines.length && /^>/.test(lines[i])) parts.push(lines[i++].replace(/^>\s?/, '').trim())
-      doc.blocks.push({ type: 'quote', text: parts.join(' ') }); ids.push(undefined); continue
+      doc.blocks.push({ type: 'quote', text: parts.join(' ') }); continue
     }
     const list = !h && (ITEM.test(line) ? ITEM : NUM.test(line) ? NUM : null)
     if (list) {
@@ -82,26 +81,29 @@ export function parseDoc(text: string): Parsed {
         else break
         i++
       }
-      doc.blocks.push({ type: list === ITEM ? 'bullets' : 'numbered', items }); ids.push(undefined); continue
+      doc.blocks.push({ type: list === ITEM ? 'bullets' : 'numbered', items }); continue
     }
     // A paragraph: its first line as written (a leading \ says "this is text"), then lines up to a blank or a block.
     const parts = [line.trim().replace(/^\\/, '')]
     i++
     while (i < lines.length && lines[i].trim() && !starts(lines[i])) parts.push(lines[i++].trim())
-    doc.blocks.push({ type: 'paragraph', text: parts.join(' ') }); ids.push(undefined)
+    doc.blocks.push({ type: 'paragraph', text: parts.join(' ') })
   }
-  giveIds(doc.blocks, ids)
+  doc.blocks = giveIds(doc.blocks)
   return { doc, errors }
 }
 
-/* Explicit ids are kept as written (validation reports duplicates); a missing one is a slug for a heading and
-   <kind>-<n> for a figure, made unique against every id in the doc. */
-function giveIds(blocks: Block[], explicit: (string | undefined)[]) {
-  const taken = new Set(explicit.filter((x): x is string => !!x)), count: Record<string, number> = {}
+/* Ids already on a block are kept as written (validation reports duplicates); a missing one is a slug for a heading and
+   <kind>-<n> for a figure, made unique against every id in the doc. Returns a new list; untouched blocks are shared. */
+export function giveIds(blocks: Block[]): Block[] {
+  const taken = new Set(blocks.flatMap((b) => ((b.type === 'heading' || b.type === 'figure') && b.id ? [b.id] : []))), count: Record<string, number> = {}
   const unique = (base: string) => { let id = base, n = 2; while (taken.has(id)) id = `${base}-${n++}`; taken.add(id); return id }
-  blocks.forEach((b, k) => {
-    if (explicit[k] || (b.type !== 'heading' && b.type !== 'figure')) return
-    if (b.type === 'heading') b.id = unique(slug(b.text) || 'section')
-    else { let id: string; do { count[b.kind] = (count[b.kind] ?? 0) + 1; id = `${b.kind}-${count[b.kind]}` } while (taken.has(id)); taken.add(id); b.id = id }
+  return blocks.map((b) => {
+    if (b.type === 'heading') return b.id ? b : { ...b, id: unique(slug(b.text) || 'section') }
+    if (b.type !== 'figure' || b.id) return b
+    let id: string
+    do { count[b.kind] = (count[b.kind] ?? 0) + 1; id = `${b.kind}-${count[b.kind]}` } while (taken.has(id))
+    taken.add(id)
+    return { ...b, id }
   })
 }
