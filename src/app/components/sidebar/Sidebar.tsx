@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { starterDoc, type DocStarter } from '@/engine/starters'
 import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
 import type { WorkspaceRepo } from '@/app/workspaces'
+import { DEV_ACCOUNT } from '@/app/dev-account'
+import { showThenFetch } from '@/app/swr'
 import { DeleteDeck } from '../DeleteDeck'
 import { ago } from './ago'
 import { ItemList, type ListRow } from './ItemList'
@@ -29,6 +31,12 @@ interface Props {
 }
 
 type Kind = 'deck' | 'doc'
+// What is stored of a list: what the rows show, not the slide a deck summary also carries.
+interface SlimDeck { id: string; name: string; updated: number; slides: number }
+interface SlimDoc { id: string; name: string; updated: number }
+const rowsOf = (v: unknown, ok: (r: Record<string, unknown>) => boolean): boolean => Array.isArray(v) && v.every((r) => !!r && typeof r === 'object' && ok(r as Record<string, unknown>))
+const isSlimDocs = (v: unknown): v is SlimDoc[] => rowsOf(v, (r) => typeof r.id === 'string' && typeof r.name === 'string' && typeof r.updated === 'number')
+const isSlimDecks = (v: unknown): v is SlimDeck[] => rowsOf(v, (r) => typeof r.id === 'string' && typeof r.name === 'string' && typeof r.updated === 'number' && typeof r.slides === 'number')
 const slides = (n: number) => `${n} slide${n === 1 ? '' : 's'}`
 const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
@@ -44,16 +52,25 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
 
   // Without a workspace (the list failed, or a server without them), every deck the user can open is listed, and no docs.
   const loaded = ws.list !== null
+  // The lists of this workspace stored in this browser show first (once per workspace: later reads would put an older
+  // copy over a rename that just happened), then the server's answer replaces them. The dev account stores nothing.
+  const account = me === DEV_ACCOUNT.id ? undefined : me, shown = useRef<Record<Kind, string | null>>({ deck: null, doc: null })
   const loadDecks = useCallback(async () => {
     if (!loaded) return
-    try { setDecks((await repos.decks.list(wsId ?? undefined)).filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` }))); setFailed((f) => ({ ...f, deck: false })) }
-    catch { setFailed((f) => ({ ...f, deck: true })) }
-  }, [repos.decks, wsId, loaded])
+    const name = `decks:${wsId ?? 'all'}`
+    const ok = await showThenFetch(shown.current.deck === name ? undefined : account, name,
+      async () => (await repos.decks.list(wsId ?? undefined)).map(({ id, name, updated, slides }) => ({ id, name, updated, slides })), isSlimDecks,
+      (l) => { shown.current.deck = name; setDecks(l.filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` }))) })
+    setFailed((f) => ({ ...f, deck: !ok }))
+  }, [repos.decks, wsId, loaded, account])
   const loadDocs = useCallback(async () => {
     if (!wsId) return
-    try { setDocs((await repos.docs.list(wsId)).map((d) => ({ id: d.id, name: d.name, sub: ago(d.updated) }))); setFailed((f) => ({ ...f, doc: false })) }
-    catch { setFailed((f) => ({ ...f, doc: true })) }
-  }, [repos.docs, wsId])
+    const name = `docs:${wsId}`
+    const ok = await showThenFetch(shown.current.doc === name ? undefined : account, name,
+      async () => (await repos.docs.list(wsId)).map(({ id, name, updated }) => ({ id, name, updated })), isSlimDocs,
+      (l) => { shown.current.doc = name; setDocs(l.map((d) => ({ id: d.id, name: d.name, sub: ago(d.updated) }))) })
+    setFailed((f) => ({ ...f, doc: !ok }))
+  }, [repos.docs, wsId, account])
   // Read again when the open deck or doc changes, so one saved for the first time shows with its real time.
   useEffect(() => { void loadDecks() }, [loadDecks, open.deck.id])
   useEffect(() => { void loadDocs() }, [loadDocs, open.doc, open.docTick])

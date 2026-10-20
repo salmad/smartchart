@@ -51,3 +51,11 @@ test('the fresh answer is never overwritten by a slow cache read', async () => {
   await tick(); await tick()
   expect(seen).toEqual(['fresh:fresh'])
 })
+
+test('without an account nothing is read or stored', async () => {
+  const { showThenFetch } = await import('@/app/swr')
+  const seen: string[] = []
+  expect(await showThenFetch(undefined, 'x', async () => [{ id: 'a' }], rows, (v, cached) => seen.push(`${cached}:${v.length}`))).toBe(true)
+  expect(await showThenFetch(undefined, 'x', () => Promise.reject(new Error('no')), rows, () => seen.push('never'))).toBe(false)
+  expect(seen).toEqual(['false:1'])
+})
