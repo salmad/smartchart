@@ -10,10 +10,17 @@ interface Props {
   onRename: () => void
   /** Null before the deck has been saved: there is nothing to delete yet. */
   onDelete: (() => void) | null
+  /** How many pages sit below this deck (null when that can't be known: the delete then waits). */
+  subpages?: () => Promise<number | null>
 }
 
-export function DeckMenu({ name, busy, onRename, onDelete }: Props) {
-  const [confirm, setConfirm] = useState(false)
+export function DeckMenu({ name, busy, onRename, onDelete, subpages }: Props) {
+  const [confirm, setConfirm] = useState(false), [kids, setKids] = useState(0)
+  const ask = async () => {
+    const n = subpages ? await subpages() : 0
+    if (n === null) return
+    setKids(n); setConfirm(true)
+  }
   // Rename puts the cursor in the name once the menu has gone: a menu still closing takes focus back from the field
   // (to its button, or to itself when the field's width moves it from under the pointer) and the half-typed name is kept.
   const renaming = useRef(false)
@@ -29,11 +36,11 @@ export function DeckMenu({ name, busy, onRename, onDelete }: Props) {
           <DropdownMenuItem disabled={busy} onSelect={() => { renaming.current = true }} className={ITEM}><Pencil {...MENU_ICON} />Rename</DropdownMenuItem>
           {onDelete && <>
             <DropdownMenuSeparator className="bg-line" />
-            <DropdownMenuItem disabled={busy} onSelect={() => setConfirm(true)} className={ITEM}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>
+            <DropdownMenuItem disabled={busy} onSelect={() => void ask()} className={ITEM}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>
           </>}
         </DropdownMenuContent>
       </DropdownMenu>
-      <DeleteDeck name={confirm ? name : null} onCancel={() => setConfirm(false)} onConfirm={() => { setConfirm(false); onDelete?.() }} />
+      <DeleteDeck name={confirm ? name : null} subpages={kids} onCancel={() => setConfirm(false)} onConfirm={() => { setConfirm(false); onDelete?.() }} />
     </>
   )
 }

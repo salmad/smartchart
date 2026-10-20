@@ -199,3 +199,49 @@ test('from the keyboard: Tab indents, Shift-Tab outdents, Ctrl-Up reorders; a re
   await page.reload()
   await expect(rows(page)).toHaveText(['Alpha', 'Research', 'Competitors'])
 })
+
+test('deleting a page that has subpages names how many go with it, takes the branch, and leaves the open page if it was inside', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/rev') // Revolut is open, inside Research > Competitors
+  await (await hover(page, 'Competitors')).getByRole('button', { name: 'More for Competitors' }).click()
+  await page.getByRole('menuitem', { name: /^Delete doc/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Delete “Competitors” and its 1 subpage?' })
+  await expect(dialog).toContainText('Their slides, text and figures go with them.')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Revolut', 'Alpha'])
+
+  await (await hover(page, 'Research')).getByRole('button', { name: 'More for Research' }).click()
+  await page.getByRole('menuitem', { name: /^Delete doc/ }).click()
+  const all = page.getByRole('dialog', { name: 'Delete “Research” and its 2 subpages?' })
+  await all.getByRole('button', { name: 'Delete 3 pages' }).click()
+  await expect(all).toBeHidden()
+  await expect(page).not.toHaveURL(/\/d\/rev/) // the open deck was in the branch
+  await expect(rows(page)).toHaveText(['Alpha'])
+  await page.reload()
+  await expect(rows(page)).toHaveText(['Alpha'])
+})
+
+test('a page without subpages keeps the plain dialog', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await (await hover(page, 'Alpha')).getByRole('button', { name: 'More for Alpha' }).click()
+  await page.getByRole('menuitem', { name: /^Delete deck/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Delete “Alpha”?' })
+  await expect(dialog).toContainText('Its slides and chat go with it.')
+  await dialog.getByRole('button', { name: 'Delete deck' }).click()
+  await expect(rows(page)).toHaveText(['Research'])
+})
+
+test('the deck bar’s delete says how many subpages go with the deck', async ({ page }) => {
+  await seed(page)
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('kids')) return
+    const s = JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{}') as { decks: Record<string, { parent?: unknown }> }
+    s.decks.rev.parent = { kind: 'deck', id: 'alpha' } // Revolut now sits under Alpha
+    localStorage.setItem('smartchart.journey.decks.v1', JSON.stringify(s)); sessionStorage.setItem('kids', '1')
+  })
+  await page.goto('/d/alpha')
+  await page.getByRole('button', { name: 'Deck menu' }).click()
+  await page.getByRole('menuitem', { name: 'Delete deck…' }).click()
+  await expect(page.getByRole('dialog', { name: 'Delete “Alpha” and its 1 subpage?' })).toBeVisible()
+})

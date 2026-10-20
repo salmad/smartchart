@@ -21,13 +21,13 @@ Calls made: the dev account's tree rules live in `src/app/local-pages.ts` (raw r
 - Local `remove` of a deck or doc deletes the subtree and its versions, as the server does.
 - Tests (`tests/unit/pages-repo.test.ts`): remote calls with a stub fetcher (URLs, bodies, each status → sentence); local repo: nest, move, refuse cycle and depth with the shared sentences, delete a branch.
 
-## Task 2. Tree state: one list, flattened rows
+## Task 2. Tree state: one list, flattened rows — done
 
 - `src/app/components/sidebar/flatten.ts` (pure): `visibleRows(pages, expanded, openRef)` → rows `{ ref, name, depth, hasChildren, open, parentRef }` in tree order; `pathTo(pages, ref)` (ancestors to auto-expand); `shownDepth = min(depth, 4)` for the indent (deeper levels keep the 4th indent, the breadcrumb tells the rest). A deck with no slides is hidden **only if it has no children** (spec edge case). Uses `buildTree` from `tree.ts`.
 - `usePageTree.ts` (hook): loads `PageRepo.list` for the workspace; same reload triggers as today (open deck, open doc, tick); the **open deck** that has no row yet shows under its live name (the current rule), at the top level or under its pending parent; `expanded` state per viewer and workspace in `localStorage` (wrapped in try/catch; renders fine without it), with the path to the open page expanded on load and when the open page changes; `move(ref, to)` is optimistic (update the list at once, call the repo, put it back and surface the sentence on a refusal).
 - Tests: `flatten` (order, collapsed, depth cap, hidden empty deck with and without children, a missing parent shows at the top, a deck and a doc with the same id); hook with a stub repo (optimistic move reverts on refusal).
 
-## Task 3. The tree component replaces ItemList
+## Task 3. The tree component replaces ItemList — done
 
 - `PageTree.tsx` replaces `ItemList.tsx` (delete it and its use; no shim). One section, "Pages", with `+` (New doc or deck at the top level, from the existing New menu: today two buttons, so `+` opens a two-item menu).
 - Row: chevron when it has children (a same-width gap when not), 14 px kind glyph (`FileText` and `Presentation` from lucide, `text-ink-3`), the name, `···` menu. Indent 14 px per shown level. The second line goes; the time moves to the tooltip (`title`). Open row styling as now.
@@ -37,7 +37,7 @@ Calls made: the dev account's tree rules live in `src/app/local-pages.ts` (raw r
 - Look: full-size screenshots, both themes, a deep tree, long names, collapsed; log the critique in `docs/temp/apple-bar-review.md`.
 - Browser tests (`tests/browser/page-tree.spec.ts`, using the dev account helpers in `dev-account.ts`): the tree renders nested rows; chevrons toggle; the open page's path is expanded after a reload; collapse state survives a reload; arrow keys, Right, Left, Enter.
 
-## Task 4. Add subpage, and a deck born under a parent
+## Task 4. Add subpage, and a deck born under a parent — done
 
 - Row `···` menu: **Add subpage → Doc | Deck**, plus a `+` on hover beside the menu (a small menu with the same two items). Menu order: Rename…, Add subpage, Move to…, Delete….
 - Doc: `createDoc` saves with `parent` and opens it; the parent expands.
@@ -45,14 +45,15 @@ Calls made: the dev account's tree rules live in `src/app/local-pages.ts` (raw r
 - The `+` at the top still makes a top-level page.
 - Browser tests: add a subpage doc under a doc; add a subpage deck under a doc, make a slide (use the starter pick as other specs do), reload: the deck sits under its parent.
 
-## Task 5. Move to…, and the keyboard moves
+## Task 5. Move to…, and the keyboard moves — done
 
 - `MovePicker.tsx` (a dialog like `NewDoc`): searchable list of the workspace's pages as an indented tree, "Top level" first. The page and its descendants are greyed (they would make a cycle); pages that would break the depth cap are greyed with the reason (`canMove` returns the sentence; show it as the row's description). Enter confirms; the page goes last under the choice. Focus is trapped and restored (shadcn Dialog).
 - Keyboard on a focused row: ⌘↑ and ⌘↓ move it among its siblings (`before` or `after` the neighbour), Tab indents (becomes the last child of the sibling above), Shift-Tab outdents (placed after its parent). A refusal puts the row back and shows the sentence (aria-live region, same as the refused saves).
 - If the **open** page is moved, nothing about the open screen changes (a move is not content).
 - Tests: unit for the picker's greying (pure function `moveTargets(pages, ref)` → `{ ref, depth, reason | null }[]`); browser: move a page with the picker, refuse a cycle (greyed), keyboard indent, outdent, reorder, reload keeps it.
 
-## Task 6. Delete with a count
+## Task 6. Delete with a count — done
+Calls made: the deck bar's Delete asks for the count too (`DeckMenu` gets `subpages`, threaded through `Bar` from `App`), since the server deletes the branch whatever menu asked. A failed count says "Couldn’t check for subpages." and deletes nothing. After a delete every page of the branch is reported to the app, which leaves only if one was the open page.
 
 - `DeleteDeck` takes `subpages?: number`: with children, "Delete “X” and its N subpage(s)? Their slides, text and figures go with them. This can’t be undone." and the button reads "Delete N+1 pages"; with none, today's dialog unchanged. The count is fetched (`PageRepo.subpages`) when the menu item is chosen; if it fails, say "Couldn’t check for subpages." and do not delete.
 - After a delete, remove the branch from the list; if the **open** page is in it, call the existing `onDeckDeleted` or `onDocDeleted` (open another page / `/new`).

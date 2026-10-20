@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { PageKind, PageRef } from '@/engine/pages/tree'
+import { descendants, type PageKind, type PageRef } from '@/engine/pages/tree'
 import { starterDoc, type DocStarter } from '@/engine/starters'
 import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
@@ -39,7 +39,7 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onDocRenamed, onRenameOpenDeck, me }: Props) {
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
-  const [doomed, setDoomed] = useState<Row | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(null)
+  const [doomed, setDoomed] = useState<{ row: Row; subpages: number } | null>(null), [said, setSaid] = useState<string | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(null)
   const [members, setMembers] = useState(false), [moving, setMoving] = useState<Row | null>(null)
   const { deck } = open
   const openRef: PageRef | null = open.doc !== null ? { kind: 'doc', id: open.doc } : deck.id ? { kind: 'deck', id: deck.id } : null
@@ -48,6 +48,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   const rows = ws.list !== null && !wsId ? [] : tree.rows
   // A refusal is said for a few seconds, then goes.
   useEffect(() => { if (!tree.notice) return; const t = setTimeout(tree.dismiss, 6000); return () => clearTimeout(t) }, [tree.notice, tree.dismiss])
+  useEffect(() => { if (!said) return; const t = setTimeout(() => setSaid(null), 6000); return () => clearTimeout(t) }, [said])
   const openPage = (ref: PageRef) => (ref.kind === 'deck' ? onOpenDeck(ref.id) : onOpenDoc(ref.id))
 
   // Switching opens the new workspace's most recent deck, or a new deck there.
@@ -82,14 +83,19 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
     if (why) throw new Error(why)
     onDocRenamed()
   }
+  // Deleting takes every page below it too, so the dialog opens once it knows how many there are; if it can't know, nothing is deleted.
+  const askDelete = async (row: Row) => {
+    try { setDoomed({ row, subpages: await repos.pages.subpages(row.ref) }) } catch { setSaid('Couldn’t check for subpages.') }
+  }
   const remove = async () => {
     if (!doomed) return
-    const { ref } = doomed
+    const { ref } = doomed.row, branch = [ref, ...descendants(tree.pages ?? [], ref)]
     setDoomed(null)
     const gone = await (ref.kind === 'deck' ? repos.decks.remove(ref.id) : repos.docs.remove(ref.id))
     await tree.reload()
     if (!gone) return
-    if (ref.kind === 'deck') onDeckDeleted(ref.id); else onDocDeleted(ref.id)
+    // The open page may be anywhere in the branch: each deleted page tells the app, which leaves only if it is the open one.
+    for (const p of branch) if (p.kind === 'deck') onDeckDeleted(p.id); else onDocDeleted(p.id)
   }
   const createDoc = async (s: DocStarter) => {
     if (!wsId) return
@@ -107,15 +113,15 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       </div>
       <div className="grid min-h-0 flex-1 content-start overflow-y-auto pb-4">
         <PageTree rows={rows} failed={tree.failed} canWrite={canWrite} busy={busy} onOpen={openPage} onToggle={tree.toggle}
-          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={setDoomed} />
-        {tree.notice && <p role="status" className="mx-2 mt-1 rounded-lg bg-panel px-2.5 py-2 text-[12.5px] leading-[1.4] text-ink-2">{tree.notice}</p>}
+          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={(row) => void askDelete(row)} />
+        {(tree.notice ?? said) && <p role="status" className="mx-2 mt-1 rounded-lg bg-panel px-2.5 py-2 text-[12.5px] leading-[1.4] text-ink-2">{tree.notice ?? said}</p>}
       </div>
 
       <RenameItem open={renaming && (renaming.kind === 'workspace'
         ? { title: 'New workspace', name: '', action: 'Create', about: 'A place to share docs and decks with your team. You can invite people once it exists.' }
         : { title: `Rename ${renaming.kind}`, name: renaming.row?.name ?? '', action: 'Rename' })}
         onSubmit={rename} onClose={() => setRenaming(null)} />
-      <DeleteDeck name={doomed?.name ?? null} what={doomed?.ref.kind ?? 'deck'} onCancel={() => setDoomed(null)} onConfirm={() => void remove()} />
+      <DeleteDeck name={doomed?.row.name ?? null} what={doomed?.row.ref.kind ?? 'deck'} subpages={doomed?.subpages ?? 0} onCancel={() => setDoomed(null)} onConfirm={() => void remove()} />
       <MovePicker page={moving && { ref: moving.ref, name: moving.name }} pages={tree.pages ?? []} onClose={() => setMoving(null)}
         onMove={async (parent) => { const why = moving ? await tree.move(moving.ref, { parent }) : null; if (!why && parent) for (const p of [...pathTo(tree.pages ?? [], parent), parent]) tree.toggle(p, true); return why }} />
       <NewDoc open={making !== null} onCreate={createDoc} onClose={() => setMaking(null)} />

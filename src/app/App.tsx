@@ -250,6 +250,8 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     onRename: (name: string) => { if (!locked(app.getState())) app.dispatch({ type: 'set', patch: { name } }) },
     // Only a deck that has been saved can be deleted: one with slides.
     onDelete: s.deckId && s.items.length ? () => void deleteDeck() : null,
+    // Deleting a deck takes the pages under it too, so the dialog first asks how many there are.
+    subpages: async () => { try { return await pages.subpages({ kind: 'deck', id: app.getState().deckId ?? '' }) } catch { say('Couldn’t check for subpages.'); return null } },
     account,
   }
 

@@ -16,6 +16,8 @@ export interface BarProps {
   onRename: (name: string) => void
   /** Null before the deck is saved. */
   onDelete: (() => void) | null
+  /** How many pages sit below the deck, or null when that can't be known. */
+  subpages?: () => Promise<number | null>
   /** The deck's inspectors on the right: its look, and its versions (null when the decks' store keeps none). */
   lookOpen: boolean; onLook: () => void
   versionsOpen: boolean; onVersions: (() => void) | null
@@ -60,7 +62,7 @@ export function Bar(p: BarProps) {
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-ink-3">/</span>
           <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
-          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} />
+          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages} />
         </nav>
       </div>
       <div data-tour="views" className="max-[900px]:hidden">
