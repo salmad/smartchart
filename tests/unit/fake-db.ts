@@ -4,7 +4,7 @@ import { KEEP, type Version } from '../../src/engine/versions'
 import type { Slide } from '../../src/engine/types'
 import type { Block } from '../../src/engine/docs/types'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments'
-import { appendKey, canAdd, NO_PAGE, type PageNode, type PageRef } from '../../src/engine/pages/tree'
+import { appendKey, canAdd, canMove, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
@@ -145,6 +145,17 @@ export function fakeDb(): FakeDb {
       ...[...docs.values()].filter((d) => d.ws === w && can(role(u, d), 'read')).map((d) => ({ kind: 'doc' as const, id: d.id, name: d.name, updated: d.updated, slides: null, parent: d.parent ?? null, sortKey: d.sortKey ?? null })),
     ].sort((a, b) => b.updated - a.updated).slice(0, 5000),
     getDoc: async (u, id) => { const d = docIf(u, id, 'read'); return d ? { id: d.id, name: d.name, updated: d.updated, workspaceId: d.ws, text: d.text, rev: d.rev } : null },
+    movePage: async (u, page, to) => {
+      const r = page.kind === 'deck' ? rows.get(page.id) : docs.get(page.id)
+      if (!r?.ws || !can(role(u, r), 'read')) return 'foreign'
+      if (!can(role(u, r), 'write')) return NO_EDIT
+      const nodes = nodesIn(r.ws), ok = canMove(nodes, page, to.parent)
+      if (ok !== 'ok') return ok
+      const slot = slotKey(nodes, page, to.parent, to)
+      if ('refused' in slot) return slot.refused
+      r.parent = to.parent; r.sortKey = slot.key
+      return 'ok'
+    },
     putDoc: async (u, id, name, text, baseRev, workspaceId, parent) => {
       const d = docs.get(id)
       if (d && !can(role(u, d), 'write')) return 'foreign'

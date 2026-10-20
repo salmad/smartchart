@@ -275,6 +275,65 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.listPages(cy.id, ws)).toEqual([])
     })
 
+    describe('moving pages', () => {
+      const put = (db: Db, u: SeedUser, ws: string, idd: string, parent?: { kind: 'doc' | 'deck'; id: string }) => db.putDoc(u.id, idd, idd, `# ${idd}`, 0, ws, parent)
+      const order = async (db: Db, u: SeedUser, ws: string, parent: { kind: 'doc' | 'deck'; id: string } | null) =>
+        (await db.listPages(u.id, ws)).filter((p) => (p.parent?.id ?? null) === (parent?.id ?? null)).sort((a, b) => ((a.sortKey ?? '') < (b.sortKey ?? '') ? -1 : 1)).map((p) => p.id)
+
+      it('re-parents, orders among siblings across kinds, and leaves the page’s revision, version and time alone', async () => {
+        const db = await make(), { ann, id } = people(), a = id('doc'), b = id('doc'), c = id('doc'), board = id('d')
+        const ws = await seedUser(db, ann)
+        for (const x of [a, b, c]) await put(db, ann, ws, x)
+        await db.putDeck(ann.id, board, 'Board', deck('B'), {}, 0, { workspaceId: ws })
+        await db.writeDocVersion(ann.id, b, docVersion(1))
+        const before = await db.getDoc(ann.id, b)
+        expect(await db.movePage(ann.id, { kind: 'doc', id: b }, { parent: { kind: 'doc', id: a } })).toBe('ok')
+        expect(await db.movePage(ann.id, { kind: 'deck', id: board }, { parent: { kind: 'doc', id: a } })).toBe('ok')
+        expect(await order(db, ann, ws, { kind: 'doc', id: a })).toEqual([b, board])
+        expect(await db.movePage(ann.id, { kind: 'deck', id: board }, { parent: { kind: 'doc', id: a }, before: { kind: 'doc', id: b } })).toBe('ok')
+        expect(await order(db, ann, ws, { kind: 'doc', id: a })).toEqual([board, b])
+        expect(await db.movePage(ann.id, { kind: 'doc', id: c }, { parent: { kind: 'doc', id: a }, after: { kind: 'deck', id: board } })).toBe('ok')
+        expect(await order(db, ann, ws, { kind: 'doc', id: a })).toEqual([board, c, b])
+        expect(await db.movePage(ann.id, { kind: 'doc', id: b }, { parent: null })).toBe('ok')
+        expect(await order(db, ann, ws, null)).toEqual([a, b])
+        const after = await db.getDoc(ann.id, b)
+        expect(after).toEqual(before) // same rev, same time
+        expect(await db.listDocVersions(ann.id, b)).toHaveLength(1)
+        expect(await db.putDoc(ann.id, b, b, '# again', before?.rev ?? 0, ws)).toEqual({ rev: 2 }) // another writer’s save from the old rev still lands
+      })
+
+      it('refuses a cycle, a seventh level (counting the subtree moved) and a neighbour from another parent', async () => {
+        const db = await make(), { ann, id } = people()
+        const ws = await seedUser(db, ann), ids: string[] = []
+        let parent: { kind: 'doc'; id: string } | undefined
+        for (let i = 0; i < 4; i++) { const x = id('doc'); await put(db, ann, ws, x, parent); ids.push(x); parent = { kind: 'doc', id: x } }
+        const [p0, p1, , p3] = ids, deep = id('doc'), sub = id('doc'), sub2 = id('doc'), loose = id('doc')
+        const CYCLE = 'A page can’t go inside itself or its subpages.'
+        expect(await db.movePage(ann.id, { kind: 'doc', id: p0 }, { parent: { kind: 'doc', id: p0 } })).toBe(CYCLE)
+        expect(await db.movePage(ann.id, { kind: 'doc', id: p0 }, { parent: { kind: 'doc', id: p3 } })).toBe(CYCLE)
+        expect(await db.movePage(ann.id, { kind: 'doc', id: p1 }, { parent: { kind: 'doc', id: p3 } })).toBe(CYCLE)
+        await put(db, ann, ws, deep); await put(db, ann, ws, sub, { kind: 'doc', id: deep }); await put(db, ann, ws, sub2, { kind: 'doc', id: sub })
+        // p3 is at level 4; a 3-level subtree under it would end at level 7.
+        expect(await db.movePage(ann.id, { kind: 'doc', id: deep }, { parent: { kind: 'doc', id: p3 } })).toBe('Pages nest 6 levels deep at most.')
+        expect(await db.movePage(ann.id, { kind: 'doc', id: sub }, { parent: { kind: 'doc', id: p3 } })).toBe('ok') // two levels end at level 6
+        await put(db, ann, ws, loose)
+        expect(await db.movePage(ann.id, { kind: 'doc', id: loose }, { parent: { kind: 'doc', id: p0 }, after: { kind: 'doc', id: p3 } })).toBe('No such page.')
+        expect(await db.movePage(ann.id, { kind: 'doc', id: loose }, { parent: { kind: 'doc', id: 'nope' } })).toBe('No such page.')
+      })
+
+      it('a viewer can’t move, a stranger sees no such page, and a parent in another workspace is no such page', async () => {
+        const db = await make(), { ann, bob, cy, id } = people(), a = id('doc'), b = id('doc'), theirs = id('doc')
+        const ws = await seedUser(db, ann), other = await seedUser(db, cy)
+        await put(db, ann, ws, a); await put(db, ann, ws, b); await put(db, cy, other, theirs)
+        await join(db, ann, ws, bob, 'viewer')
+        expect(await db.movePage(bob.id, { kind: 'doc', id: b }, { parent: { kind: 'doc', id: a } })).toBe('You can view this workspace, not change it.')
+        expect(await db.movePage(cy.id, { kind: 'doc', id: b }, { parent: null })).toBe('foreign')
+        expect(await db.movePage(ann.id, { kind: 'doc', id: b }, { parent: { kind: 'doc', id: theirs } })).toBe('No such page.')
+        expect(await db.movePage(ann.id, { kind: 'doc', id: 'nope' }, { parent: null })).toBe('foreign')
+        expect((await db.listPages(ann.id, ws)).find((p) => p.id === b)?.parent).toBeNull()
+      })
+    })
+
     it('doc versions follow the doc: members read them, editors write them, deleting the doc clears them', async () => {
       const db = await make(), { ann, bob, cy, id } = people(), doc = id('doc')
       const ws = await seedUser(db, ann)

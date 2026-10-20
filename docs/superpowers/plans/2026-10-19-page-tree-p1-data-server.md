@@ -43,7 +43,8 @@ Calls made: one shape, `parent: PageRef | null` plus `sortKey`, on `DeckSummary`
 - `putDeck` and `putDoc` take an optional `parent` for a **new** row: the parent must be in the same workspace and pass `canMove`'s depth rule, else the call answers a sentence; the row's key is after the parent's last child. An existing row's save never changes its parent or key (as a save never moves a deck between workspaces).
 - The list cap (`limit 200`) is lifted for the tree: add `listPages(userId, workspaceId)` returning decks and docs together as `PageNode`-shaped summaries (id, kind, name, updated, slides, parent, sortKey), no limit but a safety of 5,000, one SQL statement (`union all`). P2 uses it for the sidebar; the old per-kind lists stay for everything else.
 
-## Task 4. `movePage`
+## Task 4. `movePage` — done
+Calls made: the cycle and depth rules run in TypeScript over the workspace's pages (`canMove` in `tree.ts`, so the fake, the SQL Db and the sidebar say the same sentences), and the write repeats the cycle check as a recursive CTE so two moves landing together can't make a loop; depth is not rechecked in the write. That is one read of the workspace's pages and one update, not the neighbour-guarded retry sketched below: a neighbour that moves in between leaves a shared key, which the `(sortKey, id)` order already tolerates. `slotKey` (in `tree.ts`) steps over siblings that share the key before the slot. A viewer is told "You can view this workspace, not change it."; a non-member, or an unknown page, gets 'foreign'.
 
 `Db.movePage(userId, page: PageRef, to: { parent: PageRef | null; before?: PageRef; after?: PageRef })`, answering `'ok' | 'foreign' | string` (a sentence).
 

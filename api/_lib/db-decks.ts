@@ -3,7 +3,7 @@
 import { KEEP, type Tree } from '../../src/engine/versions.js'
 import type { Slide } from '../../src/engine/types.js'
 import { rolesFor, type Action, type Role } from './access.js'
-import { appendKey, canAdd, NO_PAGE, type PageNode, type PageRef } from '../../src/engine/pages/tree.js'
+import { appendKey, canAdd, canMove, CYCLE, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree.js'
 import { MAX_PAGES, shareToken, type Db, type DeckRow, type DeckSummary, type DocSummary, type PageSummary, type Presence, type PutResult, type Q } from './db.js'
 
 /** The caller `u` may take `action` on a row of `t` (decks or docs): a member with a role allowed it, or, on a deck
@@ -20,7 +20,7 @@ const R = (a: Action) => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
 
 type Calls = 'deckRole' | 'listDecks' | 'getDeck' | 'putDeck' | 'deleteDeck' | 'shareDeck' | 'sharedDeck' | 'getDeckMeta' | 'sharedRev'
-  | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages'
+  | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages' | 'movePage'
 
 type PageCols = { parent_kind: 'deck' | 'doc' | null; parent_id: string | null; sort_key: string | null }
 const parentOf = (r: PageCols): PageRef | null => (r.parent_kind && r.parent_id ? { kind: r.parent_kind, id: r.parent_id } : null)
@@ -151,6 +151,31 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
          union all select 'doc', id, name, updated_at, null, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}) p
        order by updated desc limit ${MAX_PAGES}`, [u, ws, R('read')]))
       .map((r): PageSummary => ({ kind: r.kind, id: r.id, name: r.name, updated: ms(r.updated), slides: r.slides === null ? null : Number(r.slides), parent: parentOf(r), sortKey: r.sort_key })),
+    movePage: async (u, page, to) => {
+      const t = TABLE[page.kind]
+      const at = (await q<{ ws: string | null; write: boolean }>(
+        `select workspace_id as ws, ${may(t, '$1', '$4')} as write from ${t} where id = $2 and ${may(t, '$1', '$3')}`, [u, page.id, R('read'), R('write')]))[0]
+      if (!at?.ws) return 'foreign'
+      if (!at.write) return NO_EDIT
+      const nodes = await nodesIn(u, at.ws), ok = canMove(nodes, page, to.parent)
+      if (ok !== 'ok') return ok
+      const slot = slotKey(nodes, page, to.parent, to)
+      if ('refused' in slot) return slot.refused
+      // The cycle check runs again inside the write, walking up from the new parent, so two moves landing together can't make a loop.
+      // Depth is checked only above: a race there could leave one level too many, which breaks no rule the data depends on.
+      const done = await q(
+        `update ${t} set parent_kind = $2, parent_id = $3, sort_key = $4 where id = $1 and workspace_id = $5 and ${may(t, '$6', '$7')}
+           and not exists (
+             with recursive up(kind, id, depth) as (
+               select $2::text, $3::text, 0
+               union all select p.parent_kind, p.parent_id, up.depth + 1
+                 from up join (select 'deck' as kind, id, parent_kind, parent_id from decks union all select 'doc', id, parent_kind, parent_id from docs) p
+                   on p.kind = up.kind and p.id = up.id where p.parent_id is not null and up.depth < 20)
+             select 1 from up where kind = $8 and id = $1)
+         returning id`, [page.id, to.parent?.kind ?? null, to.parent?.id ?? null, slot.key, at.ws, u, R('write'), page.kind])
+      if (done.length) return 'ok'
+      return (await q(`select 1 from ${t} where id = $1`, [page.id])).length ? CYCLE : NO_PAGE
+    },
     getDoc: async (u, id) => {
       const r = await q<{ id: string; name: string; updated: string | Date; workspaceId: string; text: string; rev: number }>(
         `select id, name, updated_at as updated, workspace_id as "workspaceId", text, rev from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')])

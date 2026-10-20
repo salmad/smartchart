@@ -6,7 +6,7 @@ import type { Slide } from '../../src/engine/types.js'
 import type { Block } from '../../src/engine/docs/types.js'
 import type { DocTree } from '../../src/engine/docs/versions.js'
 import type { CommentOp, DocComment } from '../../src/engine/comments.js'
-import type { PageNode, PageRef } from '../../src/engine/pages/tree.js'
+import type { PageNode, PageRef, Slot } from '../../src/engine/pages/tree.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
 import { docCalls } from './db-docs.js'
@@ -120,6 +120,9 @@ export interface Db {
   listDocs(userId: string, workspaceId: string): Promise<DocSummary[]>
   getDoc(userId: string, id: string): Promise<DocRow | null>
   putDoc(userId: string, id: string, name: string, text: string, baseRev: number, workspaceId?: string, parent?: PageRef): Promise<PutResult>
+  /** Move a page under `to.parent` (null: the top), right after or before a sibling, else last. Changes only the page's parent and
+      order key: no revision, no version, no `updated_at`. Answers 'ok', 'foreign' (the user can't read the page), or a sentence. */
+  movePage(userId: string, page: PageRef, to: { parent: PageRef | null } & Slot): Promise<'ok' | 'foreign' | string>
   /** Every deck and doc in the workspace the user can read, for the tree (up to MAX_PAGES). */
   listPages(userId: string, workspaceId: string): Promise<PageSummary[]>
   deleteDoc(userId: string, id: string): Promise<boolean>

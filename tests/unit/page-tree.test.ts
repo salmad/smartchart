@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appendKey, buildTree, canAdd, canMove, CYCLE, depthOf, descendants, heightBelow, isKey, keyBetween, MAX_DEPTH, NO_PAGE, TOO_DEEP, type PageKind, type PageNode, type PageRef } from '../../src/engine/pages/tree'
+import { appendKey, slotKey, buildTree, canAdd, canMove, CYCLE, depthOf, descendants, heightBelow, isKey, keyBetween, MAX_DEPTH, NO_PAGE, TOO_DEEP, type PageKind, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 
 const ref = (kind: PageKind, id: string): PageRef => ({ kind, id })
 const node = (kind: PageKind, id: string, parent: PageRef | null = null, sortKey: string | null = null): PageNode => ({ kind, id, parent, sortKey })
@@ -128,5 +128,28 @@ describe('adding a page', () => {
     expect(canAdd(chain(2), ref('doc', 'nope'))).toBe(NO_PAGE)
     expect(canAdd(chain(MAX_DEPTH - 1), ref('doc', `p${MAX_DEPTH - 2}`))).toBe('ok')
     expect(canAdd(chain(MAX_DEPTH), ref('doc', `p${MAX_DEPTH - 1}`))).toBe(TOO_DEEP)
+  })
+})
+
+describe('where a moved page goes', () => {
+  const kids = [node('doc', 'a', null, '001V'), node('doc', 'b', null, '002V'), node('doc', 'c', null, '003V'), node('doc', 'm', null, '009V')]
+  const keyOf = (r: ReturnType<typeof slotKey>) => ('key' in r ? r.key : r.refused)
+  it('last, first, between, and not counting the page itself', () => {
+    const m = ref('doc', 'm')
+    expect(keyOf(slotKey(kids, m, null, {})) > '003V').toBe(true)
+    expect(keyOf(slotKey(kids, m, null, { before: ref('doc', 'a') })) < '001V').toBe(true)
+    const between = keyOf(slotKey(kids, m, null, { after: ref('doc', 'a') }))
+    expect(between > '001V' && between < '002V').toBe(true)
+    const before = keyOf(slotKey(kids, m, null, { before: ref('doc', 'c') }))
+    expect(before > '002V' && before < '003V').toBe(true)
+    expect(keyOf(slotKey(kids, ref('doc', 'a'), null, { after: ref('doc', 'a') }))).toBe(NO_PAGE) // not its own neighbour
+  })
+  it('refuses a neighbour that is not a child of the new parent', () => {
+    expect(keyOf(slotKey(kids, ref('doc', 'm'), ref('doc', 'a'), { after: ref('doc', 'b') }))).toBe(NO_PAGE)
+  })
+  it('steps over siblings that share the key before the slot', () => {
+    const tied = [node('doc', 'a', null, '001V'), node('doc', 'b', null, '001V'), node('doc', 'c', null, '002V'), node('doc', 'm')]
+    const k = keyOf(slotKey(tied, ref('doc', 'm'), null, { after: ref('doc', 'a') }))
+    expect(k > '001V' && k < '002V').toBe(true)
   })
 })

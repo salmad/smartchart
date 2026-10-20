@@ -114,3 +114,23 @@ export function appendKey(nodes: PageNode[], parent: PageRef | null): string {
   const kids = buildTree(nodes).children(parent && nodes.some((n) => same(n, parent)) ? parent : null)
   return keyBetween(kids.at(-1)?.sortKey || null, null)
 }
+
+export const NO_EDIT = 'You can view this workspace, not change it.'
+
+/** Where among its new siblings a moved page goes: right after one of them, right before one, or (neither) last. */
+export interface Slot { before?: PageRef; after?: PageRef }
+
+/** The order key for `ref` placed at `slot` under `parent`, or a sentence when the slot's page is not a child of `parent`.
+    Siblings that share a key with the page before the slot are stepped over, so the key is always strictly after that one. */
+export function slotKey(nodes: PageNode[], ref: PageRef, parent: PageRef | null, slot: Slot): { key: string } | { refused: string } {
+  const sibs = buildTree(nodes).children(parent).filter((n) => !same(n, ref))
+  const at = (p: PageRef) => sibs.findIndex((n) => same(n, p))
+  let i = sibs.length
+  if (slot.after) i = at(slot.after) + 1 || -1
+  else if (slot.before) i = at(slot.before)
+  if (i < 0) return { refused: NO_PAGE }
+  const a = sibs[i - 1]?.sortKey || null
+  let b: string | null = null
+  for (let j = i; j < sibs.length && b === null; j++) { const k = sibs[j].sortKey || null; if (k !== null && (a === null || k > a)) b = k }
+  return { key: keyBetween(a, b) }
+}
