@@ -33,6 +33,7 @@ import { useWorkspace } from './components/sidebar/useWorkspace'
 import { DocScreen } from './components/DocScreen'
 import { ViewDeck } from './components/ViewDeck'
 import type { DocRepo } from './docs'
+import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
 import { ROOMY, usePanel } from './panel'
 
@@ -50,12 +51,14 @@ interface Props {
   backup: DeckRepo | null
   workspaces: WorkspaceRepo
   docs: DocRepo
+  /** The workspace's page tree: nesting and order. */
+  pages: PageRepo
   /** Hears the workspace open in the app: a new deck is saved there. */
   onWorkspace: (id: string | null) => void
 }
 
 /** The editor for one deck: loads it and saves it. */
-export function App({ route, account, repo, backup, workspaces, docs, onWorkspace }: Props) {
+export function App({ route, account, repo, backup, workspaces, docs, pages, onWorkspace }: Props) {
   const [s, app] = useAppState()
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const sendRef = useRef<((text: string) => void) | null>(null)
@@ -281,7 +284,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
   const [docTick, setDocTick] = useState(0)
   // The workspace down the left (⌘\), beside the editor or a doc.
-  const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, workspaces }} busy={locked(s)}
+  const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} busy={locked(s)}
     open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }, doc: route.name === 'doc' ? route.id : null, docTick }}
     onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={() => leaveTo('/new')} onDeckDeleted={onDeckDeleted}
     onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onDocRenamed={() => setDocTick((t) => t + 1)} onRenameOpenDeck={bar.onRename} me={account.id} />

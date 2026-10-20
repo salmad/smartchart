@@ -12,6 +12,7 @@ import { Present } from './components/Present'
 import { Presenter } from './components/Presenter'
 import { localDeckRepo } from './store'
 import { localDocRepo, remoteDocRepo } from './docs'
+import { localPageRepo, remotePageRepo } from './pages'
 import { localWorkspaceRepo, remoteWorkspaceRepo } from './workspaces'
 
 /** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
@@ -28,6 +29,7 @@ export function Root() {
   const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true), workspace: () => workspace.current })), [dev])
   const workspaces = useMemo(() => (dev ? localWorkspaceRepo() : remoteWorkspaceRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const pages = useMemo(() => (dev ? localPageRepo() : remotePageRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
   const joined = useCallback(() => go('/', { replace: true }), [])
@@ -56,7 +58,7 @@ export function Root() {
   // Keyed by account, not by deck: a new deck's URL becoming /d/:id after its first save must not restart it.
   return (
     <>
-      <App key={session.id} route={route} account={session} repo={repo} backup={backup} workspaces={workspaces} docs={docs} onWorkspace={(id) => { workspace.current = id }} />
+      <App key={session.id} route={route} account={session} repo={repo} backup={backup} workspaces={workspaces} docs={docs} pages={pages} onWorkspace={(id) => { workspace.current = id }} />
       <SignIn open={ended} onOpenChange={setEnded} returnTo={location.pathname} title="Sign in again"
         lede="Your session ended. Your deck is kept in this browser until you sign in and it saves to your account." />
     </>

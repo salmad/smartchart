@@ -4,6 +4,7 @@ import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
+import type { PageRepo } from '@/app/pages'
 import type { WorkspaceRepo } from '@/app/workspaces'
 import { DeleteDeck } from '../DeleteDeck'
 import { ago } from './ago'
@@ -16,7 +17,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
 interface Props {
   ws: WorkspaceState
-  repos: { decks: DeckRepo; docs: DocRepo; workspaces: WorkspaceRepo }
+  repos: { decks: DeckRepo; docs: DocRepo; pages: PageRepo; workspaces: WorkspaceRepo }
   /** The deck held in the editor (its name is live, and it lists before its first save), and the doc on screen. */
   open: { deck: { id: string | null; name: string; slides: number }; doc: string | null; docTick: number }
   busy: boolean

@@ -16,7 +16,7 @@ export const CYCLE = 'A page can’t go inside itself or its subpages.'
 export const TOO_DEEP = `Pages nest ${MAX_DEPTH} levels deep at most.`
 
 const same = (a: PageRef, b: PageRef) => a.kind === b.kind && a.id === b.id
-const keyOf = (p: PageRef) => `${p.kind}:${p.id}`
+export const keyOf = (p: PageRef) => `${p.kind}:${p.id}`
 
 /* Order keys: strings over base 62 digits that sort as plain text (compared with < and >, never localeCompare). A key never
    ends in the lowest digit, so there is always room between it and the next one. A page with no key reads as before all. */
