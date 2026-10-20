@@ -37,6 +37,9 @@
           var d = localStorage.getItem('smartchart.decksOpen')
           if (d === '1' || (d === null && matchMedia('(min-width: 1500px)').matches)) h.className += ' boot-decks'
           if (localStorage.getItem('smartchart.chatOpen') !== '0') h.className += ' boot-chat'
+          /* The editor's files (named by the build) are fetched now, alongside the entry, not after it has run. */
+          var editor = /*editor-chunks*/[]
+          for (var i = 0; i < editor.length; i++) { var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = editor[i]; document.head.appendChild(l) }
         } catch (e) { /* storage blocked: no frame */ }
       })()
       /* The browser keeps this page for ten minutes (vercel.json). If its copy names files a newer deploy has removed,

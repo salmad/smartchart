@@ -2,22 +2,20 @@
 /* Over each icon on an icon-lead card while editing: click it to choose another icon from the curated set, or ask the
    model to pick one from the card's own text. The icon changes on the slide at once; Save keeps it. */
 import { useRef, useState } from 'react'
-import { icons } from 'lucide-react'
-import { Sparkles } from 'lucide-react'
+import { Icon, Sparkles, type IconNode } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { jev } from '@/engine/agent/llm'
+import { iconNode } from '@/engine/components/icons'
 import { ICONS } from '@/engine/slides/schema'
 import type { Style } from '@/engine/types'
 import { pickIcon } from './icon'
 import type { SlideEdit } from './useSlideEdit'
 import type { Surface } from './surface'
 
-export const glyph = (name: string) => icons[name.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('') as keyof typeof icons]
-
 function Glyph({ name }: { name: string }) {
-  const Icon = glyph(name)
-  return Icon ? <Icon className="size-4" strokeWidth={1.5} /> : null
+  const node = iconNode(name)
+  return node ? <Icon iconNode={(node[2] ?? []) as IconNode} className="size-4" strokeWidth={1.5} /> : null
 }
 
 function One({ edit, path, index, deckStyle, box }: { edit: SlideEdit; path: string; index: number; deckStyle: Style; box: DOMRect }) {
