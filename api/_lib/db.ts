@@ -6,7 +6,7 @@ import type { Slide } from '../../src/engine/types.js'
 import type { Block } from '../../src/engine/docs/types.js'
 import type { DocTree } from '../../src/engine/docs/versions.js'
 import type { CommentOp, DocComment } from '../../src/engine/comments.js'
-import type { PageNode, PageRef, Slot } from '../../src/engine/pages/tree.js'
+import type { PageRef, PageSummary, Slot } from '../../src/engine/pages/tree.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
 import { docCalls } from './db-docs.js'
@@ -39,8 +39,7 @@ export interface InviteRow { token: string; email: string; role: Role; expires: 
     the email it was made for, when someone else holds the link. */
 export type InviteResult = { workspaceId: string; role: Role } | 'gone' | { wrongEmail: string }
 export interface DocSummary { id: string; name: string; updated: number; workspaceId: string; parent: PageRef | null; sortKey: string | null }
-/** One page of the tree, deck or doc, as the sidebar needs it. `slides` is a deck's slide count. */
-export interface PageSummary extends PageNode { name: string; updated: number; slides: number | null }
+export type { PageSummary }
 /** The most pages a workspace's tree call returns. */
 export const MAX_PAGES = 5000
 /** A doc is its Markdown text. */

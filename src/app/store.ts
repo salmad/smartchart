@@ -7,9 +7,11 @@ import type { ChatMessage } from '@/engine/agent/llm'
 import type { TraceStep } from '@/engine/agent/agent'
 import { record, type Version, type VersionMeta } from '@/engine/versions'
 import { mergeComments, type DeckComment } from '@/engine/comments'
+import type { PageRef } from '@/engine/pages/tree'
+import { DECK_VERSIONS_KEY, DECKS_KEY, placeNew, removeBranch } from './local-pages'
 import type { Role } from './workspaces'
 
-export const KEY = 'smartchart.journey.decks.v1'
+export const KEY = DECKS_KEY
 
 export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors: string[]; warnings: string[]; checks: Check[]; checksPending?: boolean }
 /** `files`: what the user attached to the message, as its chips show them; their text went to the agent. */
@@ -17,14 +19,16 @@ export interface Item { id: string; slide: Slide; status: 'ok' | 'draft'; errors
 export type Message = { kind: 'user' | 'bot' | 'error'; text: string; sub?: string; trace?: TraceStep[]; files?: { name: string; about: string }[]; turn?: string; undone?: boolean }
 /** `name`: what the maker called the deck; null while it follows its first title. */
 /** `comments`: notes people left on slides (src/engine/comments.ts); missing on decks saved before comments. */
-export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number; comments?: DeckComment[] }
+export interface SavedDeck { id: string; name?: string | null; style: Style; theme: Theme; accent: string | null; current: number; items: Item[]; history: ChatMessage[]; working: string[]; messages?: Message[]; updated: number; comments?: DeckComment[]
+  /** The page tree. `parent` on a deck's first save says where it goes; after that the repo keeps both (a save never moves a deck). */
+  parent?: PageRef | null; sortKey?: string | null }
 export interface Store { active: string | null; decks: Record<string, SavedDeck> }
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
 /** A deck as a list shows it: name, time, size and the first slide in the deck's look. Open it with `get`. */
-export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; first: Slide | null }
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; first: Slide | null; parent: PageRef | null; sortKey: string | null }
 export const summaryOf = (d: SavedDeck): DeckSummary => ({
-  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, first: d.items?.[0]?.slide ?? null,
+  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, first: d.items?.[0]?.slide ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
 })
 
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
@@ -73,7 +77,7 @@ export function saveStore(store: Store, storage?: Pick<Storage, 'setItem'>): boo
   try { (storage ?? localStorage).setItem(KEY, JSON.stringify(store)); return true } catch { return false }
 }
 
-export const VERSIONS_KEY = 'smartchart.versions.v1'
+export const VERSIONS_KEY = DECK_VERSIONS_KEY
 /** The dev account keeps fewer versions than the server: they share this browser's storage with the decks. */
 export const LOCAL_KEEP = 30
 interface LocalVersions { [deckId: string]: { versions: (Version & { key: string })[]; blobs: Record<string, Slide> } }
@@ -107,15 +111,18 @@ export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>, op
     list: async () => deckList(read()).map(summaryOf),
     get: async (id) => read().decks[id] ?? null,
     save: async (deck, meta) => {
-      const s = read(); s.decks[deck.id] = deck; s.active = deck.id
+      const s = read(), was = s.decks[deck.id]
+      // A save never moves a deck: a new one goes where it asked (last under its parent), an existing one keeps its place.
+      const at = was ? { parent: was.parent ?? null, sortKey: was.sortKey ?? null } : placeNew(storage, undefined, deck.parent)
+      if ('refused' in at) return at.refused
+      s.decks[deck.id] = { ...deck, parent: at.parent, sortKey: at.sortKey }; s.active = deck.id
       if (!write(s)) return 'This browser’s storage is full.'
       if (opts.versions) await recordLocal(deck, meta)
       return null
     },
     remove: async (id) => {
-      const s = read(); if (!s.decks[id]) return false; delete s.decks[id]; if (s.active === id) s.active = null
-      if (opts.versions) { const v = readV(); delete v[id]; writeV(v) }
-      return write(s)
+      return removeBranch(storage, { kind: 'deck', id }) // the deck and every page below it
+
     },
     ...(opts.versions ? {
       versions: async (id: string) => (readV()[id]?.versions ?? []).map(({ key: _k, ...v }) => v).reverse(),

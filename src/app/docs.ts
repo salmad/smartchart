@@ -5,13 +5,16 @@ import { parseDoc } from '@/engine/docs/parse'
 import { docTree, type DocTree } from '@/engine/docs/versions'
 import type { Block } from '@/engine/docs/types'
 import { newCommentId, type CommentOp, type DocComment } from '@/engine/comments'
+import type { PageRef } from '@/engine/pages/tree'
+import { DOC_VERSIONS_KEY as VERSIONS, DOCS_KEY as DOCS, placeNew, removeBranch } from './local-pages'
+import { refOf } from './pages-wire'
 import { OFFLINE, type Role } from './workspaces'
 import { LOCAL_KEEP } from './store'
 
-export interface DocSummary { id: string; name: string; updated: number; workspaceId: string }
-export interface Doc extends DocSummary { text: string }
+export interface DocSummary { id: string; name: string; updated: number; workspaceId: string; parent: PageRef | null; sortKey: string | null }
+export interface Doc extends Omit<DocSummary, 'parent' | 'sortKey'> { text: string }
 /** What a save sends: the doc as this tab holds it. */
-export type DocDraft = Omit<Doc, 'updated'>
+export type DocDraft = Omit<Doc, 'updated'> & { /** Where a new doc goes (last under this page); a save never moves a doc. */ parent?: PageRef | null }
 
 /** The doc's live state: its revision, who is editing now (expires at `until`), and the caller's role. */
 export interface DocMeta { rev: number; presence: { editing?: { by: string; until: number } }; role: Role }
@@ -54,7 +57,7 @@ export function remoteDocRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: 
     list: async (ws) => {
       const r = await call(`?workspace=${encodeURIComponent(ws)}`)
       if (!r.ok) throw new Error(`docs: ${r.status}`)
-      return (await r.json()) as DocSummary[]
+      return ((await r.json()) as Partial<DocSummary>[]).map((d) => ({ id: String(d.id), name: d.name ?? '', updated: Number(d.updated) || 0, workspaceId: String(d.workspaceId ?? ws), parent: refOf(d.parent), sortKey: typeof d.sortKey === 'string' ? d.sortKey : null }))
     },
     get: async (id) => {
       const r = await call(`?id=${encodeURIComponent(id)}`)
@@ -67,7 +70,7 @@ export function remoteDocRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: 
     save: async (doc, opts) => {
       try {
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: doc.id, name: doc.name, text: doc.text, baseRev: revs.get(doc.id) ?? 0, workspaceId: doc.workspaceId, ...(opts?.label ? { version: { label: opts.label } } : {}) }) })
+          body: JSON.stringify({ id: doc.id, name: doc.name, text: doc.text, baseRev: revs.get(doc.id) ?? 0, workspaceId: doc.workspaceId, ...(doc.parent ? { parent: doc.parent } : {}), ...(opts?.label ? { version: { label: opts.label } } : {}) }) })
         const body = (await r.json().catch(() => null)) as { rev?: number; error?: unknown } | null
         if (r.ok) { revs.set(doc.id, body?.rev ?? (revs.get(doc.id) ?? 0) + 1); return null }
         // A 403 says why in the server's words (a viewer); the rest have our own sentence.
@@ -114,10 +117,10 @@ export function remoteDocRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: 
   }
 }
 
-export const DOCS_KEY = 'smartchart.docs.v1'
-export const DOC_VERSIONS_KEY = 'smartchart.docs.versions.v1'
+export const DOCS_KEY = DOCS
+export const DOC_VERSIONS_KEY = VERSIONS
 
-type Stored = Doc & { rev?: number; comments?: DocComment[] }
+type Stored = Doc & { rev?: number; comments?: DocComment[]; parent?: PageRef | null; sortKey?: string | null }
 interface LocalVersions { list: (DocVersionRow & { key: string })[]; blobs: Record<string, Block> }
 const LOCAL_ME = 'You'
 
@@ -148,25 +151,25 @@ export function localDocRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): Do
   const strip = ({ id, name, text, updated, workspaceId }: Stored): Doc => ({ id, name, text, updated, workspaceId })
   return {
     list: async (ws) => Object.values(read()).filter((d) => d.workspaceId === ws).sort((a, b) => b.updated - a.updated)
-      .map(({ id, name, updated, workspaceId }) => ({ id, name, updated, workspaceId })),
+      .map(({ id, name, updated, workspaceId, parent, sortKey }) => ({ id, name, updated, workspaceId, parent: parent ?? null, sortKey: sortKey ?? null })),
     get: async (id) => { const d = read()[id]; if (d) revs.set(id, d.rev ?? 1); return d ? strip(d) : null },
     save: async (doc, opts) => {
       const all = read(), was = all[doc.id], rev = (was?.rev ?? 1) + (was ? 1 : 0)
       if (was && revs.has(doc.id) && revs.get(doc.id) !== (was.rev ?? 1)) return DOC_STALE
       // Later than every doc kept, so two saves in one millisecond still list newest first.
       const updated = Math.max(Date.now(), ...Object.values(all).map((d) => d.updated + 1))
-      all[doc.id] = { ...doc, updated, rev, comments: was?.comments }
+      // A save never moves a doc: a new one goes where it asked (last under its parent), an existing one keeps its place.
+      const at = was ? { parent: was.parent ?? null, sortKey: was.sortKey ?? null } : placeNew(storage, doc.workspaceId, doc.parent)
+      if ('refused' in at) return at.refused
+      const { parent: _asked, ...rest } = doc
+      all[doc.id] = { ...rest, updated, rev, comments: was?.comments, parent: at.parent, sortKey: at.sortKey }
       if (!write(all)) return 'This browser’s storage is full.'
       revs.set(doc.id, rev)
       record(doc.id, doc.text, rev, opts?.label)
       return null
     },
     remove: async (id) => {
-      const all = read()
-      if (!all[id]) return false
-      delete all[id]
-      const v = versionsOf(); delete v[id]; put(DOC_VERSIONS_KEY, v)
-      return write(all)
+      return removeBranch(storage, { kind: 'doc', id }) // the doc and every page below it
     },
     meta: async (id) => { const d = read()[id]; return d ? { rev: d.rev ?? 1, presence: {}, role: 'owner' } : null },
     known: (id) => revs.get(id) ?? read()[id]?.rev ?? 1,

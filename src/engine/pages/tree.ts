@@ -5,6 +5,8 @@ export type PageKind = 'deck' | 'doc'
 /** A deck and a doc may share an id (clients choose ids), so a page is always named by kind and id together. */
 export interface PageRef { kind: PageKind; id: string }
 export interface PageNode extends PageRef { parent: PageRef | null; sortKey: string | null }
+/** One page of the tree as the sidebar needs it. `slides` is a deck's slide count (null for a doc). */
+export interface PageSummary extends PageNode { name: string; updated: number; slides: number | null }
 
 /** Levels from the top: a page at the top is level 1. */
 export const MAX_DEPTH = 6

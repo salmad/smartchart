@@ -2,6 +2,7 @@
    a 401 means the session ended, and `onSignedOut` hears about it. */
 import type { Slide } from '@/engine/types'
 import type { Version } from '@/engine/versions'
+import { refOf } from './pages-wire'
 import type { Role } from './workspaces'
 import { deckName, localDeckRepo, type DeckEvent, type DeckRepo, type DeckSummary, type Presence, type SavedDeck } from './store'
 
@@ -47,6 +48,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
       return ((await r.json()) as Partial<DeckSummary>[]).map((d) => ({
         id: String(d.id), name: d.name || 'Untitled deck', updated: Number(d.updated) || 0, slides: Number(d.slides) || 0,
         style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink', accent: typeof d.accent === 'string' ? d.accent : null, first: d.first ?? null,
+        parent: refOf(d.parent), sortKey: typeof d.sortKey === 'string' ? d.sortKey : null,
       }))
     },
     get: (id) => inOrder(id, async () => {
@@ -64,10 +66,10 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
     }),
     save: (deck, meta) => inOrder(deck.id, async () => {
       try {
-        const { history, messages, working, name: _name, ...look } = deck, ws = workspace?.()
+        const { history, messages, working, name: _name, parent, sortKey: _key, ...look } = deck, ws = workspace?.()
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0,
-            ...(ws ? { workspaceId: ws } : {}), ...(meta ? { version: meta } : {}) }) })
+            ...(ws ? { workspaceId: ws } : {}), ...(parent ? { parent } : {}), ...(meta ? { version: meta } : {}) }) })
         if (r.ok) {
           revs.set(deck.id, ((await r.json().catch(() => null)) as { rev?: number } | null)?.rev ?? (revs.get(deck.id) ?? 0) + 1)
           bases.set(deck.id, structuredClone(deck))
