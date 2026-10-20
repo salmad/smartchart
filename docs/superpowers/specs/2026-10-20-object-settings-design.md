@@ -169,8 +169,9 @@ one too; `bars` is the gap, and it is the one the user hit.
   items keep priority.
 - **"Fill under the line"** is the series' `area` flag in Settings (a line only, in a chart of only lines), no longer a
   chart-level item. `tests/browser/chart-area.spec.ts` right-clicks the focus line itself.
-- **Not done: a pair half's chart.** A pair's two charts live under `halves[n].chart`; `settingsFor` reads `chart` only, so a
-  pair's bars and lines offer no settings yet. The target type would need the half's index.
+- **A pair half's chart.** Bar and series targets carry an optional `half` (read from the chart host's `data-chart="0"|"1"`; a
+  chart slide's host has no number). `settingsFor` then reads and writes under `halves[half].chart`. A half takes no
+  `highlight` in its schema, so "Highlight this bar" is not offered there; Emphasis, Dashed, the fill and the rest are.
 - **Submenus** open on screen near the window edge (collision padding) and take the doc page's look in a figure.
 - **Tests drive the menu by keyboard** (focus, then → or Enter): a menu opens under the pointer, so Playwright's hover has
   nothing to move and Radix opens submenus on movement.

@@ -21,7 +21,10 @@ export function chartTargetOf(el: { closest(selector: string): { dataset: Record
   const series = Number(mark?.dataset.series)
   if (!mark || !Number.isInteger(series)) return null
   const at = mark.dataset.i
-  return at === undefined ? { kind: 'series', series } : Number.isInteger(Number(at)) ? { kind: 'bar', series, index: Number(at) } : null
+  // A pair's charts are numbered (data-chart="0", "1"); a chart slide's one host has no number.
+  const host = el?.closest('[data-chart]')?.dataset.chart
+  const half = host ? { half: Number(host) } : {}
+  return at === undefined ? { kind: 'series', series, ...half } : Number.isInteger(Number(at)) ? { kind: 'bar', series, index: Number(at), ...half } : null
 }
 
 /** What a right-click or a press on `el` is about: a selection it lands inside, a table cell, a list item, a field. */
