@@ -93,11 +93,11 @@
 - Consumes: `Target` bar/series kinds (Task 3); bars carry `data-series` and `data-i`.
 - Produces: `targetAt(el, current)` returns `{ kind: 'bar', series, index }` for a bar, `{ kind: 'series', series }` for a line path, and `{ kind: 'slide' }` elsewhere on a chart, as before.
 
-- [ ] **Step 1: Write the failing test** for the pure mapping `chartTargetOf(el: { closest(sel: string): { dataset: Record<string, string> } | null } | null): Target | null` exported from `selection.ts`: a bar with `data-series="1" data-i="2"` gives `{kind:'bar',series:1,index:2}`; a line with only `data-series="0"` gives `{kind:'series',series:0}`; anything else gives `null`.
-- [ ] **Step 2: Run** it. Expected: FAIL.
-- [ ] **Step 3: Implement** `chartTargetOf` and call it in `targetAt` before the `slide` fallback (text and cell targets keep priority).
-- [ ] **Step 4: Run** `npx vitest run tests/unit && npx tsc --noEmit -p .`. Expected: PASS.
-- [ ] **Step 5: Commit** `git commit -m "Edit: a bar and a line are targets"`
+- [x] **Step 1: Write the failing test** for the pure mapping `chartTargetOf(el: { closest(sel: string): { dataset: Record<string, string> } | null } | null): Target | null` exported from `selection.ts`: a bar with `data-series="1" data-i="2"` gives `{kind:'bar',series:1,index:2}`; a line with only `data-series="0"` gives `{kind:'series',series:0}`; anything else gives `null`.
+- [x] **Step 2: Run** it. Expected: FAIL.
+- [x] **Step 3: Implement** `chartTargetOf` and call it in `targetAt` before the `slide` fallback (text and cell targets keep priority).
+- [x] **Step 4: Run** `npx vitest run tests/unit && npx tsc --noEmit -p .`. Expected: PASS.
+- [x] **Step 5: Commit** `git commit -m "Edit: a bar and a line are targets"`
 
 ### Task 5: The Settings menu
 
@@ -109,10 +109,14 @@
 - Consumes: `settingsFor`, `Setting`, `actionsFor` (Score actions have `group: "mark"`).
 - Produces: a `Settings` submenu in the context menu: one `ContextMenuSub` per `Setting` of kind `choice` (trigger shows the label and current value; content is a radio list), flags as checkable items in the Settings submenu itself; `Score` is one submenu holding the existing seven `mark` actions; `look` (`MenuLook`) classes apply to every submenu so a doc figure's menu keeps the page's colours.
 
-- [ ] **Step 1: Write the failing browser tests** in `tests/browser/settings-menu.spec.ts`, patterned on `tests/browser/chart-area.spec.ts` (a seeded doc, a figure opened in place) and `tests/browser/edit.spec.ts` (a deck): (a) right-click a table column header, Settings, Alignment, Right: after Done and Save the saved Markdown has `"align": "right"` and the column's cells have class `pl-right`; (b) right-click a series (line), Settings, Emphasis, Contrast: the saved JSON has `"color": "contrast"`; (c) right-click one bar, Settings, Highlight this bar: exactly one `path.bar.c-focus`; choose it again: none; (d) right-click a table cell range: the menu has one `Score` entry and no `Harvey ball` row at the top level; (e) the top level of a table column's menu holds at most 6 entries.
-- [ ] **Step 2: Run** `npm run test:browser -- tests/browser/settings-menu.spec.ts`. Expected: FAIL.
-- [ ] **Step 3: Implement** the menu rendering with `ContextMenuSub`, `ContextMenuSubTrigger`, `ContextMenuSubContent`, `ContextMenuRadioGroup`/`ContextMenuRadioItem` and `ContextMenuCheckboxItem`, calling `edit.apply({ set: setting.set(value) })`; group Score; keep every existing item.
-- [ ] **Step 4: Run** the new spec, then the whole suite: `npm run lint && npm run build && npm test && npm run test:browser`. Expected: all pass.
-- [ ] **Step 5: Look at it.** In the dev app, open a deck and a doc, right-click a column, a series, a bar, a card; read each menu at full size in Ink and Paper. Submenus open on screen at the window edge. Log what you see in `docs/temp/apple-bar-review.md`.
-- [ ] **Step 6: Update the docs.** Mark the spec "built" with the calls made; add `align` and `highlight` in one sentence each to `get_guide` text only if the guide names table or chart settings today (otherwise the card descriptions are the instruction); add a line to `docs/product/FUTURE.md` for what was left out (highlighting several bars, pair halves).
-- [ ] **Step 7: Commit** `git commit -m "Edit: the Settings menu, built from the schema; Score is one submenu"`
+- [x] **Step 1: Write the failing browser tests** in `tests/browser/settings-menu.spec.ts`, patterned on `tests/browser/chart-area.spec.ts` (a seeded doc, a figure opened in place) and `tests/browser/edit.spec.ts` (a deck): (a) right-click a table column header, Settings, Alignment, Right: after Done and Save the saved Markdown has `"align": "right"` and the column's cells have class `pl-right`; (b) right-click a series (line), Settings, Emphasis, Contrast: the saved JSON has `"color": "contrast"`; (c) right-click one bar, Settings, Highlight this bar: exactly one `path.bar.c-focus`; choose it again: none; (d) right-click a table cell range: the menu has one `Score` entry and no `Harvey ball` row at the top level; (e) the top level of a table column's menu holds at most 6 entries.
+- [x] **Step 2: Run** `npm run test:browser -- tests/browser/settings-menu.spec.ts`. Expected: FAIL.
+- [x] **Step 3: Implement** the menu rendering with `ContextMenuSub`, `ContextMenuSubTrigger`, `ContextMenuSubContent`, `ContextMenuRadioGroup`/`ContextMenuRadioItem` and `ContextMenuCheckboxItem`, calling `edit.apply({ set: setting.set(value) })`; group Score; keep every existing item.
+- [x] **Step 4: Run** the new spec, then the whole suite: `npm run lint && npm run build && npm test && npm run test:browser`. Expected: all pass.
+- [x] **Step 5: Look at it.** In the dev app, open a deck and a doc, right-click a column, a series, a bar, a card; read each menu at full size in Ink and Paper. Submenus open on screen at the window edge. Log what you see in `docs/temp/apple-bar-review.md`.
+- [x] **Step 6: Update the docs.** Mark the spec "built" with the calls made; add `align` and `highlight` in one sentence each to `get_guide` text only if the guide names table or chart settings today (otherwise the card descriptions are the instruction); add a line to `docs/product/FUTURE.md` for what was left out (highlighting several bars, pair halves).
+- [x] **Step 7: Commit** `git commit -m "Edit: the Settings menu, built from the schema; Score is one submenu"`
+
+---
+
+**Built (Tasks 4 and 5).** Task 4: `chartTargetOf` and its use in `targetAt`. Task 5: `SettingsMenu.tsx` and the Score submenu in `EditMenu.tsx`; `tests/browser/settings-menu.spec.ts` (table align, Score, a line's emphasis, one-bar highlight, menu size), and `chart-area.spec.ts` now right-clicks the line. Calls and the one gap (a pair half's chart) are in the spec's "As built". The plan named a "Mute" test for a series: a series' emphasis words are Highlight, Normal and Contrast (Mute is for columns, rows and cards), so the spec tests Contrast.

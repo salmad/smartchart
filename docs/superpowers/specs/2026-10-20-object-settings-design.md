@@ -1,6 +1,6 @@
 # Object settings: every schema setting is editable by hand, from the right-click menu
 
-> Status: draft for approval, 2026-10-20.
+> Status: built, 2026-10-20. Settings menu, `align`, and the per-bar highlight are in; see "As built" at the end for the calls made.
 
 ## Why
 
@@ -157,3 +157,20 @@ one too; `bars` is the gap, and it is the one the user hit.
 - Browser: in a deck and in a doc, right-click one bar, choose "Highlight this bar", and that bar draws in the focus
   colour while the others are grey; choose it again and the chart returns to its first look; Save and reload keep it.
 - The review page and look-lock show no slide moved (no existing chart sets `highlight`).
+
+## As built
+
+- **Menu.** The right-click menu gains one **Settings** submenu (`src/app/edit/SettingsMenu.tsx`) beside the existing quick
+  items. A choice is a nested submenu of radio items, its current value shown beside the entry; a flag is a checkable item in
+  Settings itself. Score is one submenu of the seven rows. Every pick is `edit.apply({ set: setting.set(value) })`, the path an
+  agent writes.
+- **Targets.** `chartTargetOf` (`src/app/edit/selection.ts`) reads the `data-series` and `data-i` the chart already draws: a bar
+  is `{ bar, series, index }`, a line `{ series }`. Right-clicking elsewhere on a chart is still the chart. Text, cells and card
+  items keep priority.
+- **"Fill under the line"** is the series' `area` flag in Settings (a line only, in a chart of only lines), no longer a
+  chart-level item. `tests/browser/chart-area.spec.ts` right-clicks the focus line itself.
+- **Not done: a pair half's chart.** A pair's two charts live under `halves[n].chart`; `settingsFor` reads `chart` only, so a
+  pair's bars and lines offer no settings yet. The target type would need the half's index.
+- **Submenus** open on screen near the window edge (collision padding) and take the doc page's look in a figure.
+- **Tests drive the menu by keyboard** (focus, then → or Enter): a menu opens under the pointer, so Playwright's hover has
+  nothing to move and Radix opens submenus on movement.

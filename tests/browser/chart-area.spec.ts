@@ -1,5 +1,5 @@
 /* The fill under a focus line: drawn by default in a line-only chart, off with `area: false`, and switched by hand from
-   the chart's right-click menu (a doc here: a deck shares the same menu and renderer). */
+   the line's right-click menu, Settings, "Fill under the line" (a doc here: a deck shares the same menu and renderer). */
 import { test, expect, type Page } from '@playwright/test'
 
 const CHART = JSON.stringify({ caption: 'Revenue · £m', chart: { categories: ['2021', '2022', '2023', '2024'], format: '£{v}m', series: [
@@ -28,11 +28,24 @@ test('a focus line with no area field is filled; the right-click item turns it o
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await page.locator('.doc-editing figure[data-kind="chart"]').click()
   await expect(page.locator('[data-figure-edit] [data-editing]')).toBeVisible()
-  const toggle = async () => {
-    await page.locator('[data-figure-edit] [data-chart]').click({ button: 'right' })
-    await page.getByRole('menuitemcheckbox', { name: 'Fill under the line' }).click()
+  // The focus line itself: a point on its stroke (the box around a line is mostly empty).
+  const rightClickFocusLine = async () => {
+    const at = await page.locator('[data-figure-edit] path.ln.c-focus').first().evaluate((p: SVGPathElement) => {
+      const pt = p.getPointAtLength(p.getTotalLength() * 0.6), m = p.getScreenCTM() as DOMMatrix
+      return { x: m.a * pt.x + m.c * pt.y + m.e, y: m.b * pt.x + m.d * pt.y + m.f }
+    })
+    await page.mouse.click(at.x, at.y, { button: 'right' })
+    // Opened from the keyboard: a menu that opens under the pointer gives hover nothing to move.
+    await page.getByRole('menuitem', { name: 'Settings' }).focus()
+    await page.keyboard.press('ArrowRight')
   }
-  await page.locator('[data-figure-edit] [data-chart]').click({ button: 'right' })
+  const toggle = async () => {
+    await rightClickFocusLine()
+    const fill = page.getByRole('menuitemcheckbox', { name: 'Fill under the line' })
+    await fill.focus()
+    await page.keyboard.press('Enter')
+  }
+  await rightClickFocusLine()
   await expect(page.getByRole('menuitemcheckbox', { name: 'Fill under the line' })).toBeChecked()
   await page.keyboard.press('Escape')
   await toggle()
