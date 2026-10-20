@@ -59,7 +59,8 @@ Calls made: the deck bar's Delete asks for the count too (`DeckMenu` gets `subpa
 - After a delete, remove the branch from the list; if the **open** page is in it, call the existing `onDeckDeleted` or `onDocDeleted` (open another page / `/new`).
 - Tests: browser: delete a parent with two children from the menu, the dialog names the count, the branch is gone after a reload, the open page was inside it so the app leaves it.
 
-## Task 7. Breadcrumb
+## Task 7. Breadcrumb — done
+Calls made: the editor bar, the doc header and the read-only deck header already had a `Breadcrumb` nav (`Occam / title`), so the pages above the open one go between `Occam /` and the title rather than above it. The sidebar and the header share one list per repo and workspace (`sharedTree.ts`), so a move shows in the header at once, with the sidebar open or hidden; the header loads the list itself only when the open page isn't in it. Past three pages the middle ones fold into `…`, whose tooltip names them; each name is cut at 16 characters. Hidden when printing (`data-print-hide`). Not yet looked at full size: Task 8.
 
 - `Breadcrumb.tsx`: `Research / Competitors / Revolut` above the title in the doc header (`DocScreen.tsx`) and the deck bar (`Bar.tsx`/`DeckTitle.tsx`), each ancestor a link (`go('/d/…')`, `go('/doc/…')`, whatever the routes are), read-only, truncated in the middle past three. Rendered only when the page has a parent; a shared page (`/s/…`) shows none.
 - It reads the same tree state as the sidebar, so a move shows at once; it is stale for a move made elsewhere until the next load (accepted in the spec).

@@ -4,7 +4,8 @@ import { keyOf, type PageRef, type PageSummary } from '@/engine/pages/tree'
 import type { PageRepo } from '@/app/pages'
 import { loadExpanded, saveExpanded, withRefs } from './expanded'
 import { pathTo, visibleRows, withOpenDeck, type Row } from './flatten'
-import { createPageTree } from './pageTree'
+import type { PageTree } from './pageTree'
+import { pageTreeFor } from './sharedTree'
 
 interface Options {
   repo: PageRepo
@@ -28,7 +29,7 @@ export interface PageTreeView {
   /** Why the last move was refused. */
   notice: string | null
   toggle(ref: PageRef, open?: boolean): void
-  move: ReturnType<typeof createPageTree>['move']
+  move: PageTree['move']
   /** Reads the list again (after a save, a rename, a delete). */
   reload(): Promise<void>
   dismiss(): void
@@ -39,7 +40,7 @@ export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, p
   const open = useMemo(() => openPage, [openPage?.kind, openPage?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const parent = useMemo(() => pendingParent, [pendingParent?.kind, pendingParent?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const liveDeck = useMemo(() => ({ id: deck.id, name: deck.name, slides: deck.slides }), [deck.id, deck.name, deck.slides])
-  const tree = useMemo(() => createPageTree(repo, workspaceId ?? ''), [repo, workspaceId])
+  const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? ''), [repo, workspaceId])
   const state = useSyncExternalStore(tree.subscribe, tree.getState)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const key = workspaceId ?? ''

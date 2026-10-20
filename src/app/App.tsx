@@ -30,6 +30,7 @@ import { useLiveDeck } from './live'
 import { usePersist } from './usePersist'
 import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
+import { usePageCrumbs } from './components/sidebar/usePageCrumbs'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import { DocScreen } from './components/DocScreen'
 import { ViewDeck } from './components/ViewDeck'
@@ -235,6 +236,12 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
 
   // The presentation opens in its own tab and follows this deck as it is edited.
   const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
+  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
+  const [docTick, setDocTick] = useState(0)
+  // The pages above the open one, for the header (read from the same list as the sidebar).
+  const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, tick: docTick, saved: s.items.length > 0,
+    open: route.name === 'doc' ? { kind: 'doc', id: route.id } : s.deckId ? { kind: 'deck', id: s.deckId } : null })
+  const openPage = (ref: { kind: 'deck' | 'doc'; id: string }) => leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : `/doc/${ref.id}`)
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
     onTheme: (theme: Theme) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { theme } }),
@@ -249,6 +256,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     onPdf: () => { if (app.getState().items.length) setPrinting(true) },
     onRename: (name: string) => { if (!locked(app.getState())) app.dispatch({ type: 'set', patch: { name } }) },
     // Only a deck that has been saved can be deleted: one with slides.
+    crumbs, onOpenPage: openPage,
     onDelete: s.deckId && s.items.length ? () => void deleteDeck() : null,
     // Deleting a deck takes the pages under it too, so the dialog first asks how many there are.
     subpages: async () => { try { return await pages.subpages({ kind: 'deck', id: app.getState().deckId ?? '' }) } catch { say('Couldn’t check for subpages.'); return null } },
@@ -297,8 +305,6 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
 
-  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
-  const [docTick, setDocTick] = useState(0)
   // The workspace down the left (⌘\), beside the editor or a doc.
   const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} busy={locked(s)}
     open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length, parent: s.pendingParent }, doc: route.name === 'doc' ? route.id : null, docTick }}
@@ -309,9 +315,9 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     <TooltipProvider delayDuration={400}>
       {route.name !== 'doc' && readOnly
         ? <ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
-          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} />
+          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} />
         : route.name === 'doc'
-        ? <DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} />
+        ? <DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} />
         : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}

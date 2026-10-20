@@ -3,7 +3,10 @@ import { History, LayoutGrid, ListOrdered, MessageSquare, PanelLeft, Palette, Pl
 import type { Account } from '@/app/auth'
 import { Button } from '@/app/components/ui/button'
 import { AccountMenu } from './AccountMenu'
+import type { PageRef } from '@/engine/pages/tree'
+import { Crumbs } from './Crumbs'
 import { DeckMenu } from './DeckMenu'
+import type { Crumb } from './sidebar/usePageCrumbs'
 import { DeckTitle } from './DeckTitle'
 import { Seg } from './LookPanel'
 import { ShareMenu } from './ShareMenu'
@@ -16,6 +19,8 @@ export interface BarProps {
   onRename: (name: string) => void
   /** Null before the deck is saved. */
   onDelete: (() => void) | null
+  /** The pages above this deck, outermost first, and how to open one. */
+  crumbs?: Crumb[]; onOpenPage?: (ref: PageRef) => void
   /** How many pages sit below the deck, or null when that can't be known. */
   subpages?: () => Promise<number | null>
   /** The deck's inspectors on the right: its look, and its versions (null when the decks' store keeps none). */
@@ -61,6 +66,7 @@ export function Bar(p: BarProps) {
         <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-ink-3">/</span>
+          <Crumbs crumbs={p.crumbs} onOpen={(r) => p.onOpenPage?.(r)} />
           <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
           <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages} />
         </nav>

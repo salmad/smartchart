@@ -245,3 +245,50 @@ test('the deck bar’s delete says how many subpages go with the deck', async ({
   await page.getByRole('menuitem', { name: 'Delete deck…' }).click()
   await expect(page.getByRole('dialog', { name: 'Delete “Alpha” and its 1 subpage?' })).toBeVisible()
 })
+
+const crumbs = (page: Page) => page.getByRole('navigation', { name: 'Breadcrumb' })
+
+test('the header shows the pages above the open one as links, none for a page at the top, and a click opens it', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/rev') // Research > Competitors > Revolut
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research', 'Competitors'])
+  await crumbs(page).getByRole('link', { name: 'Research' }).click()
+  await expect(page).toHaveURL(/\/doc\/doc_r$/)
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam']) // Research is at the top: no path
+  await page.goto('/doc/doc_c')
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research'])
+  await page.goto('/d/alpha')
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam'])
+})
+
+test('the sidebar closed or open, the path is there; a move in the sidebar changes it at once', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/rev')
+  await page.keyboard.press('Control+\\')
+  await expect(sidebar(page)).toBeHidden()
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research', 'Competitors'])
+  await page.keyboard.press('Control+\\')
+  await (await hover(page, 'Revolut')).getByRole('button', { name: 'More for Revolut' }).click()
+  await page.getByRole('menuitem', { name: 'Move to…' }).click()
+  const move = page.getByRole('dialog', { name: 'Move “Revolut”' })
+  await move.getByRole('option', { name: 'Top level' }).click()
+  await move.getByRole('button', { name: 'Move' }).click()
+  await expect(move).toBeHidden()
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam'])
+})
+
+test('past three pages above the title, the middle ones fold into an ellipsis that names them', async ({ page }) => {
+  await seed(page)
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('deep')) return
+    const decks = JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{}') as { decks: Record<string, { parent?: unknown }> }
+    const docs = JSON.parse(localStorage.getItem('smartchart.docs.v1') ?? '{}') as Record<string, { parent?: unknown; name?: string; text?: string; updated?: number; workspaceId?: string; sortKey?: string }>
+    const mk = (id: string, name: string, parent: unknown) => { docs[id] = { id, name, text: `---\ntitle: ${name}\n---\n\n## One {#one}\n\nText.`, updated: 5, workspaceId: 'ws_local', parent, sortKey: 'a' } as never }
+    mk('doc_x1', 'Level four', { kind: 'doc', id: 'doc_c' }); mk('doc_x2', 'Level five', { kind: 'doc', id: 'doc_x1' })
+    decks.decks.rev.parent = { kind: 'doc', id: 'doc_x2' } // Research > Competitors > Level four > Level five > Revolut
+    localStorage.setItem('smartchart.journey.decks.v1', JSON.stringify(decks)); localStorage.setItem('smartchart.docs.v1', JSON.stringify(docs)); sessionStorage.setItem('deep', '1')
+  })
+  await page.goto('/d/rev')
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research', 'Level four', 'Level five'])
+  await expect(crumbs(page).getByTitle('Competitors')).toHaveText('…')
+})

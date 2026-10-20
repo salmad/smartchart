@@ -19,6 +19,9 @@ import { anchorsOf } from './docs/anchors'
 import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
 import { ReadBar } from './docs/DocBar'
+import type { PageRef } from '@/engine/pages/tree'
+import { Crumbs } from './Crumbs'
+import type { Crumb } from './sidebar/usePageCrumbs'
 import { DocMenu } from './docs/DocMenu'
 import { DocPreview } from './docs/DocPreview'
 import { useDocLive } from './docs/useDocLive'
@@ -39,13 +42,15 @@ interface Props {
   onToggleSidebar: () => void
   onSite: () => void
   account: Account
+  /** The pages above this doc, outermost first, and how to open one. */
+  crumbs?: Crumb[]; onOpenPage?: (ref: PageRef) => void
 }
 
 /** A doc in the workspace shell: the sidebar, a quiet bar, and the doc, read (M2) or edited (M4). */
 // The editor (Tiptap and ProseMirror) loads when a doc is first edited, not with the app.
 const DocEditing = lazy(() => import('./docs/DocEditing').then((m) => ({ default: m.DocEditing })))
 
-export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account }: Props) {
+export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage }: Props) {
   const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
@@ -133,6 +138,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
         <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
         <span aria-hidden className="text-ink-3">/</span>
+        <Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} />
         <span className="truncate text-ink-2">{record?.name ?? ''}</span>
         {record && !editing && <DocMenu onVersions={() => setSide('versions')} />}
       </nav>

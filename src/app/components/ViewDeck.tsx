@@ -2,7 +2,10 @@ import type { ReactNode } from 'react'
 import { PanelLeft, Play } from 'lucide-react'
 import type { Deck } from '@/engine/types'
 import type { Account } from '@/app/auth'
+import type { PageRef } from '@/engine/pages/tree'
 import { AccountMenu } from './AccountMenu'
+import { Crumbs } from './Crumbs'
+import type { Crumb } from './sidebar/usePageCrumbs'
 import { Toggle } from './Bar'
 import { ReadSlides } from './ReadSlides'
 import { Button } from './ui/button'
@@ -17,11 +20,12 @@ interface Props {
   onPresent: (from: number) => void
   onSite: () => void
   account: Account
+  crumbs?: Crumb[]; onOpenPage?: (ref: PageRef) => void
 }
 
 /** A deck opened by a viewer of its workspace (or, with nothing open, a quiet empty page): the slides to read and present, inside the shell, with no chat and
     nothing to edit. Live changes by its editors still arrive. */
-export function ViewDeck({ deck, name, ids, sidebar, sidebarOpen, onToggleSidebar, onPresent, onSite, account }: Props) {
+export function ViewDeck({ deck, name, ids, sidebar, sidebarOpen, onToggleSidebar, onPresent, onSite, account, crumbs, onOpenPage }: Props) {
   return (
     <>
       <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
@@ -30,7 +34,7 @@ export function ViewDeck({ deck, name, ids, sidebar, sidebarOpen, onToggleSideba
         </div>
         <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
-          {ids.length > 0 && <><span aria-hidden className="text-ink-3">/</span><span className="truncate text-ink-2">{name}</span></>}
+          {ids.length > 0 && <><span aria-hidden className="text-ink-3">/</span><Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} /><span className="truncate text-ink-2">{name}</span></>}
           <span title="You can read and present this deck. An owner of the workspace can make you an editor."
             className="ml-1 flex-none rounded-md border border-line px-1.5 py-0.5 text-[11.5px] leading-none text-ink-3">View only</span>
         </nav>
