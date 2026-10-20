@@ -1,6 +1,6 @@
 /* The sidebar's page tree (dev account): docs and decks nested three levels, opened and closed, kept across reloads, and
    driven from the keyboard. */
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 import { signInAsDev } from './dev-account'
 
 signInAsDev()
@@ -377,4 +377,77 @@ test('dragging a row to the top edge of a sibling puts it just before that sibli
   await expect.poll(() => levels(page)).toEqual(['1', '2', '2'])
   await page.reload()
   await expect(rows(page)).toHaveText(['Research', 'Alpha', 'Competitors'])
+})
+
+/** A locator's box on the page; throws when it is not there. */
+async function box(l: Locator) { const b = await l.boundingBox(); if (!b) throw new Error('not on the page'); return b }
+
+/** Holds `from` with the mouse and moves over `to` at (x, y of the row); the caller releases. */
+async function hold(page: Page, from: string, to: string, y: number) {
+  const a = (await box(row(page, from))), b = (await box(row(page, to)))
+  await page.mouse.move(a.x + 80, a.y + 16); await page.mouse.down()
+  await page.mouse.move(a.x + 80, a.y + 24, { steps: 3 }); await page.mouse.move(b.x + 80, b.y + y, { steps: 6 })
+}
+
+test('resting 600 ms over a collapsed parent opens it, mid-drag', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await expect(rows(page)).toHaveText(['Research', 'Alpha'])
+  await hold(page, 'Alpha', 'Research', 16)
+  const r = (await box(row(page, 'Research')))
+  await page.mouse.move(r.x + 82, r.y + 16); await page.mouse.move(r.x + 84, r.y + 16) // Playwright delivers a dragover with the next move
+  await expect(row(page, 'Research')).toHaveAttribute('aria-expanded', 'true')
+  await page.mouse.up()
+})
+
+test('dropping on the empty space under the last row makes the page top level, and says so', async ({ page }) => {
+  await seed(page, ['doc:doc_r'])
+  await page.goto('/d/alpha')
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Alpha'])
+  const c = (await box(row(page, 'Competitors')))
+  await page.mouse.move(c.x + 80, c.y + 16); await page.mouse.down()
+  await page.mouse.move(c.x + 80, c.y + 40, { steps: 3 }); await page.mouse.move(c.x + 80, c.y + 120, { steps: 6 })
+  await page.mouse.move(c.x + 80, c.y + 130); await page.mouse.up()
+  await expect.poll(() => levels(page)).toEqual(['1', '1', '1'])
+  await expect(sidebar(page).getByRole('status')).toHaveText('Moved “Competitors” to the top level.')
+})
+
+test('a row dropped on a parent is announced', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await row(page, 'Alpha').dragTo(row(page, 'Research'), { targetPosition: { x: 80, y: 16 } })
+  await expect(sidebar(page).getByRole('status')).toHaveText('Moved “Alpha” under “Research”.')
+})
+
+test('the tree scrolls when a drag is held near its bottom edge', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('long')) return
+    const docs: Record<string, object> = {}
+    for (let i = 0; i < 60; i++) { const id = `long_${i}`; docs[id] = { id, name: `Page ${i}`, text: `---\ntitle: Page ${i}\n---\n\n## One {#one}\n\nText.`, updated: 5, workspaceId: 'ws_local', sortKey: `${i.toString(36).padStart(3, '0')}V` } }
+    localStorage.setItem('smartchart.docs.v1', JSON.stringify(docs)); sessionStorage.setItem('long', '1')
+  })
+  await page.goto('/doc/long_0')
+  await expect(rows(page)).toHaveCount(60)
+  const side = (await box(sidebar(page)))
+  const first = (await box(row(page, 'Page 0').first()))
+  await page.mouse.move(first.x + 80, first.y + 16); await page.mouse.down()
+  await page.mouse.move(first.x + 80, first.y + 40, { steps: 3 })
+  for (let i = 0; i < 40; i++) await page.mouse.move(first.x + 80, side.y + side.height - 10 - (i % 2))
+  await page.mouse.up()
+  const scrolled = await sidebar(page).evaluate((nav) => [...nav.querySelectorAll('div')].find((d) => /auto|scroll/.test(getComputedStyle(d).overflowY) && d.scrollHeight > d.clientHeight)?.scrollTop ?? 0)
+  expect(scrolled).toBeGreaterThan(0)
+})
+
+test('pressing and dragging from a row’s + or ··· button does not leave a menu open', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await row(page, 'Research').hover()
+  const plus = (await box(page.getByRole('button', { name: 'Add subpage to Research' })))
+  const a = (await box(row(page, 'Alpha')))
+  await page.mouse.move(plus.x + 8, plus.y + 8); await page.mouse.down()
+  await page.mouse.move(a.x + 80, a.y + 16, { steps: 8 }); await page.mouse.up()
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  await row(page, 'Research').hover()
+  await page.getByRole('button', { name: 'Add subpage to Research' }).click()
+  await expect(page.getByRole('menu')).toHaveCount(1) // a plain click still opens it
 })

@@ -1,4 +1,4 @@
-import { useState, type DragEventHandler, type FocusEventHandler, type KeyboardEventHandler } from 'react'
+import { useState, type DragEventHandler, type PointerEvent, type FocusEventHandler, type KeyboardEventHandler } from 'react'
 import { ChevronRight, FilePlus2, FileText, FolderInput, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { keyOf, MAX_DEPTH, type PageKind, type PageRef } from '@/engine/pages/tree'
@@ -46,6 +46,9 @@ function AddItems({ row, onAdd }: { row: Row; onAdd: (row: Row, kind: PageKind) 
   )
 }
 
+/** The row is draggable, so a press on + or ··· must not open its menu (Radix opens on pointer-down): the click does, as a button's does. */
+const noOpenOnPress = (e: PointerEvent) => e.preventDefault()
+
 const noun = (row: Row) => row.ref.kind
 
 /** One page of the tree: chevron, kind glyph, name, and the ··· menu for editors. Its time is the tooltip. */
@@ -53,7 +56,7 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
   const Glyph = row.ref.kind === 'doc' ? FileText : Presentation
   // The two menus are mounted when the pointer or the keyboard first reaches the row (or a menu is asked for): a thousand rows
   // with two menus each cost more than the whole rest of the tree.
-  const [armed, setArmed] = useState(false)
+  const [armed, setArmed] = useState(false), [addOpen, setAddOpen] = useState(false)
   const menus = canWrite && (armed || menuOpen)
   const tip = row.ref.kind === 'deck' && row.slides !== null ? `${row.slides} slide${row.slides === 1 ? '' : 's'} · ${ago(row.updated)}` : ago(row.updated)
   return (
@@ -72,8 +75,8 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
       <Glyph className="size-3.5 flex-none text-ink-3" strokeWidth={1.75} aria-hidden />
       <span className={cn('truncate text-[13px]', row.open ? 'text-ink' : 'text-ink-2')}>{row.name}</span>
       {menus && (
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger aria-label={`Add subpage to ${row.name}`} disabled={busy || row.depth >= MAX_DEPTH} tabIndex={-1} onClick={(e) => e.stopPropagation()}
+        <DropdownMenu modal={false} open={addOpen} onOpenChange={setAddOpen}>
+          <DropdownMenuTrigger aria-label={`Add subpage to ${row.name}`} disabled={busy || row.depth >= MAX_DEPTH} tabIndex={-1} onPointerDown={noOpenOnPress} onClick={(e) => { e.stopPropagation(); setAddOpen(!addOpen) }}
             className={cn(HOVER_BUTTON, 'right-[34px] disabled:hidden')}>
             <Plus className="size-4" />
           </DropdownMenuTrigger>
@@ -84,7 +87,7 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
       )}
       {menus && (
         <DropdownMenu modal={false} open={menuOpen} onOpenChange={onMenuOpen}>
-          <DropdownMenuTrigger aria-label={`More for ${row.name}`} disabled={busy} tabIndex={-1} onClick={(e) => e.stopPropagation()}
+          <DropdownMenuTrigger aria-label={`More for ${row.name}`} disabled={busy} tabIndex={-1} onPointerDown={noOpenOnPress} onClick={(e) => { e.stopPropagation(); onMenuOpen(!menuOpen) }}
             className={cn(HOVER_BUTTON, 'right-1.5 disabled:hidden')}>
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>

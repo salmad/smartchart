@@ -32,7 +32,7 @@ Calls made: the drag state lives in `usePageDrag.ts` (so `PageTree` grows by a f
 - Look: full-size screenshots mid-drag (line between siblings, line at a deeper indent, ring on a parent), in the dark chrome, with long names; log in `docs/temp/apple-bar-review.md`.
 - Browser tests: drag Alpha under Research (middle of the row): Research expands, Alpha is its last child, a reload keeps it; drag Alpha between Research's two children (top quarter of the lower one): the order is as dropped.
 
-## Task 3. The small things that make it usable
+## Task 3. The small things that make it usable — done
 
 - **Open a collapsed branch by hovering:** over a collapsed row's middle zone for 600 ms expands it (a timer cleared when the pointer leaves, moves to another row, or the drag ends). No animation; reduced-motion users get the same instant expand.
 - **Scroll at the edges:** the tree's scroll container scrolls 8 px per `dragover` within 32 px of its top or bottom edge (the event repeats while the pointer is held), so a long tree can be reached.
