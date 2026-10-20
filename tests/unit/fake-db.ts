@@ -49,7 +49,7 @@ export function fakeDb(): FakeDb {
   }
   const summary = ({ id, name, updated, data, share }: FakeRow) => {
     const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
-    return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null, shared: !!share }
+    return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, shared: !!share }
   }
   return {
     ...ws, rows, docs, events, keys, rate, calls, versions, blobStore, docVersions, docBlobStore,

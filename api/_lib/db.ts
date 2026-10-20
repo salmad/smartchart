@@ -17,8 +17,8 @@ export interface DeckRow { id: string; name: string; updated: number; data: unkn
 /** A save is written (with the new revision), refused because the deck moved on since the revision it read, or refused because
     the writer may not edit it (not a member, a viewer, or another user's id). */
 export type PutResult = { rev: number } | 'conflict' | 'foreign'
-/** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
-export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown; shared: boolean }
+/** What a list shows of a deck: its name, size and look, never the deck itself (slides, chat, agent history). */
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; shared: boolean }
 /** Who is working on a deck right now (an agent turn, or a person editing a slide); each entry expires at `until` (ms). */
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
 /** One change an outside writer made, so the open app can tell the user what happened. */

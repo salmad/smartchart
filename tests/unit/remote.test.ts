@@ -28,7 +28,7 @@ function fakeServer() {
     if (method === 'DELETE') return new Response(null, { status: rows.delete(id ?? '') ? 204 : 404 })
     if (id) { const r = rows.get(id); return r ? Response.json(r) : Response.json({}, { status: 404 }) }
     // The list carries summaries only, as the server's does.
-    return Response.json([...rows.values()].map(({ id, name, updated, data }) => ({ id, name, updated, slides: data.items.length, style: data.style, theme: data.theme, accent: data.accent, first: data.items[0]?.slide ?? null })))
+    return Response.json([...rows.values()].map(({ id, name, updated, data }) => ({ id, name, updated, slides: data.items.length, style: data.style, theme: data.theme, accent: data.accent })))
   }) as typeof fetch
   return { rows, state, fetcher }
 }
@@ -39,7 +39,7 @@ test('the server repo saves, lists, gets and removes a deck, named after its cov
   const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
   expect(await repo.save(deck('d_1', 5))).toBeNull()
   expect(rows.get('d_1')?.name).toBe('Acme')
-  expect(await repo.list()).toEqual([{ id: 'd_1', name: 'Acme', updated: 42, slides: 1, style: 'consulting', theme: 'ink', accent: null, first: { template: 'cover', title: 'Acme', subtitle: 'x' } }])
+  expect(await repo.list()).toEqual([{ id: 'd_1', name: 'Acme', updated: 42, slides: 1, style: 'consulting', theme: 'ink', accent: null }])
   expect((await repo.get('d_1'))?.items[0].slide.title).toBe('Acme')
   expect(await repo.get('nope')).toBeNull()
   expect(await repo.remove('d_1')).toBe(true)

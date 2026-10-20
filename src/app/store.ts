@@ -22,9 +22,9 @@ export interface Store { active: string | null; decks: Record<string, SavedDeck>
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
 /** A deck as a list shows it: name, time, size and the first slide in the deck's look. Open it with `get`. */
-export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; first: Slide | null }
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null }
 export const summaryOf = (d: SavedDeck): DeckSummary => ({
-  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, first: d.items?.[0]?.slide ?? null,
+  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null,
 })
 
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
