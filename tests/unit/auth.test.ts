@@ -144,3 +144,16 @@ test('signing out clears the cache', async () => {
   await signOut()
   expect(map.has(CACHE)).toBe(false)
 })
+
+test('signing out also forgets the account’s cached lists', async () => {
+  storage(JSON.stringify(A)); noLocation()
+  vi.stubGlobal('fetch', async () => Response.json(null))
+  vi.doMock('@neondatabase/auth', () => ({ createAuthClient: () => ({ signOut: async () => undefined }) }))
+  vi.doMock('@neondatabase/auth/vanilla/adapters', () => ({ BetterAuthVanillaAdapter: () => ({}) }))
+  const { cacheGet, cacheSet } = await import('@/app/cache')
+  await cacheSet(A.id, 'workspaces', [{ id: 'w' }]); await cacheSet('someone-else', 'workspaces', [{ id: 'x' }])
+  const { signOut } = await import('@/app/auth')
+  await signOut()
+  expect(await cacheGet(A.id, 'workspaces')).toBeUndefined()
+  expect(await cacheGet('someone-else', 'workspaces')).toEqual([{ id: 'x' }])
+})

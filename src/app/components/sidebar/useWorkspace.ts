@@ -2,6 +2,9 @@
    most recently used, for the next visit and for agents). `ready` answers once the list has loaded. */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { currentWorkspace, type Workspace, type WorkspaceRepo } from '@/app/workspaces'
+import { showThenFetch } from '@/app/swr'
+
+const isWorkspaces = (v: unknown): v is Workspace[] => Array.isArray(v) && v.every((w) => !!w && typeof (w as Workspace).id === 'string' && typeof (w as Workspace).name === 'string')
 
 export interface WorkspaceState {
   /** Null while loading; empty if it failed. */
@@ -13,15 +16,21 @@ export interface WorkspaceState {
   reload(open?: string): Promise<void>
 }
 
-export function useWorkspace(repo: WorkspaceRepo, onChange: (w: Workspace | null) => void): WorkspaceState {
+/** With `account`, the list stored in this browser shows first (and lets boot go on) while the server's answer is on its way. */
+export function useWorkspace(repo: WorkspaceRepo, onChange: (w: Workspace | null) => void, account?: string): WorkspaceState {
   const [list, setList] = useState<Workspace[] | null>(null), [picked, setPicked] = useState<string | null>(null)
   // Answered by the first load; made once, so boot can wait on it before the list is in.
   const [first] = useState(() => { let done: (w: Workspace | null) => void = () => undefined; const promise = new Promise<Workspace | null>((r) => { done = r }); return { promise, done } })
   useEffect(() => {
     let live = true
-    repo.list().then((l) => { if (live) setList(l); first.done(currentWorkspace(l, null)) }, () => { if (live) setList([]); first.done(null) })
+    if (account) {
+      void showThenFetch(account, 'workspaces', () => repo.list(), isWorkspaces, (l) => { if (live) setList(l); first.done(currentWorkspace(l, null)) })
+        .then((ok) => { if (!ok && live) { setList((l) => l ?? []); first.done(null) } })
+    } else {
+      repo.list().then((l) => { if (live) setList(l); first.done(currentWorkspace(l, null)) }, () => { if (live) setList([]); first.done(null) })
+    }
     return () => { live = false }
-  }, [repo, first])
+  }, [repo, first, account])
   const current = list ? currentWorkspace(list, picked) : null
   const changed = useRef(onChange)
   changed.current = onChange

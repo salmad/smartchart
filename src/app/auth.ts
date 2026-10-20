@@ -2,6 +2,7 @@
    Continue with Google, or an emailed 6-digit code. The session is a cookie, so API calls need no token. */
 import { useSyncExternalStore } from 'react'
 import type { VanillaBetterAuthClient } from '@neondatabase/auth'
+import { cacheClear } from './cache'
 
 export interface Account { id: string; email: string; name: string; image: string | null }
 /** `undefined` while the first session check runs; `null` when signed out. */
@@ -103,8 +104,10 @@ export async function verifyCode(email: string, otp: string): Promise<string | n
 }
 
 export async function signOut() {
+  const who = current ? current.id : null
   await (await auth()).signOut().catch(() => undefined)
   writeCached(null)
+  if (who) await cacheClear(who)
   publish(null)
 }
 

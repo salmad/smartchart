@@ -29,6 +29,7 @@ import { useLiveDeck } from './live'
 import { usePersist } from './usePersist'
 import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
+import { DEV_ACCOUNT } from './dev-account'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import type { DocRepo } from './docs'
 import type { WorkspaceRepo } from './workspaces'
@@ -73,7 +74,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   // The workspace open in the app: the most recently used, until another is picked in the sidebar.
-  const ws = useWorkspace(workspaces, (w) => { onWorkspace(w?.id ?? null); app.dispatch({ type: 'set', patch: { workspaceId: w?.id ?? null, role: w?.role ?? null } }) })
+  const ws = useWorkspace(workspaces, (w) => { onWorkspace(w?.id ?? null); app.dispatch({ type: 'set', patch: { workspaceId: w?.id ?? null, role: w?.role ?? null } }) }, account.id === DEV_ACCOUNT.id ? undefined : account.id)
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
   useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
