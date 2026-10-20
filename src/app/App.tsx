@@ -30,6 +30,7 @@ import { usePersist } from './usePersist'
 import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { DEV_ACCOUNT } from './dev-account'
+import { forgetCachedDeck, readCachedDeck } from './cached-decks'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import type { DocRepo } from './docs'
 import type { WorkspaceRepo } from './workspaces'
@@ -62,6 +63,7 @@ interface Props {
 export function App({ route, account, repo, backup, workspaces, docs, onWorkspace }: Props) {
   const [s, app] = useAppState()
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
+  const cacheId = account.id === DEV_ACCOUNT.id ? undefined : account.id
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), bootStarted = useRef(false)
   // Who wrote the next save, for its version: the agent right after a turn, or a restore. Kept until a save lands.
@@ -116,16 +118,38 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     savedKey.current = now && editKey(now)
   }, [app, measurer, say, repo])
 
+  // After a deck opens from this browser's copy: read the server's, merge what changed by slide id (as when another
+  // writer changed it), take its role, and if the deck is gone and nothing was edited meanwhile, start a new one.
+  const syncRef = useRef<((force?: boolean) => Promise<'gone' | undefined>) | null>(null)
+  const refreshKept = useCallback(async (id: string) => {
+    try {
+      const gone = await syncRef.current?.(true)
+      if (app.getState().deckId !== id) return
+      setViewOnly(repo.role?.(id) === 'viewer')
+      const now = toSaved(app.getState())
+      if (gone === 'gone' && (!now || editKey(now) === savedKey.current)) {
+        void forgetCachedDeck(account.id, id)
+        newDeck()
+        if (route.name === 'deck') say(MISSING)
+      }
+    } catch { /* offline or refused: the copy stays, and the next save finds out */ }
+  }, [app, repo, account.id, newDeck, route, say])
+
   // Boot: the deck in the URL (nothing is saved before it is loaded, so an early pick cannot overwrite it),
   // then fonts (slides measure text) and whether the models are reachable.
   useEffect(() => {
     if (bootStarted.current) return
     bootStarted.current = true
     void (async () => {
+      // The copy of the deck kept in this browser opens at once; the server is asked what changed after it is on screen.
+      // A copy kept because saves failed (backup) is older business and goes the usual way.
+      const kept = cacheId && (route.name === 'deck' || route.name === 'home') ? await readCachedDeck(cacheId, route.name === 'deck' ? route.id : undefined) : null
+      const fromCache = kept && !(backup && (await backup.get(kept.deck.id))) ? kept : null
+      if (fromCache) repo.seed?.(fromCache.deck, fromCache.rev, fromCache.role)
       // Signed in, / is the editor on the deck worked on last in the open workspace; only that deck is read in full.
-      const recent = route.name === 'home' ? (await repo.list((await ws.ready)?.id).catch(() => []))[0] : undefined
+      const recent = fromCache || route.name !== 'home' ? undefined : (await repo.list((await ws.ready)?.id).catch(() => []))[0]
       const id = route.name === 'deck' ? route.id : recent?.id
-      const wanted = id ? await findDeck(id, repo, backup) : null
+      const wanted = fromCache ? fromCache.deck : id ? await findDeck(id, repo, backup) : null
       setLoaded(true)
       // Whether the models are up does not hold the deck back: the composer waits for the answer, the slides do not.
       const health = fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()).then((j: { live?: unknown }) => !!j.live).catch(() => false)
@@ -134,7 +158,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
-      if (wanted) { openDeck(wanted); return }
+      if (wanted) { openDeck(wanted); if (fromCache) void refreshKept(wanted.id); return }
       newDeck()
       if (route.name === 'deck') say(MISSING)
       // A prompt typed on the site sets the style picked there, and builds the first slide when the models are up.
@@ -143,7 +167,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       // Only a prompt waiting to be sent needs the answer first.
       if (pending && (await health) && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
     })()
-  }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready])
+  }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready, cacheId, refreshKept])
 
   // Writes made elsewhere (an agent, another tab) are merged in by slide id; the agent hears which slides changed.
   const onMerged = useCallback((changed: string[], by: string[]) => {
@@ -153,6 +177,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     if (by.length) say(`${by.join(', ')} updated ${changed.length === 1 ? 'a slide' : `${changed.length} slides`}.`)
   }, [app, measurer, say])
   const syncNow = useLiveDeck({ app, repo, onMerged })
+  syncRef.current = syncNow
 
   const persist = usePersist({ app, repo, backup, syncNow, author, savedKey, onSaved: () => setSaves((n) => n + 1) })
 

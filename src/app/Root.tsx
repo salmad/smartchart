@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from './auth'
 import { devAccount } from './dev-account'
+import { cachedDeckRepo } from './cached-decks'
 import { remoteDeckRepo } from './remote'
 import { go, useRoute } from './route'
 import { localDeckRepo } from './store'
@@ -32,7 +33,12 @@ function Screens() {
   // whatever screen is open. The dev account keeps its decks in this browser, with nothing to back them up to.
   // The workspace open in the app, where a new deck is saved; App keeps it current.
   const workspace = useRef<string | null>(null)
-  const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true), workspace: () => workspace.current })), [dev])
+  // Signed in, what the repo reads and saves of a deck is kept in this browser too, for the next visit to open at once.
+  const repo = useMemo(() => {
+    if (dev) return localDeckRepo(undefined, { versions: true })
+    const remote = remoteDeckRepo({ onSignedOut: () => setEnded(true), workspace: () => workspace.current })
+    return session ? cachedDeckRepo(remote, session.id) : remote
+  }, [dev, session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const workspaces = useMemo(() => (dev ? localWorkspaceRepo() : remoteWorkspaceRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])

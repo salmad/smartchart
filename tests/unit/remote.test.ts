@@ -159,3 +159,24 @@ test('a refused save says what the server said on a 403, and our own sentence wh
   expect(await answer(() => new Response('nope', { status: 403 }))).toBe(VIEW_ONLY)
   expect(await answer(() => Response.json({ error: 'busy' }, { status: 413 }))).toBe('This deck is too large to save.')
 })
+
+test('a seeded deck saves with the revision it was seeded with: a newer server copy still refuses the save', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher }), other = remoteDeckRepo({ fetcher })
+  await other.save(deck('d_1', 5))
+  const cached = (await other.get('d_1')) as SavedDeck, rev = other.known?.('d_1') ?? 0
+  await other.save({ ...cached, updated: 6 }) // another tab moves the server on
+  repo.seed?.(cached, rev, 'editor')
+  expect(repo.known?.('d_1')).toBe(rev)
+  expect(repo.role?.('d_1')).toBe('editor')
+  expect(repo.base?.('d_1')).toEqual(cached)
+  expect(await repo.save({ ...cached, updated: 7 })).toBe(STALE)
+  expect(rows.get('d_1')?.data.updated).toBe(6)
+})
+
+test('a seeded deck that nobody changed saves normally', async () => {
+  const { fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher }), other = remoteDeckRepo({ fetcher })
+  await other.save(deck('d_1', 5))
+  const cached = (await other.get('d_1')) as SavedDeck
+  repo.seed?.(cached, other.known?.('d_1') ?? 0, null)
+  expect(await repo.save({ ...cached, updated: 7 })).toBeNull()
+})

@@ -48,6 +48,9 @@ export interface DeckRepo {
   known?(id: string): number
   /** The user's role on the deck as last opened (a viewer can only read it). */
   role?(id: string): Role | null
+  /** Primes the revision, common ancestor and role of a deck opened from this browser's copy, as a `get` would, so a
+      save made before the server is heard from still carries the revision the copy was read at. */
+  seed?(deck: SavedDeck, rev: number, role: Role | null): void
   /* Versions (src/engine/versions.ts): newest first, and the slides their trees name, by hash. */
   versions?(id: string): Promise<Version[]>
   blobs?(id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>

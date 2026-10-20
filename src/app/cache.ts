@@ -56,3 +56,12 @@ export async function cacheClear(account: string): Promise<void> {
     if (db) await settle(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(IDBKeyRange.bound(prefix, `${prefix}￿`)))
   } catch { /* nothing to clear */ }
 }
+
+/** Forgets one entry. */
+export async function cacheDelete(account: string, name: string): Promise<void> {
+  try {
+    memory.delete(key(account, name))
+    const db = await open()
+    if (db) await settle(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(key(account, name)))
+  } catch { /* nothing to forget */ }
+}

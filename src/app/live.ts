@@ -9,17 +9,20 @@ interface AppStore { getState(): AppState; dispatch(a: Action): void }
 
 export function useLiveDeck({ app, repo, onMerged }: { app: AppStore; repo: DeckRepo; onMerged(changed: string[], by: string[]): void }) {
   const running = useRef(false)
-  const syncNow = useCallback(async () => {
+  /** `force`: read the server's copy whatever its revision, for a deck opened from this browser's copy (the revision it
+      was read at is not known to be current). Answers 'gone' when the server has no such deck. */
+  const syncNow = useCallback(async (force = false): Promise<'gone' | undefined> => {
     const s = app.getState(), id = s.deckId
     if (!id || running.current || locked(s) || !repo.rev || !repo.known || !repo.base) return
     running.current = true
     try {
-      const head = await repo.rev(id), known = repo.known(id)
-      if (!head || head.rev <= known) return
+      const head = force ? null : await repo.rev(id), known = repo.known(id)
+      if (!force && (!head || head.rev <= known)) return
       // The common ancestor is read before the fetch: `get` replaces it with the server's copy.
       const base = repo.base(id)
       const [server, events] = await Promise.all([repo.get(id), repo.events ? repo.events(id, known) : Promise.resolve([])])
       const local = toSaved(app.getState())
+      if (!server && force) return 'gone'
       if (!server || !local || locked(app.getState()) || app.getState().deckId !== id) return
       const { deck, changed } = mergeDecks(local, server, base)
       app.dispatch({ type: 'items', items: deck.items, focusId: changed.at(-1) })

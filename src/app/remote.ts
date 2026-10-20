@@ -102,6 +102,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
       const r = await call(`?id=${encodeURIComponent(id)}&blobs=${hashes.map(encodeURIComponent).join(',')}`)
       return r.ok ? ((await r.json()) as { hash: string; slide: Slide }[]) : []
     },
+    seed: (deck, rev, role) => { revs.set(deck.id, rev); bases.set(deck.id, structuredClone(deck)); if (role) roles.set(deck.id, role) },
     base: (id) => bases.get(id) ?? null,
     known: (id) => revs.get(id) ?? 0,
     role: (id) => roles.get(id) ?? null,
