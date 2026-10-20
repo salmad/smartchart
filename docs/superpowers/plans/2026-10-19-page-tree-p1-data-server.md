@@ -30,7 +30,7 @@ alter table decks add column if not exists sort_key text;
 -- same three for docs
 ```
 
-Backfill (one statement each, `where sort_key is null`): per workspace, number every deck and doc together by `updated_at desc`, and write keys that sort in that order (`row_number()` mapped to fixed-width base-62, e.g. `0001`, `0002`…, so later `keyBetween` has room on both sides). Then `alter column sort_key set not null` is **not** used: a page made by an old server between deploy and migration would break it, so `sort_key` stays nullable in SQL and reads as `coalesce(sort_key, '')`; the code treats null as "before everything" and the next move gives it a key. Indexes: `decks_parent (workspace_id, parent_id)` and the same for `docs`.
+Backfill (one statement each, `where sort_key is null`): per workspace, number every deck and doc together by `updated_at desc`, and write keys that sort in that order (`row_number()` mapped to fixed-width base-62 with a trailing `V`, e.g. `0001V`, `0002V`…: a key may not end in the lowest digit `0`, and the suffix leaves room on both sides for `keyBetween`). Then `alter column sort_key set not null` is **not** used: a page made by an old server between deploy and migration would break it, so `sort_key` stays nullable in SQL and reads as `coalesce(sort_key, '')`; the code treats null as "before everything" and the next move gives it a key. Indexes: `decks_parent (workspace_id, parent_id)` and the same for `docs`.
 
 Decks with no workspace yet (before `ensureWorkspace`) keep null columns and are unaffected.
 
