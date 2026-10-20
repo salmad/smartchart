@@ -67,7 +67,8 @@ Calls made: the editor bar, the doc header and the read-only deck header already
 - Print: hidden in `@media print` for docs. Slides and `slides.css` are not touched; the deck bar is app chrome.
 - Look review as in Task 3; tests: browser asserts the path and a link click.
 
-## Task 8. Close the milestone
+## Task 8. Close the milestone — done
+Results: browser suite 201 passed, 8 skipped, 1 failed (`doc-done.spec.ts`, which also fails on `origin/main`); unit suite green except the 3 `api-upstream` tests (model keys set in this environment); lint and build clean. One real fix from the look review: a long name widened its row past the sidebar. The `site.spec.ts` sidebar test needed its mock to answer `?subpages`. `design-guardian` was not run; the look review was by eye (`docs/temp/apple-bar-review.md`). Both questions to settle before Task 3 were answered by keeping the plan's recommendations (sidebar stays hidden below 900 px; interleaved newest-first order).
 
 - `npm test`, `npm run lint`, `npm run build`, `npm run test:browser`; the **done-when** browser test (`page-tree.spec.ts`: build a three-level tree, reload, intact; then the same tree driven by keyboard alone: no `mouse` calls).
 - Sidebar at 1,000 pages (seeded through the local repo or the Neon branch): scroll and expand stay smooth; render only expanded rows (collapsed by default), and measure the time to expand a 200-child node. If it janks, window the list (a small own virtual list, no new dependency) and say so in the spec.

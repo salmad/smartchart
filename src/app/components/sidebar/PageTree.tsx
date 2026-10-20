@@ -79,7 +79,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
   }
 
   return (
-    <section className="grid content-start">
+    <section className="grid grid-cols-[minmax(0,1fr)] content-start">
       <div className="flex h-9 items-center justify-between pl-[18px] pr-3">
         <h2 className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.1em] text-ink-3">Pages</h2>
         {canWrite && (
@@ -94,7 +94,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
           </DropdownMenu>
         )}
       </div>
-      <div ref={refs} role="tree" aria-label="Pages" className="grid content-start gap-px px-2 pb-3">
+      <div ref={refs} role="tree" aria-label="Pages" className="grid grid-cols-[minmax(0,1fr)] content-start gap-px px-2 pb-3">
         {rows === null && !failed && [0, 1].map((k) => <div key={k} className="mx-2 my-2 h-4 animate-pulse rounded bg-line" />)}
         {failed && <p className="px-2.5 py-2 text-[12.5px] text-ink-3">Couldn’t load your pages.</p>}
         {rows !== null && !failed && !rows.length && <p className="px-2.5 py-2 text-[12.5px] text-ink-3">No pages yet.</p>}

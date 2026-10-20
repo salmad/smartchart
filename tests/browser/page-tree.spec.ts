@@ -292,3 +292,66 @@ test('past three pages above the title, the middle ones fold into an ellipsis th
   await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research', 'Level four', 'Level five'])
   await expect(crumbs(page).getByTitle('Competitors')).toHaveText('…')
 })
+
+/* The milestone's done-when: a three-level tree is built and walked with the keyboard alone (no pointer), and reload keeps it. */
+test('done when: three levels built with Tab, kept by a reload, and walked and opened without a pointer', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('flat')) return
+    const d = (id: string, name: string, key: string) => [id, { id, name, text: `---\ntitle: ${name}\n---\n\n## One {#one}\n\nText.`, updated: 5, workspaceId: 'ws_local', sortKey: key }] as const
+    localStorage.setItem('smartchart.docs.v1', JSON.stringify(Object.fromEntries([d('doc_a', 'Research', 'a'), d('doc_b', 'Competitors', 'b'), d('doc_c', 'Revolut', 'c')])))
+    sessionStorage.setItem('flat', '1')
+  })
+  await page.goto('/doc/doc_a')
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Revolut'])
+  await row(page, 'Competitors').focus()
+  await page.keyboard.press('Tab') // under Research
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '1'])
+  await row(page, 'Revolut').focus()
+  await page.keyboard.press('Tab') // under Research, after Competitors
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '2'])
+  await page.keyboard.press('Tab') // under Competitors
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '3'])
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Revolut'])
+
+  await page.reload()
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '3'])
+
+  // Walk it and open the deepest page, then read the path in the header.
+  await row(page, 'Research').focus()
+  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown')
+  await expect(row(page, 'Revolut')).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/doc\/doc_c$/)
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research', 'Competitors'])
+  // Outdent twice, and the path goes.
+  await row(page, 'Revolut').focus()
+  await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Shift+Tab')
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '1'])
+  await expect(crumbs(page).getByRole('link')).toHaveText(['Occam'])
+})
+
+test('1,000 pages: the sidebar opens a 200-child branch quickly and keeps one tab stop', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('big')) return
+    const docs: Record<string, object> = {}
+    const key = (n: number) => `${n.toString(36).padStart(4, '0')}V`
+    const add = (id: string, name: string, n: number, parent?: object) => { docs[id] = { id, name, text: `---\ntitle: ${name}\n---\n\n## One {#one}\n\nText.`, updated: 5, workspaceId: 'ws_local', sortKey: key(n), ...(parent ? { parent } : {}) } }
+    add('big_0', 'Big branch', 0)
+    for (let i = 1; i <= 200; i++) add(`big_${i}`, `Child ${i}`, i, { kind: 'doc', id: 'big_0' })
+    for (let i = 201; i < 1000; i++) add(`top_${i}`, `Top ${i}`, i)
+    localStorage.setItem('smartchart.docs.v1', JSON.stringify(docs)); sessionStorage.setItem('big', '1')
+  })
+  await page.goto('/doc/big_0')
+  await expect(rows(page)).toHaveCount(800) // the branch is closed: 1 + 799 pages at the top
+  const ms = await page.evaluate(async () => {
+    const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === 'Expand Big branch')
+    const t = performance.now()
+    b?.click()
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    return Math.round(performance.now() - t)
+  })
+  await expect(rows(page)).toHaveCount(1000)
+  console.log(`expand 200 children among 1,000 pages: ${ms} ms`)
+  expect(ms).toBeLessThan(1500)
+  await expect(rows(page).and(page.locator('[tabindex="0"]'))).toHaveCount(1)
+})

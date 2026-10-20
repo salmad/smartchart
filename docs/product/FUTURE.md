@@ -186,3 +186,6 @@ Left over from the doc editor (M4): image, team and logos figures in docs (they 
 
 ## 27. Page tree: what P1 to P4 leave out (2026-10-20)
 A Trash with restore for deleted pages (a delete of a branch is permanent today, with a count in the dialog); moving a subtree to another workspace (#23); a push when someone moves the page you have open (the breadcrumb is stale until the next load); a block-level retry when two moves land between the same neighbours (they share a key until the next move; the order stays stable by id); a depth check inside the move's write (the cycle check is there, depth is checked just before).
+
+## 28. Page tree sidebar: what P2 leaves out (2026-10-20)
+The sidebar below 900 px (it is hidden there, so Move to…, the keyboard moves and the subpage `+` have no touch home until a slide-over exists); a list window for very large workspaces if a production build janks (1,000 pages expanded a 200-child branch in about 0.8 s in a development build); the header path below 1200 px, where it shares the left third with the view switch, not yet looked at; a viewer's tree not yet looked at by eye.

@@ -99,6 +99,7 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
   await page.route('**/api/pages**', (r) => r.fulfill({ json: decks.map(({ id, name, updated, data }) => ({ kind: 'deck', id, name, updated, slides: data.items.length, parent: null, sortKey: null })) }))
   await page.route('**/api/decks**', (r) => {
     const id = new URL(r.request().url()).searchParams.get('id'), method = r.request().method()
+    if (new URL(r.request().url()).searchParams.has('subpages')) return r.fulfill({ json: { count: 0 } }) // what deleting would also take
     if (method === 'PUT') return r.fulfill({ json: { ok: true } })
     if (method === 'DELETE') { decks = decks.filter((d) => d.id !== id); return r.fulfill({ status: 204 }) }
     if (id) { fullReads.push(id); const d = decks.find((x) => x.id === id); return d ? r.fulfill({ json: d }) : r.fulfill({ status: 404, json: {} }) }

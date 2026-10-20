@@ -1,4 +1,4 @@
-import type { FocusEventHandler, KeyboardEventHandler } from 'react'
+import { useState, type FocusEventHandler, type KeyboardEventHandler } from 'react'
 import { ChevronRight, FilePlus2, FileText, FolderInput, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { keyOf, MAX_DEPTH, type PageKind, type PageRef } from '@/engine/pages/tree'
@@ -47,13 +47,17 @@ const noun = (row: Row) => row.ref.kind
 /** One page of the tree: chevron, kind glyph, name, and the ··· menu for editors. Its time is the tooltip. */
 export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuOpen, onOpen, onToggle, onRename, onAdd, onMove, onDelete, onKeyDown, onFocus }: Props) {
   const Glyph = row.ref.kind === 'doc' ? FileText : Presentation
+  // The two menus are mounted when the pointer or the keyboard first reaches the row (or a menu is asked for): a thousand rows
+  // with two menus each cost more than the whole rest of the tree.
+  const [armed, setArmed] = useState(false)
+  const menus = canWrite && (armed || menuOpen)
   const tip = row.ref.kind === 'deck' && row.slides !== null ? `${row.slides} slide${row.slides === 1 ? '' : 's'} · ${ago(row.updated)}` : ago(row.updated)
   return (
     <div role="treeitem" data-row={keyOf(row.ref)} aria-level={row.depth} aria-posinset={place.index} aria-setsize={place.size}
       aria-expanded={row.hasChildren ? row.expanded : undefined} aria-selected={row.open} aria-current={row.open ? 'page' : undefined}
-      aria-disabled={busy && !row.open ? true : undefined} tabIndex={focused ? 0 : -1} title={tip} onKeyDown={onKeyDown} onFocus={onFocus}
+      aria-disabled={busy && !row.open ? true : undefined} tabIndex={focused ? 0 : -1} title={tip} onKeyDown={onKeyDown} onFocus={(e) => { setArmed(true); onFocus(e) }} onMouseEnter={() => setArmed(true)}
       onClick={() => { if (!row.open && !busy) onOpen(row.ref) }}
-      className={cn('group relative flex h-8 cursor-pointer items-center gap-1.5 rounded-lg pr-16 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-line-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
+      className={cn('group relative flex h-8 cursor-pointer items-center gap-1.5 rounded-lg pr-2 outline-none hover:pr-16 focus-within:pr-16 has-[[data-state=open]]:pr-16 transition-colors focus-visible:ring-1 focus-visible:ring-line-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
         INDENT[shownDepth(row.depth) - 1], row.open ? 'bg-raise shadow-[0_0_0_1px_theme(colors.line)]' : 'hover:bg-panel')}>
       {row.hasChildren
         ? <button type="button" tabIndex={-1} aria-label={`${row.expanded ? 'Collapse' : 'Expand'} ${row.name}`} onClick={(e) => { e.stopPropagation(); onToggle(row.ref) }}
@@ -63,7 +67,7 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
         : <span className="size-4 flex-none" aria-hidden />}
       <Glyph className="size-3.5 flex-none text-ink-3" strokeWidth={1.75} aria-hidden />
       <span className={cn('truncate text-[13px]', row.open ? 'text-ink' : 'text-ink-2')}>{row.name}</span>
-      {canWrite && (
+      {menus && (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger aria-label={`Add subpage to ${row.name}`} disabled={busy || row.depth >= MAX_DEPTH} tabIndex={-1} onClick={(e) => e.stopPropagation()}
             className={cn(HOVER_BUTTON, 'right-[34px] disabled:hidden')}>
@@ -74,7 +78,7 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      {canWrite && (
+      {menus && (
         <DropdownMenu modal={false} open={menuOpen} onOpenChange={onMenuOpen}>
           <DropdownMenuTrigger aria-label={`More for ${row.name}`} disabled={busy} tabIndex={-1} onClick={(e) => e.stopPropagation()}
             className={cn(HOVER_BUTTON, 'right-1.5 disabled:hidden')}>
