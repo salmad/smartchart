@@ -34,6 +34,7 @@ import { bootDone } from './boot'
 import { forgetCachedDeck, readCachedDeck } from './cached-decks'
 import { recheckInIdle } from './recheck'
 import { useWorkspace } from './components/sidebar/useWorkspace'
+import { useRowActions } from './components/sidebar/useRowActions'
 import type { DocRepo } from './docs'
 import type { WorkspaceRepo } from './workspaces'
 import { ROOMY, usePanel } from './panel'
@@ -239,13 +240,20 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     go(path)
   }, [app, persist])
   const onDeckDeleted = useCallback((id: string) => { if (id === app.getState().deckId) { newDeck(); go('/new') } }, [app, newDeck])
-  // Delete from the deck menu: the open deck goes, and a new one starts in its place.
-  const deleteDeck = useCallback(async () => {
+  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
+  const [docTick, setDocTick] = useState(0)
+  // Rename, delete and new doc in the sidebar show at once and are sent behind the scenes (see useRowActions).
+  const rows = useRowActions({
+    repos: { decks: repo, docs }, wsId: ws.current?.id ?? null, onDeckDeleted, onOpenDoc: (id) => leaveTo(`/doc/${id}`), onDocRenamed: () => setDocTick((t) => t + 1),
+    onDocDeleted: (id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') },
+  })
+  // Delete from the deck menu: the open deck goes at once, and a new one starts in its place.
+  const deleteDeck = useCallback(() => {
     const id = app.getState().deckId
     if (!id || locked(app.getState())) return
-    if (await repo.remove(id)) onDeckDeleted(id)
-    else say('Couldn’t delete the deck. Try again.')
-  }, [app, repo, onDeckDeleted, say])
+    const st = app.getState()
+    rows.removeDeck({ id, name: deckName({ name: st.name, items: st.items }) })
+  }, [app, rows])
 
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])
@@ -283,7 +291,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     onPdf: () => { if (app.getState().items.length) setPrinting(true) },
     onRename: (name: string) => { if (!locked(app.getState())) app.dispatch({ type: 'set', patch: { name } }) },
     // Only a deck that has been saved can be deleted: one with slides.
-    onDelete: s.deckId && s.items.length ? () => void deleteDeck() : null,
+    onDelete: s.deckId && s.items.length ? deleteDeck : null,
     account,
   }
 
@@ -332,13 +340,11 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
 
-  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
-  const [docTick, setDocTick] = useState(0)
   // The workspace down the left (⌘\), beside the editor or a doc.
-  const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, workspaces }} busy={locked(s)}
+  const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, workspaces }} rows={rows} busy={locked(s)}
     open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }, doc: route.name === 'doc' ? route.id : null, docTick }}
-    onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={() => leaveTo('/new')} onDeckDeleted={onDeckDeleted}
-    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onDocRenamed={() => setDocTick((t) => t + 1)} onRenameOpenDeck={bar.onRename} me={account.id} />
+    onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={() => leaveTo('/new')} 
+    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} />
 
   return (
     <TooltipProvider delayDuration={400}>

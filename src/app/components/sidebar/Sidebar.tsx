@@ -1,29 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { starterDoc, type DocStarter } from '@/engine/starters'
-import { parseDoc } from '@/engine/docs/parse'
-import { serializeDoc } from '@/engine/docs/serialize'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
 import type { WorkspaceRepo } from '@/app/workspaces'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { showThenFetch } from '@/app/swr'
+import { cacheSet } from '@/app/cache'
+import { overlay } from '@/app/optimistic'
 import { DeleteDeck } from '../DeleteDeck'
 import { ago } from './ago'
 import { ItemList, type ListRow } from './ItemList'
 import { Members } from './Members'
 import { NewDoc } from './NewDoc'
 import { RenameItem } from './RenameItem'
+import { deckList, docList, type RowActions, type SlimDeck, type SlimDoc } from './useRowActions'
 import type { WorkspaceState } from './useWorkspace'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
 interface Props {
   ws: WorkspaceState
+  /** Rename, delete and new doc: shown at once, sent behind the scenes. */
+  rows: RowActions
   repos: { decks: DeckRepo; docs: DocRepo; workspaces: WorkspaceRepo }
   /** The deck held in the editor (its name is live, and it lists before its first save), and the doc on screen. */
   open: { deck: { id: string | null; name: string; slides: number }; doc: string | null; docTick: number }
   busy: boolean
-  onOpenDeck: (id: string) => void; onNewDeck: () => void; onDeckDeleted: (id: string) => void
-  onOpenDoc: (id: string) => void; onDocDeleted: (id: string) => void; onDocRenamed: () => void
+  onOpenDeck: (id: string) => void; onNewDeck: () => void
+  onOpenDoc: (id: string) => void
   /** The open deck is renamed through the editor, so its live state and its next save agree. */
   onRenameOpenDeck: (name: string) => void
   /** The signed-in user's id, for their own row in Members. */
@@ -31,9 +34,6 @@ interface Props {
 }
 
 type Kind = 'deck' | 'doc'
-// What is stored of a list: what the rows show, not the slide a deck summary also carries.
-interface SlimDeck { id: string; name: string; updated: number; slides: number }
-interface SlimDoc { id: string; name: string; updated: number }
 const rowsOf = (v: unknown, ok: (r: Record<string, unknown>) => boolean): boolean => Array.isArray(v) && v.every((r) => !!r && typeof r === 'object' && ok(r as Record<string, unknown>))
 const isSlimDocs = (v: unknown): v is SlimDoc[] => rowsOf(v, (r) => typeof r.id === 'string' && typeof r.name === 'string' && typeof r.updated === 'number')
 const isSlimDecks = (v: unknown): v is SlimDeck[] => rowsOf(v, (r) => typeof r.id === 'string' && typeof r.name === 'string' && typeof r.updated === 'number' && typeof r.slides === 'number')
@@ -42,9 +42,11 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its docs and its decks, newest
     first. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens. */
-export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onDocRenamed, onRenameOpenDeck, me }: Props) {
+export function Sidebar({ ws, rows, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onRenameOpenDeck, me }: Props) {
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
-  const [decks, setDecks] = useState<ListRow[] | null>(null), [docs, setDocs] = useState<ListRow[] | null>(null)
+  // What the server (or this browser's copy) last said; the pending changes are laid over it for the rows.
+  // Each is tagged with the list it was read for, so a workspace switch never stores one workspace's rows under another's name.
+  const [deckBase, setDeckBase] = useState<{ list: string; rows: SlimDeck[] } | null>(null), [docBase, setDocBase] = useState<{ list: string; rows: SlimDoc[] } | null>(null)
   const [failed, setFailed] = useState<Record<Kind, boolean>>({ deck: false, doc: false })
   const [renaming, setRenaming] = useState<{ kind: Kind | 'workspace'; row?: ListRow } | null>(null)
   const [doomed, setDoomed] = useState<{ kind: Kind; row: ListRow } | null>(null), [making, setMaking] = useState(false)
@@ -57,20 +59,31 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   const account = me === DEV_ACCOUNT.id ? undefined : me, shown = useRef<Record<Kind, string | null>>({ deck: null, doc: null }), ahead = useRef(new Set<string>())
   const loadDecks = useCallback(async () => {
     if (!loaded) return
-    const name = `decks:${wsId ?? 'all'}`
+    const name = deckList(wsId)
     const ok = await showThenFetch(shown.current.deck === name ? undefined : account, name,
       async () => (await repos.decks.list(wsId ?? undefined)).map(({ id, name, updated, slides }) => ({ id, name, updated, slides })), isSlimDecks,
-      (l) => { shown.current.deck = name; ahead.current.clear(); setDecks(l.filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` }))) })
+      (l) => { shown.current.deck = name; ahead.current.clear(); setDeckBase({ list: name, rows: l }) })
     setFailed((f) => ({ ...f, deck: !ok }))
   }, [repos.decks, wsId, loaded, account])
   const loadDocs = useCallback(async () => {
     if (!wsId) return
-    const name = `docs:${wsId}`
+    const name = docList(wsId)
     const ok = await showThenFetch(shown.current.doc === name ? undefined : account, name,
       async () => (await repos.docs.list(wsId)).map(({ id, name, updated }) => ({ id, name, updated })), isSlimDocs,
-      (l) => { shown.current.doc = name; setDocs(l.map((d) => ({ id: d.id, name: d.name, sub: ago(d.updated) }))) })
+      (l) => { shown.current.doc = name; setDocBase({ list: name, rows: l }) })
     setFailed((f) => ({ ...f, doc: !ok }))
   }, [repos.docs, wsId, account])
+  // The rows are the list with the pending changes laid over it, and that is also what is stored.
+  const deckName = deckList(wsId), docName = wsId ? docList(wsId) : null
+  const shownDecks = useMemo(() => (deckBase?.list === deckName ? overlay(deckName, deckBase.rows, rows.deckOps) : null), [deckBase, deckName, rows.deckOps])
+  const shownDocs = useMemo(() => (docName && docBase?.list === docName ? overlay(docName, docBase.rows, rows.docOps) : null), [docBase, docName, rows.docOps])
+  useEffect(() => { if (account && shownDecks) void cacheSet(account, deckName, shownDecks) }, [account, deckName, shownDecks])
+  useEffect(() => { if (account && docName && shownDocs) void cacheSet(account, docName, shownDocs) }, [account, docName, shownDocs])
+  const decks = useMemo<ListRow[] | null>(() => shownDecks && shownDecks.filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` })), [shownDecks])
+  const docs = useMemo<ListRow[] | null>(() => shownDocs && shownDocs.map((d) => ({ id: d.id, name: d.name, sub: ago(d.updated) })), [shownDocs])
+  // A change that failed is gone from the rows: read the lists again, so they say what the server says.
+  useEffect(() => { if (rows.lost) { void loadDecks(); void loadDocs() } }, [rows.lost]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Read again when the open deck or doc changes, so one saved for the first time shows with its real time.
   useEffect(() => { void loadDecks() }, [loadDecks, open.deck.id])
   useEffect(() => { void loadDocs() }, [loadDocs, open.doc, open.docTick])
@@ -78,7 +91,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   // Pointing at a deck for a moment reads it into this browser, so the click opens it without waiting. Once per deck until
   // the list is read again; never the open deck, whose revision and common ancestor a read would replace.
   const readAhead = (id: string) => {
-    if (id === open.deck.id || ahead.current.has(id) || !account) return
+    if (id === open.deck.id || ahead.current.has(id) || !account || rows.pending(id)) return
     ahead.current.add(id)
     void repos.decks.get(id).catch(() => undefined)
   }
@@ -107,39 +120,20 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       return
     }
     if (!row) return
-    if (kind === 'deck') {
-      if (row.id === deck.id) { onRenameOpenDeck(name); setDecks((d) => d?.map((r) => (r.id === row.id ? { ...r, name } : r)) ?? null); return }
-      const d = await repos.decks.get(row.id)
-      const why = d ? await repos.decks.save({ ...d, name }) : 'That deck is gone.'
-      if (why) throw new Error(why)
-      await loadDecks()
-      return
-    }
-    // A doc's name is its title: renaming rewrites the title, so the two never drift apart.
-    const d = await repos.docs.get(row.id)
-    const why = d ? await repos.docs.save({ id: d.id, name, text: serializeDoc({ ...parseDoc(d.text).doc, title: name }), workspaceId: d.workspaceId }) : 'That doc is gone.'
-    if (why) throw new Error(why)
-    onDocRenamed()
+    if (kind === 'deck' && row.id === deck.id) { onRenameOpenDeck(name); setDeckBase((d) => d && { ...d, rows: d.rows.map((r) => (r.id === row.id ? { ...r, name } : r)) }); return }
+    if (kind === 'deck') rows.renameDeck(row, name); else rows.renameDoc(row, name)
   }
-  const remove = async () => {
+  const remove = () => {
     if (!doomed) return
     const { kind, row } = doomed
     setDoomed(null)
-    if (kind === 'deck') {
-      setDecks((all) => all?.filter((x) => x.id !== row.id) ?? null)
-      if (await repos.decks.remove(row.id)) onDeckDeleted(row.id); else { setFailed((f) => ({ ...f, deck: true })); void loadDecks() }
-      return
-    }
-    setDocs((all) => all?.filter((x) => x.id !== row.id) ?? null)
-    if (await repos.docs.remove(row.id)) onDocDeleted(row.id); else { setFailed((f) => ({ ...f, doc: true })); void loadDocs() }
+    if (kind === 'deck') rows.removeDeck(row); else rows.removeDoc(row)
   }
   const createDoc = async (s: DocStarter) => {
-    if (!wsId) return
-    const id = newDocId(), why = await repos.docs.save({ id, name: starterDoc(s).title || s.label, text: s.markdown.join('\n'), workspaceId: wsId })
-    if (why) throw new Error(why)
-    await loadDocs()
-    onOpenDoc(id)
+    if (wsId) rows.createDoc({ id: newDocId(), name: starterDoc(s).title || s.label, text: s.markdown.join('\n'), workspaceId: wsId })
   }
+  // A row with a request on its way opens once that has been answered: its stored copy is not up to date before.
+  const openAfter = (open: (id: string) => void) => (id: string) => void rows.settled(id).then(() => open(id))
 
   return (
     <nav aria-label="Workspace" className="flex w-[248px] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
@@ -149,16 +143,17 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       </div>
       <div className="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto pb-4">
         {(wsId || !loaded) && <ItemList title="Docs" rows={wsId ? docs : null} error={failed.doc} current={open.doc} canWrite={canWrite} busy={busy}
-          onOpen={onOpenDoc} onNew={() => setMaking(true)} onRename={(row) => setRenaming({ kind: 'doc', row })} onDelete={(row) => setDoomed({ kind: 'doc', row })} />}
+          onOpen={openAfter(onOpenDoc)} onNew={() => setMaking(true)} onRename={(row) => setRenaming({ kind: 'doc', row })} onDelete={(row) => setDoomed({ kind: 'doc', row })} />}
         <ItemList title="Decks" rows={loaded ? deckRows : null} error={failed.deck} current={onDeck ? deck.id : null} canWrite={canWrite} busy={busy}
-          onOpen={onOpenDeck} onAhead={readAhead} onNew={onNewDeck} onRename={(row) => setRenaming({ kind: 'deck', row })} onDelete={(row) => setDoomed({ kind: 'deck', row })} />
+          onOpen={openAfter(onOpenDeck)} onAhead={readAhead} onNew={onNewDeck} onRename={(row) => setRenaming({ kind: 'deck', row })} onDelete={(row) => setDoomed({ kind: 'deck', row })} />
       </div>
 
       <RenameItem open={renaming && (renaming.kind === 'workspace'
         ? { title: 'New workspace', name: '', action: 'Create', about: 'A place to share docs and decks with your team. You can invite people once it exists.' }
         : { title: `Rename ${renaming.kind}`, name: renaming.row?.name ?? '', action: 'Rename' })}
         onSubmit={rename} onClose={() => setRenaming(null)} />
-      <DeleteDeck name={doomed?.row.name ?? null} what={doomed?.kind ?? 'deck'} onCancel={() => setDoomed(null)} onConfirm={() => void remove()} />
+      <DeleteDeck name={doomed?.row.name ?? null} what={doomed?.kind ?? 'deck'} onCancel={() => setDoomed(null)} onConfirm={remove} />
+      {rows.notice && <p role="alert" className="border-t border-line px-4 py-3 text-[12.5px] leading-[1.45] text-ink-2">{rows.notice}</p>}
       <NewDoc open={making} onCreate={createDoc} onClose={() => setMaking(false)} />
       {/* Leaving opens the most recently used workspace that is left. */}
       <Members workspace={members ? ws.current : null} repo={repos.workspaces} me={me} onClose={() => setMembers(false)}
