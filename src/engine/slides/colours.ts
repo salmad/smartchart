@@ -117,7 +117,8 @@ export function secondHue(theme: Theme, used: readonly string[]): [string, strin
 export type Slot = "focus" | "quiet" | "ctx1" | "ctx2" | "ctx3" | "alt1" | "alt2";
 export function seriesSlots(chart: Chart): { slots: (Slot | null)[]; labelled: boolean[] } {
   const series = chart.series || [], slots: (Slot | null)[] = series.map(() => null), labelled = series.map(() => false);
-  const focus = series.findIndex((s) => s.color === "focus");
+  // A highlighted bar is the chart's focus, so no whole series takes the slot.
+  const focus = chart.highlight ? -1 : series.findIndex((s) => s.color === "focus");
   if (focus >= 0) slots[focus] = "focus";
   const ctx = series.map((_s, i) => i).filter((i) => i !== focus);
   const ctxBars = ctx.filter((i) => series[i].mark !== "line");

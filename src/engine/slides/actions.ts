@@ -11,6 +11,8 @@ export type Target =
   | { kind: "text"; path: string; from: number; to: number }
   | { kind: "item"; item: string }
   | { kind: "cells"; r0: number; c0: number; r1: number; c1: number }
+  | { kind: "bar"; series: number; index: number }
+  | { kind: "series"; series: number }
   | { kind: "slide" };
 
 export interface Result { set: Record<string, unknown>; focus?: string; target?: Target }

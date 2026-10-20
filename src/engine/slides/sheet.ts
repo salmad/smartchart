@@ -74,13 +74,18 @@ function bars(chart: Chart, style: Style): SheetModel {
   type Map = (i: number) => number | null;
   const same: Map = (i) => i;
   const remap = (cat: Map, ser: Map = same): Patch => {
-    if (!chart.annotations) return {};
-    const out = chart.annotations.flatMap((a) => {
+    const out: Patch = {};
+    if (chart.annotations) out["chart.annotations"] = chart.annotations.flatMap((a) => {
       const f = cat(a.from ?? 0), t = cat(a.to ?? 0), k = ser(a.series ?? 0);
       if (f === null || t === null || k === null) return [];
       return [{ ...a, ...(f !== (a.from ?? 0) ? { from: f } : {}), ...(t !== (a.to ?? 0) ? { to: t } : {}), ...(k !== (a.series ?? 0) ? { series: k } : {}) }];
     });
-    return { "chart.annotations": out };
+    // The highlighted bar goes with its category and series, and is cleared when either is gone.
+    if (chart.highlight) {
+      const index = cat(chart.highlight.index), series = ser(chart.highlight.series);
+      out["chart.highlight"] = index === null || series === null ? null : { series, index };
+    }
+    return out;
   };
   const ins = (at: number): Map => (i) => (i >= at ? i + 1 : i);
   const del = (lo: number, hi: number): Map => (i) => (i < lo ? i : i <= hi ? null : i - (hi - lo + 1));
