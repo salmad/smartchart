@@ -8,7 +8,7 @@ const ws = [{ id: 'w1', name: 'Northwind team', role: 'owner', personal: false, 
 const row = { id: 'd1', name: 'Market sizing', named: false, updated: 100, rev: 1, role: 'owner',
   data: { id: 'd1', style: 'consulting', theme: 'ink', accent: null, current: 0, updated: 100, items: [{ id: 's1', slide: { template: 'section', title: 'Market sizing' }, status: 'ok', errors: [], warnings: [], checks: [] }], history: [], working: [], messages: [{ kind: 'bot', text: 'Hi.' }] }, chat: null }
 
-async function app(page: Page, opts: { cached: boolean }) {
+async function app(page: Page, opts: { cached: boolean }, deck: unknown = row) {
   if (opts.cached) await page.addInitScript((u) => localStorage.setItem('occam.account.v1', JSON.stringify(u)), user)
   await page.route('**/api/auth/get-session', (r) => r.fulfill({ json: opts.cached ? { user, session: {} } : null }))
   await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
@@ -18,7 +18,7 @@ async function app(page: Page, opts: { cached: boolean }) {
     const q = new URL(r.request().url()).searchParams
     if (q.has('rev')) return r.fulfill({ json: { rev: 1, presence: {} } })
     if (q.has('events') || q.has('versions')) return r.fulfill({ json: [] })
-    return r.fulfill({ json: q.has('id') ? row : [{ id: 'd1', name: 'Market sizing', updated: 100, slides: 1, style: 'consulting', theme: 'ink', accent: null }] })
+    return r.fulfill({ json: q.has('id') ? deck : [{ id: 'd1', name: 'Market sizing', updated: 100, slides: 1, style: 'consulting', theme: 'ink', accent: null }] })
   })
 }
 /** The page's script held back, so what shows is what the HTML alone paints. */
@@ -70,4 +70,21 @@ test('a page whose files were removed by a newer deploy loads again once, and on
   await page.goto('/guard-test')
   await page.waitForTimeout(2000)
   expect(loads).toBe(2)
+})
+
+test('the open slide draws with the first few thumbnails, and the rest follow', async ({ page }) => {
+  const many = { ...row, data: { ...row.data, items: Array.from({ length: 14 }, (_, k) => ({ id: `s${k}`, slide: { template: 'section', title: `Slide ${k}` }, status: 'ok', errors: [], warnings: [], checks: [] })) } }
+  await page.addInitScript(() => {
+    const w = window as unknown as { __atStage: number | null }
+    w.__atStage = null
+    new MutationObserver(() => {
+      if (w.__atStage === null && document.querySelector('[data-frame] .slide')) w.__atStage = document.querySelectorAll('[data-strip-thumb] .slide').length
+    }).observe(document, { childList: true, subtree: true })
+  })
+  await app(page, { cached: true }, many)
+  await page.goto('/d/d1')
+  await expect(page.locator('[data-strip-thumb] .slide')).toHaveCount(14, { timeout: 15000 })
+  const atStage = await page.evaluate(() => (window as unknown as { __atStage: number | null }).__atStage)
+  expect(atStage).not.toBeNull()
+  expect(atStage as number).toBeLessThan(14)
 })

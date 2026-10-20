@@ -42,6 +42,20 @@
           for (var i = 0; i < editor.length; i++) { var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = editor[i]; document.head.appendChild(l) }
         } catch (e) { /* storage blocked: no frame */ }
       })()
+      /* The stylesheet is fetched without blocking the first paint (vite/async-css.ts takes its <link> out and names its file
+         here). `window.__css` settles when it has applied, and main.tsx starts React after that. */
+      ;(function () {
+        var href = /*stylesheet*/null
+        if (!href) return
+        window.__css = new Promise(function (done) {
+          var l = document.createElement('link')
+          l.rel = 'preload'; l.as = 'style'; l.href = href; l.crossOrigin = 'anonymous'
+          l.onload = function () { l.onload = function () { done() }; l.rel = 'stylesheet' }
+          l.onerror = function () { done() }
+          setTimeout(done, 4000)
+          document.head.appendChild(l)
+        })
+      })()
       /* The browser keeps this page for ten minutes (vercel.json). If its copy names files a newer deploy has removed,
          load again once, which asks for the current page. */
       ;(function () {
@@ -54,6 +68,7 @@
       })()
     </script>
     <style>
+      html, body { background: #0A0A0B }
       #boot, #boot * { box-sizing: border-box }
       #boot { display: none; position: fixed; inset: 0; z-index: 10; background: #0A0A0B }
       .boot-app #boot { display: block }

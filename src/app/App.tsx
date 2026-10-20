@@ -32,6 +32,7 @@ import { Sidebar } from './components/sidebar/Sidebar'
 import { DEV_ACCOUNT } from './dev-account'
 import { bootDone } from './boot'
 import { forgetCachedDeck, readCachedDeck } from './cached-decks'
+import { recheckInIdle } from './recheck'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import type { DocRepo } from './docs'
 import type { WorkspaceRepo } from './workspaces'
@@ -110,12 +111,15 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     turns.current = []
     setViewOnly(repo.role?.(d.id) === 'viewer')
     app.dispatch({ type: 'open', deck: d })
-    // Rule checks re-run with the current code, on slides upgraded to the current schema.
+    // Rule checks re-run with the current code, on slides upgraded to the current schema. The slide that opens (a link with
+    // ?slide=<id> opens on that slide) is measured at once and shows; the others keep their stored checks until the
+    // browser is idle, so the page is not held up by measuring slides nobody is looking at yet.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
-    app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer()) })
-    // A link with ?slide=<id> opens on that slide.
-    const want = new URLSearchParams(location.search).get('slide'), at = app.getState().items.findIndex((it) => it.id === want)
+    const want = new URLSearchParams(location.search).get('slide'), at = items.findIndex((it) => it.id === want)
+    const first = at >= 0 ? at : Math.min(Math.max(opened.current, 0), items.length - 1)
+    app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer(), new Set([first])) })
     if (at >= 0) app.dispatch({ type: 'select', index: at })
+    recheckInIdle({ app, measurer, deckId: app.getState().deckId, skip: items[first]?.id ?? null })
     if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)

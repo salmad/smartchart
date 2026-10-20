@@ -7,6 +7,7 @@ import { cn } from '@/app/lib/utils'
 import { useEdgeFade } from '@/app/fade'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { SlideView } from './SlideView'
+import { useRamp } from './useRamp'
 import { MENU_ICON, MENU_ITEM } from './menu'
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 }
 
 const UNDO_MS = 6000
+
 
 /** The deck as thumbnails: a click selects, a drag reorders; each slide's menu moves or deletes it. */
 export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onRemove, removed, onRestore, layout, onOpen, noted = {} }: Props) {
@@ -47,9 +49,11 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
     if (layout === 'row') row.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [current, layout, items.length])
 
+  const drawnAt = useRamp(items.length, current)
   if (!items.length && !undo) return null
   const ctx = contexts(deck), grid = layout === 'grid'
   const thumb = grid ? 'w-full' : 'w-28 max-[900px]:w-24'
+  const thumbClass = cn('pointer-events-none relative aspect-video overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-has-[[aria-current=true]]:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)] group-has-[:focus-visible]:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)]', thumb)
 
   // The drop gap is the slot before thumbnail i (items.length: after the last).
   const over = (e: DragEvent<HTMLDivElement>, i: number) => {
@@ -88,8 +92,9 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
             {gap === i + 1 && i === items.length - 1 && <i aria-hidden className={cn('absolute top-0 w-0.5 rounded-full bg-ink', grid ? '-right-[13px] h-[calc(100%-1.25rem)]' : '-right-[6px] h-[63px] max-[900px]:h-[54px]')} />}
             <button type="button" data-strip-thumb aria-current={i === current} aria-label={`Slide ${i + 1}`} onClick={() => onSelect(i)} onDoubleClick={() => onOpen?.(i)} onKeyDown={(e) => keys(e, it, i)}
               className={cn('peer grid w-full cursor-pointer text-left outline-none', grid ? 'gap-2' : 'gap-1')}>
-              <SlideView slide={it.slide} deck={deck} ctx={ctx[i]}
-                className={cn('pointer-events-none relative aspect-video overflow-hidden rounded-md shadow-[0_0_0_1px_theme(colors.line)] group-hover:shadow-[0_0_0_1px_theme(colors.ink-3)] group-has-[[aria-current=true]]:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)] group-has-[:focus-visible]:shadow-[0_0_0_2px_theme(colors.app-bg),0_0_0_4px_theme(colors.ink)]', thumb)} />
+              {drawnAt(i)
+                ? <SlideView slide={it.slide} deck={deck} ctx={ctx[i]} className={thumbClass} />
+                : <div className={cn(thumbClass, 'bg-panel')} />}
               <span className={cn('flex gap-2 font-mono font-medium leading-none text-ink-3', grid ? 'text-[11px]' : 'text-[10px]')}>
                 <b className="font-medium text-ink-2">{String(i + 1).padStart(2, '0')}</b>
                 {it.status === 'draft' && <i className="not-italic text-warn">draft</i>}

@@ -115,7 +115,7 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
   }, [bar, current, items, onSelect, onEdit, stage, preview, s.editing, lock, side])
 
   const strip = (layout: 'row' | 'grid') => (
-    <Strip items={items} current={current} deck={deck} busy={lock} noted={noted} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
+    <Strip key={s.deckId ?? 'new'} items={items} current={current} deck={deck} busy={lock} noted={noted} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
       onOpen={layout === 'grid' ? open : undefined} onMove={onMove} onRemove={onRemove} removed={s.removed?.item ?? null} onRestore={onRestore} />
   )
 
