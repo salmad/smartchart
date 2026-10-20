@@ -27,6 +27,8 @@ export interface PageTreeView {
   notice: string | null
   toggle(ref: PageRef, open?: boolean): void
   move: ReturnType<typeof createPageTree>['move']
+  /** Reads the list again (after a save, a rename, a delete). */
+  reload(): Promise<void>
   dismiss(): void
 }
 
@@ -71,5 +73,5 @@ export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, p
   }, [viewer, key])
 
   const rows = useMemo(() => pages && visibleRows(pages, expanded, open), [pages, expanded, open])
-  return { rows, failed: state.failed, notice: state.notice, toggle, move: tree.move, dismiss: tree.dismiss }
+  return { rows, failed: state.failed, notice: state.notice, toggle, move: tree.move, reload: tree.load, dismiss: tree.dismiss }
 }

@@ -17,6 +17,8 @@ export interface Row {
   open: boolean
   parentRef: PageRef | null
   updated: number
+  /** A deck's slide count (null for a doc). */
+  slides: number | null
 }
 
 const same = (a: PageRef | null, b: PageRef | null) => !!a && !!b && a.kind === b.kind && a.id === b.id
@@ -39,7 +41,7 @@ export function visibleRows(pages: PageSummary[], expanded: ReadonlySet<string>,
     for (const n of list) {
       const children = kids(n), open = expanded.has(keyOf(n))
       rows.push({ ref: { kind: n.kind, id: n.id }, name: n.name, depth, hasChildren: children.length > 0, expanded: open && children.length > 0,
-        open: same(n, openRef), parentRef, updated: n.updated })
+        open: same(n, openRef), parentRef, updated: n.updated, slides: n.slides })
       if (open && children.length) walk(children, depth + 1, { kind: n.kind, id: n.id })
     }
   }

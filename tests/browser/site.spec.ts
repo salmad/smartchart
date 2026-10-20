@@ -95,6 +95,8 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
   ]
   const fullReads: string[] = []
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
+  await page.route('**/api/workspaces**', (r) => r.fulfill({ json: [{ id: 'ws_a', name: 'Ann’s workspace', role: 'owner', personal: true, members: 1, usedAt: 1 }] }))
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: decks.map(({ id, name, updated, data }) => ({ kind: 'deck', id, name, updated, slides: data.items.length, parent: null, sortKey: null })) }))
   await page.route('**/api/decks**', (r) => {
     const id = new URL(r.request().url()).searchParams.get('id'), method = r.request().method()
     if (method === 'PUT') return r.fulfill({ json: { ok: true } })
@@ -107,16 +109,16 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
   await expect(page).toHaveURL(/\/d\/d_a$/)
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
   expect(fullReads).toEqual(['d_a']) // only the deck being opened is read in full
-  const sidebar = page.getByRole('navigation', { name: 'Workspace' }).getByRole('list', { name: 'Decks' })
-  await expect(sidebar.getByRole('listitem')).toHaveCount(2)
+  const sidebar = page.getByRole('navigation', { name: 'Workspace' }).getByRole('tree', { name: 'Pages' })
+  await expect(sidebar.getByRole('treeitem')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Account: Ann' })).toBeVisible()
   await sidebar.getByText('Plan').click()
   await expect(page).toHaveURL(/\/d\/d_b$/)
-  await sidebar.getByRole('listitem').filter({ hasText: 'Acme' }).hover()
+  await sidebar.getByRole('treeitem').filter({ hasText: 'Acme' }).hover()
   await sidebar.getByRole('button', { name: 'More for Acme' }).click()
   await page.getByRole('menuitem', { name: 'Delete deck…' }).click()
   await page.getByRole('button', { name: 'Delete deck' }).click()
-  await expect(sidebar.getByRole('listitem')).toHaveCount(1)
+  await expect(sidebar.getByRole('treeitem')).toHaveCount(1)
   expect(decks.map((d) => d.id)).toEqual(['d_b'])
 })
 

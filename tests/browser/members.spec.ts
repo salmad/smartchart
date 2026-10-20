@@ -11,6 +11,7 @@ async function account(page: Page, { who = { id: 'u_ann', email: 'ann@example.co
   const saves: unknown[] = []
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { ...who, image: null }, session: {} } }))
   await page.route('**/api/docs**', (r) => r.fulfill({ json: [] }))
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: [{ kind: 'deck', id: 'd_1', name: 'Q3 board', updated: 1, slides: 1, parent: null, sortKey: null }] }))
   await page.route('**/api/workspaces**', (r) => r.request().method() === 'GET' && !r.request().url().includes('members') ? r.fulfill({ json: workspaces() }) : r.fallback())
   await page.route('**/api/decks**', (r) => {
     const q = new URL(r.request().url()).searchParams, method = r.request().method()
@@ -34,9 +35,9 @@ test('a viewer reads the deck, with no way to change it', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0)
   const sidebar = page.getByRole('navigation', { name: 'Workspace' })
   await expect(sidebar.getByRole('button', { name: 'Workspace: Acme' })).toContainText('Viewer')
-  await sidebar.getByRole('listitem').filter({ hasText: 'Q3 board' }).hover()
+  await sidebar.getByRole('treeitem').filter({ hasText: 'Q3 board' }).hover()
   await expect(sidebar.getByRole('button', { name: /More for/ })).toHaveCount(0)
-  await expect(sidebar.getByRole('button', { name: 'New deck' })).toHaveCount(0)
+  await expect(sidebar.getByRole('button', { name: 'New page' })).toHaveCount(0)
   await expect(page.getByRole('menuitem', { name: 'Delete deck…' })).toHaveCount(0)
   await page.waitForTimeout(600) // longer than the save pause
   expect(saves).toEqual([])
@@ -49,7 +50,7 @@ test('a viewer of a workspace with no decks sees an empty page, not the editor',
   await expect(page.getByText('Nothing here yet.')).toBeVisible()
   await expect(page.getByText('View only')).toBeVisible()
   await expect(page.getByPlaceholder(/Describe a slide/)).toHaveCount(0)
-  await expect(page.getByRole('navigation', { name: 'Workspace' }).getByRole('button', { name: /^New (deck|doc)$/ })).toHaveCount(0)
+  await expect(page.getByRole('navigation', { name: 'Workspace' }).getByRole('button', { name: /^New (page|deck|doc)$/ })).toHaveCount(0)
   expect(saves).toEqual([])
 })
 
