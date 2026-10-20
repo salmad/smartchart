@@ -130,6 +130,21 @@ export interface Db {
   docComment(userId: string, id: string, op: CommentOp, ctx: { id: string; by: string; now: number }): Promise<DocComment[] | 'foreign' | string>
 }
 
+/* First tree keys: per workspace, decks and docs numbered together newest first, as the sidebar shows them today. The number is
+   three base 62 digits and a trailing V (a key never ends in the lowest digit, so there is room between any two). Only rows
+   without a key are written, so running it again changes nothing. */
+const D62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+const BACKFILL = (table: 'decks' | 'docs', kind: 'deck' | 'doc') => `
+  with every as (
+    select 'deck' as kind, id, workspace_id, updated_at from decks where workspace_id is not null
+    union all select 'doc', id, workspace_id, updated_at from docs
+  ), ranked as (
+    select kind, id, (row_number() over (partition by workspace_id order by updated_at desc, kind, id) - 1)::int as n from every
+  )
+  update ${table} t set sort_key =
+    substr('${D62}', (r.n / 3844) % 62 + 1, 1) || substr('${D62}', (r.n / 62) % 62 + 1, 1) || substr('${D62}', r.n % 62 + 1, 1) || 'V'
+  from ranked r where r.kind = '${kind}' and r.id = t.id and t.sort_key is null`
+
 const SCHEMA = [
   `create table if not exists decks (id text primary key, user_id text not null, name text not null, data jsonb not null, updated_at timestamptz not null default now())`,
   `create index if not exists decks_user on decks (user_id, updated_at desc)`,
@@ -166,6 +181,18 @@ const SCHEMA = [
   `create table if not exists doc_versions (doc_id text not null, user_id text not null, n integer not null, rev integer not null, by_client text not null, label text, key text not null, tree jsonb not null, at timestamptz not null default now(), primary key (doc_id, n))`,
   `create table if not exists doc_blobs (doc_id text not null, hash text not null, block jsonb not null, primary key (doc_id, hash))`,
   `alter table docs add column if not exists comments jsonb not null default '[]'::jsonb`,
+  // The page tree: a parent (named by kind and id, as decks and docs may share an id) and a fractional order key, on both tables.
+  // sort_key stays nullable: a page made by an old server before the backfill below must not fail, and null reads as before all.
+  `alter table decks add column if not exists parent_kind text`,
+  `alter table decks add column if not exists parent_id text`,
+  `alter table decks add column if not exists sort_key text`,
+  `alter table docs add column if not exists parent_kind text`,
+  `alter table docs add column if not exists parent_id text`,
+  `alter table docs add column if not exists sort_key text`,
+  `create index if not exists decks_parent on decks (workspace_id, parent_id)`,
+  `create index if not exists docs_parent on docs (workspace_id, parent_id)`,
+  BACKFILL('decks', 'deck'),
+  BACKFILL('docs', 'doc'),
 ]
 
 /** One query; the schema is ready before the first. */

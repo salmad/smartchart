@@ -40,6 +40,21 @@ describe.skipIf(!url)('SQL Db', () => {
     expect(await makeDb(url).listWorkspaces(user.id)).toHaveLength(1)
   }, 30_000)
 
+  it('pages from before the page tree get top-level order keys, newest first across decks and docs, and a second start changes nothing', async () => {
+    const k = Date.now(), ws = `w_tree_${k}`, db = neon(url)
+    const deck = (id: string, at: string) => db.query(`insert into decks (id, user_id, name, data, workspace_id, updated_at) values ($1, 'u_tree', $1, '{"items":[]}', $2, $3)`, [id, ws, at])
+    const doc = (id: string, at: string) => db.query(`insert into docs (id, user_id, name, text, workspace_id, updated_at) values ($1, 'u_tree', $1, '', $2, $3)`, [id, ws, at])
+    await deck(`d_a_${k}`, '2026-01-01T00:00:00Z'); await doc(`doc_b_${k}`, '2026-01-03T00:00:00Z'); await deck(`d_c_${k}`, '2026-01-02T00:00:00Z')
+    const keys = async () => (await db.query(
+      `select id, sort_key, parent_id from (select id, sort_key, parent_id, workspace_id from decks union all select id, sort_key, parent_id, workspace_id from docs) p where workspace_id = $1 order by sort_key`, [ws])) as { id: string; sort_key: string; parent_id: string | null }[]
+    await makeDb(url).listWorkspaces('nobody') // a fresh start runs the schema again, and the backfill with it
+    const first = await keys()
+    expect(first.map((r) => r.id)).toEqual([`doc_b_${k}`, `d_c_${k}`, `d_a_${k}`])
+    expect(first.every((r) => /^[0-9A-Za-z]*[1-9A-Za-z]$/.test(r.sort_key) && r.parent_id === null)).toBe(true)
+    await makeDb(url).listWorkspaces('nobody')
+    expect(await keys()).toEqual(first)
+  }, 60_000)
+
   it('a deck from before workspaces moves into its maker’s workspace and no one else’s', async () => {
     const db = makeDb(url), k = Date.now()
     const ann = { id: `u_old_${k}`, email: `old.${k}@example.com`, name: 'Old' }
