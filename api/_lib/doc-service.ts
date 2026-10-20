@@ -54,6 +54,7 @@ async function run(e: DocEnv): Promise<ToolReply> {
       const role = (await e.workspaces()).find((w) => w.id === workspaceId)?.role
       throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(workspaceId ?? '')
     }
+    if (typeof put === 'object' && 'refused' in put) return { ok: false, error: { code: 'refused', message: put.refused, fix: 'Choose another parent.' } }
     if (put === 'conflict') {
       if (attempt === 0) continue
       return { ok: false, error: { code: 'conflict', message: 'The doc changed while this ran.', fix: 'Call it again.' } }

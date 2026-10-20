@@ -4,12 +4,13 @@ import { KEEP, type Version } from '../../src/engine/versions'
 import type { Slide } from '../../src/engine/types'
 import type { Block } from '../../src/engine/docs/types'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments'
+import { appendKey, canAdd, NO_PAGE, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
     deck from before workspaces, which only its maker can reach). */
-export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence }
-export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; presence?: DocPresence; comments?: DocComment[] }
+export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence; parent?: PageRef | null; sortKey?: string | null }
+export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; presence?: DocPresence; comments?: DocComment[]; parent?: PageRef | null; sortKey?: string | null }
 export type FakeDb = Db & FakeWorkspaces & {
   rows: Map<string, FakeRow>
   docs: Map<string, FakeDoc>
@@ -47,9 +48,23 @@ export function fakeDb(): FakeDb {
     if (w === null) return wanted === undefined ? null : false
     return can(ws.roleIn(u, w), 'write') ? w : false
   }
-  const summary = ({ id, name, updated, data, share }: FakeRow) => {
+  /** The workspace's pages as the tree sees them, whatever the caller may read (the callers check). */
+  const nodesIn = (w: string): PageNode[] => [
+    ...[...rows.values()].filter((r) => r.ws === w).map((r): PageNode => ({ kind: 'deck', id: r.id, parent: r.parent ?? null, sortKey: r.sortKey ?? null })),
+    ...[...docs.values()].filter((d) => d.ws === w).map((d): PageNode => ({ kind: 'doc', id: d.id, parent: d.parent ?? null, sortKey: d.sortKey ?? null })),
+  ]
+  /** A new page's workspace, parent and key, or the sentence saying why it can't go there (as the SQL does). */
+  const place = (u: string, wanted: string | undefined, parent: PageRef | undefined): { ws: string | null | false; parent: PageRef | null; key: string | null } | { refused: string } => {
+    const at = parent ? (parent.kind === 'deck' ? deckIf(u, parent.id, 'read') : docIf(u, parent.id, 'read'))?.ws : undefined
+    if (parent && (!at || (wanted && wanted !== at))) return { refused: NO_PAGE }
+    const w = parent ? home(u, at as string) : home(u, wanted)
+    if (!w) return { ws: w, parent: null, key: null }
+    const nodes = nodesIn(w), ok = canAdd(nodes, parent ?? null)
+    return ok === 'ok' ? { ws: w, parent: parent ?? null, key: appendKey(nodes, parent ?? null) } : { refused: ok }
+  }
+  const summary = ({ id, name, updated, data, share, parent, sortKey }: FakeRow) => {
     const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
-    return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null, shared: !!share }
+    return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, first: d.items?.[0]?.slide ?? null, shared: !!share, parent: parent ?? null, sortKey: sortKey ?? null }
   }
   return {
     ...ws, rows, docs, events, keys, rate, calls, versions, blobStore, docVersions, docBlobStore,
@@ -82,11 +97,15 @@ export function fakeDb(): FakeDb {
       const r = rows.get(id)
       if (r && !can(role(u, r), 'write')) return 'foreign'
       if (r && r.rev !== baseRev) return 'conflict'
-      const where = r ? r.ws : home(u, opts.workspaceId)
+      const fresh = r ? null : place(u, opts.workspaceId, opts.parent)
+      if (fresh && 'refused' in fresh) return fresh
+      const at = fresh && !('refused' in fresh) ? fresh : null
+      const where = r ? r.ws : at ? at.ws : false
       if (where === false) return 'foreign'
       const rev = (r?.rev ?? 0) + 1
       const named = !!r?.named || !!opts.named
-      rows.set(id, { id, name: r?.named && !opts.named ? r.name : name, data, chat, rev, updated: Date.now() + ++clock, user: r?.user ?? u, ws: where, share: r?.share, named, presence: r?.presence ?? {} })
+      rows.set(id, { id, name: r?.named && !opts.named ? r.name : name, data, chat, rev, updated: Date.now() + ++clock, user: r?.user ?? u, ws: where, share: r?.share, named, presence: r?.presence ?? {},
+        parent: r ? r.parent : at?.parent ?? null, sortKey: r ? r.sortKey : at?.key ?? null })
       return { rev }
     },
     getDeckMeta: async (u, id) => { const r = deckIf(u, id, 'read'); return r ? { rev: r.rev, share: r.share ?? null, presence: r.presence, named: r.named, role: role(u, r) as Role } : null },
@@ -120,16 +139,23 @@ export function fakeDb(): FakeDb {
     },
     sharedDeck: async (t) => { const r = [...rows.values()].find((x) => x.share === t); return r ? { name: r.name, data: r.data, rev: r.rev } : null },
     listDocs: async (u, w) => [...docs.values()].filter((d) => d.ws === w && can(role(u, d), 'read')).sort((a, b) => b.updated - a.updated)
-      .map(({ id, name, updated, ws: workspaceId }) => ({ id, name, updated, workspaceId })),
+      .map(({ id, name, updated, ws: workspaceId, parent, sortKey }) => ({ id, name, updated, workspaceId, parent: parent ?? null, sortKey: sortKey ?? null })),
+    listPages: async (u, w) => [
+      ...[...rows.values()].filter((r) => r.ws === w && can(role(u, r), 'read')).map((r) => ({ kind: 'deck' as const, id: r.id, name: r.name, updated: r.updated, slides: summary(r).slides, parent: r.parent ?? null, sortKey: r.sortKey ?? null })),
+      ...[...docs.values()].filter((d) => d.ws === w && can(role(u, d), 'read')).map((d) => ({ kind: 'doc' as const, id: d.id, name: d.name, updated: d.updated, slides: null, parent: d.parent ?? null, sortKey: d.sortKey ?? null })),
+    ].sort((a, b) => b.updated - a.updated).slice(0, 5000),
     getDoc: async (u, id) => { const d = docIf(u, id, 'read'); return d ? { id: d.id, name: d.name, updated: d.updated, workspaceId: d.ws, text: d.text, rev: d.rev } : null },
-    putDoc: async (u, id, name, text, baseRev, workspaceId) => {
+    putDoc: async (u, id, name, text, baseRev, workspaceId, parent) => {
       const d = docs.get(id)
       if (d && !can(role(u, d), 'write')) return 'foreign'
       if (d && d.rev !== baseRev) return 'conflict'
-      const where = d ? d.ws : home(u, workspaceId)
+      const fresh = d ? null : place(u, workspaceId, parent)
+      if (fresh && 'refused' in fresh) return fresh
+      const at = fresh && !('refused' in fresh) ? fresh : null
+      const where = d ? d.ws : at ? at.ws : false
       if (!where) return 'foreign'
       const rev = (d?.rev ?? 0) + 1
-      docs.set(id, { id, ws: where, user: d?.user ?? u, name, text, rev, updated: Date.now() + ++clock })
+      docs.set(id, { id, ws: where, user: d?.user ?? u, name, text, rev, updated: Date.now() + ++clock, parent: d ? d.parent : at?.parent ?? null, sortKey: d ? d.sortKey : at?.key ?? null })
       return { rev }
     },
     deleteDoc: async (u, id) => {

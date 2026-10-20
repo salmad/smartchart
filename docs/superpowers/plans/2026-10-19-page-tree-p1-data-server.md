@@ -6,7 +6,7 @@ Spec: `docs/superpowers/specs/2026-10-19-page-tree-design.md`. Inline execution;
 
 **Out of P1:** any UI (P2), drag and drop (P3), MCP (P4). The lists return the new fields, but the sidebar ignores them until P2.
 
-## Task 1. Tree helpers (framework-free)
+## Task 1. Tree helpers (framework-free) — done
 
 New `src/engine/pages/tree.ts` and `tests/unit/page-tree.test.ts`. Pure functions, shared by the client (P2) and the fake `Db`:
 
@@ -19,7 +19,7 @@ New `src/engine/pages/tree.ts` and `tests/unit/page-tree.test.ts`. Pure function
 
 Tests: key between two keys, before the first, after the last, 200 repeated insertions at the same spot stay ordered; cycle, depth 6 ok / 7 refused counting the moved subtree's height; a missing parent reads as top level.
 
-## Task 2. Schema and migration
+## Task 2. Schema and migration — done
 
 `api/_lib/db.ts` `SCHEMA` gets, for `decks` and for `docs`:
 
@@ -36,7 +36,8 @@ Decks with no workspace yet (before `ensureWorkspace`) keep null columns and are
 
 Check: running `SCHEMA` twice changes nothing (it already runs on every cold start).
 
-## Task 3. Lists and creates carry the fields
+## Task 3. Lists and creates carry the fields — done
+Calls made: one shape, `parent: PageRef | null` plus `sortKey`, on `DeckSummary`, `DocSummary` and the new `PageSummary`. `PutResult` gains `{ refused: string }` for a sentence (the REST and MCP callers answer it as 409 or a `refused` error). `putDeck` takes `opts.parent`, `putDoc` a seventh `parent` argument; a parent names the workspace (a different `workspaceId` reads as "No such page."), and every new page, with or without a parent, gets a key after its last sibling. `canAdd` and `appendKey` in `tree.ts` are shared with the fake. The new-page check runs before the write-right check, so a viewer asking for a too-deep parent is told the depth sentence; accepted, as it reveals nothing the viewer can't already read.
 
 - `DeckSummary` and `DocSummary` (`api/_lib/db.ts`) gain `parentKind: 'deck' | 'doc' | null`, `parentId: string | null`, `sortKey: string`. `listDecks` and `listDocs` select them. A new `PageRef` import from `tree.ts` is used for the pair if it reads better as `parent: PageRef | null`; pick one shape and use it in the API too.
 - `putDeck` and `putDoc` take an optional `parent` for a **new** row: the parent must be in the same workspace and pass `canMove`'s depth rule, else the call answers a sentence; the row's key is after the parent's last child. An existing row's save never changes its parent or key (as a save never moves a deck between workspaces).

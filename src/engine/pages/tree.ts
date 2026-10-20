@@ -101,3 +101,16 @@ export function canMove(nodes: PageNode[], ref: PageRef, parent: PageRef | null)
   if (parent && (same(parent, ref) || descendants(nodes, ref).some((d) => same(d, parent)))) return CYCLE
   return (parent ? depthOf(nodes, parent) : 0) + heightBelow(nodes, ref) > MAX_DEPTH ? TOO_DEEP : 'ok'
 }
+
+/** 'ok', or the sentence to show when a new page can't be made under `parent` (null: the top). */
+export function canAdd(nodes: PageNode[], parent: PageRef | null): 'ok' | string {
+  if (!parent) return 'ok'
+  if (!nodes.some((n) => same(n, parent))) return NO_PAGE
+  return depthOf(nodes, parent) + 1 > MAX_DEPTH ? TOO_DEEP : 'ok'
+}
+
+/** The key for a page added last under `parent` (null: the top level): new pages go to the bottom of their siblings. */
+export function appendKey(nodes: PageNode[], parent: PageRef | null): string {
+  const kids = buildTree(nodes).children(parent && nodes.some((n) => same(n, parent)) ? parent : null)
+  return keyBetween(kids.at(-1)?.sortKey || null, null)
+}

@@ -99,6 +99,7 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
         || (b.workspaceId !== undefined && (typeof b.workspaceId !== 'string' || !ID.test(b.workspaceId))))
         return err(400, 'Bad doc.')
       const put = await db.putDoc(user.id, b.id, b.name.slice(0, 200), b.text, b.baseRev, b.workspaceId)
+      if (typeof put === 'object' && 'refused' in put) return err(409, put.refused)
       if (put === 'conflict') return err(409, 'This doc changed somewhere else.')
       if (put === 'foreign') {
         if (!await db.getDoc(user.id, b.id) && b.workspaceId && await viewerIn(db, user.id, b.workspaceId))

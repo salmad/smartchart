@@ -73,6 +73,7 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
       // named: the maker renamed the deck; from then on its name stays put (as when an agent names it).
       // workspaceId places a new deck; a save never moves one.
       const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true, workspaceId })
+      if (typeof put === 'object' && 'refused' in put) return Response.json({ error: put.refused }, { status: 409 })
       if (put === 'conflict') return Response.json({ error: 'This deck changed somewhere else.' }, { status: 409 })
       // 'foreign': a viewer's save, a new deck where the writer may only view, or someone else's id (answered as if it did not exist).
       if (put === 'foreign') {

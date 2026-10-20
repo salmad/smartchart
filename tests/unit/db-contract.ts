@@ -234,6 +234,47 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.getDoc(ann.id, doc)).toBeNull()
     })
 
+    it('pages nest: a deck under a doc and a doc under a deck, each added last among its siblings, listed with parent and key', async () => {
+      const db = await make(), { ann, id } = people(), memo = id('doc'), board = id('d'), appendix = id('doc'), second = id('doc')
+      const ws = await seedUser(db, ann)
+      expect(await db.putDoc(ann.id, memo, 'Memo', '# Memo', 0, ws)).toEqual({ rev: 1 })
+      expect(await db.putDeck(ann.id, board, 'Board', deck('B'), {}, 0, { workspaceId: ws, parent: { kind: 'doc', id: memo } })).toEqual({ rev: 1 })
+      expect(await db.putDoc(ann.id, appendix, 'Appendix', '# A', 0, undefined, { kind: 'deck', id: board })).toEqual({ rev: 1 }) // the parent names the workspace
+      expect(await db.putDoc(ann.id, second, 'Second', '# S', 0, ws)).toEqual({ rev: 1 })
+      const pages = await db.listPages(ann.id, ws)
+      const by = (idd: string) => { const p = pages.find((x) => x.id === idd); if (!p) throw new Error(`no page ${idd}`); return p }
+      expect(by(memo)).toMatchObject({ kind: 'doc', parent: null, slides: null })
+      expect(by(board)).toMatchObject({ kind: 'deck', parent: { kind: 'doc', id: memo }, slides: 1 })
+      expect(by(appendix)).toMatchObject({ kind: 'doc', parent: { kind: 'deck', id: board } })
+      expect((by(memo).sortKey ?? '') < (by(second).sortKey ?? '')).toBe(true) // second went to the bottom of the top level
+      expect((await db.listDecks(ann.id, ws))[0]).toMatchObject({ parent: { kind: 'doc', id: memo } })
+      expect((await db.listDocs(ann.id, ws)).find((d) => d.id === appendix)).toMatchObject({ parent: { kind: 'deck', id: board } })
+      // A later save never moves a page.
+      expect(await db.putDoc(ann.id, appendix, 'Appendix 2', '# A2', 1, undefined, { kind: 'doc', id: memo })).toEqual({ rev: 2 })
+      expect((await db.listPages(ann.id, ws)).find((p) => p.id === appendix)).toMatchObject({ parent: { kind: 'deck', id: board } })
+    })
+
+    it('a new page is refused under a parent that is missing, in another workspace, unreadable or too deep', async () => {
+      const db = await make(), { ann, bob, cy, id } = people()
+      const ws = await seedUser(db, ann), other = await seedUser(db, cy)
+      const elsewhere = id('doc')
+      await db.putDoc(cy.id, elsewhere, 'Theirs', '# T', 0, other)
+      expect(await db.putDoc(ann.id, id('doc'), 'X', '# X', 0, ws, { kind: 'doc', id: 'nope' })).toEqual({ refused: 'No such page.' })
+      expect(await db.putDoc(ann.id, id('doc'), 'X', '# X', 0, ws, { kind: 'doc', id: elsewhere })).toEqual({ refused: 'No such page.' })
+      expect(await db.putDoc(ann.id, id('doc'), 'X', '# X', 0, ws, { kind: 'deck', id: elsewhere })).toEqual({ refused: 'No such page.' }) // right id, wrong kind
+      let parent: { kind: 'doc'; id: string } | undefined, first = ''
+      for (let level = 1; level <= 6; level++) {
+        const doc = id('doc')
+        expect(await db.putDoc(ann.id, doc, `L${level}`, '# L', 0, ws, parent)).toEqual({ rev: 1 })
+        parent = { kind: 'doc', id: doc }
+        first ||= doc
+      }
+      expect(await db.putDoc(ann.id, id('doc'), 'L7', '# L', 0, ws, parent)).toEqual({ refused: 'Pages nest 6 levels deep at most.' })
+      await join(db, ann, ws, bob, 'viewer')
+      expect(await db.putDoc(bob.id, id('doc'), 'V', '# V', 0, ws, { kind: 'doc', id: first })).toBe('foreign')
+      expect(await db.listPages(cy.id, ws)).toEqual([])
+    })
+
     it('doc versions follow the doc: members read them, editors write them, deleting the doc clears them', async () => {
       const db = await make(), { ann, bob, cy, id } = people(), doc = id('doc')
       const ws = await seedUser(db, ann)

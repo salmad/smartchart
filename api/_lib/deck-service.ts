@@ -98,6 +98,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
         const role = (await workspaces()).find((w) => w.id === workspaceId)?.role
         throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(workspaceId ?? '')
       }
+      if (typeof put === 'object' && 'refused' in put) return fail('refused', put.refused, 'Choose another parent.')
       if (put === 'conflict') { if (attempt === 0) continue; return fail('conflict', 'The deck changed while this ran.', 'Call it again.') }
       // One version per request: an agent's writes for the same words, close together, group into one.
       // A write with no request (a move, a delete, a resolve) is its own version, named by the tool.

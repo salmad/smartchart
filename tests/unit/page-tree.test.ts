@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTree, canMove, CYCLE, depthOf, descendants, heightBelow, isKey, keyBetween, MAX_DEPTH, NO_PAGE, TOO_DEEP, type PageKind, type PageNode, type PageRef } from '../../src/engine/pages/tree'
+import { appendKey, buildTree, canAdd, canMove, CYCLE, depthOf, descendants, heightBelow, isKey, keyBetween, MAX_DEPTH, NO_PAGE, TOO_DEEP, type PageKind, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 
 const ref = (kind: PageKind, id: string): PageRef => ({ kind, id })
 const node = (kind: PageKind, id: string, parent: PageRef | null = null, sortKey: string | null = null): PageNode => ({ kind, id, parent, sortKey })
@@ -106,5 +106,27 @@ describe('canMove', () => {
     const nodes = [node('doc', 'x'), node('deck', 'x', ref('doc', 'x'))]
     expect(canMove(nodes, ref('doc', 'x'), ref('deck', 'x'))).toBe(CYCLE)
     expect(canMove(nodes, ref('deck', 'x'), null)).toBe('ok')
+  })
+})
+
+describe('adding a page', () => {
+  it('goes last under its parent, and last at the top', () => {
+    const a = node('doc', 'a', null, '001V'), b = node('deck', 'b', null, '002V'), c = node('doc', 'c', ref('doc', 'a'), '001V')
+    const nodes = [a, b, c]
+    expect(appendKey(nodes, null) > '002V').toBe(true)
+    expect(appendKey(nodes, ref('doc', 'a')) > '001V').toBe(true)
+    expect(appendKey(nodes, ref('deck', 'b')) <= 'V').toBe(true) // no children yet: any first key
+    expect(isKey(appendKey([], null))).toBe(true)
+  })
+  it('reads pages with no key as before all, so the new one still comes last', () => {
+    const nodes = [node('doc', 'a'), node('doc', 'b')]
+    const k = appendKey(nodes, null)
+    expect(isKey(k)).toBe(true)
+  })
+  it('refuses a missing parent and a seventh level', () => {
+    expect(canAdd(chain(2), null)).toBe('ok')
+    expect(canAdd(chain(2), ref('doc', 'nope'))).toBe(NO_PAGE)
+    expect(canAdd(chain(MAX_DEPTH - 1), ref('doc', `p${MAX_DEPTH - 2}`))).toBe('ok')
+    expect(canAdd(chain(MAX_DEPTH), ref('doc', `p${MAX_DEPTH - 1}`))).toBe(TOO_DEEP)
   })
 })

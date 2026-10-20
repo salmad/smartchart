@@ -3,7 +3,8 @@
 import { KEEP, type Tree } from '../../src/engine/versions.js'
 import type { Slide } from '../../src/engine/types.js'
 import { rolesFor, type Action, type Role } from './access.js'
-import { shareToken, type Db, type DeckRow, type DeckSummary, type DocSummary, type Presence, type PutResult, type Q } from './db.js'
+import { appendKey, canAdd, NO_PAGE, type PageNode, type PageRef } from '../../src/engine/pages/tree.js'
+import { MAX_PAGES, shareToken, type Db, type DeckRow, type DeckSummary, type DocSummary, type PageSummary, type Presence, type PutResult, type Q } from './db.js'
 
 /** The caller `u` may take `action` on a row of `t` (decks or docs): a member with a role allowed it, or, on a deck
     from before workspaces (no workspace yet), its maker. `roles` is a text[] parameter holding `rolesFor(action)`. */
@@ -19,9 +20,32 @@ const R = (a: Action) => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
 
 type Calls = 'deckRole' | 'listDecks' | 'getDeck' | 'putDeck' | 'deleteDeck' | 'shareDeck' | 'sharedDeck' | 'getDeckMeta' | 'sharedRev'
-  | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc'
+  | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages'
+
+type PageCols = { parent_kind: 'deck' | 'doc' | null; parent_id: string | null; sort_key: string | null }
+const parentOf = (r: PageCols): PageRef | null => (r.parent_kind && r.parent_id ? { kind: r.parent_kind, id: r.parent_id } : null)
+const TABLE = { deck: 'decks', doc: 'docs' } as const
 
 export function deckCalls(q: Q): Pick<Db, Calls> {
+  /** Every page of a workspace as the tree sees it (no access check: callers pass a workspace they may edit in, or get an empty list). */
+  const nodesIn = async (u: string, ws: string): Promise<PageNode[]> => (await q<PageCols & { kind: 'deck' | 'doc'; id: string }>(
+    `select kind, id, parent_kind, parent_id, sort_key from (
+       select 'deck' as kind, id, parent_kind, parent_id, sort_key from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
+       union all select 'doc', id, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}) p limit ${MAX_PAGES}`,
+    [u, ws, R('read')])).map((r) => ({ kind: r.kind, id: r.id, parent: parentOf(r), sortKey: r.sort_key }))
+  /** Where a new page goes: the workspace it lands in, its parent columns and its key (last among its siblings), or the sentence
+      saying why it can't go there. Only the first save of an id calls this. */
+  const place = async (u: string, wanted: string | undefined, parent: PageRef | undefined): Promise<{ ws: string | undefined; parent: PageRef | null; key: string | null } | { refused: string }> => {
+    let ws = wanted
+    if (parent) {
+      const at = (await q<{ ws: string | null }>(`select workspace_id as ws from ${TABLE[parent.kind]} where id = $2 and ${may(TABLE[parent.kind], '$1', '$3')}`, [u, parent.id, R('read')]))[0]?.ws
+      if (!at || (wanted && wanted !== at)) return { refused: NO_PAGE }
+      ws = at
+    } else if (!ws) ws = (await q<{ id: string }>('select id from workspaces where personal_of = $1', [u]))[0]?.id
+    if (!ws) return { ws: undefined, parent: null, key: null } // a deck from before workspaces
+    const nodes = await nodesIn(u, ws), ok = canAdd(nodes, parent ?? null)
+    return ok === 'ok' ? { ws, parent: parent ?? null, key: appendKey(nodes, parent ?? null) } : { refused: ok }
+  }
   type Row = { id: string; name: string; updated: string | Date; data: unknown; chat: unknown; rev: number; named: boolean; role: Role }
   const row = (r: Row): DeckRow & { role: Role } => ({ id: r.id, name: r.name, updated: ms(r.updated), data: r.data, chat: r.chat ?? null, rev: r.rev, named: !!r.named, role: r.role })
   /** After a save wrote nothing: the row is there and the writer may edit it (an older revision), or it isn't theirs. */
@@ -33,11 +57,12 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
     deckRole: async (u, id) => (await q<{ role: Role | null }>(`select ${roleOf('decks', '$1')} as role from decks where id = $2`, [u, id]))[0]?.role ?? null,
     // The list carries only what a card draws (the first slide and the look); a deck's chat and agent history
     // can run to megabytes, so the whole deck is read only when it is opened.
-    listDecks: async (u, ws) => (await q<Omit<DeckSummary, 'updated'> & { updated: string | Date }>(
+    listDecks: async (u, ws) => (await q<Omit<DeckSummary, 'updated' | 'parent' | 'sortKey'> & PageCols & { updated: string | Date }>(
       `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
-         share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first
+         share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first,
+         parent_kind, parent_id, sort_key
        from decks where ${may('decks', '$1', '$2')} and ($3::text is null or workspace_id = $3) order by updated_at desc limit 200`, [u, R('read'), ws ?? null]))
-      .map((r) => ({ ...r, slides: Number(r.slides), updated: ms(r.updated) })),
+      .map(({ parent_kind, parent_id, sort_key, ...r }) => ({ ...r, slides: Number(r.slides), updated: ms(r.updated), parent: parentOf({ parent_kind, parent_id, sort_key }), sortKey: sort_key })),
     getDeck: async (u, id) => {
       const r = await q<Row>(`select id, name, named, updated_at as updated, data, chat, rev, ${roleOf('decks', '$1')} as role from decks where id = $2 and ${may('decks', '$1', '$3')}`, [u, id, R('read')])
       return r[0] ? row(r[0]) : null
@@ -51,11 +76,13 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
            data = $4, chat = $5, rev = decks.rev + 1, updated_at = now()
          where id = $1 and rev = $6 and ${may('decks', '$2', '$8')} returning rev`, p)
       if (upd[0]) return { rev: upd[0].rev }
+      const at = await place(u, opts.workspaceId, opts.parent)
+      if ('refused' in at) return at
       const ins = await q<{ rev: number }>(
-        `insert into decks (id, user_id, workspace_id, name, named, data, chat, rev, updated_at)
-         select $1, $2, h.ws, $3, $6, $4, $5, 1, now() from ${home('$8', '$2')} h
+        `insert into decks (id, user_id, workspace_id, name, named, data, chat, rev, updated_at, parent_kind, parent_id, sort_key)
+         select $1, $2, h.ws, $3, $6, $4, $5, 1, now(), $9, $10, $11 from ${home('$8', '$2')} h
          where (h.ws is null and $8::text is null) or ${editorIn('h.ws', '$2', '$7')}
-         on conflict (id) do nothing returning rev`, [id, u, name, p[3], p[4], !!opts.named, R('write'), opts.workspaceId ?? null])
+         on conflict (id) do nothing returning rev`, [id, u, name, p[3], p[4], !!opts.named, R('write'), at.ws ?? null, at.parent?.kind ?? null, at.parent?.id ?? null, at.key])
       return ins[0] ? { rev: ins[0].rev } : refused('decks', u, id)
     },
     deleteDeck: async (u, id) => {
@@ -113,21 +140,32 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
       `select hash, slide from deck_blobs where deck_id = $2 and hash = any($3::text[]) and ${deckRead('$1', '$2', '$4')}
          and exists (select 1 from deck_versions where deck_id = $2)`, [u, id, hashes, R('read')]) : [],
     // Docs mirror decks; a doc is always in a workspace.
-    listDocs: async (u, ws) => (await q<Omit<DocSummary, 'updated'> & { updated: string | Date }>(
-      `select id, name, updated_at as updated, workspace_id as "workspaceId" from docs where workspace_id = $2 and ${may('docs', '$1', '$3')} order by updated_at desc limit 200`,
-      [u, ws, R('read')])).map((d) => ({ ...d, updated: ms(d.updated) })),
+    listDocs: async (u, ws) => (await q<Omit<DocSummary, 'updated' | 'parent' | 'sortKey'> & PageCols & { updated: string | Date }>(
+      `select id, name, updated_at as updated, workspace_id as "workspaceId", parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')} order by updated_at desc limit 200`,
+      [u, ws, R('read')])).map(({ parent_kind, parent_id, sort_key, ...d }) => ({ ...d, updated: ms(d.updated), parent: parentOf({ parent_kind, parent_id, sort_key }), sortKey: sort_key })),
+    // The tree call: decks and docs together, with no per-kind cap of 200 (the tree needs every page or it shows holes).
+    listPages: async (u, ws) => (await q<PageCols & { kind: 'deck' | 'doc'; id: string; name: string; updated: string | Date; slides: number | null }>(
+      `select kind, id, name, updated, slides, parent_kind, parent_id, sort_key from (
+         select 'deck' as kind, id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides, parent_kind, parent_id, sort_key
+           from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
+         union all select 'doc', id, name, updated_at, null, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}) p
+       order by updated desc limit ${MAX_PAGES}`, [u, ws, R('read')]))
+      .map((r): PageSummary => ({ kind: r.kind, id: r.id, name: r.name, updated: ms(r.updated), slides: r.slides === null ? null : Number(r.slides), parent: parentOf(r), sortKey: r.sort_key })),
     getDoc: async (u, id) => {
       const r = await q<{ id: string; name: string; updated: string | Date; workspaceId: string; text: string; rev: number }>(
         `select id, name, updated_at as updated, workspace_id as "workspaceId", text, rev from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')])
       return r[0] ? { ...r[0], updated: ms(r[0].updated) } : null
     },
-    putDoc: async (u, id, name, text, baseRev, ws): Promise<PutResult> => {
+    putDoc: async (u, id, name, text, baseRev, ws, parent): Promise<PutResult> => {
       const upd = await q<{ rev: number }>(`update docs set name = $3, text = $4, rev = rev + 1, updated_at = now() where id = $1 and rev = $5 and ${may('docs', '$2', '$6')} returning rev`,
         [id, u, name, text, baseRev, R('write')])
       if (upd[0]) return { rev: upd[0].rev }
+      const at = await place(u, ws, parent)
+      if ('refused' in at) return at
       const ins = await q<{ rev: number }>(
-        `insert into docs (id, workspace_id, user_id, name, text, rev) select $1, h.ws, $2, $3, $4, 1 from ${home('$5', '$2')} h
-         where h.ws is not null and ${editorIn('h.ws', '$2', '$6')} on conflict (id) do nothing returning rev`, [id, u, name, text, ws ?? null, R('write')])
+        `insert into docs (id, workspace_id, user_id, name, text, rev, parent_kind, parent_id, sort_key) select $1, h.ws, $2, $3, $4, 1, $7, $8, $9 from ${home('$5', '$2')} h
+         where h.ws is not null and ${editorIn('h.ws', '$2', '$6')} on conflict (id) do nothing returning rev`,
+        [id, u, name, text, at.ws ?? null, R('write'), at.parent?.kind ?? null, at.parent?.id ?? null, at.key])
       return ins[0] ? { rev: ins[0].rev } : refused('docs', u, id)
     },
     deleteDoc: async (u, id) => {

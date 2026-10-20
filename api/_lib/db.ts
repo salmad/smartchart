@@ -6,6 +6,7 @@ import type { Slide } from '../../src/engine/types.js'
 import type { Block } from '../../src/engine/docs/types.js'
 import type { DocTree } from '../../src/engine/docs/versions.js'
 import type { CommentOp, DocComment } from '../../src/engine/comments.js'
+import type { PageNode, PageRef } from '../../src/engine/pages/tree.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
 import { docCalls } from './db-docs.js'
@@ -15,10 +16,13 @@ import { workspaceCalls } from './db-workspaces.js'
     chats were kept apart has rev 0 and no chat; its conversation is still inside `data`. */
 export interface DeckRow { id: string; name: string; updated: number; data: unknown; chat: unknown; rev: number; named: boolean }
 /** A save is written (with the new revision), refused because the deck moved on since the revision it read, or refused because
-    the writer may not edit it (not a member, a viewer, or another user's id). */
-export type PutResult = { rev: number } | 'conflict' | 'foreign'
+    the writer may not edit it (not a member, a viewer, or another user's id), or refused with a sentence (a new page asked to go
+    under a parent that isn't there, or too deep). */
+export type PutResult = { rev: number } | 'conflict' | 'foreign' | { refused: string }
 /** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
-export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown; shared: boolean }
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown; shared: boolean
+  /** Where the deck sits in the page tree: its parent (null at the top) and its order key among siblings (null before the backfill). */
+  parent: PageRef | null; sortKey: string | null }
 /** Who is working on a deck right now (an agent turn, or a person editing a slide); each entry expires at `until` (ms). */
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
 /** One change an outside writer made, so the open app can tell the user what happened. */
@@ -34,9 +38,13 @@ export interface InviteRow { token: string; email: string; role: Role; expires: 
 /** An accepted invite gives the role the person now holds there; `gone`: expired, revoked or never made; `wrongEmail`:
     the email it was made for, when someone else holds the link. */
 export type InviteResult = { workspaceId: string; role: Role } | 'gone' | { wrongEmail: string }
-export interface DocSummary { id: string; name: string; updated: number; workspaceId: string }
+export interface DocSummary { id: string; name: string; updated: number; workspaceId: string; parent: PageRef | null; sortKey: string | null }
+/** One page of the tree, deck or doc, as the sidebar needs it. `slides` is a deck's slide count. */
+export interface PageSummary extends PageNode { name: string; updated: number; slides: number | null }
+/** The most pages a workspace's tree call returns. */
+export const MAX_PAGES = 5000
 /** A doc is its Markdown text. */
-export interface DocRow extends DocSummary { text: string; rev: number }
+export interface DocRow extends Pick<DocSummary, 'id' | 'name' | 'updated' | 'workspaceId'> { text: string; rev: number }
 /** Who is editing a doc right now; it expires at `until` (ms). */
 export interface DocPresence { editing?: { by: string; until: number } }
 /** A doc version as a list shows it: the tree (front matter and block hashes), newest first. */
@@ -77,7 +85,7 @@ export interface Db {
   getDeck(userId: string, id: string): Promise<(DeckRow & { role: Role }) | null>
   /** `baseRev` is the revision the caller read (0 for a new deck); a save from an older one is a conflict. A new deck goes
       into `workspaceId` (else the writer's personal workspace) only if they may edit there; a save never moves a deck. */
-  putDeck(userId: string, id: string, name: string, data: unknown, chat: object, baseRev: number, opts?: { named?: boolean; workspaceId?: string }): Promise<PutResult>
+  putDeck(userId: string, id: string, name: string, data: unknown, chat: object, baseRev: number, opts?: { named?: boolean; workspaceId?: string; parent?: PageRef }): Promise<PutResult>
   /** The stored name is kept when the deck was named on purpose (named = true). */
   getDeckMeta(userId: string, id: string): Promise<{ rev: number; share: string | null; presence: Presence; named: boolean; role: Role } | null>
   sharedRev(token: string): Promise<{ rev: number } | null>
@@ -111,7 +119,9 @@ export interface Db {
   /* Docs mirror decks. */
   listDocs(userId: string, workspaceId: string): Promise<DocSummary[]>
   getDoc(userId: string, id: string): Promise<DocRow | null>
-  putDoc(userId: string, id: string, name: string, text: string, baseRev: number, workspaceId?: string): Promise<PutResult>
+  putDoc(userId: string, id: string, name: string, text: string, baseRev: number, workspaceId?: string, parent?: PageRef): Promise<PutResult>
+  /** Every deck and doc in the workspace the user can read, for the tree (up to MAX_PAGES). */
+  listPages(userId: string, workspaceId: string): Promise<PageSummary[]>
   deleteDoc(userId: string, id: string): Promise<boolean>
   getDocMeta(userId: string, id: string): Promise<{ rev: number; presence: DocPresence; role: Role } | null>
   /** Editor and up. */
