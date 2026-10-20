@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { User } from '../../api/_lib/auth'
 import { decksHandler } from '../../api/_lib/decks'
 import { docsHandler } from '../../api/_lib/docs'
+import { pagesHandler } from '../../api/_lib/pages'
 import { shareHandler } from '../../api/_lib/share'
 import { workspacesHandler } from '../../api/_lib/workspaces'
 import { fakeDb, type FakeDb } from './fake-db'
@@ -17,6 +18,7 @@ function world(db: FakeDb = fakeDb()) {
     ws: (method: string, query = '', body?: unknown) => workspacesHandler({ userFrom: async () => who, db: () => db })(call('workspaces', method, query, body)),
     decks: (method: string, query = '', body?: unknown) => decksHandler({ userFrom: async () => who, db: () => db })(call('decks', method, query, body)),
     docs: (method: string, query = '', body?: unknown) => docsHandler({ userFrom: async () => who, db: () => db })(call('docs', method, query, body)),
+    pages: (method: string, query = '') => pagesHandler({ userFrom: async () => who, db: () => db })(call('pages', method, query)),
     share: (method: string, query = '') => shareHandler({ userFrom: async () => who, db: () => db })(call('share', method, query)),
   })
   return { db, as }
@@ -236,5 +238,52 @@ describe('docs API', () => {
     const after = await json<{ label: string | null }[]>(A.docs('GET', '?id=doc_2&versions'))
     expect(after).toHaveLength(before + 1)
     expect(after[0].label).toBe('Restored the version from 14:02')
+  })
+})
+
+describe('page tree API', () => {
+  it('nests decks and docs, lists them in one call, moves, counts and deletes a branch, with the same roles', async () => {
+    const { as } = world(), A = as(ann), C = as(cy), D = as(dee)
+    const ws = await personal(A)
+    const doc = { id: 'doc_root', name: 'Research', text: '# Research', baseRev: 0, workspaceId: ws }
+    expect((await A.docs('PUT', '', doc)).status).toBe(200)
+    expect((await A.decks('PUT', '', deck('d_kid', 0, { workspaceId: ws, parent: { kind: 'doc', id: 'doc_root' } }))).status).toBe(200)
+    expect((await A.docs('PUT', '', { ...doc, id: 'doc_leaf', name: 'Leaf', parent: { kind: 'deck', id: 'd_kid' } })).status).toBe(200)
+    const pages = await json<{ kind: string; id: string; parent: { kind: string; id: string } | null; sortKey: string | null }[]>(A.pages('GET', `?workspace=${ws}`))
+    expect(pages.map((p) => [p.kind, p.id, p.parent?.id ?? null]).sort()).toEqual([['deck', 'd_kid', 'doc_root'], ['doc', 'doc_leaf', 'd_kid'], ['doc', 'doc_root', null]])
+    expect(pages.every((p) => p.sortKey)).toBe(true)
+    expect((await A.pages('GET')).status).toBe(400)
+    expect((await D.pages('GET', `?workspace=${ws}`)).status).toBe(200)
+    expect(await json(D.pages('GET', `?workspace=${ws}`))).toEqual([])
+
+    expect((await A.docs('PUT', '', { ...doc, id: 'doc_bad', parent: { kind: 'doc', id: 'nope' } })).status).toBe(409)
+    expect(await json(A.docs('PUT', '', { ...doc, id: 'doc_bad', parent: { kind: 'doc', id: 'nope' } }))).toEqual({ error: 'No such page.' })
+    expect((await A.docs('PUT', '', { ...doc, id: 'doc_bad', parent: 'x' })).status).toBe(400)
+    expect((await A.decks('PUT', '', deck('d_bad', 0, { parent: { kind: 'sheet', id: 'x' } }))).status).toBe(400)
+
+    // Counting, moving, refusing.
+    expect(await json(A.docs('GET', '?id=doc_root&subpages'))).toEqual({ count: 2 })
+    expect(await json(A.decks('GET', '?id=d_kid&subpages'))).toEqual({ count: 1 })
+    expect((await D.docs('GET', '?id=doc_root&subpages')).status).toBe(404)
+    expect((await A.docs('PUT', '?id=doc_root&move', { parent: { kind: 'doc', id: 'doc_leaf' } })).status).toBe(409)
+    expect(await json(A.docs('PUT', '?id=doc_root&move', { parent: { kind: 'doc', id: 'doc_leaf' } }))).toEqual({ error: 'A page can’t go inside itself or its subpages.' })
+    expect((await A.docs('PUT', '?id=doc_root&move', { parent: 7 })).status).toBe(400)
+    expect((await A.docs('PUT', '?id=doc_leaf&move', { parent: null })).status).toBe(200)
+    expect((await A.decks('PUT', '?id=d_kid&move', { parent: null, after: { kind: 'doc', id: 'doc_root' } })).status).toBe(200)
+    expect(await json(A.docs('GET', '?id=doc_root&subpages'))).toEqual({ count: 0 })
+
+    // A viewer sees the tree and can't change it; a stranger sees nothing.
+    await C.ws('POST', `?accept=${await invite(A, ws, cy.email, 'viewer')}`)
+    expect((await C.pages('GET', `?workspace=${ws}`)).status).toBe(200)
+    const v = await C.docs('PUT', '?id=doc_leaf&move', { parent: { kind: 'doc', id: 'doc_root' } })
+    expect(v.status).toBe(403)
+    expect(await json(v)).toEqual({ error: 'You can view this workspace, not change it.' })
+    expect((await D.decks('PUT', '?id=d_kid&move', { parent: null })).status).toBe(404)
+
+    // Deleting a parent deletes the branch.
+    expect((await A.docs('PUT', '?id=doc_leaf&move', { parent: { kind: 'deck', id: 'd_kid' } })).status).toBe(200)
+    expect((await A.decks('DELETE', '?id=d_kid')).status).toBe(204)
+    expect((await A.docs('GET', '?id=doc_leaf')).status).toBe(404)
+    expect((await A.docs('GET', '?id=doc_root')).status).toBe(200)
   })
 })

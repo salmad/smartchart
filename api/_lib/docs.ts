@@ -5,6 +5,7 @@ import { MAX_COMMENT, newCommentId, type CommentOp } from '../../src/engine/comm
 import { NO_COMMENT, type Db, type DocPresence } from './db.js'
 import { recordDocVersion } from './versions.js'
 import { viewerIn } from './decks.js'
+import { movePage, parentOf, subpages } from './pages.js'
 
 const ID = /^[\w-]{1,64}$/
 const MAX_BYTES = 1_000_000
@@ -65,6 +66,10 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
       const c = ID.test(id) ? await db.docComments(user.id, id) : null
       return c ? Response.json(c, { headers: NO_STORE }) : NO_DOC()
     }
+    // The page tree: how many pages sit below this doc, and moving it.
+    if (request.method === 'GET' && id && q.get('subpages') !== null) return ID.test(id) ? subpages(db, user.id, { kind: 'doc', id }, NO_DOC) : NO_DOC()
+    if ((request.method === 'PUT' || request.method === 'POST') && id && q.get('move') !== null)
+      return ID.test(id) ? movePage(db, user.id, { kind: 'doc', id }, request, NO_DOC) : NO_DOC()
     if (request.method === 'PUT' && id && q.get('presence')) {
       if (!ID.test(id)) return NO_DOC()
       const b = (await request.json().catch(() => ({}))) as { editing?: unknown }, p: DocPresence = b.editing === true ? { editing: { by: user.name, until: Date.now() + 60_000 } } : {}
@@ -92,13 +97,14 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
     if (request.method === 'PUT') {
       const text = await request.text()
       if (text.length > MAX_BYTES) return err(413, 'This doc is too large to save.')
-      let b: { id?: unknown; name?: unknown; text?: unknown; baseRev?: unknown; workspaceId?: unknown; version?: unknown }
+      let b: { id?: unknown; name?: unknown; text?: unknown; baseRev?: unknown; workspaceId?: unknown; version?: unknown; parent?: unknown }
       try { b = JSON.parse(text) as typeof b } catch { return err(400, 'Bad doc.') }
       if (typeof b.id !== 'string' || !ID.test(b.id) || typeof b.name !== 'string' || typeof b.text !== 'string'
         || typeof b.baseRev !== 'number' || !Number.isInteger(b.baseRev) || b.baseRev < 0
-        || (b.workspaceId !== undefined && (typeof b.workspaceId !== 'string' || !ID.test(b.workspaceId))))
+        || (b.workspaceId !== undefined && (typeof b.workspaceId !== 'string' || !ID.test(b.workspaceId))) || parentOf(b.parent) === 'bad')
         return err(400, 'Bad doc.')
-      const put = await db.putDoc(user.id, b.id, b.name.slice(0, 200), b.text, b.baseRev, b.workspaceId)
+      const parent = parentOf(b.parent)
+      const put = await db.putDoc(user.id, b.id, b.name.slice(0, 200), b.text, b.baseRev, b.workspaceId, parent === 'bad' ? undefined : parent)
       if (typeof put === 'object' && 'refused' in put) return err(409, put.refused)
       if (put === 'conflict') return err(409, 'This doc changed somewhere else.')
       if (put === 'foreign') {

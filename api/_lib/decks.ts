@@ -1,6 +1,7 @@
 // The decks API, built from its dependencies so tests can run it against a fake database and user.
 import type { UserFrom } from './auth.js'
 import type { Db, Presence } from './db.js'
+import { movePage, parentOf, subpages } from './pages.js'
 import { appMeta, recordVersion } from './versions.js'
 
 const ID = /^[\w-]{1,64}$/
@@ -39,6 +40,11 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
       const hashes = (q.get('blobs') ?? '').split(',').filter((h) => /^[a-z0-9]{1,24}$/.test(h)).slice(0, 500)
       return Response.json(ID.test(id) ? await db.blobs(user.id, id, hashes) : [])
     }
+    // The page tree: how many pages sit below this deck, and moving it (a PUT, as the function exports only GET, PUT and DELETE).
+    if (request.method === 'GET' && id && q.get('subpages') !== null)
+      return ID.test(id) ? subpages(db, user.id, { kind: 'deck', id }, NO_DECK) : NO_DECK()
+    if (request.method === 'PUT' && id && q.get('move') !== null)
+      return ID.test(id) ? movePage(db, user.id, { kind: 'deck', id }, request, NO_DECK) : NO_DECK()
     if (request.method === 'PUT' && id && q.get('presence')) {
       const b = (await request.json().catch(() => ({}))) as { busy?: unknown; editing?: unknown }, now = Date.now(), p: Presence = {}
       if (b.busy === true) p.busy = { by: 'Occam', until: now + 90_000 }
@@ -63,16 +69,16 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (request.method === 'PUT') {
       const text = await request.text()
       if (text.length > MAX_BYTES) return Response.json({ error: 'This deck is too large to save.' }, { status: 413 })
-      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown; version?: unknown; workspaceId?: unknown }
+      let body: { id?: unknown; name?: unknown; named?: unknown; data?: unknown; chat?: unknown; baseRev?: unknown; version?: unknown; workspaceId?: unknown; parent?: unknown }
       try { body = JSON.parse(text) as typeof body } catch { return Response.json({ error: 'Bad deck.' }, { status: 400 }) }
-      const { id: deckId, name, named, data, chat, baseRev, workspaceId } = body
+      const { id: deckId, name, named, data, chat, baseRev, workspaceId } = body, parent = parentOf(body.parent)
       if (typeof deckId !== 'string' || !ID.test(deckId) || typeof name !== 'string' || !data || typeof data !== 'object'
         || !chat || typeof chat !== 'object' || typeof baseRev !== 'number' || !Number.isInteger(baseRev) || baseRev < 0
-        || (workspaceId !== undefined && (typeof workspaceId !== 'string' || !ID.test(workspaceId))))
+        || (workspaceId !== undefined && (typeof workspaceId !== 'string' || !ID.test(workspaceId))) || parent === 'bad')
         return Response.json({ error: 'Bad deck.' }, { status: 400 })
       // named: the maker renamed the deck; from then on its name stays put (as when an agent names it).
       // workspaceId places a new deck; a save never moves one.
-      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true, workspaceId })
+      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true, workspaceId, parent })
       if (typeof put === 'object' && 'refused' in put) return Response.json({ error: put.refused }, { status: 409 })
       if (put === 'conflict') return Response.json({ error: 'This deck changed somewhere else.' }, { status: 409 })
       // 'foreign': a viewer's save, a new deck where the writer may only view, or someone else's id (answered as if it did not exist).

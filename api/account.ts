@@ -1,15 +1,16 @@
-// The signed-in user's small routes behind one function, as Vercel's Hobby plan allows 12: /api/keys, /api/share, /api/docs and
-// /api/workspaces. vercel.json rewrites each to this file with ?route=<name>; the path's last segment serves where there is no rewrite.
+// The signed-in user's small routes behind one function, as Vercel's Hobby plan allows 12: /api/keys, /api/share, /api/docs,
+// /api/pages and /api/workspaces. vercel.json rewrites each to this file with ?route=<name>; the path's last segment serves where there is no rewrite.
 import { userFrom } from './_lib/auth.js'
 import { getDb } from './_lib/db.js'
 import { docsHandler } from './_lib/docs.js'
+import { pagesHandler } from './_lib/pages.js'
 import { keysHandler } from './_lib/keys.js'
 import { shareHandler } from './_lib/share.js'
 import { workspacesHandler } from './_lib/workspaces.js'
 
 const deps = { userFrom, db: getDb }
 const routes: Record<string, (request: Request) => Promise<Response> | Response> = {
-  keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), workspaces: workspacesHandler(deps),
+  keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), pages: pagesHandler(deps), workspaces: workspacesHandler(deps),
 }
 
 const handle = (request: Request) => {

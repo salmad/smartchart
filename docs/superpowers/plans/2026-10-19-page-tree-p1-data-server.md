@@ -66,7 +66,8 @@ Calls made: the subtree is found in TypeScript with `descendants` over the works
 
 The return value stays a boolean so the existing callers don't change.
 
-## Task 6. API routes
+## Task 6. API routes — done
+Calls made: `/api/pages` is a route of `api/account.ts` (with a `vercel.json` rewrite), not a new function, because the project is at 11 of the Hobby plan's 12. `decks.ts` exports only GET, PUT and DELETE, so a move is `PUT ?id=&move` with `{ parent, before?, after? }` on both kinds (the docs route also accepts POST); the count is `GET ?id=&subpages` → `{ count }`; create takes `parent: { kind, id }` in the save body. A sentence answers 409 (`{ error }`), a viewer 403, an unreadable page 404, a malformed body 400.
 
 `api/decks.ts` and `api/docs.ts` (and `api/_lib/decks.ts`, `docs.ts`): list responses include the fields (Task 3); `POST …/move` with `{ parent: {kind,id} | null, before?, after? }` calls `movePage`; a sentence answer returns 409 with `{ error }` (the same shape as the refused saves), `'foreign'` returns 404; a viewer gets 403 with a sentence, as other refused writes. A `GET …/subpages` (or a field on the existing read) returns the count for the delete dialog. A `GET /api/pages?workspaceId=` returns `listPages`.
 
