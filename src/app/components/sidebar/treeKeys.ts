@@ -44,3 +44,24 @@ export function typeahead(rows: Row[], at: PageRef | null, text: string): PageRe
   }
   return null
 }
+
+/** A move the keyboard asks for: the page, and where it goes. `expand` is the page that now has a new child to show. */
+export interface KeyMove { to: { parent: PageRef | null; before?: PageRef; after?: PageRef }; expand?: PageRef }
+
+/** What ⌘↑ and ⌘↓ (reorder among siblings), Tab (indent under the sibling above) and Shift-Tab (outdent, after the parent) do to
+    the row `at`; null when there is nowhere to go, so the key keeps its usual job. */
+export function moveStep(rows: Row[], at: PageRef, key: 'up' | 'down' | 'indent' | 'outdent'): KeyMove | null {
+  const row = rows.find((r) => same(r.ref, at))
+  if (!row) return null
+  const sameParent = (a: PageRef | null, b: PageRef | null) => (a && b ? same(a, b) : a === b)
+  const sibs = rows.filter((r) => sameParent(r.parentRef, row.parentRef)), i = sibs.indexOf(row)
+  switch (key) {
+    case 'up': return i > 0 ? { to: { parent: row.parentRef, before: sibs[i - 1].ref } } : null
+    case 'down': return i < sibs.length - 1 ? { to: { parent: row.parentRef, after: sibs[i + 1].ref } } : null
+    case 'indent': return i > 0 ? { to: { parent: sibs[i - 1].ref }, expand: sibs[i - 1].ref } : null
+    case 'outdent': {
+      const parent = row.parentRef && rows.find((r) => same(r.ref, row.parentRef as PageRef))
+      return parent ? { to: { parent: parent.parentRef, after: parent.ref } } : null
+    }
+  }
+}

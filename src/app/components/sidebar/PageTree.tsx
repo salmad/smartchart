@@ -6,7 +6,8 @@ import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import type { Row } from './flatten'
 import { PageRow } from './PageRow'
-import { step, typeahead } from './treeKeys'
+import type { MoveTo } from '@/app/pages'
+import { moveStep, step, typeahead } from './treeKeys'
 
 interface Props {
   /** Null while loading. */
@@ -19,12 +20,16 @@ interface Props {
   onToggle: (ref: PageRef, open?: boolean) => void
   onNew: (kind: PageKind, parent: PageRef | null) => void
   onRename: (row: Row) => void
+  /** Opens the Move to… picker. */
+  onPick: (row: Row) => void
+  /** Moves a page by the keyboard; resolves with the sentence when refused. */
+  onMove: (ref: PageRef, to: MoveTo) => Promise<string | null>
   onDelete: (row: Row) => void
 }
 
 /** The workspace's pages as one tree: its label and +, then the rows. The keyboard is the WAI-ARIA tree's: arrows move and
     expand, Home and End jump, Enter opens, typing a letter jumps to a name, Shift+F10 opens a row's menu. */
-export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew, onRename, onDelete }: Props) {
+export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew, onRename, onPick, onMove, onDelete }: Props) {
   // The row that takes Tab is the last one focused, else the open page, else the first.
   const [focusKey, setFocusKey] = useState<string | null>(null), [menu, setMenu] = useState<string | null>(null)
   const refs = useRef<HTMLDivElement>(null), typed = useRef({ text: '', at: 0 })
@@ -44,7 +49,19 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
   useEffect(() => { if (focusKey && rows && !rows.some((r) => keyOf(r.ref) === focusKey)) setFocusKey(null) }, [rows, focusKey])
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>, row: Row) => {
-    if (e.target !== e.currentTarget || e.altKey || e.ctrlKey || e.metaKey) return
+    if (e.target !== e.currentTarget || e.altKey) return
+    if (canWrite && !busy) {
+      const mod = e.metaKey || e.ctrlKey
+      const kind = mod && !e.shiftKey && e.key === 'ArrowUp' ? 'up' : mod && !e.shiftKey && e.key === 'ArrowDown' ? 'down' : !mod && e.key === 'Tab' ? (e.shiftKey ? 'outdent' : 'indent') : null
+      const go = kind && moveStep(list, row.ref, kind)
+      if (go) {
+        e.preventDefault()
+        if (go.expand) onToggle(go.expand, true)
+        void onMove(row.ref, go.to).then(() => requestAnimationFrame(() => focus(row.ref)))
+        return
+      }
+    }
+    if (e.ctrlKey || e.metaKey) return
     if (canWrite && (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10'))) { e.preventDefault(); setMenu(keyOf(row.ref)); return }
     if (e.key.length === 1 && e.key !== ' ') {
       const now = Date.now(), t = typed.current
@@ -85,7 +102,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
           const k = keyOf(row.ref)
           return (
             <PageRow key={k} row={row} place={places.get(k) ?? { index: 1, size: 1 }} focused={!!tabbable && keyOf(tabbable) === k} canWrite={canWrite} busy={busy}
-              menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onToggle={(ref) => onToggle(ref)} onRename={onRename} onAdd={(r, kind) => onNew(kind, r.ref)} onDelete={onDelete}
+              menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onToggle={(ref) => onToggle(ref)} onRename={onRename} onAdd={(r, kind) => onNew(kind, r.ref)} onMove={onPick} onDelete={onDelete}
               onKeyDown={(e) => onKeyDown(e, row)} onFocus={(e) => { if (e.target === e.currentTarget) setFocusKey(k) }} />
           )
         })}

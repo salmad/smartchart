@@ -1,6 +1,6 @@
 /* The sidebar's tree on screen: the workspace's pages, the open page's branch expanded, the rest as the viewer left it. */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { keyOf, type PageRef } from '@/engine/pages/tree'
+import { keyOf, type PageRef, type PageSummary } from '@/engine/pages/tree'
 import type { PageRepo } from '@/app/pages'
 import { loadExpanded, saveExpanded, withRefs } from './expanded'
 import { pathTo, visibleRows, withOpenDeck, type Row } from './flatten'
@@ -22,6 +22,8 @@ interface Options {
 export interface PageTreeView {
   /** Null while loading. */
   rows: Row[] | null
+  /** Every page, with the open deck in it: what Move to… offers. */
+  pages: PageSummary[] | null
   failed: boolean
   /** Why the last move was refused. */
   notice: string | null
@@ -80,5 +82,5 @@ export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, p
   }, [viewer, key])
 
   const rows = useMemo(() => pages && visibleRows(pages, expanded, open), [pages, expanded, open])
-  return { rows, failed: state.failed, notice: state.notice, toggle, move: tree.move, reload: tree.load, dismiss: tree.dismiss }
+  return { rows, pages, failed: state.failed, notice: state.notice, toggle, move: tree.move, reload: tree.load, dismiss: tree.dismiss }
 }

@@ -1,5 +1,5 @@
 import type { FocusEventHandler, KeyboardEventHandler } from 'react'
-import { ChevronRight, FilePlus2, FileText, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
+import { ChevronRight, FilePlus2, FileText, FolderInput, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { keyOf, MAX_DEPTH, type PageKind, type PageRef } from '@/engine/pages/tree'
 import { MENU_ICON, MENU_ITEM } from '../menu'
@@ -24,6 +24,7 @@ interface Props {
   onToggle: (ref: PageRef) => void
   onRename: (row: Row) => void
   onAdd: (row: Row, kind: PageKind) => void
+  onMove: (row: Row) => void
   onDelete: (row: Row) => void
   onKeyDown: KeyboardEventHandler<HTMLDivElement>
   onFocus: FocusEventHandler<HTMLDivElement>
@@ -44,7 +45,7 @@ function AddItems({ row, onAdd }: { row: Row; onAdd: (row: Row, kind: PageKind) 
 const noun = (row: Row) => row.ref.kind
 
 /** One page of the tree: chevron, kind glyph, name, and the ··· menu for editors. Its time is the tooltip. */
-export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuOpen, onOpen, onToggle, onRename, onAdd, onDelete, onKeyDown, onFocus }: Props) {
+export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuOpen, onOpen, onToggle, onRename, onAdd, onMove, onDelete, onKeyDown, onFocus }: Props) {
   const Glyph = row.ref.kind === 'doc' ? FileText : Presentation
   const tip = row.ref.kind === 'deck' && row.slides !== null ? `${row.slides} slide${row.slides === 1 ? '' : 's'} · ${ago(row.updated)}` : ago(row.updated)
   return (
@@ -87,6 +88,7 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
                 <DropdownMenuSubContent className="min-w-[130px] rounded-[10px] border-line-2 bg-raise p-1 text-ink"><AddItems row={row} onAdd={onAdd} /></DropdownMenuSubContent>
               </DropdownMenuSub>
             )}
+            <DropdownMenuItem onSelect={() => onMove(row)} className={MENU_ITEM}><FolderInput {...MENU_ICON} />Move to…</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onDelete(row)} className={MENU_ITEM}><Trash2 {...MENU_ICON} />Delete {noun(row)}…</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
