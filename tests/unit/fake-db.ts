@@ -4,7 +4,7 @@ import { KEEP, type Version } from '../../src/engine/versions'
 import type { Slide } from '../../src/engine/types'
 import type { Block } from '../../src/engine/docs/types'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments'
-import { appendKey, canAdd, canMove, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree'
+import { appendKey, canAdd, canMove, descendants, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
@@ -61,6 +61,23 @@ export function fakeDb(): FakeDb {
     if (!w) return { ws: w, parent: null, key: null }
     const nodes = nodesIn(w), ok = canAdd(nodes, parent ?? null)
     return ok === 'ok' ? { ws: w, parent: parent ?? null, key: appendKey(nodes, parent ?? null) } : { refused: ok }
+  }
+  /** The page and everything below it, with versions and blobs; false when the caller may not edit the page. */
+  const removeTree = (u: string, page: PageRef): boolean => {
+    const r = page.kind === 'deck' ? deckIf(u, page.id, 'write') : docIf(u, page.id, 'write')
+    if (!r) return false
+    for (const p of [page, ...(r.ws ? descendants(nodesIn(r.ws), page) : [])]) {
+      if (p.kind === 'deck') {
+        for (let i = versions.length - 1; i >= 0; i--) if (versions[i].deck === p.id) versions.splice(i, 1)
+        for (const k of blobStore.keys()) if (k.startsWith(`${p.id}:`)) blobStore.delete(k)
+        rows.delete(p.id)
+      } else {
+        for (let i = docVersions.length - 1; i >= 0; i--) if (docVersions[i].doc === p.id) docVersions.splice(i, 1)
+        for (const k of docBlobStore.keys()) if (k.startsWith(`${p.id}:`)) docBlobStore.delete(k)
+        docs.delete(p.id)
+      }
+    }
+    return true
   }
   const summary = ({ id, name, updated, data, share, parent, sortKey }: FakeRow) => {
     const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
@@ -125,12 +142,7 @@ export function fakeDb(): FakeDb {
     listKeys: async (u) => [...keys.values()].filter((k) => k.userId === u).map((k) => ({ id: keyId(k.hash), prefix: k.prefix, created: k.created, lastUsed: null })),
     deleteKey: async (u, id) => { const k = [...keys.values()].find((x) => x.userId === u && keyId(x.hash) === id); return !!k && keys.delete(k.hash) },
     bumpRate: async (key, minute) => { const k = `${key}:${minute}`, c = (rate.get(k) ?? 0) + 1; rate.set(k, c); return c },
-    deleteDeck: async (u, id) => {
-      if (!deckIf(u, id, 'write')) return false
-      for (let i = versions.length - 1; i >= 0; i--) if (versions[i].deck === id) versions.splice(i, 1)
-      for (const k of blobStore.keys()) if (k.startsWith(`${id}:`)) blobStore.delete(k)
-      return rows.delete(id)
-    },
+    deleteDeck: async (u, id) => removeTree(u, { kind: 'deck', id }),
     shareDeck: async (u, id, on) => {
       const r = deckIf(u, id, 'write')
       if (!r) return undefined
@@ -169,12 +181,12 @@ export function fakeDb(): FakeDb {
       docs.set(id, { id, ws: where, user: d?.user ?? u, name, text, rev, updated: Date.now() + ++clock, parent: d ? d.parent : at?.parent ?? null, sortKey: d ? d.sortKey : at?.key ?? null })
       return { rev }
     },
-    deleteDoc: async (u, id) => {
-      if (!docIf(u, id, 'write')) return false
-      for (let i = docVersions.length - 1; i >= 0; i--) if (docVersions[i].doc === id) docVersions.splice(i, 1)
-      for (const k of docBlobStore.keys()) if (k.startsWith(`${id}:`)) docBlobStore.delete(k)
-      return docs.delete(id)
+    deleteDoc: async (u, id) => removeTree(u, { kind: 'doc', id }),
+    countSubpages: async (u, page) => {
+      const r = page.kind === 'deck' ? rows.get(page.id) : docs.get(page.id)
+      return r && can(role(u, r), 'read') ? (r.ws ? descendants(nodesIn(r.ws), page).length : 0) : null
     },
+
     getDocMeta: async (u, id) => { const d = docIf(u, id, 'read'); return d ? { rev: d.rev, presence: structuredClone(d.presence ?? {}), role: role(u, d) as Role } : null },
     setDocPresence: async (u, id, p) => { const d = docIf(u, id, 'write'); if (!d) return false; d.presence = structuredClone(p); return true },
     docVersionHead: async (u, id) => {

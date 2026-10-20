@@ -59,7 +59,8 @@ One statement per kind (the table name is the only difference; build it from a m
 
 Fake `Db` (`tests/unit/fake-db.ts`): the same rules using `tree.ts`, so the contract holds for both.
 
-## Task 5. Subtree delete
+## Task 5. Subtree delete — done
+Calls made: the subtree is found in TypeScript with `descendants` over the workspace's pages (as `movePage` does), not a recursive CTE, then deleted by id lists per kind, with each page's versions and blobs; a page made under the branch while the delete runs is left at the top level. `countSubpages` reads the same way and answers null when the caller can't read the page.
 
 `deleteDeck` and `deleteDoc` delete the page and every descendant (the same recursive CTE, `returning` each row's kind and id), then each descendant's versions and blobs: `deck_versions`, `deck_blobs`, `doc_versions`, `doc_blobs`. Permission: the write right on the workspace, which is the same for every page in it, so it is checked once on the page named. Add `countSubpages(userId, page): number | null` for the dialog (null when the user can't read the page). The fake does the same.
 

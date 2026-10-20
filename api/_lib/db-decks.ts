@@ -3,7 +3,7 @@
 import { KEEP, type Tree } from '../../src/engine/versions.js'
 import type { Slide } from '../../src/engine/types.js'
 import { rolesFor, type Action, type Role } from './access.js'
-import { appendKey, canAdd, canMove, CYCLE, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree.js'
+import { appendKey, canAdd, canMove, CYCLE, descendants, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree.js'
 import { MAX_PAGES, shareToken, type Db, type DeckRow, type DeckSummary, type DocSummary, type PageSummary, type Presence, type PutResult, type Q } from './db.js'
 
 /** The caller `u` may take `action` on a row of `t` (decks or docs): a member with a role allowed it, or, on a deck
@@ -20,7 +20,7 @@ const R = (a: Action) => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
 
 type Calls = 'deckRole' | 'listDecks' | 'getDeck' | 'putDeck' | 'deleteDeck' | 'shareDeck' | 'sharedDeck' | 'getDeckMeta' | 'sharedRev'
-  | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages' | 'movePage'
+  | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages' | 'movePage' | 'countSubpages'
 
 type PageCols = { parent_kind: 'deck' | 'doc' | null; parent_id: string | null; sort_key: string | null }
 const parentOf = (r: PageCols): PageRef | null => (r.parent_kind && r.parent_id ? { kind: r.parent_kind, id: r.parent_id } : null)
@@ -33,6 +33,29 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
        select 'deck' as kind, id, parent_kind, parent_id, sort_key from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
        union all select 'doc', id, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}) p limit ${MAX_PAGES}`,
     [u, ws, R('read')])).map((r) => ({ kind: r.kind, id: r.id, parent: parentOf(r), sortKey: r.sort_key }))
+  /** The page and everything below it, deleted with their versions and blobs; false when the caller may not edit the page.
+      The write right is the workspace's, the same for every page in it, so it is checked once, on the page named. A page made
+      under it while this runs is left behind and reads as top level (the tree's rule for a missing parent). */
+  const deleteTree = async (u: string, page: PageRef): Promise<boolean> => {
+    const t = TABLE[page.kind]
+    const ws = (await q<{ ws: string }>(`select workspace_id as ws from ${t} where id = $2 and ${may(t, '$1', '$3')}`, [u, page.id, R('write')]))[0]?.ws
+    if (!ws) {
+      // No such page, or a deck from before workspaces, which has no children.
+      const gone = page.kind === 'deck' && (await q(`delete from decks where id = $2 and ${may('decks', '$1', '$3')} returning id`, [u, page.id, R('write')])).length > 0
+      if (gone) { await q('delete from deck_versions where deck_id = $1', [page.id]); await q('delete from deck_blobs where deck_id = $1', [page.id]) }
+      return gone
+    }
+    const all = [page, ...descendants(await nodesIn(u, ws), page)]
+    const ids = (kind: PageRef['kind']) => all.filter((p) => p.kind === kind).map((p) => p.id)
+    const decks = ids('deck'), docs = ids('doc')
+    const gone = (await q(`delete from ${t} where id = $1 and workspace_id = $2 returning id`, [page.id, ws])).length > 0
+    if (!gone) return false
+    await q('delete from decks where id = any($1::text[]) and workspace_id = $2', [decks, ws])
+    await q('delete from docs where id = any($1::text[]) and workspace_id = $2', [docs, ws])
+    await q('delete from deck_versions where deck_id = any($1::text[])', [decks]); await q('delete from deck_blobs where deck_id = any($1::text[])', [decks])
+    await q('delete from doc_versions where doc_id = any($1::text[])', [docs]); await q('delete from doc_blobs where doc_id = any($1::text[])', [docs])
+    return true
+  }
   /** Where a new page goes: the workspace it lands in, its parent columns and its key (last among its siblings), or the sentence
       saying why it can't go there. Only the first save of an id calls this. */
   const place = async (u: string, wanted: string | undefined, parent: PageRef | undefined): Promise<{ ws: string | undefined; parent: PageRef | null; key: string | null } | { refused: string }> => {
@@ -85,11 +108,7 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
          on conflict (id) do nothing returning rev`, [id, u, name, p[3], p[4], !!opts.named, R('write'), at.ws ?? null, at.parent?.kind ?? null, at.parent?.id ?? null, at.key])
       return ins[0] ? { rev: ins[0].rev } : refused('decks', u, id)
     },
-    deleteDeck: async (u, id) => {
-      const gone = (await q(`delete from decks where id = $2 and ${may('decks', '$1', '$3')} returning id`, [u, id, R('write')])).length > 0
-      if (gone) { await q('delete from deck_versions where deck_id = $1', [id]); await q('delete from deck_blobs where deck_id = $1', [id]) }
-      return gone
-    },
+    deleteDeck: (u, id) => deleteTree(u, { kind: 'deck', id }),
     shareDeck: async (u, id, on) => {
       const r = on === undefined
         ? await q<{ share: string | null }>(`select share_id as share from decks where id = $2 and ${may('decks', '$1', '$3')}`, [u, id, R('write')])
@@ -193,10 +212,12 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
         [id, u, name, text, at.ws ?? null, R('write'), at.parent?.kind ?? null, at.parent?.id ?? null, at.key])
       return ins[0] ? { rev: ins[0].rev } : refused('docs', u, id)
     },
-    deleteDoc: async (u, id) => {
-      const gone = (await q(`delete from docs where id = $2 and ${may('docs', '$1', '$3')} returning id`, [u, id, R('write')])).length > 0
-      if (gone) { await q('delete from doc_versions where doc_id = $1', [id]); await q('delete from doc_blobs where doc_id = $1', [id]) }
-      return gone
+    deleteDoc: (u, id) => deleteTree(u, { kind: 'doc', id }),
+    countSubpages: async (u, page) => {
+      const t = TABLE[page.kind]
+      const ws = (await q<{ ws: string | null }>(`select workspace_id as ws from ${t} where id = $2 and ${may(t, '$1', '$3')}`, [u, page.id, R('read')]))[0]
+      if (!ws) return null
+      return ws.ws ? descendants(await nodesIn(u, ws.ws), page).length : 0
     },
   }
 }

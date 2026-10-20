@@ -101,6 +101,7 @@ export interface Db {
   deleteKey(userId: string, id: string): Promise<boolean>
   /** Counts a call in a one-minute bucket and returns the bucket's total. */
   bumpRate(key: string, minute: number): Promise<number>
+  /** Deletes the deck and every page below it, with their versions and blobs. */
   deleteDeck(userId: string, id: string): Promise<boolean>
   /** Counts one model call for the user today (UTC) and returns today's total. */
   countCall(userId: string): Promise<number>
@@ -120,11 +121,14 @@ export interface Db {
   listDocs(userId: string, workspaceId: string): Promise<DocSummary[]>
   getDoc(userId: string, id: string): Promise<DocRow | null>
   putDoc(userId: string, id: string, name: string, text: string, baseRev: number, workspaceId?: string, parent?: PageRef): Promise<PutResult>
+  /** How many pages sit below this one (what deleting it would also remove), or null when the user can't read it. */
+  countSubpages(userId: string, page: PageRef): Promise<number | null>
   /** Move a page under `to.parent` (null: the top), right after or before a sibling, else last. Changes only the page's parent and
       order key: no revision, no version, no `updated_at`. Answers 'ok', 'foreign' (the user can't read the page), or a sentence. */
   movePage(userId: string, page: PageRef, to: { parent: PageRef | null } & Slot): Promise<'ok' | 'foreign' | string>
   /** Every deck and doc in the workspace the user can read, for the tree (up to MAX_PAGES). */
   listPages(userId: string, workspaceId: string): Promise<PageSummary[]>
+  /** Deletes the doc and every page below it, with their versions and blobs. */
   deleteDoc(userId: string, id: string): Promise<boolean>
   getDocMeta(userId: string, id: string): Promise<{ rev: number; presence: DocPresence; role: Role } | null>
   /** Editor and up. */
