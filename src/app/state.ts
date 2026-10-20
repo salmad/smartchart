@@ -4,6 +4,7 @@ import type { ChatMessage } from '@/engine/agent/llm'
 import type { Pill } from '@/engine/agent/suggest'
 import { plain } from '@/engine/slides/schema'
 import { commentsOf, type DeckComment } from '@/engine/comments'
+import type { PageRef } from '@/engine/pages/tree'
 import { newDeckId, type Item, type Message, type SavedDeck } from './store'
 import type { Role } from './workspaces'
 
@@ -27,9 +28,11 @@ export interface AppState {
   /** The workspace open in the app (the first in the list, the most recently used) and the user's role in it. */
   workspaceId: string | null
   role: Role | null
+  /** Where a new deck goes on its first save (Add subpage → Deck); null for the top level. Kept after the save (the repos ignore it for a deck that exists) so the sidebar still shows the deck there. */
+  pendingParent: PageRef | null
 }
 export type Action =
-  | { type: 'open'; deck: SavedDeck } | { type: 'new' } | { type: 'set'; patch: Partial<AppState> }
+  | { type: 'open'; deck: SavedDeck } | { type: 'new'; parent?: PageRef } | { type: 'set'; patch: Partial<AppState> }
   | { type: 'select'; index: number } | { type: 'message'; message: Message } | { type: 'items'; items: Item[]; focusId?: string }
   | { type: 'pickStarter'; slide: Slide; id: string } | { type: 'insertStarter'; slide: Slide; id: string }
   | { type: 'removeSlide'; id: string } | { type: 'restoreSlide' } | { type: 'moveSlide'; id: string; to: number }
@@ -42,7 +45,7 @@ export function initialState(): AppState {
     deckId: null, name: null, style: 'consulting', theme: 'ink', accent: null,
     items: [], current: 0, history: [], working: new Set(), messages: [],
     busy: false, live: false, view: 'landing', pills: {}, removed: null, editing: null, edited: [], comments: [],
-    workspaceId: null, role: null,
+    workspaceId: null, role: null, pendingParent: null,
   }
 }
 
@@ -61,12 +64,12 @@ export function reducer(s: AppState, a: Action): AppState {
         ...s, deckId: d.id, name: d.name ?? null, style: d.style, theme: d.theme, accent: d.accent || null,
         items, current: clamp(d.current || 0, items), history: d.history || [], working: new Set(d.working || []),
         messages: d.messages ?? [], comments: commentsOf(d.comments),
-        view: items.length ? 'editor' : 'landing', pills: {}, removed: null, editing: null, edited: [],
+        view: items.length ? 'editor' : 'landing', pills: {}, removed: null, editing: null, edited: [], pendingParent: null,
       }
     }
     case 'new':
       if (s.editing) return s
-      return { ...initialState(), deckId: newDeckId(), live: s.live, style: s.style, theme: s.theme, accent: s.accent, view: 'landing', workspaceId: s.workspaceId, role: s.role }
+      return { ...initialState(), deckId: newDeckId(), live: s.live, style: s.style, theme: s.theme, accent: s.accent, view: 'landing', workspaceId: s.workspaceId, role: s.role, pendingParent: a.parent ?? null }
     case 'set':
       return { ...s, ...a.patch }
     case 'edit':
@@ -128,6 +131,7 @@ export function toSaved(s: AppState): SavedDeck | null {
     items: s.items.map(({ checksPending: _pending, ...it }) => it), history: s.history, working: [...s.working],
     messages: s.messages, comments: s.comments,
     updated: Date.now(),
+    ...(s.pendingParent ? { parent: s.pendingParent } : {}),
   }
 }
 

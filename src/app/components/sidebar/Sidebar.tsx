@@ -21,9 +21,9 @@ interface Props {
   ws: WorkspaceState
   repos: { decks: DeckRepo; docs: DocRepo; pages: PageRepo; workspaces: WorkspaceRepo }
   /** The deck held in the editor (its name is live, and it lists before its first save), and the doc on screen. */
-  open: { deck: { id: string | null; name: string; slides: number }; doc: string | null; docTick: number }
+  open: { deck: { id: string | null; name: string; slides: number; parent: PageRef | null }; doc: string | null; docTick: number }
   busy: boolean
-  onOpenDeck: (id: string) => void; onNewDeck: () => void; onDeckDeleted: (id: string) => void
+  onOpenDeck: (id: string) => void; onNewDeck: (parent: PageRef | null) => void; onDeckDeleted: (id: string) => void
   onOpenDoc: (id: string) => void; onDocDeleted: (id: string) => void; onDocRenamed: () => void
   /** The open deck is renamed through the editor, so its live state and its next save agree. */
   onRenameOpenDeck: (name: string) => void
@@ -38,11 +38,11 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDeleted, onOpenDoc, onDocDeleted, onDocRenamed, onRenameOpenDeck, me }: Props) {
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
-  const [doomed, setDoomed] = useState<Row | null>(null), [making, setMaking] = useState(false)
+  const [doomed, setDoomed] = useState<Row | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(null)
   const [members, setMembers] = useState(false)
   const { deck } = open
   const openRef: PageRef | null = open.doc !== null ? { kind: 'doc', id: open.doc } : deck.id ? { kind: 'deck', id: deck.id } : null
-  const tree = usePageTree({ repo: repos.pages, workspaceId: wsId, viewer: me, open: openRef, deck, pendingParent: null, tick: open.docTick })
+  const tree = usePageTree({ repo: repos.pages, workspaceId: wsId, viewer: me, open: openRef, deck, pendingParent: deck.parent, tick: open.docTick })
   // A workspace list that loaded with no workspace in it (a server without them) has no pages to show.
   const rows = ws.list !== null && !wsId ? [] : tree.rows
   const openPage = (ref: PageRef) => (ref.kind === 'deck' ? onOpenDeck(ref.id) : onOpenDoc(ref.id))
@@ -52,7 +52,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
     ws.switchTo(id)
     const first = (await repos.decks.list(id).catch(() => [])).find((d) => d.slides > 0)
     if (first) onOpenDeck(first.id)
-    else onNewDeck()
+    else onNewDeck(null)
   }
   const rename = async (name: string) => {
     if (!renaming) return
@@ -61,7 +61,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       const id = await repos.workspaces.create(name)
       await ws.reload(id)
       void repos.workspaces.use(id).catch(() => undefined)
-      onNewDeck()
+      onNewDeck(null)
       return
     }
     if (!row) return
@@ -90,7 +90,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   }
   const createDoc = async (s: DocStarter) => {
     if (!wsId) return
-    const id = newDocId(), why = await repos.docs.save({ id, name: starterDoc(s).title || s.label, text: s.markdown.join('\n'), workspaceId: wsId })
+    const id = newDocId(), why = await repos.docs.save({ id, name: starterDoc(s).title || s.label, text: s.markdown.join('\n'), workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
     if (why) throw new Error(why)
     await tree.reload()
     onOpenDoc(id)
@@ -104,7 +104,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       </div>
       <div className="grid min-h-0 flex-1 content-start overflow-y-auto pb-4">
         <PageTree rows={rows} failed={tree.failed} canWrite={canWrite} busy={busy} onOpen={openPage} onToggle={tree.toggle}
-          onNew={(kind) => (kind === 'doc' ? setMaking(true) : onNewDeck())} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onDelete={setDoomed} />
+          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onDelete={setDoomed} />
       </div>
 
       <RenameItem open={renaming && (renaming.kind === 'workspace'
@@ -112,10 +112,10 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
         : { title: `Rename ${renaming.kind}`, name: renaming.row?.name ?? '', action: 'Rename' })}
         onSubmit={rename} onClose={() => setRenaming(null)} />
       <DeleteDeck name={doomed?.name ?? null} what={doomed?.ref.kind ?? 'deck'} onCancel={() => setDoomed(null)} onConfirm={() => void remove()} />
-      <NewDoc open={making} onCreate={createDoc} onClose={() => setMaking(false)} />
+      <NewDoc open={making !== null} onCreate={createDoc} onClose={() => setMaking(null)} />
       {/* Leaving opens the most recently used workspace that is left. */}
       <Members workspace={members ? ws.current : null} repo={repos.workspaces} me={me} onClose={() => setMembers(false)}
-        onLeft={() => { setMembers(false); void ws.reload().then(onNewDeck) }} />
+        onLeft={() => { setMembers(false); void ws.reload().then(() => onNewDeck(null)) }} />
     </nav>
   )
 }

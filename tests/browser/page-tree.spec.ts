@@ -107,3 +107,50 @@ test('only one row takes Tab', async ({ page }) => {
   await expect(rows(page).and(page.locator('[tabindex="0"]'))).toHaveCount(1)
   await expect(row(page, 'Revolut')).toHaveAttribute('tabindex', '0')
 })
+
+const hover = async (page: Page, name: string) => { await row(page, name).hover(); return row(page, name) }
+
+test('Add subpage → Doc makes a doc under the page and opens it, with the branch open', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await (await hover(page, 'Alpha')).getByRole('button', { name: 'More for Alpha' }).click()
+  await page.getByRole('menuitem', { name: 'Add subpage' }).hover()
+  await page.getByRole('menuitem', { name: 'Doc', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'New doc' })
+  await dialog.getByText('Product requirements', { exact: true }).click()
+  await dialog.getByRole('button', { name: 'Create doc' }).click()
+  await expect(page).toHaveURL(/\/doc\/doc_[\w-]+$/)
+  await expect(row(page, 'Alpha')).toHaveAttribute('aria-expanded', 'true')
+  await expect(rows(page)).toHaveText(['Research', 'Alpha', 'Card controls PRD'])
+  expect(await rows(page).evaluateAll((els) => els.map((e) => e.getAttribute('aria-level')))).toEqual(['1', '1', '2'])
+})
+
+test('the + beside a row adds a subpage deck: it shows under its parent and stays there after a reload', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await (await hover(page, 'Research')).getByRole('button', { name: 'Add subpage to Research' }).click()
+  await page.getByRole('menuitem', { name: 'Deck', exact: true }).click()
+  await expect(page).toHaveURL(/\/new$/)
+  await page.locator('[data-starter="section"]').dblclick()
+  await expect(page).toHaveURL(/\/d\/d_[\w-]+$/)
+  await expect(row(page, 'Research')).toHaveAttribute('aria-expanded', 'true')
+  const levels = () => rows(page).evaluateAll((els) => els.map((e) => e.getAttribute('aria-level')))
+  await expect.poll(levels).toEqual(['1', '2', '2', '1'])
+  await page.waitForTimeout(600) // longer than the save pause
+  await page.reload()
+  await expect.poll(levels).toEqual(['1', '2', '2', '1'])
+  await expect(rows(page).nth(2)).toHaveAttribute('aria-selected', 'true')
+})
+
+test('the + at the top still makes a top-level deck, after a subpage was started', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await (await hover(page, 'Research')).getByRole('button', { name: 'Add subpage to Research' }).click()
+  await page.getByRole('menuitem', { name: 'Deck', exact: true }).click()
+  await expect(page).toHaveURL(/\/new$/)
+  await sidebar(page).getByRole('button', { name: 'New page' }).click()
+  await page.getByRole('menuitem', { name: 'New deck' }).click()
+  await page.locator('[data-starter="section"]').dblclick()
+  await expect(page).toHaveURL(/\/d\/d_[\w-]+$/)
+  await expect.poll(() => rows(page).evaluateAll((els) => els.map((e) => e.getAttribute('aria-level')))).toEqual(['1', '1', '1'])
+})

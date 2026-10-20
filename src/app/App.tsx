@@ -13,6 +13,7 @@ import { installDebug } from './debug'
 import { createMeasurer, type Measurer } from './measure'
 import { chipsFor, refreshPills } from './pills'
 import { deckOf, editKey, locked, toSaved } from './state'
+import type { PageRef } from '@/engine/pages/tree'
 import { saveEdit } from './edit/save'
 import { deckName, newDeckId, type DeckRepo, type Item, type SaveMeta, type SavedDeck } from './store'
 import { useVersions } from './useVersions'
@@ -99,7 +100,12 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   // A deck opened by a viewer of its workspace is read, never written: no chat, no edits, no saves. A viewer with nothing open gets the same page, empty.
   const [viewOnly, setViewOnly] = useState(false)
   const readOnly = viewOnly || (booted && s.role === 'viewer' && !s.items.length)
-  const newDeck = useCallback(() => { app.dispatch({ type: 'new' }); turns.current = []; savedKey.current = null; setViewOnly(false) }, [app])
+  // Where the next new deck goes (Add subpage → Deck): read by the route's `newDeck`, which a pick from a deck in progress reaches later.
+  const wantParent = useRef<PageRef | null>(null)
+  const newDeck = useCallback(() => {
+    app.dispatch({ type: 'new', parent: wantParent.current ?? undefined }); wantParent.current = null
+    turns.current = []; savedKey.current = null; setViewOnly(false)
+  }, [app])
   const openDeck = useCallback((d: SavedDeck) => {
     turns.current = []
     setViewOnly(repo.role?.(d.id) === 'viewer')
@@ -190,6 +196,14 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     if (saved && unsaved(saved)) void persist(saved)
     go(path)
   }, [app, persist])
+  // A new deck: at the top, or under `parent`. An empty deck held in the editor is reused, so only its parent changes.
+  const startDeck = useCallback((parent: PageRef | null) => {
+    const st = app.getState()
+    if (locked(st)) return
+    if (!st.items.length && !st.history.length) { app.dispatch({ type: 'set', patch: { pendingParent: parent } }); if (route.name !== 'new') leaveTo('/new'); return }
+    wantParent.current = parent
+    leaveTo('/new')
+  }, [app, route.name, leaveTo])
   const onDeckDeleted = useCallback((id: string) => { if (id === app.getState().deckId) { newDeck(); go('/new') } }, [app, newDeck])
   // Delete from the deck menu: the open deck goes, and a new one starts in its place.
   const deleteDeck = useCallback(async () => {
@@ -285,8 +299,8 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const [docTick, setDocTick] = useState(0)
   // The workspace down the left (⌘\), beside the editor or a doc.
   const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} busy={locked(s)}
-    open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length }, doc: route.name === 'doc' ? route.id : null, docTick }}
-    onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={() => leaveTo('/new')} onDeckDeleted={onDeckDeleted}
+    open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length, parent: s.pendingParent }, doc: route.name === 'doc' ? route.id : null, docTick }}
+    onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={startDeck} onDeckDeleted={onDeckDeleted}
     onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onDocRenamed={() => setDocTick((t) => t + 1)} onRenameOpenDeck={bar.onRename} me={account.id} />
 
   return (

@@ -63,6 +63,13 @@ export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, p
     saveExpanded(viewer, workspaceId, next)
   }, [pages, viewer, workspaceId, openKey, open])
 
+  // A deck started under a page shows there as soon as it has a slide, with the branch open (it is not yet the page that opened).
+  const parentKey = parent ? keyOf(parent) : '', shows = !!pages?.some((p) => p.kind === 'deck' && p.id === deck.id && p.parent)
+  useEffect(() => {
+    if (!workspaceId || !pages || !open || !parentKey || !shows) return
+    setExpanded((was) => { const next = withRefs(was, [...pathTo(pages, open), ...(parent ? [parent] : [])]); saveExpanded(viewer, workspaceId, next); return next })
+  }, [parentKey, shows]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const toggle = useCallback((ref: PageRef, force?: boolean) => {
     setExpanded((was) => {
       const k = keyOf(ref), next = new Set(was), on = force ?? !was.has(k)

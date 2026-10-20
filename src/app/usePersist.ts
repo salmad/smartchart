@@ -1,12 +1,15 @@
 /* Saving the open deck: a failed save keeps a copy in this browser and tries again, waiting longer each time; the copy
    goes once a save succeeds. One chat warning per run of failures, saying why. */
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react'
+import { NO_PAGE, TOO_DEEP } from '@/engine/pages/tree'
 import { config } from './config'
 import { STALE, VIEW_ONLY } from './remote'
 import { editKey, toSaved } from './state'
 import type { DeckRepo, SaveMeta, SavedDeck } from './store'
 import type { AppStore } from './useAppState'
 
+/** A new deck's parent was refused (deleted meanwhile, or too deep): the deck goes to the top level, and the chat says why. */
+const toTop = (why: string) => `${why === NO_PAGE ? 'The page you were adding under is gone.' : why} This deck is saved at the top level instead.`
 const notSaved = (why: string) => `Couldn’t save. ${why} Retrying; a copy is kept in this browser until it saves.`
 
 interface Deps {
@@ -39,6 +42,11 @@ export function usePersist({ app, repo, backup, syncNow, author, savedKey, onSav
       if (r.wait) void backup?.remove(deck.id)
       r.wait = 0; warned.current = false
       return
+    }
+    if (deck.parent && (why === NO_PAGE || why === TOO_DEEP)) {
+      app.dispatch({ type: 'set', patch: { pendingParent: null } })
+      app.dispatch({ type: 'message', message: { kind: 'bot', text: toTop(why) } })
+      return persist({ ...deck, parent: null })
     }
     // The deck was changed elsewhere: read it, merge by slide id and save the merge (the autosave does that once the
     // state changes). Not copied to this browser, where the copy would win over the newer deck the next time this one is opened.

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { FileText, Plus, Presentation } from 'lucide-react'
-import { keyOf, type PageRef } from '@/engine/pages/tree'
+import { keyOf, type PageKind, type PageRef } from '@/engine/pages/tree'
 import { MENU_ICON, MENU_ITEM } from '../menu'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -17,7 +17,7 @@ interface Props {
   busy: boolean
   onOpen: (ref: PageRef) => void
   onToggle: (ref: PageRef, open?: boolean) => void
-  onNew: (kind: 'doc' | 'deck') => void
+  onNew: (kind: PageKind, parent: PageRef | null) => void
   onRename: (row: Row) => void
   onDelete: (row: Row) => void
 }
@@ -71,8 +71,8 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
               <Button variant="ghost" size="sm" aria-label="New page" title="New page" className="size-7 p-0 text-ink-3 hover:text-ink"><Plus className="!size-3.5" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[150px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
-              <DropdownMenuItem onSelect={() => onNew('doc')} className={MENU_ITEM}><FileText {...MENU_ICON} />New doc</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onNew('deck')} className={MENU_ITEM}><Presentation {...MENU_ICON} />New deck</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onNew('doc', null)} className={MENU_ITEM}><FileText {...MENU_ICON} />New doc</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onNew('deck', null)} className={MENU_ITEM}><Presentation {...MENU_ICON} />New deck</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -85,7 +85,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
           const k = keyOf(row.ref)
           return (
             <PageRow key={k} row={row} place={places.get(k) ?? { index: 1, size: 1 }} focused={!!tabbable && keyOf(tabbable) === k} canWrite={canWrite} busy={busy}
-              menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onToggle={(ref) => onToggle(ref)} onRename={onRename} onDelete={onDelete}
+              menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onToggle={(ref) => onToggle(ref)} onRename={onRename} onAdd={(r, kind) => onNew(kind, r.ref)} onDelete={onDelete}
               onKeyDown={(e) => onKeyDown(e, row)} onFocus={(e) => { if (e.target === e.currentTarget) setFocusKey(k) }} />
           )
         })}
