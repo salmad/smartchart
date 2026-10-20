@@ -34,8 +34,10 @@ export interface RowActions {
   docOps: readonly Op<SlimDoc>[]
   /** Rows with a request not yet answered. */
   pending: (id: string) => boolean
-  /** Counts failures: the lists are read again when it changes. */
-  lost: number
+  /** Counts changes the server has answered, kept or not: the lists are read again when it changes. */
+  answered: number
+  /** Lets go of the changes the server accepted, once the lists have been read again and say so themselves. */
+  forget: () => void
   /** A sentence about the last failure, for a few seconds. */
   notice: string | null
   /** Resolves once nothing is queued for the row: opening it before that would show the old copy. */
@@ -49,25 +51,25 @@ export interface RowActions {
 
 export function useRowActions(d: Deps): RowActions {
   const [deckOps, setDeckOps] = useState<Op<SlimDeck>[]>([]), [docOps, setDocOps] = useState<Op<SlimDoc>[]>([])
-  const [lost, setLost] = useState(0), [notice, setNotice] = useState<string | null>(null)
-  const queue = useRef(ordered()).current, timer = useRef<ReturnType<typeof setTimeout>>(), sent = useRef(new Map<string, number>())
+  const [answered, setAnswered] = useState(0), [notice, setNotice] = useState<string | null>(null)
+  const queue = useRef(ordered()).current, timer = useRef<ReturnType<typeof setTimeout>>(), sent = useRef(new Map<string, number>()), accepted = useRef(new Set<Op<never>>())
   const deps = useRef(d)
   deps.current = d
   useEffect(() => () => clearTimeout(timer.current), [])
   const tell = (s: string) => { setNotice(s); clearTimeout(timer.current); timer.current = setTimeout(() => setNotice(null), NOTICE_MS) }
 
   /** Shows the change now, sends the request behind it, and takes the change back (with a sentence) if it fails. */
-  function act<R extends { id: string }>(set: React.Dispatch<React.SetStateAction<Op<R>[]>>, op: Op<R>, sorry: string, job: () => Promise<string | null>, done?: () => void) {
+  function act<R extends { id: string }>(set: React.Dispatch<React.SetStateAction<Op<R>[]>>, op: Op<R>, sorry: [lead: string, tail: string], job: () => Promise<string | null>, done?: () => void) {
     setNotice(null)
     set((all) => [...all, op])
     sent.current.set(op.row, (sent.current.get(op.row) ?? 0) + 1)
     const end = () => { const n = (sent.current.get(op.row) ?? 1) - 1; if (n) sent.current.set(op.row, n); else sent.current.delete(op.row) }
     queue.run(op.row, job).catch(() => '').then((why) => {
       end()
-      set((all) => all.filter((o) => o !== op))
-      if (why === null) { done?.(); return }
-      tell(why ? `${sorry} ${why}` : sorry)
-      setLost((n) => n + 1)
+      // An accepted change stays over the lists until they have been read again, so no row flickers back meanwhile.
+      if (why === null) accepted.current.add(op as Op<never>); else { set((all) => all.filter((o) => o !== op)); tell(`${sorry[0]} ${why || sorry[1]}`) }
+      setAnswered((n) => n + 1)
+      if (why === null) done?.()
     })
   }
 
@@ -77,27 +79,34 @@ export function useRowActions(d: Deps): RowActions {
   const named = <T extends { id: string; name: string }>(id: string, name: string) => (r: T[]) => r.map((x) => (x.id === id ? { ...x, name } : x))
 
   return {
-    deckOps, docOps, lost, notice,
+    deckOps, docOps, answered, notice,
+    forget: () => {
+      const gone = accepted.current
+      if (!gone.size) return
+      accepted.current = new Set()
+      setDeckOps((all) => all.filter((o) => !gone.has(o as Op<never>)))
+      setDocOps((all) => all.filter((o) => !gone.has(o as Op<never>)))
+    },
     pending: (id) => sent.current.has(id),
     settled: (id) => queue.wait(id),
     removeDeck: ({ id, name }) => {
-      act(setDeckOps, deckOp(id, without(id)), `Couldn’t delete “${name}”. It’s back in your list.`, async () => ((await deps.current.repos.decks.remove(id)) ? null : ''))
+      act(setDeckOps, deckOp(id, without(id)), [`Couldn’t delete “${name}”.`, 'It’s back in your list.'], async () => ((await deps.current.repos.decks.remove(id)) ? null : ''))
       deps.current.onDeckDeleted(id)
     },
     removeDoc: ({ id, name }) => {
-      act(setDocOps, docOp(id, without(id)), `Couldn’t delete “${name}”. It’s back in your list.`, async () => ((await deps.current.repos.docs.remove(id)) ? null : ''))
+      act(setDocOps, docOp(id, without(id)), [`Couldn’t delete “${name}”.`, 'It’s back in your list.'], async () => ((await deps.current.repos.docs.remove(id)) ? null : ''))
       deps.current.onDocDeleted(id)
     },
-    renameDeck: ({ id, name: was }, name) => act(setDeckOps, deckOp(id, named(id, name)), `Couldn’t rename “${was}”. It has its old name back.`, async () => {
+    renameDeck: ({ id, name: was }, name) => act(setDeckOps, deckOp(id, named(id, name)), [`Couldn’t rename “${was}”.`, 'It has its old name back.'], async () => {
       const { decks } = deps.current.repos, deck = await decks.get(id)
       return deck ? (await decks.save({ ...deck, name })) : 'That deck is gone.'
     }),
     // A doc's name is its title: renaming rewrites the title, so the two never drift apart.
-    renameDoc: ({ id, name: was }, name) => act(setDocOps, docOp(id, named(id, name)), `Couldn’t rename “${was}”. It has its old name back.`, async () => {
+    renameDoc: ({ id, name: was }, name) => act(setDocOps, docOp(id, named(id, name)), [`Couldn’t rename “${was}”.`, 'It has its old name back.'], async () => {
       const { docs } = deps.current.repos, doc = await docs.get(id)
       return doc ? (await docs.save({ id: doc.id, name, text: serializeDoc({ ...parseDoc(doc.text).doc, title: name }), workspaceId: doc.workspaceId })) : 'That doc is gone.'
     }, () => deps.current.onDocRenamed()),
     createDoc: (doc) => act(setDocOps, docOp(doc.id, (r) => (r.some((x) => x.id === doc.id) ? r : [{ id: doc.id, name: doc.name, updated: Date.now() }, ...r])),
-      'Couldn’t create the doc. Try again.', () => deps.current.repos.docs.save(doc), () => deps.current.onOpenDoc(doc.id)),
+      ['Couldn’t create the doc.', 'Try again.'], () => deps.current.repos.docs.save(doc), () => deps.current.onOpenDoc(doc.id)),
   }
 }

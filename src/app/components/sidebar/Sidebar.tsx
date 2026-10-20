@@ -81,8 +81,9 @@ export function Sidebar({ ws, rows, repos, open, busy, onOpenDeck, onNewDeck, on
   useEffect(() => { if (account && docName && shownDocs) void cacheSet(account, docName, shownDocs) }, [account, docName, shownDocs])
   const decks = useMemo<ListRow[] | null>(() => shownDecks && shownDecks.filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` })), [shownDecks])
   const docs = useMemo<ListRow[] | null>(() => shownDocs && shownDocs.map((d) => ({ id: d.id, name: d.name, sub: ago(d.updated) })), [shownDocs])
-  // A change that failed is gone from the rows: read the lists again, so they say what the server says.
-  useEffect(() => { if (rows.lost) { void loadDecks(); void loadDocs() } }, [rows.lost]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Once the server has answered a change, read the lists again, so they say what it says (a failed change is already gone
+  // from the rows; an accepted one is let go of when the lists agree).
+  useEffect(() => { if (rows.answered) void Promise.all([loadDecks(), loadDocs()]).finally(rows.forget) }, [rows.answered]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Read again when the open deck or doc changes, so one saved for the first time shows with its real time.
   useEffect(() => { void loadDecks() }, [loadDecks, open.deck.id])
