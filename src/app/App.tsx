@@ -30,6 +30,7 @@ import { usePersist } from './usePersist'
 import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { DEV_ACCOUNT } from './dev-account'
+import { bootDone } from './boot'
 import { forgetCachedDeck, readCachedDeck } from './cached-decks'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import type { DocRepo } from './docs'
@@ -71,6 +72,8 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   // Counts saves that landed, so the Versions panel knows to read the list again.
   const [saves, setSaves] = useState(0)
   const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [healthKnown, setHealthKnown] = useState(false), [loaded, setLoaded] = useState(false)
+  // The frame index.html painted stays until boot has put the deck on screen (or started a new one), not the gallery in between.
+  useEffect(() => { if (booted) bootDone() }, [booted])
   // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
   // laptop-width window, where the slide needs the room, until the maker opens them.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)

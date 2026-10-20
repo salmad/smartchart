@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from './auth'
 import { devAccount } from './dev-account'
+import { bootDone } from './boot'
 import { cachedDeckRepo } from './cached-decks'
 import { remoteDeckRepo } from './remote'
 import { go, useRoute } from './route'
@@ -43,6 +44,8 @@ function Screens() {
   const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
+  // The frame index.html painted for the editor stays until the editor has its own; any other screen replaces it at once.
+  useEffect(() => { if (session === null || !['home', 'new', 'deck', 'doc'].includes(route.name)) bootDone() }, [session, route.name])
   const joined = useCallback(() => go('/', { replace: true }), [])
 
   // A deck shared by link is for anyone who has it: no session needed, nothing of the viewer's own is shown.

@@ -14,6 +14,12 @@
     { "source": "/mcp/v1", "destination": "/api/mcp" },
     { "source": "/((?!api/|mcp/).*)", "destination": "/index.html" }
   ],
+  "headers": [
+    {
+      "source": "/((?!api/|mcp/|assets/|fonts/|starters/).*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, stale-while-revalidate=604800" }]
+    }
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite"

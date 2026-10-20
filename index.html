@@ -26,8 +26,59 @@
     <meta name="twitter:image" content="https://www.occamslides.com/og.png" />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/geist-latin-wght-normal.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/archivo-latin-wdth-normal.woff2" crossorigin />
+    <script>
+      /* A repeat visit to the editor shows its frame at once, before any script has run: the bar and the panels that
+         will be open, in the app's own colours. The app removes it (src/app/boot.ts) when it has something to show. */
+      (function () {
+        try {
+          var p = location.pathname, h = document.documentElement
+          if (!localStorage.getItem('occam.account.v1') || !(p === '/' || p === '/new' || p.indexOf('/d/') === 0 || p.indexOf('/doc/') === 0)) return
+          h.className += ' boot-app'
+          var d = localStorage.getItem('smartchart.decksOpen')
+          if (d === '1' || (d === null && matchMedia('(min-width: 1500px)').matches)) h.className += ' boot-decks'
+          if (localStorage.getItem('smartchart.chatOpen') !== '0') h.className += ' boot-chat'
+        } catch (e) { /* storage blocked: no frame */ }
+      })()
+      /* The page itself may be served from the browser's copy while a newer one is fetched. If that copy names files a
+         newer deploy has removed, load again once, which asks for the current page. */
+      ;(function () {
+        function again() { try { if (sessionStorage.getItem('reloaded-for-assets')) return; sessionStorage.setItem('reloaded-for-assets', '1') } catch (e) { return } location.reload() }
+        window.addEventListener('error', function (e) { var t = e.target; if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK') && /\/assets\//.test(t.src || t.href || '')) again() }, true)
+        window.addEventListener('vite:preloadError', again)
+        setTimeout(function () { try { sessionStorage.removeItem('reloaded-for-assets') } catch (e) { /* ignore */ } }, 10000)
+        /* Never leave the frame up if the app does not start. */
+        setTimeout(function () { var b = document.getElementById('boot'); if (b) b.remove() }, 8000)
+      })()
+    </script>
+    <style>
+      #boot, #boot * { box-sizing: border-box }
+      #boot { display: none; position: fixed; inset: 0; z-index: 10; background: #0A0A0B }
+      .boot-app #boot { display: block }
+      .boot-app body { background: #0A0A0B }
+      #boot i { display: block; flex: none; background: rgba(255, 255, 255, .045); border-radius: 6px }
+      #boot .w8 { width: 8px } #boot .w32 { width: 32px } #boot .w40 { width: 40px } #boot .w64 { width: 64px } #boot .w90 { width: 90px } #boot .w96 { width: 96px } #boot .w118 { width: 118px } #boot .w120 { width: 120px }
+      #boot .w210 { width: 210px } #boot .w250 { width: 250px } #boot .w338 { width: 338px }
+      #boot .h8 { height: 8px } #boot .h12 { height: 12px } #boot .h14 { height: 14px } #boot .h32 { height: 32px } #boot .h36 { height: 36px } #boot .h44 { height: 44px } #boot .h80 { height: 80px }
+      #boot .r10 { border-radius: 10px } #boot .rr { border-radius: 50% } #boot .gap { margin-top: 14px }
+      #boot .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; height: 56px; padding: 0 16px 0 12px; border-bottom: 1px solid rgba(255, 255, 255, .08) }
+      #boot .bar .l, #boot .bar .r { display: flex; align-items: center; gap: 8px } #boot .bar .r { justify-content: flex-end }
+      #boot .decks { padding: 22px 18px; flex-direction: column; gap: 10px } .boot-decks #boot .decks { display: flex }
+      #boot .chat { padding: 14px 14px 57px; flex-direction: column } .boot-chat #boot .chat { display: flex } #boot .grow { flex: 1 }
+      #boot .body { display: flex; height: calc(100% - 56px) }
+      #boot .decks, #boot .chat { display: none; flex: none; border-right: 1px solid rgba(255, 255, 255, .08) }
+      #boot .decks { width: 248px }
+      #boot .chat { width: 368px; background: #111113 }
+      @media (max-width: 900px) { #boot .decks, #boot .chat { display: none !important } }
+    </style>
   </head>
   <body>
+    <div id="boot" aria-hidden="true">
+      <div class="bar"><div class="l"><i class="w32 h32"></i><i class="w32 h32"></i><i class="w96 h12"></i></div><i class="w250 h36 r10"></i><div class="r"><i class="w64 h32"></i><i class="w118 h32"></i><i class="w32 h32 rr"></i></div></div>
+      <div class="body">
+        <div class="decks"><i class="w120 h14"></i><i class="w40 h8 gap"></i><i class="w90 h12"></i><i class="w40 h8 gap"></i><i class="w210 h44 r10"></i><i class="w210 h44 r10"></i></div>
+        <div class="chat"><div class="grow"></div><i class="w338 h80 r10"></i></div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
