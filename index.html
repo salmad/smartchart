@@ -39,8 +39,8 @@
           if (localStorage.getItem('smartchart.chatOpen') !== '0') h.className += ' boot-chat'
         } catch (e) { /* storage blocked: no frame */ }
       })()
-      /* The page itself may be served from the browser's copy while a newer one is fetched. If that copy names files a
-         newer deploy has removed, load again once, which asks for the current page. */
+      /* The browser keeps this page for ten minutes (vercel.json). If its copy names files a newer deploy has removed,
+         load again once, which asks for the current page. */
       ;(function () {
         function again() { try { if (sessionStorage.getItem('reloaded-for-assets')) return; sessionStorage.setItem('reloaded-for-assets', '1') } catch (e) { return } location.reload() }
         window.addEventListener('error', function (e) { var t = e.target; if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK') && /\/assets\//.test(t.src || t.href || '')) again() }, true)

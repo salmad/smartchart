@@ -17,7 +17,7 @@
   "headers": [
     {
       "source": "/((?!api/|mcp/|assets/|fonts/|starters/).*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, stale-while-revalidate=604800" }]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }]
     }
   ],
   "buildCommand": "npm run build",
