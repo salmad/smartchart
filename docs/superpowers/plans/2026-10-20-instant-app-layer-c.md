@@ -46,38 +46,46 @@ export function ordered(): { run<T>(row: string, send: () => Promise<T>): Promis
 ```
 `run` never rejects the chain (the next send still runs); it returns the caller's own result or rejection.
 
-- [ ] Failing tests: ops apply in order; ops for another list are ignored; rename-then-delete leaves the row gone; sends for one row run in issue order while different rows run in parallel; a failed send does not block the next; `wait` resolves after the last queued send settles (success or failure).
-- [ ] Implement; tests pass; commit.
+- [x] Failing tests: ops apply in order; ops for another list are ignored; rename-then-delete leaves the row gone; sends for one row run in issue order while different rows run in parallel; a failed send does not block the next; `wait` resolves after the last queued send settles (success or failure).
+- [x] Implement; tests pass; commit.
 
 ### Task 2: Optimistic delete and rename in the sidebar
 
 **Files:** Modify `Sidebar.tsx` (extract the actions into `sidebar/useRowActions.ts` if it passes ~300 lines); `ItemList.tsx` unchanged.
 
-- [ ] Hold `ops` in a ref plus a state tick. `loadDecks`/`loadDocs` pass `overlay(...)` of the fetched slim list in `fetchFresh` so state and the stored list both carry pending ops.
-- [ ] Delete: add op (remove row), re-render and store, fire `onDeckDeleted`/`onDocDeleted` at once, send `remove` through `ordered.run`. Failure: drop op, notice `Couldn’t delete “<name>”. It’s back in your list.`, reload the list.
-- [ ] Rename (not the open deck): close the dialog at once, op sets the name, queued step does get+save (doc: serialize the title, then `onDocRenamed`), failure: drop op, notice `Couldn’t rename “<old>”. It’s back to its old name.`, reload.
-- [ ] `RenameItem`: the deck/doc paths no longer throw into the dialog (the workspace create path still does).
-- [ ] Opening a row: `ordered.wait(id).then(() => onOpenX(id))`.
-- [ ] App's menu `deleteDeck` shares the delete path and wording.
-- [ ] Tests (vitest, node): the rule that matters is covered in Task 1; add a test for the failure-restore decision as a pure function if one is extracted. Commit.
+- [x] Hold `ops` in a ref plus a state tick. `loadDecks`/`loadDocs` pass `overlay(...)` of the fetched slim list in `fetchFresh` so state and the stored list both carry pending ops.
+- [x] Delete: add op (remove row), re-render and store, fire `onDeckDeleted`/`onDocDeleted` at once, send `remove` through `ordered.run`. Failure: drop op, notice `Couldn’t delete “<name>”. It’s back in your list.`, reload the list.
+- [x] Rename (not the open deck): close the dialog at once, op sets the name, queued step does get+save (doc: serialize the title, then `onDocRenamed`), failure: drop op, notice `Couldn’t rename “<old>”. It’s back to its old name.`, reload.
+- [x] `RenameItem`: the deck/doc paths no longer throw into the dialog (the workspace create path still does).
+- [x] Opening a row: `ordered.wait(id).then(() => onOpenX(id))`.
+- [x] App's menu `deleteDeck` shares the delete path and wording.
+- [x] Tests (vitest, node): the rule that matters is covered in Task 1; add a test for the failure-restore decision as a pure function if one is extracted. Commit.
 
 ### Task 3: Optimistic create doc
 
-- [ ] `NewDoc` closes at once. The row appears (op adds `{id, name, sub: 'just now'}`) and is marked current; navigation to the doc waits on the single save (`ordered.run(id, save)`), then `onOpenDoc(id)`.
-- [ ] Failure: drop op, navigate to `/` if the doc was open or about to open, notice `Couldn’t create the doc. Try again.`
-- [ ] Commit.
+- [x] `NewDoc` closes at once. The row appears (op adds `{id, name, sub: 'just now'}`) and is marked current; navigation to the doc waits on the single save (`ordered.run(id, save)`), then `onOpenDoc(id)`.
+- [x] Failure: drop op, navigate to `/` if the doc was open or about to open, notice `Couldn’t create the doc. Try again.`
+- [x] Commit.
 
 ### Task 4: Playwright spec for failed actions
 
 **Files:** Create `tests/browser/instant-actions.spec.ts` (pattern of `instant-lists.spec.ts`: mocked session, workspaces, lists).
 
-- [ ] Delete with the DELETE route held: the row is gone at once and stays gone after a route change; release with a 500: row returns and the sentence shows.
-- [ ] Rename with the save failing: new name shows at once; old name and sentence after the failure.
-- [ ] Create doc with the save failing: row appears, then is removed and the sentence shows.
-- [ ] Success paths: row stays removed and renamed after the server's next list.
-- [ ] Commit.
+- [x] Delete with the DELETE route held: the row is gone at once and stays gone after a route change; release with a 500: row returns and the sentence shows.
+- [x] Rename with the save failing: new name shows at once; old name and sentence after the failure.
+- [x] Create doc with the save failing: row appears, then is removed and the sentence shows.
+- [x] Success paths: row stays removed and renamed after the server's next list.
+- [x] Commit.
 
 ### Task 5: Measure and report
 
-- [ ] Same method as layers A and B, mock API (note a real-backend run needs a fresh test account; ask first). Time from click to the row changing, before and after, at Fast 4G. Append to `docs/temp/instant-app-measurements.md`.
-- [ ] Tick the checkboxes of this plan; report the table, the deviations and the known gap above.
+- [x] Same method as layers A and B, mock API (note a real-backend run needs a fresh test account; ask first). Time from click to the row changing, before and after, at Fast 4G. Append to `docs/temp/instant-app-measurements.md`.
+- [x] Tick the checkboxes of this plan; report the table, the deviations and the known gap above.
+
+## As built (deviations)
+
+- The actions live in `sidebar/useRowActions.ts`, held by `App` so a failure is still told when the sidebar is hidden and the menu's Delete deck shares the path. `Sidebar` takes it as `rows`.
+- An accepted change is not dropped at once: it stays over the lists until they are read again (`answered` / `forget`), otherwise the row flickers back or the old name returns, because nothing refetches after a success.
+- Each list's base is tagged with its stored name, so a workspace switch never stores one workspace's rows under another's key.
+- Known edge, not handled: a list read that began before a request was accepted and ends after the change is let go can show the old row until the next read.
+- The stored lists are written from the overlaid rows in the sidebar (effect), not inside `showThenFetch`.
