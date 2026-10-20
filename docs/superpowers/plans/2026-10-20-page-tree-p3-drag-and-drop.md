@@ -12,7 +12,7 @@ Spec: `docs/superpowers/specs/2026-10-19-page-tree-design.md` (section 4, "Drag 
 - `canMove(pages, ref, parent)` (`engine/pages/tree.ts`) answers 'ok' or the cycle, depth or missing-page sentence; `slotKey` picks the key. `moveTargets.ts` already turns it into per-page reasons for the picker.
 - Slide strip dragging (`Strip.tsx`) is native HTML5 drag with `draggable`, `onDragStart`, `onDragOver`, `onDrop`; Playwright's `dragTo` drives it (`add-slide.spec.ts`). No drag library is in `package.json` and none is added.
 
-## Task 1. Where a drop lands: a pure function
+## Task 1. Where a drop lands: a pure function — done
 
 - `src/app/components/sidebar/dropTarget.ts`: `dropTarget(rows, pages, dragged: PageRef, over: PageRef | 'end', y: number /* 0..1 down the row */): Drop | null`, with `Drop = { to: MoveTo; indicator: { kind: 'line'; before: PageRef | 'end'; depth: number } | { kind: 'into'; row: PageRef }; expand?: PageRef }`.
   - Top quarter of a row: the dragged page goes **before** that row (same parent).
@@ -23,7 +23,8 @@ Spec: `docs/superpowers/specs/2026-10-19-page-tree-design.md` (section 4, "Drag 
   - `expand`: the new parent, when it is collapsed, so a drop into a branch shows where the page went.
 - Tests (`tests/unit/page-drop.test.ts`): each zone; the expanded parent's bottom quarter; a deck over a doc and the reverse (kind-safe); cycle (own child, own grandchild, itself); depth 6 refused, 5 allowed; same-place no-op in each zone; `'end'`; a hidden page (not in `rows`) never targets.
 
-## Task 2. Dragging a row, with its indicator
+## Task 2. Dragging a row, with its indicator — done
+Calls made: the drag state lives in `usePageDrag.ts` (so `PageTree` grows by a few lines); the line is gold (the app's focus colour), 2 px, placed by two custom properties set from a layout effect (no inline styles, as the app's other moving marks); `into` is a 1 px gold ring on the row. Playwright delivers a drag's last `dragover` only with the next mouse event, so a mid-drag screenshot shows the state one move behind; the real browser does not.
 
 - `PageRow`: `draggable` when `canWrite && !busy`; `onDragStart` sets `effectAllowed = 'move'` and `dataTransfer.setData('application/x-occam-page', key)` (Firefox needs data to start a drag), and tells `PageTree` which row; `onDragEnd` clears. The dragged row is `opacity-40`. A viewer's rows are not draggable. Rows keep `onClick` to open: a drag does not click.
 - `PageTree`: `dragged` state; `onDragOver` on the tree div computes the row under the pointer (`e.target.closest('[data-row]')`) and `y` from `getBoundingClientRect`, calls `dropTarget`, stores the `Drop`, and `preventDefault()` only when it is non-null (so the cursor shows "not allowed" otherwise). `onDrop` calls `onMove(dragged, drop.to)`, expands `drop.expand`, and clears. The result is announced (see Task 3).

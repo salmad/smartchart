@@ -1,4 +1,4 @@
-import { useState, type FocusEventHandler, type KeyboardEventHandler } from 'react'
+import { useState, type DragEventHandler, type FocusEventHandler, type KeyboardEventHandler } from 'react'
 import { ChevronRight, FilePlus2, FileText, FolderInput, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { keyOf, MAX_DEPTH, type PageKind, type PageRef } from '@/engine/pages/tree'
@@ -28,6 +28,10 @@ interface Props {
   onDelete: (row: Row) => void
   onKeyDown: KeyboardEventHandler<HTMLDivElement>
   onFocus: FocusEventHandler<HTMLDivElement>
+  /** Dragging this row to a new place (only for editors). `dragging`: it is the one held; `into`: a drop would make it the parent. */
+  drag: { draggable: boolean; onDragStart: DragEventHandler<HTMLDivElement>; onDragEnd: DragEventHandler<HTMLDivElement> }
+  dragging: boolean
+  into: boolean
 }
 
 /** A ··· or + button that shows on hover and focus, and stays while its menu is open. */
@@ -45,7 +49,7 @@ function AddItems({ row, onAdd }: { row: Row; onAdd: (row: Row, kind: PageKind) 
 const noun = (row: Row) => row.ref.kind
 
 /** One page of the tree: chevron, kind glyph, name, and the ··· menu for editors. Its time is the tooltip. */
-export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuOpen, onOpen, onToggle, onRename, onAdd, onMove, onDelete, onKeyDown, onFocus }: Props) {
+export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuOpen, onOpen, onToggle, onRename, onAdd, onMove, onDelete, onKeyDown, onFocus, drag, dragging, into }: Props) {
   const Glyph = row.ref.kind === 'doc' ? FileText : Presentation
   // The two menus are mounted when the pointer or the keyboard first reaches the row (or a menu is asked for): a thousand rows
   // with two menus each cost more than the whole rest of the tree.
@@ -55,10 +59,10 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
   return (
     <div role="treeitem" data-row={keyOf(row.ref)} aria-level={row.depth} aria-posinset={place.index} aria-setsize={place.size}
       aria-expanded={row.hasChildren ? row.expanded : undefined} aria-selected={row.open} aria-current={row.open ? 'page' : undefined}
-      aria-disabled={busy && !row.open ? true : undefined} tabIndex={focused ? 0 : -1} title={tip} onKeyDown={onKeyDown} onFocus={(e) => { setArmed(true); onFocus(e) }} onMouseEnter={() => setArmed(true)}
+      aria-disabled={busy && !row.open ? true : undefined} tabIndex={focused ? 0 : -1} title={tip} onKeyDown={onKeyDown} onFocus={(e) => { setArmed(true); onFocus(e) }} onMouseEnter={() => setArmed(true)} {...drag}
       onClick={() => { if (!row.open && !busy) onOpen(row.ref) }}
       className={cn('group relative flex h-8 cursor-pointer items-center gap-1.5 rounded-lg pr-2 outline-none hover:pr-16 focus-within:pr-16 has-[[data-state=open]]:pr-16 transition-colors focus-visible:ring-1 focus-visible:ring-line-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
-        INDENT[shownDepth(row.depth) - 1], row.open ? 'bg-raise shadow-[0_0_0_1px_theme(colors.line)]' : 'hover:bg-panel')}>
+        INDENT[shownDepth(row.depth) - 1], row.open ? 'bg-raise shadow-[0_0_0_1px_theme(colors.line)]' : 'hover:bg-panel', dragging && 'opacity-40', into && 'bg-panel ring-1 ring-gold/70')}>
       {row.hasChildren
         ? <button type="button" tabIndex={-1} aria-label={`${row.expanded ? 'Collapse' : 'Expand'} ${row.name}`} onClick={(e) => { e.stopPropagation(); onToggle(row.ref) }}
             className="grid size-4 flex-none cursor-pointer place-items-center rounded text-ink-3 hover:text-ink">

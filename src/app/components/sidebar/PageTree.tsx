@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { FileText, Plus, Presentation } from 'lucide-react'
-import { keyOf, type PageKind, type PageRef } from '@/engine/pages/tree'
+import { keyOf, type PageKind, type PageRef, type PageSummary } from '@/engine/pages/tree'
 import { MENU_ICON, MENU_ITEM } from '../menu'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -8,6 +8,7 @@ import type { Row } from './flatten'
 import { PageRow } from './PageRow'
 import type { MoveTo } from '@/app/pages'
 import { moveStep, step, typeahead } from './treeKeys'
+import { usePageDrag } from './usePageDrag'
 
 interface Props {
   /** Null while loading. */
@@ -25,11 +26,13 @@ interface Props {
   /** Moves a page by the keyboard; resolves with the sentence when refused. */
   onMove: (ref: PageRef, to: MoveTo) => Promise<string | null>
   onDelete: (row: Row) => void
+  /** Every page, for the drag's rules (what a drop may do). */
+  pages: PageSummary[] | null
 }
 
 /** The workspace's pages as one tree: its label and +, then the rows. The keyboard is the WAI-ARIA tree's: arrows move and
     expand, Home and End jump, Enter opens, typing a letter jumps to a name, Shift+F10 opens a row's menu. */
-export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew, onRename, onPick, onMove, onDelete }: Props) {
+export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew, onRename, onPick, onMove, onDelete, pages }: Props) {
   // The row that takes Tab is the last one focused, else the open page, else the first.
   const [focusKey, setFocusKey] = useState<string | null>(null), [menu, setMenu] = useState<string | null>(null)
   const refs = useRef<HTMLDivElement>(null), typed = useRef({ text: '', at: 0 })
@@ -44,6 +47,13 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
     return out
   }, [list])
 
+  const lineEl = useRef<HTMLDivElement>(null)
+  const drag = usePageDrag({ rows: list, pages, canWrite, busy, tree: refs, onMove, onToggle })
+  // The line's place is a pair of custom properties, as the app's other moving marks are (no inline styles).
+  useLayoutEffect(() => {
+    if (!drag.line) return
+    lineEl.current?.style.setProperty('--y', `${drag.line.top}px`); lineEl.current?.style.setProperty('--x', `${drag.line.left}px`)
+  }, [drag.line])
   const focus = (ref: PageRef) => { setFocusKey(keyOf(ref)); refs.current?.querySelector<HTMLElement>(`[data-row="${CSS.escape(keyOf(ref))}"]`)?.focus() }
   // After a row vanishes or the list reloads, keep Tab on a row that is still there.
   useEffect(() => { if (focusKey && rows && !rows.some((r) => keyOf(r.ref) === focusKey)) setFocusKey(null) }, [rows, focusKey])
@@ -94,7 +104,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
           </DropdownMenu>
         )}
       </div>
-      <div ref={refs} role="tree" aria-label="Pages" className="grid grid-cols-[minmax(0,1fr)] content-start gap-px px-2 pb-3">
+      <div ref={refs} role="tree" aria-label="Pages" {...drag.treeProps} className="relative grid grid-cols-[minmax(0,1fr)] content-start gap-px px-2 pb-3">
         {rows === null && !failed && [0, 1].map((k) => <div key={k} className="mx-2 my-2 h-4 animate-pulse rounded bg-line" />)}
         {failed && <p className="px-2.5 py-2 text-[12.5px] text-ink-3">Couldn’t load your pages.</p>}
         {rows !== null && !failed && !rows.length && <p className="px-2.5 py-2 text-[12.5px] text-ink-3">No pages yet.</p>}
@@ -103,9 +113,11 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
           return (
             <PageRow key={k} row={row} place={places.get(k) ?? { index: 1, size: 1 }} focused={!!tabbable && keyOf(tabbable) === k} canWrite={canWrite} busy={busy}
               menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onToggle={(ref) => onToggle(ref)} onRename={onRename} onAdd={(r, kind) => onNew(kind, r.ref)} onMove={onPick} onDelete={onDelete}
-              onKeyDown={(e) => onKeyDown(e, row)} onFocus={(e) => { if (e.target === e.currentTarget) setFocusKey(k) }} />
+              onKeyDown={(e) => onKeyDown(e, row)} onFocus={(e) => { if (e.target === e.currentTarget) setFocusKey(k) }}
+              drag={drag.rowProps(row)} dragging={!!drag.dragged && keyOf(drag.dragged) === k} into={!!drag.into && keyOf(drag.into) === k} />
           )
         })}
+        {drag.line && <div ref={lineEl} aria-hidden data-drop-line className="pointer-events-none absolute right-2 top-[var(--y)] left-[var(--x)] h-0.5 rounded-full bg-gold" />}
       </div>
     </section>
   )

@@ -113,7 +113,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] content-start overflow-y-auto pb-4">
         <PageTree rows={rows} failed={tree.failed} canWrite={canWrite} busy={busy} onOpen={openPage} onToggle={tree.toggle}
-          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={(row) => void askDelete(row)} />
+          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={(row) => void askDelete(row)} pages={tree.pages} />
         {(tree.notice ?? said) && <p role="status" className="mx-2 mt-1 rounded-lg bg-panel px-2.5 py-2 text-[12.5px] leading-[1.4] text-ink-2">{tree.notice ?? said}</p>}
       </div>
 

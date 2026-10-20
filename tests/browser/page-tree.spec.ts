@@ -355,3 +355,26 @@ test('1,000 pages: the sidebar opens a 200-child branch quickly and keeps one ta
   expect(ms).toBeLessThan(1500)
   await expect(rows(page).and(page.locator('[tabindex="0"]'))).toHaveCount(1)
 })
+
+test('dragging a row onto the middle of another makes it that page’s last child, opening it; a reload keeps it', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await expect(rows(page)).toHaveText(['Research', 'Alpha'])
+  await row(page, 'Alpha').dragTo(row(page, 'Research'), { targetPosition: { x: 80, y: 16 } })
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Alpha'])
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '2'])
+  await expect(row(page, 'Research')).toHaveAttribute('aria-expanded', 'true')
+  await page.reload()
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '2'])
+})
+
+test('dragging a row to the top edge of a sibling puts it just before that sibling', async ({ page }) => {
+  await seed(page, ['doc:doc_r'])
+  await page.goto('/d/alpha')
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Alpha'])
+  await row(page, 'Alpha').dragTo(row(page, 'Competitors'), { targetPosition: { x: 80, y: 3 } })
+  await expect(rows(page)).toHaveText(['Research', 'Alpha', 'Competitors'])
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '2'])
+  await page.reload()
+  await expect(rows(page)).toHaveText(['Research', 'Alpha', 'Competitors'])
+})
