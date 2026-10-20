@@ -1,6 +1,6 @@
 # Page tree: docs and decks nested in the sidebar
 
-> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. Nothing is built.
+> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. P1 (data and server) is built; P2 to P4 are not.
 
 ## Why
 
@@ -116,6 +116,8 @@ Each milestone ends with its own plan and stops at the boundary (memory: inline 
 **P0. Spec.** This file; add "page tree" to the Occam Docs spec's section 3 as built-by-this-spec.
 
 **P1. Data and server.** The id check, the columns and migration, `movePage`, the cycle and depth rules, subtree delete, `parentId` on lists and creates, and the fake `Db`. *Done when:* a Neon-branch contract test (`tests/unit/db-sql.test.ts`) nests three levels, refuses a cycle, refuses a seventh level, deletes a subtree with its versions, and a viewer can't move.
+
+*Built 2026-10-20, commits `f74a3ea..` on `claude/ecstatic-cerf-51uhxf` (plan `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`, calls recorded per task): tree helpers (`src/engine/pages/tree.ts`), `parent_kind`, `parent_id` and `sort_key` on both tables with a newest-first backfill, `parent` and `sortKey` on the lists, `listPages`, new pages last under their parent, `movePage`, subtree delete with `countSubpages`, and the REST routes (`/api/pages` as a route of `api/account.ts`, `PUT ?move`, `GET ?subpages`, `parent` on create). The done-when runs in `tests/unit/db-contract.ts` on the fake and on a Neon branch (`db-sql.test.ts`, 28 tests): three levels nest, mixed kinds, a cycle and a seventh level are refused, a branch is deleted with its versions and blobs, a viewer can't move. At 1,000 pages the tree call took about 0.4 s and a branch delete about 1.3 s. Not done in P1: any UI, drag and drop, MCP. Open: the sidebar ignores the new fields until P2.*
 
 **P2. The sidebar.** One tree, expand and collapse, Add subpage, Move to… picker, the delete dialog with a count, keyboard, breadcrumb. *Done when:* the browser tests build a three-level tree and reload with it intact, and the tree works with the keyboard alone.
 

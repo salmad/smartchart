@@ -73,7 +73,7 @@ Calls made: `/api/pages` is a route of `api/account.ts` (with a `vercel.json` re
 
 Check against the M3 rule: a non-member reads as missing (404), a member who may not write gets a sentence (403).
 
-## Task 7. Contract tests
+## Task 7. Contract tests — done (cases from tasks 3 to 5 sit in db-contract.ts; the migration, null-key and 1,000-page cases are in db-sql.test.ts)
 
 In `tests/unit/db-contract.ts` (runs on the fake in `db-fake.test.ts` and on Neon in `db-sql.test.ts`):
 
@@ -89,7 +89,8 @@ In `tests/unit/db-contract.ts` (runs on the fake in `db-fake.test.ts` and on Neo
 
 Also the browser-free API test in `tests/unit/api-workspaces.test.ts`' style for the new routes.
 
-## Task 8. Close the milestone
+## Task 8. Close the milestone — done
+Results: Neon contract 28 of 28; unit suite green except the 3 `api-upstream` tests, which fail only because model keys are set in this environment; lint and build clean; browser tests 183 passed, 8 skipped, 1 failed (`doc-done.spec.ts`, which fails the same way on `origin/main`, on a Chromium one build older than Playwright expects). Measured at 1,000 pages: tree call 0.4 s, branch delete 1.3 s.
 
 - `npm test`, `npm run lint`, `npm run build`, `npm run test:browser` (the sidebar still works, since it ignores the new fields).
 - Run `tests/unit/db-sql.test.ts` on a Neon branch and record the result at the top of the spec's milestone line (as M4's note says when it could not).

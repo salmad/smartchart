@@ -55,6 +55,42 @@ describe.skipIf(!url)('SQL Db', () => {
     expect(await keys()).toEqual(first)
   }, 60_000)
 
+  it('pages an old server made after the migration have no key: they list first, and the first move gives them one', async () => {
+    const k = Date.now(), db = makeDb(url), ann = { id: `u_nk_${k}`, email: `nk.${k}@example.com`, name: 'Nk' }
+    const ws = await db.ensureWorkspace(ann)
+    await db.putDoc(ann.id, `doc_keyed_${k}`, 'Keyed', '# K', 0, ws)
+    await neon(url).query(`insert into docs (id, workspace_id, user_id, name, text) values ($1, $2, $3, 'Old', '# O')`, [`doc_nokey_${k}`, ws, ann.id])
+    const pages = await db.listPages(ann.id, ws)
+    expect(pages.find((p) => p.id === `doc_nokey_${k}`)).toMatchObject({ parent: null, sortKey: null })
+    expect(await db.movePage(ann.id, { kind: 'doc', id: `doc_nokey_${k}` }, { parent: { kind: 'doc', id: `doc_keyed_${k}` } })).toBe('ok')
+    expect((await db.listPages(ann.id, ws)).find((p) => p.id === `doc_nokey_${k}`)).toMatchObject({ parent: { kind: 'doc', id: `doc_keyed_${k}` } })
+  }, 60_000)
+
+  it('a workspace of 1,000 pages: the tree call, a deep move and a branch delete stay quick', async () => {
+    const k = Date.now(), db = makeDb(url), ann = { id: `u_big_${k}`, email: `big.${k}@example.com`, name: 'Big' }
+    const ws = await db.ensureWorkspace(ann)
+    // 1,000 docs: a chain of five, then 995 under the last, seeded in one statement.
+    await neon(url).query(
+      `insert into docs (id, workspace_id, user_id, name, text, parent_kind, parent_id, sort_key)
+       select 'big_' || $1 || '_' || n, $2, $3, 'P' || n, '# P', case when n = 0 then null else 'doc' end,
+         case when n = 0 then null when n < 5 then 'big_' || $1 || '_' || (n - 1) else 'big_' || $1 || '_4' end,
+         lpad(to_hex(n), 4, '0') || 'V' from generate_series(0, 999) n`, [String(k), ws, ann.id])
+    const t0 = Date.now()
+    expect(await db.listPages(ann.id, ws)).toHaveLength(1000)
+    const listMs = Date.now() - t0
+    const leaf = { kind: 'doc' as const, id: `big_${k}_900` }, root = { kind: 'doc' as const, id: `big_${k}_0` }
+    expect(await db.movePage(ann.id, root, { parent: leaf })).toBe('A page can’t go inside itself or its subpages.')
+    expect(await db.movePage(ann.id, { kind: 'doc', id: `big_${k}_3` }, { parent: leaf })).toBe('A page can’t go inside itself or its subpages.')
+    expect(await db.countSubpages(ann.id, root)).toBe(999)
+    const t1 = Date.now()
+    expect(await db.deleteDoc(ann.id, root.id)).toBe(true)
+    const deleteMs = Date.now() - t1
+    expect(await db.listPages(ann.id, ws)).toEqual([])
+    console.log(`1,000 pages: list ${listMs} ms, delete branch ${deleteMs} ms`)
+    expect(listMs).toBeLessThan(5_000)
+    expect(deleteMs).toBeLessThan(10_000)
+  }, 120_000)
+
   it('a deck from before workspaces moves into its maker’s workspace and no one else’s', async () => {
     const db = makeDb(url), k = Date.now()
     const ann = { id: `u_old_${k}`, email: `old.${k}@example.com`, name: 'Old' }

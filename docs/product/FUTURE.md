@@ -183,3 +183,6 @@ Left over from the doc editor (M4): image, team and logos figures in docs (they 
 
 ## 26. Docs over MCP: what M5 left (2026-10-19)
 `list_versions`, `restore_version` and comment tools for docs (decks have them); a `deck_events` for docs so the editor can say which block an agent changed; judgment checks (J9, J10) in the page badge, not only in `check_doc`; R13 treating ranges such as "3 to 6 months" as one unit (a slide check, so a change for slides too); a person-voice wording for the badge's messages, which are written for agents today; and the live run against production once M5 is deployed.
+
+## 27. Page tree: what P1 to P4 leave out (2026-10-20)
+A Trash with restore for deleted pages (a delete of a branch is permanent today, with a count in the dialog); moving a subtree to another workspace (#23); a push when someone moves the page you have open (the breadcrumb is stale until the next load); a block-level retry when two moves land between the same neighbours (they share a key until the next move; the order stays stable by id); a depth check inside the move's write (the cycle check is there, depth is checked just before).
