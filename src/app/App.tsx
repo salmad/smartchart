@@ -319,8 +319,11 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
   const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
+  // The gallery is for an empty deck. On a route that opens a deck it waits for boot, so a deck about to open is not
+  // preceded by thirty slide tiles measured and drawn for nothing.
+  const opening = !booted && (route.name === 'deck' || route.name === 'home')
   const stage = s.view === 'landing'
-    ? <AddSlide deck={deck} current={0} onUse={onPick} />
+    ? (opening ? undefined : <AddSlide deck={deck} current={0} onUse={onPick} />)
     : s.view === 'add'
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined

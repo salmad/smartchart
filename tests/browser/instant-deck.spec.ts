@@ -62,3 +62,16 @@ test('a role downgrade to viewer makes the cached deck read-only', async ({ page
   release()
   await expect(page.locator('textarea')).toHaveCount(0)
 })
+
+test('the starter gallery is never drawn while a known deck is opening', async ({ page }) => {
+  // Thirty slide tiles measured and drawn for a deck that is about to replace them cost most of a repeat visit's start.
+  await page.addInitScript(() => {
+    ;(window as unknown as { __tiles: boolean }).__tiles = false
+    new MutationObserver(() => { if (document.querySelector('[data-starter]')) (window as unknown as { __tiles: boolean }).__tiles = true }).observe(document, { childList: true, subtree: true })
+  })
+  const { release } = await twoVisits(page, {})
+  await expect.poll(() => title(page), { timeout: 15000 }).toBe('Market sizing')
+  await page.waitForTimeout(500)
+  expect(await page.evaluate(() => (window as unknown as { __tiles: boolean }).__tiles)).toBe(false)
+  release()
+})
