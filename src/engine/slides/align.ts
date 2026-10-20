@@ -27,3 +27,7 @@ export function columnAlign(t: Pick<Table, "columns" | "rows">): Align[] {
     return vals.every((v) => NUMERIC.test(v)) ? "num" : "text";
   });
 }
+
+/** A column's own alignment when the writer set one; null for `auto` (or none): the content decides then. */
+export type Place = "left" | "centre" | "right";
+export const placeOf = (col: Table["columns"][number] | undefined): Place | null => (col?.align && col.align !== "auto" ? col.align : null);

@@ -19,10 +19,13 @@ export interface SeriesColours { slots: (Slot | null)[]; labelled: boolean[] }
 
 const niceStep = (raw: number) => { const p = 10 ** Math.floor(Math.log10(raw)), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; };
 
+/** A chart of only lines draws as lines (end labels, no legend); its focus series is shaded unless it says `area: false`. */
+export const drawsAsLines = (c: Chart): boolean => (c.kind || "bars") === "bars" && (c.series ?? []).every((s) => s.mark === "line");
+
 /** `colours`: { slots, labelled } from allocate(); computed here when a caller has none. */
 export function drawChart(host: HTMLElement, spec: Chart, markers: Marker[] = [], colours: SeriesColours = seriesSlots(spec)): void {
   const kind = spec.kind || "bars", series = spec.series ?? [];
-  const allLines = kind === "bars" && series.every((s) => s.mark === "line");
+  const allLines = drawsAsLines(spec);
   // One series needs no legend: the title names it.
   const legend = kind !== "bars" || allLines || series.length < 2 ? "" : `<div class="legend">${series.map((s, i) =>
     `<span class="c-${colours.slots[i]}"><i class="${s.mark === "line" ? "line" : ""}"></i>${esc(s.name)}</span>`).join("")}</div>`;
@@ -89,13 +92,14 @@ function bars(box: HTMLElement, chart: Chart, W: number, H: number, markers: Mar
   spec.categories.forEach((c, i) => { t += lbl("cat", xc(i), P.t + ph + 16, "tc", esc(c)); });
   spec.series.forEach((s, si) => {
     if (s.mark === "line") return;
-    const j = B.indexOf(s), f = pct ? "{v}%" : s.format || spec.format, top1 = stacked && j === B.length - 1, slot = slots[si];
+    const j = B.indexOf(s), f = pct ? "{v}%" : s.format || spec.format, top1 = stacked && j === B.length - 1;
     s.values.forEach((raw, i) => {
+      const slot = spec.highlight?.series === si && spec.highlight.index === i ? "focus" : slots[si];
       const v = val(s, i), x = barX(s, i), w = bw - 8, broken = brk && brk.series === si && brk.index === i;
       const bottom = stacked ? yb(acc[i]) : zero, top = stacked ? yb(acc[i] + Math.max(0, v)) : broken ? yb(bMax) - ph * .08 : yb(v), h = bottom - top;
-      if (h > .5) g += `<path class="bar c-${slot}" data-series="${si}" d="${stacked && !top1 ? `M${x},${bottom}V${top}H${x + w}V${bottom}Z` : topRounded(x, top, w, h, 6)}"/>`;
+      if (h > .5) g += `<path class="bar c-${slot}" data-series="${si}" data-i="${i}" d="${stacked && !top1 ? `M${x},${bottom}V${top}H${x + w}V${bottom}Z` : topRounded(x, top, w, h, 6)}"/>`;
       // A bar below zero hangs from the zero line, rounded at its foot, with its value under it.
-      else if (h < -.5) g += `<path class="bar c-${slot}" data-series="${si}" d="${topRounded(x, -top, w, -h, 6)}" transform="scale(1,-1)"/>`;
+      else if (h < -.5) g += `<path class="bar c-${slot}" data-series="${si}" data-i="${i}" d="${topRounded(x, -top, w, -h, 6)}" transform="scale(1,-1)"/>`;
       // The axis break: the outlier bar is cut, and its label keeps the true value.
       if (broken) { const yk = yb(bMax * .88); g += `<path class="brk" d="M${x - 8},${yk + 12}L${x + w + 8},${yk - 4}M${x - 8},${yk + 26}L${x + w + 8},${yk + 10}"/>`; }
       // Stacked: a segment's value sits inside it, hidden when the segment is shorter than its label (spec 4.2a).
@@ -188,7 +192,7 @@ function lines(box: HTMLElement, chart: Chart, W: number, H: number, _markers: M
   const endY = Object.fromEntries(ends.map((e) => [e.i, e.y]));
   spec.series.forEach((s, si) => {
     const pts = s.values.map((v, i) => [x(i), y(v)]), d = pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join(""), slot = slots[si];
-    if (s.area && slot === "focus") g += `<path d="${d}L${pw},${y(0)}L0,${y(0)}Z" fill="url(#gA)"/>`;
+    if (s.area !== false && slot === "focus") g += `<path d="${d}L${pw},${y(0)}L0,${y(0)}Z" fill="url(#gA)"/>`;
     g += `<path class="ln c-${slot} ${s.dashed ? "dashed" : ""}" data-series="${si}" d="${d}"/>`;
     const [lx, ly] = pts.at(-1) ?? [0, 0];
     g += `<circle class="pt solid c-${slot}" cx="${lx}" cy="${ly}" r="10"/>`;
