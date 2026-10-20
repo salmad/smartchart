@@ -118,6 +118,16 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     savedKey.current = now && editKey(now)
   }, [app, measurer, say, repo])
 
+  // The copy of a deck kept in this browser (the one asked for, or at / the one worked on last), primed into the repo so a
+  // save made before the server is heard from carries the revision it was read at. A copy kept because saves failed
+  // (backup) is older business and goes the usual way.
+  const readKept = useCallback(async (id: string | undefined) => {
+    const kept = cacheId ? await readCachedDeck(cacheId, id) : null
+    if (!kept || (backup && (await backup.get(kept.deck.id)))) return null
+    repo.seed?.(kept.deck, kept.rev, kept.role)
+    return kept
+  }, [cacheId, backup, repo])
+
   // After a deck opens from this browser's copy: read the server's, merge what changed by slide id (as when another
   // writer changed it), take its role, and if the deck is gone and nothing was edited meanwhile, start a new one.
   const syncRef = useRef<((force?: boolean) => Promise<'gone' | undefined>) | null>(null)
@@ -142,10 +152,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     bootStarted.current = true
     void (async () => {
       // The copy of the deck kept in this browser opens at once; the server is asked what changed after it is on screen.
-      // A copy kept because saves failed (backup) is older business and goes the usual way.
-      const kept = cacheId && (route.name === 'deck' || route.name === 'home') ? await readCachedDeck(cacheId, route.name === 'deck' ? route.id : undefined) : null
-      const fromCache = kept && !(backup && (await backup.get(kept.deck.id))) ? kept : null
-      if (fromCache) repo.seed?.(fromCache.deck, fromCache.rev, fromCache.role)
+      const fromCache = route.name === 'deck' || route.name === 'home' ? await readKept(route.name === 'deck' ? route.id : undefined) : null
       // Signed in, / is the editor on the deck worked on last in the open workspace; only that deck is read in full.
       const recent = fromCache || route.name !== 'home' ? undefined : (await repo.list((await ws.ready)?.id).catch(() => []))[0]
       const id = route.name === 'deck' ? route.id : recent?.id
@@ -167,7 +174,7 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
       // Only a prompt waiting to be sent needs the answer first.
       if (pending && (await health) && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
     })()
-  }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready, cacheId, refreshKept])
+  }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready, readKept, refreshKept])
 
   // Writes made elsewhere (an agent, another tab) are merged in by slide id; the agent hears which slides changed.
   const onMerged = useCallback((changed: string[], by: string[]) => {
@@ -208,8 +215,15 @@ export function App({ route, account, repo, backup, workspaces, docs, onWorkspac
     shown.current = where
     if (route.name === 'new') { if (app.getState().items.length || app.getState().history.length) newDeck(); return }
     if (route.name !== 'deck' || route.id === app.getState().deckId) return
-    void findDeck(route.id, repo, backup).then((d) => { if (d) openDeck(d); else { newDeck(); say(MISSING) } })
-  }, [route, where, booted, app, repo, backup, openDeck, newDeck, say])
+    const id = route.id
+    void (async () => {
+      // A deck seen before opens from this browser's copy at once (hovering its row in the sidebar reads it ahead).
+      const kept = await readKept(id)
+      if (kept) { openDeck(kept.deck); void refreshKept(id); return }
+      const d = await findDeck(id, repo, backup)
+      if (d) openDeck(d); else { newDeck(); say(MISSING) }
+    })()
+  }, [route, where, booted, app, repo, backup, openDeck, newDeck, say, readKept, refreshKept])
   // Leaving a deck saves it now rather than after the usual pause.
   const leaveTo = useCallback((path: string) => {
     if (locked(app.getState())) return

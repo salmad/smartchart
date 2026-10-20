@@ -18,7 +18,7 @@ async function twoVisits(page: Page, second: { status?: number; row?: ReturnType
   let hold = false // armed for the second visit (the first one fetches twice in dev, under StrictMode)
   let release: () => void = () => {}
   const held = new Promise<void>((ok) => { release = ok })
-  let current = row('Market sizing', 1)
+  const current = row('Market sizing', 1)
   await page.route('**/api/decks**', async (r) => {
     const q = new URL(r.request().url()).searchParams
     if (r.request().method() === 'PUT') return r.fulfill({ json: { ok: true, rev: 9 } })

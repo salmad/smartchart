@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { Button } from '../ui/button'
@@ -17,6 +18,8 @@ interface Props {
   canWrite: boolean
   busy: boolean
   onOpen: (id: string) => void
+  /** Called when a row has been pointed at or focused for a moment: read what opening it needs ahead of the click. */
+  onAhead?: (id: string) => void
   onNew: () => void
   onRename: (row: ListRow) => void
   onDelete: (row: ListRow) => void
@@ -25,8 +28,11 @@ interface Props {
 const noun = { Docs: 'doc', Decks: 'deck' } as const
 
 /** One section of the sidebar: its label and New, then its rows, newest first, each with Rename and Delete in its ··· menu. */
-export function ItemList({ title, rows, error, current, canWrite, busy, onOpen, onNew, onRename, onDelete }: Props) {
+export function ItemList({ title, rows, error, current, canWrite, busy, onOpen, onAhead, onNew, onRename, onDelete }: Props) {
   const one = noun[title]
+  const pause = useRef<ReturnType<typeof setTimeout>>()
+  const ahead = (id: string) => { clearTimeout(pause.current); if (onAhead) pause.current = setTimeout(() => onAhead(id), 100) }
+  useEffect(() => () => clearTimeout(pause.current), [])
   return (
     <section className="grid content-start">
       <div className="flex h-9 items-center justify-between pl-[18px] pr-3">
@@ -45,7 +51,7 @@ export function ItemList({ title, rows, error, current, canWrite, busy, onOpen, 
           const open = r.id === current
           return (
             <li key={r.id} className="group relative">
-              <button type="button" onClick={() => { if (!open) onOpen(r.id) }} disabled={busy && !open} aria-current={open ? 'page' : undefined}
+              <button type="button" onClick={() => { if (!open) onOpen(r.id) }} onPointerEnter={() => ahead(r.id)} onFocus={() => ahead(r.id)} onPointerLeave={() => clearTimeout(pause.current)} onBlur={() => clearTimeout(pause.current)} disabled={busy && !open} aria-current={open ? 'page' : undefined}
                 className={cn('grid w-full cursor-pointer gap-0.5 rounded-lg py-2 pl-2.5 pr-9 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-line-2 disabled:cursor-not-allowed disabled:opacity-45',
                   open ? 'bg-raise shadow-[0_0_0_1px_theme(colors.line)]' : 'hover:bg-panel')}>
                 <span className={cn('truncate text-[13px]', open ? 'text-ink' : 'text-ink-2')}>{r.name}</span>

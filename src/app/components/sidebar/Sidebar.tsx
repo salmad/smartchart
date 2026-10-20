@@ -54,13 +54,13 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   const loaded = ws.list !== null
   // The lists of this workspace stored in this browser show first (once per workspace: later reads would put an older
   // copy over a rename that just happened), then the server's answer replaces them. The dev account stores nothing.
-  const account = me === DEV_ACCOUNT.id ? undefined : me, shown = useRef<Record<Kind, string | null>>({ deck: null, doc: null })
+  const account = me === DEV_ACCOUNT.id ? undefined : me, shown = useRef<Record<Kind, string | null>>({ deck: null, doc: null }), ahead = useRef(new Set<string>())
   const loadDecks = useCallback(async () => {
     if (!loaded) return
     const name = `decks:${wsId ?? 'all'}`
     const ok = await showThenFetch(shown.current.deck === name ? undefined : account, name,
       async () => (await repos.decks.list(wsId ?? undefined)).map(({ id, name, updated, slides }) => ({ id, name, updated, slides })), isSlimDecks,
-      (l) => { shown.current.deck = name; setDecks(l.filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` }))) })
+      (l) => { shown.current.deck = name; ahead.current.clear(); setDecks(l.filter((d) => d.slides > 0).map((d) => ({ id: d.id, name: d.name, sub: `${slides(d.slides)} · ${ago(d.updated)}` }))) })
     setFailed((f) => ({ ...f, deck: !ok }))
   }, [repos.decks, wsId, loaded, account])
   const loadDocs = useCallback(async () => {
@@ -74,6 +74,14 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
   // Read again when the open deck or doc changes, so one saved for the first time shows with its real time.
   useEffect(() => { void loadDecks() }, [loadDecks, open.deck.id])
   useEffect(() => { void loadDocs() }, [loadDocs, open.doc, open.docTick])
+
+  // Pointing at a deck for a moment reads it into this browser, so the click opens it without waiting. Once per deck until
+  // the list is read again; never the open deck, whose revision and common ancestor a read would replace.
+  const readAhead = (id: string) => {
+    if (id === open.deck.id || ahead.current.has(id) || !account) return
+    ahead.current.add(id)
+    void repos.decks.get(id).catch(() => undefined)
+  }
 
   // The open deck lists before its first save, and always under its live name.
   const { deck } = open, onDeck = open.doc === null
@@ -143,7 +151,7 @@ export function Sidebar({ ws, repos, open, busy, onOpenDeck, onNewDeck, onDeckDe
         {(wsId || !loaded) && <ItemList title="Docs" rows={wsId ? docs : null} error={failed.doc} current={open.doc} canWrite={canWrite} busy={busy}
           onOpen={onOpenDoc} onNew={() => setMaking(true)} onRename={(row) => setRenaming({ kind: 'doc', row })} onDelete={(row) => setDoomed({ kind: 'doc', row })} />}
         <ItemList title="Decks" rows={loaded ? deckRows : null} error={failed.deck} current={onDeck ? deck.id : null} canWrite={canWrite} busy={busy}
-          onOpen={onOpenDeck} onNew={onNewDeck} onRename={(row) => setRenaming({ kind: 'deck', row })} onDelete={(row) => setDoomed({ kind: 'deck', row })} />
+          onOpen={onOpenDeck} onAhead={readAhead} onNew={onNewDeck} onRename={(row) => setRenaming({ kind: 'deck', row })} onDelete={(row) => setDoomed({ kind: 'deck', row })} />
       </div>
 
       <RenameItem open={renaming && (renaming.kind === 'workspace'
