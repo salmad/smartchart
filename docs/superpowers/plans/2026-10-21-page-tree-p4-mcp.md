@@ -15,7 +15,9 @@ Spec: `docs/superpowers/specs/2026-10-19-page-tree-design.md` (P4: "`parentId`, 
 - `tests/unit/tools-registry.test.ts` snapshots every tool's MCP view, so adding a tool or a parameter changes `__snapshots__/tools-registry.test.ts.snap` (update it, and read the diff).
 - `tests/unit/doc-tools.test.ts`, `deck-service.test.ts`, `mcp.test.ts` run tools against the fake `Db` (`tests/unit/fake-db.ts`), which already enforces the tree rules.
 
-## Task 1. `parent` on create_doc and create_deck
+## Task 1. `parent` on create_doc and create_deck — done
+
+Calls made: the workspace question needed no new lookup: the server's `place` (P1) already takes the parent's workspace and refuses a different `workspaceId` ("No such page."), so the services only stop defaulting to the most recently opened workspace when a parent is given. A `'foreign'` put with a parent can only be a viewer (an unreadable parent is refused earlier as "No such page."), so it answers with the viewer sentence. The page schema and the shape check live in `src/engine/tools/pages.ts` (also where `move_page` goes). Tests are in `tests/unit/tools-parent.test.ts`; the registry snapshot changed only for the two create tools.
 
 - Both tools get an optional `parent: { kind: 'doc' | 'deck', id: string }` (see Calls on why an object and not `parentId`). Description: "Put it under this page (a doc or a deck; it goes last among that page's subpages). Without it, the page is at the top level of the workspace." It must be in the same workspace; with `parent` and no `workspaceId`, the workspace is the parent's, not the most recently opened one.
 - `HandlerOut` gains `parent?: PageRef`. The handlers validate the shape only (kind is `doc` or `deck`, `id` matches the id pattern: `pageRef` from `api/_lib/pages.ts` is server-side, so the schema in the tool carries the enum and the handler a small shape check, `bad_input` otherwise). Everything else is the server's: `doc-service.ts` and `deck-service.ts` pass `out.parent` to `putDoc` / `putDeck`.

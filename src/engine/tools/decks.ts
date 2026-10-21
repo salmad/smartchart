@@ -3,6 +3,7 @@ import type { Style, Theme } from "../types.js";
 import { getAt } from "../slides/edit.js";
 import { openComments } from "../comments.js";
 import { storylineRows } from "./doc.js";
+import { pageArg, pageSchema, type PageArg } from "./pages.js";
 import { IDEMPOTENT, READ, ToolError, WRITE, tool, type DeckDoc, type ToolContext } from "./types.js";
 
 const DECK_ID = { type: "string", description: "The deck id from list_decks or create_deck." } as const;
@@ -38,13 +39,14 @@ export const deckTools = [
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDecks(limit, cursor, workspaceId) }) }),
 
-  tool<{ style: Style; name?: string; theme?: Theme; accent?: string; workspaceId?: string }>({ name: "create_deck", title: "Create a deck", group: "decks", scope: "create", annotations: WRITE,
-    description: "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. Returns the deck with its editor link: give it to the user so they can watch.",
-    input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE, name: { type: "string" }, theme: THEME, accent: ACCENT, workspaceId: WORKSPACE_ID } },
-    run: async (ctx, { style, name, theme = "ink", accent, workspaceId }) => {
+  tool<{ style: Style; name?: string; theme?: Theme; accent?: string; workspaceId?: string; parent?: PageArg }>({ name: "create_deck", title: "Create a deck", group: "decks", scope: "create", annotations: WRITE,
+    description: "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the deck with its editor link: give it to the user so they can watch.",
+    input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE, name: { type: "string" }, theme: THEME, accent: ACCENT, workspaceId: WORKSPACE_ID, parent: pageSchema("Put the deck under this page.") } },
+    run: async (ctx, { style, name, theme = "ink", accent, workspaceId, parent }) => {
+      const under = parent === undefined ? undefined : pageArg(parent, "parent");
       checkAccent(theme, accent);
       const doc: DeckDoc = { id: ctx.port.newDeckId(), name: name?.trim().slice(0, 200) || "Untitled deck", style, theme, accent: accent ?? null, slides: [], comments: [] };
-      return { result: deckView(ctx, doc, 1), deck: doc, named: !!name, workspaceId, events: [{ slideId: null, what: "deck", paths: ["created"] }] };
+      return { result: { ...deckView(ctx, doc, 1), parent: under ?? null }, deck: doc, named: !!name, workspaceId, ...(under ? { parent: under } : {}), events: [{ slideId: null, what: "deck", paths: ["created"] }] };
     } }),
 
   tool<{ deckId: string }>({ name: "get_deck", title: "Open a deck", group: "decks", scope: "deck", annotations: READ,

@@ -187,7 +187,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create a deck",
     },
-    "description": "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. Returns the deck with its editor link: give it to the user so they can watch.",
+    "description": "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the deck with its editor link: give it to the user so they can watch.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -197,6 +197,28 @@ exports[`registry > the three views agree (published contract: only additions al
         },
         "name": {
           "type": "string",
+        },
+        "parent": {
+          "additionalProperties": false,
+          "description": "Put the deck under this page.",
+          "properties": {
+            "id": {
+              "description": "The docId or deckId.",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "doc",
+                "deck",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "id",
+          ],
+          "type": "object",
         },
         "style": {
           "enum": [
@@ -817,13 +839,35 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create a doc",
     },
-    "description": "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    "description": "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
         "accent": {
           "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
           "type": "string",
+        },
+        "parent": {
+          "additionalProperties": false,
+          "description": "Put the doc under this page.",
+          "properties": {
+            "id": {
+              "description": "The docId or deckId.",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "doc",
+                "deck",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "id",
+          ],
+          "type": "object",
         },
         "subtitle": {
           "type": "string",

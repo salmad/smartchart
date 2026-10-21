@@ -53,9 +53,9 @@ export interface ToolContext {
 export type Scope = "account" | "deck" | "create" | "doc" | "createDoc";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
 /** `label`: the version's label when the write is not a user request (a restore). `workspaceId`: where a new deck goes
-    (scope "create" or "createDoc"; else the workspace most recently used). `file`: the doc to save (scopes "doc" and "createDoc"); `what`: a version's label when
+    (scope "create" or "createDoc"; else the workspace most recently used). `parent`: the page a new one goes under, in that page's workspace. `file`: the doc to save (scopes "doc" and "createDoc"); `what`: a version's label when
     the write is not a user request, so it stands alone in Versions. */
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string }
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string; parent?: { kind: "doc" | "deck"; id: string } }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";
