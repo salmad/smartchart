@@ -8,6 +8,13 @@ import { pageTreeFor } from './sharedTree'
 
 export interface Crumb { ref: PageRef; name: string }
 
+/** The open page's name as the shared list has it: what the header shows before the page itself has been read. */
+export function usePageName({ repo, workspaceId, account, open }: { repo: PageRepo; workspaceId: string | null; account?: string; open: PageRef | null }): string | undefined {
+  const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? '', account), [repo, workspaceId, account])
+  const { pages } = useSyncExternalStore(tree.subscribe, tree.getState)
+  return open ? pages?.find((p) => p.kind === open.kind && p.id === open.id)?.name : undefined
+}
+
 /** `saved`: the open deck has a slide, so the server has its row; read the list again when that turns true. `tick`: a doc was saved. */
 export function usePageCrumbs({ repo, workspaceId, account, open, saved, tick }: { repo: PageRepo; workspaceId: string | null; account?: string; open: PageRef | null; saved: boolean; tick: number }): Crumb[] {
   const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? '', account), [repo, workspaceId, account])
