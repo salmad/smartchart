@@ -1205,5 +1205,123 @@ exports[`registry > the three views agree (published contract: only additions al
     "name": "check_doc",
     "title": "Check the doc",
   },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Move a page",
+    },
+    "description": "Move a doc or a deck to another place in the workspace tree: under a parent (a doc or a deck), or to the top level with parent null. It goes last among that parent's subpages unless before or after names one of them (a sibling under the same parent). Its own subpages move with it. Both pages must be in the same workspace. A move is not a version: it changes where the page sits, not what it says. list_docs and list_decks show each page's parent.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "additionalProperties": false,
+          "description": "Put it just after this sibling.",
+          "properties": {
+            "id": {
+              "description": "The docId or deckId.",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "doc",
+                "deck",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "id",
+          ],
+          "type": "object",
+        },
+        "before": {
+          "additionalProperties": false,
+          "description": "Put it just before this sibling.",
+          "properties": {
+            "id": {
+              "description": "The docId or deckId.",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "doc",
+                "deck",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "id",
+          ],
+          "type": "object",
+        },
+        "page": {
+          "additionalProperties": false,
+          "description": "The page to move.",
+          "properties": {
+            "id": {
+              "description": "The docId or deckId.",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "doc",
+                "deck",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "id",
+          ],
+          "type": "object",
+        },
+        "parent": {
+          "description": "The page it goes under, or null for the top level.",
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "description": "The page it goes under.",
+              "properties": {
+                "id": {
+                  "description": "The docId or deckId.",
+                  "type": "string",
+                },
+                "kind": {
+                  "enum": [
+                    "doc",
+                    "deck",
+                  ],
+                  "type": "string",
+                },
+              },
+              "required": [
+                "kind",
+                "id",
+              ],
+              "type": "object",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+      },
+      "required": [
+        "page",
+        "parent",
+      ],
+      "type": "object",
+    },
+    "name": "move_page",
+    "title": "Move a page",
+  },
 ]
 `;

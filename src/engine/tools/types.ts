@@ -30,6 +30,8 @@ export interface AccountPort {
   newDocId(): string;
   /** One workspace's docs: the one named, else the one most recently used. */
   listDocs(limit: number, cursor: number, workspaceId?: string): Promise<{ workspaceId: string; docs: { docId: string; name: string; updated: number }[]; next?: number }>;
+  /** Moves a page in its workspace's tree: 'ok', 'foreign' (not found or not readable), or the sentence saying why not. */
+  movePage(page: { kind: "doc" | "deck"; id: string }, to: { parent: { kind: "doc" | "deck"; id: string } | null; before?: { kind: "doc" | "deck"; id: string }; after?: { kind: "doc" | "deck"; id: string } }): Promise<"ok" | string>;
   /** The deck's versions, newest first, and the slides their trees name. */
   versions(deckId: string): Promise<Version[]>;
   blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;

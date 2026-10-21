@@ -62,6 +62,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const all = await db.listDocs(uid, ws), page = all.slice(cursor, cursor + limit)
       return { workspaceId: ws, docs: page.map((d) => ({ docId: d.id, name: d.name, updated: d.updated })), ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
     },
+    movePage: (page, to) => db.movePage(uid, page, to),
     versions: (deckId) => db.listVersions(uid, deckId),
     blobs: (deckId, hashes) => db.blobs(uid, deckId, hashes),
     addImage: async (img) => {
