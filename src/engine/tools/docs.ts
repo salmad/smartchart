@@ -54,7 +54,7 @@ function written(ctx: ToolContext, file: DocFile, e: Edit, extra: Record<string,
 
 export const docTools = [
   tool<{ limit?: number; cursor?: number; workspaceId?: string }>({ name: "list_docs", title: "List docs", group: "docs", scope: "account", annotations: READ,
-    description: "A workspace's docs, newest first: id, name and last change. Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    description: "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc or a deck, or null at the top level). Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDocs(limit, cursor, workspaceId) }) }),
 

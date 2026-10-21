@@ -46,7 +46,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
       if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
       const all = await db.listDecks(uid, ws), page = all.slice(cursor, cursor + limit)
-      return { workspaceId: ws, decks: page.map((d) => ({ deckId: d.id, name: d.name, style: d.style === 'pitch' ? 'pitch' : 'consulting', slides: d.slides, updated: d.updated, shared: !!d.shared })),
+      return { workspaceId: ws, decks: page.map((d) => ({ deckId: d.id, name: d.name, style: d.style === 'pitch' ? 'pitch' : 'consulting', slides: d.slides, updated: d.updated, shared: !!d.shared, parent: d.parent })),
         ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
     },
     share: async (deckId, on) => {
@@ -60,7 +60,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
       if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
       const all = await db.listDocs(uid, ws), page = all.slice(cursor, cursor + limit)
-      return { workspaceId: ws, docs: page.map((d) => ({ docId: d.id, name: d.name, updated: d.updated })), ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
+      return { workspaceId: ws, docs: page.map((d) => ({ docId: d.id, name: d.name, updated: d.updated, parent: d.parent })), ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
     },
     movePage: (page, to) => db.movePage(uid, page, to),
     versions: (deckId) => db.listVersions(uid, deckId),

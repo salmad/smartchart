@@ -34,7 +34,9 @@ Calls made: annotated `IDEMPOTENT` (the contract test shows the same move twice 
 - A move writes no version and bumps no revision (P1's call: a page's place is not its content). Say so in the description so an agent does not look for a version.
 - Tests (`tests/unit/pages-tool.test.ts`, on the fake): move a doc under a deck and back to the top; before and after a sibling put it there; into its own child is refused (cycle sentence); a seventh level is refused; a viewer is refused; a page in another user's workspace is `not_found` (not "refused", so it does not confirm it exists); both `before` and `after` is `bad_input`; the second identical call is a no-op (decides the annotation).
 
-## Task 3. `list_docs` and `list_decks` return parents; the guide line
+## Task 3. `list_docs` and `list_decks` return parents; the guide line — done
+
+Calls made: rows carry `parent` (ref or null) and no sortKey; order unchanged. The guide line is one sentence in `instructions.ts` (shortened to fit) and one bullet in the doc guide. The instructions token budget rose 470 to 495 for that sentence (it was at 467). Registry snapshot diff: only the two list descriptions. Test in `tests/unit/tools-parent.test.ts`.
 
 - `AccountPort.listDocs` and `listDecks` rows gain `parent: { kind, id } | null` (the port already has it from the `Db` rows; it just stops dropping it). Order stays "newest first" (it is a list, not the tree); update the two tool descriptions to say each row says where the page sits ("`parent` is the page it sits under, or null at the top level; a parent can be a doc or a deck"). No `sortKey` in the answer: the agent works with `before` / `after`, never with a key.
 - The one guide line, in `instructions.ts` (the MCP server's instructions, where docs and decks are introduced) and in the doc and deck guides (`guide-text.ts`), short: "Pages nest: pass `parent` to `create_doc` or `create_deck` to start one under another page, and `move_page` to move one; keep a deck's supporting docs under the deck." (What to nest is the agent's judgement; the line only says the ability exists. Thin harness: no nesting policy in code.)

@@ -35,7 +35,7 @@ function checkAccent(theme: Theme, accent: string | null | undefined) {
 
 export const deckTools = [
   tool<{ limit?: number; cursor?: number; workspaceId?: string }>({ name: "list_decks", title: "List decks", group: "decks", scope: "account", annotations: READ,
-    description: "A workspace's decks, newest first: id, name, style, number of slides, last change and whether a share link is on. Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    description: "A workspace's decks, newest first: id, name, style, number of slides, last change, whether a share link is on and parent (the page it sits under, a doc or a deck, or null at the top level). Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDecks(limit, cursor, workspaceId) }) }),
 

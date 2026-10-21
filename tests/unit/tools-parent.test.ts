@@ -63,3 +63,16 @@ describe('create_doc and create_deck under a parent', () => {
     expect((await ok('create_deck', { style: 'pitch' })).parent).toBeNull()
   })
 })
+
+describe('list_docs and list_decks say where each page sits', () => {
+  it('a nested page shows its parent, a top-level one null', async () => {
+    const { ok, acme } = await setup()
+    const top = await ok('create_doc', { title: 'Research', workspaceId: acme }), parent = { kind: 'doc', id: String(top.docId) }
+    const sub = await ok('create_doc', { title: 'Notes', parent }), deck = await ok('create_deck', { style: 'pitch', name: 'Pack', parent })
+    await ok('create_block', { docId: String(sub.docId), after: 'end', markdown: '## One' }) // a deck needs a slide to list; docs list as they are
+    const docs = (await ok('list_docs', { workspaceId: acme })).docs as { docId: string; parent: unknown }[]
+    expect(Object.fromEntries(docs.map((d) => [d.docId, d.parent]))).toEqual({ [String(top.docId)]: null, [String(sub.docId)]: parent })
+    const decks = (await ok('list_decks', { workspaceId: acme })).decks as { deckId: string; parent: unknown }[]
+    expect(decks.find((d) => d.deckId === deck.deckId)?.parent).toEqual(parent)
+  })
+})

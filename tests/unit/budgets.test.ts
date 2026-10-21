@@ -9,7 +9,7 @@ const list = JSON.stringify({ templates: OFFERED.map((id) => ({ template: id, su
 
 describe('context budgets (tokens ≈ chars / 4)', () => {
   // 400 for decks; the docs paragraph (spec 2026-10-19 §6) is about 60 more.
-  it('instructions ≤ 470', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(470))
+  it('instructions ≤ 495', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(495))
   it('get_guide doc ≤ 1100', () => expect(tokens(docGuideText())).toBeLessThanOrEqual(1100))
   it.each(['consulting', 'pitch'] as const)('get_guide %s ≤ 2000', (s) => expect(tokens(guideText(s))).toBeLessThanOrEqual(2000))
   // 660 for fifteen templates (450 for ten, 400 for seven): about 44 tokens each.

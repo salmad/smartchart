@@ -156,7 +156,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List decks",
     },
-    "description": "A workspace's decks, newest first: id, name, style, number of slides, last change and whether a share link is on. Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "description": "A workspace's decks, newest first: id, name, style, number of slides, last change, whether a share link is on and parent (the page it sits under, a doc or a deck, or null at the top level). Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -808,7 +808,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List docs",
     },
-    "description": "A workspace's docs, newest first: id, name and last change. Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "description": "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc or a deck, or null at the top level). Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
