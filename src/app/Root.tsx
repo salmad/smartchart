@@ -1,24 +1,33 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { App } from './App'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from './auth'
-import { Shared } from './components/Shared'
-import { Invite } from './components/Invite'
-import { SignIn } from './components/SignIn'
-import { Site } from './components/landing/Site'
 import { devAccount } from './dev-account'
+import { bootDone } from './boot'
+import { cachedDeckRepo } from './cached-decks'
 import { remoteDeckRepo } from './remote'
 import { go, useRoute } from './route'
-import { Present } from './components/Present'
-import { Presenter } from './components/Presenter'
 import { localDeckRepo } from './store'
 import { localDocRepo, remoteDocRepo } from './docs'
 import { localPageRepo, remotePageRepo } from './pages'
 import { localWorkspaceRepo, remoteWorkspaceRepo } from './workspaces'
 
+// One screen per route: the site, the editor and the shared views load only when they are shown.
+const App = lazy(() => import('./App').then((m) => ({ default: m.App })))
+const Shared = lazy(() => import('./components/Shared').then((m) => ({ default: m.Shared })))
+const Invite = lazy(() => import('./components/Invite').then((m) => ({ default: m.Invite })))
+const SignIn = lazy(() => import('./components/SignIn').then((m) => ({ default: m.SignIn })))
+const Site = lazy(() => import('./components/landing/Site').then((m) => ({ default: m.Site })))
+const Present = lazy(() => import('./components/Present').then((m) => ({ default: m.Present })))
+const Presenter = lazy(() => import('./components/Presenter').then((m) => ({ default: m.Presenter })))
+
 /** Picks the screen. Signed out: the site, with sign-in open over it when the editor was asked for (a prompt typed
     on the site waits through sign-in). Signed in: the editor, at / on the deck worked on last; the site stays at
     /home, reached from Occam in the editor's bar, with Open app in place of sign-in. */
 export function Root() {
+  const route = useRoute()
+  return <Suspense fallback={<div className={route.name === 'home' || route.name === 'site' ? 'h-full bg-paper' : 'h-full bg-app-bg'} />}><Screens /></Suspense>
+}
+
+function Screens() {
   const route = useRoute(), live = useSession(), dev = useMemo(devAccount, [])
   const session = dev ?? live
   const [signingIn, setSigningIn] = useState(false), [ended, setEnded] = useState(false)
@@ -26,12 +35,19 @@ export function Root() {
   // whatever screen is open. The dev account keeps its decks in this browser, with nothing to back them up to.
   // The workspace open in the app, where a new deck is saved; App keeps it current.
   const workspace = useRef<string | null>(null)
-  const repo = useMemo(() => (dev ? localDeckRepo(undefined, { versions: true }) : remoteDeckRepo({ onSignedOut: () => setEnded(true), workspace: () => workspace.current })), [dev])
+  // Signed in, what the repo reads and saves of a deck is kept in this browser too, for the next visit to open at once.
+  const repo = useMemo(() => {
+    if (dev) return localDeckRepo(undefined, { versions: true })
+    const remote = remoteDeckRepo({ onSignedOut: () => setEnded(true), workspace: () => workspace.current })
+    return session ? cachedDeckRepo(remote, session.id) : remote
+  }, [dev, session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const workspaces = useMemo(() => (dev ? localWorkspaceRepo() : remoteWorkspaceRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const pages = useMemo(() => (dev ? localPageRepo() : remotePageRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
+  // The frame index.html painted for the editor stays until the editor has its own; any other screen replaces it at once.
+  useEffect(() => { if (session === null || !['home', 'new', 'deck', 'doc'].includes(route.name)) bootDone() }, [session, route.name])
   const joined = useCallback(() => go('/', { replace: true }), [])
 
   // A deck shared by link is for anyone who has it: no session needed, nothing of the viewer's own is shown.

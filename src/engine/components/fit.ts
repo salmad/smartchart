@@ -1,14 +1,14 @@
 /* Fitters: they measure a mounted component and set what CSS cannot know (column widths, icon stacking, picture sizes,
    shrinking values, the floor two halves share). `root` is what holds the components (a slide, or a doc figure's canvas);
    `k` is its scale, its drawn width over its design width, so measurements read in design pixels. */
-import { createElement, icons } from "lucide";
+import { createElement } from "lucide";
+import { iconNode } from "./icons.js";
 
 /* Icons: lucide's createIcons scans the whole document; this does the same replacement (same
    attributes and classes) for the components just mounted only. */
-const pascal = (name: string) => name.replace(/(\w)(\w*)(_|-|\s*)/g, (_m, a: string, b: string) => a.toUpperCase() + b.toLowerCase());
 export function drawIcons(root: HTMLElement): void {
   root.querySelectorAll("i[data-lucide]").forEach((el) => {
-    const name = el.getAttribute("data-lucide") ?? "", node = icons[pascal(name) as keyof typeof icons];
+    const name = el.getAttribute("data-lucide") ?? "", node = iconNode(name);
     if (!node) return;
     const [tag, attrs, children] = node;
     el.replaceWith(createElement([tag, { ...attrs, "data-lucide": name, "stroke-width": 1.5, class: `lucide lucide-${name}` }, children]));

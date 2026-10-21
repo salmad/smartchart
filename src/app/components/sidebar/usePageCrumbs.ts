@@ -9,8 +9,8 @@ import { pageTreeFor } from './sharedTree'
 export interface Crumb { ref: PageRef; name: string }
 
 /** `saved`: the open deck has a slide, so the server has its row; read the list again when that turns true. `tick`: a doc was saved. */
-export function usePageCrumbs({ repo, workspaceId, open, saved, tick }: { repo: PageRepo; workspaceId: string | null; open: PageRef | null; saved: boolean; tick: number }): Crumb[] {
-  const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? ''), [repo, workspaceId])
+export function usePageCrumbs({ repo, workspaceId, account, open, saved, tick }: { repo: PageRepo; workspaceId: string | null; account?: string; open: PageRef | null; saved: boolean; tick: number }): Crumb[] {
+  const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? '', account), [repo, workspaceId, account])
   const { pages } = useSyncExternalStore(tree.subscribe, tree.getState)
   const openKey = open ? keyOf(open) : ''
   const known = !!open && !!pages?.some((p) => keyOf(p) === openKey)

@@ -1,36 +1,39 @@
-/* The deck's look, as an inspector down the right of the editor (writing style, palette, accent): open beside the
-   slide so every change shows on it at once. Opened from the deck menu; it stays open until closed. */
+/* The look of a deck or a doc, as an inspector down the right (writing style for a deck, palette, accent): open beside
+   the page so every change shows on it at once. It stays open until closed. A doc has no writing style to choose. */
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import type { Style, Theme } from '@/engine/types'
 import { AccentPanel, accentLook } from './AccentPicker'
 
 interface Props {
-  deckStyle: Style; theme: Theme; accent: string | null
-  /** The writing style is fixed once the deck has slides: the agent wrote them in it. */
-  styleLocked: boolean
-  onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void
+  noun?: 'deck' | 'doc'
+  theme: Theme; accent: string | null
+  /** A deck's writing style, fixed once it has slides (the agent wrote them in it); a doc passes neither. */
+  deckStyle?: Style; styleLocked?: boolean; onStyle?: (s: Style) => void
+  onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void
   onClose: () => void
 }
 
 export function LookPanel(p: Props) {
-  const l = accentLook(p.accent, p.theme)
+  const l = accentLook(p.accent, p.theme), noun = p.noun ?? 'deck'
   return (
-    <aside aria-label="Deck look" className="flex w-[288px] min-h-0 flex-none flex-col gap-5 overflow-y-auto border-l border-line bg-app-bg p-4 max-[900px]:order-2 max-[900px]:border-l-0 max-[900px]:border-t">
+    <aside aria-label={`${noun === 'doc' ? 'Doc' : 'Deck'} look`} className="flex w-[288px] min-h-0 flex-none flex-col gap-5 overflow-y-auto border-l border-line bg-app-bg p-4 max-[900px]:order-2 max-[900px]:border-l-0 max-[900px]:border-t">
       <header className="flex items-start justify-between gap-3">
         <div className="grid gap-0.5">
           <h2 className="text-[14px] font-medium text-ink">Look</h2>
-          <p className="text-[12.5px] text-ink-3">This deck’s look, on every slide.</p>
+          <p className="text-[12.5px] text-ink-3">{noun === 'doc' ? 'This doc’s look, on every figure.' : 'This deck’s look, on every slide.'}</p>
         </div>
         <button type="button" onClick={p.onClose} aria-label="Close look"
           className="-mr-1 -mt-1 grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink">
           <X className="size-4" strokeWidth={1.75} />
         </button>
       </header>
-      <Section title="Writing" note={p.styleLocked ? 'Set when the deck starts.' : undefined}>
-        <Seg label="Deck style" value={p.deckStyle} disabled={p.styleLocked} onChange={p.onStyle}
-          options={[['consulting', 'Consulting'], ['pitch', 'Pitch']]} />
-      </Section>
+      {p.deckStyle && p.onStyle && (
+        <Section title="Writing" note={p.styleLocked ? 'Set when the deck starts.' : undefined}>
+          <Seg label="Deck style" value={p.deckStyle} disabled={p.styleLocked} onChange={p.onStyle}
+            options={[['consulting', 'Consulting'], ['pitch', 'Pitch']]} />
+        </Section>
+      )}
       <Section title="Palette">
         <Seg label="Palette" value={p.theme} onChange={p.onTheme} options={[['ink', 'Ink'], ['paper', 'Paper']]} />
       </Section>

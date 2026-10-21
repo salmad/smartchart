@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TourShow } from './tour'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
@@ -6,7 +6,7 @@ import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
 import { newLiveKey, openPresentation, usePublishDeck } from './presenter-channel'
-import { PrintDeck, pdfName } from './components/PrintDeck'
+import { pdfName } from './pdf-name'
 import { TooltipProvider } from './components/ui/tooltip'
 import { config } from './config'
 import { installDebug } from './debug'
@@ -31,13 +31,21 @@ import { usePersist } from './usePersist'
 import type { Attached } from './files'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { usePageCrumbs } from './components/sidebar/usePageCrumbs'
+import { DEV_ACCOUNT } from './dev-account'
+import { bootDone } from './boot'
+import { forgetCachedDeck, readCachedDeck } from './cached-decks'
+import { recheckInIdle } from './recheck'
 import { useWorkspace } from './components/sidebar/useWorkspace'
-import { DocScreen } from './components/DocScreen'
-import { ViewDeck } from './components/ViewDeck'
+import { useRowActions } from './components/sidebar/useRowActions'
 import type { DocRepo } from './docs'
 import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
 import { ROOMY, usePanel } from './panel'
+
+// Screens not needed for the first paint load when they are first shown.
+const DocScreen = lazy(() => import('./components/DocScreen').then((m) => ({ default: m.DocScreen })))
+const ViewDeck = lazy(() => import('./components/ViewDeck').then((m) => ({ default: m.ViewDeck })))
+const PrintDeck = lazy(() => import('./components/PrintDeck').then((m) => ({ default: m.PrintDeck })))
 
 const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
@@ -63,19 +71,22 @@ interface Props {
 export function App({ route, account, repo, backup, workspaces, docs, pages, onWorkspace }: Props) {
   const [s, app] = useAppState()
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
+  const cacheId = account.id === DEV_ACCOUNT.id ? undefined : account.id
   const sendRef = useRef<((text: string) => void) | null>(null)
   const turns = useRef<TurnRecord[]>([]), bootStarted = useRef(false)
   // Who wrote the next save, for its version: the agent right after a turn, or a restore. Kept until a save lands.
   const author = useRef<SaveMeta | null>(null)
   // Counts saves that landed, so the Versions panel knows to read the list again.
   const [saves, setSaves] = useState(0)
-  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [loaded, setLoaded] = useState(false)
+  const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [healthKnown, setHealthKnown] = useState(false), [loaded, setLoaded] = useState(false)
+  // The frame index.html painted stays until boot has put the deck on screen (or started a new one), not the gallery in between.
+  useEffect(() => { if (booted) bootDone() }, [booted])
   // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
   // laptop-width window, where the slide needs the room, until the maker opens them.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   // The workspace open in the app: the most recently used, until another is picked in the sidebar.
-  const ws = useWorkspace(workspaces, (w) => { onWorkspace(w?.id ?? null); app.dispatch({ type: 'set', patch: { workspaceId: w?.id ?? null, role: w?.role ?? null } }) })
+  const ws = useWorkspace(workspaces, (w) => { onWorkspace(w?.id ?? null); app.dispatch({ type: 'set', patch: { workspaceId: w?.id ?? null, role: w?.role ?? null } }) }, account.id === DEV_ACCOUNT.id ? undefined : account.id)
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
   useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
@@ -111,16 +122,46 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     turns.current = []
     setViewOnly(repo.role?.(d.id) === 'viewer')
     app.dispatch({ type: 'open', deck: d })
-    // Rule checks re-run with the current code, on slides upgraded to the current schema.
+    // Rule checks re-run with the current code, on slides upgraded to the current schema. The slide that opens (a link with
+    // ?slide=<id> opens on that slide) is measured at once and shows; the others keep their stored checks until the
+    // browser is idle, so the page is not held up by measuring slides nobody is looking at yet.
     const opened = app.getState(), items = opened.items.map((it) => ({ ...it, slide: upgrade(it.slide) }))
-    app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer()) })
-    // A link with ?slide=<id> opens on that slide.
-    const want = new URLSearchParams(location.search).get('slide'), at = app.getState().items.findIndex((it) => it.id === want)
+    const want = new URLSearchParams(location.search).get('slide'), at = items.findIndex((it) => it.id === want)
+    const first = at >= 0 ? at : Math.min(Math.max(opened.current, 0), items.length - 1)
+    app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer(), new Set([first])) })
     if (at >= 0) app.dispatch({ type: 'select', index: at })
+    recheckInIdle({ app, measurer, deckId: app.getState().deckId, skip: items[first]?.id ?? null })
     if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)
   }, [app, measurer, say, repo])
+
+  // The copy of a deck kept in this browser (the one asked for, or at / the one worked on last), primed into the repo so a
+  // save made before the server is heard from carries the revision it was read at. A copy kept because saves failed
+  // (backup) is older business and goes the usual way.
+  const readKept = useCallback(async (id: string | undefined) => {
+    const kept = cacheId ? await readCachedDeck(cacheId, id) : null
+    if (!kept || (backup && (await backup.get(kept.deck.id)))) return null
+    repo.seed?.(kept.deck, kept.rev, kept.role)
+    return kept
+  }, [cacheId, backup, repo])
+
+  // After a deck opens from this browser's copy: read the server's, merge what changed by slide id (as when another
+  // writer changed it), take its role, and if the deck is gone and nothing was edited meanwhile, start a new one.
+  const syncRef = useRef<((force?: boolean) => Promise<'gone' | undefined>) | null>(null)
+  const refreshKept = useCallback(async (id: string) => {
+    try {
+      const gone = await syncRef.current?.(true)
+      if (app.getState().deckId !== id) return
+      setViewOnly(repo.role?.(id) === 'viewer')
+      const now = toSaved(app.getState())
+      if (gone === 'gone' && (!now || editKey(now) === savedKey.current)) {
+        void forgetCachedDeck(account.id, id)
+        newDeck()
+        if (route.name === 'deck') say(MISSING)
+      }
+    } catch { /* offline or refused: the copy stays, and the next save finds out */ }
+  }, [app, repo, account.id, newDeck, route, say])
 
   // Boot: the deck in the URL (nothing is saved before it is loaded, so an early pick cannot overwrite it),
   // then fonts (slides measure text) and whether the models are reachable.
@@ -128,27 +169,30 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     if (bootStarted.current) return
     bootStarted.current = true
     void (async () => {
+      // The copy of the deck kept in this browser opens at once; the server is asked what changed after it is on screen.
+      const fromCache = route.name === 'deck' || route.name === 'home' ? await readKept(route.name === 'deck' ? route.id : undefined) : null
       // Signed in, / is the editor on the deck worked on last in the open workspace; only that deck is read in full.
-      const recent = route.name === 'home' ? (await repo.list((await ws.ready)?.id).catch(() => []))[0] : undefined
+      const recent = fromCache || route.name !== 'home' ? undefined : (await repo.list((await ws.ready)?.id).catch(() => []))[0]
       const id = route.name === 'deck' ? route.id : recent?.id
-      const wanted = id ? await findDeck(id, repo, backup) : null
+      const wanted = fromCache ? fromCache.deck : id ? await findDeck(id, repo, backup) : null
       setLoaded(true)
+      // Whether the models are up does not hold the deck back: the composer waits for the answer, the slides do not.
+      const health = fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()).then((j: { live?: unknown }) => !!j.live).catch(() => false)
+      void health.then((live) => { app.dispatch({ type: 'set', patch: { live } }); setHealthKnown(true) })
       await document.fonts.ready
-      let live = false
-      try { live = !!((await (await fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) })).json()) as { live?: unknown }).live } catch { /* offline */ }
-      app.dispatch({ type: 'set', patch: { live } })
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
-      if (wanted) { openDeck(wanted); return }
+      if (wanted) { openDeck(wanted); if (fromCache) void refreshKept(wanted.id); return }
       newDeck()
       if (route.name === 'deck') say(MISSING)
       // A prompt typed on the site sets the style picked there, and builds the first slide when the models are up.
       const pending = parsePending(takePendingPrompt())
       if (pending) app.dispatch({ type: 'set', patch: { style: pending.style } })
-      if (pending && live && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
+      // Only a prompt waiting to be sent needs the answer first.
+      if (pending && (await health) && app.getState().role !== 'viewer') void sendRef.current?.(pending.text)
     })()
-  }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready])
+  }, [app, repo, backup, openDeck, newDeck, route, say, ws.ready, readKept, refreshKept])
 
   // Writes made elsewhere (an agent, another tab) are merged in by slide id; the agent hears which slides changed.
   const onMerged = useCallback((changed: string[], by: string[]) => {
@@ -158,6 +202,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     if (by.length) say(`${by.join(', ')} updated ${changed.length === 1 ? 'a slide' : `${changed.length} slides`}.`)
   }, [app, measurer, say])
   const syncNow = useLiveDeck({ app, repo, onMerged })
+  syncRef.current = syncNow
 
   const persist = usePersist({ app, repo, backup, syncNow, author, savedKey, onSaved: () => setSaves((n) => n + 1) })
 
@@ -188,8 +233,15 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     shown.current = where
     if (route.name === 'new') { if (app.getState().items.length || app.getState().history.length) newDeck(); return }
     if (route.name !== 'deck' || route.id === app.getState().deckId) return
-    void findDeck(route.id, repo, backup).then((d) => { if (d) openDeck(d); else { newDeck(); say(MISSING) } })
-  }, [route, where, booted, app, repo, backup, openDeck, newDeck, say])
+    const id = route.id
+    void (async () => {
+      // A deck seen before opens from this browser's copy at once (hovering its row in the sidebar reads it ahead).
+      const kept = await readKept(id)
+      if (kept) { openDeck(kept.deck); void refreshKept(id); return }
+      const d = await findDeck(id, repo, backup)
+      if (d) openDeck(d); else { newDeck(); say(MISSING) }
+    })()
+  }, [route, where, booted, app, repo, backup, openDeck, newDeck, say, readKept, refreshKept])
   // Leaving a deck saves it now rather than after the usual pause.
   const leaveTo = useCallback((path: string) => {
     if (locked(app.getState())) return
@@ -206,13 +258,20 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     leaveTo('/new')
   }, [app, route.name, leaveTo])
   const onDeckDeleted = useCallback((id: string) => { if (id === app.getState().deckId) { newDeck(); go('/new') } }, [app, newDeck])
-  // Delete from the deck menu: the open deck goes, and a new one starts in its place.
-  const deleteDeck = useCallback(async () => {
+  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
+  const [docTick, setDocTick] = useState(0)
+  // Rename, delete and new doc in the sidebar show at once and are sent behind the scenes (see useRowActions).
+  const rows = useRowActions({
+    repos: { decks: repo, docs }, wsId: ws.current?.id ?? null, onDeckDeleted, onOpenDoc: (id) => leaveTo(`/doc/${id}`), onDocRenamed: () => setDocTick((t) => t + 1),
+    onDocDeleted: (id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') },
+  })
+  // Delete from the deck menu: the open deck goes at once, and a new one starts in its place.
+  const deleteDeck = useCallback(() => {
     const id = app.getState().deckId
     if (!id || locked(app.getState())) return
-    if (await repo.remove(id)) onDeckDeleted(id)
-    else say('Couldn’t delete the deck. Try again.')
-  }, [app, repo, onDeckDeleted, say])
+    const st = app.getState()
+    rows.remove({ ref: { kind: 'deck', id }, name: deckName({ name: st.name, items: st.items }) })
+  }, [app, rows])
 
   const { live, busy, current, items } = s
   useEffect(() => refreshPills(app), [live, busy, current, items, app])
@@ -232,14 +291,12 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     app.dispatch({ type: 'set', patch: { style, history: [], working: new Set(), items, current: 0, view: 'editor' } })
   }, [app])
 
-  useEffect(() => installDebug({ live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
+  useEffect(() => installDebug({ booted, live: s.live, items: s.items, current: s.current, turns: turns.current, send, setStyle, load }))
 
   // The presentation opens in its own tab and follows this deck as it is edited.
   const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
-  // A doc saved or renamed: the sidebar lists it again, and the doc on screen is read again.
-  const [docTick, setDocTick] = useState(0)
   // The pages above the open one, for the header (read from the same list as the sidebar).
-  const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, tick: docTick, saved: s.items.length > 0,
+  const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, tick: docTick, saved: s.items.length > 0,
     open: route.name === 'doc' ? { kind: 'doc', id: route.id } : s.deckId ? { kind: 'deck', id: s.deckId } : null })
   const openPage = (ref: { kind: 'deck' | 'doc'; id: string }) => leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : `/doc/${ref.id}`)
   const bar = {
@@ -257,7 +314,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     onRename: (name: string) => { if (!locked(app.getState())) app.dispatch({ type: 'set', patch: { name } }) },
     // Only a deck that has been saved can be deleted: one with slides.
     crumbs, onOpenPage: openPage,
-    onDelete: s.deckId && s.items.length ? () => void deleteDeck() : null,
+    onDelete: s.deckId && s.items.length ? deleteDeck : null,
     // Deleting a deck takes the pages under it too, so the dialog first asks how many there are.
     subpages: async () => { try { return await pages.subpages({ kind: 'deck', id: app.getState().deckId ?? '' }) } catch { say('Couldn’t check for subpages.'); return null } },
     account,
@@ -299,29 +356,32 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
+  // The gallery is for an empty deck. On a route that opens a deck it waits for boot, so a deck about to open is not
+  // preceded by thirty slide tiles measured and drawn for nothing.
+  const opening = !booted && (route.name === 'deck' || route.name === 'home')
   const stage = s.view === 'landing'
-    ? <AddSlide deck={deck} current={0} onUse={onPick} />
+    ? (opening ? undefined : <AddSlide deck={deck} current={0} onUse={onPick} />)
     : s.view === 'add'
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
 
   // The workspace down the left (⌘\), beside the editor or a doc.
-  const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} busy={locked(s)}
+  const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} rows={rows} busy={locked(s)}
     open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length, parent: s.pendingParent }, doc: route.name === 'doc' ? route.id : null, docTick }}
-    onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={startDeck} onDeckDeleted={onDeckDeleted}
-    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onDocDeleted={(id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') }} onDocRenamed={() => setDocTick((t) => t + 1)} onRenameOpenDeck={bar.onRename} me={account.id} />
+    onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={startDeck}
+    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} />
 
   return (
     <TooltipProvider delayDuration={400}>
       {route.name !== 'doc' && readOnly
-        ? <ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
-          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} />
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
+          onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
         : route.name === 'doc'
-        ? <DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} />
-        : <Editor state={s} booted={booted} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
+        : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
-      {printing && <PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} />}
+      {printing && <Suspense fallback={null}><PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} /></Suspense>}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
     </TooltipProvider>

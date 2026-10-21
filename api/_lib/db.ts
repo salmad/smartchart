@@ -19,8 +19,8 @@ export interface DeckRow { id: string; name: string; updated: number; data: unkn
     the writer may not edit it (not a member, a viewer, or another user's id), or refused with a sentence (a new page asked to go
     under a parent that isn't there, or too deep). */
 export type PutResult = { rev: number } | 'conflict' | 'foreign' | { refused: string }
-/** What a list shows of a deck: its first slide and look for the thumbnail, never the whole deck (chat, agent history). */
-export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; first: unknown; shared: boolean
+/** What a list shows of a deck: its name, size and look, never the deck itself (slides, chat, agent history). */
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: unknown; theme: unknown; accent: unknown; shared: boolean
   /** Where the deck sits in the page tree: its parent (null at the top) and its order key among siblings (null before the backfill). */
   parent: PageRef | null; sortKey: string | null }
 /** Who is working on a deck right now (an agent turn, or a person editing a slide); each entry expires at `until` (ms). */

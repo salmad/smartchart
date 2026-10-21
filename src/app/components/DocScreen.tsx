@@ -14,6 +14,7 @@ import { authorOf } from '@/app/useComments'
 import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
 import { Toggle } from './Bar'
+import { LookPanel } from './LookPanel'
 import { VersionsPanel } from './VersionsPanel'
 import { anchorsOf } from './docs/anchors'
 import { CommentTriggers } from './docs/CommentTriggers'
@@ -22,7 +23,6 @@ import { ReadBar } from './docs/DocBar'
 import type { PageRef } from '@/engine/pages/tree'
 import { Crumbs } from './Crumbs'
 import type { Crumb } from './sidebar/usePageCrumbs'
-import { DocMenu } from './docs/DocMenu'
 import { DocPreview } from './docs/DocPreview'
 import { useDocLive } from './docs/useDocLive'
 import './docs/docs-comments.css'
@@ -56,7 +56,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const record = typeof state === 'object' ? state : null
   const parsed = useMemo(() => (record ? parseDoc(record.text).doc : null), [record])
   const me = authorOf(account), live = useDocLive(docs, id, editing, me)
-  const [side, setSide] = useState<'comments' | 'versions' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
+  const [side, setSide] = useState<'comments' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
   const [comments, setComments] = useState<DocComment[]>([]), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
   const blocks = useRef(new Map<string, Block>())
@@ -71,8 +71,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   }, [id, docs, tick, reload]) // eslint-disable-line react-hooks/exhaustive-deps -- a rename while editing waits for the next read
   // Someone saved while this tab was only reading: show what they wrote.
   useEffect(() => { if (live.newer && !editing && record) setReload((n) => n + 1) }, [live.newer]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Editing starts from the current doc: a version preview, and Versions, are for reading.
-  useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' ? null : s)); setRefused(false) } }, [editing])
+  // Editing starts from the current doc: a version preview, Versions and Look are for reading.
+  useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' || s === 'look' ? null : s)); setRefused(false) } }, [editing])
   useEffect(() => { let go = true; void docs.comments(id).then((c) => { if (go) setComments(c) }); return () => { go = false } }, [docs, id, live.tick])
 
   // The read view, drawn from the doc shown (a version, while one is previewed); again after each save.
@@ -130,6 +130,15 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const toggleComments = () => setSide((s) => (s === 'comments' ? null : 'comments'))
   const commenting = { open: side === 'comments', count: comments.filter((c) => !c.done).length, onToggle: toggleComments }
 
+  const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
+  // The look is the doc's own front matter: a change is a save, so it is a version like any other.
+  const setLook = async (look: { theme: Doc['theme'] } | { accent: string | null }) => {
+    if (!parsed) return
+    const { accent: _old, ...rest } = parsed, accent = 'accent' in look ? look.accent : parsed.accent
+    const why = await save({ ...rest, ...('theme' in look ? { theme: look.theme } : {}), ...(accent ? { accent } : {}) }, { label: 'Changed the look' })
+    if (why) window.alert(why)
+  }
+
   const header = (bar: ReactNode) => (
     <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
       <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
@@ -140,7 +149,6 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         <span aria-hidden className="text-ink-3">/</span>
         <Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} />
         <span className="truncate text-ink-2">{record?.name ?? ''}</span>
-        {record && !editing && <DocMenu onVersions={() => setSide('versions')} />}
       </nav>
       {bar}
       <AccountMenu account={account} />
@@ -156,6 +164,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         {state === 'failed' && <p className="px-8 py-10 text-[13.5px] text-ink-2">Couldn’t open the doc. Reload to try again.</p>}
         {content}
       </main>
+      {!editing && side === 'look' && parsed && canEdit && <LookPanel noun="doc" theme={parsed.theme ?? 'paper'} accent={parsed.accent ?? null}
+        onTheme={(theme) => void setLook({ theme })} onAccent={(accent) => void setLook({ accent })} onClose={() => setSide(null)} />}
       {!editing && side === 'versions' && <VersionsPanel list={() => docs.versions(id)} describe={(v, before) => describeDocDiff(before?.tree ?? null, v.tree)} noun="doc"
         saves={saves} selected={preview?.v.n ?? null} onPreview={(v, before, current) => void showVersion(v, before, current)} onClose={() => { setSide(null); setPreview(null) }} />}
       {side === 'comments' && parsed && <DocComments comments={comments} anchors={anchorsOf(parsed)} target={target} onTarget={setTarget} error={commentError}
@@ -177,7 +187,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   }
   return (
     <>
-      {header(record && <ReadBar canEdit={canEdit && !preview} onEdit={() => setEditing(true)} others={live.others} comments={commenting} />)}
+      {header(record && <ReadBar canEdit={canEdit && !preview} onEdit={() => setEditing(true)} others={live.others} comments={commenting}
+        look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }} />)}
       {body(<><div ref={page} />{record && <CommentTriggers page={pageEl} theme={shown?.theme ?? 'paper'} onPick={pick} />}</>)}
     </>
   )

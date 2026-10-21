@@ -47,7 +47,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
       // A missing look falls back to the defaults, so a deck saved before a field existed still lists.
       return ((await r.json()) as Partial<DeckSummary>[]).map((d) => ({
         id: String(d.id), name: d.name || 'Untitled deck', updated: Number(d.updated) || 0, slides: Number(d.slides) || 0,
-        style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink', accent: typeof d.accent === 'string' ? d.accent : null, first: d.first ?? null,
+        style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink', accent: typeof d.accent === 'string' ? d.accent : null,
         parent: refOf(d.parent), sortKey: typeof d.sortKey === 'string' ? d.sortKey : null,
       }))
     },
@@ -104,6 +104,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
       const r = await call(`?id=${encodeURIComponent(id)}&blobs=${hashes.map(encodeURIComponent).join(',')}`)
       return r.ok ? ((await r.json()) as { hash: string; slide: Slide }[]) : []
     },
+    seed: (deck, rev, role) => { revs.set(deck.id, rev); bases.set(deck.id, structuredClone(deck)); if (role) roles.set(deck.id, role) },
     base: (id) => bases.get(id) ?? null,
     known: (id) => revs.get(id) ?? 0,
     role: (id) => roles.get(id) ?? null,

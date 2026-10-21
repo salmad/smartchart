@@ -155,7 +155,7 @@ const KINDS = ["bars", "waterfall", "timeline", "ranked", "matrix"] as const;
 type Kind = (typeof KINDS)[number];
 /* Fields each chart kind uses; any other chart field is an error for that kind. */
 export const KIND_FIELDS: Record<Kind, string[]> = {
-  bars: ["kind", "stacking", "categories", "format", "series", "annotations"],
+  bars: ["kind", "stacking", "categories", "format", "series", "highlight", "annotations"],
   waterfall: ["kind", "format", "items"],
   timeline: ["kind", "periods", "rows", "milestones"],
   ranked: ["kind", "format", "ranking"],
@@ -163,26 +163,29 @@ export const KIND_FIELDS: Record<Kind, string[]> = {
 };
 const idx = (what: string) => f("number", `0-based index into ${what}.`);
 
-const CHART = f("object", "A chart. Values are written on the data (bars: every value; a line: its last point only, so name any other point in an annotation or a note); there is no y-axis to configure. `kind` sets which fields it takes.", {
+const CHART = f("object", "A chart. Values sit on the data (bars: every value; a line: its last point only, so name any other point in an annotation or note); no y-axis to configure. `kind` sets its fields.", {
   required: true,
   fields: {
-    kind: f("enum", "`bars` (default): bar and line series over categories. `waterfall`: a bridge from one total to another. `timeline`: workstreams over periods (a Gantt). `ranked`: horizontal bars by named item. `matrix`: a 2×2.", { values: KINDS, default: "bars" }),
-    stacking: f("enum", "Bars only. \"stacked\": bar series stacked into one column per category; \"none\": side by side; \"percent\": stacked as shares of 100%. \"auto\": code decides by the chart guide.", { values: ["none", "stacked", "percent", "auto"], default: "none" }),
+    kind: f("enum", "`bars` (default): bar and line series. `waterfall`: a bridge between totals. `timeline`: workstreams over periods (Gantt). `ranked`: horizontal bars by item. `matrix`: a 2×2.", { values: KINDS, default: "bars" }),
+    stacking: f("enum", "Bars only. \"stacked\": one column per category; \"none\": side by side; \"percent\": shares of 100%. \"auto\": code decides by the chart guide.", { values: ["none", "stacked", "percent", "auto"], default: "none" }),
     categories: f("list", "Bars only. X-axis labels, in order. Short: 'Year 1', 'Q2', 'Q1 ’27'.", { items: { min: 2, max: 12 }, of: f("text", "Category label.", { max: 10 }) }),
-    format: f("text", "Value format; `{v}` is replaced by the number. E.g. '£{v}m', '{v}%'.", { default: "{v}" }),
-    series: f("list", "Bars only. Data series. One series is the focus: the one the title is about.", {
+    format: f("text", "Value format; `{v}` is the number. E.g. '£{v}m', '{v}%'.", { default: "{v}" }),
+    series: f("list", "Bars only. Data series; one is the focus.", {
       items: { min: 1, max: 6 },
       of: f("object", "One series.", { fields: {
         name: f("text", "Series name, shown in the legend or end label.", { required: true, max: 24 }),
         values: f("list", "One number per category, same order. Plain numbers, no units.", { required: true, of: f("number", "Value.") }),
         mark: f("enum", "`bar` or `line` for this series. \"auto\": code decides by the chart guide. Write bar or line only when the user named it.", { required: true, values: ["bar", "line", "auto"] }),
-        color: f("enum", "`focus`: the series the slide is about. `neutral`: context. `contrast`: a secondary series that must still read clearly. Leave it out when the slide has focus \"auto\".", { values: ["focus", "neutral", "contrast"] }),
+        color: f("enum", "`focus`: the series the slide is about. `neutral`: context. `contrast`: a secondary series that must still read clearly. Leave out when the slide has focus \"auto\".", { values: ["focus", "neutral", "contrast"] }),
         format: f("text", "Overrides the chart format for this series (a % line over £ bars)."),
-        area: f("boolean", "Line series in a chart of only lines: shade the area under it. Focus series only.", { default: false }),
-        dashed: f("boolean", "Line series only: dashed, for a forecast, a scenario or a reference (target, average).", { default: false }),
+        area: f("boolean", "Lines-only chart: the focus line is shaded under; false for a plain line.", { default: true }),
+        dashed: f("boolean", "Line only: dashed, for a forecast, scenario or reference (target, average).", { default: false }),
       } }),
     }),
-    annotations: f("list", "Bars only. Figures code computes and draws on the chart; you never write the figure.", {
+    highlight: f("object", "Bars only. The one bar the title is about; then no series is `color: focus`.", {
+      fields: { series: idx("chart.series"), index: idx("chart.categories") },
+    }),
+    annotations: f("list", "Bars only. Figures code computes and draws; you never write the figure.", {
       items: { max: 3 },
       of: f("object", "One annotation.", { fields: {
         type: f("enum", "`cagr`: growth rate per period between two categories. `difference`: the change between two categories. `target`: a dashed goal line.", { required: true, values: ["cagr", "difference", "target"] }),
@@ -194,18 +197,18 @@ const CHART = f("object", "A chart. Values are written on the data (bars: every 
         label: f("text", "target only: the line's name. Default 'Target'.", { max: 16 }),
       } }),
     }),
-    items: f("list", "Waterfall only. The start total, the signed changes, then totals. Subtotals may sit in between.", {
+    items: f("list", "Waterfall only. Start total, signed changes, then totals; subtotals may sit between.", {
       items: { min: 3, max: 10 },
       of: f("object", "One bar of the bridge.", { fields: {
         label: f("text", "Bar label: 'FY24', 'Price', 'FX'.", { required: true, max: 12 }),
         value: f("number", "The first item: the starting total. A change: signed (3.1 or -1.2). A total: leave it out and code computes it."),
-        total: f("boolean", "A subtotal or end total: code draws it from zero at the running sum.", { default: false }),
+        total: f("boolean", "A subtotal or end total: code draws it at the running sum.", { default: false }),
         focus: f("boolean", "Highlight the driver the title is about. At most one.", { default: false }),
-        tone: f("enum", "A change only, and only when the user asks for red or green: `neg` or `pos`. Steps are grey by default; the focus carries the colour.", { values: ["neg", "pos"] }),
+        tone: f("enum", "A change only, when the user asks for red or green: `neg` or `pos`. Steps are grey; the focus carries the colour.", { values: ["neg", "pos"] }),
       } }),
     }),
     periods: f("list", "Timeline only. Column labels, in order: 'Q1', 'Q2', 'Jan'.", { items: { min: 3, max: 16 }, of: f("text", "Period label.", { max: 8 }) }),
-    rows: f("list", "Timeline only. One bar per workstream. A workstream made of smaller steps is a group: give the steps `level: 1` directly after it and leave the group's own `start` and `end` out (it spans its steps).", {
+    rows: f("list", "Timeline only. One bar per workstream. For a group, give its steps `level: 1` directly after it and leave its own `start` and `end` out (it spans them).", {
       items: { min: 2, max: 12 },
       of: f("object", "One workstream or step.", { fields: {
         label: f("text", "Workstream name.", { required: true, max: 28 }),
@@ -219,7 +222,7 @@ const CHART = f("object", "A chart. Values are written on the data (bars: every 
       items: { max: 6 },
       of: f("object", "One milestone.", { fields: {
         label: f("text", "What happens.", { required: true, max: 16 }),
-        at: f("number", "0-based index of the period it falls at the end of.", { required: true }),
+        at: f("number", "0-based index of the period it ends.", { required: true }),
       } }),
     }),
     ranking: f("list", "Ranked only. Largest first.", {
@@ -288,6 +291,7 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   bars: f("boolean", "A column of figures (0 or more): a small bar beside each figure, to scale with the column's largest, so the column can be scanned. Shares, scores, sizes. Not on marks or words.", { default: false }),
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
+  align: f("enum", "Text alignment; auto follows the content.", { values: ["left", "centre", "right", "auto"], default: "auto" }),
 } });
 const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
 
@@ -764,8 +768,20 @@ function checkChart(c: Chart | undefined, path: string, out: Out, focusAuto: boo
   if ((c.stacking === "stacked" || c.stacking === "percent") && (bars.length < 2 || new Set(bars.map((s) => fmtOf(c, s))).size > 1))
     out.errors.push(`${path}.stacking: stacking needs 2 or more bar series in one unit. Set it to "none".`);
   const focus = series.filter((s) => s?.color === "focus").length;
-  if (!focusAuto && focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
+  checkHighlight(c, categories, series, focus, path, out);
+  if (!focusAuto && !c.highlight && focus !== 1) out.warnings.push(`${path}.series: ${focus} series are "focus"; exactly one should be.`);
   checkAnnotations(c, categories, series, series.filter((s) => s?.mark !== "line"), path, out);
+}
+
+function checkHighlight(c: Chart, categories: string[], series: Series[], focus: number, path: string, out: Out): void {
+  const h = c.highlight;
+  if (!h || typeof h !== "object") return;
+  const at = `${path}.highlight`, whole = (v: unknown, n: number): v is number => Number.isInteger(v) && (v as number) >= 0 && (v as number) < n;
+  if (!whole(h.series, series.length)) out.errors.push(`${at}.series: 0–${series.length - 1}, an index into chart.series.`);
+  else if (series[h.series]?.mark === "line") out.errors.push(`${at}.series: series ${h.series} is a line; a highlight picks a bar.`);
+  if (!whole(h.index, categories.length)) out.errors.push(`${at}.index: 0–${categories.length - 1}, an index into chart.categories.`);
+  if (focus) out.errors.push(`${at}: a series is also \`color: focus\`. Use one: the highlighted bar is the focus, so remove the series' focus.`);
+  if (series.length && series.every((s) => s?.mark === "line")) out.errors.push(`${at}: needs bars; this chart is only lines.`);
 }
 
 function checkAnnotations(c: Chart, categories: string[], series: Series[], bars: Series[], path: string, out: Out): void {

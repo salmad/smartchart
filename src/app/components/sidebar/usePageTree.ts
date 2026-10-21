@@ -2,9 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { keyOf, type PageRef, type PageSummary } from '@/engine/pages/tree'
 import type { PageRepo } from '@/app/pages'
+import { cacheSet } from '@/app/cache'
+import { overlay, type Op } from '@/app/optimistic'
 import { loadExpanded, saveExpanded, withRefs } from './expanded'
 import { pathTo, visibleRows, withOpenDeck, type Row } from './flatten'
-import type { PageTree } from './pageTree'
+import { pageList, type PageTree } from './pageTree'
 import { pageTreeFor } from './sharedTree'
 
 interface Options {
@@ -18,6 +20,10 @@ interface Options {
   pendingParent: PageRef | null
   /** Change to read the list again: a doc saved or renamed. */
   tick: number
+  /** Changes shown but not yet read back from the server (rename, delete, new doc), laid over the list. */
+  ops: readonly Op<PageSummary>[]
+  /** The signed-in account whose browser copy of the list shows first; none for the dev account. */
+  account?: string
 }
 
 export interface PageTreeView {
@@ -35,12 +41,12 @@ export interface PageTreeView {
   dismiss(): void
 }
 
-export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, pendingParent, tick }: Options): PageTreeView {
+export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, pendingParent, tick, ops, account }: Options): PageTreeView {
   // The callers' objects are new on every render; what they say is kept by value.
   const open = useMemo(() => openPage, [openPage?.kind, openPage?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const parent = useMemo(() => pendingParent, [pendingParent?.kind, pendingParent?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const liveDeck = useMemo(() => ({ id: deck.id, name: deck.name, slides: deck.slides }), [deck.id, deck.name, deck.slides])
-  const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? ''), [repo, workspaceId])
+  const tree = useMemo(() => pageTreeFor(repo, workspaceId ?? '', account), [repo, workspaceId, account])
   const state = useSyncExternalStore(tree.subscribe, tree.getState)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const key = workspaceId ?? ''
@@ -49,7 +55,10 @@ export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, p
   const openKey = open ? keyOf(open) : ''
   useEffect(() => { if (workspaceId) void tree.load() }, [tree, workspaceId, openKey, tick])
 
-  const pages = useMemo(() => state.pages && withOpenDeck(state.pages, liveDeck, parent), [state.pages, liveDeck, parent])
+  // The list with the pending changes laid over it is what shows, and what is stored for the next visit.
+  const shown = useMemo(() => state.pages && workspaceId ? overlay(pageList(workspaceId), state.pages, ops) : state.pages, [state.pages, workspaceId, ops])
+  useEffect(() => { if (account && workspaceId && shown) void cacheSet(account, pageList(workspaceId), shown) }, [account, workspaceId, shown])
+  const pages = useMemo(() => shown && withOpenDeck(shown, liveDeck, parent), [shown, liveDeck, parent])
 
   // The open page's branch is expanded when the list first arrives and whenever another page opens; after that the
   // viewer's own collapsing is left alone.

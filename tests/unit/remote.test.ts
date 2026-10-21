@@ -28,7 +28,7 @@ function fakeServer() {
     if (method === 'DELETE') return new Response(null, { status: rows.delete(id ?? '') ? 204 : 404 })
     if (id) { const r = rows.get(id); return r ? Response.json(r) : Response.json({}, { status: 404 }) }
     // The list carries summaries only, as the server's does.
-    return Response.json([...rows.values()].map(({ id, name, updated, data }) => ({ id, name, updated, slides: data.items.length, style: data.style, theme: data.theme, accent: data.accent, first: data.items[0]?.slide ?? null })))
+    return Response.json([...rows.values()].map(({ id, name, updated, data }) => ({ id, name, updated, slides: data.items.length, style: data.style, theme: data.theme, accent: data.accent })))
   }) as typeof fetch
   return { rows, state, fetcher }
 }
@@ -39,7 +39,7 @@ test('the server repo saves, lists, gets and removes a deck, named after its cov
   const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher })
   expect(await repo.save(deck('d_1', 5))).toBeNull()
   expect(rows.get('d_1')?.name).toBe('Acme')
-  expect(await repo.list()).toEqual([{ id: 'd_1', name: 'Acme', updated: 42, slides: 1, style: 'consulting', theme: 'ink', accent: null, first: { template: 'cover', title: 'Acme', subtitle: 'x' }, parent: null, sortKey: null }])
+  expect(await repo.list()).toEqual([{ id: 'd_1', name: 'Acme', updated: 42, slides: 1, style: 'consulting', theme: 'ink', accent: null, parent: null, sortKey: null }])
   expect((await repo.get('d_1'))?.items[0].slide.title).toBe('Acme')
   expect(await repo.get('nope')).toBeNull()
   expect(await repo.remove('d_1')).toBe(true)
@@ -158,4 +158,25 @@ test('a refused save says what the server said on a 403, and our own sentence wh
   expect(await answer(() => Response.json({ error: 'Ask an owner of Acme to make you an editor.' }, { status: 403 }))).toBe('Ask an owner of Acme to make you an editor.')
   expect(await answer(() => new Response('nope', { status: 403 }))).toBe(VIEW_ONLY)
   expect(await answer(() => Response.json({ error: 'busy' }, { status: 413 }))).toBe('This deck is too large to save.')
+})
+
+test('a seeded deck saves with the revision it was seeded with: a newer server copy still refuses the save', async () => {
+  const { rows, fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher }), other = remoteDeckRepo({ fetcher })
+  await other.save(deck('d_1', 5))
+  const cached = (await other.get('d_1')) as SavedDeck, rev = other.known?.('d_1') ?? 0
+  await other.save({ ...cached, updated: 6 }) // another tab moves the server on
+  repo.seed?.(cached, rev, 'editor')
+  expect(repo.known?.('d_1')).toBe(rev)
+  expect(repo.role?.('d_1')).toBe('editor')
+  expect(repo.base?.('d_1')).toEqual(cached)
+  expect(await repo.save({ ...cached, updated: 7 })).toBe(STALE)
+  expect(rows.get('d_1')?.data.updated).toBe(6)
+})
+
+test('a seeded deck that nobody changed saves normally', async () => {
+  const { fetcher } = fakeServer(), repo = remoteDeckRepo({ fetcher }), other = remoteDeckRepo({ fetcher })
+  await other.save(deck('d_1', 5))
+  const cached = (await other.get('d_1')) as SavedDeck
+  repo.seed?.(cached, other.known?.('d_1') ?? 0, null)
+  expect(await repo.save({ ...cached, updated: 7 })).toBeNull()
 })

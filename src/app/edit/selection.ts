@@ -14,6 +14,16 @@ export function cellAt(el: Element | null): { r: number; c: number } | null {
   return body ? { r: Number(body[1]), c: Number(body[2]) } : head ? { r: -1, c: Number(head[1]) } : null
 }
 
+/** A bar or a line of a chart under the pointer: the bar by its series and position, the line by its series. The chart
+    draws both with `data-series` (a bar also with `data-i`), so this reads only what the renderer already says. */
+export function chartTargetOf(el: { closest(selector: string): { dataset: Record<string, string | undefined> } | null } | null): Target | null {
+  const mark = el?.closest('[data-series]')
+  const series = Number(mark?.dataset.series)
+  if (!mark || !Number.isInteger(series)) return null
+  const at = mark.dataset.i
+  return at === undefined ? { kind: 'series', series } : Number.isInteger(Number(at)) ? { kind: 'bar', series, index: Number(at) } : null
+}
+
 /** What a right-click or a press on `el` is about: a selection it lands inside, a table cell, a list item, a field. */
 export function targetAt(el: Element | null, current: Target): Target {
   const field = el?.closest<HTMLElement>('[data-path]') ?? null
@@ -26,6 +36,8 @@ export function targetAt(el: Element | null, current: Target): Target {
   if (cell) return { kind: 'cells', r0: cell.r, c0: cell.c, r1: cell.r, c1: cell.c }
   const item = el?.closest<HTMLElement>('[data-item]')
   if (item) return { kind: 'item', item: item.dataset.item ?? '' }
+  const mark = chartTargetOf(el)
+  if (mark) return mark
   if (field) return { kind: 'text', path: field.dataset.path ?? '', from: 0, to: 0 }
   return { kind: 'slide' }
 }

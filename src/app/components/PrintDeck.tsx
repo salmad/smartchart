@@ -33,4 +33,3 @@ export function PrintDeck({ deck, name, onDone }: { deck: Deck; name: string; on
 }
 
 /** The file name a deck saves under: its name, without characters file systems refuse. */
-export const pdfName = (name: string) => name.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'Deck'

@@ -4,7 +4,8 @@ import type { Item } from './store'
 import type { TurnRecord } from './turn'
 
 export interface JourneyDebug {
-  live: boolean; items: Item[]; current: number; turns: TurnRecord[]
+  /** Boot has finished: the deck is open (or a fresh one started) and slides can be measured. */
+  booted: boolean; live: boolean; items: Item[]; current: number; turns: TurnRecord[]
   send(text: string): Promise<TurnRecord | undefined>; setStyle(style: Style): void; load(slides: Slide[], style: Style): void
 }
 

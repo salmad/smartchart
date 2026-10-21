@@ -34,8 +34,7 @@ test('restore a version: the read view shows the first text, and Versions lists 
   await append(page, ' One.')
   await page.clock.runFor(120_000) // a pause past GROUP_MS: the next save is its own version
   await append(page, ' Two.')
-  await page.getByRole('button', { name: 'Doc menu' }).click()
-  await page.getByRole('menuitem', { name: 'Versions' }).click()
+  await page.getByRole('button', { name: 'Versions' }).click()
   const rows = page.getByRole('complementary', { name: 'Versions' }).locator('button[aria-pressed]')
   await expect(rows).toHaveCount(2)
   await rows.nth(1).click()
@@ -89,7 +88,23 @@ test('a stale save: the newer-version bar appears, and Save is refused with the 
 
 test('Versions is not offered while editing', async ({ page }) => {
   await seed(page)
-  await expect(page.getByRole('button', { name: 'Doc menu' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Versions' })).toBeVisible()
   await edit(page)
-  await expect(page.getByRole('button', { name: 'Doc menu' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Versions' })).toHaveCount(0)
+})
+
+test('Look: the palette and accent change the page, persist, and are not offered while editing', async ({ page }) => {
+  await seed(page)
+  await page.getByRole('button', { name: 'Look' }).click()
+  const look = page.getByRole('complementary', { name: 'Doc look' })
+  await expect(look.getByRole('group', { name: 'Deck style' })).toHaveCount(0)
+  await look.getByRole('button', { name: 'Ink' }).click()
+  await expect(page.locator('.doc.theme-ink')).toBeVisible()
+  await look.getByRole('button', { name: 'Cobalt' }).click()
+  await page.reload()
+  await expect(page.locator('.doc.theme-ink')).toBeVisible()
+  await page.getByRole('button', { name: 'Versions' }).click()
+  await expect(page.getByRole('complementary', { name: 'Versions' })).toContainText('Changed the look')
+  await edit(page)
+  await expect(page.getByRole('button', { name: 'Look' })).toHaveCount(0)
 })

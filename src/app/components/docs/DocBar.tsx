@@ -1,9 +1,10 @@
-/* The doc's controls in the bar: who else is editing, the comments toggle, Edit while reading (editors and owners
+/* The doc's controls in the bar: who else is editing, Look and Versions while reading, the comments toggle, Edit while reading (editors and owners
    only), and while editing the stale-save notice, Discard and Save. */
 import { useState } from 'react'
-import { MessageSquare } from 'lucide-react'
+import { History, MessageSquare, Palette } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { cn } from '@/app/lib/utils'
+import { Toggle } from '@/app/components/Bar'
 import type { DocEdit } from './useDocEdit'
 
 /** "Ann is editing", "Ann and Ben are editing", "Ann and 2 others are editing". Below 900px only the dot shows. */
@@ -29,10 +30,17 @@ export function CommentsToggle({ open, count, onClick }: { open: boolean; count:
   )
 }
 
-export function ReadBar({ canEdit, onEdit, others, comments }: { canEdit: boolean; onEdit: () => void; others: string[]; comments: { open: boolean; count: number; onToggle: () => void } }) {
+interface Panel { open: boolean; onToggle: () => void }
+
+/** Look (editors only) and Versions sit beside the comments toggle, as on a deck. Both are for reading: a draft can't be overwritten under you. */
+export function ReadBar({ canEdit, onEdit, others, comments, look, versions }: { canEdit: boolean; onEdit: () => void; others: string[]; comments: Panel & { count: number }; look: Panel | null; versions: Panel }) {
   return (
     <div className="flex items-center gap-2">
       <Presence names={others} />
+      <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
+        {look && <Toggle open={look.open} onClick={look.onToggle} label="Look"><Palette className="size-[17px]" strokeWidth={1.75} /></Toggle>}
+        <Toggle open={versions.open} onClick={versions.onToggle} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>
+      </div>
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       {canEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
     </div>

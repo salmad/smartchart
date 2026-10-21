@@ -9,10 +9,9 @@ const COVER = { template: 'cover', title: 'Acme', subtitle: 'Cards for small bus
 async function open(page: Page, width: number, height = 900) {
   await page.setViewportSize({ width, height })
   await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
-  const health = page.waitForResponse('**/api/health')
   await page.goto('/new')
   await page.waitForFunction(() => window.__journey)
-  await health
+  await page.waitForFunction(() => window.__journey?.booted)
   await page.evaluate((s) => window.__journey?.load(s as never, 'consulting'), [COVER, { ...COVER, title: 'Second' }])
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(2)
 }

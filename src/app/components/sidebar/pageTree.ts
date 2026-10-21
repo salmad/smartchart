@@ -2,6 +2,12 @@
    React in here, so it runs under test; usePageTree puts it on screen. */
 import { canMove, NO_PAGE, slotKey, type PageRef, type PageSummary } from '@/engine/pages/tree'
 import type { MoveTo, PageRepo } from '@/app/pages'
+import { showThenFetch } from '@/app/swr'
+
+/** The stored name of a workspace's page list. */
+export const pageList = (workspaceId: string) => `pages:${workspaceId}`
+export const isPages = (v: unknown): v is PageSummary[] => Array.isArray(v) && v.every((p) => !!p && typeof p === 'object'
+  && ((p as PageSummary).kind === 'deck' || (p as PageSummary).kind === 'doc') && typeof (p as PageSummary).id === 'string' && typeof (p as PageSummary).name === 'string' && typeof (p as PageSummary).updated === 'number')
 
 export interface TreeState {
   /** Null until the first load. */
@@ -22,7 +28,8 @@ export interface PageTree {
 
 const is = (a: PageRef, b: PageRef) => a.kind === b.kind && a.id === b.id
 
-export function createPageTree(repo: PageRepo, workspaceId: string): PageTree {
+/** With an `account`, the list stored in this browser shows first (once: a later read would put an older copy over a change just made). */
+export function createPageTree(repo: PageRepo, workspaceId: string, account?: string): PageTree {
   let state: TreeState = { pages: null, failed: false, notice: null }
   const listeners = new Set<() => void>()
   const set = (patch: Partial<TreeState>) => { state = { ...state, ...patch }; listeners.forEach((l) => l()) }
@@ -30,12 +37,12 @@ export function createPageTree(repo: PageRepo, workspaceId: string): PageTree {
   // move reads the list again when it ends.
   let epoch = 0, moving = 0
 
+  let stored = false
   const load = async () => {
     const at = epoch
-    try {
-      const pages = await repo.list(workspaceId)
-      if (at === epoch && !moving) set({ pages, failed: false })
-    } catch { if (at === epoch && !moving) set({ failed: true }) }
+    const ok = await showThenFetch(stored ? undefined : account, pageList(workspaceId), () => repo.list(workspaceId), isPages,
+      (pages) => { if (at === epoch && !moving) { stored = true; set({ pages, failed: false }) } })
+    if (!ok && at === epoch && !moving) set({ failed: true })
   }
 
   const move = async (page: PageRef, to: MoveTo): Promise<string | null> => {

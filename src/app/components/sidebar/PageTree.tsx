@@ -18,6 +18,7 @@ interface Props {
   canWrite: boolean
   busy: boolean
   onOpen: (ref: PageRef) => void
+  onAhead?: (ref: PageRef) => void
   onToggle: (ref: PageRef, open?: boolean) => void
   onNew: (kind: PageKind, parent: PageRef | null) => void
   onRename: (row: Row) => void
@@ -32,7 +33,7 @@ interface Props {
 
 /** The workspace's pages as one tree: its label and +, then the rows. The keyboard is the WAI-ARIA tree's: arrows move and
     expand, Home and End jump, Enter opens, typing a letter jumps to a name, Shift+F10 opens a row's menu. */
-export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew, onRename, onPick, onMove, onDelete, pages }: Props) {
+export function PageTree({ rows, failed, canWrite, busy, onOpen, onAhead, onToggle, onNew, onRename, onPick, onMove, onDelete, pages }: Props) {
   // The row that takes Tab is the last one focused, else the open page, else the first.
   const [focusKey, setFocusKey] = useState<string | null>(null), [menu, setMenu] = useState<string | null>(null)
   const refs = useRef<HTMLDivElement>(null), typed = useRef({ text: '', at: 0 })
@@ -113,7 +114,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onToggle, onNew
           const k = keyOf(row.ref)
           return (
             <PageRow key={k} row={row} place={places.get(k) ?? { index: 1, size: 1 }} focused={!!tabbable && keyOf(tabbable) === k} canWrite={canWrite} busy={busy}
-              menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onToggle={(ref) => onToggle(ref)} onRename={onRename} onAdd={(r, kind) => onNew(kind, r.ref)} onMove={onPick} onDelete={onDelete}
+              menuOpen={menu === k} onMenuOpen={(o) => setMenu(o ? k : null)} onOpen={onOpen} onAhead={onAhead} onToggle={(ref) => onToggle(ref)} onRename={onRename} onAdd={(r, kind) => onNew(kind, r.ref)} onMove={onPick} onDelete={onDelete}
               onKeyDown={(e) => onKeyDown(e, row)} onFocus={(e) => { if (e.target === e.currentTarget) setFocusKey(k) }}
               drag={drag.rowProps(row)} dragging={!!drag.dragged && keyOf(drag.dragged) === k} into={!!drag.into && keyOf(drag.into) === k} />
           )

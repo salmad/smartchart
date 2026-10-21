@@ -14,7 +14,7 @@ export interface MatrixPoint { label: string; x: number; y: number; focus?: bool
 export interface Chart {
   kind?: 'bars' | 'waterfall' | 'timeline' | 'ranked' | 'matrix'
   stacking?: 'none' | 'stacked' | 'percent' | 'auto'
-  categories?: string[]; format?: string; series?: Series[]; annotations?: Annotation[]
+  categories?: string[]; format?: string; series?: Series[]; highlight?: { series: number; index: number }; annotations?: Annotation[]
   items?: WaterfallItem[]
   periods?: string[]; rows?: TimelineRow[]; milestones?: Milestone[]
   ranking?: RankItem[]
@@ -24,7 +24,7 @@ export interface Note { title: string; text?: string; point?: { series: number; 
 /** An Occam picture (slides/images.ts): `src` names its kind and size; `alt` is what it shows, in words. */
 export interface ImageRef { src: string; alt?: string }
 export type Cell = string | { value?: string; note?: string; bullets?: string[]; status?: boolean; logo?: ImageRef }
-export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; bars?: boolean; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[] }
+export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; bars?: boolean; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean; align?: 'left' | 'centre' | 'right' | 'auto' }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[] }
 export interface Card { icon?: string; value?: string; logo?: ImageRef; label?: string; title: string; bullets?: string[]; text?: string; tone?: Tone; facts?: { label: string; text: string }[] }
 export interface Step { when: string; title: string; text: string; focus?: boolean }
 export interface Point { title: string; text: string }

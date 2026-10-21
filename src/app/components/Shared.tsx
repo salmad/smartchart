@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadShared, type Shared as SharedDeck } from '@/app/share'
 import { Button } from './ui/button'
 import { newLiveKey, openPresentation, usePublishDeck } from '@/app/presenter-channel'
-import { PrintDeck, pdfName } from './PrintDeck'
+import { PrintDeck } from './PrintDeck'
+import { pdfName } from '../pdf-name'
 import { ReadSlides, type ReadSlidesHandle } from './ReadSlides'
 
 type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { state: 'ready'; shared: SharedDeck }

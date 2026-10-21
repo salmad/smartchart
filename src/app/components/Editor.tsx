@@ -32,7 +32,7 @@ import { ReviewDeck } from './ReviewDeck'
 import type { Attached as File } from '@/app/files'
 
 export interface EditorProps {
-  state: AppState; booted: boolean; deck: Deck; chips: Pill[] | null
+  state: AppState; healthKnown: boolean; deck: Deck; chips: Pill[] | null
   bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onLook' | 'onVersions' | 'lookOpen' | 'versionsOpen'> & {
     onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void; onAdd: () => void
   }
@@ -58,7 +58,7 @@ type Preview = { v: Version; diff: TreeDiff; current: boolean; items: Item[] | n
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
     with the deck's look as an inspector on the right while it is open. */
-export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, onSelect, onMove, onTalk, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments, tourShow, onRebuild }: EditorProps) {
+export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClear, onSelect, onMove, onTalk, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments, tourShow, onRebuild }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
@@ -115,20 +115,20 @@ export function Editor({ state: s, booted, deck, chips, bar, onSend, onClear, on
   }, [bar, current, items, onSelect, onEdit, stage, preview, s.editing, lock, side])
 
   const strip = (layout: 'row' | 'grid') => (
-    <Strip items={items} current={current} deck={deck} busy={lock} noted={noted} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
+    <Strip key={s.deckId ?? 'new'} items={items} current={current} deck={deck} busy={lock} noted={noted} onSelect={onSelect} onAdd={bar.onAdd} layout={layout}
       onOpen={layout === 'grid' ? open : undefined} onMove={onMove} onRemove={onRemove} removed={s.removed?.item ?? null} onRestore={onRestore} />
   )
 
   return (
     <>
-      <Bar {...bar} decksOpen={bar.decksOpen && !decksAside} onToggleDecks={decksAside ? () => { setSide(null); setPreview(null); setTarget(null); setRing(null) } : bar.onToggleDecks} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live}
+      <Bar {...bar} decksOpen={bar.decksOpen && !decksAside} onToggleDecks={decksAside ? () => { setSide(null); setPreview(null); setTarget(null); setRing(null) } : bar.onToggleDecks} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live || !healthKnown}
         view={shown || null} onView={setView} lookOpen={side === 'look'} onLook={() => { setPreview(null); setSide(side === 'look' ? null : 'look') }}
         versionsOpen={side === 'versions'} onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
         {!decksAside && decks}
         {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}
         <aside aria-label="Chat" data-tour="chat" className={cn('flex w-[368px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
-          <Chat messages={s.messages} offline={booted && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} />
+          <Chat messages={s.messages} offline={healthKnown && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} />
           <Composer chips={chips} canSend={s.live && !lock} busy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear} canClear={s.messages.length > 0}
             start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
         </aside>

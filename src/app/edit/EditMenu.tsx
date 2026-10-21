@@ -3,6 +3,7 @@
    from the same actions as the floating bar and the keys. Shift + right-click still opens the browser's (spellcheck). */
 import { useState, type ReactNode } from 'react'
 import { actionsFor, type Action, type Target } from '@/engine/slides/actions'
+import { settingsFor } from '@/engine/slides/settings'
 import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from '@/app/components/ui/context-menu'
 import type { Style } from '@/engine/types'
 import { cn } from '@/app/lib/utils'
@@ -10,6 +11,7 @@ import { selectRange } from './fields'
 import { targetAt } from './selection'
 import type { SlideEdit } from './useSlideEdit'
 import type { Surface } from './surface'
+import { SettingsMenu, Sub } from './SettingsMenu'
 
 const GROUPS: { id: Action['group']; label: string }[] = [
   { id: 'text', label: 'Text' }, { id: 'item', label: 'Item' }, { id: 'row', label: 'Row' }, { id: 'column', label: 'Column' }, { id: 'format', label: 'Format' }, { id: 'mark', label: 'Score' },
@@ -33,8 +35,11 @@ export interface MenuLook { content: string; item: string; separator: string; la
 export function EditMenu({ edit, surface, deckStyle, onChart, look, children }: { edit: SlideEdit; surface: Surface | null; deckStyle: Style; onChart: (which: number) => void; look?: MenuLook; children: ReactNode }) {
   const [target, setTarget] = useState<Target>({ kind: 'slide' }), [chartAt, setChartAt] = useState(0)
   const half = edit.draft.halves?.[chartAt]
-  const actions = actionsFor(target, edit.draft, deckStyle)
+  const actions = actionsFor(target, edit.draft, deckStyle), settings = settingsFor(target, edit.draft, deckStyle)
   const field = target.kind === 'text'
+  const rows = (items: Action[]) => items.map((a) => a.checked !== undefined
+    ? <ContextMenuCheckboxItem className={look?.item} key={a.id} checked={a.checked} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuCheckboxItem>
+    : <ContextMenuItem className={look?.item} key={a.id} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuItem>)
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild
@@ -63,14 +68,13 @@ export function EditMenu({ edit, surface, deckStyle, onChart, look, children }: 
           return (
             <div key={g.id}>
               {before && <ContextMenuSeparator className={look?.separator} />}
-              {(g.id === 'format' || g.id === 'mark') && <ContextMenuLabel className={cn('text-[11px] font-normal text-ink-3', look?.label)}>{g.label}</ContextMenuLabel>}
-              {items.map((a) => a.checked !== undefined
-                ? <ContextMenuCheckboxItem className={look?.item} key={a.id} checked={a.checked} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuCheckboxItem>
-                : <ContextMenuItem className={look?.item} key={a.id} onSelect={() => edit.apply(a.run())}>{a.label}<ContextMenuShortcut>{keys(a.shortcut)}</ContextMenuShortcut></ContextMenuItem>)}
+              {g.id === 'format' && <ContextMenuLabel className={cn('text-[11px] font-normal text-ink-3', look?.label)}>{g.label}</ContextMenuLabel>}
+              {g.id === 'mark' ? <Sub label={g.label} look={look}>{rows(items)}</Sub> : rows(items)}
             </div>
           )
         })}
-        {(edit.draft.chart || edit.draft.table || (half && (half.chart || half.table))) && <>{actions.length > 0 && <ContextMenuSeparator className={look?.separator} />}<ContextMenuItem className={look?.item} onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table || half?.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
+        {settings.length > 0 && <>{(actions.length > 0 || field) && <ContextMenuSeparator className={look?.separator} />}<SettingsMenu settings={settings} apply={edit.apply} look={look} /></>}
+        {(edit.draft.chart || edit.draft.table || (half && (half.chart || half.table))) && <>{(actions.length > 0 || settings.length > 0) && <ContextMenuSeparator className={look?.separator} />}<ContextMenuItem className={look?.item} onSelect={() => { setTimeout(() => onChart(chartAt), 0) }}>{edit.draft.table || half?.table ? 'Edit as sheet…' : 'Edit chart data…'}</ContextMenuItem></>}
         {target.kind === 'slide' && !edit.draft.chart && !edit.draft.table && !edit.draft.halves && <ContextMenuLabel className={cn('text-[11px] font-normal text-ink-3', look?.label)}>Right-click a card, row, column or text</ContextMenuLabel>}
       </ContextMenuContent>
     </ContextMenu>

@@ -78,11 +78,11 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
   const deckRead = (u: string, id: string, roles: string) => `exists (select 1 from decks where decks.id = ${id} and ${may('decks', u, roles)})`
   return {
     deckRole: async (u, id) => (await q<{ role: Role | null }>(`select ${roleOf('decks', '$1')} as role from decks where id = $2`, [u, id]))[0]?.role ?? null,
-    // The list carries only what a card draws (the first slide and the look); a deck's chat and agent history
+    // The list carries only what a row shows (name, size and look); a deck's slides, chat and agent history
     // can run to megabytes, so the whole deck is read only when it is opened.
     listDecks: async (u, ws) => (await q<Omit<DeckSummary, 'updated' | 'parent' | 'sortKey'> & PageCols & { updated: string | Date }>(
       `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
-         share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent, data->'items'->0->'slide' as first,
+         share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent,
          parent_kind, parent_id, sort_key
        from decks where ${may('decks', '$1', '$2')} and ($3::text is null or workspace_id = $3) order by updated_at desc limit 200`, [u, R('read'), ws ?? null]))
       .map(({ parent_kind, parent_id, sort_key, ...r }) => ({ ...r, slides: Number(r.slides), updated: ms(r.updated), parent: parentOf({ parent_kind, parent_id, sort_key }), sortKey: sort_key })),

@@ -16,6 +16,8 @@ const savedText = (page: Page) => page.evaluate(() => Object.values(JSON.parse(l
 test('creates a doc, writes a section, inserts and edits a chart and a table, and a reload matches the Markdown', async ({ page }) => {
   await page.addInitScript(([k]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, JSON.stringify({ active: 'a', decks: { a: { id: 'a', style: 'consulting', theme: 'ink', accent: null, current: 0, updated: 1, history: [], working: [], messages: [{ kind: 'bot', text: 'Hi.' }], items: [{ id: 's', slide: { template: 'section', title: 'Alpha' }, status: 'ok', errors: [], warnings: [], checks: [] }] } } })); sessionStorage.setItem('seeded', '1') } }, [DECKS] as const)
   await page.goto('/d/a')
+  // The editor loads on its own after the page: wait for its sidebar button before asking which way it points.
+  await page.getByRole('button', { name: /^(Show|Hide) the sidebar$/ }).waitFor()
   const show = page.getByRole('button', { name: 'Show the sidebar' })
   if (await show.isVisible()) await show.click()
   await page.getByRole('navigation', { name: 'Workspace' }).getByRole('button', { name: 'New page' }).click()
@@ -31,7 +33,8 @@ test('creates a doc, writes a section, inserts and edits a chart and a table, an
   // A new section at the end: a heading from the slash menu, then a paragraph under it.
   const last = page.locator('.doc-editing .sec-body > p').last()
   await last.click()
-  await page.keyboard.press(`${mod}+ArrowRight`)
+  // The caret goes to the end of the paragraph (Cmd+→ means that on a Mac only; Ctrl+→ jumps a word elsewhere).
+  await last.evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s?.removeAllRanges(); s?.addRange(r) })
   await page.keyboard.press('Enter')
   await page.keyboard.type('/head')
   await page.keyboard.press('Enter')

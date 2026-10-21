@@ -26,7 +26,7 @@ test('a card with no icon lead has nothing to pick', async () => {
 })
 
 test('every icon in the curated set has a glyph for the picker', async () => {
-  const { glyph } = await import('@/app/edit/IconPicker')
+  const { iconNode } = await import('@/engine/components/icons')
   const { ICONS } = await import('@/engine/slides/schema')
-  expect(ICONS.filter((n) => !glyph(n))).toEqual([])
+  expect(ICONS.filter((n) => !iconNode(n))).toEqual([])
 })

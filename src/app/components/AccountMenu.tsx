@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Compass, LogOut, PenLine, Plug } from 'lucide-react'
 import { signOut, type Account } from '@/app/auth'
 import { go } from '@/app/route'
+import { Avatar } from './Avatar'
 import { AgentKey } from './AgentKey'
 import { MENU_ICON, MENU_ITEM } from './menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
@@ -15,8 +16,8 @@ export function AccountMenu({ account, onTour = null, onReview = null }: { accou
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger data-tour="account" aria-label={`Account: ${who}`} title={who}
           className="grid size-8 flex-none cursor-pointer place-items-center rounded-full outline-none transition-colors hover:bg-panel focus-visible:ring-1 focus-visible:ring-line-2 data-[state=open]:bg-panel">
-          <span className="grid size-7 place-items-center overflow-hidden rounded-full bg-raise text-[12px] font-medium text-ink shadow-[0_0_0_1px_theme(colors.line-2)]">
-            {account.image ? <img src={account.image} alt="" className="size-full object-cover" /> : who.slice(0, 1).toUpperCase()}
+          <span className="relative grid size-7 place-items-center overflow-hidden rounded-full bg-raise text-[12px] font-medium text-ink shadow-[0_0_0_1px_theme(colors.line-2)]">
+            <Avatar name={who} image={account.image} />
           </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8} className="min-w-[220px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">

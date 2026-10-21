@@ -26,9 +26,9 @@ export interface Store { active: string | null; decks: Record<string, SavedDeck>
 
 /** How the app reaches saved decks, one deck at a time: on the server, or in this browser (a copy kept while saves fail; the dev account). */
 /** A deck as a list shows it: name, time, size and the first slide in the deck's look. Open it with `get`. */
-export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; first: Slide | null; parent: PageRef | null; sortKey: string | null }
+export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; parent: PageRef | null; sortKey: string | null }
 export const summaryOf = (d: SavedDeck): DeckSummary => ({
-  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, first: d.items?.[0]?.slide ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
+  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
 })
 
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
@@ -52,6 +52,9 @@ export interface DeckRepo {
   known?(id: string): number
   /** The user's role on the deck as last opened (a viewer can only read it). */
   role?(id: string): Role | null
+  /** Primes the revision, common ancestor and role of a deck opened from this browser's copy, as a `get` would, so a
+      save made before the server is heard from still carries the revision the copy was read at. */
+  seed?(deck: SavedDeck, rev: number, role: Role | null): void
   /* Versions (src/engine/versions.ts): newest first, and the slides their trees name, by hash. */
   versions?(id: string): Promise<Version[]>
   blobs?(id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>

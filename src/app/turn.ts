@@ -86,10 +86,12 @@ export async function sendTurn(input: string, deps: TurnDeps, files: Attached[] 
   }
 }
 
-/** Rule checks for every slide with the current code; judgment checks already made are kept. */
-export function recheckRules(s: AppState, measurer: TurnDeps['measurer']): Item[] {
+/** Rule checks for every slide with the current code (or only the slides at `only`, the rest left as they are);
+    judgment checks already made are kept. */
+export function recheckRules(s: AppState, measurer: TurnDeps['measurer'], only?: ReadonlySet<number>): Item[] {
   const d = deckOf(s)
   return s.items.map((it, i) => {
+    if (only && !only.has(i)) return it
     measurer.measure(it.slide, d, i)
     return { ...it, checks: [...ruleChecks(it.slide, s.style, measurer.lines), ...(it.checks || []).filter((c) => c.id.startsWith('J'))], checksPending: false }
   })

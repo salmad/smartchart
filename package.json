@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "test:browser": "playwright test -c tests/browser/playwright.config.ts",
     "eval:mcp": "vite-node --config vitest.config.ts tests/mcp-eval/eval.ts --",
     "film:upload": "node scripts/film-upload.mjs"
@@ -55,6 +56,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@modelcontextprotocol/sdk": "^1.31.0",
     "@playwright/test": "^1.58.2",
     "@types/node": "^26.6.3",
@@ -65,6 +70,7 @@
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
+    "fake-indexeddb": "^6.2.6",
     "globals": "^15.14.0",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.49",

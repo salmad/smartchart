@@ -2,6 +2,7 @@
    Continue with Google, or an emailed 6-digit code. The session is a cookie, so API calls need no token. */
 import { useSyncExternalStore } from 'react'
 import type { VanillaBetterAuthClient } from '@neondatabase/auth'
+import { cacheClear } from './cache'
 
 export interface Account { id: string; email: string; name: string; image: string | null }
 /** `undefined` while the first session check runs; `null` when signed out. */
@@ -14,9 +15,32 @@ const auth = (): Promise<VanillaBetterAuthClient> => (client ??= Promise.all([im
 
 const VERIFIER = 'neon_auth_session_verifier'
 
-let current: SessionState = undefined
+// The last account seen is kept in this browser so the signed-in app paints at once; the session check below
+// still runs and has the last word. Storage can be blocked or hold junk: both read as no cache.
+const CACHE = 'occam.account.v1'
+function readCached(): Account | undefined {
+  try {
+    const a: unknown = JSON.parse(localStorage.getItem(CACHE) ?? 'null')
+    if (a && typeof a === 'object' && 'id' in a && typeof a.id === 'string' && a.id) {
+      const { id, email, name, image } = a as Partial<Account> & { id: string }
+      return { id, email: typeof email === 'string' ? email : '', name: typeof name === 'string' ? name : '', image: typeof image === 'string' ? image : null }
+    }
+  } catch { /* blocked or corrupt */ }
+  return undefined
+}
+function writeCached(a: Account | null) {
+  try { if (a) localStorage.setItem(CACHE, JSON.stringify(a)); else localStorage.removeItem(CACHE) } catch { /* blocked or full */ }
+}
+const same = (a: SessionState, b: SessionState) => !!a && !!b && a.id === b.id && a.email === b.email && a.name === b.name && a.image === b.image
+
+let current: SessionState = readCached()
+// Whether the first check has been started: the cached account must not stand in for it.
+let started = false
 const listeners = new Set<() => void>()
-const publish = (s: SessionState) => { current = s; listeners.forEach((fn) => fn()) }
+const publish = (s: SessionState) => {
+  if (same(current, s)) return
+  current = s; listeners.forEach((fn) => fn())
+}
 
 interface SessionBody { user?: { id?: string; email?: string; name?: string | null; image?: string | null } }
 
@@ -39,18 +63,26 @@ async function check(): Promise<SessionState> {
     if (verifier) { here.searchParams.delete(VERIFIER); history.replaceState(history.state, '', here.href) }
     let r = await getSession(verifier ? `?${VERIFIER}=${encodeURIComponent(verifier)}` : '')
     if (!r.ok && verifier) r = await getSession()
+    // Only a definite answer changes who is signed in; a server error or a dropped connection keeps what is shown.
+    if (!r.ok && r.status !== 401) { if (current === undefined) publish(null); return current }
     const u = r.ok ? ((await r.json()) as SessionBody | null)?.user : undefined
-    publish(u?.id ? { id: u.id, email: u.email ?? '', name: u.name ?? '', image: u.image ?? null } : null)
-  } catch { publish(null) }
+    const account = u?.id ? { id: u.id, email: u.email ?? '', name: u.name ?? '', image: u.image ?? null } : null
+    writeCached(account)
+    publish(account)
+  } catch { if (current === undefined) publish(null) }
   return current
 }
 
+export const sessionSnapshot = (): SessionState => current
+
+export function subscribeSession(fn: () => void): () => void {
+  listeners.add(fn)
+  if (!started) { started = true; void refreshSession() }
+  return () => { listeners.delete(fn) }
+}
+
 export function useSession(): SessionState {
-  return useSyncExternalStore((fn) => {
-    listeners.add(fn)
-    if (current === undefined && listeners.size === 1) void refreshSession()
-    return () => { listeners.delete(fn) }
-  }, () => current)
+  return useSyncExternalStore(subscribeSession, sessionSnapshot)
 }
 
 /** Leaves for Google and comes back to `returnTo` (a path on this site). */
@@ -72,7 +104,10 @@ export async function verifyCode(email: string, otp: string): Promise<string | n
 }
 
 export async function signOut() {
+  const who = current ? current.id : null
   await (await auth()).signOut().catch(() => undefined)
+  writeCached(null)
+  if (who) await cacheClear(who)
   publish(null)
 }
 
