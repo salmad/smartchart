@@ -189,3 +189,6 @@ A Trash with restore for deleted pages (a delete of a branch is permanent today,
 
 ## 28. Page tree sidebar: what P2 leaves out (2026-10-20)
 The sidebar below 900 px (it is hidden there, so Move to…, the keyboard moves and the subpage `+` have no touch home until a slide-over exists); a list window for very large workspaces if a production build janks (1,000 pages expanded a 200-child branch in about 0.8 s in a development build); the header path below 1200 px, where it shares the left third with the view switch, not yet looked at; a viewer's tree not yet looked at by eye.
+
+## 29. Page tree drag and drop: what P3 leaves out (2026-10-21)
+Dragging by touch (native HTML5 drag does not start from a finger on most phones, and the sidebar is hidden below 900 px anyway; Move to… and the keys are the way until a slide-over exists); dragging a page into another workspace (#23); a custom drag image (the browser's own is used); multi-select drag. The drag has no keyboard form of its own by design: the keys and Move to… do the same thing, and a drop is announced to screen readers.

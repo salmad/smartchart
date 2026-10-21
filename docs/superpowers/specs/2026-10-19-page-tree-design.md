@@ -1,6 +1,6 @@
 # Page tree: docs and decks nested in the sidebar
 
-> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. P1 (data and server) and P2 (the sidebar) are built; P3 and P4 are not.
+> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. P1 (data and server), P2 (the sidebar) and P3 (drag and drop) are built; P4 is not.
 
 ## Why
 
@@ -123,7 +123,7 @@ Each milestone ends with its own plan and stops at the boundary (memory: inline 
 
 *Built 2026-10-20 on `claude/ecstatic-cerf-51uhxf` (plan `docs/superpowers/plans/2026-10-20-page-tree-p2-sidebar.md`, calls recorded per task): the client repos and `PageRepo` (remote and the dev account's), the tree state (`flatten.ts`, `usePageTree`, optimistic moves that revert on a refusal), `PageTree` in place of `ItemList` (ARIA tree, arrow, Right, Left, Home, End, type-ahead, Shift+F10), Add subpage from a row's menu and its `+`, a deck born under a parent, the Move to… picker, Tab, Shift-Tab and ⌘/Ctrl-↑↓ moves, delete with the subpage count (sidebar and deck bar), and the pages above the open one in the header. The done-when runs in `tests/browser/page-tree.spec.ts` (19 tests): a three-level tree is built with Tab alone, survives a reload, is walked and opened with no pointer, and the header path follows. Calls made: the header path sits between `Occam /` and the title (the three headers already had a breadcrumb); the sidebar and the header share one list per workspace; the row's two menus mount when the pointer or the keyboard first reaches the row, which took expanding a 200-child branch among 1,000 pages from about 1.7 s to 0.8 s in a development build in this container (no list windowing was needed; if a production build janks, window it); a row gives up room for its buttons only on hover, focus or an open menu. Not done in P2: below 900 px the whole sidebar is still hidden, so Move to… and the keyboard moves are not reachable there until a mobile sidebar exists.*
 
-**P3. Drag and drop.** Reorder and re-parent by drag. *Done when:* a browser test drags a page under another and between two siblings, and an illegal drop does nothing.
+**P3. Drag and drop (built; plan `2026-10-20-page-tree-p3-drag-and-drop.md`).** Reorder and re-parent by drag. *Done when:* a browser test drags a page under another and between two siblings, and an illegal drop does nothing.
 
 **P4. MCP.** `parentId`, `move_page`, the guide line. *Done when:* an MCP session creates a doc, nests two under it and moves one out, and `list_docs` returns the parents.
 

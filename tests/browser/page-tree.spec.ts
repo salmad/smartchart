@@ -451,3 +451,29 @@ test('pressing and dragging from a row’s + or ··· button does not leave a m
   await page.getByRole('button', { name: 'Add subpage to Research' }).click()
   await expect(page.getByRole('menu')).toHaveCount(1) // a plain click still opens it
 })
+
+test('done when: an illegal drop does nothing; the legal ones land where dropped and a reload keeps them', async ({ page }) => {
+  await seed(page, ['doc:doc_r', 'doc:doc_c'])
+  await page.goto('/d/rev')
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Revolut', 'Alpha'])
+  // Competitors onto its own child: no line, no ring, no move, no notice.
+  await hold(page, 'Competitors', 'Revolut', 16)
+  const r = (await box(row(page, 'Revolut')))
+  await page.mouse.move(r.x + 82, r.y + 16)
+  await page.mouse.up()
+  await expect(rows(page)).toHaveText(['Research', 'Competitors', 'Revolut', 'Alpha'])
+  await expect.poll(() => levels(page)).toEqual(['1', '2', '3', '1'])
+  await expect(sidebar(page).getByRole('status')).toHaveCount(0)
+  // Revolut to the top of the list (before Research).
+  await row(page, 'Revolut').dragTo(row(page, 'Research'), { targetPosition: { x: 80, y: 3 } })
+  await expect(rows(page)).toHaveText(['Revolut', 'Research', 'Competitors', 'Alpha'])
+  await expect.poll(() => levels(page)).toEqual(['1', '1', '2', '1'])
+  // Alpha under Research, then between Research and its child.
+  await row(page, 'Alpha').dragTo(row(page, 'Research'), { targetPosition: { x: 80, y: 16 } })
+  await expect(rows(page)).toHaveText(['Revolut', 'Research', 'Competitors', 'Alpha'])
+  await row(page, 'Alpha').dragTo(row(page, 'Competitors'), { targetPosition: { x: 80, y: 3 } })
+  await expect(rows(page)).toHaveText(['Revolut', 'Research', 'Alpha', 'Competitors'])
+  await page.reload()
+  await expect(rows(page)).toHaveText(['Revolut', 'Research', 'Alpha', 'Competitors'])
+  await expect.poll(() => levels(page)).toEqual(['1', '1', '2', '2'])
+})

@@ -214,3 +214,25 @@ test('signed out, every call to action is Start free or Make slides, with the of
   expect(new Set(labels.map((l) => l.trim()))).toEqual(new Set(['Start free', 'Make slides']))
   await expect(page.getByText('First slide free.')).toHaveCount(2)
 })
+
+test('a drop the server refuses puts the row back and says why', async ({ page }) => {
+  const mk = (id: string, name: string, parent: { kind: string; id: string } | null, sortKey: string) => ({ kind: 'deck', id, name, updated: 1, slides: 1, parent, sortKey })
+  const pages = [mk('d_a', 'Acme', null, 'a'), mk('d_b', 'Plan', null, 'b')]
+  await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
+  await page.route('**/api/workspaces**', (r) => r.fulfill({ json: [{ id: 'ws_a', name: 'Ann’s workspace', role: 'owner', personal: true, members: 1, usedAt: 1 }] }))
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: pages }))
+  await page.route('**/api/decks**', (r) => {
+    const url = new URL(r.request().url())
+    if (url.searchParams.has('move')) return r.fulfill({ status: 409, json: { error: 'That page is too deep to move there.' } })
+    if (r.request().method() === 'PUT') return r.fulfill({ json: { ok: true } })
+    const id = url.searchParams.get('id')
+    return id ? r.fulfill({ json: { id, name: id === 'd_a' ? 'Acme' : 'Plan', updated: 1, data: { ...oneDeck.data, id } } }) : r.fulfill({ json: [] })
+  })
+  await page.goto('/d/d_a')
+  const tree = page.getByRole('navigation', { name: 'Workspace' }).getByRole('tree', { name: 'Pages' })
+  await expect(tree.getByRole('treeitem')).toHaveText(['Acme', 'Plan'])
+  await tree.getByRole('treeitem').filter({ hasText: 'Plan' }).dragTo(tree.getByRole('treeitem').filter({ hasText: 'Acme' }), { targetPosition: { x: 80, y: 16 } })
+  await expect(page.getByRole('navigation', { name: 'Workspace' }).getByRole('status')).toHaveText('That page is too deep to move there.')
+  await expect(tree.getByRole('treeitem')).toHaveText(['Acme', 'Plan'])
+  await expect(tree.getByRole('treeitem').filter({ hasText: 'Plan' })).toHaveAttribute('aria-level', '1')
+})

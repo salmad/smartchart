@@ -41,7 +41,7 @@ Calls made: the drag state lives in `usePageDrag.ts` (so `PageTree` grows by a f
 - **Say what happened:** a visually hidden `role="status"` line in `Sidebar` ("Moved “Alpha” under “Research”.", "Moved “Alpha” to the top level.") after a drop that was accepted; a refusal already shows `tree.notice`. The announcement is the screen-reader answer to a gesture that has no keyboard form; Move to… and the keys remain the accessible way to do the same.
 - Browser tests: hover a collapsed parent 600 ms mid-drag and it opens; drop on the empty space makes a top-level page; a long tree scrolls while dragging (seed 60 pages); a viewer's rows are not draggable (`draggable` is not set).
 
-## Task 4. The illegal drop, and close the milestone
+## Task 4. The illegal drop, and close the milestone — done
 
 - **Done-when test** (`tests/browser/page-tree.spec.ts`): the three-level seed; drag Competitors onto Revolut (its own child): no indicator, and after the drop nothing moved and no notice appeared; drag Revolut to the top of the list; drag Alpha under Research and then between Research and its child; reload, each result kept.
 - A move the server refuses (a stubbed 409 in a mocked-API test, as `site.spec.ts` does) puts the row back and shows the sentence: the optimistic path that the keyboard already uses.
