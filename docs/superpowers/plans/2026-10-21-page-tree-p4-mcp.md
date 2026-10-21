@@ -42,7 +42,9 @@ Calls made: rows carry `parent` (ref or null) and no sortKey; order unchanged. T
 - The one guide line, in `instructions.ts` (the MCP server's instructions, where docs and decks are introduced) and in the doc and deck guides (`guide-text.ts`), short: "Pages nest: pass `parent` to `create_doc` or `create_deck` to start one under another page, and `move_page` to move one; keep a deck's supporting docs under the deck." (What to nest is the agent's judgement; the line only says the ability exists. Thin harness: no nesting policy in code.)
 - Tests: `list_docs` and `list_decks` show `parent` for a nested page and null for a top-level one; the registry snapshot is updated (read the diff: three descriptions changed, one tool added, two inputs added); `guide` tests that match text still pass.
 
-## Task 4. The done-when, and close the milestone
+## Task 4. The done-when, and close the milestone — done
+
+Calls made: `tests/unit/page-tree-mcp.test.ts` runs the scenario through the MCP transport on the fake `Db` and compares `list_docs` with the `/api/pages` handler. The live run was skipped (no `TEST_DATABASE_URL` approved; `DATABASE_URL` untouched). Spec and `FUTURE.md` #30 updated. MCP clients that cached `tools/list` need to reconnect to see `move_page`.
 
 - `tests/unit/page-tree-mcp.test.ts` (one scenario, through `mcp.ts` the way `mcp.test.ts` does, so the transport is in it, on the fake `Db`): create a doc "Research"; create two docs with `parent` = Research; `list_docs` shows both with that parent and Research with null; `move_page` one to the top level; `list_docs` shows it with null and the other still under Research; `get_doc` still works on all three; the REST `/api/pages` list (the same fake) agrees, which is what the sidebar reads.
 - `npm test`, `npm run lint`, `npm run build`.

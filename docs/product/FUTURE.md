@@ -192,3 +192,6 @@ The sidebar below 900 px (it is hidden there, so Move to…, the keyboard moves 
 
 ## 29. Page tree drag and drop: what P3 leaves out (2026-10-21)
 Dragging by touch (native HTML5 drag does not start from a finger on most phones, and the sidebar is hidden below 900 px anyway; Move to… and the keys are the way until a slide-over exists); dragging a page into another workspace (#23); a custom drag image (the browser's own is used); multi-select drag. The drag has no keyboard form of its own by design: the keys and Move to… do the same thing, and a drop is announced to screen readers.
+
+## 30. Page tree over MCP: what P4 leaves out (2026-10-21)
+A `list_pages` returning the whole tree in one call (agents find a parent through `list_docs` and `list_decks` today); placing a page by position number instead of `before` / `after` a sibling; agents moving a page into another workspace (#23). A live MCP run against a real database was not done.
