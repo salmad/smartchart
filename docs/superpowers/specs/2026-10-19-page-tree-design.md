@@ -125,7 +125,7 @@ Each milestone ends with its own plan and stops at the boundary (memory: inline 
 
 **P3. Drag and drop (built; plan `2026-10-20-page-tree-p3-drag-and-drop.md`).** Reorder and re-parent by drag. *Done when:* a browser test drags a page under another and between two siblings, and an illegal drop does nothing.
 
-**P4. MCP.** `parentId`, `move_page`, the guide line. *Done when:* an MCP session creates a doc, nests two under it and moves one out, and `list_docs` returns the parents.
+**P4. MCP (plan `2026-10-21-page-tree-p4-mcp.md`).** `parentId`, `move_page`, the guide line. *Done when:* an MCP session creates a doc, nests two under it and moves one out, and `list_docs` returns the parents.
 
 ## Critical files
 
