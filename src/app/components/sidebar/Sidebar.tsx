@@ -13,6 +13,7 @@ import { NewDoc } from './NewDoc'
 import { pathTo, type Row } from './flatten'
 import { PageTree } from './PageTree'
 import { usePageTree } from './usePageTree'
+import { useSidebarWidth } from './useSidebarWidth'
 import { RenameItem } from './RenameItem'
 import type { RowActions } from './useRowActions'
 import type { WorkspaceState } from './useWorkspace'
@@ -39,6 +40,7 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its pages as one tree of docs and
     decks. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens and expands. */
 export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onRenameOpenDeck, me }: Props) {
+  const size = useSidebarWidth()
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
   const [doomed, setDoomed] = useState<{ row: Row; subpages: number } | null>(null), [said, setSaid] = useState<string | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(null)
@@ -100,7 +102,8 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   }
 
   return (
-    <nav aria-label="Workspace" className="flex w-[248px] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
+    <nav ref={size.nav} aria-label="Workspace" className="relative flex w-[var(--sidebar-w,248px)] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
+      <div {...size.gripProps} className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize touch-none outline-none"><span className="mx-auto block h-full w-px bg-transparent transition-colors group-hover:bg-gold/60 group-focus-visible:bg-gold group-active:bg-gold" /></div>
       <div className="h-12 px-2 pb-1 pt-2">
         {ws.current && <WorkspaceSwitcher list={ws.list} current={ws.current} busy={busy} onSwitch={(id) => void switchTo(id)}
           onNew={() => setRenaming({ kind: 'workspace' })} onMembers={() => setMembers(true)} />}
