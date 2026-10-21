@@ -41,9 +41,11 @@ import type { DocRepo } from './docs'
 import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
 import { ROOMY, usePanel } from './panel'
+import { lazyScreen, whenIdle } from './lazy-screen'
 
-// Screens not needed for the first paint load when they are first shown.
-const DocScreen = lazy(() => import('./components/DocScreen').then((m) => ({ default: m.DocScreen })))
+// Screens not needed for the first paint load when they are first shown; the doc screen also loads once the browser is idle
+// after boot, so the first doc opened does not wait for it.
+const docScreen = lazyScreen(() => import('./components/DocScreen').then((m) => m.DocScreen))
 const ViewDeck = lazy(() => import('./components/ViewDeck').then((m) => ({ default: m.ViewDeck })))
 const PrintDeck = lazy(() => import('./components/PrintDeck').then((m) => ({ default: m.PrintDeck })))
 
@@ -78,9 +80,15 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const author = useRef<SaveMeta | null>(null)
   // Counts saves that landed, so the Versions panel knows to read the list again.
   const [saves, setSaves] = useState(0)
+  // The deck last opened from the URL (or found missing there).
+  const [opened, setOpened] = useState<string | null>(null)
   const [printing, setPrinting] = useState(false), [booted, setBooted] = useState(false), [healthKnown, setHealthKnown] = useState(false), [loaded, setLoaded] = useState(false)
   // The frame index.html painted stays until boot has put the deck on screen (or started a new one), not the gallery in between.
-  useEffect(() => { if (booted) bootDone() }, [booted])
+  useEffect(() => {
+    if (!booted) return
+    bootDone()
+    whenIdle(() => void docScreen.preload())
+  }, [booted])
   // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
   // laptop-width window, where the slide needs the room, until the maker opens them.
   const [decksOpen, toggleDecks] = usePanel(DECKS_OPEN, '\\', () => matchMedia(ROOMY).matches)
@@ -180,6 +188,8 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       const health = fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()).then((j: { live?: unknown }) => !!j.live).catch(() => false)
       void health.then((live) => { app.dispatch({ type: 'set', patch: { live } }); setHealthKnown(true) })
       await document.fonts.ready
+      // Whatever happens next (opened, or missing and replaced by a new deck), the deck in the URL is done opening.
+      if (route.name === 'deck') setOpened(route.id)
       setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
       if (app.getState().deckId) return
@@ -206,6 +216,13 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
 
   const persist = usePersist({ app, repo, backup, syncNow, author, savedKey, onSaved: () => setSaves((n) => n + 1) })
 
+  // While the deck in the URL is still opening, the URL is left alone, and the doc it was picked from stays on screen rather
+  // than the deck held behind it.
+  const switching = route.name === 'deck' && booted && route.id !== s.deckId && opened !== route.id
+  const [lastDoc, setLastDoc] = useState<string | null>(null)
+  const docOnScreen = route.name === 'doc' ? route.id : switching ? lastDoc : null
+  if (docOnScreen !== lastDoc) setLastDoc(docOnScreen)
+
   // Save 250 ms after the last change, never mid-turn.
   useEffect(() => {
     if (!loaded || s.busy || !s.deckId || viewOnly) return
@@ -213,11 +230,11 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       const saved = toSaved(app.getState())
       if (!saved) return
       // A doc on screen keeps its URL; the deck held behind it still saves.
-      if (location.pathname !== `/d/${saved.id}` && route.name !== 'doc') go(`/d/${saved.id}`, { replace: true })
+      if (location.pathname !== `/d/${saved.id}` && route.name !== 'doc' && !switching) go(`/d/${saved.id}`, { replace: true })
       if (unsaved(saved)) void persist(saved)
     }, config.saveDelayMs)
     return () => clearTimeout(t)
-  }, [s, loaded, app, persist, route.name, viewOnly])
+  }, [s, loaded, app, persist, route.name, viewOnly, switching])
 
   usePresence(repo, s.deckId, s.busy, s.editing)
 
@@ -240,7 +257,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       if (kept) { openDeck(kept.deck); void refreshKept(id); return }
       const d = await findDeck(id, repo, backup)
       if (d) openDeck(d); else { newDeck(); say(MISSING) }
-    })()
+    })().finally(() => setOpened(id))
   }, [route, where, booted, app, repo, backup, openDeck, newDeck, say, readKept, refreshKept])
   // Leaving a deck saves it now rather than after the usual pause.
   const leaveTo = useCallback((path: string) => {
@@ -297,8 +314,8 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
   // The pages above the open one, for the header (read from the same list as the sidebar).
   const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, tick: docTick, saved: s.items.length > 0,
-    open: route.name === 'doc' ? { kind: 'doc', id: route.id } : s.deckId ? { kind: 'deck', id: s.deckId } : null })
-  const docName = usePageName({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, open: route.name === 'doc' ? { kind: 'doc', id: route.id } : null })
+    open: docOnScreen ? { kind: 'doc', id: docOnScreen } : s.deckId ? { kind: 'deck', id: s.deckId } : null })
+  const docName = usePageName({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, open: docOnScreen ? { kind: 'doc', id: docOnScreen } : null })
   const openPage = (ref: { kind: 'deck' | 'doc'; id: string }) => leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : `/doc/${ref.id}`)
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
@@ -372,13 +389,14 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={startDeck}
     onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} />
 
+  const DocScreen = docScreen.get()
   return (
     <TooltipProvider delayDuration={400}>
-      {route.name !== 'doc' && readOnly
+      {!docOnScreen && readOnly
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
-        : route.name === 'doc'
-        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={route.id} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} /></Suspense>
+        : docOnScreen
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} /></Suspense>
         : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}

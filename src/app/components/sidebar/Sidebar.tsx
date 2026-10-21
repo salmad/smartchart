@@ -6,7 +6,6 @@ import type { DocRepo } from '@/app/docs'
 import type { PageRepo } from '@/app/pages'
 import type { WorkspaceRepo } from '@/app/workspaces'
 import { DEV_ACCOUNT } from '@/app/dev-account'
-import { readDocAhead } from '@/app/doc-cache'
 import { DeleteDeck } from '../DeleteDeck'
 import { MovePicker } from './MovePicker'
 import { Members } from './Members'
@@ -54,7 +53,11 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   // never the open one; a doc into memory.
   const ahead = useRef(new Set<string>())
   const readAhead = (ref: PageRef) => {
-    if (ref.kind === 'doc') { if (ref.id !== open.doc && !actions.pending(ref)) readDocAhead(repos.docs, ref.id); return }
+    if (ref.kind === 'doc') {
+      if (ref.id === open.doc || repos.docs.peek?.(ref.id)?.doc || actions.pending(ref)) return
+      void repos.docs.get(ref.id).then(() => repos.docs.comments(ref.id)).catch(() => undefined)
+      return
+    }
     if (ref.kind !== 'deck' || ref.id === deck.id || ahead.current.has(ref.id) || me === DEV_ACCOUNT.id || actions.pending(ref)) return
     ahead.current.add(ref.id)
     void repos.decks.get(ref.id).catch(() => undefined)

@@ -44,3 +44,30 @@ test('switching docs keeps the name and the bar on screen, and a doc read before
   await expect(title).toHaveText('Alpha plan', { timeout: SLOW / 2 })
   expect(await page.evaluate(() => (window as unknown as { blinks: string[] }).blinks)).toEqual([])
 })
+
+test('a doc read on an earlier visit opens from this browser before the server answers', async ({ page }) => {
+  await page.addInitScript((u) => localStorage.setItem('occam.account.v1', JSON.stringify(u)), user)
+  await page.route('**/api/auth/get-session', (r) => r.fulfill({ json: { user, session: {} } }))
+  await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
+  await page.route('**/api/workspaces', (r) => r.fulfill({ json: ws }))
+  await page.route('**/api/decks**', (r) => r.fulfill({ json: [] }))
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: Object.entries(docs).map(([id, name]) => ({ kind: 'doc', id, name, updated: 100, slides: null, parent: null, sortKey: null })) }))
+  let wait = 0
+  await page.route('**/api/docs**', async (r) => {
+    const q = new URL(r.request().url()).searchParams, id = q.get('id') as keyof typeof docs | null
+    if (!id) return r.fulfill({ json: [] })
+    if (q.has('rev')) return r.fulfill({ json: { rev: 1, presence: {}, role: 'owner' } })
+    if (q.has('comments') || q.has('versions')) return r.fulfill({ json: [] })
+    await new Promise((done) => setTimeout(done, wait))
+    return r.fulfill({ json: { id, name: docs[id], text: text(docs[id]), updated: 100, rev: 1, workspaceId: 'w1' } })
+  })
+  await page.goto('/doc/doc_a')
+  await expect(page.locator('.doc-title')).toHaveText('Alpha plan')
+  await page.waitForTimeout(300) // the copy is stored
+  wait = 5000
+  await page.reload()
+  await expect(page.locator('.doc-title')).toHaveText('Alpha plan', { timeout: 2500 })
+  // Edit waits for the server's read, then opens the editor on it.
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(page.locator('.doc-editing')).toBeVisible({ timeout: 8000 })
+})

@@ -40,6 +40,10 @@ export interface DocRepo {
   comments(id: string): Promise<DocComment[]>
   /** The doc's comments after the change, or why not as a sentence. */
   comment(id: string, op: CommentOp): Promise<DocComment[] | string>
+  /** The copy kept in memory from an earlier read or save (see cachedDocRepo); null when there is none. */
+  peek?(id: string): { doc: Doc | null; comments: DocComment[] } | null
+  /** The kept copy, from memory or this browser. */
+  kept?(id: string): Promise<{ doc: Doc | null; comments: DocComment[] } | null>
 }
 
 export const DOC_STALE = 'This doc was changed in another tab or window. Reload to see the latest.'

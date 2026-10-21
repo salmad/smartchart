@@ -1,5 +1,5 @@
 import '@/engine/docs/doc.css'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DocComment } from '@/engine/comments'
 import { PanelLeft } from 'lucide-react'
 import { parseDoc } from '@/engine/docs/parse'
@@ -10,7 +10,6 @@ import { plainOf } from '@/engine/slides/markup'
 import type { Block, Doc } from '@/engine/docs/types'
 import type { Account } from '@/app/auth'
 import { DOC_STALE, type Doc as DocRecord, type DocRepo, type DocVersionRow } from '@/app/docs'
-import { keepComments, keepDoc, peekComments, peekDoc } from '@/app/doc-cache'
 import { authorOf } from '@/app/useComments'
 import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
@@ -26,6 +25,7 @@ import { Crumbs } from './Crumbs'
 import type { Crumb } from './sidebar/usePageCrumbs'
 import { DocPreview } from './docs/DocPreview'
 import { useDocLive } from './docs/useDocLive'
+import { lazyScreen, whenIdle } from '@/app/lazy-screen'
 import './docs/docs-comments.css'
 
 interface Props {
@@ -50,42 +50,54 @@ interface Props {
 }
 
 /** A doc in the workspace shell: the sidebar, a quiet bar, and the doc, read (M2) or edited (M4). */
-// The editor (Tiptap and ProseMirror) loads when a doc is first edited, not with the app.
-const DocEditing = lazy(() => import('./docs/DocEditing').then((m) => ({ default: m.DocEditing })))
+// The editor (Tiptap and ProseMirror) loads once a doc is open and the browser is idle (or at the first Edit), not with the app.
+const docEditing = lazyScreen(() => import('./docs/DocEditing').then((m) => m.DocEditing))
 
 export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name }: Props) {
   const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
-  const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => peekDoc(docs, id)), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
+  const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => docs.peek?.(id)?.doc ?? null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
   const parsed = useMemo(() => (record ? parseDoc(record.text).doc : null), [record])
   const me = authorOf(account), live = useDocLive(docs, id, editing, me)
   const [side, setSide] = useState<'comments' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
-  const [comments, setComments] = useState<DocComment[]>(() => peekComments(docs, id)), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
+  const [comments, setComments] = useState<DocComment[]>(() => docs.peek?.(id)?.comments ?? []), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
   const blocks = useRef(new Map<string, Block>())
   const shown = preview?.doc && preview.doc !== 'missing' && !preview.current ? preview.doc : parsed
 
-  // Another doc picked: reset while rendering, not after, so the old doc never paints under the new id. One read before
-  // opens from memory at once, and the server is asked again behind it.
+  // Another doc picked: reset while rendering, not after, so the old doc never paints under the new id. A doc read before
+  // opens at once from memory (or, on a new visit, from this browser), and the server is asked again behind it.
   const [openId, setOpenId] = useState(id)
   if (openId !== id) {
-    setOpenId(id); setEditing(false); setState(peekDoc(docs, id)); setPreview(null); setSide(null); setComments(peekComments(docs, id))
+    const kept = docs.peek?.(id)
+    setOpenId(id); setEditing(false); setState(kept?.doc ?? null); setPreview(null); setSide(null); setComments(kept?.comments ?? [])
   }
-  useEffect(() => { blocks.current = new Map() }, [id])
-  useEffect(() => { if (record) keepDoc(docs, record) }, [docs, record])
+  useEffect(() => {
+    if (canEdit) whenIdle(() => void docEditing.preload())
+  }, [canEdit])
+  useEffect(() => {
+    blocks.current = new Map()
+    let go = true
+    if (!docs.peek?.(id)?.doc) void docs.kept?.(id).then((k) => { if (go && k?.doc) { const { doc } = k; setState((s) => s ?? doc); setComments((c) => (c.length ? c : k.comments)) } })
+    return () => { go = false }
+  }, [docs, id])
+  // The server's read of the doc on screen: Edit waits for it, so a draft never starts from a kept copy's revision.
+  const read = useRef<{ id: string; done: Promise<unknown> }>({ id, done: Promise.resolve() })
   useEffect(() => {
     if (editing) return
     let go = true
     // The same doc read again keeps the object on screen, so the page is not drawn twice.
-    const same = (a: DocRecord, b: DocRecord) => a.id === b.id && a.text === b.text && a.name === b.name && a.updated === b.updated
-    void docs.get(id).then((d) => { if (go) setState((s) => (d && s && typeof s === 'object' && same(s, d) ? s : d ?? 'missing')) }, () => { if (go) setState((s) => (s && typeof s === 'object' ? s : 'failed')) })
+    const same = (a: DocRecord, b: DocRecord) => a.id === b.id && a.text === b.text && a.name === b.name
+    const done = docs.get(id).then((d) => { if (go) setState((s) => (d && s && typeof s === 'object' && same(s, d) ? s : d ?? 'missing')) }, () => { if (go) setState((s) => (s && typeof s === 'object' ? s : 'failed')) })
+    read.current = { id, done }
     return () => { go = false }
   }, [id, docs, tick, reload]) // eslint-disable-line react-hooks/exhaustive-deps -- a rename while editing waits for the next read
+  const startEditing = () => { const at = read.current; void at.done.then(() => { if (read.current.id === at.id) setEditing(true) }) }
   // Someone saved while this tab was only reading: show what they wrote.
   useEffect(() => { if (live.newer && !editing && record) setReload((n) => n + 1) }, [live.newer]) // eslint-disable-line react-hooks/exhaustive-deps
   // Editing starts from the current doc: a version preview, Versions and Look are for reading.
   useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' || s === 'look' ? null : s)); setRefused(false) } }, [editing])
-  useEffect(() => { let go = true; void docs.comments(id).then((c) => { if (go) { setComments(c); keepComments(docs, id, c) } }); return () => { go = false } }, [docs, id, live.tick])
+  useEffect(() => { let go = true; void docs.comments(id).then((c) => { if (go) setComments(c) }); return () => { go = false } }, [docs, id, live.tick])
 
   // The read view, drawn from the doc shown (a version, while one is previewed); again after each save.
   useEffect(() => {
@@ -130,7 +142,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
 
   const comment = async (op: Parameters<DocRepo['comment']>[1]) => {
     const r = await docs.comment(id, op)
-    if (typeof r === 'string') setCommentError(r); else { setCommentError(null); setComments(r); keepComments(docs, id, r) }
+    if (typeof r === 'string') setCommentError(r); else { setCommentError(null); setComments(r) }
   }
   const mine = (c: DocComment) => c.userId === account.id || c.userId === 'local'
   const reveal = (anchor: string) => {
@@ -188,6 +200,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   )
 
   if (editing && parsed) {
+    const DocEditing = docEditing.get()
     return (
       <Suspense fallback={<>{header(null)}{body(null)}</>}>
         <DocEditing doc={parsed} save={save} onDone={() => setEditing(false)} comments={commenting}
@@ -200,7 +213,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   return (
     <>
       {/* The bar stays while the next doc is read, so its buttons do not blink; Edit waits for the doc. */}
-      {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) setEditing(true) }} others={live.others} comments={commenting}
+      {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} others={live.others} comments={commenting}
         look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }} />)}
       {body(<><div ref={page} />{record && <CommentTriggers page={pageEl} theme={shown?.theme ?? 'paper'} onPick={pick} />}</>)}
     </>
