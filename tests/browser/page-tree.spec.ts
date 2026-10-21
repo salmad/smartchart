@@ -264,6 +264,7 @@ test('the header shows the pages above the open one as links, none for a page at
 test('the sidebar closed or open, the path is there; a move in the sidebar changes it at once', async ({ page }) => {
   await seed(page)
   await page.goto('/d/rev')
+  await expect(row(page, 'Revolut')).toBeVisible() // the app has booted, so the key is heard
   await page.keyboard.press('Control+\\')
   await expect(sidebar(page)).toBeHidden()
   await expect(crumbs(page).getByRole('link')).toHaveText(['Occam', 'Research', 'Competitors'])

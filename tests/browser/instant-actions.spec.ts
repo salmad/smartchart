@@ -7,7 +7,7 @@ const deck = (id: string, name: string) => ({ id, name, updated: Date.now() - 36
 const doc = (id: string, name: string) => ({ id, name, updated: Date.now() - 7200_000, workspaceId: 'w1' })
 const bar = (page: Page) => page.getByRole('navigation', { name: 'Workspace' })
 /** The row's own button (its name starts with the item's name; the notice also quotes it). */
-const row = (page: Page, name: string) => bar(page).getByRole('button', { name: new RegExp(`^${name}`) })
+const row = (page: Page, name: string) => bar(page).getByRole('treeitem', { name: new RegExp(`^${name}`) })
 
 /** A signed-in browser with two decks and two docs; `docRoute` and `deckRoute` get the requests that change something. */
 async function start(page: Page, h: { deckRoute?: (r: Route, id: string | null) => Promise<void> | void; docRoute?: (r: Route, id: string | null) => Promise<void> | void } = {}) {
@@ -19,13 +19,18 @@ async function start(page: Page, h: { deckRoute?: (r: Route, id: string | null) 
   await page.route('**/api/workspaces', (r) => r.fulfill({ json: ws }))
   await page.route('**/api/decks**', async (r) => {
     const q = new URL(r.request().url()).searchParams
+    if (q.has('subpages')) return r.fulfill({ json: { count: 0 } }) // what deleting would also take
     if (r.request().method() !== 'GET' && h.deckRoute) return h.deckRoute(r, q.get('id'))
     if (r.request().method() === 'DELETE') { decks = decks.filter((d) => d.id !== q.get('id')); return r.fulfill({ json: { ok: true } }) }
     if (q.has('id')) return r.fulfill({ status: 404, json: { error: 'gone' } })
     await r.fulfill({ json: decks })
   })
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: [
+    ...decks.map((d) => ({ kind: 'deck', id: d.id, name: d.name, updated: d.updated, slides: d.slides, parent: null, sortKey: null })),
+    ...docs.map((d) => ({ kind: 'doc', id: d.id, name: d.name, updated: d.updated, slides: null, parent: null, sortKey: null }))] }))
   await page.route('**/api/docs**', async (r) => {
     const q = new URL(r.request().url()).searchParams, id = q.get('id')
+    if (q.has('subpages')) return r.fulfill({ json: { count: 0 } })
     if (r.request().method() !== 'GET' && h.docRoute) return h.docRoute(r, id)
     if (id && q.size === 1) { const d = docs.find((x) => x.id === id); return d ? r.fulfill({ json: { ...d, text: `---\ntitle: ${d.name}\n---\n\n## One {#one}\n\nText.`, rev: 1 } }) : r.fulfill({ status: 404, json: {} }) }
     if (id) return r.fulfill({ status: 404, json: {} })
@@ -37,7 +42,7 @@ async function start(page: Page, h: { deckRoute?: (r: Route, id: string | null) 
 }
 
 async function menu(page: Page, name: string, item: string) {
-  const li = bar(page).getByRole('listitem').filter({ hasText: name })
+  const li = bar(page).getByRole('treeitem').filter({ hasText: name })
   await li.hover()
   await li.getByRole('button', { name: `More for ${name}` }).click()
   await page.getByRole('menuitem', { name: item }).click()
@@ -97,11 +102,12 @@ test('a deck that is gone cannot be renamed: the old name returns with a sentenc
 
 test('a new doc that cannot be saved appears, then goes with a sentence and no doc opens', async ({ page }) => {
   await start(page, { docRoute: (r) => r.fulfill({ status: 413, json: {} }) })
-  await bar(page).getByRole('button', { name: 'New doc' }).click()
+  await bar(page).getByRole('button', { name: 'New page' }).click()
+  await page.getByRole('menuitem', { name: 'New doc' }).click()
   await page.getByRole('radiogroup').locator('label').first().click()
   await page.getByRole('button', { name: 'Create doc' }).click()
   await expect(bar(page).getByRole('alert')).toHaveText('Couldn’t create the doc. This doc is too large to save.')
-  await expect(bar(page).getByRole('list', { name: 'Docs' }).getByRole('listitem')).toHaveCount(2)
+  await expect(bar(page).getByRole('treeitem')).toHaveCount(4)
   await expect(page).not.toHaveURL(/\/doc\//)
 })
 

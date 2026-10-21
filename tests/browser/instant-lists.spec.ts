@@ -6,6 +6,10 @@ const user = { id: 'u1', email: 'ada@example.com', name: 'Ada', image: null }
 const ws = [{ id: 'w1', name: 'Northwind team', role: 'owner', personal: false, members: 3, usedAt: 1 }]
 const deck = (id: string, name: string) => ({ id, name, updated: Date.now() - 3600_000, slides: 4, style: 'consulting', theme: 'ink', accent: null, first: null })
 const doc = (id: string, name: string) => ({ id, name, updated: Date.now() - 7200_000, workspaceId: 'w1' })
+/** What /api/pages answers: the decks and docs as one list. */
+const pagesOf = (decks: { id: string; name: string; updated: number; slides: number }[], docs: { id: string; name: string; updated: number }[]) => [
+  ...decks.map((d) => ({ kind: 'deck', id: d.id, name: d.name, updated: d.updated, slides: d.slides, parent: null, sortKey: null })),
+  ...docs.map((d) => ({ kind: 'doc', id: d.id, name: d.name, updated: d.updated, slides: null, parent: null, sortKey: null }))]
 
 test('the lists show from the cache while the server is slow, then the fresh lists replace them', async ({ page }) => {
   await page.addInitScript((u) => localStorage.setItem('occam.account.v1', JSON.stringify(u)), user)
@@ -22,6 +26,7 @@ test('the lists show from the cache while the server is slow, then the fresh lis
     await r.fulfill({ json: decks })
   })
   await page.route('**/api/docs**', async (r) => { if (hold) await held; await r.fulfill({ json: docs }) })
+  await page.route('**/api/pages**', async (r) => { if (hold) await held; await r.fulfill({ json: pagesOf(decks, docs) }) })
   const bar = page.getByRole('navigation', { name: 'Workspace' })
   await page.goto('/new')
   await expect(bar.getByText('Market sizing')).toBeVisible()
@@ -54,6 +59,7 @@ test('another account never sees these lists', async ({ page }) => {
     await r.fulfill({ json: [deck('d1', 'Market sizing')] })
   })
   await page.route('**/api/docs**', (r) => r.fulfill({ json: [] }))
+  await page.route('**/api/pages**', async (r) => { if (hold) await held; await r.fulfill({ json: pagesOf([deck('d1', 'Market sizing')], []) }) })
   const bar = page.getByRole('navigation', { name: 'Workspace' })
   await page.goto('/new')
   await expect(bar.getByText('Market sizing')).toBeVisible()

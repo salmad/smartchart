@@ -14,6 +14,7 @@ test('hovering a deck reads it once, and the click opens it before the server an
   await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
   await page.route('**/api/workspaces', (r) => r.fulfill({ json: ws }))
   await page.route('**/api/docs**', (r) => r.fulfill({ json: [] }))
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: Object.values(decks).map((d) => ({ kind: 'deck', id: d.id, name: d.name, updated: 100, slides: 1, parent: null, sortKey: null })) }))
   const reads: string[] = []
   let hold = false
   const held = new Promise<void>(() => undefined)
@@ -28,7 +29,7 @@ test('hovering a deck reads it once, and the click opens it before the server an
   const bar = page.getByRole('navigation', { name: 'Workspace' })
   await page.goto('/d/d1')
   await expect(bar.getByText('Board update')).toBeVisible()
-  const row2 = bar.getByRole('button', { name: /^Board update/ })
+  const row2 = bar.getByRole('treeitem', { name: /^Board update/ })
   expect(reads.filter((x) => x === 'd2')).toHaveLength(0)
   await row2.hover()
   await expect.poll(() => reads.filter((x) => x === 'd2').length).toBe(1)
@@ -46,6 +47,7 @@ test('the deck that is open is never read ahead', async ({ page }) => {
   await page.route('**/api/health', (r) => r.fulfill({ json: { live: false } }))
   await page.route('**/api/workspaces', (r) => r.fulfill({ json: ws }))
   await page.route('**/api/docs**', (r) => r.fulfill({ json: [] }))
+  await page.route('**/api/pages**', (r) => r.fulfill({ json: Object.values(decks).map((d) => ({ kind: 'deck', id: d.id, name: d.name, updated: 100, slides: 1, parent: null, sortKey: null })) }))
   const reads: string[] = []
   await page.route('**/api/decks**', async (r) => {
     const q = new URL(r.request().url()).searchParams, id = q.get('id') as keyof typeof decks | null
@@ -58,7 +60,7 @@ test('the deck that is open is never read ahead', async ({ page }) => {
   await page.goto('/d/d1')
   await expect(bar.getByText('Board update')).toBeVisible()
   const before = reads.filter((x) => x === 'd1').length
-  await bar.getByRole('button', { name: /^Market sizing/ }).hover()
+  await bar.getByRole('treeitem', { name: /^Market sizing/ }).hover()
   await page.waitForTimeout(500)
   expect(reads.filter((x) => x === 'd1')).toHaveLength(before)
 })
