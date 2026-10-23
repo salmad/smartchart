@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { descendants, type PageKind, type PageRef } from '@/engine/pages/tree'
+import { serializeDoc } from '@/engine/docs/serialize'
 import { starterDoc, type DocStarter } from '@/engine/starters'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
@@ -35,6 +36,7 @@ interface Props {
   me: string
 }
 
+const BLANK_TITLE = 'Untitled doc'
 const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its pages as one tree of docs and
@@ -97,8 +99,9 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
     setDoomed(null)
     actions.remove({ ref, name: doomed.row.name }, branch.slice(1))
   }
-  const createDoc = async (s: DocStarter) => {
-    if (wsId) actions.createDoc({ id: newDocId(), name: starterDoc(s).title || s.label, text: s.markdown.join('\n'), workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
+  const createDoc = async (s: DocStarter | null) => {
+    const name = s ? starterDoc(s).title || s.label : BLANK_TITLE, text = s ? s.markdown.join('\n') : serializeDoc({ title: BLANK_TITLE, blocks: [] })
+    if (wsId) actions.createDoc({ id: newDocId(), name, text, workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
   }
 
   return (

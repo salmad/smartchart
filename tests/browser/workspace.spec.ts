@@ -20,6 +20,17 @@ test('the sidebar names the workspace and lists its docs and decks', async ({ pa
   await expect(rows(page)).toHaveText(['Alpha', 'Beta'])
 })
 
+test('a new doc can be blank: it is the default, lists as Untitled doc and opens', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/a')
+  await newPage(page, 'doc')
+  const dialog = page.getByRole('dialog', { name: 'New doc' })
+  await expect(dialog.getByRole('radio', { name: /Blank doc/ })).toBeChecked()
+  await dialog.getByRole('button', { name: 'Create doc' }).click()
+  await expect(page).toHaveURL(/\/doc\/doc_[\w-]+$/)
+  await expect(rows(page)).toHaveText(['Alpha', 'Beta', 'Untitled doc'])
+})
+
 test('a new doc from a starter lists in the tree and opens in the read view', async ({ page }) => {
   await seed(page)
   await page.goto('/d/a')
