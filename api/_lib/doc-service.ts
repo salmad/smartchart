@@ -4,6 +4,7 @@
 import { parseDoc } from '../../src/engine/docs/parse.js'
 import { serializeDoc } from '../../src/engine/docs/serialize.js'
 import { plainOf } from '../../src/engine/slides/markup.js'
+import { NO_EDIT } from '../../src/engine/pages/tree.js'
 import { ToolError, type AccountPort, type AnyTool, type ToolContext } from '../../src/engine/tools/types.js'
 import type { JevFn } from '../../src/engine/agent/llm.js'
 import type { Db, WorkspaceRow } from './db.js'
@@ -47,10 +48,12 @@ async function run(e: DocEnv): Promise<ToolReply> {
     const out = await t.run(ctx, e.input)
     if (!out.file) return { ok: true, result: out.result }
     const file = out.file, text = serializeDoc(file.doc), name = plainOf(file.doc.title).trim() || file.name
-    const workspaceId = t.scope === 'createDoc' ? out.workspaceId ?? (await e.workspaces())[0]?.id : undefined
-    const put = await db.putDoc(uid, file.id, name, text, baseRev, workspaceId)
+    // Under a parent, the page is in the parent's workspace (the save finds it), not the most recently opened one.
+    const workspaceId = t.scope === 'createDoc' ? out.workspaceId ?? (out.parent ? undefined : (await e.workspaces())[0]?.id) : undefined
+    const put = await db.putDoc(uid, file.id, name, text, baseRev, workspaceId, out.parent)
     if (put === 'foreign') {
       if (t.scope === 'doc') throw await db.getDoc(uid, file.id) ? VIEW_DOC : noDoc(file.id)
+      if (out.parent) throw new ToolError('refused', NO_EDIT, 'Create it in a workspace you can edit.') // the parent is readable (else the save says no such page), so this is a viewer
       const role = (await e.workspaces()).find((w) => w.id === workspaceId)?.role
       throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(workspaceId ?? '')
     }

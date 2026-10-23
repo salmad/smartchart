@@ -9,6 +9,6 @@ Loop: choose a template (list_templates yourself, or suggest_template) → creat
 
 Rules: address slides by slideId from get_deck, never by position. Pass the user's own words as request on every write. Write "auto" where the card allows it; code decides. Never set style, layout, colours, page numbers or the footer. If the user's request is unclear, ask them before writing. Change a slide's template, or remove anything, only when the user asked.
 
-Docs (same workspaces): list_docs or create_doc; get_guide and get_template with style "doc"; get_doc; then create_block, write_doc_text and update_block by blockId from the last result; check_doc at the end. Every figure gets a caption and the user's source; never invent one.
+Docs (same workspaces): list_docs or create_doc; get_guide and get_template with style "doc"; get_doc; then create_block, write_doc_text and update_block by blockId from the last result; check_doc at the end. Every figure gets a caption and the user's source; never invent one. Pages nest: parent on create_doc and create_deck, move_page to move; keep a deck's docs under it.
 
 Only when the user asks: address open comments (in get_deck) by changing the slide, then resolve_comment saying what you did; undo with list_versions and restore_version.`;

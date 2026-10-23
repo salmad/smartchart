@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { descendants, type PageKind, type PageRef } from '@/engine/pages/tree'
+import { serializeDoc } from '@/engine/docs/serialize'
 import { starterDoc, type DocStarter } from '@/engine/starters'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
@@ -13,6 +14,7 @@ import { NewDoc } from './NewDoc'
 import { pathTo, type Row } from './flatten'
 import { PageTree } from './PageTree'
 import { usePageTree } from './usePageTree'
+import { useSidebarWidth } from './useSidebarWidth'
 import { RenameItem } from './RenameItem'
 import type { RowActions } from './useRowActions'
 import type { WorkspaceState } from './useWorkspace'
@@ -34,11 +36,13 @@ interface Props {
   me: string
 }
 
+const BLANK_TITLE = 'Untitled doc'
 const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its pages as one tree of docs and
     decks. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens and expands. */
 export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onRenameOpenDeck, me }: Props) {
+  const size = useSidebarWidth()
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
   const [doomed, setDoomed] = useState<{ row: Row; subpages: number } | null>(null), [said, setSaid] = useState<string | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(null)
@@ -101,12 +105,14 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
     setDoomed(null)
     actions.remove({ ref, name: doomed.row.name }, branch.slice(1))
   }
-  const createDoc = async (s: DocStarter) => {
-    if (wsId) actions.createDoc({ id: newDocId(), name: starterDoc(s).title || s.label, text: s.markdown.join('\n'), workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
+  const createDoc = async (s: DocStarter | null) => {
+    const name = s ? starterDoc(s).title || s.label : BLANK_TITLE, text = s ? s.markdown.join('\n') : serializeDoc({ title: BLANK_TITLE, blocks: [] })
+    if (wsId) actions.createDoc({ id: newDocId(), name, text, workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
   }
 
   return (
-    <nav aria-label="Workspace" className="flex w-[248px] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
+    <nav ref={size.nav} aria-label="Workspace" className="relative flex w-[var(--sidebar-w,248px)] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
+      <div {...size.gripProps} className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize touch-none outline-none"><span className="mx-auto block h-full w-px bg-transparent transition-colors group-hover:bg-gold/60 group-focus-visible:bg-gold group-active:bg-gold" /></div>
       <div className="h-12 px-2 pb-1 pt-2">
         {ws.current && <WorkspaceSwitcher list={ws.list} current={ws.current} busy={busy} onSwitch={(id) => void switchTo(id)}
           onNew={() => setRenaming({ kind: 'workspace' })} onMembers={() => setMembers(true)} />}

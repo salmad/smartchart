@@ -9,6 +9,7 @@ import { serializeDoc } from "../docs/serialize.js";
 import { validateDoc } from "../docs/validate.js";
 import { plain } from "../slides/schema.js";
 import type { Theme } from "../types.js";
+import { pageArg, pageSchema, type PageArg } from "./pages.js";
 import { DESTRUCTIVE, IDEMPOTENT, READ, ToolError, WRITE, tool, type DocFile, type HandlerOut, type ToolContext } from "./types.js";
 
 const DOC_ID = { type: "string", description: "The doc id from list_docs or create_doc." } as const;
@@ -53,19 +54,20 @@ function written(ctx: ToolContext, file: DocFile, e: Edit, extra: Record<string,
 
 export const docTools = [
   tool<{ limit?: number; cursor?: number; workspaceId?: string }>({ name: "list_docs", title: "List docs", group: "docs", scope: "account", annotations: READ,
-    description: "A workspace's docs, newest first: id, name and last change. Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    description: "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc or a deck, or null at the top level). Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDocs(limit, cursor, workspaceId) }) }),
 
-  tool<{ title: string; subtitle?: string; theme?: Theme; accent?: string; workspaceId?: string }>({ name: "create_doc", title: "Create a doc", group: "docs", scope: "createDoc", annotations: WRITE,
-    description: "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
-    input: { type: "object", additionalProperties: false, required: ["title"], properties: { title: { type: "string" }, subtitle: { type: "string" }, theme: THEME, accent: ACCENT, workspaceId: WORKSPACE_ID } },
-    run: async (ctx, { title, subtitle, theme, accent, workspaceId }) => {
+  tool<{ title: string; subtitle?: string; theme?: Theme; accent?: string; workspaceId?: string; parent?: PageArg }>({ name: "create_doc", title: "Create a doc", group: "docs", scope: "createDoc", annotations: WRITE,
+    description: "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    input: { type: "object", additionalProperties: false, required: ["title"], properties: { title: { type: "string" }, subtitle: { type: "string" }, theme: THEME, accent: ACCENT, workspaceId: WORKSPACE_ID, parent: pageSchema("Put the doc under this page.") } },
+    run: async (ctx, { title, subtitle, theme, accent, workspaceId, parent }) => {
+      const under = parent === undefined ? undefined : pageArg(parent, "parent");
       const doc: Doc = { title: title.trim(), ...(subtitle?.trim() ? { subtitle: subtitle.trim() } : {}), ...(theme ? { theme } : {}), ...(accent ? { accent } : {}), blocks: [] };
       const bad = validateDoc(doc).errors[0];
       if (bad) throw new ToolError("bad_input", bad, "Fix it and call again.");
       const file = { id: ctx.port.newDocId(), name: doc.title, doc };
-      return { result: docView(ctx, file, 1), file, workspaceId };
+      return { result: { ...docView(ctx, file, 1), parent: under ?? null }, file, workspaceId, ...(under ? { parent: under } : {}) };
     } }),
 
   tool<{ docId: string }>({ name: "get_doc", title: "Open a doc", group: "docs", scope: "doc", annotations: READ,

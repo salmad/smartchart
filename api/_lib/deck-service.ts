@@ -3,6 +3,7 @@
 import { checkInput } from '../../src/engine/tools/input.js'
 import { dataFromDoc, docFromData } from '../../src/engine/tools/doc.js'
 import { toolByName } from '../../src/engine/tools/index.js'
+import { NO_EDIT } from '../../src/engine/pages/tree.js'
 import { ToolError, type AccountPort, type ErrorCode, type ToolContext } from '../../src/engine/tools/types.js'
 import type { JevFn } from '../../src/engine/agent/llm.js'
 import type { Db } from './db.js'
@@ -45,7 +46,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
       if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
       const all = await db.listDecks(uid, ws), page = all.slice(cursor, cursor + limit)
-      return { workspaceId: ws, decks: page.map((d) => ({ deckId: d.id, name: d.name, style: d.style === 'pitch' ? 'pitch' : 'consulting', slides: d.slides, updated: d.updated, shared: !!d.shared })),
+      return { workspaceId: ws, decks: page.map((d) => ({ deckId: d.id, name: d.name, style: d.style === 'pitch' ? 'pitch' : 'consulting', slides: d.slides, updated: d.updated, shared: !!d.shared, parent: d.parent })),
         ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
     },
     share: async (deckId, on) => {
@@ -59,8 +60,9 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
       if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
       const all = await db.listDocs(uid, ws), page = all.slice(cursor, cursor + limit)
-      return { workspaceId: ws, docs: page.map((d) => ({ docId: d.id, name: d.name, updated: d.updated })), ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
+      return { workspaceId: ws, docs: page.map((d) => ({ docId: d.id, name: d.name, updated: d.updated, parent: d.parent })), ...(cursor + limit < all.length ? { next: cursor + limit } : {}) }
     },
+    movePage: (page, to) => db.movePage(uid, page, to),
     versions: (deckId) => db.listVersions(uid, deckId),
     blobs: (deckId, hashes) => db.blobs(uid, deckId, hashes),
     addImage: async (img) => {
@@ -91,10 +93,11 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       if (!out.deck) return { ok: true, result: out.result }
       const base = row?.rev ?? 0, chat = (row?.chat as object | null) ?? { history: [], messages: [], working: [] }
       const data = dataFromDoc(out.deck, row?.data)
-      const workspaceId = t.scope === 'create' ? out.workspaceId ?? (await workspaces())[0]?.id : undefined
-      const put = await db.putDeck(uid, out.deck.id, out.deck.name, data, chat, base, { named: !!out.named, workspaceId })
+      const workspaceId = t.scope === 'create' ? out.workspaceId ?? (out.parent ? undefined : (await workspaces())[0]?.id) : undefined
+      const put = await db.putDeck(uid, out.deck.id, out.deck.name, data, chat, base, { named: !!out.named, workspaceId, parent: out.parent })
       if (put === 'foreign') {
         if (t.scope !== 'create') throw await refusal(out.deck.id)
+        if (out.parent) throw new ToolError('refused', NO_EDIT, 'Create it in a workspace you can edit.')
         const role = (await workspaces()).find((w) => w.id === workspaceId)?.role
         throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(workspaceId ?? '')
       }

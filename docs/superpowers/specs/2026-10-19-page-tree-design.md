@@ -1,6 +1,6 @@
 # Page tree: docs and decks nested in the sidebar
 
-> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. P1 (data and server), P2 (the sidebar) and P3 (drag and drop) are built; P4 is not.
+> Status: approved 2026-10-19 (delete and subpage calls confirmed); P1 plan: `docs/superpowers/plans/2026-10-19-page-tree-p1-data-server.md`. Part of Occam Docs (`2026-10-19-occam-docs-design.md`, section 3 "Notion-like sidebar"). It follows the doc editor spec (`2026-10-19-doc-editor-rewrite-design.md`), which left it out. P1 (data and server), P2 (the sidebar), P3 (drag and drop) and P4 (MCP) are built.
 
 ## Why
 
@@ -125,7 +125,7 @@ Each milestone ends with its own plan and stops at the boundary (memory: inline 
 
 **P3. Drag and drop (built; plan `2026-10-20-page-tree-p3-drag-and-drop.md`).** Reorder and re-parent by drag. *Done when:* a browser test drags a page under another and between two siblings, and an illegal drop does nothing.
 
-**P4. MCP.** `parentId`, `move_page`, the guide line. *Done when:* an MCP session creates a doc, nests two under it and moves one out, and `list_docs` returns the parents.
+**P4. MCP — built (plan `2026-10-21-page-tree-p4-mcp.md`).** `parent` on `create_doc` and `create_deck` (an object `{kind, id}`, not a bare `parentId`), `move_page`, `parent` on `list_docs` and `list_decks`, the guide line. *Done when:* an MCP session creates a doc, nests two under it and moves one out, and `list_docs` returns the parents.
 
 ## Critical files
 

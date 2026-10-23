@@ -478,3 +478,24 @@ test('done when: an illegal drop does nothing; the legal ones land where dropped
   await expect(rows(page)).toHaveText(['Revolut', 'Research', 'Alpha', 'Competitors'])
   await expect.poll(() => levels(page)).toEqual(['1', '1', '2', '2'])
 })
+
+test('the sidebar is as wide as it was dragged or keyed to, kept across reloads, and double-click resets it', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/rev')
+  await expect(row(page, 'Revolut')).toBeVisible()
+  const grip = page.getByRole('separator', { name: 'Resize sidebar' })
+  const width = async () => Math.round((await sidebar(page).boundingBox())?.width ?? 0)
+  expect(await width()).toBe(248)
+  await grip.focus()
+  await page.keyboard.press('ArrowRight')
+  expect(await width()).toBe(264)
+  const box = (await grip.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + 200)
+  await page.mouse.down(); await page.mouse.move(box.x + 500, box.y + 200, { steps: 5 }); await page.mouse.up()
+  expect(await width()).toBe(480) // clamped
+  await page.reload()
+  await expect(row(page, 'Revolut')).toBeVisible()
+  expect(await width()).toBe(480)
+  await grip.dblclick()
+  expect(await width()).toBe(248)
+})
