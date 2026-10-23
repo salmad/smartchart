@@ -32,11 +32,14 @@ function fieldsAt(slide: Slide, style: Style, path: string): Record<string, Fiel
   return fields;
 }
 
+/** Where the chart a bar or line belongs to lives: the slide's own, or a pair half's. */
+const chartPath = (t: { half?: number }) => (t.half === undefined ? "chart" : `halves[${t.half}].chart`);
+
 /** The object(s) a target points at: their paths, and the chart bar when it is one. */
 function objectsOf(t: Target, slide: Slide): string[] {
   switch (t.kind) {
     case "item": return [t.item];
-    case "series": case "bar": return [`chart.series[${t.series}]`];
+    case "series": case "bar": return [`${chartPath(t)}.series[${t.series}]`];
     case "cells": {
       const lo = Math.min(t.c0, t.c1), hi = Math.max(t.c0, t.c1), n = slide.table?.columns.length ?? 0;
       if (Math.min(t.r0, t.r1) < 0) return Array.from({ length: Math.min(hi, n - 1) - lo + 1 }, (_, i) => `table.columns[${lo + i}]`);
@@ -87,13 +90,15 @@ export function settingsFor(target: Target, slide: Slide, style: Style): Setting
   // A patch is offered when applying it adds no error the slide did not already have.
   const fine = (patch: Patch) => { const r = applyPatch(slide, patch); return !!r.slide && validate(r.slide, style).errors.every((e) => before.has(e)); };
 
-  if (target.kind === "bar" && (slide.chart?.kind ?? "bars") === "bars") {
-    const { series, index } = target, h = slide.chart?.highlight, on = h?.series === series && h.index === index;
+  const base = target.kind === "bar" || target.kind === "series" ? chartPath(target) : "chart";
+  const chart = (getAt(slide, base) ?? undefined) as Slide["chart"];
+  if (target.kind === "bar" && (chart?.kind ?? "bars") === "bars") {
+    const { series, index } = target, h = chart?.highlight, on = h?.series === series && h.index === index;
     // A series that is the focus gives way: the highlighted bar is the focus, so the two never stand together.
-    const demote = Object.fromEntries((slide.chart?.series ?? []).flatMap((s, i) => (s.color === "focus" ? [[`chart.series[${i}].color`, "neutral"]] : [])));
-    const flag: Setting = { id: "highlight", label: label("highlight"), path: "chart.highlight", kind: "flag", on,
-      set: (v) => (v ? { "chart.highlight": { series, index }, ...demote } : { "chart.highlight": null }) };
-    if (slide.chart?.series?.[series]?.mark !== "line" && fine(flag.set(!on))) out.push(flag);
+    const demote = Object.fromEntries((chart?.series ?? []).flatMap((s, i) => (s.color === "focus" ? [[`${base}.series[${i}].color`, "neutral"]] : [])));
+    const flag: Setting = { id: "highlight", label: label("highlight"), path: `${base}.highlight`, kind: "flag", on,
+      set: (v) => (v ? { [`${base}.highlight`]: { series, index }, ...demote } : { [`${base}.highlight`]: null }) };
+    if (chart?.series?.[series]?.mark !== "line" && fine(flag.set(!on))) out.push(flag);
   }
 
   const emph = (target.kind === "slide" ? null : emphasis(fields, paths, slide)), skip = new Set(emph?.used ?? []);
@@ -102,7 +107,7 @@ export function settingsFor(target: Target, slide: Slide, style: Style): Setting
     if (options.length > 1) out.push({ ...setting, options });
   }
 
-  const chartKind = slide.chart?.kind ?? "bars";
+  const chartKind = chart?.kind ?? "bars";
   for (const [name, def] of Object.entries(fields)) {
     if (skip.has(name) || NEVER.has(name) || (paths[0] === "chart" && !KIND_FIELDS[chartKind as keyof typeof KIND_FIELDS]?.includes(name))) continue;
     const path = (p: string) => `${p}.${name}`;

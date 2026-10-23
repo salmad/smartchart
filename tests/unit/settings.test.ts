@@ -91,3 +91,16 @@ test('never offers kind, icon, logo or free text', () => {
   const all = [settings({ kind: 'cells', r0: -1, c0: 1, r1: 3, c1: 1 }, starter('table')), settings({ kind: 'slide' }, starter('chart-notes')), settings({ kind: 'item', item: 'cards[0]' }, starter('cards-icon'))].flat()
   for (const x of all) expect(x.path).not.toMatch(/\.(kind|icon|logo|label|name|title|text|format)$/)
 })
+
+test("a pair half's chart: a series writes under halves[n].chart; Highlight this bar is left out (the half takes no highlight)", () => {
+  const s = starter('pair'), half = 1
+  expect(settings({ kind: 'bar', series: 0, index: 1, half }, s).map((x) => x.id)).not.toContain('highlight')
+  const em = choice(byId(settings({ kind: 'series', series: 0, half }, s), 'emphasis'))
+  expect(em.path).toBe(`halves[${half}].chart.series[0].color`)
+  const base = validate(s, 'consulting').errors
+  for (const o of em.options) {
+    const r = applyPatch(s, em.set(o.value))
+    expect(r.errors).toBeUndefined()
+    expect(validate(must(r.slide), 'consulting').errors.filter((e) => !base.includes(e))).toEqual([])
+  }
+})
