@@ -53,9 +53,15 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
     ops: actions.ops, account: me === DEV_ACCOUNT.id ? undefined : me })
   // Once the server has answered a change, the list is read again, so it says what the server says; a change it accepted is let go of then.
   useEffect(() => { if (actions.answered) void tree.reload().finally(actions.forget) }, [actions.answered]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Pointing at a deck for a moment reads it into this browser, so the click opens it without waiting: once per deck, never the open one.
+  // Pointing at a page for a moment reads it ahead, so the click opens it without waiting: a deck into this browser once,
+  // never the open one; a doc into memory.
   const ahead = useRef(new Set<string>())
   const readAhead = (ref: PageRef) => {
+    if (ref.kind === 'doc') {
+      if (ref.id === open.doc || repos.docs.peek?.(ref.id)?.doc || actions.pending(ref)) return
+      void repos.docs.get(ref.id).then(() => repos.docs.comments(ref.id)).catch(() => undefined)
+      return
+    }
     if (ref.kind !== 'deck' || ref.id === deck.id || ahead.current.has(ref.id) || me === DEV_ACCOUNT.id || actions.pending(ref)) return
     ahead.current.add(ref.id)
     void repos.decks.get(ref.id).catch(() => undefined)

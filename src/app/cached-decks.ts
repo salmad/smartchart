@@ -31,12 +31,16 @@ export async function forgetCachedDeck(account: string, id: string): Promise<voi
     decks nobody opened); a save does, as that is working on it. */
 export function cachedDeckRepo(inner: DeckRepo, account: string): DeckRepo {
   const keep = (deck: SavedDeck) => cacheSet(account, `deck:${deck.id}`, { deck, rev: inner.known?.(deck.id) ?? 0, role: inner.role?.(deck.id) ?? null } satisfies CachedDeck)
+  // A read already on its way (pointing at a row in the sidebar starts one) is shared: the click that follows waits for it rather than asking again.
+  const reading = new Map<string, Promise<SavedDeck | null>>()
   return {
     ...inner,
-    get: async (id) => {
-      const d = await inner.get(id)
-      if (d) void keep(d)
-      return d
+    get: (id) => {
+      const have = reading.get(id)
+      if (have) return have
+      const p = inner.get(id).then((d) => { if (d) void keep(d); return d }).finally(() => reading.delete(id))
+      reading.set(id, p)
+      return p
     },
     save: async (deck, meta) => {
       const why = await inner.save(deck, meta)

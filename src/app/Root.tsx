@@ -3,6 +3,7 @@ import { useSession } from './auth'
 import { devAccount } from './dev-account'
 import { bootDone } from './boot'
 import { cachedDeckRepo } from './cached-decks'
+import { cachedDocRepo } from './doc-cache'
 import { remoteDeckRepo } from './remote'
 import { go, useRoute } from './route'
 import { localDeckRepo } from './store'
@@ -42,7 +43,7 @@ function Screens() {
     return session ? cachedDeckRepo(remote, session.id) : remote
   }, [dev, session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const workspaces = useMemo(() => (dev ? localWorkspaceRepo() : remoteWorkspaceRepo({ onSignedOut: () => setEnded(true) })), [dev])
-  const docs = useMemo(() => (dev ? localDocRepo() : remoteDocRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const docs = useMemo(() => (dev ? cachedDocRepo(localDocRepo()) : cachedDocRepo(remoteDocRepo({ onSignedOut: () => setEnded(true) }), session?.id)), [dev, session?.id])
   const pages = useMemo(() => (dev ? localPageRepo() : remotePageRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])

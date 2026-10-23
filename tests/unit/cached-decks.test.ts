@@ -68,3 +68,14 @@ test('a stored entry of the wrong shape reads as no cache', async () => {
   expect(await readCachedDeck('u1', 'd5')).toBeNull()
   expect(await readCachedDeck('u1', 'd6')).toBeNull()
 })
+
+test('a read already on its way is shared, not asked again', async () => {
+  const [{ cachedDeckRepo }] = await load()
+  const base = inner({ d1: deck('d1') }), get = vi.fn(base.get)
+  const repo = cachedDeckRepo({ ...base, get }, 'u1')
+  const [x, y] = await Promise.all([repo.get('d1'), repo.get('d1')])
+  expect(x).toBe(y)
+  expect(get).toHaveBeenCalledTimes(1)
+  await repo.get('d1')
+  expect(get).toHaveBeenCalledTimes(2)
+})
