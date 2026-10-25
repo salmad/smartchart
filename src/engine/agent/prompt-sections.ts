@@ -11,7 +11,9 @@ export const START_PLAIN = `- A new slide is the simplest version that makes the
 - Add a takeaway, notes, annotations (cagr, difference, target), a kicker or a footnote only when the user asked for it (in any words: "the conclusion", "the growth rate", "vs plan", "explain the drivers"). Two exceptions: the "Illustrative figures" footnote when the user asked for made-up figures, and a source the user gave.
 - Plain means no extras, not a plain key component: when the card names a shape for the content (marks and icons for options against criteria), use it from the first write.`;
 
-export const START_PLAIN_IN_APP = `- After the slide, the user is shown suggested next steps; they add the rest one change at a time.`;
+export const OFFER_SUGGESTIONS = `On a clean write, \`suggestions\` often name a chart annotation (CAGR, difference, target): offer it as numbered choices; add it only if the user picks one or asked.`;
+
+export const START_PLAIN_IN_APP = `- After the slide, the user is shown suggested next steps; they add the rest one change at a time. ${OFFER_SUGGESTIONS}`;
 
 export const ASK_IN_APP = `- Stop and ask before writing anything when you would remove something the user did not name (a note, the takeaway, a series, a card, a row, a footnote), or change a slide's template when they did not ask for another kind of slide. Offer the options, e.g. "1. Remove the notes  2. Keep them and reword note 2".
 - If you cannot tell what the user means, stop and ask before writing anything: do not guess, build a best effort or write around it. Unclear means, for example: no figures given for a slide that needs them (ask for them, or whether to use published sources); years or periods missing between the ones given (2023 and 2025, but no 2024); figures that do not map onto the slide (3 values for a 5-year chart); a figure that contradicts the slide or the user's own claim; which slide, series or item a change is for.

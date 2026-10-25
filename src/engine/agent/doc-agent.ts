@@ -1,6 +1,7 @@
 /* In-app doc agent: GLM with doc MCP tools only, each executed on the server. */
 import { agentStep, type ChatMessage } from './llm.js'
 import { openAiView, toolByName, TOOLS } from '../tools/index.js'
+import { OFFER_SUGGESTIONS } from './prompt-sections.js'
 import { docGuideText } from '../tools/guide-text.js'
 
 const DOC_TOOLS = new Set([
@@ -16,7 +17,7 @@ export interface DocTurnArgs { text: string; docId: string; history: ChatMessage
 export interface DocTurnResult { reply: string; modelCalls: number; toolCalls: number; ms: number }
 
 export async function runDocTurn({ text, docId, history, runTool }: DocTurnArgs): Promise<DocTurnResult> {
-  const system = `${docGuideText()}\n\nYou edit one doc at a time. The open doc id is ${docId}. Start with get_doc if you need its blocks. Use blockIds from the last result; read again after each write. End with check_doc when the doc matches what the user asked.`
+  const system = `${docGuideText()}\n\nYou edit one doc at a time. The open doc id is ${docId}. Start with get_doc if you need its blocks. Use blockIds from the last result; read again after each write. End with check_doc when the doc matches what the user asked. ${OFFER_SUGGESTIONS}`
   const messages: ChatMessage[] = [{ role: 'system', content: system }, ...history, { role: 'user', content: text }]
   let modelCalls = 0, toolCalls = 0, t0 = performance.now(), reply = ''
   for (let step = 0; step < MAX; step++) {

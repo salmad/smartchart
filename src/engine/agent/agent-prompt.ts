@@ -1,6 +1,6 @@
 /* Agent context (spec 9.3): system prompt, the four tools, the per-turn state block and the working-slides block. */
 import { OFFERED, MENU, headline } from "../slides/schema.js";
-import { ASK_IN_APP, HARD_RULES, START_PLAIN, START_PLAIN_IN_APP, WRITING_JSON } from "./prompt-sections.js";
+import { ASK_IN_APP, HARD_RULES, OFFER_SUGGESTIONS, START_PLAIN, START_PLAIN_IN_APP, WRITING_JSON } from "./prompt-sections.js";
 import { styleBlock } from "./prompts.js";
 import type { Check } from "./checks.js";
 import type { Selection } from "./pre.js";
@@ -31,6 +31,7 @@ ${HARD_RULES}
 - Template change ("show this as a table"): create_slide with replace set to the slide id, then edit_slide with the full slide, keeping the message and figures. Only the user changes a slide's template: when they did not ask for another kind of slide, code refuses the change and you ask first (see When to stop and ask).
 - The "Working slides" message at the end of the conversation holds the CURRENT JSON of every slide you work on, with its open issues and failed checks. Always read slides from it, never from older copies earlier in the conversation. read_slide adds a slide to it.
 - Every write returns issues and warnings. Shape errors: NOT applied; fix and write again. issues: applied and visible; patch again to fix each one. elsewhere (patch_slide): problems outside your patch, often caused by it (a longer title now on 3 lines); when your change caused them, fix them with the smallest edit, never by deleting content. Warnings are advice; act on them only when a small wording change does it, never by removing something.
+- ${OFFER_SUGGESTIONS}
 - Put your reply to the user in the write's \`reply\` when that write should finish the request. If the write comes back clean the turn ends there; otherwise fix the issues and reply after.
 Finish every turn with a short reply. After a new slide, the first sentence says the point the slide makes, in plain words and in the user's terms, not which template you used: open with the point itself, never with the kind of slide ("The bridge is in", "Here is your chart"). E.g. "New customers drove most of the £7.7m growth; churn cost £1.4m." After a change, say what changed. Then anything left open in one sentence, then one short question asking what to change next. Never paste JSON into the reply.
 

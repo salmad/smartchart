@@ -1,6 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { parseSuggestions, suggestMessages } from "../../src/engine/agent/suggest";
+import { docSuggestMessages, parseSuggestions, suggestMessages } from "../../src/engine/agent/suggest";
+import type { Doc } from "../../src/engine/docs/types";
 import type { Slide } from "../../src/engine/types";
 
 const BOOK: Slide = { template: "chart", title: "The book grows to [[£120m]] by 2030", chart: { categories: ["2026", "2030"], format: "£{v}m",
@@ -23,6 +24,16 @@ test("parse: JSON inside prose, at most 4 pills; nothing on bad output", () => {
   assert.deepEqual(parseSuggestions("no json").pills, []);
   assert.deepEqual(parseSuggestions('{"suggestions": [{"label": 3}]}').pills, []);
 });
+
+test("doc suggestions carry figures and code hints", () => {
+  const doc: Doc = { title: 'Plan', blocks: [{ type: 'heading', level: 2, id: 'a', text: 'Rev' }, { type: 'figure', kind: 'chart', id: 'rev', body: {
+    caption: 'Revenue', source: 'Filings',
+    chart: { categories: ['2021', '2022', '2023', '2024', '2025'], format: '£{v}m', series: [{ name: 'R', mark: 'bar', color: 'focus', values: [2, 3, 4, 6, 9] }] },
+  } }] }
+  const [, user] = docSuggestMessages({ doc })
+  assert.match(String(user.content), /rev/)
+  assert.match(String(user.content), /CAGR/)
+})
 
 test("the suggestions know every template and the new table abilities", () => {
   const [, user] = suggestMessages({ slide: BOOK, style: "consulting" });

@@ -16,7 +16,9 @@ import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
 import { Toggle } from './Bar'
 import { ChatPanel } from './ChatPanel'
+import { chipsForDoc, refreshDocPills } from '@/app/docPills'
 import { sendDocTurn } from '@/app/doc-turn'
+import type { Pill } from '@/engine/agent/suggest'
 import type { ChatMessage } from '@/engine/agent/llm'
 import type { Message } from '@/app/store'
 import { LookPanel } from './LookPanel'
@@ -75,6 +77,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => docs.peek?.(id)?.doc ?? null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
   const parsed = useMemo(() => (record ? parseDoc(record.text).doc : null), [record])
+  const docKey = useMemo(() => (parsed ? JSON.stringify(parsed.blocks) : ''), [parsed])
+  const [docChips, setDocChips] = useState<{ key: string; pills: Pill[] } | null>(null)
   const me = authorOf(account), live = useDocLive(docs, id, editing, me)
   const [side, setSide] = useState<'comments' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
@@ -115,6 +119,14 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   useEffect(() => { if (live.newer && !editing && record) setReload((n) => n + 1) }, [live.newer]) // eslint-disable-line react-hooks/exhaustive-deps
   // Editing starts from the current doc: a version preview, Versions and Look are for reading.
   useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' || s === 'look' ? null : s)); setRefused(false) } }, [editing])
+  useEffect(() => {
+    if (!parsed || !modelsLive || !canEdit || chatBusy || editing) return
+    const starters = chipsForDoc(parsed, { live: modelsLive, busy: chatBusy, editing, fresh: !messages.length, history: historyRef.current })
+    if (starters) { setDocChips({ key: docKey, pills: starters }); return }
+    setDocChips(null)
+    refreshDocPills(parsed, docKey, { live: modelsLive, busy: chatBusy, editing, history: historyRef.current }, (pills) => setDocChips({ key: docKey, pills }))
+  }, [parsed, docKey, modelsLive, canEdit, chatBusy, editing, messages.length])
+  const chips = docChips?.key === docKey ? docChips.pills : null
   useEffect(() => { let go = true; void docs.comments(id).then((c) => { if (go) setComments(c) }); return () => { go = false } }, [docs, id, live.tick])
 
   // The read view, drawn from the doc shown (a version, while one is previewed); again after each save.
@@ -194,7 +206,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
       {sidebar}
       <ChatPanel open={chatOpen} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
-        chips={null} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
+        chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
         onSend={(text) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }}
         onClear={() => { setMessages([]); historyRef.current = [] }} />
       <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg">

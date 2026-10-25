@@ -13,6 +13,7 @@ import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep, type Pre, type Selec
 import { RESOLVE_COMMENT, TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt.js";
 import { openComments, resolveComment, type DeckComment } from "../comments.js";
 import { shorten, targets } from "./shorten.js";
+import { softChecks } from "./soft.js";
 import type { Series, Slide, Style, TemplateId, Theme } from "../types.js";
 
 export interface AgentSlide { id: string; slide: Slide | null; pending?: boolean; issues: string[]; warnings: string[]; checks?: Check[] }
@@ -47,6 +48,8 @@ interface ToolOut {
   /** Reserved slides still to write this turn. */
   todo?: string
   resolved_comment?: string
+  /** Up to two softer ideas (e.g. chart annotations); offer them, do not add without the user. */
+  suggestions?: string[]
 }
 interface WriteResult extends ToolOut { applied: boolean; issues: string[] }
 interface CallResult { clean: boolean; name: string; out: ToolOut; args: ToolArgs | null; reply: string | null }
@@ -100,6 +103,8 @@ export async function runTurn({ text, deck, history, working, selection, edited 
     working.add(item.id); written.add(item.id);
     onChange?.(deck, item.id);
     const result: WriteResult = { applied: true, issues, warnings: item.warnings, autofixes: w.autofixes, resolved: w.resolved };
+    const soft = issues.length ? [] : softChecks(slide);
+    if (soft.length) result.suggestions = soft.map((x) => x.msg);
     // Over-long text: one small call per field instead of another agent step.
     const long = round < SHORTEN_ROUNDS ? targets(issues, slide) : [];
     if (!long.length) return result;

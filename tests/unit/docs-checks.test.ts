@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkDoc, figureChecks } from '../../src/engine/docs/checks'
+import { checkDoc, figureChecks, figureSuggestions } from '../../src/engine/docs/checks'
 import { serializeDoc } from '../../src/engine/docs/serialize'
 import { BLOCK_STARTERS } from '../../src/engine/starters'
 import type { Doc, FigureBlock, FigureBody } from '../../src/engine/docs/types'
@@ -39,6 +39,33 @@ describe('figureChecks', () => {
     const all = ['chart', 'table', 'number', 'cards', 'steps', 'summary', 'pair'].flatMap((k) => figureChecks(fig(k as FigureBlock['kind'], start(k))))
     for (const id of ['R1', 'R2', 'R3', 'R6', 'R7', 'R10', 'R12', 'J1', 'J5', 'J6', 'J7', 'J8']) expect(get(all, id)).toBeUndefined()
     expect(figureChecks(fig('callout', { tone: 'note', text: 'x' }))).toEqual([])
+  })
+})
+
+describe('pair figures', () => {
+  it('soft checks run on each half chart', () => {
+    const body = start('pair')
+    if (body.halves?.[0]?.chart) {
+      body.halves[0].chart.categories = ['2021', '2022', '2023', '2024', '2025']
+      body.halves[0].chart.series = [{ name: 'R', mark: 'bar', color: 'focus', values: [2, 3, 4, 6, 9] }]
+    }
+    body.source = 'Filings'
+    const cs = figureChecks(fig('pair', body, 'pair-fig'))
+    expect(cs.some((c) => c.id === 'S4' && c.msg.includes('CAGR'))).toBe(true)
+  })
+})
+
+describe('figureSuggestions', () => {
+  it('returns soft checks for a changed chart figure', () => {
+    const body = start('chart')
+    if (body.chart) {
+      body.chart.categories = ['2021', '2022', '2023', '2024', '2025']
+      body.chart.series = [{ name: 'R', mark: 'bar', color: 'focus', values: [2, 3, 4, 6, 9] }]
+    }
+    body.source = 'Filings'
+    const d: Doc = { title: 'T', blocks: [{ type: 'heading', level: 2, id: 'a', text: 'A' }, fig('chart', body, 'rev')] }
+    expect(figureSuggestions(d, ['rev']).some((s) => s.startsWith('rev:') && s.includes('CAGR'))).toBe(true)
+    expect(figureSuggestions(d, ['a'])).toEqual([])
   })
 })
 

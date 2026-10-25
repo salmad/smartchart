@@ -7,9 +7,10 @@ import type { JevFn } from '../agent/llm.js'
 import { plain } from '../slides/schema.js'
 import type { Slide } from '../types.js'
 import { asSlide } from './figure.js'
+import { identify } from './ops.js'
 import type { Doc, FigureBlock } from './types.js'
 
-/** `id` is a slide check's own (R4 R5 R8 R9 R11 R13 R14 R15 S2 S3 J9 J10) or the doc's: D1 a figure has no caption,
+/** `id` is a slide check's own (R4 R5 R8 R9 R11 R13 R14 R15 S2 S3 S4 S5 J9 J10) or the doc's: D1 a figure has no caption,
     D2 a section is empty, D3 a figure could not be read. */
 export interface DocCheck { blockId: string; id: string; ok: boolean; msg: string }
 
@@ -34,6 +35,18 @@ export function figureChecks(f: FigureBlock): DocCheck[] {
   // R4, as a doc has it: at most one element stands out. There is no title to carry the highlight.
   const fc = focusCount(s), r4: DocCheck[] = fc === null ? [] : [{ blockId: f.id, id: 'R4', ok: fc <= 1, msg: fc <= 1 ? 'At most one focus element' : `${fc} focus elements; one should stand out` }]
   return [...r4, ...rules, ...softChecks(s).map((c) => at({ id: c.id, ok: false, msg: c.msg }))]
+}
+
+/** Softer figure ideas on changed blocks, for doc writes when the doc has no schema errors. */
+export function figureSuggestions(doc: Doc, blockIds: readonly string[]): string[] {
+  const byId = new Map(identify(doc).map(({ id, block }) => [id, block]))
+  const out: string[] = []
+  for (const id of blockIds) {
+    const block = byId.get(id)
+    if (block?.type !== 'figure') continue
+    figureChecks(block).filter((c) => !c.ok && /^S\d/.test(c.id)).forEach((c) => out.push(`${id}: ${c.msg}`))
+  }
+  return out
 }
 
 /** Every check a doc has. Judgment checks (J9, J10, for tables) need `jev`; without one they are left out. Never throws. */

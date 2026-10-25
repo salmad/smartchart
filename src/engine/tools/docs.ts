@@ -1,7 +1,7 @@
 /* The doc tools: list, create, read, change and check a doc. Blocks are addressed by blockId (see docs/ops.ts); every write
    returns the doc's blocks again, because a text block's id changes when its words do. Edits are pure functions of the doc:
    the service saves what they return. */
-import { checkDoc } from "../docs/checks.js";
+import { checkDoc, figureSuggestions } from "../docs/checks.js";
 import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind } from "../docs/types.js";
 import { createFigure, createText, deleteBlock, identify, moveBlock, setLook, updateFigure, writeText, type Edit } from "../docs/ops.js";
 import { textsOf } from "../docs/nest.js";
@@ -46,8 +46,9 @@ const object = (v: unknown, what: string): Record<string, unknown> => {
 /** What a write returns: the new blocks, which ones it made or changed, the doc's warnings, and what to do next. */
 function written(ctx: ToolContext, file: DocFile, e: Edit, extra: Record<string, unknown> = {}): HandlerOut {
   if (typeof e === "string") throw refuse(e);
-  const warnings = validateDoc(e.doc).warnings, next = file.doc.blocks.length < 2 && e.doc.blocks.length < 2 ? "" : "When the doc says what the user asked, check_doc judges it.";
-  return { result: { applied: true, rev: ctx.rev, changed: e.ids, blocks: blocksOf(e.doc), ...(warnings.length ? { warnings } : {}), ...extra, ...(next ? { next } : {}) }, file: { ...file, doc: e.doc } };
+  const v = validateDoc(e.doc), next = file.doc.blocks.length < 2 && e.doc.blocks.length < 2 ? "" : "When the doc says what the user asked, check_doc judges it.";
+  const suggestions = v.errors.length ? [] : figureSuggestions(e.doc, e.ids);
+  return { result: { applied: true, rev: ctx.rev, changed: e.ids, blocks: blocksOf(e.doc), ...(v.warnings.length ? { warnings: v.warnings } : {}), ...(suggestions.length ? { suggestions } : {}), ...extra, ...(next ? { next } : {}) }, file: { ...file, doc: e.doc } };
 }
 
 export const docTools = [

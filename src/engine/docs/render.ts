@@ -15,8 +15,11 @@ function badgeHTML(f: Extract<Block, { type: 'figure' }>): string {
   let failed: ReturnType<typeof figureChecks>
   try { failed = figureChecks(f).filter((c) => !c.ok) } catch { return '' }
   if (!failed.length) return ''
+  const hard = failed.filter((c) => !/^S\d/.test(c.id)), soft = failed.filter((c) => /^S\d/.test(c.id))
+  const summary = hard.length ? `${hard.length} check${hard.length === 1 ? '' : 's'}` : 'Could be better'
   const say = (msg: string) => msg.replace(/^The /, '').replace(/\.$/, '')
-  return `<details class="fig-checks"><summary>${failed.length} thing${failed.length === 1 ? '' : 's'} to fix</summary><ul>${failed.map((c) => `<li>${esc(say(c.msg))}</li>`).join('')}</ul></details>`
+  const rows = [...hard, ...soft].map((c) => `<li>${esc(say(c.msg))}</li>`).join('')
+  return `<details class="fig-checks"><summary>${summary}</summary><ul>${rows}</ul></details>`
 }
 
 /** A list; the list under an item is drawn inside that item's li. */
