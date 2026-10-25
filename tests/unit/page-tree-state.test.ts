@@ -75,6 +75,17 @@ describe('page tree state', () => {
     expect(await t.move(doc('a'), { parent: null })).toBe('No such page.')
   })
 
+  it('uses the on-screen list so a page only in the view can move to another workspace', async () => {
+    const s = stub(start()), t = createPageTree(s.repo, 'w1')
+    await t.load()
+    const pending = page('new', { sortKey: 'z' })
+    const view = [...start(), pending]
+    const done = t.move(doc('new'), { parent: null, workspaceId: 'w2' }, view)
+    expect(s.calls.move).toBe(1)
+    s.gates[0].resolve(null)
+    expect(await done).toBeNull()
+  })
+
   it('ignores a list that was read before a move, and reads again when the move ends', async () => {
     const s = stub(start()), t = createPageTree(s.repo, 'w')
     await t.load()

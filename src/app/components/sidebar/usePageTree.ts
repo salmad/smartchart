@@ -92,5 +92,6 @@ export function usePageTree({ repo, workspaceId, viewer, open: openPage, deck, p
   }, [viewer, key])
 
   const rows = useMemo(() => pages && visibleRows(pages, expanded, open), [pages, expanded, open])
-  return { rows, pages, failed: state.failed, notice: state.notice, toggle, move: tree.move, reload: tree.load, dismiss: tree.dismiss }
+  const move = useCallback((page: PageRef, to: Parameters<PageTree['move']>[1]) => tree.move(page, to, pages), [tree, pages])
+  return { rows, pages, failed: state.failed, notice: state.notice, toggle, move, reload: tree.load, dismiss: tree.dismiss }
 }
