@@ -25,7 +25,6 @@ import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, parsePending, takePendingPrompt, type Route } from './route'
 import type { Account } from './auth'
-import { findDeck } from './remote'
 import { useLiveDeck } from './live'
 import { usePersist } from './usePersist'
 import type { Attached } from './files'
@@ -33,7 +32,9 @@ import { Sidebar } from './components/sidebar/Sidebar'
 import { usePageCrumbs, usePageName } from './components/sidebar/usePageCrumbs'
 import { DEV_ACCOUNT } from './dev-account'
 import { bootDone } from './boot'
-import { forgetCachedDeck, readCachedDeck } from './cached-decks'
+import { forgetCachedDeck, touchLastDeckInWorkspace } from './cached-decks'
+import { keptDeck, openDeckFromServer, openKeptDeck } from './open-kept-deck'
+import { findDeck } from './remote'
 import { recheckInIdle } from './recheck'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import { useRowActions } from './components/sidebar/useRowActions'
@@ -142,17 +143,11 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)
-  }, [app, measurer, say, repo])
+    const wsId = app.getState().workspaceId
+    if (cacheId && wsId) touchLastDeckInWorkspace(cacheId, wsId, d.id)
+  }, [app, measurer, say, repo, cacheId])
 
-  // The copy of a deck kept in this browser (the one asked for, or at / the one worked on last), primed into the repo so a
-  // save made before the server is heard from carries the revision it was read at. A copy kept because saves failed
-  // (backup) is older business and goes the usual way.
-  const readKept = useCallback(async (id: string | undefined) => {
-    const kept = cacheId ? await readCachedDeck(cacheId, id) : null
-    if (!kept || (backup && (await backup.get(kept.deck.id)))) return null
-    repo.seed?.(kept.deck, kept.rev, kept.role)
-    return kept
-  }, [cacheId, backup, repo])
+  const readKept = useCallback((id: string | undefined) => keptDeck(repo, cacheId, id, backup), [cacheId, backup, repo])
 
   // After a deck opens from this browser's copy: read the server's, merge what changed by slide id (as when another
   // writer changed it), take its role, and if the deck is gone and nothing was edited meanwhile, start a new one.
@@ -170,6 +165,11 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       }
     } catch { /* offline or refused: the copy stays, and the next save finds out */ }
   }, [app, repo, account.id, newDeck, route, say])
+  const afterKeptOpen = useCallback((id: string) => { void refreshKept(id) }, [refreshKept])
+  const openKept = useCallback(
+    (id: string) => openKeptDeck(repo, cacheId, backup, id, openDeck, afterKeptOpen),
+    [repo, cacheId, backup, openDeck, afterKeptOpen],
+  )
 
   // Boot: the deck in the URL (nothing is saved before it is loaded, so an early pick cannot overwrite it),
   // then fonts (slides measure text) and whether the models are reachable.
@@ -187,13 +187,19 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       // Whether the models are up does not hold the deck back: the composer waits for the answer, the slides do not.
       const health = fetch(config.healthUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()).then((j: { live?: unknown }) => !!j.live).catch(() => false)
       void health.then((live) => { app.dispatch({ type: 'set', patch: { live } }); setHealthKnown(true) })
-      await document.fonts.ready
-      // Whatever happens next (opened, or missing and replaced by a new deck), the deck in the URL is done opening.
       if (route.name === 'deck') setOpened(route.id)
-      setBooted(true)
       // A tile picked while this loaded already started a deck: it wins over reopening the last one.
-      if (app.getState().deckId) return
-      if (wanted) { openDeck(wanted); if (fromCache) void refreshKept(wanted.id); return }
+      if (app.getState().deckId) { setBooted(true); return }
+      if (wanted && fromCache) {
+        setBooted(true)
+        openDeck(wanted)
+        void refreshKept(wanted.id)
+        void document.fonts.ready
+        return
+      }
+      await document.fonts.ready
+      setBooted(true)
+      if (wanted) { openDeck(wanted); return }
       newDeck()
       if (route.name === 'deck') say(MISSING)
       // A prompt typed on the site sets the style picked there, and builds the first slide when the models are up.
@@ -252,13 +258,11 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
     if (route.name !== 'deck' || route.id === app.getState().deckId) return
     const id = route.id
     void (async () => {
-      // A deck seen before opens from this browser's copy at once (hovering its row in the sidebar reads it ahead).
-      const kept = await readKept(id)
-      if (kept) { openDeck(kept.deck); void refreshKept(id); return }
-      const d = await findDeck(id, repo, backup)
-      if (d) openDeck(d); else { newDeck(); say(MISSING) }
+      if (await openKept(id)) return
+      if (await openDeckFromServer(id, repo, backup, openDeck)) return
+      newDeck(); say(MISSING)
     })().finally(() => setOpened(id))
-  }, [route, where, booted, app, repo, backup, openDeck, newDeck, say, readKept, refreshKept])
+  }, [route, where, booted, app, repo, backup, openDeck, newDeck, say, openKept])
   // Leaving a deck saves it now rather than after the usual pause.
   const leaveTo = useCallback((path: string) => {
     if (locked(app.getState())) return

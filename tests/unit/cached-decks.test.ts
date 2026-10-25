@@ -79,3 +79,35 @@ test('a read already on its way is shared, not asked again', async () => {
   await repo.get('d1')
   expect(get).toHaveBeenCalledTimes(2)
 })
+
+test('peek returns a deck as soon as it is read, without waiting on storage', async () => {
+  const [{ cachedDeckRepo }] = await load()
+  const base = inner({ d1: deck('d1') })
+  let release: () => void = () => {}
+  const repo = cachedDeckRepo({ ...base, get: () => new Promise((ok) => { release = () => ok(deck('d1')) }) }, 'u1')
+  const reading = repo.get('d1')
+  expect(repo.peek?.('d1')).toBeNull()
+  release()
+  await reading
+  expect(repo.peek?.('d1')?.deck.id).toBe('d1')
+})
+
+test('the last deck opened in a workspace is remembered', async () => {
+  const [{ touchLastDeckInWorkspace, lastDeckIdInWorkspace }, { cacheSet }] = await load()
+  await cacheSet('u1', 'deck:d9', { deck: deck('d9'), rev: 1, role: 'editor' })
+  touchLastDeckInWorkspace('u1', 'w2', 'd9')
+  expect(await lastDeckIdInWorkspace('u1', 'w2')).toBe('d9')
+  expect(await lastDeckIdInWorkspace('u1', 'w3')).toBeNull()
+})
+
+test('kept waits for a read already on its way, then answers from memory', async () => {
+  const [{ cachedDeckRepo }] = await load()
+  const base = inner({ d1: deck('d1') })
+  let release: () => void = () => {}
+  const repo = cachedDeckRepo({ ...base, get: () => new Promise((ok) => { release = () => ok(deck('d1')) }) }, 'u1')
+  const reading = repo.get('d1')
+  const kept = repo.kept?.('d1')
+  release()
+  expect(await kept).toMatchObject({ deck: { id: 'd1' } })
+  await reading
+})

@@ -7,12 +7,13 @@ import type { DocRepo } from '@/app/docs'
 import type { PageRepo } from '@/app/pages'
 import type { WorkspaceRepo } from '@/app/workspaces'
 import { DEV_ACCOUNT } from '@/app/dev-account'
+import { lastDeckIdInWorkspace } from '@/app/cached-decks'
 import { DeleteDeck } from '../DeleteDeck'
 import { MovePicker } from './MovePicker'
 import { Members } from './Members'
 import { NewDoc } from './NewDoc'
 import { pathTo, type Row } from './flatten'
-import { PageTree } from './PageTree'
+import { PageTree as PageTreePanel } from './PageTree.tsx'
 import { usePageTree } from './usePageTree'
 import { useSidebarWidth } from './useSidebarWidth'
 import { RenameItem } from './RenameItem'
@@ -62,7 +63,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
       void repos.docs.get(ref.id).then(() => repos.docs.comments(ref.id)).catch(() => undefined)
       return
     }
-    if (ref.kind !== 'deck' || ref.id === deck.id || ahead.current.has(ref.id) || me === DEV_ACCOUNT.id || actions.pending(ref)) return
+    if (ref.kind !== 'deck' || ref.id === deck.id || repos.decks.peek?.(ref.id) || ahead.current.has(ref.id) || me === DEV_ACCOUNT.id || actions.pending(ref)) return
     ahead.current.add(ref.id)
     void repos.decks.get(ref.id).catch(() => undefined)
   }
@@ -74,12 +75,23 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   // A page with a request on its way opens once that has been answered: its stored copy is not up to date before.
   const openPage = (ref: PageRef) => void actions.settled(ref).then(() => (ref.kind === 'deck' ? onOpenDeck(ref.id) : onOpenDoc(ref.id)))
 
-  // Switching opens the new workspace's most recent deck, or a new deck there.
-  const switchTo = async (id: string) => {
+  // Switching opens the deck last used in that workspace from cache when possible; list fills in behind.
+  const switchTo = (id: string) => {
     ws.switchTo(id)
-    const first = (await repos.decks.list(id).catch(() => [])).find((d) => d.slides > 0)
-    if (first) onOpenDeck(first.id)
-    else onNewDeck(null)
+    const account = me === DEV_ACCOUNT.id ? undefined : me
+    void (async () => {
+      if (account) {
+        const last = await lastDeckIdInWorkspace(account, id)
+        if (last && (repos.decks.peek?.(last) || await repos.decks.kept?.(last))) {
+          onOpenDeck(last)
+          return
+        }
+      }
+      const list = await repos.decks.list(id).catch(() => [])
+      const first = list.find((d) => d.slides > 0)
+      if (first) onOpenDeck(first.id)
+      else onNewDeck(null)
+    })()
   }
   const rename = async (name: string) => {
     if (!renaming) return
@@ -118,7 +130,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
           onNew={() => setRenaming({ kind: 'workspace' })} onMembers={() => setMembers(true)} />}
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto] overflow-y-auto pb-4">
-        <PageTree rows={rows} failed={tree.failed} canWrite={canWrite} busy={busy} onOpen={openPage} onToggle={tree.toggle} onAhead={readAhead}
+        <PageTreePanel rows={rows} failed={tree.failed} canWrite={canWrite} busy={busy} onOpen={openPage} onToggle={tree.toggle} onAhead={readAhead}
           onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={(row) => void askDelete(row)} pages={tree.pages} />
         {(tree.notice ?? said) && <p role="status" className="mx-2 mt-1 rounded-lg bg-panel px-2.5 py-2 text-[12.5px] leading-[1.4] text-ink-2">{tree.notice ?? said}</p>}
       </div>
