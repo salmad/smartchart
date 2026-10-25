@@ -33,6 +33,8 @@ export const summaryOf = (d: SavedDeck): DeckSummary => ({
 
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
 export interface DeckEvent { rev: number; by: string; slideId: string | null; what: string }
+/** A deck as kept in this browser for an instant reopen, with the revision and role it was read at. */
+export interface KeptDeck { deck: SavedDeck; rev: number; role: Role | null }
 
 export interface DeckRepo {
   /** One workspace's decks; without one, every deck the user can open. This browser's decks are all in one. */
@@ -55,6 +57,10 @@ export interface DeckRepo {
   /** Primes the revision, common ancestor and role of a deck opened from this browser's copy, as a `get` would, so a
       save made before the server is heard from still carries the revision the copy was read at. */
   seed?(deck: SavedDeck, rev: number, role: Role | null): void
+  /** The copy kept in memory from an earlier read or save (see cachedDeckRepo); null when there is none. */
+  peek?(id: string): KeptDeck | null
+  /** The kept copy, from memory or this browser; without `id`, the deck worked on last at /. */
+  kept?(id?: string): Promise<KeptDeck | null>
   /* Versions (src/engine/versions.ts): newest first, and the slides their trees name, by hash. */
   versions?(id: string): Promise<Version[]>
   blobs?(id: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>

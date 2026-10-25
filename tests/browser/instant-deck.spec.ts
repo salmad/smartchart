@@ -22,7 +22,12 @@ async function twoVisits(page: Page, second: { status?: number; row?: ReturnType
   await page.route('**/api/decks**', async (r) => {
     const q = new URL(r.request().url()).searchParams
     if (r.request().method() === 'PUT') return r.fulfill({ json: { ok: true, rev: 9 } })
-    if (q.has('rev')) return r.fulfill({ json: { rev: current.rev, presence: {} } })
+    if (q.has('rev')) {
+      if (hold) await held
+      if (hold && second.status === 404) return r.fulfill({ status: 404, json: {} })
+      const live = hold && second.row ? second.row : current
+      return r.fulfill({ json: { rev: live.rev, presence: {} } })
+    }
     if (q.has('events') || q.has('versions')) return r.fulfill({ json: [] })
     if (q.has('id')) {
       if (hold) await held
@@ -56,7 +61,7 @@ test('a deck the server no longer has is missing, not shown from the cache', asy
 })
 
 test('a role downgrade to viewer makes the cached deck read-only', async ({ page }) => {
-  const { release } = await twoVisits(page, { row: row('Market sizing', 1, 'viewer') })
+  const { release } = await twoVisits(page, { row: row('Market sizing', 2, 'viewer') })
   await expect.poll(() => title(page), { timeout: 15000 }).toBe('Market sizing')
   await expect(page.locator('textarea')).toBeVisible()
   release()
