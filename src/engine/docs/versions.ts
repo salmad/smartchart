@@ -16,8 +16,6 @@ export function docTree(doc: Doc): { tree: DocTree; blobs: Record<string, Block>
   })
   const tree: DocTree = { title: doc.title, blocks }
   if (doc.subtitle !== undefined) tree.subtitle = doc.subtitle
-  if (doc.theme) tree.theme = doc.theme
-  if (doc.accent) tree.accent = doc.accent
   return { tree, blobs }
 }
 

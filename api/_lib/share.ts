@@ -22,16 +22,27 @@ export function shareHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     if (!db) return Response.json({ error: 'Sharing is not set up on this server.' }, { status: 503 })
     const q = new URL(request.url).searchParams, token = q.get('s'), id = q.get('id')
 
+    const docId = q.get('doc')
     if (token !== null) {
       if (request.method !== 'GET') return Response.json({ error: 'method not allowed' }, { status: 405 })
-      const d = ID.test(token) ? await db.sharedDeck(token) : null
-      // The link always shows the latest version, so nothing is cached along the way.
-      return d ? Response.json(publicDeck(d.name, d.data, d.rev), { headers: { 'Cache-Control': 'no-store' } })
+      if (!ID.test(token)) return Response.json({ error: 'This link was turned off, or never existed.' }, { status: 404 })
+      const deck = await db.sharedDeck(token)
+      if (deck) return Response.json({ kind: 'deck', ...publicDeck(deck.name, deck.data, deck.rev) }, { headers: { 'Cache-Control': 'no-store' } })
+      const doc = await db.sharedDoc(token)
+      return doc ? Response.json({ kind: 'doc', name: doc.name, text: doc.text, rev: doc.rev }, { headers: { 'Cache-Control': 'no-store' } })
         : Response.json({ error: 'This link was turned off, or never existed.' }, { status: 404 })
     }
 
     const user = await deps.userFrom(request)
-    if (!user) return Response.json({ error: 'Sign in to share your decks.' }, { status: 401 })
+    if (!user) return Response.json({ error: 'Sign in to share.' }, { status: 401 })
+    if (docId) {
+      if (!ID.test(docId)) return Response.json({ error: 'No such doc.' }, { status: 404 })
+      const on = request.method === 'POST' ? true : request.method === 'DELETE' ? false : request.method === 'GET' ? undefined : null
+      if (on === null) return Response.json({ error: 'method not allowed' }, { status: 405 })
+      await db.ensureWorkspace(user)
+      const share = await db.shareDoc(user.id, docId, on)
+      return share === undefined ? Response.json({ error: 'You can view this doc, not share it.' }, { status: 403 }) : Response.json({ share })
+    }
     if (!id || !ID.test(id)) return Response.json({ error: 'No such deck.' }, { status: 404 })
     const on = request.method === 'POST' ? true : request.method === 'DELETE' ? false : request.method === 'GET' ? undefined : null
     if (on === null) return Response.json({ error: 'method not allowed' }, { status: 405 })

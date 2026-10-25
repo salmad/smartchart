@@ -103,8 +103,6 @@ test('Look: the palette and accent change the page, persist, and are not offered
   await look.getByRole('button', { name: 'Cobalt' }).click()
   await page.reload()
   await expect(page.locator('.doc.theme-ink')).toBeVisible()
-  await page.getByRole('button', { name: 'Versions' }).click()
-  await expect(page.getByRole('complementary', { name: 'Versions' })).toContainText('Changed the look')
   await edit(page)
   await expect(page.getByRole('button', { name: 'Look' })).toHaveCount(0)
 })

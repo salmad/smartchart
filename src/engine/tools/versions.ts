@@ -25,7 +25,7 @@ export const versionTools = [
       const hashes = [...new Set(v.tree.slides.map(([, h]) => h))];
       const slides = slidesOf(v.tree, new Map((await ctx.port.blobs(deckId, hashes)).map((b) => [b.hash, b.slide])));
       if (!slides) throw new ToolError("not_found", `Version ${version}'s slides are no longer stored.`, "Pick another version.");
-      const doc: DeckDoc = { ...structuredClone(ctx.deck as DeckDoc), style: v.tree.style, theme: v.tree.theme, accent: v.tree.accent,
+      const doc: DeckDoc = { ...structuredClone(ctx.deck as DeckDoc), style: v.tree.style,
         slides: slides.map((s) => ({ id: s.id, slide: s.slide, issues: [], warnings: [], checks: [] })) };
       return { result: { restored: version, slides: storylineRows(doc), rev: ctx.rev }, deck: doc, label: `Restored version ${version}`, events: [{ slideId: null, what: "deck", paths: ["restored"] }] };
     } }),

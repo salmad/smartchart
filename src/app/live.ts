@@ -27,7 +27,7 @@ export async function syncLiveDeck(
   if (!server || !local || locked(app.getState()) || app.getState().deckId !== id) return
   const { deck, changed } = mergeDecks(local, server, base)
   app.dispatch({ type: 'items', items: deck.items, focusId: changed.at(-1) })
-  app.dispatch({ type: 'set', patch: { name: deck.name ?? null, style: deck.style, theme: deck.theme, accent: deck.accent, comments: deck.comments ?? [] } })
+  app.dispatch({ type: 'set', patch: { name: deck.name ?? null, style: deck.style, comments: deck.comments ?? [] } })
   onMerged(changed, [...new Set(events.map((e) => e.by))])
 }
 

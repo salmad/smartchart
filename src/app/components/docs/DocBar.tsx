@@ -1,6 +1,6 @@
 /* The doc's controls in the bar: who else is editing, Look and Versions while reading, the comments toggle, Edit while reading (editors and owners
    only), and while editing the stale-save notice, Discard and Save. */
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { History, MessageSquare, Palette } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { cn } from '@/app/lib/utils'
@@ -33,7 +33,7 @@ export function CommentsToggle({ open, count, onClick }: { open: boolean; count:
 interface Panel { open: boolean; onToggle: () => void }
 
 /** Look (editors only) and Versions sit beside the comments toggle, as on a deck. Both are for reading: a draft can't be overwritten under you. */
-export function ReadBar({ canEdit, onEdit, others, comments, look, versions }: { canEdit: boolean; onEdit: () => void; others: string[]; comments: Panel & { count: number }; look: Panel | null; versions: Panel }) {
+export function ReadBar({ canEdit, onEdit, others, comments, look, versions, share }: { canEdit: boolean; onEdit: () => void; others: string[]; comments: Panel & { count: number }; look: Panel | null; versions: Panel; share?: ReactNode }) {
   return (
     <div className="flex items-center gap-2">
       <Presence names={others} />
@@ -41,6 +41,7 @@ export function ReadBar({ canEdit, onEdit, others, comments, look, versions }: {
         {look && <Toggle open={look.open} onClick={look.onToggle} label="Look"><Palette className="size-[17px]" strokeWidth={1.75} /></Toggle>}
         <Toggle open={versions.open} onClick={versions.onToggle} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>
       </div>
+      {share}
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       {canEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
     </div>

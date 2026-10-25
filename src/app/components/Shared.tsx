@@ -1,20 +1,21 @@
 /* A deck shared by link, for the room: every slide full width, top to bottom, and Present for the meeting.
    Open to anyone with the link, signed in or not; it always shows the deck as last saved. */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { loadShared, type Shared as SharedDeck } from '@/app/share'
+import { loadShared, type Shared, type SharedDeck } from '@/app/share'
+import { SharedDocView } from './SharedDoc'
 import { Button } from './ui/button'
 import { newLiveKey, openPresentation, usePublishDeck } from '@/app/presenter-channel'
 import { PrintDeck } from './PrintDeck'
 import { pdfName } from '../pdf-name'
 import { ReadSlides, type ReadSlidesHandle } from './ReadSlides'
 
-type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { state: 'ready'; shared: SharedDeck }
+type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { state: 'ready'; shared: Shared }
 
 export function Shared({ token }: { token: string }) {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [printing, setPrinting] = useState(false), liveKey = useMemo(newLiveKey, [])
   const slides = useRef<ReadSlidesHandle>(null)
-  usePublishDeck(load.state === 'ready' ? load.shared.deck : null, liveKey)
+  usePublishDeck(load.state === 'ready' && load.shared.kind === 'deck' ? load.shared.deck : null, liveKey)
 
   useEffect(() => {
     let live = true
@@ -47,7 +48,22 @@ export function Shared({ token }: { token: string }) {
 
   if (load.state === 'loading') return <div className="h-full bg-app-bg" />
   if (load.state !== 'ready') return <Gone error={load.state === 'error'} />
-  const { deck } = load.shared
+  if (load.shared.kind === 'doc') {
+    return (
+      <div className="flex h-full flex-col overflow-hidden bg-app-bg text-ink">
+        <header className="flex h-14 flex-none items-center gap-3 border-b border-line px-5 max-[900px]:px-4">
+          <a href="/home" className="whitespace-nowrap text-[13px] font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
+          <span aria-hidden className="text-[13px] text-ink-3">/</span>
+          <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{load.shared.name}</h1>
+        </header>
+        <SharedDocView shared={load.shared} />
+        <footer className="flex-none border-t border-line py-6 text-center text-[12.5px] text-ink-3">
+          Made with <a href="/home" className="text-ink-2 underline decoration-line-2 underline-offset-4 hover:text-ink">Occam</a>
+        </footer>
+      </div>
+    )
+  }
+  const { deck } = load.shared as SharedDeck
 
   const present = (from: number) => openPresentation(liveKey, from)
   return (
@@ -71,8 +87,8 @@ export function Shared({ token }: { token: string }) {
 function Gone({ error }: { error: boolean }) {
   return (
     <div className="grid h-full place-content-center gap-2 bg-app-bg px-6 text-center text-ink">
-      <p className="text-[17px] font-medium">{error ? 'This deck can’t be opened right now.' : 'This link is off.'}</p>
-      <p className="text-ink-3">{error ? 'Check your connection and reload the page.' : 'Its owner stopped sharing the deck, or the link was never made.'}</p>
+      <p className="text-[17px] font-medium">{error ? 'This link can’t be opened right now.' : 'This link is off.'}</p>
+      <p className="text-ink-3">{error ? 'Check your connection and reload the page.' : 'Its owner stopped sharing, or the link was never made.'}</p>
       <a href="/home" className="mt-4 text-[13px] text-ink-2 hover:text-ink">Occam</a>
     </div>
   )

@@ -3,6 +3,8 @@
 // editing by hand is told, and their next Save is refused as stale by the same revision check.
 import { parseDoc } from '../../src/engine/docs/parse.js'
 import { serializeDoc } from '../../src/engine/docs/serialize.js'
+import type { UserLook } from '../../src/engine/look.js'
+import { stripDoc } from '../../src/engine/stored-palette.js'
 import { plainOf } from '../../src/engine/slides/markup.js'
 import { NO_EDIT } from '../../src/engine/pages/tree.js'
 import { ToolError, type AccountPort, type AnyTool, type ToolContext } from '../../src/engine/tools/types.js'
@@ -19,7 +21,7 @@ const noWorkspace = (id: string) => new ToolError('not_found', `No workspace ${i
 
 export interface DocEnv {
   tool: AnyTool; input: unknown; uid: string; client: string; db: Db; origin: string
-  now: () => number; port: AccountPort; jev: JevFn
+  now: () => number; port: AccountPort; jev: JevFn; userLook: UserLook
   /** Most recently used first: the first is the default. */
   workspaces: () => Promise<WorkspaceRow[]>
 }
@@ -35,14 +37,14 @@ export async function runDocTool(e: DocEnv): Promise<ToolReply> {
 async function run(e: DocEnv): Promise<ToolReply> {
   const { tool: t, uid, db, origin } = e, docId = (e.input as { docId?: unknown }).docId
   for (let attempt = 0; ; attempt++) {
-    let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, file: null, docPresence: {}, port: e.port, jev: e.jev, now: e.now, client: e.client }
+    let ctx: ToolContext = { deck: null, rev: 0, userLook: e.userLook, links: null, presence: {}, file: null, docPresence: {}, port: e.port, jev: e.jev, now: e.now, client: e.client }
     let baseRev = 0
     if (t.scope === 'doc') {
       const row = typeof docId === 'string' && ID.test(docId) ? await db.getDoc(uid, docId) : null
       if (!row) throw noDoc(docId)
       const meta = await db.getDocMeta(uid, row.id)
       baseRev = row.rev
-      ctx = { ...ctx, rev: row.rev, file: { id: row.id, name: row.name, doc: parseDoc(row.text).doc }, docPresence: meta?.presence ?? {}, links: { edit: `${origin}/doc/${row.id}`, share: null } }
+      ctx = { ...ctx, rev: row.rev, file: { id: row.id, name: row.name, doc: stripDoc(parseDoc(row.text).doc) }, docPresence: meta?.presence ?? {}, links: { edit: `${origin}/doc/${row.id}`, share: null } }
     } else ctx = { ...ctx, links: { edit: '', share: null } }
 
     const out = await t.run(ctx, e.input)

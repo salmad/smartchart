@@ -19,7 +19,7 @@ const editorIn = (ws: string, u: string, roles: string) => `exists (select 1 fro
 const R = (a: Action) => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
 
-type Calls = 'deckRole' | 'listDecks' | 'getDeck' | 'putDeck' | 'deleteDeck' | 'shareDeck' | 'sharedDeck' | 'getDeckMeta' | 'sharedRev'
+type Calls = 'deckRole' | 'listDecks' | 'getDeck' | 'putDeck' | 'deleteDeck' | 'shareDeck' | 'sharedDeck' | 'getDeckMeta' | 'sharedRev' | 'shareDoc' | 'sharedDoc'
   | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages' | 'movePage' | 'countSubpages'
 
 type PageCols = { parent_kind: 'deck' | 'doc' | null; parent_id: string | null; sort_key: string | null }
@@ -82,7 +82,7 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
     // can run to megabytes, so the whole deck is read only when it is opened.
     listDecks: async (u, ws) => (await q<Omit<DeckSummary, 'updated' | 'parent' | 'sortKey'> & PageCols & { updated: string | Date }>(
       `select id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides,
-         share_id is not null as shared, data->'style' as style, data->'theme' as theme, data->'accent' as accent,
+         share_id is not null as shared, data->'style' as style, null::jsonb as theme, null::jsonb as accent,
          parent_kind, parent_id, sort_key
        from decks where ${may('decks', '$1', '$2')} and ($3::text is null or workspace_id = $3) order by updated_at desc limit 200`, [u, R('read'), ws ?? null]))
       .map(({ parent_kind, parent_id, sort_key, ...r }) => ({ ...r, slides: Number(r.slides), updated: ms(r.updated), parent: parentOf({ parent_kind, parent_id, sort_key }), sortKey: sort_key })),
@@ -118,6 +118,15 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
       return r[0] ? r[0].share : undefined
     },
     sharedDeck: async (t) => (await q<{ name: string; data: unknown; rev: number }>('select name, data, rev from decks where share_id = $1', [t]))[0] ?? null,
+    shareDoc: async (u, id, on) => {
+      const r = on === undefined
+        ? await q<{ share: string | null }>(`select share_id as share from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('write')])
+        : await q<{ share: string | null }>(
+            `update docs set share_id = ${on ? 'coalesce(share_id, $4)' : 'null'} where id = $2 and ${may('docs', '$1', '$3')} returning share_id as share`,
+            on ? [u, id, R('write'), shareToken()] : [u, id, R('write')])
+      return r[0] ? r[0].share : undefined
+    },
+    sharedDoc: async (t) => (await q<{ name: string; text: string; rev: number }>('select name, text, rev from docs where share_id = $1', [t]))[0] ?? null,
     getDeckMeta: async (u, id) => (await q<{ rev: number; share: string | null; presence: Presence; named: boolean; role: Role }>(
       `select rev, share_id as share, presence, named, ${roleOf('decks', '$1')} as role from decks where id = $2 and ${may('decks', '$1', '$3')}`, [u, id, R('read')]))[0] ?? null,
     sharedRev: async (t) => (await q<{ rev: number }>('select rev from decks where share_id = $1', [t]))[0] ?? null,

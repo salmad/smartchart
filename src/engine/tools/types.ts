@@ -6,6 +6,7 @@ import type { JevFn } from "../agent/llm.js";
 import type { DeckComment } from "../comments.js";
 import type { Version } from "../versions.js";
 import type { Doc } from "../docs/types.js";
+import type { UserLook } from "../look.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };
@@ -42,6 +43,8 @@ export interface AccountPort {
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"
   rev: number;                       // the deck's revision when loaded (0 for scope "create")
+  /** The signed-in user's palette (not stored on decks or docs). */
+  userLook: UserLook;
   links: { edit: string; share: string | null } | null;
   presence: Presence;
   /** Set for scope "doc": the doc as loaded, and who is editing it by hand (expires at `until`). */

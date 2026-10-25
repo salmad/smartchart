@@ -2,6 +2,7 @@
    version is a tree (the look plus the ordered slide ids and blob hashes). An unchanged slide is never stored again,
    a version costs a few hundred bytes, and two versions diff by comparing hashes. Restoring reads a tree and its
    blobs; there is no patch chain to replay. Framework-free: the server and the in-browser dev account share it. */
+import { DEFAULT_USER_LOOK } from './look.js'
 import type { Slide, Style, Theme } from "./types.js";
 
 export interface Tree { style: Style; theme: Theme; accent: string | null; slides: [id: string, hash: string][] }
@@ -32,7 +33,7 @@ export function hash(s: string): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36) + s.length.toString(36);
 }
 
-interface SavedData { style?: Style; theme?: Theme; accent?: string | null; items?: { id: string; slide: Slide }[] }
+interface SavedData { style?: Style; items?: { id: string; slide: Slide }[] }
 
 /** A saved deck as a tree, its blobs (hash → slide) and its key (the tree's own hash: equal keys, equal decks). */
 export function treeOf(data: unknown): { tree: Tree; blobs: Map<string, Slide>; key: string } {
@@ -42,7 +43,7 @@ export function treeOf(data: unknown): { tree: Tree; blobs: Map<string, Slide>; 
     blobs.set(h, it.slide);
     return [it.id, h];
   });
-  const tree: Tree = { style: d.style === "pitch" ? "pitch" : "consulting", theme: d.theme === "paper" ? "paper" : "ink", accent: d.accent ?? null, slides };
+  const tree: Tree = { style: d.style === "pitch" ? "pitch" : "consulting", theme: DEFAULT_USER_LOOK.theme, accent: DEFAULT_USER_LOOK.accent, slides };
   return { tree, blobs, key: hash(JSON.stringify(tree)) };
 }
 
@@ -63,7 +64,7 @@ export function diffTrees(a: Tree | null, b: Tree): TreeDiff {
   const removed = (a?.slides ?? []).filter(([id]) => !B.has(id)).map(([id]) => id);
   const changed = b.slides.filter(([id, h]) => A.has(id) && A.get(id) !== h).map(([id]) => id);
   const kept = (t: Tree | null, other: Map<string, string>) => (t?.slides ?? []).map(([id]) => id).filter((id) => other.has(id)).join();
-  return { added, removed, changed, moved: kept(a, B) !== kept(b, A), look: !!a && (a.style !== b.style || a.theme !== b.theme || a.accent !== b.accent) };
+  return { added, removed, changed, moved: kept(a, B) !== kept(b, A), look: !!a && a.style !== b.style };
 }
 
 const count = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
@@ -75,7 +76,7 @@ export function describeDiff(d: TreeDiff): string {
     d.changed.length && `changed ${count(d.changed.length, "slide")}`,
     d.removed.length && `removed ${count(d.removed.length, "slide")}`,
     !d.added.length && !d.removed.length && d.moved && "reordered slides",
-    d.look && "changed the look",
+    d.look && "changed the style",
   ].filter((p): p is string => !!p);
   // "slide" is said once when the parts run together: "added 1 slide, changed 2".
   const counted = (p: string) => /^(?:added|changed|removed) \d+ slides?$/.test(p);

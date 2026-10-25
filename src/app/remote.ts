@@ -4,7 +4,8 @@ import type { Slide } from '@/engine/types'
 import type { Version } from '@/engine/versions'
 import { refOf } from './pages-wire'
 import type { Role } from './workspaces'
-import { deckName, localDeckRepo, type DeckEvent, type DeckRepo, type DeckSummary, type Presence, type SavedDeck } from './store'
+import { deckBody, deckName, localDeckRepo, type DeckEvent, type DeckRepo, type DeckSummary, type Presence, type SavedDeck } from './store'
+import { DEFAULT_USER_LOOK } from '@/engine/look'
 
 /** What the chat says when the server refuses a save because the deck moved on since this tab read it. */
 export const STALE = 'This deck was changed in another tab or window. Reload to see the latest.'
@@ -47,7 +48,7 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
       // A missing look falls back to the defaults, so a deck saved before a field existed still lists.
       return ((await r.json()) as Partial<DeckSummary>[]).map((d) => ({
         id: String(d.id), name: d.name || 'Untitled deck', updated: Number(d.updated) || 0, slides: Number(d.slides) || 0,
-        style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: d.theme === 'paper' ? 'paper' : 'ink', accent: typeof d.accent === 'string' ? d.accent : null,
+        style: d.style === 'pitch' ? 'pitch' : 'consulting', theme: DEFAULT_USER_LOOK.theme, accent: DEFAULT_USER_LOOK.accent,
         parent: refOf(d.parent), sortKey: typeof d.sortKey === 'string' ? d.sortKey : null,
       }))
     },
@@ -60,15 +61,15 @@ export function remoteDeckRepo({ fetcher = (...a) => fetch(...a), onSignedOut, w
       if (row.role) roles.set(id, row.role)
       // `chat` wins when present; an older deck has the conversation in `data`.
       // The name lives on the row: set by the maker here, or by an agent, it is `named`; otherwise it follows the cover.
-      const got: SavedDeck = { ...row.data, ...(row.chat ?? {}), id: row.id, name: row.named ? row.name : null }
+      const got: SavedDeck = { ...row.data, ...(row.chat ?? {}), id: row.id, name: row.named ? row.name : null, theme: DEFAULT_USER_LOOK.theme, accent: DEFAULT_USER_LOOK.accent }
       bases.set(id, structuredClone(got))
       return got
     }),
     save: (deck, meta) => inOrder(deck.id, async () => {
       try {
-        const { history, messages, working, name: _name, parent, sortKey: _key, ...look } = deck, ws = workspace?.()
+        const { history, messages, working, parent } = deck, ws = workspace?.()
         const r = await call('', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: look, chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0,
+          body: JSON.stringify({ id: deck.id, name: deckName(deck), named: !!deck.name?.trim(), data: deckBody(deck), chat: { history, messages, working }, baseRev: revs.get(deck.id) ?? 0,
             ...(ws ? { workspaceId: ws } : {}), ...(parent ? { parent } : {}), ...(meta ? { version: meta } : {}) }) })
         if (r.ok) {
           revs.set(deck.id, ((await r.json().catch(() => null)) as { rev?: number } | null)?.rev ?? (revs.get(deck.id) ?? 0) + 1)

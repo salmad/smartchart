@@ -115,10 +115,9 @@ export function deleteBlock(doc: Doc, blockId: string): Edit {
 }
 
 export function setLook(doc: Doc, look: { title?: string; subtitle?: string | null; theme?: Theme; accent?: string | null }): Edit {
-  const next: Doc = { ...doc }
+  const { theme: _rt, accent: _ra, ...base } = doc
+  const next: Doc = { ...base }
   if (look.title !== undefined) next.title = look.title.trim()
   if (look.subtitle !== undefined) { if (look.subtitle === null || !look.subtitle.trim()) delete next.subtitle; else next.subtitle = look.subtitle.trim() }
-  if (look.theme) next.theme = look.theme
-  if (look.accent !== undefined) { if (look.accent === null) delete next.accent; else next.accent = look.accent }
   return accept(doc, next, () => [])
 }

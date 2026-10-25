@@ -28,7 +28,7 @@ export interface Store { active: string | null; decks: Record<string, SavedDeck>
 /** A deck as a list shows it: name, time, size and the first slide in the deck's look. Open it with `get`. */
 export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; parent: PageRef | null; sortKey: string | null }
 export const summaryOf = (d: SavedDeck): DeckSummary => ({
-  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
+  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme ?? 'paper', accent: d.accent ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
 })
 
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
@@ -118,13 +118,18 @@ export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>, op
   }
   return {
     list: async () => deckList(read()).map(summaryOf),
-    get: async (id) => read().decks[id] ?? null,
+    get: async (id) => {
+      const d = read().decks[id]
+      if (!d) return null
+      return { ...d, theme: d.theme ?? 'paper', accent: d.accent ?? null }
+    },
     save: async (deck, meta) => {
       const s = read(), was = s.decks[deck.id]
       // A save never moves a deck: a new one goes where it asked (last under its parent), an existing one keeps its place.
       const at = was ? { parent: was.parent ?? null, sortKey: was.sortKey ?? null } : placeNew(storage, undefined, deck.parent)
       if ('refused' in at) return at.refused
-      s.decks[deck.id] = { ...deck, parent: at.parent, sortKey: at.sortKey }; s.active = deck.id
+      const { theme: _t, accent: _a, ...stored } = deck
+      s.decks[deck.id] = { ...stored, parent: at.parent, sortKey: at.sortKey } as SavedDeck; s.active = deck.id
       if (!write(s)) return 'This browser’s storage is full.'
       if (opts.versions) await recordLocal(deck, meta)
       return null
@@ -146,6 +151,12 @@ export const newDeckId = (): string => `d_${Date.now().toString(36)}${Math.rando
 export const deckList = (store: Store): SavedDeck[] => Object.values(store.decks).sort((a, b) => (b.updated || 0) - (a.updated || 0))
 
 /** Named after the cover, else the first slide's title. */
+/** Payload stored on the server or in localStorage: no palette (a user preference). */
+export function deckBody(deck: SavedDeck) {
+  const { history, messages, working, name: _name, parent, sortKey: _key, theme: _t, accent: _a, ...body } = deck
+  return body
+}
+
 export function deckName(d: { name?: string | null; items?: Item[] }): string {
   if (d.name?.trim()) return d.name.trim()
   const slides = (d.items || []).map((it) => it.slide)
@@ -188,7 +199,7 @@ export function mergeDecks(local: SavedDeck, server: SavedDeck, base: SavedDeck 
     items.splice(0, items.length, ...placed)
   }
   // The look follows the same rule as slides: a field changed here since `base` is kept, otherwise the server's is taken.
-  const take = <K extends 'name' | 'style' | 'theme' | 'accent'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
-  return { deck: { ...local, name: take('name'), style: take('style'), theme: take('theme'), accent: take('accent'), items,
+  const take = <K extends 'name' | 'style'>(k: K): SavedDeck[K] => (base && local[k] !== base[k] ? local[k] : server[k])
+  return { deck: { ...local, name: take('name'), style: take('style'), theme: local.theme, accent: local.accent, items,
     comments: mergeComments(local.comments ?? [], server.comments ?? [], base ? base.comments ?? [] : null) }, changed }
 }

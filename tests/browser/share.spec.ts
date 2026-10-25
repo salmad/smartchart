@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 import starters from '../../src/engine/starters/starters.json' with { type: 'json' }
 
 const slides = (starters.slides as { consulting?: unknown }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
-const shared = { name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides }
+const shared = { kind: 'deck', name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides, rev: 1, ids: ['s1', 's2', 's3'] }
 
 test('a shared deck opens for a signed-out visitor, every slide in order, and presents from the slide clicked', async ({ page, context }) => {
   await page.route('**/api/share?s=tok_1', (r) => r.fulfill({ json: shared }))

@@ -21,7 +21,7 @@ export function LookPanel(p: Props) {
       <header className="flex items-start justify-between gap-3">
         <div className="grid gap-0.5">
           <h2 className="text-[14px] font-medium text-ink">Look</h2>
-          <p className="text-[12.5px] text-ink-3">{noun === 'doc' ? 'This doc’s look, on every figure.' : 'This deck’s look, on every slide.'}</p>
+          <p className="text-[12.5px] text-ink-3">Your palette and accent, on every slide and doc.</p>
         </div>
         <button type="button" onClick={p.onClose} aria-label="Close look"
           className="-mr-1 -mt-1 grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink">

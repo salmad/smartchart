@@ -26,7 +26,10 @@ describe('deck document', () => {
   it('round-trips the app’s saved data', () => {
     const doc = docFromData('d_1', 'Deck', data)
     expect(doc.slides[0]).toMatchObject({ id: 's_a', issues: [] })
-    expect(dataFromDoc(doc, data)).toMatchObject({ current: 0, items: [{ id: 's_a', status: 'ok', errors: [] }] })
+    const saved = dataFromDoc(doc, data)
+    expect(saved).toMatchObject({ current: 0, items: [{ id: 's_a', status: 'ok', errors: [] }] })
+    expect(saved).not.toHaveProperty('theme')
+    expect(saved).not.toHaveProperty('accent')
   })
   it('storyline and lookups', () => {
     const doc = docFromData('d_1', 'Deck', data)

@@ -6,11 +6,12 @@ import { docsHandler } from './_lib/docs.js'
 import { pagesHandler } from './_lib/pages.js'
 import { keysHandler } from './_lib/keys.js'
 import { shareHandler } from './_lib/share.js'
+import { prefsHandler } from './_lib/prefs.js'
 import { workspacesHandler } from './_lib/workspaces.js'
 
 const deps = { userFrom, db: getDb }
 const routes: Record<string, (request: Request) => Promise<Response> | Response> = {
-  keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), pages: pagesHandler(deps), workspaces: workspacesHandler(deps),
+  keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), pages: pagesHandler(deps), workspaces: workspacesHandler(deps), prefs: prefsHandler(deps),
 }
 
 const handle = (request: Request) => {

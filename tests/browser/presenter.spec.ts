@@ -5,7 +5,7 @@ import starters from '../../src/engine/starters/starters.json' with { type: 'jso
 
 const slides = (starters.slides as { consulting?: Record<string, unknown> }[]).map((s) => s.consulting).filter(Boolean).slice(0, 3)
   .map((s, i) => (i === 0 ? { ...s, talk: 'Open on the problem: founders fund the business on their own cards.\nThen hand over to the numbers.' } : s))
-const shared = { name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides }
+const shared = { kind: 'deck', name: 'Acme board update', style: 'consulting', theme: 'ink', accent: null, slides, rev: 1, ids: [] }
 
 test('the presentation and the presenter view are independent tabs on one deck', async ({ page, context }) => {
   await page.route('**/api/share?s=tok_1', (r) => r.fulfill({ json: shared }))

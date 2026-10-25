@@ -1,7 +1,7 @@
 /* Edit mode for a doc: the draft, the editor page and its bar, ⌘S / ⌘Z, and asking before changes are dropped. */
 import { useCallback, useEffect, type ReactNode } from 'react'
-import { DEFAULT_THEME } from '@/engine/docs/render'
 import type { Doc } from '@/engine/docs/types'
+import type { Theme } from '@/engine/types'
 import { DocEditor } from './DocEditor'
 import { EditBar } from './DocBar'
 import { useDocEdit } from './useDocEdit'
@@ -9,6 +9,7 @@ import { serializeDoc } from '@/engine/docs/serialize'
 
 interface Props {
   doc: Doc
+  look: { theme: Theme; accent: string | undefined }
   /** Null when saved; otherwise why not, as a sentence. */
   save: (doc: Doc) => Promise<string | null>
   onDone: () => void
@@ -18,8 +19,8 @@ interface Props {
   children: (bar: ReactNode, page: ReactNode) => ReactNode
 }
 
-export function DocEditing({ doc, save, onDone, stale, comments, children }: Props) {
-  const theme = doc.theme ?? DEFAULT_THEME, edit = useDocEdit({ doc, theme, accent: doc.accent, save, onDone })
+export function DocEditing({ doc, look, save, onDone, stale, comments, children }: Props) {
+  const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone })
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])
 
   // The words as they would be saved, for the clipboard.
@@ -38,5 +39,5 @@ export function DocEditing({ doc, save, onDone, stale, comments, children }: Pro
     return () => { document.removeEventListener('keydown', key); window.removeEventListener('beforeunload', leave) }
   }, [edit])
 
-  return <>{children(<EditBar edit={edit} onDiscard={discard} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />, <DocEditor edit={edit} theme={theme} accent={doc.accent} />)}</>
+  return <>{children(<EditBar edit={edit} onDiscard={discard} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />, <DocEditor edit={edit} theme={look.theme} accent={look.accent} />)}</>
 }

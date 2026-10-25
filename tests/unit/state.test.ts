@@ -82,7 +82,7 @@ test('an edit is a change to the slides, the look or the chat; selecting a slide
   const same = (patch: Partial<AppState>) => editKey(toSaved({ ...s, ...patch }) as SavedDeck) === key
   expect(same({ current: 2 })).toBe(true)
   expect(same({ items: s.items.map((it) => ({ ...it, checks: [], warnings: ['re-run'] })) })).toBe(true)
-  expect(same({ theme: 'paper' })).toBe(false)
+  expect(same({ theme: 'paper' })).toBe(true)
   expect(same({ items: s.items.map((it, i) => (i ? it : { ...it, slide: { ...it.slide, title: 'New' } })) })).toBe(false)
   expect(same({ items: s.items.slice().reverse() })).toBe(false)
   expect(same({ messages: [{ kind: 'user', text: 'hi' }] })).toBe(false)

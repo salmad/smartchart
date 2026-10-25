@@ -78,7 +78,8 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
         return Response.json({ error: 'Bad deck.' }, { status: 400 })
       // named: the maker renamed the deck; from then on its name stays put (as when an agent names it).
       // workspaceId places a new deck; a save never moves one.
-      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), data, chat, baseRev, { named: named === true, workspaceId, parent })
+      const stored = (() => { const { theme: _t, accent: _a, ...rest } = data as { theme?: unknown; accent?: unknown }; return rest })()
+      const put = await db.putDeck(user.id, deckId, name.slice(0, 200), stored, chat, baseRev, { named: named === true, workspaceId, parent })
       if (typeof put === 'object' && 'refused' in put) return Response.json({ error: put.refused }, { status: 409 })
       if (put === 'conflict') return Response.json({ error: 'This deck changed somewhere else.' }, { status: 409 })
       // 'foreign': a viewer's save, a new deck where the writer may only view, or someone else's id (answered as if it did not exist).
@@ -87,7 +88,7 @@ export function decksHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
           return Response.json({ error: 'You can view this workspace, not add to it.' }, { status: 403 })
         return refusedDeck(db, user.id, deckId)
       }
-      await recordVersion(db, user.id, deckId, data, appMeta(body.version), put.rev)
+      await recordVersion(db, user.id, deckId, stored, appMeta(body.version), put.rev)
       return Response.json({ ok: true, rev: put.rev })
     }
     return Response.json({ error: 'method not allowed' }, { status: 405 })

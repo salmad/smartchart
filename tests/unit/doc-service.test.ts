@@ -6,6 +6,7 @@ import { serializeDoc } from '../../src/engine/docs/serialize'
 import { tool, WRITE, type AnyTool } from '../../src/engine/tools/types'
 import { fakeDb } from './fake-db'
 import { fakeJev, seedUser, type SeedUser } from './fakes'
+import { DEFAULT_USER_LOOK } from '../../src/engine/look'
 import { fakePort } from './tool-ctx'
 
 const user = (n: string): SeedUser => ({ id: `u_${n}`, email: `${n}@x.y`, name: n })
@@ -22,7 +23,7 @@ const make = (workspaceId?: string): AnyTool => tool<{ title: string }>({ name: 
 async function world() {
   const db = fakeDb(), ws = await seedUser(db, ann)
   await db.putDoc(ann.id, 'doc_1', 'Memo', START, 0, ws)
-  const env = (u: SeedUser, t: AnyTool, input: unknown, now = 1_000_000): DocEnv => ({ tool: t, input, uid: u.id, client: 'Claude Code', db, origin: 'https://app.test', now: () => now, port: fakePort(), jev: fakeJev(), workspaces: () => db.listWorkspaces(u.id) })
+  const env = (u: SeedUser, t: AnyTool, input: unknown, now = 1_000_000): DocEnv => ({ tool: t, input, uid: u.id, client: 'Claude Code', db, origin: 'https://app.test', now: () => now, port: fakePort(), jev: fakeJev(), userLook: DEFAULT_USER_LOOK, workspaces: () => db.listWorkspaces(u.id) })
   return { db, ws, env }
 }
 const join = async (db: Db, ws: string, who: SeedUser, role: 'editor' | 'viewer') => {

@@ -41,6 +41,8 @@ import { useRowActions } from './components/sidebar/useRowActions'
 import type { DocRepo } from './docs'
 import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
+import type { UserLook } from '@/engine/look'
+import { useUserLook } from './useUserLook'
 import { ROOMY, usePanel } from './panel'
 import { lazyScreen, whenIdle } from './lazy-screen'
 
@@ -96,12 +98,18 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const [chatOpen, toggleChat] = usePanel(CHAT_OPEN, 'l')
   // The workspace open in the app: the most recently used, until another is picked in the sidebar.
   const ws = useWorkspace(workspaces, (w) => { onWorkspace(w?.id ?? null); app.dispatch({ type: 'set', patch: { workspaceId: w?.id ?? null, role: w?.role ?? null } }) }, account.id === DEV_ACCOUNT.id ? undefined : account.id)
+  const { look: userLook, setLook: setUserLook } = useUserLook(account.id, !!backup)
+  useEffect(() => { app.dispatch({ type: 'set', patch: { theme: userLook.theme, accent: userLook.accent } }) }, [userLook.theme, userLook.accent, app])
+  const applyLook = useCallback((patch: Partial<UserLook>) => {
+    if (locked(app.getState()) || app.getState().role === 'viewer') return
+    void setUserLook(patch)
+  }, [setUserLook])
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
   useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
   // The same deck object until a slide or the look changes: it is what the presentation tab follows.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deckOf reads only these four
-  const deck = useMemo(() => deckOf(s), [s.items, s.style, s.theme, s.accent])
+  const deck = useMemo(() => ({ ...deckOf(s), theme: userLook.theme, accent: userLook.accent }), [s.items, s.style, userLook])
   const liveKey = useMemo(newLiveKey, [])
   usePublishDeck(deck.slides.length ? deck : null, liveKey)
 
@@ -323,8 +331,8 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const openPage = (ref: { kind: 'deck' | 'doc'; id: string }) => leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : `/doc/${ref.id}`)
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
-    onTheme: (theme: Theme) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { theme } }),
-    onAccent: (accent: string | null) => !locked(app.getState()) && app.dispatch({ type: 'set', patch: { accent } }),
+    onTheme: (theme: Theme) => applyLook({ theme }),
+    onAccent: (accent: string | null) => applyLook({ accent }),
     onPresent: present,
     onAdd: () => { if (!locked(app.getState()) && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks, chatOpen, onToggleChat: toggleChat,
@@ -406,7 +414,9 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
         : docOnScreen
-        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} chat={deckChat} /></Suspense>
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} chat={deckChat}
+          look={{ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }}
+          shareId={backup ? null : docOnScreen} /></Suspense>
         : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}

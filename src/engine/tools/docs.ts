@@ -8,7 +8,6 @@ import { textsOf } from "../docs/nest.js";
 import { serializeDoc } from "../docs/serialize.js";
 import { validateDoc } from "../docs/validate.js";
 import { plain } from "../slides/schema.js";
-import type { Theme } from "../types.js";
 import { pageArg, pageSchema, type PageArg } from "./pages.js";
 import { DESTRUCTIVE, IDEMPOTENT, READ, ToolError, WRITE, tool, type DocFile, type HandlerOut, type ToolContext } from "./types.js";
 
@@ -16,8 +15,6 @@ const DOC_ID = { type: "string", description: "The doc id from list_docs or crea
 const BLOCK_ID = { type: "string", description: "A blockId from get_doc: a heading's or figure's own id, or a text block's t_… id. Read the doc again after any write." } as const;
 const AFTER = { type: "string", description: "A blockId, \"start\" or \"end\"." } as const;
 const WORKSPACE_ID = { type: "string", description: "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently." } as const;
-const THEME = { type: "string", enum: ["ink", "paper"], description: "ink: dark page; paper: light page (the default for reading)." } as const;
-const ACCENT = { type: "string", description: "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain." } as const;
 
 const preview = (b: Block): string => {
   switch (b.type) {
@@ -31,7 +28,8 @@ const blocksOf = (doc: Doc) => identify(doc).map(({ id, block }) => ({ blockId: 
 
 function docView(ctx: ToolContext, file: DocFile, rev: number): Record<string, unknown> {
   const doc = file.doc, editing = ctx.docPresence.editing && ctx.docPresence.editing.until > ctx.now() ? ctx.docPresence.editing : null;
-  return { docId: file.id, title: doc.title, ...(doc.subtitle !== undefined ? { subtitle: doc.subtitle } : {}), theme: doc.theme ?? "paper", ...(doc.accent ? { accent: doc.accent } : {}), rev,
+  const { theme, accent } = ctx.userLook;
+  return { docId: file.id, title: doc.title, ...(doc.subtitle !== undefined ? { subtitle: doc.subtitle } : {}), theme, ...(accent ? { accent } : {}), rev,
     links: { edit: ctx.links?.edit ?? "" }, ...(editing ? { presence: { editing } } : {}),
     outline: identify(doc).flatMap(({ id, block }) => (block.type === "heading" ? [{ blockId: id, level: block.level, text: plain(block.text) }] : [])),
     blocks: blocksOf(doc), markdown: serializeDoc(doc) };
@@ -58,12 +56,12 @@ export const docTools = [
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDocs(limit, cursor, workspaceId) }) }),
 
-  tool<{ title: string; subtitle?: string; theme?: Theme; accent?: string; workspaceId?: string; parent?: PageArg }>({ name: "create_doc", title: "Create a doc", group: "docs", scope: "createDoc", annotations: WRITE,
-    description: "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
-    input: { type: "object", additionalProperties: false, required: ["title"], properties: { title: { type: "string" }, subtitle: { type: "string" }, theme: THEME, accent: ACCENT, workspaceId: WORKSPACE_ID, parent: pageSchema("Put the doc under this page.") } },
-    run: async (ctx, { title, subtitle, theme, accent, workspaceId, parent }) => {
+  tool<{ title: string; subtitle?: string; workspaceId?: string; parent?: PageArg }>({ name: "create_doc", title: "Create a doc", group: "docs", scope: "createDoc", annotations: WRITE,
+    description: "Start a new, empty doc: a title (it is the doc's name) and an optional subtitle. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    input: { type: "object", additionalProperties: false, required: ["title"], properties: { title: { type: "string" }, subtitle: { type: "string" }, workspaceId: WORKSPACE_ID, parent: pageSchema("Put the doc under this page.") } },
+    run: async (ctx, { title, subtitle, workspaceId, parent }) => {
       const under = parent === undefined ? undefined : pageArg(parent, "parent");
-      const doc: Doc = { title: title.trim(), ...(subtitle?.trim() ? { subtitle: subtitle.trim() } : {}), ...(theme ? { theme } : {}), ...(accent ? { accent } : {}), blocks: [] };
+      const doc: Doc = { title: title.trim(), ...(subtitle?.trim() ? { subtitle: subtitle.trim() } : {}), blocks: [] };
       const bad = validateDoc(doc).errors[0];
       if (bad) throw new ToolError("bad_input", bad, "Fix it and call again.");
       const file = { id: ctx.port.newDocId(), name: doc.title, doc };
@@ -71,13 +69,13 @@ export const docTools = [
     } }),
 
   tool<{ docId: string }>({ name: "get_doc", title: "Open a doc", group: "docs", scope: "doc", annotations: READ,
-    description: "A doc's look, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
+    description: "A doc's title, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Palette and accent come from the user's Look settings. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
     input: { type: "object", additionalProperties: false, required: ["docId"], properties: { docId: DOC_ID } },
     run: async (ctx) => ({ result: docView(ctx, fileOf(ctx), ctx.rev) }) }),
 
-  tool<{ docId: string; title?: string; subtitle?: string | null; theme?: Theme; accent?: string | null }>({ name: "update_doc", title: "Change the doc's title or look", group: "docs", scope: "doc", annotations: IDEMPOTENT,
-    description: "Rename the doc (its title is its name), set or clear its subtitle (null clears), or change its theme or accent colour.",
-    input: { type: "object", additionalProperties: false, required: ["docId"], properties: { docId: DOC_ID, title: { type: "string" }, subtitle: { oneOf: [{ type: "string" }, { type: "null" }], description: "text, or null to clear" }, theme: THEME, accent: { oneOf: [ACCENT, { type: "null" }], description: "#rrggbb, or null for the default" } } },
+  tool<{ docId: string; title?: string; subtitle?: string | null }>({ name: "update_doc", title: "Rename a doc", group: "docs", scope: "doc", annotations: IDEMPOTENT,
+    description: "Rename the doc (its title is its name) or set or clear its subtitle (null clears).",
+    input: { type: "object", additionalProperties: false, required: ["docId"], properties: { docId: DOC_ID, title: { type: "string" }, subtitle: { oneOf: [{ type: "string" }, { type: "null" }], description: "text, or null to clear" } } },
     run: async (ctx, { docId: _id, ...look }) => written(ctx, fileOf(ctx), setLook(fileOf(ctx).doc, look)) }),
 
   tool<{ docId: string; blockId: string; markdown: string }>({ name: "write_doc_text", title: "Rewrite a text block", group: "docs", scope: "doc", annotations: DESTRUCTIVE,

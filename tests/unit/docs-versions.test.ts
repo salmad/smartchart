@@ -19,10 +19,11 @@ describe('doc versions', () => {
     expect(Object.keys(blobs)).toHaveLength(2)
   })
 
-  it('the look and title live in the tree; a missing blob gives null', () => {
+  it('title and subtitle live in the tree; palette is not stored; a missing blob gives null', () => {
     const doc: Doc = { title: 'T', subtitle: 'S', theme: 'paper', accent: '#123456', blocks: [{ type: 'paragraph', text: 'A' }] }
     const { tree } = docTree(doc)
-    expect(tree).toMatchObject({ title: 'T', subtitle: 'S', theme: 'paper', accent: '#123456' })
+    expect(tree).toMatchObject({ title: 'T', subtitle: 'S' })
+    expect(tree).not.toHaveProperty('theme')
     expect(docFrom(tree, {})).toBeNull()
   })
 })

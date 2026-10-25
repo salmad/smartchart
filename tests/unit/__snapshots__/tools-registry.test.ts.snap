@@ -191,10 +191,6 @@ exports[`registry > the three views agree (published contract: only additions al
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
-        "accent": {
-          "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
-          "type": "string",
-        },
         "name": {
           "type": "string",
         },
@@ -227,14 +223,6 @@ exports[`registry > the three views agree (published contract: only additions al
           ],
           "type": "string",
         },
-        "theme": {
-          "description": "ink: dark slides; paper: light slides.",
-          "enum": [
-            "ink",
-            "paper",
-          ],
-          "type": "string",
-        },
         "workspaceId": {
           "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
           "type": "string",
@@ -256,7 +244,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a deck",
     },
-    "description": "A deck's look, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Use slide ids from here in every slide call.",
+    "description": "A deck's style, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Palette and accent come from the user's Look settings, not the deck file. Use slide ids from here in every slide call.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -279,24 +267,12 @@ exports[`registry > the three views agree (published contract: only additions al
       "idempotentHint": true,
       "openWorldHint": false,
       "readOnlyHint": false,
-      "title": "Change the deck's look",
+      "title": "Rename a deck",
     },
-    "description": "Rename the deck or change its theme or accent colour. Style can change only while the deck has no slides.",
+    "description": "Rename the deck. Style can change only while the deck has no slides. Palette and accent are user preferences (Look in the app), not stored on the deck.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
-        "accent": {
-          "description": "#rrggbb, or null for the default",
-          "oneOf": [
-            {
-              "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
-        },
         "deckId": {
           "description": "The deck id from list_decks or create_deck.",
           "type": "string",
@@ -311,14 +287,6 @@ exports[`registry > the three views agree (published contract: only additions al
           ],
           "type": "string",
         },
-        "theme": {
-          "description": "ink: dark slides; paper: light slides.",
-          "enum": [
-            "ink",
-            "paper",
-          ],
-          "type": "string",
-        },
       },
       "required": [
         "deckId",
@@ -326,7 +294,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "type": "object",
     },
     "name": "update_deck",
-    "title": "Change the deck's look",
+    "title": "Rename a deck",
   },
   {
     "annotations": {
@@ -839,14 +807,10 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create a doc",
     },
-    "description": "Start a new, empty doc: a title (it is the doc's name), an optional subtitle, and optionally its theme and accent. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    "description": "Start a new, empty doc: a title (it is the doc's name) and an optional subtitle. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
-        "accent": {
-          "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
-          "type": "string",
-        },
         "parent": {
           "additionalProperties": false,
           "description": "Put the doc under this page.",
@@ -870,14 +834,6 @@ exports[`registry > the three views agree (published contract: only additions al
           "type": "object",
         },
         "subtitle": {
-          "type": "string",
-        },
-        "theme": {
-          "description": "ink: dark page; paper: light page (the default for reading).",
-          "enum": [
-            "ink",
-            "paper",
-          ],
           "type": "string",
         },
         "title": {
@@ -904,7 +860,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a doc",
     },
-    "description": "A doc's look, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
+    "description": "A doc's title, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Palette and accent come from the user's Look settings. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -927,24 +883,12 @@ exports[`registry > the three views agree (published contract: only additions al
       "idempotentHint": true,
       "openWorldHint": false,
       "readOnlyHint": false,
-      "title": "Change the doc's title or look",
+      "title": "Rename a doc",
     },
-    "description": "Rename the doc (its title is its name), set or clear its subtitle (null clears), or change its theme or accent colour.",
+    "description": "Rename the doc (its title is its name) or set or clear its subtitle (null clears).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
-        "accent": {
-          "description": "#rrggbb, or null for the default",
-          "oneOf": [
-            {
-              "description": "The highlight colour as #rrggbb. Code checks it stands out and doesn't read as loss or gain.",
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
-        },
         "docId": {
           "description": "The doc id from list_docs or create_doc.",
           "type": "string",
@@ -960,14 +904,6 @@ exports[`registry > the three views agree (published contract: only additions al
             },
           ],
         },
-        "theme": {
-          "description": "ink: dark page; paper: light page (the default for reading).",
-          "enum": [
-            "ink",
-            "paper",
-          ],
-          "type": "string",
-        },
         "title": {
           "type": "string",
         },
@@ -978,7 +914,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "type": "object",
     },
     "name": "update_doc",
-    "title": "Change the doc's title or look",
+    "title": "Rename a doc",
   },
   {
     "annotations": {

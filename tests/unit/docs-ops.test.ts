@@ -85,11 +85,11 @@ describe('moveBlock, deleteBlock, setLook', () => {
     const d = doc(), r = ok(deleteBlock(d, 'risk-cards'))
     expect(r.doc.blocks).toHaveLength(d.blocks.length - 1); expect(r.ids).toEqual([])
   })
-  it('setLook renames, clears a subtitle, and refuses a red accent', () => {
-    const d = { ...doc(), subtitle: 'Sub' }
-    expect(ok(setLook(d, { title: 'Renamed', subtitle: null, theme: 'ink' })).doc).toMatchObject({ title: 'Renamed', theme: 'ink' })
+  it('setLook renames and clears a subtitle; palette is not stored on the doc', () => {
+    const d: Doc = { ...doc(), subtitle: 'Sub', theme: 'ink', accent: '#2447D1' }
+    expect(ok(setLook(d, { title: 'Renamed', subtitle: null, theme: 'paper', accent: '#ff0000' })).doc).toMatchObject({ title: 'Renamed' })
     expect('subtitle' in ok(setLook(d, { subtitle: null })).doc).toBe(false)
-    expect(setLook(d, { accent: '#ff0000' })).toMatch(/^accent:/)
+    expect('theme' in ok(setLook(d, { accent: '#ff0000' })).doc).toBe(false)
     expect(setLook(d, { title: '  ' })).toMatch(/^title:/)
   })
 })

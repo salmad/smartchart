@@ -2,6 +2,8 @@
 // Built from its dependencies so tests run it against a fake database and user. Writing in a doc's editor comes in M4.
 import type { UserFrom } from './auth.js'
 import { MAX_COMMENT, newCommentId, type CommentOp } from '../../src/engine/comments.js'
+import { parseDoc } from '../../src/engine/docs/parse.js'
+import { serializeDoc } from '../../src/engine/docs/serialize.js'
 import { NO_COMMENT, type Db, type DocPresence } from './db.js'
 import { recordDocVersion } from './versions.js'
 import { viewerIn } from './decks.js'
@@ -104,7 +106,10 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
         || (b.workspaceId !== undefined && (typeof b.workspaceId !== 'string' || !ID.test(b.workspaceId))) || parentOf(b.parent) === 'bad')
         return err(400, 'Bad doc.')
       const parent = parentOf(b.parent)
-      const put = await db.putDoc(user.id, b.id, b.name.slice(0, 200), b.text, b.baseRev, b.workspaceId, parent === 'bad' ? undefined : parent)
+      const { doc } = parseDoc(b.text)
+      const { theme: _t, accent: _a, ...body } = doc
+      const saved = serializeDoc(body)
+      const put = await db.putDoc(user.id, b.id, b.name.slice(0, 200), saved, b.baseRev, b.workspaceId, parent === 'bad' ? undefined : parent)
       if (typeof put === 'object' && 'refused' in put) return err(409, put.refused)
       if (put === 'conflict') return err(409, 'This doc changed somewhere else.')
       if (put === 'foreign') {
@@ -112,7 +117,7 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
           return err(403, 'You can view this workspace, not add to it.')
         return refusedDoc(db, user.id, b.id)
       }
-      await recordDocVersion(db, user.id, b.id, b.text, user.name, put.rev, versionLabel(b.version))
+      await recordDocVersion(db, user.id, b.id, saved, user.name, put.rev, versionLabel(b.version))
       return Response.json({ ok: true, rev: put.rev })
     }
     return err(405, 'method not allowed')

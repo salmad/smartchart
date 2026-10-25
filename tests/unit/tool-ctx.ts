@@ -1,3 +1,4 @@
+import { DEFAULT_USER_LOOK } from '../../src/engine/look'
 import type { AccountPort, DeckDoc, ToolContext } from '../../src/engine/tools/types'
 import type { JevFn } from '../../src/engine/agent/llm'
 import { fakeJev } from './fakes'
@@ -10,5 +11,5 @@ export function fakePort(over: Partial<AccountPort> = {}): AccountPort {
     addImage: async ({ kind }) => ({ src: `https://store1.public.blob.vercel-storage.com/img/0123456789abcdef-${kind}-800x200.png`, width: 800, height: 200, kind }), ...over }
 }
 export function ctxFor(over: Partial<ToolContext> & { jev?: JevFn } = {}): ToolContext {
-  return { deck: emptyDeck(), rev: 1, links: { edit: 'https://x/d/d_1', share: null }, presence: {}, file: null, docPresence: {}, port: fakePort(), jev: fakeJev(), now: () => 1000, ...over }
+  return { deck: emptyDeck(), rev: 1, userLook: DEFAULT_USER_LOOK, links: { edit: 'https://x/d/d_1', share: null }, presence: {}, file: null, docPresence: {}, port: fakePort(), jev: fakeJev(), now: () => 1000, ...over }
 }

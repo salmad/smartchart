@@ -1,6 +1,7 @@
 // Runs one tool for one caller: check input, load the deck (by the user's role in its workspace), run the handler, save with rev
 // (a conflict reloads and runs again once), record events. Hosts (REST, MCP) only translate in and out.
 import { checkInput } from '../../src/engine/tools/input.js'
+import { userLookOf } from '../../src/engine/look.js'
 import { dataFromDoc, docFromData } from '../../src/engine/tools/doc.js'
 import { toolByName } from '../../src/engine/tools/index.js'
 import { NO_EDIT } from '../../src/engine/pages/tree.js'
@@ -75,17 +76,18 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
   }
   const jev = deps.jev ?? serverJev({ userId: uid, db })
   const deckId = (input as { deckId?: string }).deckId
+  const userLook = userLookOf(await db.getUserLook(uid))
 
   try {
-    if (t.scope === 'doc' || t.scope === 'createDoc') return await runDocTool({ tool: t, input, uid, client: caller.client, db, origin, now, port, jev, workspaces })
+    if (t.scope === 'doc' || t.scope === 'createDoc') return await runDocTool({ tool: t, input, uid, client: caller.client, db, origin, now, port, jev, workspaces, userLook })
     for (let attempt = 0; ; attempt++) {
-      let ctx: ToolContext = { deck: null, rev: 0, links: null, presence: {}, file: null, docPresence: {}, port, jev, now, client: caller.client }
+      let ctx: ToolContext = { deck: null, rev: 0, userLook, links: null, presence: {}, file: null, docPresence: {}, port, jev, now, client: caller.client }
       let row: Awaited<ReturnType<Db['getDeck']>> = null
       if (t.scope === 'deck') {
         row = deckId ? await db.getDeck(uid, deckId) : null
         if (!row) return fail('not_found', `No deck ${deckId}.`, 'list_decks shows your decks.')
         const meta = await db.getDeckMeta(uid, row.id)
-        ctx = { ...ctx, deck: docFromData(row.id, row.name, row.data), rev: row.rev, presence: meta?.presence ?? {},
+        ctx = { ...ctx, deck: docFromData(row.id, row.name, row.data, userLook), rev: row.rev, presence: meta?.presence ?? {},
           links: { edit: `${origin}/d/${row.id}`, share: meta?.share ? `${origin}/s/${meta.share}` : null } }
       }
       if (t.scope === 'create') ctx = { ...ctx, links: { edit: '', share: null } }

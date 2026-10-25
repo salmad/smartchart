@@ -23,7 +23,8 @@ const DOC: Doc = {
 test('a doc round-trips', () => {
   const { doc, errors } = parseDoc(serializeDoc(DOC))
   expect(errors).toEqual([])
-  expect(doc).toEqual(DOC)
+  const { theme: _t, accent: _a, ...want } = DOC
+  expect(doc).toEqual(want)
 })
 
 test('text that looks like syntax stays text', () => {

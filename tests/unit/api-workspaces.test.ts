@@ -169,11 +169,13 @@ describe('docs API', () => {
   it('lists, opens, saves and deletes docs by workspace, with the same roles', async () => {
     const { as } = world(), A = as(ann), C = as(cy), D = as(dee)
     const ws = await personal(A)
-    const doc = { id: 'doc_1', name: 'Memo', text: '# Memo', baseRev: 0, workspaceId: ws }
+    const doc = { id: 'doc_1', name: 'Memo', text: '---\ntitle: Memo\n---\n\n', baseRev: 0, workspaceId: ws }
     expect(await json(A.docs('PUT', '', doc))).toEqual({ ok: true, rev: 1 })
     expect((await A.docs('PUT', '', { ...doc, text: '# Stale' })).status).toBe(409)
     expect(await json(A.docs('GET', `?workspace=${ws}`))).toMatchObject([{ id: 'doc_1', name: 'Memo' }])
-    expect(await json(A.docs('GET', '?id=doc_1'))).toMatchObject({ text: '# Memo', rev: 1 })
+    const open = await json<{ text: string; rev: number }>(A.docs('GET', '?id=doc_1'))
+    expect(open.rev).toBe(1)
+    expect(open.text).toContain('title: Memo')
     expect((await A.docs('GET')).status).toBe(400)
 
     await C.ws('POST', `?accept=${await invite(A, ws, cy.email, 'viewer')}`)

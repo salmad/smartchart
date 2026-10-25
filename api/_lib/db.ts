@@ -10,6 +10,7 @@ import type { PageRef, PageSummary, Slot } from '../../src/engine/pages/tree.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
 import { docCalls } from './db-docs.js'
+import { prefsCalls } from './db-prefs.js'
 import { workspaceCalls } from './db-workspaces.js'
 
 /** `rev` counts saves; `chat` is the conversation (agent history, messages), kept apart from the slides in `data`. A deck saved before
@@ -66,6 +67,8 @@ export interface Db {
   renameWorkspace(userId: string, id: string, name: string): Promise<boolean>
   /** Marks the workspace as the user's most recently used. */
   touchWorkspace(userId: string, id: string): Promise<void>
+  getUserLook(userId: string): Promise<unknown>
+  setUserLook(userId: string, look: { theme: 'ink' | 'paper'; accent: string | null }): Promise<boolean>
   /** Null when the user is not a member. */
   listMembers(userId: string, id: string): Promise<MemberRow[] | null>
   /** Changes a member's role, or removes them with null. An owner may change anyone; any member may remove themselves.
@@ -109,6 +112,8 @@ export interface Db {
   shareDeck(userId: string, id: string, on?: boolean): Promise<string | null | undefined>
   /** A shared deck by its link token, for anyone who has the link. */
   sharedDeck(token: string): Promise<{ name: string; data: unknown; rev: number } | null>
+  shareDoc(userId: string, id: string, on?: boolean): Promise<string | null | undefined>
+  sharedDoc(token: string): Promise<{ name: string; text: string; rev: number } | null>
   /* Versions (src/engine/versions.ts): trees per save, slide blobs stored once per hash. */
   versionHead(userId: string, id: string): Promise<VersionHead | null>
   /** Stores the blobs, then adds a version (or replaces version `replace`) and keeps the newest KEEP. */
@@ -167,6 +172,7 @@ const SCHEMA = [
   // A share link is a random token on the deck; dropping it ends the link.
   `alter table decks add column if not exists share_id text`,
   `create unique index if not exists decks_share on decks (share_id) where share_id is not null`,
+  `create unique index if not exists docs_share on docs (share_id) where share_id is not null`,
   // A save carries the revision it read and is refused when the deck moved on. The chat lives apart from the slides.
   `alter table decks add column if not exists rev integer not null default 0`,
   `alter table decks add column if not exists chat jsonb`,
@@ -186,6 +192,7 @@ const SCHEMA = [
   // Workspaces: decks and docs live in one; members' roles decide who may do what (access.ts). A personal workspace
   // is made on its owner's first request, and their decks from before move in (decks.user_id now means who made it).
   `create table if not exists workspaces (id text primary key, name text not null, brand jsonb, personal_of text unique, created timestamptz not null default now())`,
+  `create table if not exists user_prefs (user_id text primary key, look jsonb not null)`,
   `create table if not exists members (workspace_id text not null, user_id text not null, email text not null, name text not null default '', role text not null check (role in ('owner','editor','viewer')), used_at timestamptz, joined timestamptz not null default now(), primary key (workspace_id, user_id))`,
   `create index if not exists members_user on members (user_id, used_at desc nulls last)`,
   `create table if not exists invites (token text primary key, workspace_id text not null, email text not null, role text not null, by_user text not null, expires timestamptz not null)`,
@@ -243,6 +250,7 @@ export function makeDb(url: string): Db {
     ...deckCalls(q),
     ...docCalls(q),
     ...workspaceCalls(q, tx),
+    ...prefsCalls(q),
     countCall: async (u) => Number((await q<{ calls: number }>(
       `insert into model_usage (user_id, day, calls) values ($1, current_date, 1)
        on conflict (user_id, day) do update set calls = model_usage.calls + 1 returning calls`, [u]))[0].calls),

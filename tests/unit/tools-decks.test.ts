@@ -19,13 +19,12 @@ describe('deck tools', () => {
     const r = (await t('get_deck').run(ctxFor({ deck, rev: 4 }), { deckId: 'd_1' })).result
     expect(r).toMatchObject({ deckId: 'd_1', rev: 4, links: { edit: 'https://x/d/d_1' }, slides: [{ slideId: 's_a', n: 1, issues: 1 }] })
   })
-  it('update_deck refuses a style change once there are slides, and a grey accent', async () => {
+  it('update_deck refuses a style change once there are slides', async () => {
     const deck = emptyDeck({ slides: [{ id: 's_a', slide, issues: [], warnings: [], checks: [] }] })
     await expect(t('update_deck').run(ctxFor({ deck }), { deckId: 'd_1', style: 'pitch' })).rejects.toMatchObject({ code: 'refused' })
-    await expect(t('update_deck').run(ctxFor({ deck }), { deckId: 'd_1', accent: '#808080' })).rejects.toMatchObject({ code: 'bad_input' })
-    const ok = await t('update_deck').run(ctxFor({ deck }), { deckId: 'd_1', theme: 'paper', name: 'Q3' })
-    expect(ok.deck).toMatchObject({ theme: 'paper', name: 'Q3' })
-    expect(ok.events).toEqual([{ slideId: null, what: 'deck', paths: ['theme', 'name'] }])
+    const ok = await t('update_deck').run(ctxFor({ deck }), { deckId: 'd_1', name: 'Q3' })
+    expect(ok.deck).toMatchObject({ name: 'Q3' })
+    expect(ok.events).toEqual([{ slideId: null, what: 'deck', paths: ['name'] }])
   })
   it('share_deck goes through the port', async () => {
     const r = (await t('share_deck').run(ctxFor({ port: fakePort({ share: async (_id, on) => (on ? 'https://x/s/t' : null) }) }), { deckId: 'd_1', on: true })).result

@@ -61,7 +61,7 @@ export function reducer(s: AppState, a: Action): AppState {
       if (s.editing) return s
       const d = a.deck, items = d.items || []
       return {
-        ...s, deckId: d.id, name: d.name ?? null, style: d.style, theme: d.theme, accent: d.accent || null,
+        ...s, deckId: d.id, name: d.name ?? null, style: d.style,
         items, current: clamp(d.current || 0, items), history: d.history || [], working: new Set(d.working || []),
         messages: d.messages ?? [], comments: commentsOf(d.comments),
         view: items.length ? 'editor' : 'landing', pills: {}, removed: null, editing: null, edited: [], pendingParent: null,
@@ -135,10 +135,9 @@ export function toSaved(s: AppState): SavedDeck | null {
   }
 }
 
-/** What counts as an edit: the slides and their order, the name, the look, and the chat. Opening a deck, selecting a slide or
-    re-running its checks is not one, so it neither saves the deck nor moves it up the list of decks. */
+/** What counts as an edit: the slides and their order, the name, the style, and the chat. Palette is a user preference. */
 export const editKey = (d: SavedDeck): string =>
-  JSON.stringify([d.name ?? null, d.style, d.theme, d.accent, d.items.map((it) => [it.id, it.slide]), (d.messages ?? []).map((m) => [m.kind, m.text]), d.history.length, d.comments ?? []])
+  JSON.stringify([d.name ?? null, d.style, d.items.map((it) => [it.id, it.slide]), (d.messages ?? []).map((m) => [m.kind, m.text]), d.history.length, d.comments ?? []])
 
 /** The engine's deck: the footer is the cover title; with no cover, only the page number. */
 export function deckOf(s: AppState): Deck {

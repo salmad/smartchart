@@ -26,6 +26,6 @@ function block(b: Block): string {
 }
 
 export function serializeDoc(doc: Doc): string {
-  const front = [`title: ${doc.title}`, doc.subtitle !== undefined && `subtitle: ${doc.subtitle}`, doc.theme && `theme: ${doc.theme}`, doc.accent && `accent: ${doc.accent}`].filter(Boolean)
+  const front = [`title: ${doc.title}`, doc.subtitle !== undefined && `subtitle: ${doc.subtitle}`].filter(Boolean)
   return `---\n${front.join('\n')}\n---\n\n${doc.blocks.map(block).join('\n\n')}\n`
 }

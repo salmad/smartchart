@@ -57,7 +57,7 @@ describe('doc tools', () => {
     expect(await call('create_block', { docId, after: 'end', markdown: 'x', figure: { kind: 'table', body: {} } })).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringContaining('exactly one') } })
     expect(await call('create_block', { docId, after: 'end' })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
     expect(await call('create_block', { docId, after: 'end', figure: { kind: 'chart', body: {} } })).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringContaining('.chart') } })
-    expect(await call('update_doc', { docId, accent: '#ff0000' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringMatching(/^accent:/) } })
+    expect(await call('update_doc', { docId, accent: '#ff0000' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: expect.stringContaining('accent') } })
     expect(await call('update_block', { docId, blockId: 'nope', set: { a: 1 } })).toMatchObject({ ok: false, error: { code: 'not_found' } })
     expect((await ok('get_doc', { docId })).rev).toBe(before)
   })
@@ -65,9 +65,9 @@ describe('doc tools', () => {
   it('update_doc renames the doc, and the name is the title', async () => {
     const { ok, db } = world()
     const docId = String((await ok('create_doc', { title: 'Old' })).docId)
-    await ok('update_doc', { docId, title: 'New', subtitle: 'Sub', theme: 'ink' })
+    await ok('update_doc', { docId, title: 'New', subtitle: 'Sub' })
     expect((await db.getDoc('u1', docId))?.name).toBe('New')
-    expect(await ok('get_doc', { docId })).toMatchObject({ title: 'New', subtitle: 'Sub', theme: 'ink' })
+    expect(await ok('get_doc', { docId })).toMatchObject({ title: 'New', subtitle: 'Sub', theme: 'paper' })
     await ok('update_doc', { docId, subtitle: null })
     expect('subtitle' in await ok('get_doc', { docId })).toBe(false)
   })
@@ -82,7 +82,7 @@ describe('doc tools', () => {
 
   it('the competitor teardown, built through the tools, checks as warnings only and check_doc writes nothing', async () => {
     const { ok, db } = world()
-    const docId = String((await ok('create_doc', { title: 'Competitor teardown', theme: 'paper' })).docId)
+    const docId = String((await ok('create_doc', { title: 'Competitor teardown' })).docId)
     await ok('create_block', { docId, after: 'end', markdown: '## Where the money is' })
     await ok('create_block', { docId, after: 'end', markdown: 'Revenue follows the account.' })
     await ok('create_block', { docId, after: 'end', figure: { kind: 'chart', body: start('chart') } })

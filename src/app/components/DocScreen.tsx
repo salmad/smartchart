@@ -1,13 +1,14 @@
 import '@/engine/docs/doc.css'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DocComment } from '@/engine/comments'
-import { MessageSquare, PanelLeft } from 'lucide-react'
+import { PanelLeft, Sparkles } from 'lucide-react'
 import { parseDoc } from '@/engine/docs/parse'
 import { loadFaces, mountDoc } from '@/engine/docs/mount'
 import { serializeDoc } from '@/engine/docs/serialize'
 import { describeDocDiff, docFrom } from '@/engine/docs/versions'
 import { plainOf } from '@/engine/slides/markup'
 import type { Block, Doc } from '@/engine/docs/types'
+import type { Theme } from '@/engine/types'
 import type { Account } from '@/app/auth'
 import { DOC_STALE, type Doc as DocRecord, type DocRepo, type DocVersionRow } from '@/app/docs'
 import { authorOf } from '@/app/useComments'
@@ -21,6 +22,7 @@ import { anchorsOf } from './docs/anchors'
 import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
 import { ReadBar } from './docs/DocBar'
+import { ShareMenu } from './ShareMenu'
 import type { PageRef } from '@/engine/pages/tree'
 import { Crumbs } from './Crumbs'
 import type { Crumb } from './sidebar/usePageCrumbs'
@@ -50,13 +52,17 @@ interface Props {
   name?: string
   /** The deck held behind the doc: same chat as in the editor. */
   chat: ChatPanelProps & { onToggle: () => void }
+  /** Workspace palette and accent (not stored on the doc). */
+  look: { theme: Theme; accent: string | null; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void }
+  /** A share link on the server; null for the dev account. */
+  shareId: string | null
 }
 
 /** A doc in the workspace shell: the sidebar, a quiet bar, and the doc, read (M2) or edited (M4). */
 // The editor (Tiptap and ProseMirror) loads once a doc is open and the browser is idle (or at the first Edit), not with the app.
 const docEditing = lazyScreen(() => import('./docs/DocEditing').then((m) => m.DocEditing))
 
-export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name, chat }: Props) {
+export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name, chat, look, shareId }: Props) {
   const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => docs.peek?.(id)?.doc ?? null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
@@ -67,6 +73,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const [comments, setComments] = useState<DocComment[]>(() => docs.peek?.(id)?.comments ?? []), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
   const blocks = useRef(new Map<string, Block>())
   const shown = preview?.doc && preview.doc !== 'missing' && !preview.current ? preview.doc : parsed
+  const drawn = useMemo(() => (shown ? { ...shown, theme: look.theme, ...(look.accent ? { accent: look.accent } : {}) } : null), [shown, look.theme, look.accent])
 
   // Another doc picked: reset while rendering, not after, so the old doc never paints under the new id. A doc read before
   // opens at once from memory (or, on a new visit, from this browser), and the server is asked again behind it.
@@ -104,18 +111,18 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
 
   // The read view, drawn from the doc shown (a version, while one is previewed); again after each save.
   useEffect(() => {
-    if (!record || !shown || editing) return
+    if (!record || !drawn || editing) return
     let go = true, mounted: { destroy(): void } | null = null
     // Figures measure text, as slides do: the fonts first.
-    void loadFaces().then(() => { if (go && page.current) { mounted = mountDoc(page.current, shown, record.id); setPageEl(page.current) } })
+    void loadFaces().then(() => { if (go && page.current) { mounted = mountDoc(page.current, drawn, record.id); setPageEl(page.current) } })
     return () => { go = false; mounted?.destroy() }
-  }, [record, shown, editing])
+  }, [record, drawn, editing])
   // The page redrawn gives a ring a new element to wear.
   useEffect(() => {
     const el = ring && pageEl ? pageEl.querySelector<HTMLElement>(`[id="${CSS.escape(ring)}"]`) : null, on = el?.matches('.doc-sec') ? el.querySelector<HTMLElement>(':scope > h2') : el
     on?.classList.add('doc-ring')
     return () => on?.classList.remove('doc-ring')
-  }, [ring, pageEl, shown])
+  }, [ring, pageEl, drawn])
 
   const save = useCallback(async (doc: Doc, opts?: { label?: string }) => {
     if (!record) return 'This doc is gone.'
@@ -158,19 +165,12 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const commenting = { open: side === 'comments', count: comments.filter((c) => !c.done).length, onToggle: toggleComments }
 
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
-  // The look is the doc's own front matter: a change is a save, so it is a version like any other.
-  const setLook = async (look: { theme: Doc['theme'] } | { accent: string | null }) => {
-    if (!parsed) return
-    const { accent: _old, ...rest } = parsed, accent = 'accent' in look ? look.accent : parsed.accent
-    const why = await save({ ...rest, ...('theme' in look ? { theme: look.theme } : {}), ...(accent ? { accent } : {}) }, { label: 'Changed the look' })
-    if (why) window.alert(why)
-  }
 
   const header = (bar: ReactNode) => (
     <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
       <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
         <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-        <Toggle open={chat.open} onClick={chat.onToggle} label={`${chat.open ? 'Hide' : 'Show'} the chat`} keys="⌘L"><MessageSquare className="size-[17px]" strokeWidth={1.75} /></Toggle>
+        <Toggle open={chat.open} onClick={chat.onToggle} label={`${chat.open ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
       </div>
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
         <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
@@ -193,8 +193,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         {state === 'failed' && <p className="px-8 py-10 text-[13.5px] text-ink-2">Couldn’t open the doc. Reload to try again.</p>}
         {content}
       </main>
-      {!editing && side === 'look' && parsed && canEdit && <LookPanel noun="doc" theme={parsed.theme ?? 'paper'} accent={parsed.accent ?? null}
-        onTheme={(theme) => void setLook({ theme })} onAccent={(accent) => void setLook({ accent })} onClose={() => setSide(null)} />}
+      {!editing && side === 'look' && canEdit && <LookPanel noun="doc" theme={look.theme} accent={look.accent}
+        onTheme={look.onTheme} onAccent={look.onAccent} onClose={() => setSide(null)} />}
       {!editing && side === 'versions' && <VersionsPanel list={() => docs.versions(id)} describe={(v, before) => describeDocDiff(before?.tree ?? null, v.tree)} noun="doc"
         saves={saves} selected={preview?.v.n ?? null} onPreview={(v, before, current) => void showVersion(v, before, current)} onClose={() => { setSide(null); setPreview(null) }} />}
       {side === 'comments' && parsed && <DocComments comments={comments} anchors={anchorsOf(parsed)} target={target} onTarget={setTarget} error={commentError}
@@ -208,7 +208,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     const DocEditing = docEditing.get()
     return (
       <Suspense fallback={<>{header(null)}{body(null)}</>}>
-        <DocEditing doc={parsed} save={save} onDone={() => setEditing(false)} comments={commenting}
+        <DocEditing doc={parsed} look={{ theme: look.theme, accent: look.accent ?? undefined }} save={save} onDone={() => setEditing(false)} comments={commenting}
           stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
           {(bar, editor) => <>{header(bar)}{body(editor)}</>}
         </DocEditing>
@@ -219,8 +219,9 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     <>
       {/* The bar stays while the next doc is read, so its buttons do not blink; Edit waits for the doc. */}
       {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} others={live.others} comments={commenting}
-        look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }} />)}
-      {body(<><div ref={page} />{record && <CommentTriggers page={pageEl} theme={shown?.theme ?? 'paper'} onPick={pick} />}</>)}
+        look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }}
+        share={shareId ? <ShareMenu target="doc" id={shareId} /> : null} />)}
+      {body(<><div ref={page} />{record && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}</>)}
     </>
   )
 }

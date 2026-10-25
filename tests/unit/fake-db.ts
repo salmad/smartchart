@@ -10,7 +10,7 @@ import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
     deck from before workspaces, which only its maker can reach). */
 export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence; parent?: PageRef | null; sortKey?: string | null }
-export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; presence?: DocPresence; comments?: DocComment[]; parent?: PageRef | null; sortKey?: string | null }
+export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; share?: string | null; presence?: DocPresence; comments?: DocComment[]; parent?: PageRef | null; sortKey?: string | null }
 export type FakeDb = Db & FakeWorkspaces & {
   rows: Map<string, FakeRow>
   docs: Map<string, FakeDoc>
@@ -27,6 +27,7 @@ export type FakeDb = Db & FakeWorkspaces & {
 export function fakeDb(): FakeDb {
   const rows = new Map<string, FakeRow>()
   const docs = new Map<string, FakeDoc>()
+  const userPrefs = new Map<string, unknown>()
   const events: FakeDb['events'] = []
   const keys: FakeDb['keys'] = new Map()
   const rate = new Map<string, number>()
@@ -80,8 +81,8 @@ export function fakeDb(): FakeDb {
     return true
   }
   const summary = ({ id, name, updated, data, share, parent, sortKey }: FakeRow) => {
-    const d = data as { items?: { slide: unknown }[]; style?: unknown; theme?: unknown; accent?: unknown }
-    return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme, accent: d.accent, shared: !!share, parent: parent ?? null, sortKey: sortKey ?? null }
+    const d = data as { items?: { slide: unknown }[]; style?: unknown }
+    return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: null, accent: null, shared: !!share, parent: parent ?? null, sortKey: sortKey ?? null }
   }
   return {
     ...ws, rows, docs, events, keys, rate, calls, versions, blobStore, docVersions, docBlobStore,
@@ -150,6 +151,13 @@ export function fakeDb(): FakeDb {
       return r.share ?? null
     },
     sharedDeck: async (t) => { const r = [...rows.values()].find((x) => x.share === t); return r ? { name: r.name, data: r.data, rev: r.rev } : null },
+    shareDoc: async (u, id, on) => {
+      const d = docIf(u, id, 'write')
+      if (!d) return undefined
+      if (on !== undefined) d.share = on ? d.share ?? `tok_${++n}` : null
+      return d.share ?? null
+    },
+    sharedDoc: async (t) => { const d = [...docs.values()].find((x) => x.share === t); return d ? { name: d.name, text: d.text, rev: d.rev } : null },
     listDocs: async (u, w) => [...docs.values()].filter((d) => d.ws === w && can(role(u, d), 'read')).sort((a, b) => b.updated - a.updated)
       .map(({ id, name, updated, ws: workspaceId, parent, sortKey }) => ({ id, name, updated, workspaceId, parent: parent ?? null, sortKey: sortKey ?? null })),
     listPages: async (u, w) => [
@@ -232,5 +240,7 @@ export function fakeDb(): FakeDb {
       }
       return structuredClone(list)
     },
+    getUserLook: async (u) => userPrefs.get(u) ?? null,
+    setUserLook: async (u, look) => { userPrefs.set(u, look); return true },
   }
 }

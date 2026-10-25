@@ -98,7 +98,7 @@ describe('share API', () => {
     const seen = await anyone(sreq('GET', `?s=${share}`))
     expect(seen.headers.get('cache-control')).toBe('no-store')
     const body = await seen.json()
-    expect(body).toEqual({ name: 'Board update', style: 'pitch', theme: 'ink', accent: null, slides: [{ template: 'cover', title: 'Q3' }], rev: 1, ids: ['s1'] })
+    expect(body).toEqual({ kind: 'deck', name: 'Board update', style: 'pitch', theme: null, accent: null, slides: [{ template: 'cover', title: 'Q3' }], rev: 1, ids: ['s1'] })
     expect(JSON.stringify(body)).not.toContain('secret') // never the chat or the agent's history
     expect(await (await h(sreq('DELETE', '?id=d_1'))).json()).toEqual({ share: null })
     expect((await anyone(sreq('GET', `?s=${share}`))).status).toBe(404)

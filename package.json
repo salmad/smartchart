@@ -12,7 +12,8 @@
     "check:bundle": "node scripts/check-bundle.mjs",
     "test:browser": "playwright test -c tests/browser/playwright.config.ts",
     "eval:mcp": "vite-node --config vitest.config.ts tests/mcp-eval/eval.ts --",
-    "film:upload": "node scripts/film-upload.mjs"
+    "film:upload": "node scripts/film-upload.mjs",
+    "db:strip-palette": "vite-node --config vitest.config.ts scripts/strip-stored-palette.ts"
   },
   "dependencies": {
     "@neondatabase/auth": "^0.5.0-beta",

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { History, LayoutGrid, ListOrdered, MessageSquare, PanelLeft, Palette, Play, RectangleHorizontal, type LucideIcon } from 'lucide-react'
+import { History, LayoutGrid, ListOrdered, PanelLeft, Palette, Play, RectangleHorizontal, Sparkles, type LucideIcon } from 'lucide-react'
 import type { Account } from '@/app/auth'
 import { Button } from '@/app/components/ui/button'
 import { AccountMenu } from './AccountMenu'
@@ -35,6 +35,7 @@ export interface BarProps {
   onSite: () => void
   /** The deck a share link can be made for; null when decks live only in this browser, or before the deck exists. */
   shareId: string | null
+  shareTarget?: 'deck' | 'doc'
   onPdf: () => void
   account: Account
   /** Starts the tour; null where there is no deck to show it on. */
@@ -61,7 +62,7 @@ export function Bar(p: BarProps) {
         {/* The layout toggles, together as in Cursor's title bar: each shows whether its panel is open. */}
         <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
           <Toggle open={p.decksOpen} onClick={p.onToggleDecks} label={`${p.decksOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-          <Toggle open={p.chatOpen} onClick={p.onToggleChat} label={`${p.chatOpen ? 'Hide' : 'Show'} the chat`} keys="⌘L"><MessageSquare className="size-[17px]" strokeWidth={1.75} /></Toggle>
+          <Toggle open={p.chatOpen} onClick={p.onToggleChat} label={`${p.chatOpen ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
         </div>
         <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
@@ -81,7 +82,7 @@ export function Bar(p: BarProps) {
           {p.hasSlides && p.onVersions && <Toggle open={p.versionsOpen} onClick={p.onVersions} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>}
         </div>
         {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
-        {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} deckId={p.shareId} onPdf={p.onPdf} /></div>}
+        {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} onPdf={p.onPdf} /></div>}
         {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
         <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
       </div>

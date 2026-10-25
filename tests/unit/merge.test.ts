@@ -23,9 +23,9 @@ describe('mergeDecks', () => {
     const local = deck([item('a', 'A'), item('x', 'X'), item('b', 'B')])
     expect(mergeDecks(local, deck([item('b', 'B'), item('a', 'A')]), base).deck.items.map((i) => i.id)).toEqual(['b', 'a', 'x'])
   })
-  it('the look changed here is kept, an untouched one follows the server', () => {
-    const m = mergeDecks({ ...base, theme: 'paper' }, { ...base, theme: 'ink', accent: '#3366ff' }, base)
-    expect(m.deck).toMatchObject({ theme: 'paper', accent: '#3366ff' })
+  it('palette stays with this tab; the server cannot change it through merge', () => {
+    const m = mergeDecks({ ...base, theme: 'paper', accent: '#112233' }, { ...base, theme: 'ink', accent: '#3366ff' }, base)
+    expect(m.deck).toMatchObject({ theme: 'paper', accent: '#112233' })
   })
   it('a slide deleted here stays deleted when the server did not change it, and comes back when it did', () => {
     const local = deck([item('a', 'A')])
