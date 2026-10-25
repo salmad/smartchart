@@ -185,6 +185,26 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
         `select workspace_id as ws, ${may(t, '$1', '$4')} as write from ${t} where id = $2 and ${may(t, '$1', '$3')}`, [u, page.id, R('read'), R('write')]))[0]
       if (!at?.ws) return 'foreign'
       if (!at.write) return NO_EDIT
+      if (to.workspaceId && to.workspaceId !== at.ws) {
+        const target = to.workspaceId
+        const allowed = await q(`select 1 from members where workspace_id = $1 and user_id = $2 and role = any($3::text[])`, [target, u, R('write')])
+        if (!allowed.length) return NO_EDIT
+        const sourceNodes = await nodesIn(u, at.ws), all = [page, ...descendants(sourceNodes, page)]
+        const targetNodes = await nodesIn(u, target)
+        const parent = to.parent ?? null
+        const addOk = parent === null ? canAdd(targetNodes, null) : targetNodes.some((n) => n.kind === parent.kind && n.id === parent.id) ? canAdd(targetNodes, parent) : NO_PAGE
+        if (addOk !== 'ok') return addOk
+        const key = appendKey(targetNodes, parent)
+        const deckIds = all.filter((p) => p.kind === 'deck').map((p) => p.id), docIds = all.filter((p) => p.kind === 'doc').map((p) => p.id)
+        if (deckIds.length) await q(`update decks set workspace_id = $2 where id = any($1::text[]) and workspace_id = $3`, [deckIds, target, at.ws])
+        if (docIds.length) await q(`update docs set workspace_id = $2 where id = any($1::text[]) and workspace_id = $3`, [docIds, target, at.ws])
+        const root = page.kind === 'deck'
+          ? await q(`update decks set parent_kind = $2, parent_id = $3, sort_key = $4 where id = $1 and workspace_id = $5 returning id`,
+            [page.id, parent?.kind ?? null, parent?.id ?? null, key, target])
+          : await q(`update docs set parent_kind = $2, parent_id = $3, sort_key = $4 where id = $1 and workspace_id = $5 returning id`,
+            [page.id, parent?.kind ?? null, parent?.id ?? null, key, target])
+        return root.length ? 'ok' : 'foreign'
+      }
       const nodes = await nodesIn(u, at.ws), ok = canMove(nodes, page, to.parent)
       if (ok !== 'ok') return ok
       const slot = slotKey(nodes, page, to.parent, to)

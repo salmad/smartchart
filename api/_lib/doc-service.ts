@@ -65,6 +65,7 @@ async function run(e: DocEnv): Promise<ToolReply> {
       return { ok: false, error: { code: 'conflict', message: 'The doc changed while this ran.', fix: 'Call it again.' } }
     }
     await recordDocVersion(db, uid, file.id, text, e.client, put.rev, out.what ?? null, e.now())
+    await db.markAgentConnectDone(uid)
     const result = { ...out.result }
     if ('rev' in result) result.rev = put.rev
     if (t.scope === 'createDoc') result.links = { edit: `${origin}/doc/${file.id}` }

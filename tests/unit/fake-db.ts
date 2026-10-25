@@ -28,6 +28,7 @@ export function fakeDb(): FakeDb {
   const rows = new Map<string, FakeRow>()
   const docs = new Map<string, FakeDoc>()
   const userPrefs = new Map<string, unknown>()
+  const agentOnboarding = new Map<string, { agentNudgeDismissed?: boolean; agentConnectDone?: boolean }>()
   const events: FakeDb['events'] = []
   const keys: FakeDb['keys'] = new Map()
   const rate = new Map<string, number>()
@@ -169,6 +170,25 @@ export function fakeDb(): FakeDb {
       const r = page.kind === 'deck' ? rows.get(page.id) : docs.get(page.id)
       if (!r?.ws || !can(role(u, r), 'read')) return 'foreign'
       if (!can(role(u, r), 'write')) return NO_EDIT
+      if (to.workspaceId && to.workspaceId !== r.ws) {
+        const target = to.workspaceId
+        if (!can(ws.roleIn(u, target), 'write')) return NO_EDIT
+        const sourceNodes = nodesIn(r.ws), all = [page, ...descendants(sourceNodes, page)]
+        const targetNodes = nodesIn(target)
+        const parent = to.parent ?? null
+        const addOk = canAdd(targetNodes, parent)
+        if (addOk !== 'ok') return addOk
+        const key = appendKey(targetNodes, parent)
+        for (const p of all) {
+          const row = p.kind === 'deck' ? rows.get(p.id) : docs.get(p.id)
+          if (!row || row.ws !== r.ws) continue
+          row.ws = target
+        }
+        const root = page.kind === 'deck' ? rows.get(page.id) : docs.get(page.id)
+        if (!root || root.ws !== target) return 'foreign'
+        root.parent = parent; root.sortKey = key
+        return 'ok'
+      }
       const nodes = nodesIn(r.ws), ok = canMove(nodes, page, to.parent)
       if (ok !== 'ok') return ok
       const slot = slotKey(nodes, page, to.parent, to)
@@ -242,5 +262,13 @@ export function fakeDb(): FakeDb {
     },
     getUserLook: async (u) => userPrefs.get(u) ?? null,
     setUserLook: async (u, look) => { userPrefs.set(u, look); return true },
+    agentConnectState: async (u) => {
+      const on = agentOnboarding.get(u) ?? {}
+      const hasKey = [...keys.values()].some((k) => k.userId === u)
+      const done = hasKey || !!on.agentConnectDone
+      return { dismissed: !!on.agentNudgeDismissed, done }
+    },
+    dismissAgentNudge: async (u) => { agentOnboarding.set(u, { ...agentOnboarding.get(u), agentNudgeDismissed: true }); return },
+    markAgentConnectDone: async (u) => { agentOnboarding.set(u, { ...agentOnboarding.get(u), agentConnectDone: true }); return },
   }
 }

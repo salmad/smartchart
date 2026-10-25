@@ -11,4 +11,4 @@ Rules: address slides by slideId from get_deck, never by position. Pass the user
 
 Docs (same workspaces): list_docs or create_doc; get_guide and get_template with style "doc"; get_doc; then create_block, write_doc_text and update_block by blockId from the last result; check_doc at the end. Every figure gets a caption and the user's source; never invent one. Pages nest: parent on create_doc and create_deck, move_page to move; keep a deck's docs under it.
 
-Only when the user asks: address open comments (in get_deck) by changing the slide, then resolve_comment saying what you did; undo with list_versions and restore_version.`;
+Only when asked: fix the slide or block, then resolve_comment or resolve_doc_comment; undo with list_versions/restore_version or list_doc_versions/restore_doc_version.`;

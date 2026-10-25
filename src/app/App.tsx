@@ -21,6 +21,8 @@ import { authorOf, useComments } from './useComments'
 import { useTour } from './useTour'
 import { usePresence } from './usePresence'
 import { Tour, TourNudge } from './components/Tour'
+import { AgentConnectNudge } from './components/AgentConnectNudge'
+import { useAgentConnect } from './useAgentConnect'
 import { recheckRules, sendTurn, type TurnRecord } from './turn'
 import { useAppState } from './useAppState'
 import { go, parsePending, takePendingPrompt, type Route } from './route'
@@ -121,6 +123,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
   const tour = useTour(app, recheck)
   const offerTour = tour.offer
+  const agentConnect = useAgentConnect(account.id, backup !== null)
 
   // The deck as last saved (or opened): a save happens only when this changes, so opening a deck or selecting a
   // slide does not stamp it as edited and move it up the list.
@@ -386,12 +389,6 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const onUse = useCallback((st: Starter) => { app.dispatch({ type: 'insertStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
   const onCancelAdd = useCallback(() => app.dispatch({ type: 'set', patch: { view: 'editor' } }), [app])
   const onPick = useCallback((st: Starter) => { app.dispatch({ type: 'pickStarter', slide: starterSlide(st, app.getState().style), id: `s_${newDeckId()}` }); recheck() }, [app, recheck])
-  const lock = locked(s)
-  const deckChat = {
-    open: chatOpen, onToggle: toggleChat, messages: s.messages, offline: healthKnown && !s.live, onUndo: undoTurn, busy: lock, fresh: !s.items.length, chips: chipsFor(s),
-    canSend: s.live && !lock, composerBusy: s.busy, hint: s.editing ? 'Save or discard to keep chatting' : undefined, onSend, onClear,
-    start: s.items.length ? undefined : { style: s.style, onStyle: bar.onStyle },
-  }
   // The gallery is for an empty deck. On a route that opens a deck it waits for boot, so a deck about to open is not
   // preceded by thirty slide tiles measured and drawn for nothing.
   const opening = !booted && (route.name === 'deck' || route.name === 'home')
@@ -414,12 +411,14 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
         : docOnScreen
-        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} chat={deckChat}
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} chatOpen={chatOpen} onToggleChat={toggleChat} offline={healthKnown && !s.live} modelsLive={s.live}
           look={{ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }}
           shareId={backup ? null : docOnScreen} /></Suspense>
         : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
+      {agentConnect.show && !tour.nudge && !tour.touring && booted && !readOnly
+        && <AgentConnectNudge onDismiss={agentConnect.dismiss} onConnected={agentConnect.refresh} />}
       {printing && <Suspense fallback={null}><PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} /></Suspense>}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />

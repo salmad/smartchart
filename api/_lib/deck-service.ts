@@ -66,6 +66,14 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
     movePage: (page, to) => db.movePage(uid, page, to),
     versions: (deckId) => db.listVersions(uid, deckId),
     blobs: (deckId, hashes) => db.blobs(uid, deckId, hashes),
+    docVersions: (docId) => db.listDocVersions(uid, docId),
+    docBlobs: (docId, hashes) => db.docBlobs(uid, docId, hashes),
+    docComments: async (docId) => {
+      const c = await db.docComments(uid, docId)
+      if (c === null) throw new ToolError('not_found', `No doc ${docId}.`, 'list_docs shows your docs.')
+      return c
+    },
+    docComment: (docId, op, by, now) => db.docComment(uid, docId, op, { id: `c_${now.toString(36)}`, by, now }),
     addImage: async (img) => {
       const store = deps.store === undefined ? blobStore() : deps.store
       if (!store) throw new ToolError('refused', 'Pictures are not set up on this server.', 'Tell the user; slides without pictures still work.')
@@ -110,6 +118,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       const request = (input as { request?: unknown }).request, asked = out.label ?? (typeof request === 'string' && request.trim() ? request.trim().slice(0, 300) : null)
       await recordVersion(db, uid, out.deck.id, data, { by: caller.client, turn: asked ? `mcp:${asked}` : `mcp-op:${name}:${now()}`, label: asked ?? t.title }, put.rev, now())
       if (out.events?.length) await db.addEvents(uid, out.deck.id, out.events.map((e) => ({ ...e, rev: put.rev, by: caller.client })))
+      await db.markAgentConnectDone(uid)
       const result = { ...out.result }
       if ('rev' in result) result.rev = put.rev
       if (t.scope === 'create') result.links = { edit: `${origin}/d/${out.deck.id}` }

@@ -8,7 +8,7 @@ import { refOf } from './pages-wire'
 import { OFFLINE } from './workspaces'
 
 export type { PageSummary }
-export type MoveTo = { parent: PageRef | null } & Slot
+export type MoveTo = { parent: PageRef | null; workspaceId?: string } & Slot
 
 export interface PageRepo {
   /** Every deck and doc of the workspace the user can open, with parents and order keys. Throws when the list can't be read. */

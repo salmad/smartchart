@@ -39,6 +39,6 @@ test('text kinds turn the paragraph, empty, and keep the cursor in it', () => {
 
 test('typing "chart" finds every chart form, and "bar" the horizontal ones too', async () => {
   const { matching } = await import('@/app/components/docs/slash')
-  expect(matching('chart').map((c) => c.id)).toEqual(['chart', 'line-chart', 'horizontal-bars', 'waterfall', 'timeline', 'matrix'])
-  expect(matching('bar').map((c) => c.id)).toEqual(['chart', 'horizontal-bars'])
+  expect(matching('chart').map((c) => c.id)).toEqual(['chart', 'line-chart', 'horizontal-bars', 'waterfall', 'timeline', 'matrix', 'bar-line'])
+  expect(matching('bar').map((c) => c.id)).toEqual(['chart', 'horizontal-bars', 'bar-line'])
 })

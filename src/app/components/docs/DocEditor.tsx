@@ -11,6 +11,7 @@ import { FigureEdit } from './FigureEdit'
 import { SelectionBar } from './SelectionBar'
 import { SlashMenu } from './SlashMenu'
 import { useSlash } from './useSlash'
+import { useDocPictures } from './useDocPictures'
 import type { DocEdit } from './useDocEdit'
 import './docs-edit.css'
 
@@ -21,6 +22,7 @@ export function DocEditor({ edit, theme, accent }: Props) {
   const { editor } = edit
   const [frame, setFrame] = useState<HTMLElement | null>(null), page = frame?.querySelector<HTMLElement>('.ProseMirror') ?? null
   const slash = useSlash(edit, useCallback(() => frameRef.current, []))
+  const pics = useDocPictures(edit, frame)
   const open = editor && edit.figure ? findFigure(editor, edit.figure) : null
   return (
     <div ref={(el) => { frameRef.current = el; setFrame(el) }} className={`relative theme-${theme}`}>
@@ -31,6 +33,11 @@ export function DocEditor({ edit, theme, accent }: Props) {
       {editor && frame && <SelectionBar editor={editor} frame={frame} theme={theme} />}
       {slash.slash && <SlashMenu x={slash.slash.x} y={slash.slash.y} above={slash.slash.above} choices={slash.slash.choices} active={slash.slash.active} onPick={slash.choose} onHover={slash.hover} />}
       {edit.slot && open?.block.type === 'figure' && edit.figure && createPortal(<FigureEdit key={edit.figure} doc={edit} at={edit.figure} block={open.block} theme={theme} accent={accent} />, edit.slot)}
+      {pics.error && (
+        <p role="alert" className="pointer-events-auto absolute bottom-3 left-1/2 flex max-w-[min(90%,28rem)] -translate-x-1/2 items-center gap-3 rounded-lg bg-raise px-3 py-2 text-[12.5px] text-ink-2 shadow-[0_0_0_1px_theme(colors.line-2)]">
+          {pics.error}<button type="button" onClick={pics.dismiss} className="text-ink-3 hover:text-ink">Dismiss</button>
+        </p>
+      )}
     </div>
   )
 }

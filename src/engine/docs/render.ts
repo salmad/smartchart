@@ -15,7 +15,8 @@ function badgeHTML(f: Extract<Block, { type: 'figure' }>): string {
   let failed: ReturnType<typeof figureChecks>
   try { failed = figureChecks(f).filter((c) => !c.ok) } catch { return '' }
   if (!failed.length) return ''
-  return `<details class="fig-checks"><summary>${failed.length} check${failed.length === 1 ? '' : 's'}</summary><ul>${failed.map((c) => `<li><b>${c.id}</b> ${esc(c.msg)}</li>`).join('')}</ul></details>`
+  const say = (msg: string) => msg.replace(/^The /, '').replace(/\.$/, '')
+  return `<details class="fig-checks"><summary>${failed.length} thing${failed.length === 1 ? '' : 's'} to fix</summary><ul>${failed.map((c) => `<li>${esc(say(c.msg))}</li>`).join('')}</ul></details>`
 }
 
 /** A list; the list under an item is drawn inside that item's li. */

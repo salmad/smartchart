@@ -141,7 +141,13 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
         onSubmit={rename} onClose={() => setRenaming(null)} />
       <DeleteDeck name={doomed?.row.name ?? null} what={doomed?.row.ref.kind ?? 'deck'} subpages={doomed?.subpages ?? 0} onCancel={() => setDoomed(null)} onConfirm={remove} />
       <MovePicker page={moving && { ref: moving.ref, name: moving.name }} pages={tree.pages ?? []} onClose={() => setMoving(null)}
-        onMove={async (parent) => { const why = moving ? await tree.move(moving.ref, { parent }) : null; if (!why && parent) for (const p of [...pathTo(tree.pages ?? [], parent), parent]) tree.toggle(p, true); return why }} />
+        workspaces={ws.list?.filter((w) => w.role === 'owner' || w.role === 'editor') ?? []} currentWorkspaceId={wsId ?? undefined}
+        onMove={async (parent, workspaceId) => {
+          if (!moving) return null
+          const why = await tree.move(moving.ref, { parent, ...(workspaceId ? { workspaceId } : {}) })
+          if (!why && parent && !workspaceId) for (const p of [...pathTo(tree.pages ?? [], parent), parent]) tree.toggle(p, true)
+          return why
+        }} />
       {actions.notice && <p role="alert" className="border-t border-line px-4 py-3 text-[12.5px] leading-[1.45] text-ink-2">{actions.notice}</p>}
       <NewDoc open={making !== null} onCreate={createDoc} onClose={() => setMaking(null)} />
       {/* Leaving opens the most recently used workspace that is left. */}

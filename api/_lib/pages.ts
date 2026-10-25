@@ -20,14 +20,15 @@ export function parentOf(v: unknown): PageRef | undefined | 'bad' {
 }
 
 /** A move request's body: where the page goes, or null when it is not one. */
-export function moveBody(v: unknown): ({ parent: PageRef | null } & Slot) | null {
-  const o = (v && typeof v === 'object' ? v : null) as { parent?: unknown; before?: unknown; after?: unknown } | null
+export function moveBody(v: unknown): ({ parent: PageRef | null; workspaceId?: string } & Slot) | null {
+  const o = (v && typeof v === 'object' ? v : null) as { parent?: unknown; before?: unknown; after?: unknown; workspaceId?: unknown } | null
   if (!o || !('parent' in o)) return null
   const parent = o.parent === null ? null : pageRef(o.parent)
   if (parent === undefined) return null
   const before = o.before === undefined ? undefined : pageRef(o.before), after = o.after === undefined ? undefined : pageRef(o.after)
   if ((o.before !== undefined && !before) || (o.after !== undefined && !after) || (before && after)) return null
-  return { parent, ...(before ? { before } : {}), ...(after ? { after } : {}) }
+  const workspaceId = typeof o.workspaceId === 'string' && ID.test(o.workspaceId) ? o.workspaceId : undefined
+  return { parent, ...(workspaceId ? { workspaceId } : {}), ...(before ? { before } : {}), ...(after ? { after } : {}) }
 }
 
 /** The answer to a move: a page the user can't read reads as missing, a viewer is told so, any other sentence is a refused move. */

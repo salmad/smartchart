@@ -31,8 +31,8 @@ test('every starter has a subsection, a link to a figure, and captions on its fi
 })
 
 test('the figure starters are the eight kinds (a chart in six forms), in menu order', () => {
-  expect(BLOCK_STARTERS.map((s) => s.id)).toEqual(['chart', 'line-chart', 'horizontal-bars', 'waterfall', 'timeline', 'matrix', 'table', 'number', 'cards', 'steps', 'summary', 'pair', 'callout'])
-  expect(BLOCK_STARTERS.map((s) => s.kind)).toEqual(['chart', 'chart', 'chart', 'chart', 'chart', 'chart', 'table', 'number', 'cards', 'steps', 'summary', 'pair', 'callout'])
+  expect(BLOCK_STARTERS.map((s) => s.id)).toEqual(['chart', 'line-chart', 'horizontal-bars', 'waterfall', 'timeline', 'matrix', 'table', 'number', 'cards', 'steps', 'summary', 'pair', 'callout', 'bar-line', 'product-image'])
+  expect(BLOCK_STARTERS.map((s) => s.kind)).toEqual(['chart', 'chart', 'chart', 'chart', 'chart', 'chart', 'table', 'number', 'cards', 'steps', 'summary', 'pair', 'callout', 'chart', 'image'])
 })
 
 test('every figure starter validates as a figure, with ids unique and kinds real', () => {

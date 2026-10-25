@@ -15,7 +15,10 @@ import { authorOf } from '@/app/useComments'
 import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
 import { Toggle } from './Bar'
-import { ChatPanel, type ChatPanelProps } from './ChatPanel'
+import { ChatPanel } from './ChatPanel'
+import { sendDocTurn } from '@/app/doc-turn'
+import type { ChatMessage } from '@/engine/agent/llm'
+import type { Message } from '@/app/store'
 import { LookPanel } from './LookPanel'
 import { VersionsPanel } from './VersionsPanel'
 import { anchorsOf } from './docs/anchors'
@@ -50,8 +53,10 @@ interface Props {
   crumbs?: Crumb[]; onOpenPage?: (ref: PageRef) => void
   /** The doc's name as the sidebar lists it: shown until the doc itself has been read. */
   name?: string
-  /** The deck held behind the doc: same chat as in the editor. */
-  chat: ChatPanelProps & { onToggle: () => void }
+  chatOpen: boolean
+  onToggleChat: () => void
+  offline: boolean
+  modelsLive: boolean
   /** Workspace palette and accent (not stored on the doc). */
   look: { theme: Theme; accent: string | null; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void }
   /** A share link on the server; null for the dev account. */
@@ -62,7 +67,10 @@ interface Props {
 // The editor (Tiptap and ProseMirror) loads once a doc is open and the browser is idle (or at the first Edit), not with the app.
 const docEditing = lazyScreen(() => import('./docs/DocEditing').then((m) => m.DocEditing))
 
-export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name, chat, look, shareId }: Props) {
+export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name, chatOpen, onToggleChat, offline, modelsLive, look, shareId }: Props) {
+  const [messages, setMessages] = useState<Message[]>([])
+  const historyRef = useRef<ChatMessage[]>([])
+  const [chatBusy, setChatBusy] = useState(false)
   const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => docs.peek?.(id)?.doc ?? null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
@@ -170,7 +178,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
       <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
         <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-        <Toggle open={chat.open} onClick={chat.onToggle} label={`${chat.open ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
+        <Toggle open={chatOpen} onClick={onToggleChat} label={`${chatOpen ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
       </div>
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
         <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
@@ -185,7 +193,10 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const body = (content: ReactNode) => (
     <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
       {sidebar}
-      <ChatPanel {...chat} />
+      <ChatPanel open={chatOpen} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
+        chips={null} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
+        onSend={(text) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }}
+        onClear={() => { setMessages([]); historyRef.current = [] }} />
       <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg">
         {!editing && preview && record && shown && <DocPreview version={preview.v} current={preview.current} ready={preview.doc === 'missing' ? 'missing' : !!preview.doc} busy={restoring}
           what={describeDocDiff(preview.before?.tree ?? null, preview.v.tree)} onRestore={() => void restore()} onBack={() => setPreview(null)} />}

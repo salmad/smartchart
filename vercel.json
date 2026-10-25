@@ -11,6 +11,7 @@
     { "source": "/api/pages", "destination": "/api/account?route=pages" },
     { "source": "/api/workspaces", "destination": "/api/account?route=workspaces" },
     { "source": "/api/prefs", "destination": "/api/account?route=prefs" },
+    { "source": "/api/tool", "destination": "/api/account?route=tool" },
     { "source": "/api/auth/:path*", "destination": "/api/auth" },
     { "source": "/api/v1/:tool*", "destination": "/api/v1?tool=:tool*" },
     { "source": "/mcp/v1", "destination": "/api/mcp" },

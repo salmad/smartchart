@@ -10,6 +10,7 @@ import { ActionBar } from '@/app/edit/ActionBar'
 import { ChartGrid } from '@/app/edit/ChartGrid'
 import { EditMenu, type MenuLook } from '@/app/edit/EditMenu'
 import { EditOverlay } from '@/app/edit/EditOverlay'
+import { PictureButtons, usePictures } from '@/app/edit/EditPictures'
 import { EditSurface } from '@/app/edit/EditSurface'
 import { IconPicker } from '@/app/edit/IconPicker'
 import { useEditKeys } from '@/app/edit/useEditKeys'
@@ -38,7 +39,7 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
     return null
   }
   const save = useCallback(async (d: Slide) => finish.current(d, true), [])
-  const edit = useSlideEdit({ slide, check, save, onDone: NONE }), editRef = useRef(edit)
+  const edit = useSlideEdit({ slide, check, save, onDone: NONE }), pictures = usePictures(edit, STYLE), editRef = useRef(edit)
   editRef.current = edit
   useEffect(() => { doc.holdFigure(() => finish.current(editRef.current.draft, editRef.current.dirty)); return () => doc.holdFigure(null) }, [doc])
 
@@ -56,7 +57,8 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
   const callout = block.kind === 'callout', data = edit.draft.chart || edit.draft.table || edit.draft.halves
   const surfaceEl = (
     <EditSurface edit={edit} deckStyle={STYLE} render={render} onSurface={setSurface}>
-      {!callout && <EditOverlay edit={edit} surface={surface} deckStyle={STYLE} onChart={setGrid} onAddPicture={NONE} />}
+      {!callout && <EditOverlay edit={edit} surface={surface} deckStyle={STYLE} onChart={setGrid} onAddPicture={pictures.add} />}
+      {block.kind === 'image' && <PictureButtons surface={surface} pictures={pictures} />}
       <ActionBar edit={edit} surface={surface} deckStyle={STYLE} />
       {!callout && <IconPicker edit={edit} surface={surface} deckStyle={STYLE} />}
       {grid !== null && data && <ChartGrid edit={edit} deckStyle={STYLE} which={grid} onClose={() => setGrid(null)} />}

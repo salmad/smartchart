@@ -6,6 +6,9 @@ import type { JevFn } from "../agent/llm.js";
 import type { DeckComment } from "../comments.js";
 import type { Version } from "../versions.js";
 import type { Doc } from "../docs/types.js";
+import type { Block } from "../docs/types.js";
+import type { DocComment, CommentOp } from "../comments.js";
+import type { DocTree } from "../docs/versions.js";
 import type { UserLook } from "../look.js";
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
@@ -37,6 +40,10 @@ export interface AccountPort {
   /** The deck's versions, newest first, and the slides their trees name. */
   versions(deckId: string): Promise<Version[]>;
   blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;
+  docVersions(docId: string): Promise<{ n: number; rev: number; by: string; label: string | null; at: number; tree: DocTree }[]>;
+  docBlobs(docId: string, hashes: string[]): Promise<{ hash: string; block: Block }[]>;
+  docComments(docId: string): Promise<DocComment[]>;
+  docComment(docId: string, op: CommentOp, by: string, now: number): Promise<DocComment[] | string>;
   /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
   addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind; from?: string }>;
 }

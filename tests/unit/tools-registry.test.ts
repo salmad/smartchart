@@ -5,7 +5,8 @@ describe('registry', () => {
   it('has the v1 tool set, unique names, no prefixes', () => {
     expect(TOOLS.map((t) => t.name)).toEqual(['whoami', 'list_workspaces', 'get_guide', 'list_templates', 'get_template', 'list_decks', 'create_deck', 'get_deck', 'update_deck', 'share_deck',
       'suggest_template', 'add_image', 'create_slide', 'read_slide', 'update_slide', 'change_template', 'move_slide', 'delete_slide', 'check_slide', 'check_storyline', 'resolve_comment', 'list_versions', 'restore_version',
-      'list_docs', 'create_doc', 'get_doc', 'update_doc', 'write_doc_text', 'create_block', 'update_block', 'move_block', 'delete_block', 'check_doc', 'move_page'])
+      'list_docs', 'create_doc', 'get_doc', 'update_doc', 'write_doc_text', 'create_block', 'update_block', 'move_block', 'delete_block', 'check_doc',
+      'list_doc_versions', 'restore_doc_version', 'list_doc_comments', 'resolve_doc_comment', 'move_page'])
   })
   it('every input closes additional properties at the top', () => {
     for (const t of TOOLS) expect(t.input.additionalProperties, t.name).toBe(false)

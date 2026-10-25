@@ -69,6 +69,11 @@ export interface Db {
   touchWorkspace(userId: string, id: string): Promise<void>
   getUserLook(userId: string): Promise<unknown>
   setUserLook(userId: string, look: { theme: 'ink' | 'paper'; accent: string | null }): Promise<boolean>
+  /** Whether to show the one-time “Connect an agent” nudge (see FUTURE #18a). */
+  agentConnectState(userId: string): Promise<{ dismissed: boolean; done: boolean }>
+  dismissAgentNudge(userId: string): Promise<void>
+  /** Set when an agent key exists or a write landed over MCP. */
+  markAgentConnectDone(userId: string): Promise<void>
   /** Null when the user is not a member. */
   listMembers(userId: string, id: string): Promise<MemberRow[] | null>
   /** Changes a member's role, or removes them with null. An owner may change anyone; any member may remove themselves.
@@ -129,7 +134,7 @@ export interface Db {
   countSubpages(userId: string, page: PageRef): Promise<number | null>
   /** Move a page under `to.parent` (null: the top), right after or before a sibling, else last. Changes only the page's parent and
       order key: no revision, no version, no `updated_at`. Answers 'ok', 'foreign' (the user can't read the page), or a sentence. */
-  movePage(userId: string, page: PageRef, to: { parent: PageRef | null } & Slot): Promise<'ok' | 'foreign' | string>
+  movePage(userId: string, page: PageRef, to: { parent: PageRef | null; workspaceId?: string } & Slot): Promise<'ok' | 'foreign' | string>
   /** Every deck and doc in the workspace the user can read, for the tree (up to MAX_PAGES). */
   listPages(userId: string, workspaceId: string): Promise<PageSummary[]>
   /** Deletes the doc and every page below it, with their versions and blobs. */
@@ -193,6 +198,7 @@ const SCHEMA = [
   // is made on its owner's first request, and their decks from before move in (decks.user_id now means who made it).
   `create table if not exists workspaces (id text primary key, name text not null, brand jsonb, personal_of text unique, created timestamptz not null default now())`,
   `create table if not exists user_prefs (user_id text primary key, look jsonb not null)`,
+  `alter table user_prefs add column if not exists onboarding jsonb not null default '{}'::jsonb`,
   `create table if not exists members (workspace_id text not null, user_id text not null, email text not null, name text not null default '', role text not null check (role in ('owner','editor','viewer')), used_at timestamptz, joined timestamptz not null default now(), primary key (workspace_id, user_id))`,
   `create index if not exists members_user on members (user_id, used_at desc nulls last)`,
   `create table if not exists invites (token text primary key, workspace_id text not null, email text not null, role text not null, by_user text not null, expires timestamptz not null)`,

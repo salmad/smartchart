@@ -3683,6 +3683,38 @@
     "tone": "note",
     "text": "Limits here are published terms only; issuers may offer less once an application is made."
    }
+  },
+  {
+   "id": "bar-line",
+   "kind": "chart",
+   "label": "Bar and line chart",
+   "blurb": "Bars for amounts, a line for a rate or margin",
+   "body": {
+    "caption": "Income and gross margin, years 1–5 · £m, %",
+    "chart": {
+     "categories": ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"],
+     "format": "£{v}m",
+     "series": [
+      { "name": "Revenue", "mark": "bar", "color": "focus", "values": [0.4, 3.1, 14, 36, 80] },
+      { "name": "Gross margin", "mark": "line", "color": "contrast", "format": "{v}%", "values": [12, 24, 31, 36, 38] }
+     ]
+    },
+    "source": "Company filings (illustrative)."
+   }
+  },
+  {
+   "id": "product-image",
+   "kind": "image",
+   "label": "Product screenshot",
+   "blurb": "A picture that shows the product at work",
+   "body": {
+    "caption": "Acme app · 90-day cash flow forecast",
+    "image": {
+     "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
+     "alt": "The Acme cash flow screen: a 90-day forecast with a suggested draw before a VAT dip"
+    },
+    "source": "Product screenshot."
+   }
   }
  ]
 }
