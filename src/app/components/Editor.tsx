@@ -13,15 +13,13 @@ import type { Measurer } from '@/app/measure'
 import { EditMode } from '@/app/edit/EditMode'
 import type { Attached } from '@/app/files'
 import { deckName } from '@/app/store'
-import { cn } from '@/app/lib/utils'
 import { phaseLinesOf } from '@/app/phase'
 import { useRoomy } from '@/app/panel'
 import { Bar, type BarProps, type DeckView } from './Bar'
-import { Chat } from './Chat'
+import { ChatPanel } from './ChatPanel'
 import { Checks } from './Checks'
 import { CommentsPanel } from './Comments'
 import { SlideActions } from './SlideActions'
-import { Composer } from './Composer'
 import { LookPanel } from './LookPanel'
 import { SLIDE_W, Stage, UNDER_SLIDE } from './Stage'
 import { Storyline } from './Storyline'
@@ -126,12 +124,9 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
         versionsOpen={side === 'versions'} onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
       <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
         {!decksAside && decks}
-        {/* Hidden, not unmounted: a half-written message survives. On a phone the chat always shows, under the deck. */}
-        <aside aria-label="Chat" data-tour="chat" className={cn('flex w-[368px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !bar.chatOpen && 'min-[901px]:hidden')}>
-          <Chat messages={s.messages} offline={healthKnown && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} />
-          <Composer chips={chips} canSend={s.live && !lock} busy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear} canClear={s.messages.length > 0}
-            start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
-        </aside>
+        <ChatPanel open={bar.chatOpen} messages={s.messages} offline={healthKnown && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} chips={chips}
+          canSend={s.live && !lock} composerBusy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
+          start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
         {preview
           ? <main className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)] max-[900px]:contents">
               <VersionPreview version={preview.v} items={preview.items} diff={preview.diff} current={preview.current} busy={lock} onBack={() => setPreview(null)}
