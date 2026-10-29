@@ -4,6 +4,7 @@ import type { Attached } from '@/app/files'
 import type { Message } from '@/app/store'
 import { cn } from '@/app/lib/utils'
 import { Chat } from './Chat'
+import { ChatModelTip } from './ChatModelTip'
 import { Composer } from './Composer'
 
 export interface ChatPanelProps {
@@ -27,6 +28,7 @@ export function ChatPanel({ open, messages, offline, onUndo, busy, fresh, chips,
   return (
     <aside aria-label="Chat" data-tour="chat" className={cn('flex w-[368px] min-h-0 flex-none flex-col border-r border-line bg-panel max-[900px]:order-3 max-[900px]:w-auto max-[900px]:border-r-0 max-[900px]:border-t max-[900px]:bg-transparent', !open && 'min-[901px]:hidden')}>
       <Chat messages={messages} offline={offline} onUndo={onUndo} busy={busy} fresh={fresh} />
+      <ChatModelTip />
       <Composer chips={chips} canSend={canSend} busy={composerBusy} hint={hint} onSend={onSend} onClear={onClear} canClear={messages.length > 0} start={start} />
     </aside>
   )

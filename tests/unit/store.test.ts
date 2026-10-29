@@ -22,8 +22,8 @@ test('the local repo saves, lists, gets and removes one deck at a time, and reso
   const storage = mem(), repo = localDeckRepo(storage)
   const deck: SavedDeck = { id: 'd_1', style: 'consulting', theme: 'ink', accent: null, current: 0, items: [], history: [{ role: 'user', content: 'hi' }], working: [], messages: [], updated: 1 }
   expect(await repo.save(deck)).toBeNull()
-  expect(await repo.get('d_1')).toEqual({ ...deck, theme: 'paper', accent: null, parent: null, sortKey: expect.any(String) }) // palette is not persisted on the deck
-  expect(await repo.list()).toEqual([{ ...summaryOf({ ...deck, theme: 'paper', accent: null }), sortKey: expect.any(String) }])
+  expect(await repo.get('d_1')).toEqual({ ...deck, theme: 'ink', accent: null, parent: null, sortKey: expect.any(String) }) // palette is not persisted on the deck
+  expect(await repo.list()).toEqual([{ ...summaryOf({ ...deck, theme: 'ink', accent: null }), sortKey: expect.any(String) }])
   expect(loadStore(storage).active).toBe('d_1')
   expect(await repo.remove('d_1')).toBe(true)
   expect(await repo.get('d_1')).toBeNull()

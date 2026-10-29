@@ -7,6 +7,7 @@ import type { ChatMessage } from '@/engine/agent/llm'
 import type { TraceStep } from '@/engine/agent/agent'
 import { record, type Version, type VersionMeta } from '@/engine/versions'
 import { mergeComments, type DeckComment } from '@/engine/comments'
+import { DEFAULT_USER_LOOK } from '@/engine/look'
 import type { PageRef } from '@/engine/pages/tree'
 import { DECK_VERSIONS_KEY, DECKS_KEY, placeNew, removeBranch } from './local-pages'
 import type { Role } from './workspaces'
@@ -28,7 +29,7 @@ export interface Store { active: string | null; decks: Record<string, SavedDeck>
 /** A deck as a list shows it: name, time, size and the first slide in the deck's look. Open it with `get`. */
 export interface DeckSummary { id: string; name: string; updated: number; slides: number; style: Style; theme: Theme; accent: string | null; parent: PageRef | null; sortKey: string | null }
 export const summaryOf = (d: SavedDeck): DeckSummary => ({
-  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme ?? 'paper', accent: d.accent ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
+  id: d.id, name: deckName(d), updated: d.updated, slides: d.items?.length ?? 0, style: d.style, theme: d.theme ?? DEFAULT_USER_LOOK.theme, accent: d.accent ?? null, parent: d.parent ?? null, sortKey: d.sortKey ?? null,
 })
 
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
@@ -121,7 +122,7 @@ export function localDeckRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>, op
     get: async (id) => {
       const d = read().decks[id]
       if (!d) return null
-      return { ...d, theme: d.theme ?? 'paper', accent: d.accent ?? null }
+      return { ...d, theme: d.theme ?? DEFAULT_USER_LOOK.theme, accent: d.accent ?? null }
     },
     save: async (deck, meta) => {
       const s = read(), was = s.decks[deck.id]

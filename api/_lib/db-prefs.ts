@@ -30,12 +30,12 @@ export function prefsCalls(q: Q): Pick<Db, Calls> {
     dismissAgentNudge: async (u) => {
       await q(`insert into user_prefs (user_id, look, onboarding) values ($1, $2::jsonb, $3::jsonb)
         on conflict (user_id) do update set onboarding = user_prefs.onboarding || excluded.onboarding`,
-        [u, JSON.stringify({ theme: 'paper', accent: null }), JSON.stringify({ agentNudgeDismissed: true })])
+        [u, JSON.stringify({ theme: 'ink', accent: null }), JSON.stringify({ agentNudgeDismissed: true })])
     },
     markAgentConnectDone: async (u) => {
       await q(`insert into user_prefs (user_id, look, onboarding) values ($1, $2::jsonb, $3::jsonb)
         on conflict (user_id) do update set onboarding = user_prefs.onboarding || excluded.onboarding`,
-        [u, JSON.stringify({ theme: 'paper', accent: null }), JSON.stringify({ agentConnectDone: true })])
+        [u, JSON.stringify({ theme: 'ink', accent: null }), JSON.stringify({ agentConnectDone: true })])
     },
   }
 }

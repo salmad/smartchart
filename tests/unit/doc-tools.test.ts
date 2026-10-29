@@ -67,7 +67,7 @@ describe('doc tools', () => {
     const docId = String((await ok('create_doc', { title: 'Old' })).docId)
     await ok('update_doc', { docId, title: 'New', subtitle: 'Sub' })
     expect((await db.getDoc('u1', docId))?.name).toBe('New')
-    expect(await ok('get_doc', { docId })).toMatchObject({ title: 'New', subtitle: 'Sub', theme: 'paper' })
+    expect(await ok('get_doc', { docId })).toMatchObject({ title: 'New', subtitle: 'Sub', theme: 'ink' })
     await ok('update_doc', { docId, subtitle: null })
     expect('subtitle' in await ok('get_doc', { docId })).toBe(false)
   })

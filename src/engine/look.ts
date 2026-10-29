@@ -3,7 +3,7 @@ import type { Theme } from './types.js'
 /** Ink/Paper and accent: a per-user preference, not stored on decks or docs. */
 export interface UserLook { theme: Theme; accent: string | null }
 
-export const DEFAULT_USER_LOOK: UserLook = { theme: 'paper', accent: null }
+export const DEFAULT_USER_LOOK: UserLook = { theme: 'ink', accent: null }
 
 export function parseUserLook(raw: unknown): UserLook | null {
   if (!raw || typeof raw !== 'object') return null

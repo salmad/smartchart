@@ -4,7 +4,7 @@ import { deckBody } from '../../src/app/store'
 import { serializeDoc } from '../../src/engine/docs/serialize'
 
 describe('user look', () => {
-  it('defaults to paper with no accent', () => {
+  it('defaults to ink with no accent', () => {
     expect(userLookOf(null)).toEqual(DEFAULT_USER_LOOK)
   })
 

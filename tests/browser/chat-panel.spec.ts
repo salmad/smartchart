@@ -23,3 +23,18 @@ test('the chat hides and comes back with ⌘L or its toggle, keeping a half-writ
   await expect(page.getByRole('button', { name: 'Show the agent' })).toBeVisible()
   await expect(chat).toBeHidden()
 })
+
+test('the chat shows a dismissible tip about using a strong model in-app, not over MCP', async ({ page }) => {
+  await page.addInitScript(() => { localStorage.removeItem('smartchart.chatModelTip.dismissed') })
+  await page.addInitScript((d) => { if (!sessionStorage.getItem('seeded-tip')) { localStorage.setItem('smartchart.journey.decks.v1', JSON.stringify({ active: 'd_c', decks: { d_c: d } })); sessionStorage.setItem('seeded-tip', '1') } }, deck)
+  await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, live: true } }))
+  await page.goto('/d/d_c')
+  const chat = page.getByRole('complementary', { name: 'Chat' })
+  const tip = chat.getByRole('status')
+  await expect(tip).toContainText('strong model')
+  await expect(tip).toContainText('MCP')
+  await tip.getByRole('button', { name: 'Dismiss' }).click()
+  await expect(tip).toBeHidden()
+  await page.reload()
+  await expect(chat.getByRole('status')).toBeHidden()
+})

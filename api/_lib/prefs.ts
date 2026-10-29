@@ -1,3 +1,4 @@
+import { userLookOf } from '../../src/engine/look.js'
 import type { UserFrom } from './auth.js'
 import type { Db } from './db.js'
 
@@ -10,14 +11,11 @@ export function prefsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     const user = await deps.userFrom(request)
     if (!user) return err(401, 'Sign in to save your preferences.')
     if (request.method === 'GET') {
-      const look = await db.getUserLook(user.id)
+      const look = userLookOf(await db.getUserLook(user.id))
       const agent = await db.agentConnectState(user.id)
-      const theme = look && typeof look === 'object' && (look as { theme?: unknown }).theme === 'ink' ? 'ink' : 'paper'
-      const raw = look && typeof look === 'object' ? (look as { accent?: unknown }).accent : null
-      const accent = raw === null || raw === undefined ? null : typeof raw === 'string' && /^#[0-9a-f]{6}$/i.test(raw) ? raw : null
       return Response.json({
-        theme,
-        accent,
+        theme: look.theme,
+        accent: look.accent,
         agentNudgeDismissed: agent.dismissed,
         agentConnectDone: agent.done,
         showAgentNudge: !agent.dismissed && !agent.done,
@@ -37,13 +35,10 @@ export function prefsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) 
     }
     if (!theme && b.dismissAgentNudge !== true) return err(400, 'Palette is Ink or Paper, or dismiss the agent nudge.')
     const agent = await db.agentConnectState(user.id)
-    const look = await db.getUserLook(user.id)
-    const savedTheme = look && typeof look === 'object' && (look as { theme?: unknown }).theme === 'ink' ? 'ink' : 'paper'
-    const savedAccent = look && typeof look === 'object' ? (look as { accent?: unknown }).accent : null
-    const accentOut = savedAccent === null || savedAccent === undefined ? null : typeof savedAccent === 'string' && /^#[0-9a-f]{6}$/i.test(savedAccent) ? savedAccent : null
+    const saved = userLookOf(await db.getUserLook(user.id))
     return Response.json({
-      theme: theme ?? savedTheme,
-      accent: theme ? (accentPut ?? null) : accentOut,
+      theme: theme ?? saved.theme,
+      accent: theme ? (accentPut ?? null) : saved.accent,
       agentNudgeDismissed: agent.dismissed,
       agentConnectDone: agent.done,
       showAgentNudge: !agent.dismissed && !agent.done,
