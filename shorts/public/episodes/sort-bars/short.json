@@ -1,0 +1,10 @@
+{
+  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "pinHook": true,
+  "scenes": [
+    { "type": "hook", "kicker": "TOPIC", "text": "The problem in *six* words", "say": "[knowing] One sentence that names the pain or the payoff." },
+    { "type": "slide", "title": "The usual way", "retitle": "The better way", "bars": [{ "label": "A", "value": 60 }, { "label": "B", "value": 25 }], "focus": "A", "cues": ["better"],
+      "say": "[casual] Show the usual way first. [beat] [emphatic] Then the turn: the better way." },
+    { "type": "recap", "items": ["Point one", "Point two"], "loop": "A line that sends them back to the *start*", "say": "[upbeat] Point one. Point two. [playful] A line that sends them back to the start." }
+  ]
+}

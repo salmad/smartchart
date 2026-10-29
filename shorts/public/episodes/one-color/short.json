@@ -1,0 +1,20 @@
+{
+  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "pinHook": true,
+  "scenes": [
+    { "type": "hook", "kicker": "Consulting craft", "text": "Grey is the most *important* colour on a slide",
+      "say": "[knowing, slightly amused] Grey... is the most important colour on a slide." },
+    { "type": "slide", "title": "APAC grew *4x* faster than any other region", "before": "rainbow", "label": ["Every bar a colour", "One colour"],
+      "bars": [{ "label": "APAC", "value": 16 }, { "label": "EMEA", "value": 4 }, { "label": "Americas", "value": 3 }, { "label": "Japan", "value": 2 }, { "label": "LATAM", "value": 1 }],
+      "focus": "APAC", "unit": "%", "cues": ["except"],
+      "say": "[casual] A typical chart: five regions, five colours. [dry] Where do you look? [beat] [emphatic] Grey everything... except the one bar that matters. [confident] Now it has a point." },
+    { "type": "slide", "label": "The rule", "title": "APAC grew *4x* faster than any other region",
+      "bars": [{ "label": "APAC", "value": 16 }, { "label": "EMEA", "value": 4 }, { "label": "Americas", "value": 3 }, { "label": "Japan", "value": 2 }, { "label": "LATAM", "value": 1 }],
+      "focus": "APAC", "unit": "%",
+      "checks": [{ "text": "Grey is context", "on": "chart" }, { "text": "*One* colour is the point", "on": "chart" }, { "text": "The title says why", "on": "title" }],
+      "cues": ["grey", "one", "title"],
+      "say": "[conversational] The rule is simple. Grey is context. One colour is the point. [pointed] And the title says why it's lit." },
+    { "type": "recap", "items": ["Grey for context", "One colour for the point", "The title explains it"], "loop": "Open your last chart. *How many* colours?",
+      "say": "[upbeat] Grey for context. One colour for the point. The title explains it. [playful] Now open your last chart... how many colours?" }
+  ]
+}

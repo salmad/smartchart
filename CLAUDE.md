@@ -16,6 +16,7 @@ Dev review page: `/src/dev/review.html` (every example in both styles, validated
 - `src/app`: the React app. `App.tsx` holds state and picks the screen; `components/` (screens and parts), `components/ui` (shadcn)
 - `src/dev`: review page and lint fixture (dev only, not built)
 - `api/`: Vercel functions (web `Request`/`Response`; keys stay here)
+- `shorts/`: standalone Remotion package for 9:16 social shorts (own `package.json`; not part of the app build, lint or deploy; Remotion's inline styles are fine there). Driven by the `create-shorts` skill; see `docs/product/SHORT-FORM-VIDEO.md`
 - `tests/unit` (vitest), `tests/browser` (Playwright), `tests/fixtures`, `tests/agent-harness` (live agent quality run, needs the models)
 
 ## Rules

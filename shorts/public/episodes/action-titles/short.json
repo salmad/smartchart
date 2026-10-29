@@ -1,0 +1,110 @@
+{
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
+  "pinHook": true,
+  "scenes": [
+    {
+      "type": "hook",
+      "kicker": "Consulting craft",
+      "text": "Consulting slides do *one* thing yours don't",
+      "say": "[knowing] Consulting slides do one thing yours don't."
+    },
+    {
+      "type": "slide",
+      "title": "Revenue by region",
+      "retitle": "APAC drove *70%* of growth",
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 70
+        },
+        {
+          "label": "EMEA",
+          "value": 16
+        },
+        {
+          "label": "Americas",
+          "value": 9
+        },
+        {
+          "label": "Other",
+          "value": 5
+        }
+      ],
+      "focus": "APAC",
+      "unit": "%",
+      "cues": [
+        "answer"
+      ],
+      "say": "[casual] It's the title. Most decks title this slide... revenue by region. [beat] [emphatic] But partners? They write the answer. [confident] APAC drove 70% of growth."
+    },
+    {
+      "type": "slide",
+      "label": "The three-second test",
+      "title": "APAC drove *70%* of growth",
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 70
+        },
+        {
+          "label": "EMEA",
+          "value": 16
+        },
+        {
+          "label": "Americas",
+          "value": 9
+        },
+        {
+          "label": "Other",
+          "value": 5
+        }
+      ],
+      "focus": "APAC",
+      "unit": "%",
+      "checks": [
+        {
+          "text": "Full sentence",
+          "on": "title"
+        },
+        {
+          "text": "*One* claim",
+          "on": "title"
+        },
+        {
+          "text": "The chart proves it",
+          "on": "chart"
+        }
+      ],
+      "cues": [
+        "full",
+        "one",
+        "chart"
+      ],
+      "say": "[conversational] Here's the test. Is it a full sentence? Does it make one claim? [pointed] And does the chart actually prove it?"
+    },
+    {
+      "type": "deck",
+      "titles": [
+        "APAC drove *70%* of growth",
+        "Margins held despite the price cuts",
+        "Competitors are moving into APAC",
+        "So we double down on APAC *now*"
+      ],
+      "say": "[thoughtful] Then read only your titles, top to bottom. [warm] If they tell the whole story on their own... you've nailed it."
+    },
+    {
+      "type": "recap",
+      "items": [
+        "Answer, not topic",
+        "One claim per title",
+        "Titles tell the story"
+      ],
+      "loop": "Now check your *last* slide title.",
+      "say": "[upbeat] Answer, not topic. One claim per title. Titles that tell the story. [playful] Now go check your last slide title."
+    }
+  ]
+}

@@ -12,6 +12,7 @@ export default tseslint.config(
       'node_modules',
       'tests/agent-harness',
       '.superpowers',
+      'shorts',
     ],
   },
   js.configs.recommended,

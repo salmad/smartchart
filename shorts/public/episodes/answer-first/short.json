@@ -1,0 +1,15 @@
+{
+  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "pinHook": true,
+  "scenes": [
+    { "type": "hook", "kicker": "Consulting craft", "text": "Your deck is *upside down*",
+      "say": "[knowing, slightly amused] Your deck... is upside down." },
+    { "type": "deck", "titles": ["Background: the market today", "What we analysed", "Three options we considered", "Recommendation: enter APAC *now*"],
+      "reorder": [3, 0, 1, 2], "cues": ["flip"],
+      "say": "[casual] Most decks tell it like a story. Background... analysis... options... and the answer, last. [beat] [emphatic] Partners flip it. The answer goes first." },
+    { "type": "deck", "titles": ["Enter APAC *now*", "APAC drove 70% of our growth", "Competitors are moving in", "We can fund it from margins"],
+      "say": "[conversational] Then every slide after it is proof. [confident] Why it's right... why now... and how we pay for it." },
+    { "type": "recap", "items": ["Answer first", "Then the proof", "Background last, if at all"], "loop": "Now go *flip* your deck.",
+      "say": "[upbeat] Answer first. Then the proof. Background last, if at all. [playful] Now go flip your deck." }
+  ]
+}
