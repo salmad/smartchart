@@ -26,6 +26,7 @@
 - Hashtags: #consulting #datavisualization #powerpoint
 - Pinned comment: Bonus: if a chart needs a second highlight colour, it probably needs to be two charts.
 - Cover: out/one-color/cover.jpg (frame 0)
+- Posted: https://youtube.com/shorts/_yud7O8MOZg (scheduled public 2026-10-31T17:00:00+04:00)
 
 ## Results (fill at 48h and 7d)
 | | 48h | 7d |

@@ -26,6 +26,7 @@
 - Hashtags: #consulting #presentation #powerpoint
 - Pinned comment: Quick test: if your CEO stopped after slide one, would they know what you recommend?
 - Cover: out/answer-first/cover.jpg (frame 0)
+- Posted: https://youtube.com/shorts/bGLe0PfKTxI (scheduled public 2026-11-02T17:00:00+04:00)
 
 ## Results (fill at 48h and 7d)
 | | 48h | 7d |

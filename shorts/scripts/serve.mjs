@@ -15,8 +15,8 @@ createServer((req, res) => {
   if (req.method === 'OPTIONS') return res.end()
   const file = path.join(out, decodeURIComponent(req.url.split('?')[0]))
   if (!file.startsWith(out + path.sep)) return res.writeHead(403).end()
-  try {
-    res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': statSync(file).size })
-    createReadStream(file).pipe(res)
-  } catch { res.writeHead(404).end() }
+  const stat = statSync(file, { throwIfNoEntry: false })
+  if (!stat?.isFile()) return res.writeHead(404).end()
+  res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': stat.size })
+  createReadStream(file).on('error', () => res.destroy()).pipe(res)
 }).listen(PORT, '127.0.0.1', () => console.log(`serving out/ on http://127.0.0.1:${PORT}`))
