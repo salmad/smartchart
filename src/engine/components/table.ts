@@ -1,7 +1,7 @@
 /* A table: columns aligned by their figures, marks and scores, status pills, bullets, logos and in-cell bars, and groups
    as rows or as a first column. `base` is the table's own path ("table" on a slide, "halves[0].table" in a pair). */
 import type { Cell, Table } from "../types.js";
-import { plain } from "../slides/schema.js";
+import { CELL_MAX, plain } from "../slides/schema.js";
 import { markKinds, markOf } from "../slides/marks.js";
 import { columnAlign, figureOf, placeOf } from "../slides/align.js";
 import { groupLayout, type TableRoom } from "../slides/groups.js";
@@ -60,7 +60,9 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
       return [html];
     }).join("");
   };
-  return `<table class="tbl${n <= 2 ? " narrow" : ""}${byColumn ? " by-group" : ""}"><colgroup>${byColumn ? `<col class="grp">` : ""}${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
+  // Two columns of label and figure sit narrow; two columns of words take the full width.
+  const wordy = body.some((r) => r.cells.some((c) => plain(String(typeof c === "object" && c ? c.value ?? "" : c ?? "")).length > CELL_MAX));
+  return `<table class="tbl${n <= 2 && !wordy ? " narrow" : ""}${byColumn ? " by-group" : ""}"><colgroup>${byColumn ? `<col class="grp">` : ""}${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
     <thead><tr>${byColumn ? `<th class="grp"></th>` : ""}${t.columns.map(head).join("")}</tr></thead>
     <tbody>${byColumn ? columnRows() : t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
 }

@@ -1,6 +1,6 @@
 /* Stress deck (?stress=1 on the review page): every field filled to its limit, within the rules.
    Moved out of the engine's examples unchanged; only tests and the dev review page use it. */
-import { fieldsFor, MIXED_HALVES, type FieldDef } from "@/engine/slides/schema";
+import { CELL_MAX, fieldsFor, MIXED_HALVES, WIDE_CELL_MAX, type FieldDef } from "@/engine/slides/schema";
 import type { Chart, Slide, Style, TemplateId } from "@/engine/types";
 
 /* The claim under test: if a slide passes validate(), it fits. */
@@ -89,7 +89,7 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       { caption: `${W(30)} · £m`, table: { columns: [{ label: W(12) }, { label: W(10) }, { label: W(10) }], rows: TIMES(5).map((_, i) => ({ cells: [W(14), { value: "(1,234)", note: "8% × £10.5k" }, "12,345"], focus: i === 4 })) } }] },
       { template: "pair", name: "Stress · number + points", ...frame("pair"), halves: [
       { number: { value: "€4,000b", caption: W(c ? 80 : 60) } },
-      { caption: W(36), points: TIMES(c ? 4 : 3).map(() => W(c ? 70 : 44)) }] },
+      { caption: W(36), points: TIMES(c ? 4 : 3).map(() => W(max("pair", st, "halves", "points"))) }] },
     ] as (Slide & { name: string })[]) : []),
     { template: "summary", name: "Stress · summary + takeaway", ...frame("summary"), points: TIMES(3).map(() => ({ title: W(40), text: W(100) })) },
     { template: "summary", name: "Stress · summary ×4", ...frame("summary"), takeaway: undefined, points: TIMES(4).map(() => ({ title: W(40), text: W(100) })) },
@@ -136,6 +136,18 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
       columns: [{ label: W(20) }, { label: W(12), bars: true, focus: true }, { label: W(12) }, { label: W(12), bars: true }],
       rows: [...TIMES(c ? 6 : 5).map((_, i) => ({ cells: [W(20), `£${[1240, 860, 2310, 415, 1980, 95][i]}k`, "✓", `${[31, 12, 48, 7, 22, 3][i]}%`], ...(i === 2 ? { focus: true } : {}) })),
         ...(c ? [{ cells: ["Total", "£6,900k", "", "100%"], style: "total" as const }] : [])] } },
+    // Cards at the room each layout takes (schema checkRules, cards): a takeaway takes one bullet's room on every card.
+    { template: "cards", name: "Stress · cards icon ×2, 4 bullets + takeaway", ...frame("cards"), cards: TIMES(2).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(4).map(() => W(80)) } : { icon: "zap", title: W(22), text: W(50) }) },
+    { template: "cards", name: "Stress · cards icon ×2, 5 bullets", ...frame("cards"), takeaway: undefined, cards: TIMES(2).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(5).map(() => W(80)) } : { icon: "zap", title: W(22), text: W(50) }) },
+    { template: "cards", name: "Stress · cards logo ×2, 5 bullets", ...frame("cards"), takeaway: undefined, cards: TIMES(2).map((_, i) => c ? { logo: logo(i), title: W(24), bullets: TIMES(5).map(() => W(80)) } : { logo: logo(i), title: W(22), text: W(50) }) },
+    { template: "cards", name: "Stress · cards icon ×3, 3 × 60", ...frame("cards"), takeaway: undefined, cards: TIMES(3).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(60)) } : { icon: "zap", title: W(22), text: W(50) }) },
+    { template: "cards", name: "Stress · cards numbered ×3, 3 × 60", ...frame("cards"), takeaway: undefined, lead: "number", cards: TIMES(3).map((_, i) => c ? { title: W(i === 1 ? 24 : 10), bullets: TIMES(3).map(() => W(60)) } : { title: W(i === 1 ? 22 : 10), text: W(50) }) },
+    { template: "cards", name: "Stress · cards grid 2×2, 3 bullets", ...frame("cards"), takeaway: undefined, lead: "number", arrange: "grid", cards: TIMES(4).map((_, i) => c ? { title: W(i === 1 ? 24 : 12), bullets: TIMES(3).map(() => W(52)) } : { title: W(i === 1 ? 22 : 12), text: W(44) }) },
+    { template: "cards", name: "Stress · cards icon ×4, 2 × 52 + takeaway", ...frame("cards"), cards: TIMES(4).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(2).map(() => W(52)) } : { icon: "zap", title: W(22), text: W(30) }) },
+    { template: "cards", name: "Stress · cards icon ×4, 3 bullets", ...frame("cards"), takeaway: undefined, cards: TIMES(4).map(() => c ? { icon: "zap", title: W(24), bullets: TIMES(3).map(() => W(48)) } : { icon: "zap", title: W(22), text: W(30) }) },
+    // Two columns of words are drawn full width; in consulting the second column takes the wide limit.
+    { template: "table", name: "Stress · table two columns of words", ...frame("table"), ...(c ? {} : { takeaway: undefined }), table: { columns: [{ label: W(20) }, { label: W(26) }],
+      rows: TIMES(c ? 8 : 6).map((_, i) => ({ cells: c ? [W(CELL_MAX), W(WIDE_CELL_MAX)] : [W(24), W(24)], ...(i === 2 ? { focus: true } : {}) })) } },
   ].map((s) => withExhibitHeads(s as Slide & { name: string }, st));
 }
 

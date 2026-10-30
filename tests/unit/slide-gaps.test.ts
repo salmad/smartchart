@@ -44,10 +44,11 @@ test('cards: a lead of number or none, four cards two over two, and what each ne
   expect(validate(s([card(), card()]), 'consulting').errors[0]).toMatch(/exactly one of "icon", "value" or "logo" \(or set lead to "number" or "none"\)/)
   expect(validate(s([card(), card(), card()], { lead: 'number', arrange: 'grid' }), 'consulting').errors[0]).toMatch(/"grid" is for exactly 4 cards/)
   expect(validate(s([card({ bullets: undefined }), card()], { lead: 'none' }), 'consulting').errors[0]).toMatch(/plain cards need "bullets" or "text"/)
-  // A grid card has the room of a card in a row of three: 52-character bullets pass there, not in a row of four.
-  const wide = card({ bullets: ['x'.repeat(52), 'y'.repeat(52)] })
-  expect(validate(s([wide, wide, wide, wide], { lead: 'number', arrange: 'grid' }), 'consulting').errors).toEqual([])
-  expect(validate(s([wide, wide, wide, wide], { lead: 'number' }), 'consulting').errors.join(' ')).toMatch(/at most 48 here/)
+  // A grid card takes three 52-character bullets; a row of four takes two of them, or three of 48.
+  const wide = card({ bullets: ['x'.repeat(52), 'y'.repeat(52)] }), three = card({ bullets: ['x'.repeat(52), 'y'.repeat(52), 'z'.repeat(52)] })
+  expect(validate(s([three, three, three, three], { lead: 'number', arrange: 'grid' }), 'consulting').errors).toEqual([])
+  expect(validate(s([wide, wide, wide, wide], { lead: 'number' }), 'consulting').errors).toEqual([])
+  expect(validate(s([three, three, three, three], { lead: 'number' }), 'consulting').errors.join(' ')).toMatch(/at most 48 in 4 cards in a row/)
 })
 
 const tbl = (vals: string[], bars = true): Table => ({ columns: [{ label: 'Provider' }, { label: 'Book', bars }], rows: vals.map((v, i) => ({ cells: [`P${i}`, v] })) })

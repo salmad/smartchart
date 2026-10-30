@@ -19,7 +19,7 @@ import { columnAlign, figureOf } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
 import { imageMeta, type ImageKind } from "./images.js";
 import type { Capability, Shape } from "./capabilities.js";
-import type { Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
+import type { Card, Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell" | "image";
@@ -293,13 +293,17 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
   align: f("enum", "Text alignment; auto follows the content.", { values: ["left", "centre", "right", "auto"], default: "auto" }),
 } });
-const TABLE_CELLS = f("list", "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.", { required: true, of: f("cell", "Cell.", { max: 40 }) });
+/** A cell's characters. A two-column table of words is drawn full width, so its second column takes the wide limit. */
+export const CELL_MAX = 40, WIDE_CELL_MAX = 80;
+const CELLS_DESC = "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.";
+const TABLE_CELLS = f("list", `${CELLS_DESC} At most ${CELL_MAX} characters a cell; in a two-column consulting table the second column takes ${WIDE_CELL_MAX} (a sentence of what each row means).`, { required: true, of: f("cell", "Cell.", { max: WIDE_CELL_MAX }) });
+const HALF_CELLS = f("list", CELLS_DESC, { required: true, of: f("cell", "Cell.", { max: CELL_MAX }) });
 
 /* A small table for half a slide: no icons, no group headings, no bullets in cells (checked in checkGrid). */
 const HALF_TABLE = f("object", "A small table for half the slide: 2–3 columns, at most 5 rows. Marks, cell notes and status labels work; bullets, icons and group headings do not.", { fields: {
   columns: f("list", "Column headers, left to right.", { required: true, items: { min: 2, max: 3 }, of: f("object", "Column.", { fields: COLUMN_FIELDS }) }),
   rows: f("list", "Rows, top to bottom.", { required: true, items: { min: 1, max: 5 }, of: f("object", "Row.", { fields: {
-    cells: TABLE_CELLS,
+    cells: HALF_CELLS,
     style: f("enum", "`muted`: context, hidden in pitch. `total`: the bottom line.", { values: ["muted", "total"] }),
     focus: f("boolean", "Highlight this row.", { default: false }),
   } }) }),
@@ -314,7 +318,7 @@ const MIXED_NUMBER = f("object", "A big figure and what it means.", { fields: {
   caption: f("markup", "What it means, as one sentence.", { required: true, max: { consulting: 80, pitch: 60 } }),
   tone: TONE,
 } });
-const MIXED_POINTS = f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: { consulting: 70, pitch: 44 } }) });
+const MIXED_POINTS = f("list", "2–4 short points; a **bold** lead-in is allowed.", { items: { min: 2, max: 4 }, of: f("markup", "Point.", { max: { consulting: 80, pitch: 44 } }) });
 
 /* How to write each chart kind: enforced or mechanical, so rules. When to choose one is in the chart's capabilities. */
 const CHART_KINDS = [
@@ -371,6 +375,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
       "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), header icons 0 inline but 1 when a label is too long to sit beside its icon (the icons then go above the labels), a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
+      `Cells: at most ${CELL_MAX} characters. Consulting: a two-column table of words (a label, then what it means) is drawn full width, and its second column takes ${WIDE_CELL_MAX}.`,
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
       "Header icons: on every column after the first, or none.",
@@ -431,7 +436,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
         logo: { ...LOGO, desc: `Logo lead: the company the card is about. Not with \`icon\`, \`value\` or \`framed\`. ${ADD_IMAGE}` },
         label: f("text", "Framed only: who or what this case is, e.g. 'Credit-only lenders'.", { max: 30 }),
         title: f("markup", "Card title. Framed: a big 2-word headline, plain text.", { required: true, max: { consulting: 24, pitch: 22 } }),
-        bullets: f("list", "1–3 short bullets: the way to say it. Not with `text`.", { items: { min: 1, max: 3 }, of: f("markup", "Bullet.", { max: 60 }), styles: CONSULTING }),
+        bullets: f("list", "1–5 short bullets: the way to say it. How many and how long depends on the number of cards and the takeaway (see rules). Not with `text`.", { items: { min: 1, max: 5 }, of: f("markup", "Bullet.", { max: 80 }), styles: CONSULTING }),
         text: f("markup", "One short line, when a single fact needs no bullets. Not with `bullets`. Value cards: one sentence of context.", { max: { consulting: 80, pitch: 50 } }),
         tone: f("enum", "`focus`: the card the title is about. `neg`: only when the user asks for red. `neutral`: the rest, including the losing case in a two-card contrast.", { values: ["neutral", "focus", "neg"], default: "neutral" }),
         facts: f("list", "Framed only, optional: up to 2 labelled facts at the bottom of the card.", { items: { min: 1, max: 2 }, styles: CONSULTING, of: f("object", "Fact.", { fields: {
@@ -444,12 +449,13 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     variant: (s) => (s.framed ? "framed" : s.lead === "number" ? "numbered" : s.lead === "none" ? "plain" : s.cards?.some((c) => c?.value) ? "value" : s.cards?.some((c) => c?.logo) ? "logo" : "icon"),
     rules: [
       "Not framed: one lead on every card: an icon, a value, a logo, a number (`lead: \"number\"`) or none (`lead: \"none\"`). Framed: exactly 2 cards, each with a `label`, no icon, value or logo.",
-      "Say it in bullets (consulting): 2–3 short ones per card, never a paragraph. Pitch cards use one short line.",
-      "Four cards: in a row (default) or `arrange: \"grid\"`, two over two. A row of 4 allows 48 characters a bullet and 2 bullets; the grid 52, 2 bullets, text 44.",
+      "Say it in bullets (consulting): short ones, never a paragraph. Pitch cards use one short line.",
+      "Four cards: in a row (default) or `arrange: \"grid\"`, two over two; the grid has room for longer bullets and text (text 44).",
       "All cards use the same body: all bullets, all text, or (value cards only) none.",
       "Text: icon and logo cards at most 50 characters (30 in a row of 4); value cards at most 80 (pitch 44); framed at most 50.",
-      "Bullets: at most 60 characters each and 120 per card; 48 each in framed cards or a row of 4, and at most 2 per card in a row of 4.",
+      "Bullets per card × characters per bullet. A takeaway takes one bullet's room on every card: 2 cards 5 × 80 (4 with a takeaway); 3 cards 3 × 60 (and 120 per card with a takeaway); 4 in a grid 3 × 52 (2); 4 in a row 3 × 48 or 2 × 52 (2 × 52); framed 3 × 48. Value cards: 3 × 60 and 120 per card, 2 bullets with 4 cards.",
       "At most one card has tone `focus` unless framed.",
+      "More than the cards take: offer a second slide, or pair with points, before cutting the user's words.",
     ],
   },
   summary: {
@@ -887,6 +893,13 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
     }
     if (r.cells.length !== n) out.errors.push(`${base}.rows[${i}].cells: ${r.cells.length} cells, but there are ${n} columns. Use "—" for an empty cell.`);
   });
+  // The field allows the wide limit (a half table's field does not); only the second column of a two-column consulting
+  // table takes it. Pitch sets cells larger, so its words wrap and the rows outgrow the budget.
+  if (!half) rows.forEach((r, i) => (r?.cells || []).forEach((c, j) => {
+    const v = obj(c) ? obj(c)?.value : c, max = style === "consulting" && n === 2 && j === 1 && r.style !== "group" ? WIDE_CELL_MAX : CELL_MAX;
+    const len = v === undefined || v === null ? 0 : plain(String(v)).length;
+    if (len > max && max < WIDE_CELL_MAX) out.errors.push(`${base}.rows[${i}].cells[${j}]: ${len} characters; at most ${max} here (${WIDE_CELL_MAX} only in the second column of a two-column consulting table). Shorten it.`);
+  }));
   cols.forEach((c, j) => { if (c?.muted && c.focus) out.errors.push(`${base}.columns[${j}]: muted or focus, not both.`); });
   cols.forEach((c, j) => { if (j > 0 && c && !c.label) out.errors.push(`${base}.columns[${j}].label: required. Header text.`); });
   const data = rows.filter((r) => r?.style !== "group").length;
@@ -1100,14 +1113,29 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       // Limits per look: framed cards are wide, value cards set text small, icon cards set it large.
       const look = MENU.cards.variant(s), four = cards.length === 4 && s.arrange !== "grid";
       const grid = cards.length === 4 && s.arrange === "grid", textMax = grid ? 44 : ({ framed: 50, value: style === "pitch" ? 44 : 80, icon: four ? 30 : 50, logo: four ? 30 : 50, numbered: four ? 30 : 50, plain: four ? 30 : 50 } as Record<string, number>)[look];
-      const bulletMax = look === "framed" || four ? 48 : grid ? 52 : 60;
+      // Measured with every frame field at its limit (the stress deck): of the frame, only the takeaway changes the room.
+      // Value cards keep a tighter budget: a big figure leads each card.
+      const take = !!s.takeaway, n = cards.length;
+      const where = look === "framed" ? "framed cards" : look === "value" ? "value cards" : grid ? "4 cards in a grid" : four ? "4 cards in a row" : `${n} cards`;
+      const room = (c: Card): { bullets: number; chars: number; total?: number } => {
+        if (look === "framed") return { bullets: 3, chars: 48 };
+        if (look === "value") return { bullets: n === 4 ? 2 : 3, chars: four ? 48 : grid ? 52 : 60, total: 120 };
+        if (n === 2) return { bullets: take ? 4 : 5, chars: 80 };
+        if (n === 3) return { bullets: 3, chars: 60, ...(take ? { total: 120 } : {}) };
+        if (grid) return { bullets: take ? 2 : 3, chars: 52 };
+        return { bullets: take ? 2 : 3, chars: (c.bullets?.length ?? 0) > 2 ? 48 : 52 };
+      };
       cards.forEach((c, i) => {
         if (!c) return;
         if (c.text && plain(c.text).length > textMax) out.errors.push(`cards[${i}].text: ${plain(c.text).length} characters; ${look} cards${four ? " in a row of 4" : ""} allow ${textMax}. Shorten it.`);
-        (c.bullets || []).forEach((b, j) => { if (plain(b).length > bulletMax) out.errors.push(`cards[${i}].bullets[${j}]: ${plain(b).length} characters; at most ${bulletMax} here.`); });
-        if (cards.length === 4 && c.bullets && c.bullets.length > 2) out.errors.push(`cards[${i}].bullets: with 4 cards, at most 2 bullets each.`);
-        const n = c.bullets ? c.bullets.reduce((sum, b) => sum + plain(b).length, 0) : 0;
-        if (look !== "framed" && n > 120) out.errors.push(`cards[${i}].bullets: ${n} characters in total; at most 120. Cut a bullet or shorten them.`);
+        const r = room(c), bullets = c.bullets || [];
+        if (bullets.length > r.bullets) {
+          const more = take && look !== "framed" && look !== "value" && bullets.length === r.bullets + 1 ? " Or drop the takeaway: it takes one bullet's room." : "";
+          out.errors.push(`cards[${i}].bullets: ${bullets.length} bullets; ${where} take at most ${r.bullets}. Merge or cut, or split the content over two slides.${more}`);
+        }
+        bullets.forEach((b, j) => { if (plain(b).length > r.chars) out.errors.push(`cards[${i}].bullets[${j}]: ${plain(b).length} characters; at most ${r.chars} in ${where}.`); });
+        const total = bullets.reduce((sum, b) => sum + plain(b).length, 0);
+        if (r.total && total > r.total) out.errors.push(`cards[${i}].bullets: ${total} characters in total; ${where} take at most ${r.total}. Cut a bullet or shorten them.`);
       });
       break;
     }
