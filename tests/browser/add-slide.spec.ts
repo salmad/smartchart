@@ -20,7 +20,8 @@ test('Add slide shows starters in the deck style and inserts after the current s
   await expect(page.getByRole('button', { name: 'Add as slide 2' })).toBeDisabled()
   await page.getByRole('tab', { name: 'Open the deck' }).click()
   await page.locator('[data-starter="section"]').click()
-  await expect(page.locator('[data-featured] .slide.style-pitch.theme-paper')).toBeVisible()
+  // Style is the deck's; the palette is the user's Look, Ink by default.
+  await expect(page.locator('[data-featured] .slide.style-pitch.theme-ink')).toBeVisible()
   await page.getByRole('button', { name: 'Add as slide 2' }).click()
   const titles = await page.evaluate(() => window.__journey?.items.map((i) => i.slide.template))
   expect(titles).toEqual(['cover', 'section', 'section'])

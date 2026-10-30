@@ -72,7 +72,8 @@ test('a deck saved by the prototype opens with its slide and look', async ({ pag
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Acme')
   await page.getByRole('button', { name: 'Look', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByRole('button', { name: 'Paper' })).toHaveAttribute('aria-pressed', 'true')
+  // The palette is the user's Look, not the deck's: the prototype's Paper gives way to the default, Ink.
+  await expect(page.getByRole('button', { name: 'Ink' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('the deck is renamed in place and keeps its name; Esc keeps the old one', async ({ page }) => {
