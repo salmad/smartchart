@@ -1,0 +1,17 @@
+{
+  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "pinHook": true,
+  "scenes": [
+    { "type": "hook", "kicker": "Boss feedback, decoded", "text": "\"Walk me *through* it.\"",
+      "say": "[knowing, slightly amused] Walk me through it. [beat] Here's what that means." },
+    { "type": "deck", "titles": ["Market overview", "Customer research", "Financials", "Next steps"],
+      "say": "[casual] They flipped through your deck. Market overview. Customer research. Financials. Next steps. [dry] Four slides... no story." },
+    { "type": "statement", "text": "Your titles should *tell it*.",
+      "say": "[beat] [emphatic] It means: your titles should tell it." },
+    { "type": "deck", "titles": ["Small firms are our *fastest*-growing segment", "They leave because setup takes *weeks*", "Faster setup pays back in *a year*", "So we fix setup *first*"],
+      "cues": ["small", "leave", "faster", "fix"],
+      "say": "[confident] Small firms grow fastest. They leave because setup takes weeks. Faster setup pays back in a year. [pointed] So we fix it first." },
+    { "type": "recap", "items": ["One sentence per title", "In order, a story", "No walk-through needed"], "loop": "Read *only* your titles. Is it a story?",
+      "say": "[upbeat] One sentence per title. In order, a story. No walk-through needed. [playful] Now read only your titles... is it a story?" }
+  ]
+}

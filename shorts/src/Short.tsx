@@ -27,8 +27,9 @@ const Body = ({ scene, base }: { scene: Placed; base: string }) => {
     case 'shot': return <Shot src={scene.src} base={base} focus={scene.focus} zoom={scene.zoom} caption={scene.caption} cues={cueTimes(scene, [scene.caption ?? ''])} />
     case 'compare': return <Compare before={scene.before} after={scene.after} cues={cueTimes(scene, [scene.before.text, scene.after.text])} />
     case 'slide': return <Slide title={scene.title} retitle={scene.retitle} bars={scene.bars} focus={scene.focus} unit={scene.unit} label={scene.label}
-      before={scene.before} checks={scene.checks}
-      cues={cueTimes(scene, [...(scene.retitle ? [scene.retitle] : scene.before ? [scene.focus ?? ''] : []), ...(scene.checks ?? []).map((c) => c.text)])} />
+      before={scene.before} bullets={scene.bullets} pick={scene.pick} checks={scene.checks}
+      cues={cueTimes(scene, [...(scene.pick === undefined ? [] : [scene.pick].flat()).map((b) => scene.bullets?.[b] ?? ''),
+        ...(scene.retitle ? [scene.retitle] : scene.before ? [scene.focus ?? ''] : []), ...(scene.checks ?? []).map((c) => c.text)])} />
     case 'deck': return <Deck titles={scene.titles} reorder={scene.reorder} cues={cueTimes(scene, scene.reorder ? [scene.titles[scene.reorder[0]]] : scene.titles)} />
   }
 }

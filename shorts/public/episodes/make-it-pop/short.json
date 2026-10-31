@@ -1,0 +1,20 @@
+{
+  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "pinHook": true,
+  "scenes": [
+    { "type": "hook", "kicker": "Boss feedback, decoded", "text": "\"Can you make it *pop*?\"",
+      "say": "[knowing, slightly amused] Can you make it pop? [beat] Here's what that means." },
+    { "type": "slide", "title": "Sales by channel", "retitle": "Online is now *half* our sales", "before": "rainbow", "label": ["More colour", "One point"],
+      "bars": [{ "label": "Online", "value": 52 }, { "label": "Retail", "value": 21 }, { "label": "Wholesale", "value": 13 }, { "label": "Partners", "value": 9 }, { "label": "Other", "value": 5 }],
+      "focus": "Online", "unit": "%", "cues": ["point"],
+      "say": "[casual] So you add colour. Five bars, five colours. [dry] Still doesn't pop. [beat] [emphatic] Because pop means... I can't find the point. [confident] Now it pops." },
+    { "type": "slide", "label": "The fix", "title": "Online is now *half* our sales",
+      "bars": [{ "label": "Online", "value": 52 }, { "label": "Retail", "value": 21 }, { "label": "Wholesale", "value": 13 }, { "label": "Partners", "value": 9 }, { "label": "Other", "value": 5 }],
+      "focus": "Online", "unit": "%",
+      "checks": [{ "text": "The point in the title", "on": "title" }, { "text": "*One* bar in colour", "on": "chart" }, { "text": "Everything else grey", "on": "chart" }],
+      "cues": ["title", "bar", "everything"],
+      "say": "[conversational] So give them one. The point in the title. One bar in colour. [pointed] Everything else grey." },
+    { "type": "recap", "items": ["Pop means: no point", "Point in the title", "One colour, the rest grey"], "loop": "Next time they say *pop*, you'll know.",
+      "say": "[upbeat] Pop means no point. Point in the title. One colour, the rest grey. [playful] Next time they say pop... you'll know." }
+  ]
+}

@@ -27,9 +27,11 @@ export type Scene = Base & (
   | { type: 'recap'; title?: string; items: string[]; loop?: string }
   /** A real-looking slide with a bar chart. The turn (first cue) happens when there is a `retitle` or the bars start
    *  `rainbow`: the title is rewritten and/or every bar goes grey while the `focus` bar lights. `checks` pin ticks to the
-   *  title or the chart, one cue each after the turn. `label` is the tag above the slide, or [before, after] the turn. */
+   *  title or the chart, one cue each after the turn. `label` is the tag above the slide, or [before, after] the turn.
+   *  `bullets` start the slide as a bullet list that gives way to the chart at the turn; `pick` (an index, or several)
+   *  lights the bullets that hold the point, one cue each before the turn. */
   | { type: 'slide'; title: string; retitle?: string; bars: Bar[]; focus?: string; unit?: string; label?: string | [string, string];
-      before?: 'rainbow'; checks?: { text: string; on: 'title' | 'chart' }[] }
+      before?: 'rainbow'; bullets?: string[]; pick?: number | number[]; checks?: { text: string; on: 'title' | 'chart' }[] }
   /** A deck seen titles-only. Without `reorder`, each title lights in turn, reading as a story. With `reorder` (the
    *  title indices in their new order), at the first cue the slides move into that order and the new first one lights. */
   | { type: 'deck'; titles: string[]; reorder?: number[] }

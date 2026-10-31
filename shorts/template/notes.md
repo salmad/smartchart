@@ -5,6 +5,8 @@
 - Pain or payoff (one sentence):
 - Format:
 - Why it could spread (who sends this to whom):
+- Series (consulting craft / boss feedback decoded / watch it fix it):
+- Business potential 0–3, and where Occam shows on screen:
 
 ## Hooks (pick one, keep the others for variants)
 1.
@@ -22,7 +24,8 @@
 - Title (≤ 60 chars, the hook's promise, no clickbait it can't pay off):
 - Description (2 lines: what they'll learn, one keyword phrase people search):
 - Hashtags (3 at most, topic first):
-- Pinned comment (a follow-up tip or question that adds value, not "subscribe"):
+- Pinned comment (a follow-up tip that adds value, not "subscribe", then the UTM link line):
+- LinkedIn post (one-paragraph takeaway, "I build Occam"; UTM link in the first comment):
 - Cover: out/<slug>/cover.jpg (frame 0)
 
 ## Results (fill at 48h and 7d)
@@ -33,3 +36,4 @@
 | Avg % viewed | | |
 | Likes / shares / saves | | |
 | Subs gained | | |
+| Site visits / sign-ups (UTM) | | |

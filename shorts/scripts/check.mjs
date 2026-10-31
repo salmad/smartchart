@@ -20,7 +20,7 @@ if (mode === 'spec') {
   const TYPES = ['hook', 'statement', 'list', 'stat', 'terminal', 'prompt', 'shot', 'compare', 'recap', 'slide', 'deck']
   const SHOWN = ['stat', 'terminal', 'prompt', 'shot', 'slide', 'deck']
   const BEATS = ['list', 'recap', 'terminal', 'compare', 'slide', 'deck']
-  const beats = (s) => s.type === 'slide' ? (s.retitle || s.before ? 1 : 0) + (s.checks?.length ?? 0)
+  const beats = (s) => s.type === 'slide' ? (s.pick === undefined ? 0 : [s.pick].flat().length) + (s.retitle || s.before ? 1 : 0) + (s.checks?.length ?? 0)
     : s.type === 'deck' && s.reorder ? 1 : (s.items ?? s.steps ?? s.titles ?? (s.type === 'compare' ? [0, 1] : [s.caption])).length
   if (!voice?.model || !voice?.voice) errors.push('voice needs "model" and "voice"')
   if (scenes.length < 3) errors.push('fewer than three scenes: hook, at least one beat, a close')

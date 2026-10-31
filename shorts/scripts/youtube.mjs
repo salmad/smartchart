@@ -80,7 +80,7 @@ if (cmd === 'connect') {
   if (typeof id !== 'string') die(`uploaded, but no video id in the response: ${JSON.stringify(data).slice(0, 400)}`)
   const url = `https://youtube.com/shorts/${id}`
   writeFileSync(record(ep), JSON.stringify({ id, url, privacy, title: meta.title, at: new Date().toISOString() }, null, 1))
-  appendFileSync(path.join(ROOT, 'ledger.md'), `| ${new Date().toISOString().slice(0, 10)} | [${ep.slug}](${url}) | ${meta.format} | ${meta.title} | ${duration(file).toFixed(0)}s | | | | | | |\n`)
+  appendFileSync(path.join(ROOT, 'ledger.md'), `| ${new Date().toISOString().slice(0, 10)} | [${ep.slug}](${url}) | ${meta.format} | ${meta.title} | ${duration(file).toFixed(0)}s | | | | | | | |\n`)
   console.log(`${url}\nCheck it in YouTube Studio: if it shows "Locked as private", uploads through this connection can't be public.`)
 } else if (cmd === 'privacy') {
   const ep = episode(slug), to = rest[0]

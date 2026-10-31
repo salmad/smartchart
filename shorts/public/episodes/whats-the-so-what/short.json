@@ -1,0 +1,17 @@
+{
+  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "pinHook": true,
+  "scenes": [
+    { "type": "hook", "kicker": "Boss feedback, decoded", "text": "\"What's the *so what*?\"",
+      "say": "[knowing, slightly amused] What's the so what? [beat] Here's what that means." },
+    { "type": "slide", "title": "Customer churn by quarter", "retitle": "Churn more than *doubled* this year", "label": ["What it is", "What it says"],
+      "bars": [{ "label": "Q1", "value": 4 }, { "label": "Q2", "value": 5 }, { "label": "Q3", "value": 7 }, { "label": "Q4", "value": 9 }],
+      "focus": "Q4", "unit": "%", "cues": ["tell"],
+      "say": "[casual] Your title names the chart. Customer churn by quarter. [beat] [emphatic] So what? Tell me what it says. [confident] Churn more than doubled this year." },
+    { "type": "deck", "titles": ["Customer churn by quarter", "Churn more than *doubled* this year", "Fix onboarding *before* we raise prices"],
+      "cues": ["topic", "churn", "fix"],
+      "say": "[conversational] Then ask again. Topic... so what? Churn doubled. So what? [pointed] Fix onboarding before we raise prices." },
+    { "type": "recap", "items": ["Not what it is", "What it says", "Then ask again"], "loop": "Ask your last title: *so what?*",
+      "say": "[upbeat] Not what it is. What it says. Then ask again. [playful] Now ask your last title... so what?" }
+  ]
+}
