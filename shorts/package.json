@@ -11,6 +11,8 @@
     "check": "node scripts/check.mjs video",
     "studio": "node scripts/render.mjs --studio",
     "youtube": "node scripts/youtube.mjs",
+    "social": "node scripts/social.mjs",
+    "postproxy": "node scripts/postproxy.mjs",
     "serve": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit"
   },

@@ -24,8 +24,8 @@
 - Title (≤ 60 chars, the hook's promise, no clickbait it can't pay off):
 - Description (2 lines: what they'll learn, one keyword phrase people search):
 - Hashtags (3 at most, topic first):
-- Pinned comment (a follow-up tip that adds value, not "subscribe", then the UTM link line):
-- LinkedIn post (one-paragraph takeaway, "I build Occam"; UTM link in the first comment):
+- Pinned comment (a follow-up tip that adds value, not "subscribe", then "Made in Occam: occamslides.com/yt/<slug>"):
+- LinkedIn post (one-paragraph takeaway, "I build Occam"; occamslides.com/li/<slug> in the first comment):
 - Cover: out/<slug>/cover.jpg (frame 0)
 
 ## Results (fill at 48h and 7d)
@@ -36,4 +36,4 @@
 | Avg % viewed | | |
 | Likes / shares / saves | | |
 | Subs gained | | |
-| Site visits / sign-ups (UTM) | | |
+| Site visits (Vercel Pages: /yt, /ig, /tt, /x + slug) / sign-ups | | |
