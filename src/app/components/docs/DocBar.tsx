@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { History, MessageSquare, Palette } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { cn } from '@/app/lib/utils'
 import { Toggle } from '@/app/components/Bar'
 import type { DocEdit } from './useDocEdit'
@@ -50,6 +51,21 @@ export function ReadBar({ canEdit, onEdit, others, comments, look, versions, sha
 
 const LINK = 'cursor-pointer font-medium text-ink underline-offset-2 hover:underline disabled:opacity-45'
 
+function IssueList({ label, items, soft }: { label: string; items: string[]; soft?: boolean }) {
+  const n = items.length
+  if (!n) return null
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost" className={cn('max-w-[min(100%,280px)] truncate', soft ? 'text-ink-2' : 'text-warn')} aria-label={`${label}: ${items[0]}`}>
+          {n} {label}{n === 1 ? '' : 's'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 text-[13px]"><ul className="grid gap-1.5">{items.map((msg, i) => <li key={i}>{msg}</li>)}</ul></PopoverContent>
+    </Popover>
+  )
+}
+
 /** A newer version exists (or a save was refused for it): the sentence, then Reload and Copy my text. */
 interface Stale { by: string | null; onReload: () => void; onCopy: () => Promise<boolean>; refused: boolean }
 
@@ -57,19 +73,27 @@ export function EditBar({ edit, onDiscard, stale, comments }: { edit: DocEdit; o
   const [copied, setCopied] = useState(false)
   const copy = async () => { if (await stale?.onCopy()) { setCopied(true); window.setTimeout(() => setCopied(false), 2000) } }
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      {stale
-        ? (
-          <span role={stale.refused ? 'alert' : 'status'} className={cn('flex min-w-0 items-center gap-1.5 text-[13px]', stale.refused ? 'text-warn' : 'text-ink-2')}>
-            <span className="truncate">
-              {stale.refused ? 'Not saved: ' : ''}{stale.by ? <b className="font-medium text-ink">{stale.by}</b> : 'Someone'} {stale.refused ? 'saved first.' : 'saved a newer version.'}
+    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {stale
+          ? (
+            <span role={stale.refused ? 'alert' : 'status'} className={cn('flex min-w-0 items-center gap-1.5 text-[13px]', stale.refused ? 'text-warn' : 'text-ink-2')}>
+              <span className="truncate">
+                {stale.refused ? 'Not saved: ' : ''}{stale.by ? <b className="font-medium text-ink">{stale.by}</b> : 'Someone'} {stale.refused ? 'saved first.' : 'saved a newer version.'}
+              </span>
+              <button type="button" className={cn(LINK, 'flex-none')} title="Load the newer version. Unsaved changes here are dropped." onClick={stale.onReload}>Reload</button>
+              <span aria-hidden className="text-ink-3">·</span>
+              <button type="button" className={cn(LINK, 'flex-none')} onClick={() => void copy()}>{copied ? 'Copied' : 'Copy my text'}</button>
             </span>
-            <button type="button" className={cn(LINK, 'flex-none')} title="Load the newer version. Unsaved changes here are dropped." onClick={stale.onReload}>Reload</button>
-            <span aria-hidden className="text-ink-3">·</span>
-            <button type="button" className={cn(LINK, 'flex-none')} onClick={() => void copy()}>{copied ? 'Copied' : 'Copy my text'}</button>
-          </span>
-        )
-        : edit.error && <span role="alert" className="max-w-[360px] truncate text-[13px] text-warn">{edit.error}</span>}
+          )
+          : (
+            <>
+              <IssueList label="issue" items={edit.blockers} />
+              <IssueList label="warning" items={edit.warnings} soft />
+              {edit.error && <span role="alert" className="min-w-0 truncate text-[13px] text-warn">{edit.error}</span>}
+            </>
+          )}
+      </div>
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       <Button size="sm" variant="ghost" onClick={onDiscard} disabled={edit.saving}>Discard</Button>
       <Button size="sm" onClick={() => void edit.save()} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>

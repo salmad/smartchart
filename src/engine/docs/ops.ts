@@ -43,20 +43,37 @@ const slot = (doc: Doc, after: string): number | string => {
   return i < 0 ? GONE(after) : i + 1
 }
 
-/** Why the new doc must not be written, or null: it adds an error the old one did not have, or would not survive saving as
-    written. The agent's ops and a person's Save go through the same gate; it refuses, it never rewrites. */
-export function refusal(before: Doc, next: Doc): string | null {
-  let fresh: string | undefined
+export const ROUND_TRIP = 'That text would not survive being saved as written; rewrite it.'
+const TYPE_ERR = 'A figure now holds a value of the wrong type for its fields. Check each value against get_template.'
+
+/** Whether the doc would lose content on write (the only hard stop for a person’s Save; agents still use refusal). */
+export function hardSaveRefusal(next: Doc): string | null {
+  try {
+    if (JSON.stringify(parseDoc(serializeDoc(next)).doc) !== JSON.stringify(next)) return ROUND_TRIP
+  } catch {
+    return TYPE_ERR
+  }
+  return null
+}
+
+/** Every reason the new doc must not be written that the old one did not already have, and whether it would round-trip.
+    The agent's ops and a person's Save go through the same gate; it refuses, it never rewrites. */
+export function freshErrors(before: Doc, next: Doc): string[] {
+  const out: string[] = []
   try {
     const was = new Set(validateDoc(before).errors)
-    fresh = validateDoc(next).errors.find((e) => !was.has(e))
+    validateDoc(next).errors.forEach((e) => { if (!was.has(e)) out.push(e) })
   } catch {
-    // A value of the wrong type can stop the schema check itself: the write is refused, not thrown.
-    return 'A figure now holds a value of the wrong type for its fields. Check each value against get_template.'
+    return [TYPE_ERR]
   }
-  if (fresh) return fresh
-  if (JSON.stringify(parseDoc(serializeDoc(next)).doc) !== JSON.stringify(next)) return 'That text would not survive being saved as written; rewrite it.'
-  return null
+  const hard = hardSaveRefusal(next)
+  if (!out.length && hard) out.push(hard)
+  return out
+}
+
+/** Why the new doc must not be written, or null. */
+export function refusal(before: Doc, next: Doc): string | null {
+  return freshErrors(before, next)[0] ?? null
 }
 
 /** Accepts the new doc unless the gate refuses it. */

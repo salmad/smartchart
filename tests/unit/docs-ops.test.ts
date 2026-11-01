@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseDoc } from '../../src/engine/docs/parse'
 import { serializeDoc } from '../../src/engine/docs/serialize'
-import { createFigure, createText, deleteBlock, identify, moveBlock, parseText, setLook, updateFigure, writeText, type Edit } from '../../src/engine/docs/ops'
+import { createFigure, createText, deleteBlock, freshErrors, identify, moveBlock, parseText, setLook, updateFigure, writeText, type Edit } from '../../src/engine/docs/ops'
 import type { Doc } from '../../src/engine/docs/types'
 
 const FILE = ['---', 'title: Memo', '---', '', '## Plan {#plan}', '', 'First paragraph.', '', 'Same words.', '', 'Same words.', '', '## Risks {#risks}', '',
@@ -98,5 +98,21 @@ describe('parseText', () => {
   it('refuses empty text and a # heading', () => {
     expect(parseText('  ')).toMatch(/at least one block/)
     expect(parseText('# Title')).toMatch(/^markdown: line/)
+  })
+})
+
+describe('freshErrors', () => {
+  it('lists every new validation error, not just the first', () => {
+    const before = doc(), next: Doc = {
+      ...before,
+      blocks: [
+        ...before.blocks,
+        { type: 'heading', level: 2, id: 'plan', text: 'Duplicate' },
+        { type: 'heading', level: 2, id: 'plan', text: 'Again' },
+      ],
+    }
+    const fresh = freshErrors(before, next)
+    expect(fresh.some((e) => e.includes('#plan'))).toBe(true)
+    expect(fresh.length).toBeGreaterThanOrEqual(1)
   })
 })

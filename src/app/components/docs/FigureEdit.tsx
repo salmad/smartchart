@@ -31,17 +31,19 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
   const [refused, setRefused] = useState<string | null>(null)
   // Done: the figure's errors refuse it; a changed figure is written into the doc. Read through refs: the doc calls it
   // from its own Save.
-  const finish = useRef<(d: Slide, dirty: boolean) => string | null>(() => null)
-  finish.current = (d, dirty) => {
-    const first = check(d)[0]
-    if (first) { setRefused(first.msg); return first.msg }
+  const finish = useRef<(d: Slide, dirty: boolean, force?: boolean) => string | null>(() => null)
+  finish.current = (d, dirty, force?: boolean) => {
+    if (!force) {
+      const first = check(d)[0]
+      if (first) { setRefused(first.msg); return first.msg }
+    } else setRefused(null)
     if (dirty) doc.setFigure(at, bodyOf(d))
     return null
   }
   const save = useCallback(async (d: Slide) => finish.current(d, true), [])
   const edit = useSlideEdit({ slide, check, save, onDone: NONE }), pictures = usePictures(edit, STYLE), editRef = useRef(edit)
   editRef.current = edit
-  useEffect(() => { doc.holdFigure(() => finish.current(editRef.current.draft, editRef.current.dirty)); return () => doc.holdFigure(null) }, [doc])
+  useEffect(() => { doc.holdFigure((force) => finish.current(editRef.current.draft, editRef.current.dirty, force)); return () => doc.holdFigure(null) }, [doc])
 
   const box = useRef<HTMLDivElement>(null)
   const render = useMemo(() => figureRender(block, theme, accent, () => box.current), [block, theme, accent])
