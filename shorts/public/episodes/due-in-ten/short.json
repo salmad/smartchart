@@ -1,0 +1,90 @@
+{
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
+  "pinHook": true,
+  "scenes": [
+    {
+      "type": "hook",
+      "kicker": "Watch it fix it",
+      "text": "Your deck is due in *ten* minutes",
+      "say": "[knowing, slightly amused] Your deck is due... in ten minutes."
+    },
+    {
+      "type": "slide",
+      "label": "Your notes",
+      "title": "Churn notes",
+      "bullets": [
+        "Churn up in Q3",
+        "Monthly plans: 9% a month",
+        "Annual plans: 2%",
+        "Price rise in July",
+        "Support tickets up"
+      ],
+      "bars": [
+        {
+          "label": "Monthly",
+          "value": 9
+        },
+        {
+          "label": "Annual",
+          "value": 2
+        }
+      ],
+      "say": "[casual] You've got notes. Churn notes, five bullets. [dry] And no slide."
+    },
+    {
+      "type": "prompt",
+      "text": "Make this one slide. Put the answer in the title.",
+      "reply": "Monthly plans drive our churn: 9% a month, against 2% on annual",
+      "cues": [
+        "prompt",
+        "title"
+      ],
+      "say": "[beat] [emphatic] Don't build it. One prompt. [confident] Make this one slide, and put the answer in the title."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.05,
+        "y": 0.07,
+        "w": 0.55,
+        "h": 0.17
+      },
+      "zoom": 1.5,
+      "caption": "Made in Occam",
+      "cues": [
+        "Monthly"
+      ],
+      "say": "[confident] In Occam, that's the slide. Monthly plans drive our churn. 9% a month, against 2% on annual."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.63,
+        "y": 0.27,
+        "w": 0.34,
+        "h": 0.56
+      },
+      "zoom": 1.5,
+      "cues": [
+        "notes"
+      ],
+      "say": "[conversational] The title makes the point. The chart proves it. [pointed] And the notes say what to do next."
+    },
+    {
+      "type": "recap",
+      "items": [
+        "Answer in the title",
+        "Chart proves it",
+        "One point per slide"
+      ],
+      "loop": "Ten minutes? You need *one* prompt.",
+      "say": "[upbeat] Answer in the title. Chart proves it. One point per slide. [playful] Ten minutes? You need one prompt."
+    }
+  ]
+}

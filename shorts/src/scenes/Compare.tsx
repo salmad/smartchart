@@ -14,7 +14,7 @@ const Card = ({ side, good, p }: { side: Side; good: boolean; p: number }) => (
 
 /** The old way, struck through as the better way lands under it. */
 export const Compare = ({ before, after, cues }: { before: Side; after: Side; cues: number[] }) => {
-  const s = useSeconds(), a = useEnter(cues[0] ?? 0), b = useEnter(cues[1] ?? 1.2)
+  const s = useSeconds(), a = useEnter(cues[0] ?? 0, 'panel'), b = useEnter(cues[1] ?? 1.2, 'panel')
   const strike = interpolate(s, [(cues[1] ?? 1.2) - 0.1, (cues[1] ?? 1.2) + 0.3], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>

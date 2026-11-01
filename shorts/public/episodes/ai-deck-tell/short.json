@@ -1,0 +1,83 @@
+{
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
+  "pinHook": true,
+  "scenes": [
+    {
+      "type": "hook",
+      "kicker": "AI slides",
+      "text": "You can spot an AI deck in *two* seconds",
+      "say": "[knowing, slightly amused] You can spot an AI deck... in two seconds."
+    },
+    {
+      "type": "deck",
+      "titles": [
+        "Market overview",
+        "Customer insights",
+        "Competitive landscape",
+        "Recommendations"
+      ],
+      "say": "[casual] Read the titles. Market overview. Customer insights. Competitive landscape. Recommendations."
+    },
+    {
+      "type": "compare",
+      "before": {
+        "label": "AI deck",
+        "text": "Market overview"
+      },
+      "after": {
+        "label": "Consulting deck",
+        "text": "Our market grows 18% a year"
+      },
+      "cues": [
+        "Topics",
+        "answer"
+      ],
+      "say": "[beat] [emphatic] Topics. Every one. But consultants? They write the answer."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.05,
+        "y": 0.07,
+        "w": 0.85,
+        "h": 0.12
+      },
+      "zoom": 1.05,
+      "caption": "Made in Occam",
+      "cues": [
+        "answer"
+      ],
+      "say": "[confident] In Occam, the deck opens with the answer. We win on speed of setup, not on price."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.05,
+        "y": 0.27,
+        "w": 0.42,
+        "h": 0.6
+      },
+      "zoom": 1.5,
+      "cues": [
+        "claim"
+      ],
+      "say": "[conversational] And every point under it is a claim. [pointed] Read them alone... and you've got the story."
+    },
+    {
+      "type": "recap",
+      "items": [
+        "Topics name the slide",
+        "Answers make the case",
+        "Titles tell the story"
+      ],
+      "loop": "Two seconds. That's all *your boss* reads.",
+      "say": "[upbeat] Topics name the slide. Answers make the case. [playful] Two seconds... that's all your boss reads."
+    }
+  ]
+}

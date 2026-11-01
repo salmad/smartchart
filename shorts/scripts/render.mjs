@@ -44,9 +44,10 @@ if (studio) {
   const sheetDir = path.join(ep.out, 'sheet')
   rmSync(sheetDir, { recursive: true, force: true })
   mkdirSync(sheetDir)
-  const at = [0, ...scenes.map((s) => s.from + s.dur * 0.85)]
+  // The settled state alone hides the motion: also catch each scene mid-entry (overshoot, tilt) and just after.
+  const at = [0, ...scenes.flatMap((s) => [s.from + 0.15, s.from + 0.4, s.from + s.dur * 0.85])]
   at.forEach((sec, i) => ff('-ss', sec.toFixed(2), '-i', file, '-frames:v', '1', '-vf', 'scale=360:-2', path.join(sheetDir, `${String(i).padStart(2, '0')}.jpg`)))
-  const cols = Math.min(at.length, 6)
+  const cols = Math.min(at.length, 6)  // two scenes a row
   ff('-framerate', '1', '-i', path.join(sheetDir, '%02d.jpg'), '-vf', `tile=${cols}x${Math.ceil(at.length / cols)}:padding=8:color=0x333333`, '-frames:v', '1', path.join(ep.out, 'sheet.jpg'))
   rmSync(sheetDir, { recursive: true })
 

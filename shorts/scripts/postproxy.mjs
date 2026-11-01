@@ -12,7 +12,8 @@
      npm run postproxy -- publish-twitter <slug>
      npm run postproxy -- schedule-twitter-all
      npm run postproxy -- sync-twitter-dates
-     npm run postproxy -- update-copy [slug]          push regenerated captions/comments to scheduled posts */
+     npm run postproxy -- update-copy [slug]          push regenerated captions/comments to scheduled posts
+     npm run postproxy -- replace-media <slug>        swap a re-cut video onto its scheduled posts */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { ROOT, die, episode, getEnv } from './lib.mjs'
@@ -338,6 +339,28 @@ async function updateCopy(only) {
   }
 }
 
+/** Swaps the video on a short's scheduled Instagram, TikTok and X posts for the current render (a re-cut). */
+async function replaceMedia(slug) {
+  const ep = episode(slug)
+  const video = path.join(ep.out, `${ep.slug}.mp4`)
+  if (!existsSync(video)) die(`no video at ${video}`)
+  for (const platform of ['instagram', 'tiktok', 'twitter']) {
+    const file = metaPath(ep, platform)
+    if (!existsSync(file)) continue
+    const meta = JSON.parse(readFileSync(file, 'utf8'))
+    if (!meta.postproxyId) continue
+    const post = await api(`/posts/${meta.postproxyId}`).then((b) => b.data ?? b)
+    if (post.status !== 'scheduled' || new Date(post.scheduled_at).getTime() < Date.now() + 6 * 60_000) {
+      console.log(`${slug}\t${platform}\tskipped (${post.status})`)
+      continue
+    }
+    const fd = new FormData()
+    fd.append('media[]', new Blob([readFileSync(video)], { type: 'video/mp4' }), path.basename(video))
+    await api(`/posts/${meta.postproxyId}`, { method: 'PATCH', body: fd })
+    console.log(`${slug}\t${platform}\tmedia replaced`)
+  }
+}
+
 const [cmd, slug] = process.argv.slice(2)
 
 if (cmd === 'profiles') {
@@ -381,4 +404,7 @@ if (cmd === 'profiles') {
   syncTikTokDates()
 } else if (cmd === 'update-copy') {
   await updateCopy(slug)
+} else if (cmd === 'replace-media') {
+  if (!slug) die('usage: npm run postproxy -- replace-media <slug>')
+  await replaceMedia(slug)
 } else die('usage: npm run postproxy -- profiles | schedule | schedule-all | cadence | schedule-tiktok | publish-tiktok | schedule-tiktok-all | sync-tiktok-dates | schedule-twitter | publish-twitter | schedule-twitter-all | sync-twitter-dates')

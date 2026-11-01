@@ -41,7 +41,7 @@ export const List = ({ title, items, cues }: { title?: string; items: string[]; 
 /** The close: every point checked off, then the line that loops back to the hook. */
 export const Recap = ({ title, items, loop, cues, dur }: { title?: string; items: string[]; loop?: string; cues: number[]; dur: number }) => {
   const loopAt = loop ? Math.max((cues[cues.length - 1] ?? 0) + 0.8, dur * 0.7) : dur
-  const p = useEnter(Math.min(loopAt, dur - 0.6))
+  const p = useEnter(Math.min(loopAt, dur - 0.6), 'headline')
   return (
     <div>
       <div style={kicker}>{title ? <Rich text={title} /> : 'Recap'}</div>

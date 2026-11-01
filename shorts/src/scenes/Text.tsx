@@ -1,6 +1,6 @@
 import { interpolate } from 'remotion'
 import { Rich } from '../Rich'
-import { useEnter, useSeconds, rise } from '../motion'
+import { useEnter, useSeconds } from '../motion'
 import { C, F } from '../theme'
 
 const sizeFor = (text: string, big: number) => {
@@ -26,6 +26,6 @@ export const Hook = ({ text, kicker, dur }: { text: string; kicker?: string; dur
 }
 
 export const Statement = ({ text }: { text: string }) => {
-  const p = useEnter(0)
-  return <div style={{ ...display, fontSize: sizeFor(text, 116), ...rise(p) }}><Rich text={text} /></div>
+  const p = useEnter(0, 'headline')
+  return <div style={{ ...display, fontSize: sizeFor(text, 116), opacity: Math.min(1, p * 1.5), transform: `scale(${interpolate(p, [0, 1], [0.82, 1])})` }}><Rich text={text} /></div>
 }

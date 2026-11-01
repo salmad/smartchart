@@ -14,7 +14,7 @@ function countUp(value: string, p: number) {
 }
 
 export const Stat = ({ value, label, source }: { value: string; label: string; source?: string }) => {
-  const s = useSeconds(), p = useEnter(0), q = useEnter(0.35)
+  const s = useSeconds(), p = useEnter(0, 'headline'), q = useEnter(0.35, 'panel')
   const t = interpolate(s, [0, 0.9], [0, 1], { extrapolateRight: 'clamp', easing: (x) => 1 - Math.pow(1 - x, 3) })
   return (
     <div style={{ textAlign: 'center' }}>

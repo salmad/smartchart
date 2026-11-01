@@ -1,0 +1,114 @@
+{
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
+  "pinHook": true,
+  "scenes": [
+    {
+      "type": "hook",
+      "kicker": "Boss feedback, decoded",
+      "text": "The intern's slide vs the *partner's*",
+      "say": "[knowing, slightly amused] The intern's slide... versus the partner's."
+    },
+    {
+      "type": "slide",
+      "label": "The intern's slide",
+      "title": "Revenue update",
+      "bullets": [
+        "Enterprise: 64% of new revenue",
+        "Mid-market: 24%",
+        "SMB: 12%",
+        "New logos up",
+        "Pipeline strong"
+      ],
+      "bars": [
+        {
+          "label": "Enterprise",
+          "value": 64
+        },
+        {
+          "label": "Mid-market",
+          "value": 24
+        },
+        {
+          "label": "SMB",
+          "value": 12
+        }
+      ],
+      "say": "[casual] The intern's slide. Revenue update, five bullets. [dry] Every number... no point."
+    },
+    {
+      "type": "slide",
+      "label": [
+        "Every colour",
+        "One colour"
+      ],
+      "title": "Revenue by segment",
+      "before": "rainbow",
+      "retitle": "Enterprise drove *64%* of new revenue",
+      "bars": [
+        {
+          "label": "Enterprise",
+          "value": 64
+        },
+        {
+          "label": "Mid-market",
+          "value": 24
+        },
+        {
+          "label": "SMB",
+          "value": 12
+        }
+      ],
+      "focus": "Enterprise",
+      "unit": "%",
+      "cues": [
+        "thing"
+      ],
+      "say": "[thoughtful] Same data. [beat] [emphatic] But the partner's slide? It says one thing. [confident] Enterprise drove 64% of new revenue."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.05,
+        "y": 0.07,
+        "w": 0.8,
+        "h": 0.12
+      },
+      "zoom": 1.1,
+      "caption": "Made in Occam",
+      "cues": [
+        "title"
+      ],
+      "say": "[conversational] In Occam, that's the default. The title says it. One colour shows it. [pointed] The rest? Gone."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.03,
+        "y": 0.05,
+        "w": 0.94,
+        "h": 0.88
+      },
+      "zoom": 1.0,
+      "cues": [
+        "why"
+      ],
+      "say": "[pointed] The notes say why. And the last line says what to do."
+    },
+    {
+      "type": "recap",
+      "items": [
+        "Say the point",
+        "One colour",
+        "Cut the rest"
+      ],
+      "loop": "Your next slide: intern or *partner*?",
+      "say": "[upbeat] Say the point. One colour. Cut the rest. [playful] So... your next slide. Intern, or partner?"
+    }
+  ]
+}

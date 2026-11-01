@@ -1,26 +1,148 @@
 {
-  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
   "pinHook": true,
   "scenes": [
-    { "type": "hook", "kicker": "Consulting craft", "text": "Your boss didn't read your *bullets*",
-      "say": "[knowing, slightly amused] Your boss... didn't read your bullets." },
-    { "type": "slide", "label": "The usual slide", "title": "Q3 update",
-      "bullets": ["Revenue up 12% year on year", "APAC drove 80% of growth", "EMEA and Americas slower", "New pricing live since July", "Hiring behind plan"],
-      "bars": [{ "label": "APAC", "value": 80 }, { "label": "EMEA", "value": 12 }, { "label": "Americas", "value": 8 }],
-      "say": "[casual] The usual slide. Q3 update, and five bullets. [dry] They read the title... then they're gone." },
-    { "type": "slide", "label": ["Point buried", "Point first"], "title": "Q3 update", "retitle": "APAC drove *80%* of our Q3 growth",
-      "bullets": ["Revenue up 12% year on year", "APAC drove 80% of growth", "EMEA and Americas slower", "New pricing live since July", "Hiring behind plan"],
+    {
+      "type": "hook",
+      "kicker": "Consulting craft",
+      "text": "Your boss didn't read your *bullets*",
+      "say": "[knowing, slightly amused] Your boss... didn't read your bullets."
+    },
+    {
+      "type": "slide",
+      "label": "The usual slide",
+      "title": "Q3 update",
+      "bullets": [
+        "Revenue up 12% year on year",
+        "APAC drove 80% of growth",
+        "EMEA and Americas slower",
+        "New pricing live since July",
+        "Hiring behind plan"
+      ],
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 80
+        },
+        {
+          "label": "EMEA",
+          "value": 12
+        },
+        {
+          "label": "Americas",
+          "value": 8
+        }
+      ],
+      "say": "[casual] The usual slide. Q3 update, and five bullets. [dry] They read the title... then they're gone."
+    },
+    {
+      "type": "slide",
+      "label": [
+        "Point buried",
+        "Point first"
+      ],
+      "title": "Q3 update",
+      "retitle": "APAC drove *80%* of our Q3 growth",
+      "bullets": [
+        "Revenue up 12% year on year",
+        "APAC drove 80% of growth",
+        "EMEA and Americas slower",
+        "New pricing live since July",
+        "Hiring behind plan"
+      ],
       "pick": 1,
-      "bars": [{ "label": "APAC", "value": 80 }, { "label": "EMEA", "value": 12 }, { "label": "Americas", "value": 8 }],
-      "focus": "APAC", "unit": "%", "cues": ["bullet", "first"],
-      "say": "[thoughtful] Look where the point is. Bullet two. [beat] [emphatic] You found it last. So say it first. [confident] APAC drove 80% of our growth." },
-    { "type": "slide", "label": "The rule", "title": "APAC drove *80%* of our Q3 growth",
-      "bars": [{ "label": "APAC", "value": 80 }, { "label": "EMEA", "value": 12 }, { "label": "Americas", "value": 8 }],
-      "focus": "APAC", "unit": "%",
-      "checks": [{ "text": "The point is the title", "on": "title" }, { "text": "Proof sits under it", "on": "chart" }, { "text": "The rest? *Another* slide", "on": "chart" }],
-      "cues": ["title", "proof", "rest"],
-      "say": "[conversational] So the rule. The point is the title. Proof sits under it. [pointed] And the rest? Another slide." },
-    { "type": "recap", "items": ["Point first", "Proof under it", "One point per slide"], "loop": "Your boss reads one line. *Make it* the point.",
-      "say": "[upbeat] Point first. Proof under it. One point per slide. [playful] Your boss reads one line... make it the point." }
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 80
+        },
+        {
+          "label": "EMEA",
+          "value": 12
+        },
+        {
+          "label": "Americas",
+          "value": 8
+        }
+      ],
+      "focus": "APAC",
+      "unit": "%",
+      "cues": [
+        "bullet",
+        "first"
+      ],
+      "say": "[thoughtful] Look where the point is. Bullet two. [beat] [emphatic] You found it last. So say it first. [confident] APAC drove 80% of our growth."
+    },
+    {
+      "type": "slide",
+      "label": "The rule",
+      "title": "APAC drove *80%* of our Q3 growth",
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 80
+        },
+        {
+          "label": "EMEA",
+          "value": 12
+        },
+        {
+          "label": "Americas",
+          "value": 8
+        }
+      ],
+      "focus": "APAC",
+      "unit": "%",
+      "checks": [
+        {
+          "text": "The point is the title",
+          "on": "title"
+        },
+        {
+          "text": "Proof sits under it",
+          "on": "chart"
+        },
+        {
+          "text": "The rest? *Another* slide",
+          "on": "chart"
+        }
+      ],
+      "cues": [
+        "title",
+        "proof",
+        "rest"
+      ],
+      "say": "[conversational] So the rule. The point is the title. Proof sits under it. [pointed] And the rest? Another slide."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.03,
+        "y": 0.05,
+        "w": 0.94,
+        "h": 0.88
+      },
+      "zoom": 1.05,
+      "caption": "Made in Occam",
+      "cues": [
+        "Occam"
+      ],
+      "say": "[confident] In Occam, every slide works that way. The point is the title."
+    },
+    {
+      "type": "recap",
+      "items": [
+        "Point first",
+        "Proof under it",
+        "One point per slide"
+      ],
+      "loop": "Your boss reads one line. *Make it* the point.",
+      "say": "[upbeat] Point first. Proof under it. One point per slide. [playful] Your boss reads one line... make it the point."
+    }
   ]
 }

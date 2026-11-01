@@ -2,7 +2,7 @@ import { Audio } from '@remotion/media'
 import { AbsoluteFill, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig } from 'remotion'
 import { Captions } from './Captions'
 import { cueTimes } from './cues'
-import { useEnter } from './motion'
+import { tiltIn, useEnter } from './motion'
 import { plain } from './Rich'
 import { Compare } from './scenes/Compare'
 import { List, Recap } from './scenes/Lists'
@@ -34,19 +34,27 @@ const Body = ({ scene, base }: { scene: Placed; base: string }) => {
   }
 }
 
-/** Every scene drifts in slowly so no frame is ever still. */
+// Scenes that show an object (a slide, a screen, a chat bar) arrive in depth; words stay flat and land on their own.
+const PANEL = new Set<Placed['type']>(['slide', 'shot', 'prompt', 'terminal', 'deck'])
+
+/** Every scene drifts in slowly so no frame is ever still; the camera glides, it never jumps. */
 const Stage = ({ scene, base }: { scene: Placed; base: string }) => {
-  const frame = useCurrentFrame(), { fps } = useVideoConfig()
-  const push = interpolate(frame, [0, scene.dur * fps], [1, 1.025])
+  const frame = useCurrentFrame(), { fps } = useVideoConfig(), p = useEnter(0, 'panel')
+  const push = interpolate(frame, [0, scene.dur * fps], [1, 1.03])
+  const panel = PANEL.has(scene.type)
+  const sway = panel ? interpolate(frame, [0, scene.dur * fps], [-2, 2]) : 0
   return (
-    <div style={{ position: 'absolute', left: SAFE.x, right: SAFE.x, top: SAFE.top, height: SAFE.bottom - SAFE.top, display: 'flex', flexDirection: 'column', justifyContent: 'center', transform: `scale(${push})` }}>
-      <Body scene={scene} base={base} />
+    <div style={{ position: 'absolute', left: SAFE.x, right: SAFE.x, top: SAFE.top, height: SAFE.bottom - SAFE.top, perspective: 1700, perspectiveOrigin: '50% 40%' }}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', transformStyle: 'preserve-3d',
+        transform: `scale(${push}) rotateY(${sway}deg)` }}>
+        <div style={panel ? tiltIn(p) : undefined}><Body scene={scene} base={base} /></div>
+      </div>
     </div>
   )
 }
 
 const Pinned = ({ text }: { text: string }) => {
-  const p = useEnter(0, 8)
+  const p = useEnter(0)
   return (
     <div style={{ position: 'absolute', left: SAFE.x, right: SAFE.x, top: 196, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, opacity: p }}>
       <div style={{ fontFamily: F.display, fontStretch: '78%', fontWeight: 560, fontSize: 46, lineHeight: 1.08, color: C.fg2, textAlign: 'center', textWrap: 'balance' }}>{plain(text)}</div>

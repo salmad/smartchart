@@ -1,20 +1,104 @@
 {
-  "voice": { "model": "elevenlabs/eleven-v4", "voice": "iP95p4xoKVk53GoZ742B", "pace": 1.04 },
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
   "pinHook": true,
   "scenes": [
-    { "type": "hook", "kicker": "Consulting craft", "text": "Ask every bullet *one* question",
-      "say": "[knowing] Ask every bullet... one question." },
-    { "type": "slide", "label": "One claim, five bullets", "title": "We should enter APAC *now*",
-      "bullets": ["APAC demand up 40% this year", "Our team visited Singapore", "Two rivals already launched there", "New logo approved in May", "Office lease ends in June"],
-      "bars": [{ "label": "APAC", "value": 40 }, { "label": "EMEA", "value": 12 }, { "label": "Americas", "value": 8 }],
-      "say": "[casual] Here's a slide. The title makes a claim: enter APAC now. [dry] Then five bullets." },
-    { "type": "slide", "label": "The so-what test", "title": "We should enter APAC *now*",
-      "bullets": ["APAC demand up 40% this year", "Our team visited Singapore", "Two rivals already launched there", "New logo approved in May", "Office lease ends in June"],
-      "pick": [0, 2],
-      "bars": [{ "label": "APAC", "value": 40 }, { "label": "EMEA", "value": 12 }, { "label": "Americas", "value": 8 }],
-      "cues": ["demand", "rivals"],
-      "say": "[beat] [emphatic] Ask each one: so what? Does it prove the title? [confident] Demand up 40%: yes. Rivals already there: yes. [pointed] The other three? Not on this slide." },
-    { "type": "recap", "items": ["Ask: so what?", "Proves the title? Stays", "Doesn't? Another slide"], "loop": "Your last slide: how many bullets *survive*?",
-      "say": "[upbeat] Ask, so what? Proves the title, it stays. Doesn't, another slide. [playful] Now check your last slide... how many survive?" }
+    {
+      "type": "hook",
+      "kicker": "Consulting craft",
+      "text": "Ask every bullet *one* question",
+      "say": "[knowing] Ask every bullet... one question."
+    },
+    {
+      "type": "slide",
+      "label": "One claim, five bullets",
+      "title": "We should enter APAC *now*",
+      "bullets": [
+        "APAC demand up 40% this year",
+        "Our team visited Singapore",
+        "Two rivals already launched there",
+        "New logo approved in May",
+        "Office lease ends in June"
+      ],
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 40
+        },
+        {
+          "label": "EMEA",
+          "value": 12
+        },
+        {
+          "label": "Americas",
+          "value": 8
+        }
+      ],
+      "say": "[casual] Here's a slide. The title makes a claim: enter APAC now. [dry] Then five bullets."
+    },
+    {
+      "type": "slide",
+      "label": "The so-what test",
+      "title": "We should enter APAC *now*",
+      "bullets": [
+        "APAC demand up 40% this year",
+        "Our team visited Singapore",
+        "Two rivals already launched there",
+        "New logo approved in May",
+        "Office lease ends in June"
+      ],
+      "pick": [
+        0,
+        2
+      ],
+      "bars": [
+        {
+          "label": "APAC",
+          "value": 40
+        },
+        {
+          "label": "EMEA",
+          "value": 12
+        },
+        {
+          "label": "Americas",
+          "value": 8
+        }
+      ],
+      "cues": [
+        "demand",
+        "rivals"
+      ],
+      "say": "[beat] [emphatic] Ask each one: so what? Does it prove the title? [confident] Demand up 40%: yes. Rivals already there: yes. [pointed] The other three? Not on this slide."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.03,
+        "y": 0.05,
+        "w": 0.94,
+        "h": 0.88
+      },
+      "zoom": 1.05,
+      "caption": "Made in Occam",
+      "cues": [
+        "Occam"
+      ],
+      "say": "[confident] In Occam, only the proof stays on the slide."
+    },
+    {
+      "type": "recap",
+      "items": [
+        "Ask: so what?",
+        "Proves the title? Stays",
+        "Doesn't? Another slide"
+      ],
+      "loop": "Your last slide: how many bullets *survive*?",
+      "say": "[upbeat] Ask, so what? Proves the title, it stays. Doesn't, another slide. [playful] Now check your last slide... how many survive?"
+    }
   ]
 }

@@ -1,6 +1,6 @@
 import { interpolate } from 'remotion'
 import { Rich } from '../Rich'
-import { useEnter, useSeconds, rise } from '../motion'
+import { useEnter, useSeconds } from '../motion'
 import { C, F } from '../theme'
 import type { Bar } from '../types'
 
@@ -48,11 +48,13 @@ type Props = { title: string; retitle?: string; bars: Bar[]; focus?: string; uni
  *  the one that proves it lights. With `bullets`, the slide starts as a bullet list (the chart appears only at the
  *  turn) and `pick` lights the bullets that hold the point, one cue each before the turn. */
 export const Slide = ({ title, retitle, bars, focus, unit = '', label, before, bullets, pick, checks = [], cues }: Props) => {
-  const s = useSeconds(), p = useEnter(0)
+  const s = useSeconds()
   // Without a turn the slide is already in its final state: everything is "after".
   const turn = !!retitle || before === 'rainbow'
   const picks = pick === undefined ? [] : [pick].flat(), picked = picks.length
   const T = turn ? cues[picked] : -1
+  // At the turn the slide leans in a hair and settles: the moment has weight.
+  const pop = useEnter(turn ? T : 1e4, 'headline')
   const strike = ramp(s, T - 0.45, T - 0.15), swap = retitle ? ramp(s, T - 0.1, T + 0.25) : 1, lit = ramp(s, T, T + 0.4)
   const checkAt = checks.map((_, i) => cues[picked + (turn ? 1 : 0) + i] ?? 1e9)
   const chart = bullets ? (turn ? ramp(s, T, T + 0.3) : 0) : 1, g0 = bullets ? T + 0.1 : 0.15
@@ -63,9 +65,9 @@ export const Slide = ({ title, retitle, bars, focus, unit = '', label, before, b
   const after = s >= T
   const tag = Array.isArray(label) ? label[after ? 1 : 0] : label ?? (after ? 'Action title' : 'Topic title')
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, ...rise(p, 50) }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <div style={{ fontFamily: F.mono, fontSize: 28, letterSpacing: '0.14em', textTransform: 'uppercase', color: after ? C.gold : C.muted }}>{tag}</div>
-      <div style={{ background: P.bg, borderRadius: 18, padding: '40px 46px 44px', boxShadow: '0 40px 120px rgba(0,0,0,.55)', transform: `scale(${1 + 0.025 * lit})` }}>
+      <div style={{ background: P.bg, borderRadius: 18, padding: '40px 46px 44px', boxShadow: '0 40px 120px rgba(0,0,0,.55)', transform: `scale(${1 + 0.03 * pop})` }}>
         <div style={{ position: 'relative', minHeight: 104, marginBottom: 26 }}>
           <div style={{ position: 'absolute', inset: '-10px -14px', borderRadius: 12, boxShadow: `0 0 0 4px ${C.gold}`, opacity: ring('title') }} />
           {retitle && (

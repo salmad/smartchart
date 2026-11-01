@@ -8,10 +8,10 @@ const Caret = ({ on }: { on: boolean }) => <span style={{ display: 'inline-block
 
 /** A terminal that types its commands; each step starts at its cue. */
 export const Terminal = ({ title, steps, cues }: { title?: string; steps: { cmd?: string; out?: string }[]; cues: number[] }) => {
-  const s = useSeconds(), p = useEnter(0)
+  const s = useSeconds()
   const live = cues.filter((c) => c <= s).length - 1
   return (
-    <div style={{ background: C.surface, border: `2px solid ${C.line}`, borderRadius: 28, overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,.55)', ...rise(p) }}>
+    <div style={{ background: C.surface, border: `2px solid ${C.line}`, borderRadius: 28, overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,.55)' }}>
       <div style={{ height: 72, display: 'flex', alignItems: 'center', gap: 14, padding: '0 28px', borderBottom: `2px solid ${C.line}` }}>
         {[0, 1, 2].map((i) => <div key={i} style={{ width: 18, height: 18, borderRadius: 9, background: C.line }} />)}
         <div style={{ marginLeft: 16, fontFamily: F.mono, fontSize: 24, color: C.muted }}>{title ?? 'terminal'}</div>
@@ -34,13 +34,13 @@ export const Terminal = ({ title, steps, cues }: { title?: string; steps: { cmd?
 
 /** A prompt bar that types the request, then the reply lands under it. */
 export const Prompt = ({ text, reply, cues }: { text: string; reply?: string; cues: number[] }) => {
-  const s = useSeconds(), p = useEnter(0)
+  const s = useSeconds()
   const shown = typed(text, s - 0.25), done = shown.length >= text.length
   const replyAt = cues[1] ?? 0.25 + text.length / CPS + 0.4
-  const q = useEnter(Math.max(replyAt, 0.25 + text.length / CPS + 0.2))
+  const q = useEnter(Math.max(replyAt, 0.25 + text.length / CPS + 0.2), 'panel')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
-      <div style={{ position: 'relative', background: '#171514', border: '2px solid rgba(255,255,255,.12)', borderRadius: 56, padding: '34px 140px 34px 48px', boxShadow: '0 30px 80px rgba(0,0,0,.5)', fontFamily: F.text, fontSize: 42, lineHeight: 1.35, color: C.fg, minHeight: 112, ...rise(p) }}>
+      <div style={{ position: 'relative', background: '#171514', border: '2px solid rgba(255,255,255,.12)', borderRadius: 56, padding: '34px 140px 34px 48px', boxShadow: '0 30px 80px rgba(0,0,0,.5)', fontFamily: F.text, fontSize: 42, lineHeight: 1.35, color: C.fg, minHeight: 112 }}>
         {shown}<Caret on={!done || Math.floor(s * 2) % 2 === 0} />
         <div style={{ position: 'absolute', right: 22, bottom: 22, width: 72, height: 72, borderRadius: 36, background: done ? C.gold : C.fg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="32" height="32" viewBox="0 0 32 32"><path d="M16 26 V8 M8 15 l8 -8 l8 8" fill="none" stroke={C.bg} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></svg>

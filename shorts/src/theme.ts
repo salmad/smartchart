@@ -22,4 +22,13 @@ export const F = {
 export const W = 1080, H = 1920, FPS = 30
 export const SAFE = { x: 84, top: 300, bottom: 1290, captions: 1340 }
 
-export const spring = { damping: 200, stiffness: 180, mass: 0.6 }
+/** Motion with mass, one rule per class of object; if everything overshoots, nothing feels precise.
+ *  ui snaps (ticks, rings, captions), panel settles with a hair of overshoot (slides, prompt bars, screenshots),
+ *  headline lands hard and holds (hook, statement, stat), camera glides with none. */
+export const springs = {
+  ui: { damping: 22, stiffness: 320, mass: 0.5 },
+  panel: { damping: 17, stiffness: 150, mass: 0.9 },
+  headline: { damping: 13, stiffness: 210, mass: 0.8 },
+  camera: { damping: 200, stiffness: 60, mass: 1.2 },
+} as const
+export type SpringKind = keyof typeof springs

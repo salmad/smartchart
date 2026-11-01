@@ -97,6 +97,22 @@
       "say": "[thoughtful] Then read only your titles, top to bottom. [warm] If they tell the whole story on their own... you've nailed it."
     },
     {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": {
+        "x": 0.03,
+        "y": 0.05,
+        "w": 0.94,
+        "h": 0.88
+      },
+      "zoom": 1.05,
+      "caption": "Made in Occam",
+      "cues": [
+        "Occam"
+      ],
+      "say": "[confident] In Occam, every title is the answer."
+    },
+    {
       "type": "recap",
       "items": [
         "Answer, not topic",

@@ -1,0 +1,75 @@
+{
+  "voice": {
+    "model": "elevenlabs/eleven-v4",
+    "voice": "iP95p4xoKVk53GoZ742B",
+    "pace": 1.04
+  },
+  "pinHook": true,
+  "scenes": [
+    {
+      "type": "hook",
+      "kicker": "Watch it fix it",
+      "text": "Those \"one prompt\" AI demos are *hiding* something",
+      "say": "[knowing, slightly amused] Those one prompt AI demos... are hiding something."
+    },
+    {
+      "type": "stat",
+      "value": "9,500",
+      "label": "characters in the brief behind a *viral* one-prompt video",
+      "source": "@seeconvm on X, Oct 2026",
+      "say": "[curious] The best ones? Behind them, a 9,500 character brief."
+    },
+    {
+      "type": "prompt",
+      "text": "Make me a slide on Q3 sales.",
+      "reply": "Q3 Sales Overview",
+      "cues": ["Make", "get"],
+      "say": "[casual] Slides work the same way. Make me a slide on Q3 sales. [dry] And you get..."
+    },
+    {
+      "type": "slide",
+      "label": "What it made",
+      "title": "Q3 Sales Overview",
+      "bullets": [
+        "Sales performance review",
+        "Key regional trends",
+        "Growth opportunities",
+        "Next steps"
+      ],
+      "bars": [
+        { "label": "West", "value": 18 },
+        { "label": "North", "value": 9 },
+        { "label": "South", "value": 5 },
+        { "label": "East", "value": 2 }
+      ],
+      "say": "[flat] Q3 sales overview. Four bullets that fit anyone's deck."
+    },
+    {
+      "type": "statement",
+      "text": "It didn't fail.\nIt *guessed*.",
+      "say": "[beat] [emphatic] Did it fail? No. It guessed."
+    },
+    {
+      "type": "prompt",
+      "text": "Answer: West drove Q3. Reader: the CFO. Growth: West 18%, East 2%.",
+      "reply": "West drove Q3 growth: 18%, against 2% in the East",
+      "cues": ["know", "numbers"],
+      "say": "[confident] So give it what only you know. The answer, who's reading, the numbers."
+    },
+    {
+      "type": "shot",
+      "src": "occam-slide.png",
+      "focus": { "x": 0.055, "y": 0.075, "w": 0.795, "h": 0.105 },
+      "zoom": 1.2,
+      "caption": "Made in Occam",
+      "cues": ["West"],
+      "say": "[confident] In Occam, that's the slide. West drove Q3 growth. 18%, against 2% in the East."
+    },
+    {
+      "type": "recap",
+      "items": ["The answer", "Who's reading", "The real numbers"],
+      "loop": "One prompt? Sure. With a *brief* inside.",
+      "say": "[upbeat] The answer. Who's reading. The real numbers. [playful] One prompt? Sure. With a brief inside."
+    }
+  ]
+}
