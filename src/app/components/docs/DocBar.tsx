@@ -54,13 +54,15 @@ const LINK = 'cursor-pointer font-medium text-ink underline-offset-2 hover:under
 function IssueList({ label, items, soft }: { label: string; items: string[]; soft?: boolean }) {
   const n = items.length
   if (!n) return null
+  const btn = (
+    <Button size="sm" variant="ghost" className={cn('max-w-[min(100%,280px)] truncate', soft ? 'text-ink-2' : 'text-warn')} aria-label={`${label}: ${items[0]}`}>
+      {n} {label}{n === 1 ? '' : 's'}{n > 1 ? '' : `: ${items[0]}`}
+    </Button>
+  )
+  if (n === 1) return btn
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost" className={cn('max-w-[min(100%,280px)] truncate', soft ? 'text-ink-2' : 'text-warn')} aria-label={`${label}: ${items[0]}`}>
-          {n} {label}{n === 1 ? '' : 's'}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{btn}</PopoverTrigger>
       <PopoverContent className="w-96 text-[13px]"><ul className="grid gap-1.5">{items.map((msg, i) => <li key={i}>{msg}</li>)}</ul></PopoverContent>
     </Popover>
   )
@@ -88,9 +90,16 @@ export function EditBar({ edit, onDiscard, stale, comments }: { edit: DocEdit; o
           )
           : (
             <>
-              <IssueList label="issue" items={edit.blockers} />
+              {edit.blockers[0] && (
+                <span role="alert" className="min-w-0 line-clamp-2 text-[13px] text-warn" title={edit.blockers[0]}>
+                  Can’t save: {edit.blockers[0]}
+                </span>
+              )}
+              {edit.blockers.length > 1 && <IssueList label="issue" items={edit.blockers} />}
               <IssueList label="warning" items={edit.warnings} soft />
-              {edit.error && <span role="alert" className="min-w-0 truncate text-[13px] text-warn">{edit.error}</span>}
+              {edit.error && !edit.blockers.includes(edit.error) && (
+                <span role="alert" className="min-w-0 truncate text-[13px] text-warn">{edit.error}</span>
+              )}
             </>
           )}
       </div>

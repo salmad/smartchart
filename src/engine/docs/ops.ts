@@ -2,6 +2,7 @@
    not (never a throw, never a partial change). Blocks are addressed by id. Headings and figures carry theirs in the file;
    any other block has a read-time id made from its words, so it is never written to the file and changes when the words do. */
 import { applyPatch } from '../agent/patch.js'
+import { plain } from '../slides/schema.js'
 import { hash } from '../versions.js'
 import type { Slide, Theme } from '../types.js'
 import { giveIds, parseDoc } from './parse.js'
@@ -46,28 +47,83 @@ const slot = (doc: Doc, after: string): number | string => {
 export const ROUND_TRIP = 'That text would not survive being saved as written; rewrite it.'
 const TYPE_ERR = 'A figure now holds a value of the wrong type for its fields. Check each value against get_template.'
 
-/** Whether the doc would lose content on write (the only hard stop for a person’s Save; agents still use refusal). */
+/** Fields the doc file does not store (look lives on the workspace). */
+const fileDoc = (d: Doc): Doc => {
+  const { theme: _t, accent: _a, ...rest } = d
+  return rest
+}
+
+const stable = (v: unknown): string => {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v)
+  if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`
+  return `{${Object.keys(v as object).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(',')}}`
+}
+
+const blockEqual = (a: Block, b: Block): boolean => {
+  if (a.type !== b.type) return false
+  if (a.type === 'figure' && b.type === 'figure') return a.kind === b.kind && a.id === b.id && stable(a.body) === stable(b.body)
+  return stable(a) === stable(b)
+}
+
+const docEqual = (a: Doc, b: Doc): boolean =>
+  a.title === b.title && a.subtitle === b.subtitle && a.blocks.length === b.blocks.length && a.blocks.every((x, i) => blockEqual(x, b.blocks[i]!))
+
+const blockHint = (b: Block): string => {
+  if (b.type === 'heading') return `the section “${plain(b.text).slice(0, 60)}”`
+  if (b.type === 'figure') return `figure #${b.id || b.kind}`
+  if (b.type === 'paragraph') return `the paragraph starting “${plain(b.text).slice(0, 60)}”`
+  if (b.type === 'bullets' || b.type === 'numbered') return `a list starting “${plain(b.items[0] ?? '').slice(0, 60)}”`
+  if (b.type === 'quote') return `the quote “${plain(b.text).slice(0, 60)}”`
+  return 'a block near where you edited'
+}
+
+/** When save-as-written would change the doc, a sentence that names where to look (agents refuse; people see it as a warning). */
+export function roundTripHint(want: Doc, got: Doc): string {
+  if (want.title !== got.title) {
+    return 'The title would save differently. If you meant plain text, avoid **bold**, [[focus]], [-red-], or [text](links) in the title unless you use the editor’s formatting.'
+  }
+  if (want.blocks.length !== got.blocks.length) {
+    return got.blocks.length < want.blocks.length
+      ? 'Save would drop one or more blocks. A line that starts with #, -, a number., >, ---, or ``` is treated as structure—put a blank line before it, or start the line with \\, to keep it as text.'
+      : 'Save would split what you wrote into extra blocks. Try merging lines into one paragraph or simplifying nested lists where you edited.'
+  }
+  for (let i = 0; i < want.blocks.length; i++) {
+    if (!blockEqual(want.blocks[i]!, got.blocks[i]!)) {
+      return `${blockHint(want.blocks[i]!)} would not round-trip. Lines that look like Markdown (headings, lists, quotes) need a blank line above them or a \\ at the start when you meant plain text.`
+    }
+  }
+  return ROUND_TRIP
+}
+
+/** Whether the doc would change on write; null when the file would round-trip. */
 export function hardSaveRefusal(next: Doc): string | null {
   try {
-    if (JSON.stringify(parseDoc(serializeDoc(next)).doc) !== JSON.stringify(next)) return ROUND_TRIP
+    const want = fileDoc(next)
+    const got = fileDoc(parseDoc(serializeDoc(want)).doc)
+    if (docEqual(want, got)) return null
+    return roundTripHint(want, got)
   } catch {
     return TYPE_ERR
   }
-  return null
 }
 
-/** Every reason the new doc must not be written that the old one did not already have, and whether it would round-trip.
-    The agent's ops and a person's Save go through the same gate; it refuses, it never rewrites. */
-export function freshErrors(before: Doc, next: Doc): string[] {
-  const out: string[] = []
+/** Every new schema error, and (when there are none) a round-trip sentence for agents. */
+export function freshValidationErrors(before: Doc, next: Doc): string[] {
   try {
     const was = new Set(validateDoc(before).errors)
-    validateDoc(next).errors.forEach((e) => { if (!was.has(e)) out.push(e) })
+    return validateDoc(next).errors.filter((e) => !was.has(e))
   } catch {
     return [TYPE_ERR]
   }
-  const hard = hardSaveRefusal(next)
-  if (!out.length && hard) out.push(hard)
+}
+
+/** Every reason the new doc must not be written that the old one did not already have. The agent refuses; people may still Save. */
+export function freshErrors(before: Doc, next: Doc): string[] {
+  const out = freshValidationErrors(before, next)
+  if (!out.length) {
+    const hard = hardSaveRefusal(next)
+    if (hard) out.push(hard)
+  }
   return out
 }
 

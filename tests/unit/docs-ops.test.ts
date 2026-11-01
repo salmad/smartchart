@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseDoc } from '../../src/engine/docs/parse'
 import { serializeDoc } from '../../src/engine/docs/serialize'
-import { createFigure, createText, deleteBlock, freshErrors, identify, moveBlock, parseText, setLook, updateFigure, writeText, type Edit } from '../../src/engine/docs/ops'
+import { createFigure, createText, deleteBlock, freshErrors, hardSaveRefusal, identify, moveBlock, parseText, roundTripHint, setLook, updateFigure, writeText, type Edit } from '../../src/engine/docs/ops'
 import type { Doc } from '../../src/engine/docs/types'
 
 const FILE = ['---', 'title: Memo', '---', '', '## Plan {#plan}', '', 'First paragraph.', '', 'Same words.', '', 'Same words.', '', '## Risks {#risks}', '',
@@ -114,5 +114,18 @@ describe('freshErrors', () => {
     const fresh = freshErrors(before, next)
     expect(fresh.some((e) => e.includes('#plan'))).toBe(true)
     expect(fresh.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('hardSaveRefusal', () => {
+  it('ignores theme and accent that are not stored in the file', () => {
+    const d = { ...doc(), theme: 'ink' as const, accent: '#2447D1' }
+    expect(hardSaveRefusal(d)).toBeNull()
+  })
+
+  it('names what would change when blocks differ', () => {
+    const want = doc()
+    const got = { ...want, blocks: want.blocks.slice(0, -1) }
+    expect(roundTripHint(want, got)).toMatch(/drop/)
   })
 })
