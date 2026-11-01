@@ -51,3 +51,16 @@ test('on a phone, Present and the avatar sit at the right edge', async ({ page }
   const right = await page.getByRole('button', { name: 'Present' }).evaluate((e) => e.parentElement?.getBoundingClientRect().right ?? 0)
   expect(right).toBeGreaterThan(390 - 20)
 })
+
+test('on a phone, the sidebar and agent toggles open the workspace and chat', async ({ page }) => {
+  await open(page, 390, 844)
+  await expect(decks(page)).toHaveCount(0)
+  await page.getByRole('button', { name: 'Show the sidebar' }).click()
+  await expect(decks(page)).toBeVisible()
+  await page.getByRole('button', { name: 'Close the sidebar' }).click()
+  await expect(decks(page)).toHaveCount(0)
+  if (await page.getByRole('button', { name: 'Hide the agent' }).isVisible()) await page.getByRole('button', { name: 'Hide the agent' }).click()
+  await expect(page.getByRole('complementary', { name: 'Chat' })).toBeHidden()
+  await page.getByRole('button', { name: 'Show the agent' }).click()
+  await expect(page.getByRole('complementary', { name: 'Chat' })).toBeVisible()
+})

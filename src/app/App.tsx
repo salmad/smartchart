@@ -402,7 +402,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} rows={rows} busy={locked(s)}
     open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length, parent: s.pendingParent }, doc: docOnScreen, docTick }}
     onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={startDeck}
-    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} />
+    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} onDismiss={toggleDecks} />
 
   const DocScreen = docScreen.get()
   return (

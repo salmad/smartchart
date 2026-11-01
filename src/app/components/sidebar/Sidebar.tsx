@@ -35,6 +35,8 @@ interface Props {
   onRenameOpenDeck: (name: string) => void
   /** The signed-in user's id, for their own row in Members. */
   me: string
+  /** Below 900 px the sidebar is a slide-over; the backdrop calls this. */
+  onDismiss?: () => void
 }
 
 const BLANK_TITLE = 'Untitled doc'
@@ -42,7 +44,7 @@ const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(3
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its pages as one tree of docs and
     decks. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens and expands. */
-export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onRenameOpenDeck, me }: Props) {
+export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onRenameOpenDeck, me, onDismiss }: Props) {
   const size = useSidebarWidth()
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
@@ -73,7 +75,10 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   useEffect(() => { if (!tree.notice) return; const t = setTimeout(tree.dismiss, 6000); return () => clearTimeout(t) }, [tree.notice, tree.dismiss])
   useEffect(() => { if (!said) return; const t = setTimeout(() => setSaid(null), 6000); return () => clearTimeout(t) }, [said])
   // A page with a request on its way opens once that has been answered: its stored copy is not up to date before.
-  const openPage = (ref: PageRef) => void actions.settled(ref).then(() => (ref.kind === 'deck' ? onOpenDeck(ref.id) : onOpenDoc(ref.id)))
+  const openPage = (ref: PageRef) => void actions.settled(ref).then(() => {
+    if (onDismiss && matchMedia('(max-width: 900px)').matches) onDismiss()
+    return ref.kind === 'deck' ? onOpenDeck(ref.id) : onOpenDoc(ref.id)
+  })
 
   // Switching opens the deck last used in that workspace from cache when possible; list fills in behind.
   const switchTo = (id: string) => {
@@ -123,8 +128,14 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   }
 
   return (
-    <nav ref={size.nav} aria-label="Workspace" className="relative flex w-[var(--sidebar-w,248px)] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:hidden">
-      <div {...size.gripProps} className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize touch-none outline-none"><span className="mx-auto block h-full w-px bg-transparent transition-colors group-hover:bg-gold/60 group-focus-visible:bg-gold group-active:bg-gold" /></div>
+    <>
+      {onDismiss && (
+        <button type="button" aria-label="Close the sidebar" onClick={onDismiss}
+          className="fixed inset-0 z-20 hidden bg-ink/25 max-[900px]:block" />
+      )}
+      <nav ref={size.nav} aria-label="Workspace"
+        className="relative flex w-[var(--sidebar-w,248px)] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:fixed max-[900px]:inset-y-0 max-[900px]:left-0 max-[900px]:z-30 max-[900px]:max-w-[min(100vw,320px)] max-[900px]:shadow-[8px_0_40px_rgba(0,0,0,.35)]">
+        <div {...size.gripProps} className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize touch-none outline-none max-[900px]:hidden"><span className="mx-auto block h-full w-px bg-transparent transition-colors group-hover:bg-gold/60 group-focus-visible:bg-gold group-active:bg-gold" /></div>
       <div className="h-12 px-2 pb-1 pt-2">
         {ws.current && <WorkspaceSwitcher list={ws.list} current={ws.current} busy={busy} onSwitch={(id) => void switchTo(id)}
           onNew={() => setRenaming({ kind: 'workspace' })} onMembers={() => setMembers(true)} />}
@@ -153,6 +164,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
       {/* Leaving opens the most recently used workspace that is left. */}
       <Members workspace={members ? ws.current : null} repo={repos.workspaces} me={me} onClose={() => setMembers(false)}
         onLeft={() => { setMembers(false); void ws.reload().then(() => onNewDeck(null)) }} />
-    </nav>
+      </nav>
+    </>
   )
 }

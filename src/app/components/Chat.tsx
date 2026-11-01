@@ -27,7 +27,7 @@ export function Chat({ messages, offline, onUndo, busy, fresh }: Props) {
   useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, offline])
 
   return (
-    <div ref={thread} className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:overflow-visible max-[900px]:px-4 max-[900px]:empty:hidden">
+    <div ref={thread} className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:px-4">
       {/* A new deck: the question the first message answers. The composer's placeholder says how. */}
       {!messages.length && fresh && <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>}
       {messages.map((m, k) => <Bubble key={k} m={m} onUndo={onUndo} busy={busy} />)}

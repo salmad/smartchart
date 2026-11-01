@@ -60,7 +60,7 @@ export function Bar(p: BarProps) {
     <header className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-6 border-b border-line pl-3 pr-4 max-[900px]:flex max-[900px]:gap-3 max-[900px]:px-4">
       <div className="flex min-w-0 items-center gap-3 max-[900px]:flex-1">
         {/* The layout toggles, together as in Cursor's title bar: each shows whether its panel is open. */}
-        <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
+        <div className="flex flex-none items-center gap-0.5">
           <Toggle open={p.decksOpen} onClick={p.onToggleDecks} label={`${p.decksOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
           <Toggle open={p.chatOpen} onClick={p.onToggleChat} label={`${p.chatOpen ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
         </div>

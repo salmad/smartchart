@@ -29,7 +29,7 @@ export function ViewDeck({ deck, name, ids, sidebar, sidebarOpen, onToggleSideba
   return (
     <>
       <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
-        <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
+        <div className="flex flex-none items-center gap-0.5">
           <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
         </div>
         <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
