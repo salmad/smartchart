@@ -2,6 +2,7 @@
    div.sec-body), so doc.css and components.css apply unchanged. Every container says what the Block union says it may
    hold, and nothing the file cannot write is offered: no italic, no code marks, no hard breaks, one quote text. */
 import { InputRule, Mark, markInputRule, Node, textblockTypeInputRule } from '@tiptap/core'
+import { Fragment } from '@tiptap/pm/model'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -34,7 +35,22 @@ export const DocSubtitle = Node.create({ name: 'docSubtitle', content: 'inline*'
 export const SectionHead = Node.create({
   name: 'sectionHead', content: 'inline*', marks: '_', defining: true,
   addAttributes: () => ({ id: { default: '', rendered: false } }),
-  renderHTML: ({ node }) => ['h2', node.attrs.id ? { id: node.attrs.id as string } : {}, 0],
+  parseHTML: () => [{
+    tag: 'h2',
+    getAttrs: (dom) => ({ id: (dom as HTMLElement).id || '' }),
+    getContent: (dom, schema) => {
+      const el = dom as HTMLElement
+      const from = el.querySelector('.sec-h-text') ?? el.querySelector('a')
+      const text = (from?.textContent ?? [...el.childNodes].filter((n) => !(n instanceof Element && n.classList.contains('fold'))).map((n) => n.textContent).join('')).trim()
+      return text ? Fragment.from(schema.text(text)) : Fragment.empty
+    },
+  }],
+  renderHTML: ({ node }) => {
+    const id = node.attrs.id as string
+    return ['h2', id ? { id } : {},
+      ['button', { class: 'fold', type: 'button', 'aria-expanded': 'true', 'aria-label': 'Fold section', contenteditable: 'false' }, ['i', { 'data-lucide': 'chevron-down' }]],
+      ['span', { class: 'sec-h-text' }, 0]]
+  },
 })
 export const SectionBody = Node.create({ name: 'sectionBody', content: 'block*', renderHTML: () => ['div', { class: 'sec-body' }, 0] })
 export const Section = Node.create({ name: 'section', content: 'sectionHead sectionBody', renderHTML: () => ['section', { class: 'doc-sec' }, 0] })

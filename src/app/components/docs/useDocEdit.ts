@@ -6,7 +6,7 @@ import { useEditor, type Editor } from '@tiptap/react'
 import { Node as PMNode } from '@tiptap/pm/model'
 import { giveIds } from '@/engine/docs/parse'
 import { tidy } from '@/engine/docs/tidy'
-import { freshValidationErrors, hardSaveRefusal } from '@/engine/docs/ops'
+import { hardSaveRefusal } from '@/engine/docs/ops'
 import { validateDoc } from '@/engine/docs/validate'
 import { fromProse, literalMarkup, toProse, type ProseNode } from '@/engine/docs/prose'
 import { plainOf } from '@/engine/slides/markup'
@@ -20,7 +20,7 @@ export interface DocEdit {
   /** The blocks the editor opened with (an unchanged block is written back as it was). */
   originals: readonly Block[]
   dirty: boolean; saving: boolean; error: string | null
-  /** Hard stops only (plain text that would become formatting). */
+  /** Reserved for a hard client stop; human Save is not blocked by schema or layout. */
   blockers: string[]
   /** Schema, links and title notes: shown, never block a person’s Save. */
   warnings: string[]
@@ -48,17 +48,13 @@ interface Options { doc: Doc; theme: Theme; accent: string | undefined; save: (d
 
 const MEASURE_MS = 300
 
-/** Hard stops for Save: characters the file would read as formatting. Round-trip notes are warnings only. */
-export function saveHardBlockers(_next: Doc, json: ProseNode): string[] {
-  const typed = literalMarkup(json)
-  return typed ? [`“${typed.slice(0, 40)}” would be read as formatting once saved. Reword it or use the toolbar for bold and links.`] : []
-}
-
-/** Notes on the draft; agents refuse on freshErrors, people can still Save. */
-export function docEditWarnings(before: Doc, next: Doc): string[] {
+/** Every schema issue on the draft, as warnings (relaxed doc rules). */
+export function docEditWarnings(_before: Doc, next: Doc, json: ProseNode): string[] {
   const notes: string[] = []
   if (!plainOf(next.title).trim()) notes.push('Title is empty; Save keeps the previous title until you add one.')
-  notes.push(...freshValidationErrors(before, next), ...validateDoc(next).warnings)
+  const typed = literalMarkup(json)
+  if (typed) notes.push(`“${typed.slice(0, 40)}” looks like formatting in plain text. Save anyway; use the toolbar for bold and links if you meant styling.`)
+  notes.push(...validateDoc(next, { strict: false }).warnings)
   const trip = hardSaveRefusal(next)
   if (trip) notes.push(trip)
   return notes
@@ -113,8 +109,8 @@ export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEd
     const t = setTimeout(() => {
       if (!editor) { setBlockers([]); setWarnings([]); return }
       const json = editor.getJSON() as ProseNode, next = docOf(doc, json)
-      setBlockers(saveHardBlockers(next, json))
-      setWarnings(docEditWarnings(doc, next))
+      setBlockers([])
+      setWarnings(docEditWarnings(doc, next, json))
     }, MEASURE_MS)
     return () => clearTimeout(t)
   }, [editor, doc, tick])
@@ -150,8 +146,6 @@ export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEd
     save: async () => {
       if (!editor || !closeFigure(true)) return
       const json = editor.getJSON() as ProseNode, next = titleForSave(doc, docOf(doc, json))
-      const hard = saveHardBlockers(next, json)
-      if (hard.length) { setError(hard[0]); return }
       // Nothing changed: nothing is written, and no version is made.
       if (initial.current && editor.state.doc.eq(initial.current)) { onDone(); return }
       setSaving(true); setError(null)

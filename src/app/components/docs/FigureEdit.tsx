@@ -16,7 +16,7 @@ import { IconPicker } from '@/app/edit/IconPicker'
 import { useEditKeys } from '@/app/edit/useEditKeys'
 import { useSlideEdit } from '@/app/edit/useSlideEdit'
 import type { Surface } from '@/app/edit/surface'
-import { bodyOf, figureCheck, figureRender } from './figureCheck'
+import { bodyOf, figureCheck, figureDoneRefusal, figureRender } from './figureCheck'
 import type { DocEdit } from './useDocEdit'
 import { surface as card, tintOnFocus, tintOnHover } from './chrome'
 
@@ -34,8 +34,8 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
   const finish = useRef<(d: Slide, dirty: boolean, force?: boolean) => string | null>(() => null)
   finish.current = (d, dirty, force?: boolean) => {
     if (!force) {
-      const first = check(d)[0]
-      if (first) { setRefused(first.msg); return first.msg }
+      const hard = figureDoneRefusal(block.kind, d)
+      if (hard) { setRefused(hard); return hard }
     } else setRefused(null)
     if (dirty) doc.setFigure(at, bodyOf(d))
     return null

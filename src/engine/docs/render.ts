@@ -2,7 +2,7 @@
    (no DOM), so it is tested in node; mount.ts draws the charts, scales the canvases and wires the page. */
 import type { Theme } from '../types.js'
 import { esc, md } from '../components/text.js'
-import { outline } from './parse.js'
+import { outlineTree, type OutlineSection } from './parse.js'
 import { codeFigureHTML, figureHTML } from './figure.js'
 import { figureChecks } from './checks.js'
 import type { Block, Doc, ListBlock } from './types.js'
@@ -47,9 +47,18 @@ export function blockHTML(b: Block, theme: Theme): string {
 
 const sectionOpen = (id: string, text: string) => `<section class="doc-sec" id="${id}"><h2><button class="fold" type="button" aria-expanded="true" aria-controls="${id}-body" aria-label="Fold section"><i data-lucide="chevron-down"></i></button><a href="#${id}">${md(text)}</a></h2><div class="sec-body" id="${id}-body">`
 
+function tocItem(s: OutlineSection): string {
+  const link = `<a href="#${esc(s.id)}">${esc(s.text)}</a>`
+  if (!s.children.length) return `<li class="l2">${link}</li>`
+  const sub = `<ol>${s.children.map((c) => `<li class="l3"><a href="#${esc(c.id)}">${esc(c.text)}</a></li>`).join('')}</ol>`
+  return `<li class="l2 toc-branch"><details class="toc-sec" open><summary>${link}</summary>${sub}</details></li>`
+}
+
+const tocList = (tree: OutlineSection[]) => `<ol>${tree.map(tocItem).join('')}</ol>`
+
 export function docHTML(doc: Doc): string {
-  const theme = doc.theme ?? DEFAULT_THEME, toc = outline(doc)
-  const list = `<ol>${toc.map((h) => `<li class="l${h.level}"><a href="#${h.id}">${esc(h.text)}</a></li>`).join('')}</ol>`
+  const theme = doc.theme ?? DEFAULT_THEME, tree = outlineTree(doc)
+  const list = tocList(tree)
   let body = '', open = false
   for (const b of doc.blocks) {
     if (b.type === 'heading' && b.level === 2) { body += `${open ? '</div></section>' : ''}${sectionOpen(b.id, b.text)}`; open = true; continue }
@@ -57,7 +66,7 @@ export function docHTML(doc: Doc): string {
   }
   if (open) body += '</div></section>'
   const head = `<header class="doc-head"><h1 class="doc-title">${md(doc.title)}</h1>${doc.subtitle ? `<p class="doc-sub">${md(doc.subtitle)}</p>` : ''}</header>`
-  const nav = toc.length ? `<nav class="doc-toc" aria-label="Contents"><p class="toc-h">Contents</p>${list}</nav>` : ''
-  const mini = toc.length ? `<details class="doc-toc-mini"><summary>Contents</summary>${list}</details>` : ''
+  const nav = tree.length ? `<nav class="doc-toc" aria-label="Contents"><p class="toc-h">Contents</p>${list}</nav>` : ''
+  const mini = tree.length ? `<details class="doc-toc-mini"><summary>Contents</summary>${list}</details>` : ''
   return `<article class="doc theme-${theme}" data-links>${head}${nav}<div class="doc-body">${mini}${body}</div></article>`
 }

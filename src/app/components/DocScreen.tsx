@@ -231,7 +231,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     const DocEditing = docEditing.get()
     return (
       <Suspense fallback={<>{header(null)}{body(null)}</>}>
-        <DocEditing doc={parsed} look={{ theme: look.theme, accent: look.accent ?? undefined }} save={save} onDone={() => setEditing(false)} comments={commenting}
+        <DocEditing doc={parsed} docId={id} look={{ theme: look.theme, accent: look.accent ?? undefined }} save={save} onDone={() => setEditing(false)} comments={commenting}
           stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
           {(bar, editor) => <>{header(bar)}{body(editor)}</>}
         </DocEditing>

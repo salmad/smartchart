@@ -9,6 +9,7 @@ import { serializeDoc } from '@/engine/docs/serialize'
 
 interface Props {
   doc: Doc
+  docId: string
   look: { theme: Theme; accent: string | undefined }
   /** Null when saved; otherwise why not, as a sentence. */
   save: (doc: Doc) => Promise<string | null>
@@ -19,7 +20,7 @@ interface Props {
   children: (bar: ReactNode, page: ReactNode) => ReactNode
 }
 
-export function DocEditing({ doc, look, save, onDone, stale, comments, children }: Props) {
+export function DocEditing({ doc, docId, look, save, onDone, stale, comments, children }: Props) {
   const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone })
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])
 
@@ -39,5 +40,5 @@ export function DocEditing({ doc, look, save, onDone, stale, comments, children 
     return () => { document.removeEventListener('keydown', key); window.removeEventListener('beforeunload', leave) }
   }, [edit])
 
-  return <>{children(<EditBar edit={edit} onDiscard={discard} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />, <DocEditor edit={edit} theme={look.theme} accent={look.accent} />)}</>
+  return <>{children(<EditBar edit={edit} onDiscard={discard} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />, <DocEditor edit={edit} theme={look.theme} accent={look.accent} docId={docId} />)}</>
 }

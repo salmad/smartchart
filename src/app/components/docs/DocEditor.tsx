@@ -12,21 +12,25 @@ import { SelectionBar } from './SelectionBar'
 import { SlashMenu } from './SlashMenu'
 import { useSlash } from './useSlash'
 import { useDocPictures } from './useDocPictures'
+import { DocContents } from './DocContents'
+import { useDocFold } from './useDocFold'
 import type { DocEdit } from './useDocEdit'
 import './docs-edit.css'
 
-interface Props { edit: DocEdit; theme: Theme; accent: string | undefined }
+interface Props { edit: DocEdit; theme: Theme; accent: string | undefined; docId: string }
 
-export function DocEditor({ edit, theme, accent }: Props) {
+export function DocEditor({ edit, theme, accent, docId }: Props) {
   const frameRef = useRef<HTMLElement | null>(null)
   const { editor } = edit
   const [frame, setFrame] = useState<HTMLElement | null>(null), page = frame?.querySelector<HTMLElement>('.ProseMirror') ?? null
+  useDocFold({ root: frame?.querySelector('article.doc') ?? null, docId, editor: edit.editor })
   const slash = useSlash(edit, useCallback(() => frameRef.current, []))
   const pics = useDocPictures(edit, frame)
   const open = editor && edit.figure ? findFigure(editor, edit.figure) : null
   return (
     <div ref={(el) => { frameRef.current = el; setFrame(el) }} className={`relative theme-${theme}`}>
       <article className={`doc theme-${theme} doc-editing`} data-links>
+        <DocContents edit={edit} root={frame?.querySelector('article.doc') ?? null} docId={docId} />
         <EditorContent editor={editor} className="contents" />
       </article>
       {editor && page && frame && <BlockHandle edit={edit} page={page} frame={frame} theme={theme} />}

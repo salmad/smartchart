@@ -21,6 +21,12 @@
   .doc-toc-mini { display: none; }
 }
 
+.doc-editing .doc-toc-mini { grid-column: 2; }
+@media (min-width: 1180px) {
+  .doc-editing .doc-toc { display: block; grid-column: 3; grid-row: 1; align-self: start; position: sticky; top: 72px; }
+  .doc-editing .doc-toc-mini { display: none; }
+}
+
 /* ═════════════ Type ═════════════ */
 .doc-title { margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 48px; line-height: 1.05; letter-spacing: -.012em; text-wrap: balance; }
 .doc-sub { margin: 12px 0 0; font-size: 20px; line-height: 1.4; color: var(--fg-2); text-wrap: balance; }
@@ -68,6 +74,16 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
 .doc-toc-mini[open] summary::after { margin-top: 3px; transform: rotate(-135deg); }
 .doc-toc-mini summary::-webkit-details-marker { display: none; }
 .doc-toc-mini[open] summary { margin-bottom: 12px; }
+.toc-sec { margin: 0; }
+.toc-sec > summary { cursor: pointer; list-style: none; }
+.toc-sec > summary::-webkit-details-marker { display: none; }
+.toc-sec > summary::before {
+  content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 0 2px;
+  border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: rotate(-45deg); transition: transform .15s ease; vertical-align: middle;
+}
+.toc-sec[open] > summary::before { transform: rotate(45deg); margin-bottom: 1px; }
+.toc-sec > ol { margin: 4px 0 8px; }
 
 /* ═════════════ Folding: the control hangs in the gutter, so headings line up with the text ═════════════ */
 .doc-sec > h2 { position: relative; }

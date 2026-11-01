@@ -19,7 +19,7 @@ const LINK = /\]\(#([\w-]+)\)/g
 /** Every string inside a value: where a link can be written. */
 const strings = (v: unknown): string[] => (typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(strings) : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : [])
 
-export function validateDoc(doc: Doc): Validation {
+export function validateDoc(doc: Doc, opts?: { /** Default true (agents). False: limits and layout become warnings so Save never blocks. */ strict?: boolean }): Validation {
   const out: Validation = { errors: [], warnings: [] }
   if (!doc.title.trim()) out.errors.push("title: required. The doc's title, in the front matter.")
   if (doc.theme && doc.theme !== 'ink' && doc.theme !== 'paper') out.errors.push(`theme: "${String(doc.theme)}" is not a theme. Use ink or paper.`)
@@ -39,5 +39,9 @@ export function validateDoc(doc: Doc): Validation {
   const known = new Set(ids), dead = new Set<string>()
   for (const s of strings(doc.blocks)) for (const m of s.matchAll(LINK)) if (!known.has(m[1])) dead.add(m[1])
   dead.forEach((id) => out.warnings.push(`link #${id}: no heading or figure has this id.`))
+  if (opts?.strict === false) {
+    out.warnings.push(...out.errors)
+    out.errors = []
+  }
   return out
 }

@@ -8,9 +8,16 @@ const REST = 82, FROM = 100, PEEK = 45
 const LEGS: [from: number, to: number, ms: number][] = [[FROM, PEEK, 1200], [PEEK, PEEK, 900], [PEEK, REST, 1100]]
 const ease = (k: number) => (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2)
 
+interface BeforeAfterProps {
+  /** Divider position in % (default REST). Used for link-preview capture. */
+  rest?: number
+  /** Run the intro animation on first view (off for static captures). */
+  motion?: boolean
+}
+
 /** The same numbers twice: the Occam slide, with a slide tool's default chart over its right side, split by a line you
     drag. It rests mostly on Occam, so the slide reads whole without a drag. */
-export function BeforeAfter() {
+export function BeforeAfter({ rest = REST, motion = true }: BeforeAfterProps) {
   const box = useRef<HTMLDivElement>(null), handle = useRef<HTMLDivElement>(null)
   const at = useRef(REST), dragging = useRef(false)
 
@@ -23,7 +30,7 @@ export function BeforeAfter() {
   useEffect(() => {
     const el = box.current
     if (!el) return
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { set(REST); return }
+    if (!motion || matchMedia('(prefers-reduced-motion: reduce)').matches) { set(rest); return }
     set(FROM)
     let raf = 0
     const io = new IntersectionObserver(([e]) => {
@@ -41,7 +48,7 @@ export function BeforeAfter() {
     }, { threshold: 0.35 })
     io.observe(el)
     return () => { io.disconnect(); cancelAnimationFrame(raf) }
-  }, [])
+  }, [motion, rest])
 
   const fromPointer = (e: PointerEvent) => {
     const r = box.current?.getBoundingClientRect()

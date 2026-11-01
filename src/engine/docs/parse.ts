@@ -40,6 +40,20 @@ export function outline(doc: Doc): { id: string; level: 2 | 3; text: string }[] 
   return doc.blocks.flatMap((b) => (b.type === 'heading' ? [{ id: b.id, level: b.level, text: plain(b.text) }] : []))
 }
 
+/** Sections (##) with their subsections (###), for a contents tree that can fold by level. */
+export interface OutlineSection { id: string; text: string; children: { id: string; text: string }[] }
+
+export function outlineTree(doc: Doc): OutlineSection[] {
+  const tree: OutlineSection[] = []
+  let sec: OutlineSection | null = null
+  for (const h of outline(doc)) {
+    if (h.level === 2) { sec = { id: h.id, text: h.text, children: [] }; tree.push(sec) }
+    else if (h.level === 3 && sec) sec.children.push({ id: h.id, text: h.text })
+    else if (h.level === 3) tree.push({ id: h.id, text: h.text, children: [] })
+  }
+  return tree
+}
+
 export function parseDoc(text: string): Parsed {
   const lines = text.replace(/\r\n?/g, '\n').split('\n'), errors: string[] = [], doc: Doc = { title: '', blocks: [] }
   let i = 0

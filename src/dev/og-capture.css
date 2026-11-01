@@ -1,0 +1,9 @@
+/* Fixed frame for public/og.png (2400×1260). Dev-only; not shipped in the app build. */
+html, body { margin: 0; background: #F6F3EC; }
+#og {
+  box-sizing: border-box;
+  width: 2400px;
+  height: 1260px;
+  overflow: hidden;
+  padding: 72px 80px 64px;
+}

@@ -29,6 +29,15 @@ test('figure errors carry the figure id', () => {
   expect(r.errors.some((e) => e.startsWith('#cmp.table.columns'))).toBe(true)
 })
 
+test('relaxed validation keeps Save unblocked', () => {
+  const table = { columns: [{ label: 'Country' }, { label: 'Status' }], rows: rows(21) }
+  const strict = validateDoc(doc([{ type: 'figure', kind: 'table', id: 'reg', body: { table } }]))
+  expect(strict.errors.join(' ')).toMatch(/#reg\.table/)
+  const relaxed = validateDoc(doc([{ type: 'figure', kind: 'table', id: 'reg', body: { table } }]), { strict: false })
+  expect(relaxed.errors).toEqual([])
+  expect(relaxed.warnings.join(' ')).toMatch(/#reg\.table/)
+})
+
 test('a doc table takes 20 rows, a slide table 8', () => {
   const table = { columns: [{ label: 'Country' }, { label: 'Status' }], rows: rows(12) }
   const r = validateDoc(doc([{ type: 'figure', kind: 'table', id: 'reg', body: { caption: 'Regulation by country', table } }]))
