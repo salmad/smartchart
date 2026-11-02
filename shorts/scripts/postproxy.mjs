@@ -1,19 +1,16 @@
-/* Social scheduling through PostProxy (Instagram, TikTok, X). Key: postproxy_api_key in repo .env.
+/* Social scheduling through PostProxy (Instagram only by default). Key: postproxy_api_key in repo .env.
+   TikTok and X are off unless POSTPROXY_EXTRA_PLATFORMS=tiktok,twitter (low site traffic). Disconnect those
+   profiles in the PostProxy dashboard when pausing them.
 
      npm run postproxy -- profiles
      npm run postproxy -- schedule <slug>              Instagram Reel from instagram.json
      npm run postproxy -- schedule-all                 pending instagram.json only
-     npm run postproxy -- cadence                      Sun/Tue/Thu 5 PM Gulf on IG (reels 2–12)
-     npm run postproxy -- schedule-tiktok <slug>       TikTok from tiktok.json
-     npm run postproxy -- publish-tiktok <slug>        TikTok now (backfill)
-     npm run postproxy -- schedule-tiktok-all
-     npm run postproxy -- sync-tiktok-dates
-     npm run postproxy -- schedule-twitter <slug>      X from twitter.json
-     npm run postproxy -- publish-twitter <slug>
-     npm run postproxy -- schedule-twitter-all
-     npm run postproxy -- sync-twitter-dates
+     npm run postproxy -- cadence                      every 2 days, 5 PM Gulf on IG (reels 2–12)
+     npm run postproxy -- cancel-secondary             delete scheduled TikTok/X posts in PostProxy + clear ids
+     npm run postproxy -- schedule-tiktok <slug>       (needs POSTPROXY_EXTRA_PLATFORMS)
+     … schedule-tiktok-all, sync-tiktok-dates, schedule-twitter*, publish-twitter*, sync-twitter-dates
      npm run postproxy -- update-copy [slug]          push regenerated captions/comments to scheduled posts
-     npm run postproxy -- replace-media <slug>        swap a re-cut video onto its scheduled posts */
+     npm run postproxy -- replace-media <slug>        swap a re-cut video onto its scheduled IG post */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { ROOT, die, episode, getEnv } from './lib.mjs'
@@ -21,6 +18,18 @@ import { ROOT, die, episode, getEnv } from './lib.mjs'
 const API = 'https://api.postproxy.dev/api'
 const apiKey = getEnv('POSTPROXY_API_KEY') ?? getEnv('postproxy_api_key')
 if (!apiKey) die('postproxy_api_key is not set in the repo .env')
+
+/** Instagram Reels only unless POSTPROXY_EXTRA_PLATFORMS lists tiktok and/or twitter. */
+const EXTRA_PLATFORMS = new Set(
+  (getEnv('POSTPROXY_EXTRA_PLATFORMS') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+)
+function extraEnabled(platform) {
+  if (EXTRA_PLATFORMS.has(platform)) return true
+  die(`${platform} is off — Instagram only (POSTPROXY_EXTRA_PLATFORMS to re-enable). Disconnect @occamstudio on TikTok/X in the PostProxy dashboard.`)
+}
 
 async function api(pathname, init = {}) {
   const r = await fetch(`${API}${pathname}`, {
@@ -253,7 +262,8 @@ function syncTwitterDates() {
   }
 }
 
-/** Reels 2–12: Sun, Tue, Thu at 17:00 Gulf, first slot today (or next Sun/Tue/Thu). */
+/** Reels 2–12: one every two days at 17:00 Gulf, first slot from today (Gulf calendar). */
+const IG_EVERY_DAYS = 2
 const SERIES_SLUGS = [
   'answer-first', 'too-many-words', 'make-it-pop', 'whats-the-so-what', 'due-in-ten',
   'intern-vs-partner', 'ai-deck-tell', 'so-what-test', 'walk-me-through-it',
@@ -274,15 +284,14 @@ function gulfWeekday(iso) {
   return new Date(new Date(iso).toLocaleString('en-US', { timeZone: 'Asia/Dubai' })).getDay()
 }
 
-function sunTueThuPublishAts(count, from = new Date()) {
+function everyNDaysPublishAts(n, count, from = new Date()) {
   const out = []
   const cur = new Date(from)
   cur.setHours(12, 0, 0, 0)
   while (out.length < count) {
     const day = gulfCalendarDay(cur)
-    const wd = gulfWeekday(cur)
-    if ([0, 2, 4].includes(wd)) out.push(`${day}T17:00:00+04:00`)
-    cur.setDate(cur.getDate() + 1)
+    out.push(`${day}T17:00:00+04:00`)
+    cur.setDate(cur.getDate() + n)
   }
   return out
 }
@@ -296,8 +305,21 @@ async function patchSchedule(postId, publishAt) {
   return post
 }
 
+async function tryPatchSchedule(postId, publishAt) {
+  const r = await fetch(`${API}/posts/${postId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ post: { scheduled_at: publishAt } }),
+  })
+  const text = await r.text()
+  let body
+  try { body = text ? JSON.parse(text) : null } catch { body = text }
+  if (!r.ok) return { ok: false, error: typeof body === 'object' && body?.error ? String(body.error) : `${r.status}` }
+  return { ok: true, post: body?.data ?? body }
+}
+
 async function applyCadence() {
-  const dates = sunTueThuPublishAts(SERIES_SLUGS.length)
+  const dates = everyNDaysPublishAts(IG_EVERY_DAYS, SERIES_SLUGS.length)
   for (let i = 0; i < SERIES_SLUGS.length; i++) {
     const slug = SERIES_SLUGS[i]
     const publishAt = dates[i]
@@ -307,20 +329,32 @@ async function applyCadence() {
       console.log(`${slug}: no postproxyId — npm run postproxy -- schedule ${slug}`)
       continue
     }
-    const post = await patchSchedule(meta.postproxyId, publishAt)
-    const updated = { ...meta, publishAt, scheduledAt: post.scheduled_at, via: 'postproxy' }
-    writeFileSync(metaPath(ep), JSON.stringify(updated, null, 2) + '\n')
-    console.log(`${publishAt.slice(0, 10)} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][gulfWeekday(publishAt)]})  ${slug}  ${meta.postproxyId}`)
+    try {
+      const r = await tryPatchSchedule(meta.postproxyId, publishAt)
+      if (!r.ok) {
+        console.log(`${slug}: skipped (${r.error})`)
+        continue
+      }
+      const post = r.post
+      const updated = { ...meta, publishAt, scheduledAt: post.scheduled_at, via: 'postproxy' }
+      writeFileSync(metaPath(ep), JSON.stringify(updated, null, 2) + '\n')
+      console.log(`${publishAt.slice(0, 10)} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][gulfWeekday(publishAt)]})  ${slug}  ${meta.postproxyId}`)
+    } catch (e) {
+      console.log(`${slug}: skipped (${e instanceof Error ? e.message : e})`)
+    }
   }
 }
 
-/** Pushes the copy in each short's instagram/tiktok/twitter.json to its scheduled PostProxy post: caption (and the
-    Instagram first comment, or the X link reply). Posts already out, or within PostProxy's 5-minute lock, are skipped. */
+function postproxyPlatforms() {
+  return ['instagram', ...['tiktok', 'twitter'].filter((p) => EXTRA_PLATFORMS.has(p))]
+}
+
+/** Pushes the copy in each short's instagram.json (and optional tiktok/twitter) to its scheduled PostProxy post. */
 async function updateCopy(only) {
   const soon = Date.now() + 6 * 60_000
   const slugs = only ? [only] : readdirSync(path.join(ROOT, 'out'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort()
   for (const s of slugs) {
-    for (const platform of ['instagram', 'tiktok', 'twitter']) {
+    for (const platform of postproxyPlatforms()) {
       const file = path.join(ROOT, 'out', s, `${platform}.json`)
       if (!existsSync(file)) continue
       const meta = JSON.parse(readFileSync(file, 'utf8'))
@@ -339,12 +373,12 @@ async function updateCopy(only) {
   }
 }
 
-/** Swaps the video on a short's scheduled Instagram, TikTok and X posts for the current render (a re-cut). */
+/** Swaps the video on a short's scheduled PostProxy post(s) for the current render (a re-cut). */
 async function replaceMedia(slug) {
   const ep = episode(slug)
   const video = path.join(ep.out, `${ep.slug}.mp4`)
   if (!existsSync(video)) die(`no video at ${video}`)
-  for (const platform of ['instagram', 'tiktok', 'twitter']) {
+  for (const platform of postproxyPlatforms()) {
     const file = metaPath(ep, platform)
     if (!existsSync(file)) continue
     const meta = JSON.parse(readFileSync(file, 'utf8'))
@@ -358,6 +392,30 @@ async function replaceMedia(slug) {
     fd.append('media[]', new Blob([readFileSync(video)], { type: 'video/mp4' }), path.basename(video))
     await api(`/posts/${meta.postproxyId}`, { method: 'PATCH', body: fd })
     console.log(`${slug}\t${platform}\tmedia replaced`)
+  }
+}
+
+/** Drops scheduled TikTok and X posts from PostProxy; clears postproxyId in each short's tiktok.json and twitter.json. */
+async function cancelSecondary() {
+  const outDir = path.join(ROOT, 'out')
+  if (!existsSync(outDir)) { console.log('no out/ — nothing to cancel'); return }
+  for (const slug of readdirSync(outDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort()) {
+    for (const platform of ['tiktok', 'twitter']) {
+      const file = path.join(outDir, slug, `${platform}.json`)
+      if (!existsSync(file)) continue
+      const meta = JSON.parse(readFileSync(file, 'utf8'))
+      if (!meta.postproxyId) continue
+      let post
+      try { post = await api(`/posts/${meta.postproxyId}`).then((b) => b.data ?? b) } catch { post = null }
+      if (post?.status === 'scheduled') {
+        await api(`/posts/${meta.postproxyId}`, { method: 'DELETE' })
+        console.log(`${slug}\t${platform}\tcancelled ${meta.postproxyId}`)
+      } else console.log(`${slug}\t${platform}\tskipped (${post?.status ?? 'missing'})`)
+      if (post?.status === 'scheduled' || post?.status === 'draft') {
+        const { postproxyId: _id, scheduledAt: _at, ...rest } = meta
+        writeFileSync(file, JSON.stringify({ ...rest, via: 'off' }, null, 2) + '\n')
+      }
+    }
   }
 }
 
@@ -379,32 +437,42 @@ if (cmd === 'profiles') {
   for (const s of slugs) await scheduleSlug(s, profileId)
 } else if (cmd === 'cadence') {
   await applyCadence()
+} else if (cmd === 'cancel-secondary') {
+  await cancelSecondary()
 } else if (cmd === 'schedule-twitter') {
+  extraEnabled('twitter')
   if (!slug) die('usage: npm run postproxy -- schedule-twitter <slug>')
   await scheduleTwitterSlug(slug, await twitterProfileId())
 } else if (cmd === 'publish-twitter') {
+  extraEnabled('twitter')
   if (!slug) die('usage: npm run postproxy -- publish-twitter <slug>')
   await publishTwitterSlug(slug, await twitterProfileId())
 } else if (cmd === 'schedule-twitter-all') {
+  extraEnabled('twitter')
   const profileId = await twitterProfileId()
   for (const s of TWITTER_SLUGS) await scheduleTwitterSlug(s, profileId)
 } else if (cmd === 'sync-twitter-dates') {
+  extraEnabled('twitter')
   syncTwitterDates()
 } else if (cmd === 'schedule-tiktok') {
+  extraEnabled('tiktok')
   if (!slug) die('usage: npm run postproxy -- schedule-tiktok <slug>')
   await scheduleTikTokSlug(slug, await tiktokProfileId())
 } else if (cmd === 'publish-tiktok') {
+  extraEnabled('tiktok')
   if (!slug) die('usage: npm run postproxy -- publish-tiktok <slug>')
   await publishTikTokSlug(slug, await tiktokProfileId())
 } else if (cmd === 'schedule-tiktok-all') {
+  extraEnabled('tiktok')
   const profileId = await tiktokProfileId()
   for (const s of TIKTOK_PUBLISH_SLUGS) await publishTikTokSlug(s, profileId)
   for (const s of TIKTOK_SCHEDULE_SLUGS) await scheduleTikTokSlug(s, profileId)
 } else if (cmd === 'sync-tiktok-dates') {
+  extraEnabled('tiktok')
   syncTikTokDates()
 } else if (cmd === 'update-copy') {
   await updateCopy(slug)
 } else if (cmd === 'replace-media') {
   if (!slug) die('usage: npm run postproxy -- replace-media <slug>')
   await replaceMedia(slug)
-} else die('usage: npm run postproxy -- profiles | schedule | schedule-all | cadence | schedule-tiktok | publish-tiktok | schedule-tiktok-all | sync-tiktok-dates | schedule-twitter | publish-twitter | schedule-twitter-all | sync-twitter-dates')
+} else die('usage: npm run postproxy -- profiles | schedule | schedule-all | cadence | cancel-secondary | update-copy | replace-media | …tiktok/twitter (POSTPROXY_EXTRA_PLATFORMS)')
