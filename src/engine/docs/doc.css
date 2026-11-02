@@ -7,8 +7,12 @@
   display: grid; grid-template-columns: minmax(16px, 1fr) minmax(0, var(--doc-wide, 1040px)) minmax(16px, 1fr); align-content: start;
   padding: 72px 0 160px; min-height: 100%;
   background: var(--bg); color: var(--fg); font-family: var(--text); font-size: 17px; line-height: 1.6;
-  -webkit-font-smoothing: antialiased; font-kerning: normal; text-align: left;
+  -webkit-font-smoothing: antialiased; font-kerning: normal;
 }
+.doc-head, .doc-sec > h2, .doc-body > h3, .doc-toc, .doc-toc-mini, .fig-take, .fig-src, .fig-checks { text-align: left; }
+/* Body copy: flush both edges within the measure (headings and chrome stay ragged right). */
+:is(.doc-body, .sec-body) > p,
+:is(.doc-body, .sec-body) > blockquote p { text-align: justify; hyphens: auto; text-wrap: pretty; }
 .doc *, .doc *::before, .doc *::after { box-sizing: border-box; }
 .doc-head, .doc-body { grid-column: 2; min-width: 0; }
 .doc-head, .doc-sec > h2, .doc-body > :not(.doc-sec, .doc-fig), .sec-body > :not(.doc-fig) { max-width: var(--measure); }

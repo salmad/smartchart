@@ -8,6 +8,8 @@ import type { Table } from "../types.js";
 export type TableRoom = "full" | "split" | "half";
 /** The longest heading that fits the group column on one line (about 18% of the table at the label size). */
 const MAX: Record<TableRoom, number> = { full: 18, split: 12, half: 0 };
+/** Doc figures are not height-budgeted; slightly longer group labels still fit beside their rows. */
+const DOC_GROUP_MAX = 26;
 /** A table of two columns is drawn at 2/3 width, so it has the room of a table beside notes. */
 export const roomOf = (t: Partial<Table> | undefined, notes: boolean): TableRoom => (notes || (t?.columns?.length ?? 0) <= 2 ? "split" : "full");
 
@@ -17,4 +19,11 @@ export function groupLayout(t: Partial<Table> | undefined, room: TableRoom): "no
   const heads = (t?.rows ?? []).filter((r) => r?.style === "group").map((r) => plainOf(text(r.cells?.[0])).trim());
   if (!heads.length) return "none";
   return room !== "half" && heads.every((h) => h.length <= MAX[room]) ? "column" : "rows";
+}
+
+/** Group layout for a doc figure (full width, taller tables, longer group labels). */
+export function docGroupLayout(t: Partial<Table> | undefined): "none" | "column" | "rows" {
+  const heads = (t?.rows ?? []).filter((r) => r?.style === "group").map((r) => plainOf(text(r.cells?.[0])).trim());
+  if (!heads.length) return "none";
+  return heads.every((h) => h.length <= DOC_GROUP_MAX) ? "column" : "rows";
 }

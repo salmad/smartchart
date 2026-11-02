@@ -4,13 +4,13 @@ import type { Cell, Table } from "../types.js";
 import { CELL_MAX, plain } from "../slides/schema.js";
 import { markKinds, markOf } from "../slides/marks.js";
 import { columnAlign, figureOf, placeOf } from "../slides/align.js";
-import { groupLayout, type TableRoom } from "../slides/groups.js";
+import { groupLayout, docGroupLayout, type TableRoom } from "../slides/groups.js";
 import { at, esc, item, list, md } from "./text.js";
 import { ballKey, markHTML } from "./scores.js";
 import { named } from "./pictures.js";
 
-export function tableHTML(t: Table, base: string, key = true, room: TableRoom = "full"): string {
-  const al = columnAlign(t), n = t.columns.length, byColumn = groupLayout(t, room) === "column";
+export function tableHTML(t: Table, base: string, key = true, room: TableRoom = "full", doc = false): string {
+  const al = columnAlign(t), n = t.columns.length, byColumn = (doc ? docGroupLayout(t) : groupLayout(t, room)) === "column";
   // Bars: each figure to scale with its column's largest; the figures right-aligned in a fixed width (in ch, mono) so every
   // bar in the column starts and is measured from one edge.
   const body = t.rows.filter((r) => r.style !== "group");
@@ -62,7 +62,7 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
   };
   // Two columns of label and figure sit narrow; two columns of words take the full width.
   const wordy = body.some((r) => r.cells.some((c) => plain(String(typeof c === "object" && c ? c.value ?? "" : c ?? "")).length > CELL_MAX));
-  return `<table class="tbl${n <= 2 && !wordy ? " narrow" : ""}${byColumn ? " by-group" : ""}"><colgroup>${byColumn ? `<col class="grp">` : ""}${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
+  return `<table class="tbl${n <= 2 && !wordy ? " narrow" : ""}${byColumn ? " by-group" : ""}${doc ? " wrap" : ""}"><colgroup>${byColumn ? `<col class="grp">` : ""}${t.columns.map((c) => (c.focus ? `<col class="focus">` : "<col>")).join("")}</colgroup>
     <thead><tr>${byColumn ? `<th class="grp"></th>` : ""}${t.columns.map(head).join("")}</tr></thead>
     <tbody>${byColumn ? columnRows() : t.rows.map(row).join("")}</tbody></table>${key && markKinds(t).has("balls") ? ballKey() : ""}`;
 }

@@ -205,6 +205,8 @@
 .tbl.by-group tr:not(.grp-end) > td.grp { border-bottom-color: transparent; }
 .tbl.by-group tr.grp-end > td { border-bottom-color: var(--line-2); }
 .tbl.by-group.measuring tr > :nth-child(2) { white-space: nowrap; }
+/* A doc's table (`wrap`): group headings wrap too, so a longer one still sits beside its rows. */
+.tbl.wrap tr.group td:first-child, .tbl.wrap.by-group tr > td.grp { white-space: normal; overflow-wrap: anywhere; }
 .tbl tr.muted td { color: var(--muted); }
 .tbl tr.total td { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 16px; font-weight: 700; color: var(--fg); }
 .tbl tr.total td:first-child { color: var(--fg); }

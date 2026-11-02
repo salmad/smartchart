@@ -27,10 +27,14 @@ export function sizeTable(root: HTMLElement, k: number): void {
   root.querySelectorAll<HTMLElement>(".tbl").forEach((tbl) => {
     const cols = [...tbl.querySelectorAll<HTMLElement>("col")], grp = tbl.classList.contains("by-group") ? 1 : 0, col = cols[grp];
     if (!col) return;
-    // A fit can run more than once: widths from the last one would measure as content.
     cols.forEach((c) => { c.style.width = ""; });
-    tbl.classList.remove("fitted");
-    const g = grp ? (Math.max(0, ...[...tbl.querySelectorAll("td.grp > span")].map((el) => el.getBoundingClientRect().width / k)) + 28) / tbl.clientWidth : 0;
+    tbl.classList.remove("fitted", "measuring", "line-measure");
+    const w = tbl.clientWidth, wrap = tbl.classList.contains("wrap");
+    // A doc's group headings may wrap, so they are measured on one line; their column takes at most 30%.
+    if (wrap) tbl.classList.add("line-measure");
+    const heads = Math.max(0, ...[...tbl.querySelectorAll("td.grp > span")].map((el) => el.getBoundingClientRect().width / k));
+    if (wrap) tbl.classList.remove("line-measure");
+    const g = grp ? Math.min(wrap ? .3 : 1, (heads + 28) / w) : 0;
     if (grp) cols[0].style.width = `${(g * 100).toFixed(2)}%`;
     tbl.classList.add("measuring");
     const natural = Math.max(...[...tbl.querySelectorAll(`tr:not(.group) > :nth-child(${grp + 1})`)].map((c) => c.scrollWidth));
@@ -38,7 +42,6 @@ export function sizeTable(root: HTMLElement, k: number): void {
     tbl.classList.add("line-measure");
     const line = [...tbl.querySelectorAll("thead th")].map((th) => th.getBoundingClientRect().width / k);
     tbl.classList.remove("measuring", "line-measure");
-    const w = tbl.clientWidth;
     // +2px: at exactly its natural width, subpixel rounding can wrap the label.
     const share = Math.min(.4, Math.max(.2, (natural + 2) / w));
     col.style.width = `${(share * 100).toFixed(2)}%`;
@@ -48,7 +51,8 @@ export function sizeTable(root: HTMLElement, k: number): void {
     const shares = data.map((_, j) => (bul.has(j) && !root.classList.contains("style-pitch") ? 2 : 1)), total = shares.reduce((a, b) => a + b, 0);
     const room = 1 - g - share, need = data.map((_, j) => (line[grp + 1 + j] ?? 0) + 2);
     const fits = data.map((_, j) => need[j] <= room * w * shares[j] / total);
-    if (!bul.size && fits.some((f) => !f)) {
+    // A doc table has no height budget: no leaning towards one line, the other columns share the rest and wrap.
+    if (!wrap && !bul.size && fits.some((f) => !f)) {
       tbl.classList.add("fitted");
       const spare = room * w - need.reduce((a, b) => a + b, 0);
       // Every column on one line: each its width and an even part of the rest.

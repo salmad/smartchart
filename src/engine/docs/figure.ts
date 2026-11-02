@@ -4,7 +4,6 @@
    is named by data-block. */
 import type { Callout, Slide, Theme } from '../types.js'
 import { MENU } from '../slides/schema.js'
-import { roomOf } from '../slides/groups.js'
 import { at, capHTML, md } from '../components/text.js'
 import { tableHTML } from '../components/table.js'
 import { cardsHTML } from '../components/cards.js'
@@ -39,7 +38,7 @@ function component(f: FigureBlock): string {
   const b = f.body, s = asSlide(f)
   switch (f.kind) {
     case 'chart': return '<div class="chart full grow" data-chart></div>'
-    case 'table': { const t = b.table ?? { columns: [], rows: [] }; return tableHTML(t, 'table', true, roomOf(t, false)) }
+    case 'table': { const t = b.table ?? { columns: [], rows: [] }; return tableHTML(t, 'table', true, 'full', true) }
     case 'number': return numberHTML(b.number ?? { value: '', caption: '' }, '', true)
     case 'cards': return cardsHTML(b.cards ?? [], s ? MENU.cards.variant(s) : 'icon', b.arrange, '')
     case 'steps': return stepsHTML(b.steps ?? [], '')
