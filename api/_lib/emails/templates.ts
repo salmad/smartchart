@@ -113,13 +113,14 @@ function specFor(key: EmailKey, v: EmailVars): Spec {
         { button: 'Connect your agent', href: at('/?connect=1') },
       ] }
     case '4b-so-what': return {
-      subject: 'Slide titles: topic or point?', preview: 'How to check your titles, with an example.',
-      eyebrow: 'Guide', title: 'Topic or point? *Check your titles.*',
+      subject: 'Check a deck by reading only its titles', preview: 'A two-minute check before you send a deck.',
+      eyebrow: 'Guide', title: 'Read only the titles. *They should tell the story.*',
       body: [
-        { p: 'Readers take in the title first. If it only names the topic, they have to work out the conclusion from the chart. Compare:' },
-        { list: ['**Topic:** ARR bridge, FY25 to FY26', '**Point:** ARR reaches £17.5m in FY26; new customers add £6.2m of the £7.7m growth'] },
-        { slide: 's15-consulting.jpg', alt: 'A waterfall slide whose title states that new customers add £6.2m of the £7.7m growth', label: 'Waterfall with a point as its title' },
-        { p: 'To check a deck, read only the titles in order. If they don’t tell the story, ask your agent: “Rewrite each title as the point the slide proves.”' },
+        { p: 'A quick check before you send a deck: read only the slide titles, in order. If they tell the story on their own, the deck works.' },
+        { p: 'If a title reads like a label, rewrite it as what the slide shows. For example, “ARR bridge, FY25 to FY26” becomes:' },
+        { quote: 'ARR reaches £17.5m in FY26; new customers add £6.2m of the £7.7m growth' },
+        { slide: 's15-consulting.jpg', alt: 'A waterfall slide titled: ARR reaches £17.5m in FY26; new customers add £6.2m of the £7.7m growth', label: 'Waterfall, ARR bridge' },
+        { p: 'Your agent can do this for a whole deck: “Rewrite each title as the point the slide proves.” Occam flags any title that is still a label.' },
         { button: 'Watch a 25-second example', href: watch(key, 'T-4zj3FsNeA') },
       ] }
     case '5-cagr': return {
