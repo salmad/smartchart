@@ -8,7 +8,7 @@ import { decide } from './series.js'
 import { emailStore, type EmailStore } from './store.js'
 import { SITE, renderEmail, type EmailKey, type EmailVars } from './templates.js'
 
-const FROM = 'Salim from Occam <salim@occamslides.com>'
+const FROM = 'Sam from Occam <sam@occamslides.com>'
 const KEYS: EmailKey[] = ['1-connect', '2-line', '3-templates', '4-connect-again', '4b-so-what', '5-cagr', '6-docs', '7-partner']
 
 const unsubscribeUrl = (token: string) => `${SITE}/api/unsubscribe?t=${encodeURIComponent(token)}`
@@ -61,7 +61,7 @@ export async function emailCron(request: Request): Promise<Response> {
   if (test) {
     const results = []
     for (const key of KEYS) {
-      const vars: EmailVars = { first: 'Salim', existing: true, deck: { id: 'example', name: 'Acme board deck' }, unsubscribeUrl: unsubscribeUrl('test') }
+      const vars: EmailVars = { first: 'Sam', existing: true, deck: { id: 'example', name: 'Acme board deck' }, unsubscribeUrl: unsubscribeUrl('test') }
       results.push({ key, ...(await send(test, key, vars, `test-${test}-${key}-${Date.now()}`)) })
     }
     return Response.json({ test, results })

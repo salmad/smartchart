@@ -171,7 +171,7 @@ export function renderEmail(key: EmailKey, v: EmailVars): RenderedEmail {
       <h1 class="h1" style="margin:0 0 24px;font:400 38px/1.02 ${DISPLAY};font-stretch:78%;letter-spacing:-.02em;color:${C.type}">${md(s.title)}</h1>
       <p style="margin:0 0 16px;font:400 16px/1.6 ${SANS};color:${C.type2}">${esc(hi)}</p>
       ${s.body.map(html).join('\n      ')}
-      <p style="margin:0 0 28px;font:400 16px/1.6 ${SANS};color:${C.type2}">Salim<br><span style="color:${C.type3}">Founder, Occam</span></p>
+      <p style="margin:0 0 28px;font:400 16px/1.6 ${SANS};color:${C.type2}">Sam<br><span style="color:${C.type3}">Founder, Occam</span></p>
     </td></tr>
     <tr><td style="padding:24px 8px 0;font:400 12px/1.6 ${SANS};color:${C.type3}">
       If it isn’t beautiful, it’s probably wrong.<br>
@@ -180,6 +180,6 @@ export function renderEmail(key: EmailKey, v: EmailVars): RenderedEmail {
   </table>
 </td></tr></table>
 </body></html>`
-  const body = [hi, '', ...s.body.map(text).flatMap((t) => [t, '']), 'Salim', 'Founder, Occam', '', '—', `Unsubscribe: ${v.unsubscribeUrl}`].join('\n')
+  const body = [hi, '', ...s.body.map(text).flatMap((t) => [t, '']), 'Sam', 'Founder, Occam', '', '—', `Unsubscribe: ${v.unsubscribeUrl}`].join('\n')
   return { subject: s.subject, html: page, text: body }
 }
