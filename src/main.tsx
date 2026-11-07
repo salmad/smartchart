@@ -14,8 +14,10 @@ declare global { interface Window { __css?: Promise<void> } }
 const fromEmail = takeEmailEntry()
 void import('@vercel/analytics').then(({ inject, pageview }) => {
   inject({ mode: import.meta.env.DEV ? 'development' : 'production' })
-  if (fromEmail) pageview({ route: '/em/[email]', path: fromEmail })
+  if (fromEmail && !fromEmail.video) pageview({ route: '/em/[email]', path: fromEmail.path })
+  // A video link: give the view a moment to send, then go to the video.
+  if (fromEmail?.video) setTimeout(() => location.replace(`https://youtube.com/shorts/${fromEmail.video}`), 600)
 })
 
 const root = document.getElementById('root')
-if (root) void (window.__css ?? Promise.resolve()).then(() => createRoot(root).render(<StrictMode><Root /></StrictMode>))
+if (root && !fromEmail?.video) void (window.__css ?? Promise.resolve()).then(() => createRoot(root).render(<StrictMode><Root /></StrictMode>))
