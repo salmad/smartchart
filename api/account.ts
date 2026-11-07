@@ -9,11 +9,14 @@ import { shareHandler } from './_lib/share.js'
 import { prefsHandler } from './_lib/prefs.js'
 import { workspacesHandler } from './_lib/workspaces.js'
 import { appToolHandler } from './_lib/app-tool.js'
+import { emailCron, emailUnsubscribe } from './_lib/emails/handler.js'
 
 const deps = { userFrom, db: getDb }
 const routes: Record<string, (request: Request) => Promise<Response> | Response> = {
   keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), pages: pagesHandler(deps), workspaces: workspacesHandler(deps), prefs: prefsHandler(deps),
   tool: appToolHandler(deps),
+  // The engagement emails: the daily cron and the unsubscribe link (api/_lib/emails/handler.ts).
+  'email-cron': emailCron, 'email-unsub': emailUnsubscribe,
 }
 
 const handle = (request: Request) => {

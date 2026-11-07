@@ -8,6 +8,7 @@ import type { PageRepo } from '@/app/pages'
 import type { WorkspaceRepo } from '@/app/workspaces'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { lastDeckIdInWorkspace } from '@/app/cached-decks'
+import { dropLinkParam, linkParam } from '@/app/email-links'
 import { DeleteDeck } from '../DeleteDeck'
 import { MovePicker } from './MovePicker'
 import { Members } from './Members'
@@ -48,13 +49,14 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   const size = useSidebarWidth()
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
-  const [doomed, setDoomed] = useState<{ row: Row; subpages: number } | null>(null), [said, setSaid] = useState<string | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(null)
+  const [doomed, setDoomed] = useState<{ row: Row; subpages: number } | null>(null), [said, setSaid] = useState<string | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(() => (linkParam('new') === 'doc' ? { parent: null } : null))
   const [members, setMembers] = useState(false), [moving, setMoving] = useState<Row | null>(null)
   const { deck } = open
   const openRef: PageRef | null = open.doc !== null ? { kind: 'doc', id: open.doc } : deck.id ? { kind: 'deck', id: deck.id } : null
   const tree = usePageTree({ repo: repos.pages, workspaceId: wsId, viewer: me, open: openRef, deck, pendingParent: deck.parent, tick: open.docTick,
     ops: actions.ops, account: me === DEV_ACCOUNT.id ? undefined : me })
   // Once the server has answered a change, the list is read again, so it says what the server says; a change it accepted is let go of then.
+  useEffect(() => dropLinkParam('new'), [])
   useEffect(() => { if (actions.answered) void tree.reload().finally(actions.forget) }, [actions.answered]) // eslint-disable-line react-hooks/exhaustive-deps
   // Pointing at a page for a moment reads it ahead, so the click opens it without waiting: a deck into this browser once,
   // never the open one; a doc into memory.

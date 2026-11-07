@@ -138,7 +138,7 @@ A short checklist for a new user (in the app, quiet and dismissable) that walks 
 - Ask your agent to create a deck (it ticks when a deck is written over MCP; offer a sentence to paste, e.g. "Make me a 6-slide deck on …").
 - Share a deck (a link made).
 - Leave a comment and ask the agent to address it.
-Open questions: where it lives (empty-state of the decks list, or the account menu with a progress ring); whether it shows once or until done; what counts as done (server-side events, not clicks, so an agent's actions count); no emails or nagging.
+Open questions: where it lives (empty-state of the decks list, or the account menu with a progress ring); whether it shows once or until done; what counts as done (server-side events, not clicks, so an agent's actions count); no nagging in the app. Emails are a separate series, see #31.
 
 ### 18a. First slice: a dismissable "Connect an agent" prompt (2026-10-07)
 Before the full checklist, one item on its own: a small card in the app (decks list or editor corner) saying "Connect an agent: let Claude or Cursor build and edit your decks here", with a primary button that opens `AgentKey` (Make a key) and a close (×) that hides it.
@@ -195,3 +195,18 @@ Dragging by touch (native HTML5 drag does not start from a finger on most phones
 
 ## 30. Page tree over MCP: what P4 leaves out (2026-10-21)
 A `list_pages` returning the whole tree in one call (agents find a parent through `list_docs` and `list_decks` today); placing a page by position number instead of `before` / `after` a sibling; agents moving a page into another workspace (#23). A live MCP run against a real database was not done.
+
+## 31. Engagement emails that walk a new maker to the wow moment (2026-11-07)
+A short series of emails for new makers, sent when something does or doesn't happen in the product rather than on fixed dates. Each email skips the step once it is done. This replaces #18's "no emails" for this series only; #18 stays the in-app half.
+- **The wow moment:** the maker's own material (a report, a PRD, a link) turned into a checked, on-brand deck or doc that they share with the room.
+- **Themes, in order (owner, 2026-11-07):** (1) connect Occam to your agent over MCP; (2) how to make better slides, each email linking to one of our short videos and the same fix done in Occam (the emails never name Instagram or reels); (3) what Occam can do: the slide templates (from `starters.json`, never another example set); (4) advanced features such as CAGR on charts, notes and marks; (5) making docs, not only decks. Other emails are not mainly prompts to copy.
+- **Cadence:** about 5–7 emails in the first 14 days. At most one every two days, never two on one day, one action per email, and nothing after day 30 unless the maker is active (then one product note a month at most). No upgrade pushes in the first two weeks.
+- **What it learns from the best:**
+  - Gamma (8 emails in 6 days, 3 upgrade pushes, two days with two emails each): copy the one-action welcome and the congratulations after a first edit; avoid the volume and the repeats.
+  - Airbnb hosts: each email shows real progress ("done / left") and branches on what the person actually did.
+  - PostHog and Heap: send emails on product events, stop once the maker activates, hold back a control group.
+  - Gmail: keep spam complaints under 0.3% and offer one-click unsubscribe.
+- **Look:** plain and founder-signed, in USERS.md's vocabulary. Show the maker's own slide as a thumbnail where possible (we have the renderer).
+- **Thin harness:** the server sends events (signed up, deck or doc made, key made or MCP write, link shared, comment resolved). A sequencing tool (Loops or Customer.io) holds the series, and a sender (Resend) on the occamslides.com domain delivers it. The same sender serves workspace invites (#24).
+- **Measure:** the share of new makers who make a deck or doc from their own material and share it within 7 days, against a held-back group that gets no emails.
+- **Open:** which tool; consent wording at signup; whether signed-out makers (local decks) are reached at all; which videos map to which feature.

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Compass, LogOut, PenLine, Plug } from 'lucide-react'
 import { signOut, type Account } from '@/app/auth'
+import { dropLinkParam, linkParam } from '@/app/email-links'
 import { go } from '@/app/route'
 import { Avatar } from './Avatar'
 import { AgentKey } from './AgentKey'
@@ -9,7 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 /** Your avatar at the right of the bar: who is signed in, Connect an agent and Sign out. */
 export function AccountMenu({ account, onTour = null, onReview = null }: { account: Account; onTour?: (() => void) | null; onReview?: (() => void) | null }) {
-  const [connecting, setConnecting] = useState(false)
+  const [connecting, setConnecting] = useState(() => linkParam('connect') !== null)
+  useEffect(() => dropLinkParam('connect'), [])
   const who = account.name || account.email
   return (
     <>
