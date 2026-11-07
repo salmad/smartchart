@@ -75,77 +75,83 @@ function specFor(key: EmailKey, v: EmailVars): Spec {
       subject: 'Set up Occam in Claude', preview: 'Connect your Occam account to Claude, ChatGPT or Cursor.',
       eyebrow: 'Setup', title: 'Set up Occam in Claude. *It takes about a minute.*',
       body: [
-        { p: `${v.existing ? 'You can now use Occam from Claude, ChatGPT or Cursor.' : 'Thanks for signing up for Occam. You can use it from Claude, ChatGPT or Cursor.'} Connect your account once, then ask your agent for a deck: it builds it in Occam, and you watch it change live.` },
+        { p: v.existing ? 'You can now use Occam from Claude, ChatGPT or Cursor. To set it up:' : 'Thanks for signing up. You can use Occam from Claude, ChatGPT or Cursor. To set it up:' },
+        { list: ['**Make a key:** in Occam, open your account menu and choose Connect an agent.', '**Add it to your agent:** copy the setup shown for Claude, ChatGPT or Cursor.', '**Ask for a deck:** for example, “Make a 6-slide deck from this report.” It appears in Occam as your agent writes it.'] },
         { slide: 's3-consulting.jpg', alt: 'A slide whose title states the point, proved by a bar and line chart with three notes on the right', label: 'Chart with notes, written by an agent' },
-        { p: 'Every slide is checked before you see it: the title makes the point, the numbers fit, nothing spills.' },
+        { p: 'Each slide is checked as it is written: the title states the point, the numbers fit and nothing overflows.' },
         { button: 'Connect your agent', href: at('/?connect=1') },
-        { small: 'No agent? Start in Occam’s own chat instead.' },
+        { small: 'No agent? You can use Occam’s own chat instead.' },
       ] }
     case '2-line': return {
-      subject: 'A tip for your slide titles', preview: 'Put the point in the title and let the chart prove it.',
-      eyebrow: 'Tip', title: 'Put the point in the title. *Let the chart prove it.*',
+      subject: 'How to write slide titles in Occam', preview: 'Write the point in the title, and let the chart prove it.',
+      eyebrow: 'Guide', title: 'Write the point in the title. *The chart proves it.*',
       body: [
-        { p: 'Most slides hide their point in the third bullet. The room reads the title, skims the rest and moves on. The fix: say the point up top, then let the chart show the evidence.' },
+        { p: 'A slide title works best as a full sentence that states the conclusion, not as a label. For example:' },
+        { list: ['**Label:** Loan book, 2027 to 2028', '**Point:** The base case reaches a £120m book by Q4 2028; the downside still clears £70m'] },
         { slide: 's13-consulting.jpg', alt: 'A line chart slide titled: The base case reaches a £120m book by Q4 2028; the downside still clears £70m', label: 'Line chart, two scenarios' },
-        { button: 'Watch the fix (29s)', href: watch(key, 'NwgboFYXgcY') },
-        { p: 'Occam flags a title that isn’t a claim before anyone else sees it. Try it on the busiest slide you have.' },
+        { p: 'Occam flags titles that are labels, so you can fix them before you share the deck.' },
+        { button: 'Watch a 29-second example', href: watch(key, 'NwgboFYXgcY') },
       ] }
     case '3-templates': return {
-      subject: 'Your Occam slide templates', preview: '30 templates, each built for one job.',
-      eyebrow: 'Templates', title: 'Your slide templates. *30, each built for one job.*',
+      subject: 'Choosing a slide template in Occam', preview: 'Pick the template by what the slide needs to show.',
+      eyebrow: 'Guide', title: 'Pick the template by what the slide shows.',
       body: [
-        { p: 'Every slide in Occam starts from a template built for one job. You never pick fonts, colours or spacing, and every deck keeps one look.' },
+        { p: 'Occam has 30 slide templates, each built for one job. Choose by what the slide needs to show:' },
+        { list: ['**Comparing options:** scoring table, with ✓, ✗ and Harvey balls', '**Positioning:** matrix, with notes on the right saying why', '**Numbers side by side:** table', '**Plans over time:** timeline, with the critical path marked'] },
         { slide: 'templates-grid.jpg', alt: 'Four Occam slides: a scoring table, a matrix with notes on the right, a margin table and a launch timeline', label: 'Scoring, matrix, table, timeline' },
-        { list: ['**Scoring table:** options compared with ✓, ✗ and Harvey balls', '**Matrix with notes:** where each option sits, and notes on the right saying why the gap is open', '**Table:** unit economics or plans, side by side', '**Timeline:** workstreams that run side by side, and the one on the critical path'] },
-        { button: 'Browse all 30 templates', href: at('/new') },
+        { p: 'Occam sets the fonts, colours and spacing, so every deck keeps one look.' },
+        { button: 'See all 30 templates', href: at('/new') },
       ] }
     case '4-connect-again': return {
-      subject: 'Finish setting up Occam in Claude', preview: 'One step left: connect your agent.',
+      subject: 'Finish setting up Occam in Claude', preview: 'Your account isn’t connected to an agent yet.',
       eyebrow: 'Setup', title: 'Finish setting up Occam. *One step left.*',
       body: [
-        { p: 'Once Occam is connected, this is all it takes:' },
+        { p: 'Your Occam account isn’t connected to an agent yet. Once it is, you can ask for a deck in one sentence:' },
         { quote: 'Make me a 6-slide deck from this report for the leadership meeting. Put the point of each slide in its title.' },
         { slide: 's21-consulting.jpg', alt: 'A next-steps slide: four steps take you from a blank page to a deck you can present', label: 'Next steps table' },
-        { p: 'Your agent writes, Occam checks every slide, and you watch it happen. Then leave a comment (“too wordy”, “use Q3’s number”) and your agent fixes it.' },
+        { p: 'To connect, open your account menu in Occam, choose Connect an agent and copy the setup for your agent. After that, comments you leave on a slide (“too wordy”, “use Q3’s number”) can be fixed by your agent too.' },
         { button: 'Connect your agent', href: at('/?connect=1') },
       ] }
     case '4b-so-what': return {
-      subject: 'Turning slide topics into points', preview: 'A short tip on titles, with an example.',
-      eyebrow: 'Tip', title: '“Revenue by region” is a topic. *“New customers drove growth” is a point.*',
+      subject: 'How to turn a slide topic into a point', preview: 'A short guide to titles, with an example.',
+      eyebrow: 'Guide', title: 'A topic names the slide. *A point says what it means.*',
       body: [
-        { p: 'When someone asks “what’s the so-what?”, the title says what the slide is about, not what it means.' },
-        { slide: 's15-consulting.jpg', alt: 'A waterfall slide whose title states that new customers add £6.2m of the £7.7m growth', label: 'Waterfall with a claim title' },
-        { button: 'Watch the fix (25s)', href: watch(key, 'T-4zj3FsNeA') },
-        { p: 'Next time, ask your agent to retitle your deck so every title makes a point. Occam flags any that still don’t.' },
+        { p: 'When a title only names the topic, readers have to work out the conclusion themselves. Compare:' },
+        { list: ['**Topic:** ARR bridge, FY25 to FY26', '**Point:** ARR reaches £17.5m in FY26; new customers add £6.2m of the £7.7m growth'] },
+        { slide: 's15-consulting.jpg', alt: 'A waterfall slide whose title states that new customers add £6.2m of the £7.7m growth', label: 'Waterfall with a point as its title' },
+        { p: 'To fix a whole deck, ask your agent: “Rewrite each title as the point the slide proves.” Occam flags any that are still topics.' },
+        { button: 'Watch a 25-second example', href: watch(key, 'T-4zj3FsNeA') },
       ] }
     case '5-cagr': return {
-      subject: 'Growth rates on your Occam charts', preview: 'CAGR, gaps and targets, drawn on the chart.',
-      eyebrow: 'Charts', title: 'Growth rates on your charts. *Worked out from your numbers.*',
+      subject: 'How to show a growth rate on an Occam chart', preview: 'Add a CAGR mark; Occam works out the rate from your numbers.',
+      eyebrow: 'Guide', title: 'Show the growth rate on the chart. *Occam works it out.*',
       body: [
-        { p: 'When a title claims a growth rate, the room looks for proof. Occam draws the CAGR between the two bars and works out the rate from your numbers, so the title and the chart always agree.' },
+        { p: 'When a title states a growth rate, add a CAGR mark to the chart. Occam calculates the rate from your numbers and draws it between the two bars, so the title and the chart agree.' },
         { slide: 's14-consulting.jpg', alt: 'A bar chart of a loan book from 2026 to 2030 with an 86% CAGR line and a £100m plan line', label: 'Chart with CAGR and target' },
-        { list: ['**Difference:** the gap between two bars, labelled', '**Target:** a goal line, and how far you are from it', '**Notes:** three observations that say what the chart doesn’t show'] },
+        { p: 'Other marks work the same way:' },
+        { list: ['**Difference:** the gap between two bars, labelled', '**Target:** a goal line, and how far you are from it', '**Notes:** short observations beside the chart on what it doesn’t show'] },
         { quote: `Add a CAGR from 2024 to 2026 on the revenue chart${v.deck ? ` in ${v.deck.name}` : ''}.` },
         v.deck ? { button: `Open ${v.deck.name}`, href: at(`/d/${encodeURIComponent(v.deck.id)}`) } : { button: 'Open Occam', href: at() },
       ] }
     case '6-docs': return {
-      subject: 'Docs in Occam', preview: 'PRDs, memos and teardowns, with the same charts and checks.',
-      eyebrow: 'Docs', title: 'Docs in Occam. *Same charts, same checks.*',
+      subject: 'How to write a doc in Occam', preview: 'PRDs, memos and teardowns, with the same charts and checks.',
+      eyebrow: 'Guide', title: 'Docs in Occam. *Same charts, same checks.*',
       body: [
-        { p: 'A PRD, a memo or a competitor teardown gets read, not presented. Occam docs use the same charts, tables and checks as your slides, laid out as pages, and your agent writes them the same way.' },
+        { p: 'Use a doc when the content will be read rather than presented: a PRD, a memo or a competitor teardown.' },
         { slide: 'doc-prd.jpg', alt: 'An Occam doc: a product requirements document with goals and a decision callout', label: 'Product requirements doc' },
-        { p: 'A doc can sit under a deck as the detail behind it. Start from a PRD, a competitor teardown or a legal memo.' },
+        { p: 'Docs use the same charts, tables and checks as slides, and your agent can write them the same way. A doc can also sit under a deck as the detail behind it.' },
+        { p: 'To start one, choose New doc in the sidebar and pick a PRD, a competitor teardown or a legal memo.' },
         { button: 'Start a doc', href: at('/?new=doc') },
       ] }
     case '7-partner': return {
-      subject: 'How Occam checks your slides', preview: 'What every slide is checked for, with an example.',
-      eyebrow: 'Checks', title: 'How Occam checks your slides. *One point, proved.*',
+      subject: 'What Occam checks on each slide', preview: 'The checks every slide goes through, with an example.',
+      eyebrow: 'Checks', title: 'What Occam checks. *On every slide.*',
       body: [
-        { p: 'One slide lists everything. The other makes one point and proves it.' },
+        { p: 'Every slide in Occam goes through the same checks:' },
+        { list: ['**The title states the point,** not the topic.', '**The numbers back it:** the chart or table shows what the title claims.', '**One point per slide.**', '**Nothing overflows** or overlaps.'] },
         { slide: 's10-consulting.jpg', alt: 'A ranked bar slide titled: Low limits are the top reason SMEs turn down a business card, ahead of fees', label: 'Ranked bars' },
-        { button: 'Watch the difference (32s)', href: watch(key, '9oMUFAJIgLQ') },
-        { p: 'Every slide in Occam is checked like a partner would check it: does the title make the point, do the numbers back it, is there one point per slide.' },
-        { p: 'If Occam isn’t working for you yet, reply and tell me why. I read every reply.' },
+        { button: 'Watch a 32-second example', href: watch(key, '9oMUFAJIgLQ') },
+        { p: 'If something in Occam isn’t working for you, reply to this email. I read every reply.' },
       ] }
   }
 }
