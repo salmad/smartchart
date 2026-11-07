@@ -5,7 +5,7 @@ import { test, expect } from 'vitest'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { contexts, slideHTML } from '@/engine/slides/render'
-import { FOOTER, STARTERS } from '@/engine/starters'
+import { FOOTER, startersFor, starterSlide } from '@/engine/starters'
 import { stressFor } from '../fixtures/stress'
 import type { Slide, Style } from '@/engine/types'
 
@@ -16,7 +16,7 @@ function hashes(): Record<string, string> {
   const out: Record<string, string> = {}
   for (const style of STYLES) {
     const sets: [string[], Slide[]][] = [
-      [STARTERS.map((s) => s.id), STARTERS.map((s) => s[style])],
+      [startersFor(style).map((s) => s.id), startersFor(style).map((s) => starterSlide(s, style))],
       [stressFor(style).map((_, i) => `stress-${i + 1}`), stressFor(style).map(({ name: _name, ...s }) => s)],
     ]
     for (const [ids, slides] of sets) {

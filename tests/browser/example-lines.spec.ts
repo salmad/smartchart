@@ -13,7 +13,9 @@ test('example line counts are locked', async ({ page }) => {
   const got: Lines = []
   for (let i = 0; i < STARTERS.length; i++) {
     got[i] = {}
-    for (const style of ['consulting', 'pitch']) {
+    for (const style of ['consulting', 'pitch'] as const) {
+      // A starter with no version in this style (Them vs us in pitch) has no lines to lock.
+      if (!STARTERS[i][style]) { got[i][style] = []; continue }
       await page.goto(`/src/dev/review.html?style=${style}&full=1&only=${i}`)
       await page.waitForFunction(() => window.__fit)
       got[i][style] = await page.$eval('.frame .slide', (slide) => {

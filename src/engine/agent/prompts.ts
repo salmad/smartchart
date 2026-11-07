@@ -1,6 +1,6 @@
 /* Prompt pieces shared by the agent and Jev (spec 9.3): the style block, worked examples, the picking guide. */
 import { MENU, OFFERED, PICKING_GUIDE, STYLES } from "../slides/schema.js";
-import { STARTERS, starterSlide } from "../starters/index.js";
+import { startersFor, starterSlide } from "../starters/index.js";
 import type { Slide, Style, TemplateId } from "../types.js";
 
 /* A new slide starts plain (agent prompt, "Start plain"), so the example shows the plain version: the model
@@ -15,7 +15,7 @@ const plainExample = (s: Slide): Slide => {
 
 /** The worked example for a template and style, plain; for cards, the one with the same lead. */
 export function exampleFor(id: TemplateId, style: Style, lead?: string | null): string {
-  const pool = STARTERS.filter((s) => s.consulting.template === id).map((s) => plainExample(starterSlide(s, style)));
+  const pool = startersFor(style).filter((s) => s.consulting.template === id).map((s) => plainExample(starterSlide(s, style)));
   const match = pool.find((s) => MENU[id].variant(s) === lead) || pool[0];
   return match ? JSON.stringify(match, null, 1) : "(none)";
 }

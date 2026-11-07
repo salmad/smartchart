@@ -21,15 +21,20 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
     const p = b.max > 0 && v !== null && v > 0 ? Math.round((v / b.max) * 1000) / 10 : 0;
     return `<span class="cbar"><i style="width:${p}%"></i></span>${inner}`;
   };
-  const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${al[j]}`, placeOf(c) ? `pl-${placeOf(c)}` : "", c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
+  // A verdict column (ticks, pros and cons): every cell a mark with its reason (✗ Pasted in, then restyled). The mark leads
+  // its words on one line, left-aligned like text. Bare marks (a scorecard) and figures stay as their column aligns them.
+  const verdict = t.columns.map((_, j) => j > 0 && body.length > 0 && body.every((r) => { const c = r.cells[j], o = typeof c === "object" && c ? c : null; return !!o?.note && !!markOf(String(o.value ?? "")); }));
+  const cls = (c: Table["columns"][number] | undefined, j: number) => [`al-${verdict[j] ? "text" : al[j]}`, verdict[j] ? "verdict" : "", placeOf(c) ? `pl-${placeOf(c)}` : "", c?.focus ? "focus" : "", c?.muted ? "muted" : "", c?.bold ? "bold" : "", c?.italic ? "italic" : ""].filter(Boolean).join(" ");
   const P = (r: number, j: number) => `${base}.rows[${r}].cells[${j}]`;
   const note = (o: { note?: string }, p: string) => (o.note ? `<small${at(`${p}.note`, "esc")}>${esc(o.note)}</small>` : "");
   const cell = (c: Cell, r: number, j: number) => {
     const p = P(r, j), o = typeof c === "object" && c ? c : null, text = o ? o.value ?? "" : c ?? "", mark = markOf(String(text)), k = cls(t.columns[j], j);
+    if (mark && o?.note && verdict[j]) return `<td class="${k}"><span class="vd"${at(`${p}.value`, "md")}>${markHTML(mark, plain(String(text)))}</span><span${at(`${p}.note`, "esc")}>${esc(o.note)}</span></td>`;
     if (mark && o?.note) return `<td class="${k} score has-note"><span${at(`${p}.value`, "md")}>${markHTML(mark, plain(String(text)))}</span>${note(o, p)}</td>`;
     if (mark) return `<td class="${k} score"${at(o ? `${p}.value` : p, "md")}>${markHTML(mark, plain(String(text)))}</td>`;
     if (o?.status) return `<td class="${k} status"><span class="pill"${at(`${p}.value`, "esc")}>${esc(o.value ?? "")}</span>${note(o, p)}</td>`;
     if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
+    if (o?.icon) return `<td class="${k} has-ric"><span class="ric"><i data-lucide="${esc(o.icon)}"></i><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span></span>${note(o, p)}</td>`;
     if (o?.logo) return `<td class="${k} has-lg">${named(o.logo, `<span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>`, plain(String(o.value ?? "")), `${p}.logo`)}${note(o, p)}</td>`;
     if (bars[j]) return `<td class="${k} has-bar" style="--vc:${bars[j]?.ch}">${barred(j, c, `<span${at(o ? `${p}.value` : p, "md")}>${md(o ? o.value ?? "" : c ?? "")}</span>`)}${o ? note(o, p) : ""}</td>`;
     if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;

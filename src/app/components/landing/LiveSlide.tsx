@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { contexts } from '@/engine/slides/render'
 import { GROUPS, STARTERS, starterSlide } from '@/engine/starters'
+import { starterContext } from '@/app/lib/starterContext'
 import type { Style, Theme } from '@/engine/types'
 import { cn } from '@/app/lib/utils'
 import { SlideView } from '../SlideView'
@@ -16,9 +16,9 @@ export function LiveSlide({ id, deckStyle: style = 'consulting', theme = 'ink', 
     if (!starter) throw new Error(`no starter ${id}`)
     const slide = starterSlide(starter, style)
     if (withoutNotes) delete slide.notes
-    return { slide, ctx: contexts({ footer: 'Occam', slides: [slide] })[0] }
+    return { slide, ctx: starterContext(starter, slide) }
   }, [id, style, withoutNotes])
-  return <SlideView slide={slide} deck={{ style, theme, accent: null }} ctx={{ ...ctx, section: Math.max(ctx.section, 1) }}
+  return <SlideView slide={slide} deck={{ style, theme, accent: null }} ctx={ctx}
     className={cn('relative aspect-video w-full overflow-hidden', className)} />
 }
 

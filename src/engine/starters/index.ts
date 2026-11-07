@@ -15,20 +15,26 @@ export const GROUPS: readonly { id: Group; label: string }[] = [
   { id: 'open', label: 'Open the deck' }, { id: 'trend', label: 'Show a trend' }, { id: 'change', label: 'Explain a change' }, { id: 'compare', label: 'Compare options' },
   { id: 'number', label: 'Land one number' }, { id: 'case', label: 'Make the case' }, { id: 'plan', label: 'Lay out a plan' },
 ]
-export interface Starter { id: string; group: Group; label: string; blurb: string; consulting: Slide; pitch: Slide }
+/** `chapters`: an agenda's sample chapters, for when it is drawn on its own (a gallery tile has no dividers to list). */
+/** `pitch`: absent when the slide is not offered in pitch decks (Them vs us, until its pitch form is solved). */
+export interface Starter { id: string; group: Group; label: string; blurb: string; consulting: Slide; pitch?: Slide; chapters?: { title: string; subtitle?: string }[] }
 export const FOOTER = 'Occam'
 
 // JSON has no literal types: the schema check below is what makes these Slides.
 export const STARTERS: readonly Starter[] = data.slides as unknown as Starter[]
+/** The starters a deck of this style offers. */
+export const startersFor = (style: Style): readonly Starter[] => STARTERS.filter((s) => s[style])
 for (const style of ['consulting', 'pitch'] as const) {
-  const { errors } = validateDeck({ style, slides: STARTERS.map((s) => s[style]) })
+  const { errors } = validateDeck({ style, slides: startersFor(style).map((s) => starterSlide(s, style)) })
   if (errors.length) throw new Error(`starters.json (${style}): ${errors.join('; ')}`)
 }
 for (const s of STARTERS) if (!GROUPS.some((g) => g.id === s.group)) throw new Error(`starters.json: ${s.id} has unknown group ${s.group}`)
 
 /** A deep copy of the starter in one style, safe to put in a deck. */
 export function starterSlide(s: Starter, style: Style): Slide {
-  return structuredClone(s[style])
+  const slide = s[style]
+  if (!slide) throw new Error(`starter ${s.id} has no ${style} version`)
+  return structuredClone(slide)
 }
 
 /** A doc starter: its Markdown as lines, so the file reads as the doc does. */

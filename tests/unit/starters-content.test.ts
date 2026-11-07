@@ -17,7 +17,7 @@ test('100% stacked shares sum to 100 in every category', () => {
   for (let i = 0; i < n; i++) expect(rows.reduce((t, r) => t + r[i], 0)).toBeCloseTo(100, 9)
 })
 test('red and green are rare: none in titles or subtitles, no red or green big numbers', () => {
-  for (const s of STARTERS) for (const st of [s.consulting, s.pitch]) {
+  for (const s of STARTERS) for (const st of [s.consulting, ...(s.pitch ? [s.pitch] : [])]) {
     expect(`${st.title} ${st.subtitle ?? ''}`, s.id).not.toMatch(/\[-|\[\+/)
     expect(['neg', 'pos'], s.id).not.toContain(st.number?.tone)
   }

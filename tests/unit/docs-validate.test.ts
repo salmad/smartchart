@@ -48,7 +48,7 @@ test('a doc table takes 20 rows, a slide table 8', () => {
 })
 
 test('caption is allowed on any figure', () => {
-  const r = validateDoc(doc([{ type: 'figure', kind: 'cards', id: 'sw', body: { caption: 'Revolut, strengths and weaknesses', ...bodyOf('cards-framed') } }]))
+  const r = validateDoc(doc([{ type: 'figure', kind: 'cards', id: 'sw', body: { caption: 'Why SMEs switch', ...bodyOf('cards-icon') } }]))
   expect(r.errors.filter((e) => /not a field/.test(e))).toEqual([])
 })
 

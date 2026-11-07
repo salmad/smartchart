@@ -9,7 +9,7 @@ import { checkWrite } from "./write.js";
 import { applyPatch } from "./patch.js";
 import type { Resolved } from "./resolve.js";
 import type { Check } from "./checks.js";
-import { LEADS, LEAD_Q, P_LEAD, firstCall, isSure, preStep, type Pre, type Selection } from "./pre.js";
+import { leads, leadQ, P_LEAD, firstCall, isSure, preStep, type Pre, type Selection } from "./pre.js";
 import { RESOLVE_COMMENT, TOOLS, agentSystem, stateBlock, workingBlock } from "./agent-prompt.js";
 import { openComments, resolveComment, type DeckComment } from "../comments.js";
 import { shorten, targets } from "./shorten.js";
@@ -87,7 +87,7 @@ export async function runTurn({ text, deck, history, working, selection, edited 
   async function classify(about: string): Promise<{ template: TemplateId; probabilities: Record<string, number>; lead: string | null }> {
     const titles = visible().map((s, i) => `${i + 1}. [${s.slide.template}] ${headline(s.slide)}`).join("\n");
     const r = await jev(`Deck style: ${STYLE_STATE[style]}.\n${titles ? `Slides already in the deck:\n${titles}` : "The deck is empty."}\nContent for the slide: ${about}`,
-      { template: { instructions: `Which slide template best fits this content?\n${GUIDE}`, options: MENU_OPTIONS }, lead: { instructions: LEAD_Q, options: LEADS } });
+      { template: { instructions: `Which slide template best fits this content?\n${GUIDE}`, options: MENU_OPTIONS }, lead: { instructions: leadQ(style), options: leads(style) } });
     log({ step: "Classify", model: "Jev", ms: r._ms, detail: `${r.template.choice} · p ${r.template.p.toFixed(2)}` });
     // Jev answers with one of the options, which are the template ids.
     return { template: r.template.choice as TemplateId, probabilities: r.template.probabilities, lead: r.lead.p >= P_LEAD ? r.lead.choice : null };

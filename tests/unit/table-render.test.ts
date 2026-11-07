@@ -10,10 +10,22 @@ test('old cells unchanged: a plain mark keeps its path on the cell', () => {
   expect(h).toContain('score" data-path="table.rows[0].cells[1]" data-kind="md"><span class="mk-tick">')
 })
 
-test('a mark with a note draws the mark and the note under it', () => {
-  const h = html({ columns: [{ label: 'P' }, { label: 'A' }], rows: [{ cells: ['Bank', { value: '✓', note: 'from Q2' }] }] })
+test('in a column of marks, a mark with a note draws the mark and the note under it', () => {
+  const h = html({ columns: [{ label: 'P' }, { label: 'A' }], rows: [{ cells: ['Bank', { value: '✓', note: 'from Q2' }] }, { cells: ['Card', '✗'] }] })
   expect(h).toContain('score has-note"><span data-path="table.rows[0].cells[1].value" data-kind="md"><span class="mk-tick">')
   expect(h).toContain('<small data-path="table.rows[0].cells[1].note" data-kind="esc">from Q2</small>')
+})
+
+test('a verdict column (ticks, pros and cons: every cell a mark with its reason) leads each reason with its mark, left-aligned', () => {
+  const h = html({ columns: [{ label: '' }, { label: 'Occam', focus: true }], rows: [{ cells: ['Layout', { value: '✓', note: 'Set once, by rules' }] }, { cells: ['Charts', { value: '✗', note: 'Pasted in' }] }] })
+  expect(h).toContain('<td class="al-text verdict focus"><span class="vd" data-path="table.rows[0].cells[1].value" data-kind="md"><span class="mk-tick">')
+  expect(h).toContain('<span data-path="table.rows[0].cells[1].note" data-kind="esc">Set once, by rules</span></td>')
+  expect(h).toContain('<th class="al-text verdict focus"')
+})
+
+test('row icons sit beside each row name, in the first column', () => {
+  const h = html({ columns: [{ label: '' }, { label: 'Occam', focus: true }], rows: [{ cells: [{ value: 'Layout', icon: 'layers' }, { value: '✓', note: 'Set once, by rules' }] }, { cells: [{ value: 'Charts', icon: 'chart-column' }, { value: '✗', note: 'Pasted in' }] }] })
+  expect(h).toContain('<td class="al-text has-ric"><span class="ric"><i data-lucide="layers"></i><span data-path="table.rows[0].cells[0].value" data-kind="md">Layout</span></span></td>')
 })
 
 test('header icons sit above the label, which keeps its own path', () => {

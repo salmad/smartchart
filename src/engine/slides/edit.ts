@@ -50,12 +50,14 @@ export function listOf(ops: ListOp[], itemPath: string): { op: ListOp; index: nu
 /* A blank of one field: text empty, a choice "auto" where code may pick, else its default; lists of text keep
    their minimum of empty entries, so a new card has one empty bullet to type into. */
 function blank(def: FieldView, like: unknown): unknown {
+  // A row name with an icon keeps its neighbour's icon (icons go on every row or none); the person changes it.
+  if (def.type === "cell" && isObj(like) && typeof like.icon === "string") return { value: "", icon: like.icon };
   if (def.type === "text" || def.type === "markup" || def.type === "cell") return "";
   if (def.type === "enum") return def.values?.includes("auto") ? "auto" : def.default ?? like;
   if (def.type === "boolean") return def.default ?? false;
   if (def.type === "image") return undefined;
   // A list with a minimum keeps that many empty entries (bullets: 1); one without keeps its length (a row's cells).
-  if (def.type === "list") return Array.isArray(like) && def.of ? Array.from({ length: Math.max(1, def.items?.min ?? like.length) }, () => blank(def.of as FieldView, like[0])) : like;
+  if (def.type === "list") return Array.isArray(like) && def.of ? Array.from({ length: Math.max(1, def.items?.min ?? like.length) }, (_, i) => blank(def.of as FieldView, like[i] ?? like[0])) : like;
   if (def.type === "object" && def.fields && isObj(like)) return Object.fromEntries(Object.entries(like).flatMap(([k, x]) => (def.fields?.[k] ? [[k, blank(def.fields[k], x)]] : [])));
   return like;
 }
@@ -100,7 +102,7 @@ function textPaths(slide: Slide, style: Style): string[] {
 
 /** Another template: the shared fields stay, the body comes from that template's first starter (sample text). */
 export function switchTemplate(slide: Slide, to: TemplateId, style: Style): { slide: Slide; keeps: string[]; drops: string[]; samples: string[] } {
-  const st = STARTERS.find((s) => s[style].template === to);
+  const st = STARTERS.find((s) => s[style]?.template === to);
   if (!st) throw new Error(`No starter for ${to}`);
   const base = starterSlide(st, style) as Slide & Obj, src = slide as Slide & Obj;
   const shared = MENU[to].frame === false || MENU[slide.template].frame === false ? BARE : COMMON;

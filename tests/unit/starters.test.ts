@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { STARTERS, GROUPS, starterSlide } from '@/engine/starters'
+import { STARTERS, GROUPS, startersFor, starterSlide } from '@/engine/starters'
 import { validateDeck, MIXED_HALVES } from '@/engine/slides/schema'
 import { stressFor } from '../fixtures/stress'
 
@@ -16,7 +16,7 @@ test('stress fixture keeps its slides per style', () => {
 })
 test('every starter validates with no errors or warnings, both styles', () => {
   for (const style of ['consulting', 'pitch'] as const) {
-    const r = validateDeck({ style, slides: STARTERS.map((s) => starterSlide(s, style)) })
+    const r = validateDeck({ style, slides: startersFor(style).map((s) => starterSlide(s, style)) })
     expect(r.errors).toEqual([]); expect(r.warnings).toEqual([])
   }
 })

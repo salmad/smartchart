@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { contexts } from '@/engine/slides/render'
-import { GROUPS, STARTERS, starterSlide, type Group, type Starter } from '@/engine/starters'
-import type { Deck, TemplateId } from '@/engine/types'
+import { GROUPS, startersFor, starterSlide, type Group, type Starter } from '@/engine/starters'
+import type { Deck, Style, TemplateId } from '@/engine/types'
 import { Button } from '@/app/components/ui/button'
 import { cn } from '@/app/lib/utils'
 import { useEdgeFade } from '@/app/fade'
@@ -16,7 +16,8 @@ interface Props {
 
 // Add slide opens on the group of the slide you are on: its likeliest neighbour.
 const GROUP_OF: Record<TemplateId, Group> = { chart: 'trend', pair: 'trend', table: 'compare', cards: 'case', number: 'number', quote: 'case', steps: 'plan', summary: 'open', image: 'case', team: 'case', logos: 'case', agenda: 'open', cover: 'trend', section: 'trend' }
-const GROUPED = GROUPS.map((g) => ({ ...g, starters: STARTERS.filter((s) => s.group === g.id) })).filter((g) => g.starters.length)
+// Per style: a starter with no version in the deck's style is not offered.
+const grouped = (style: Style) => GROUPS.map((g) => ({ ...g, starters: startersFor(style).filter((s) => s.group === g.id) })).filter((g) => g.starters.length)
 
 /** Add slide, and a new deck's first screen: pick a starter from the filmstrip (nothing is picked at first), see it
     full size in the deck's own look where it would land, then add it. A double click adds straight away; a group's
@@ -25,7 +26,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   const start = GROUP_OF[deck.slides[current]?.template ?? 'chart']
   const film = useRef<HTMLDivElement | null>(null)
   const [picked, setPicked] = useState<Starter | null>(null), [group, setGroup] = useState<Group>(start)
-  const fadeTabs = useEdgeFade(), fadeFilm = useEdgeFade()
+  const fadeTabs = useEdgeFade(), fadeFilm = useEdgeFade(), GROUPED = grouped(deck.style)
 
   const pickGroup = (g: Group) => { setGroup(g); scrollTo(film.current, g, true) }
   const pick = (s: Starter) => { setPicked(s); setGroup(s.group) }

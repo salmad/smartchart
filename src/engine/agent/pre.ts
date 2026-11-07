@@ -24,12 +24,15 @@ const INTENTS: Record<string, string> = {
   ask: "Too unclear to act on: the agent must ask one question first.",
   other: "A question, a comment, thanks, or anything that does not change the deck.",
 };
-export const LEADS: Record<string, string> = {
+/** How cards lead, per style: framed contrast cards are consulting only. */
+export const leads = (style: Style): Record<string, string> => ({
   icon: "Each card leads with an icon.",
   value: "Each card leads with a big number.",
-  framed: "Two framed cards contrasting a losing case and a winning case.",
-};
-export const LEAD_Q = "If the slide were cards, how should they lead? Value when every card has a number worth showing; framed for a two-way contrast (them vs us, before vs after); otherwise icon.";
+  ...(style === "consulting" ? { framed: "Two framed cards contrasting a losing case and a winning case." } : {}),
+});
+export const leadQ = (style: Style): string => style === "consulting"
+  ? "If the slide were cards, how should they lead? Value when every card has a number worth showing; framed for a two-way contrast (them vs us, before vs after); otherwise icon."
+  : "If the slide were cards, how should they lead? Value when every card has a number worth showing; otherwise icon.";
 
 export async function preStep({ text, deck, selection, jev }: { text: string; deck: PreDeck; selection: Selection; jev: JevFn }): Promise<Pre> {
   const slides = deck.slides.filter((s): s is { id: string; slide: Slide } => !!s.slide);
@@ -39,7 +42,7 @@ export async function preStep({ text, deck, selection, jev }: { text: string; de
   const qs: Record<string, JevQuestion> = {
     intent: { instructions: "What does the user want done with this message?", options: INTENTS },
     template: { instructions: `If this message asks for a new slide or another kind of slide, which template fits its content?\n${GUIDE}`, options: MENU_OPTIONS },
-    lead: { instructions: LEAD_Q, options: LEADS },
+    lead: { instructions: leadQ(deck.style), options: leads(deck.style) },
   };
   if (slides.length) qs.after = { instructions: "If a new slide is added, after which slide should it go? The end, unless the message says where or clearly continues a particular slide.",
     options: { end: "At the end of the deck.", ...Object.fromEntries(slides.map((s) => [s.id, `After ${s.id}: ${headline(s.slide)}`])) } };

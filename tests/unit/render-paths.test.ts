@@ -3,15 +3,15 @@ import { test, expect } from 'vitest'
 import { slideHTML } from '@/engine/slides/render'
 import { parsePath } from '@/engine/agent/patch'
 import { plainOf } from '@/engine/slides/markup'
-import { STARTERS } from '@/engine/starters'
+import { startersFor, starterSlide } from '@/engine/starters'
 import type { Slide } from '@/engine/types'
 
 const CTX = { page: 2, section: 1, kicker: '01 · Market', footer: 'Acme' }
 const get = (s: Slide, path: string): unknown => (parsePath(path) ?? []).reduce<unknown>((v, k) => (v as Record<string | number, unknown> | undefined)?.[k], s)
 
-for (const st of STARTERS) for (const style of ['consulting', 'pitch'] as const) {
+for (const style of ['consulting', 'pitch'] as const) for (const st of startersFor(style)) {
   test(`${st.id} (${style}): every data-path resolves and shows its field's text`, () => {
-    const slide = st[style], host = document.createElement('div')
+    const slide = starterSlide(st, style), host = document.createElement('div')
     host.innerHTML = slideHTML(slide, CTX, { style, theme: 'ink' })
     const fields = [...host.querySelectorAll<HTMLElement>('[data-path]')]
     expect(fields.length).toBeGreaterThan(0)

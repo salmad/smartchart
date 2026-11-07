@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { softChecks } from '../../src/engine/agent/soft'
-import { STARTERS, starterSlide } from '../../src/engine/starters'
+import { startersFor, starterSlide } from '../../src/engine/starters'
 import type { Slide } from '../../src/engine/types'
 
 const chart = (title: string, extra: Record<string, unknown> = {}): Slide => ({ template: 'chart', title, chart: { categories: ['2024', '2025'], format: '£{v}m', series: [{ name: 'Rev', mark: 'bar', color: 'focus', values: [4, 9] }], ...extra } } as Slide)
@@ -40,7 +40,7 @@ describe('softer checks', () => {
     expect(softChecks(chart('Revenue doubled', { stacking: 'stacked' }))).toEqual([])
   })
   it('the gallery mostly passes: suggestions are the exception, not the rule', () => {
-    const hits = STARTERS.flatMap((s) => (['consulting', 'pitch'] as const).map((st) => softChecks(starterSlide(s, st)).length)).filter(Boolean).length
+    const hits = (['consulting', 'pitch'] as const).flatMap((st) => startersFor(st).map((s) => softChecks(starterSlide(s, st)).length)).filter(Boolean).length
     expect(hits).toBe(0)
   })
 })

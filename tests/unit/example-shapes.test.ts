@@ -5,6 +5,6 @@ import locked from '../fixtures/example-shapes.json'
 
 // The starters keep the structure locked from the 788f4d7 examples (names from the lock, by position). Never -u.
 test('starter shapes match the locked example shapes', async () => {
-  const shapes = STARTERS.map((s, i) => ({ name: locked[i]?.name, consulting: shapeOf(starterSlide(s, 'consulting')), pitch: shapeOf(starterSlide(s, 'pitch')) }))
+  const shapes = STARTERS.map((s, i) => ({ name: locked[i]?.name, consulting: shapeOf(starterSlide(s, 'consulting')), pitch: s.pitch ? shapeOf(starterSlide(s, 'pitch')) : null }))
   await expect(JSON.stringify(shapes, null, 1)).toMatchFileSnapshot('../fixtures/example-shapes.json')
 })

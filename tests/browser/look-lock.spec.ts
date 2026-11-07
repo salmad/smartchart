@@ -41,6 +41,7 @@ test('a table fits the same at half and full size', async ({ page }) => {
   const at = (slide: unknown, style: string, width: number) => page.evaluate(([s, st, w]) => window.cols?.(s as never, st as never, w), [slide, style, width] as const)
   let fitted = 0
   for (const s of STARTERS.filter((x) => x.consulting.template === 'table')) for (const style of ['consulting', 'pitch'] as const) {
+    if (!s[style]) continue
     const full = await at(s[style], style, 1920), half = await at(s[style], style, 960)
     fitted += full?.filter((w) => w !== '').length ?? 0
     expect(half, `${s.id} ${style}`).toEqual(full)

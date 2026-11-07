@@ -3,7 +3,7 @@ import { getAt, issuePath, listOf, listOps, newItem, removeItem, switchTemplate 
 import { applyPatch } from '@/engine/agent/patch'
 import { autofix } from '@/engine/agent/autofix'
 import { OFFERED, validate } from '@/engine/slides/schema'
-import { STARTERS, starterSlide } from '@/engine/starters'
+import { STARTERS, startersFor, starterSlide } from '@/engine/starters'
 import type { Slide, Style } from '@/engine/types'
 
 const must = <T>(v: T | undefined): T => { if (v === undefined) throw new Error('missing'); return v }
@@ -29,7 +29,7 @@ test('listOf maps an item path to its list', () => {
   expect(listOf(ops, 'title')).toBeNull()
 })
 
-for (const st of STARTERS) for (const style of ['consulting', 'pitch'] as const) {
+for (const style of ['consulting', 'pitch'] as const) for (const st of startersFor(style)) {
   test(`${st.id} (${style}): a new item on every list validates once its text is filled in`, () => {
     const slide = starterSlide(st, style)
     for (const op of listOps(slide, style)) {
@@ -81,7 +81,7 @@ test('switchTemplate to and from cover keeps only title and subtitle', () => {
 for (const from of OFFERED) for (const to of OFFERED) for (const style of ['consulting', 'pitch'] as const) {
   if (from === to) continue
   test(`switchTemplate ${from} → ${to} (${style}) validates`, () => {
-    const src = starterSlide(must(STARTERS.find((s) => s[style].template === from)), style)
+    const src = starterSlide(must(STARTERS.find((s) => s[style]?.template === from)), style)
     const r = switchTemplate(src, to, style)
     expect(validate(autofix(r.slide, style).slide, style).errors.filter((e) => !/characters|at most|budget|wraps/.test(e))).toEqual([])
   })

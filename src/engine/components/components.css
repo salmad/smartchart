@@ -152,7 +152,16 @@
 .tbl.line-measure { width: max-content; }
 .tbl.line-measure :is(th, td) { white-space: nowrap; }
 .tbl th { font: 500 19px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 28px 18px 0; border-bottom: 1px solid var(--line); vertical-align: bottom; }
-.tbl td { font-size: 28px; line-height: 1.2; padding: 8px 28px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl td { font-size: 28px; line-height: 1.2; padding: 8px 28px 8px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+/* A row is a band between two rules: when the table is stretched to fill the body, its text sits in the middle of the
+   band, never hanging from the rule above. Rows of bullets read from the top. */
+.tbl tr:has(td.has-bul) td { vertical-align: top; }
+/* Column headers name what is compared (the options, the criteria, the measures): semibold body type, one style across
+   the row, so they outrank the cells. The first column's header stays the small mono label over the row names. */
+.tbl th:not(:first-child) { font: 600 25px/1.2 var(--text); letter-spacing: 0; text-transform: none; color: var(--fg); }
+.tbl th.focus:not(:first-child) { color: var(--focus); }
+/* The first column names each row: semibold, so the rows read as the table's structure. */
+.tbl tbody tr:not(.group) td:first-child.al-text { font-weight: 600; }
 /* L2: alignment is derived from the column's content; numbers use tabular figures so digits line up. */
 .tbl .al-text { text-align: left; }
 .tbl .al-num { text-align: right; }
@@ -185,8 +194,15 @@
 .tbl.ic-above th.al-sym.has-ic svg { margin-inline: auto; }
 .tbl.ic-above th.al-num.has-ic svg { margin-left: auto; }
 .tbl.ic-above th.pl-left.has-ic svg { margin: 0 0 10px; } .tbl.ic-above th.pl-centre.has-ic svg { margin-inline: auto; } .tbl.ic-above th.pl-right.has-ic svg { margin: 0 0 10px auto; }
-/* A mark with a note: the mark centred, the note under it. */
-.tbl td.score.has-note small { text-align: center; margin-top: 6px; }
+/* A mark with a note: the mark centred, the note under it as body text (it says why the mark), not a mono working. */
+.tbl td.score.has-note small { text-align: center; margin-top: 8px; font: 400 23px/1.3 var(--text); color: var(--fg-2); }
+/* A verdict column: the mark leads its words on one line, in a fixed slot so the words start on one edge (and wrap to it). */
+.tbl td.verdict { padding-left: 52px; text-indent: -52px; }
+.tbl td.verdict.focus { padding-left: 72px; }
+.tbl td.verdict .vd { display: inline-block; width: 52px; text-indent: 0; }
+/* Row icons: an icon from the curated set beside each row's name, in the first column. */
+.tbl .ric { display: inline-flex; align-items: center; gap: 16px; }
+.tbl .ric svg { flex: none; width: 30px; height: 30px; color: var(--muted); }
 /* Status: a neutral outline label. The value is the information, never a colour. */
 .tbl td.status > .pill { display: inline-block; padding: 7px 14px 6px; border: 1.5px solid var(--line); border-radius: 999px; font: 500 18px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); white-space: nowrap; }
 .tbl td.focus.status > .pill, .tbl tr.focus td.status > .pill { color: var(--focus); border-color: currentColor; }

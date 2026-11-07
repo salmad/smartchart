@@ -439,75 +439,108 @@
    "id": "cards-framed",
    "group": "case",
    "label": "Them vs us",
-   "blurb": "Why your approach beats the old one",
+   "blurb": "Two options compared on the same points",
    "consulting": {
-    "template": "cards",
+    "template": "table",
     "kicker": "The difference",
-    "title": "A blank canvas leaves the layout to you; [[rules and checks]] leave it to the product",
-    "framed": true,
-    "cards": [
-     {
-      "tone": "neutral",
-      "label": "Blank canvas",
-      "title": "Fiddly loop",
-      "bullets": [
-       "Spacing and sizes set slide by slide",
-       "Charts pasted in, restyled, mis-scaled",
-       "Nothing checks the words or the numbers"
-      ],
-      "facts": [
-       {
-        "label": "Outcome",
-        "text": "Every slide a little different"
-       },
-       {
-        "label": "Time",
-        "text": "Hours per deck, every time"
-       }
-      ]
-     },
-     {
-      "tone": "focus",
-      "label": "Occam",
-      "title": "Checked loop",
-      "bullets": [
-       "Say what the slide must prove",
-       "Layout, sizes and colours come from rules",
-       "Every slide is measured and checked"
-      ],
-      "facts": [
-       {
-        "label": "Outcome",
-        "text": "One look across every slide"
-       },
-       {
-        "label": "Proof",
-        "text": "Each slide fits before you see it"
-       }
-      ]
-     }
-    ],
+    "title": "A blank canvas makes you set every slide; [[Occam sets them once and checks each one]]",
+    "table": {
+     "columns": [
+      {
+       "label": ""
+      },
+      {
+       "label": "Blank canvas"
+      },
+      {
+       "label": "Occam",
+       "focus": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        {
+         "value": "Layout",
+         "icon": "layers"
+        },
+        {
+         "value": "✗",
+         "note": "Sized and spaced on every slide"
+        },
+        {
+         "value": "✓",
+         "note": "Set once, by rules"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "Charts",
+         "icon": "chart-column"
+        },
+        {
+         "value": "✗",
+         "note": "Pasted in, then restyled"
+        },
+        {
+         "value": "✓",
+         "note": "Drawn from the data"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "Checks",
+         "icon": "shield-check"
+        },
+        {
+         "value": "✗",
+         "note": "None before the meeting"
+        },
+        {
+         "value": "✓",
+         "note": "Every slide measured and checked"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "Consistency",
+         "icon": "scale"
+        },
+        {
+         "value": "✗",
+         "note": "Drifts from slide to slide"
+        },
+        {
+         "value": "✓",
+         "note": "One look across the deck"
+        }
+       ]
+      },
+      {
+       "cells": [
+        {
+         "value": "Your time",
+         "icon": "clock"
+        },
+        {
+         "value": "✗",
+         "note": "Spent on formatting"
+        },
+        {
+         "value": "✓",
+         "note": "Spent on the message"
+        }
+       ]
+      }
+     ]
+    },
     "takeaway": "The point of a slide is the message, not the formatting."
-   },
-   "pitch": {
-    "template": "cards",
-    "title": "The difference",
-    "subtitle": "Layout by rules, not by hand.",
-    "framed": true,
-    "cards": [
-     {
-      "tone": "neutral",
-      "label": "Blank canvas",
-      "title": "Fiddly loop",
-      "text": "Sizes and spacing set by hand, every slide."
-     },
-     {
-      "tone": "focus",
-      "label": "Occam",
-      "title": "Checked loop",
-      "text": "Rules set the layout. Every slide is checked."
-     }
-    ]
    }
   },
   {
@@ -2749,7 +2782,25 @@
    },
    "pitch": {
     "template": "agenda"
-   }
+   },
+   "chapters": [
+    {
+     "title": "The problem",
+     "subtitle": "SMEs fund growth on personal cards."
+    },
+    {
+     "title": "The product",
+     "subtitle": "A card and a credit line in one account."
+    },
+    {
+     "title": "The economics",
+     "subtitle": "Interchange overtakes interest by year 4."
+    },
+    {
+     "title": "The ask",
+     "subtitle": "£5m funds the first 18 months."
+    }
+   ]
   },
   {
    "id": "pair-number",

@@ -248,60 +248,43 @@
  {
   "name": "Table · with notes (split)",
   "consulting": {
-   "template": "cards",
-   "variant": "framed",
+   "template": "table",
+   "variant": "full",
    "keys": [
-    "cards",
-    "framed",
     "kicker",
+    "table",
     "takeaway",
     "template",
     "title"
    ],
-   "cards": [
-    {
-     "tone": "neutral",
-     "hasValue": false,
-     "hasText": false,
-     "bullets": 3,
-     "facts": 2
-    },
-    {
-     "tone": "focus",
-     "hasValue": false,
-     "hasText": false,
-     "bullets": 3,
-     "facts": 2
-    }
-   ]
+   "table": {
+    "columns": [
+     {},
+     {},
+     {
+      "focus": true
+     }
+    ],
+    "rows": [
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     }
+    ]
+   }
   },
-  "pitch": {
-   "template": "cards",
-   "variant": "framed",
-   "keys": [
-    "cards",
-    "framed",
-    "subtitle",
-    "template",
-    "title"
-   ],
-   "cards": [
-    {
-     "tone": "neutral",
-     "hasValue": false,
-     "hasText": true,
-     "bullets": 0,
-     "facts": 0
-    },
-    {
-     "tone": "focus",
-     "hasValue": false,
-     "hasText": true,
-     "bullets": 0,
-     "facts": 0
-    }
-   ]
-  }
+  "pitch": null
  },
  {
   "name": "Chart · full width",
