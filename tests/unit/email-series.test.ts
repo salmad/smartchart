@@ -19,12 +19,17 @@ describe('engagement email series', () => {
     expect(decide(start, day(3), [sent(1, 2)], fresh)).toEqual({ kind: 'wait', skipped: [] })
   })
 
-  it('skips what the maker has already done', () => {
+  it('skips what the maker has already done, and moves the next email up', () => {
     const connected = { ...fresh, connected: true }
-    expect(decide(start, day(0), [], connected)).toEqual({ kind: 'wait', skipped: [1] })
+    // Ahead of the series: connected on day 0, so the titles guide comes now instead of the setup email.
+    expect(decide(start, day(0), [], connected)).toEqual({ kind: 'send', slot: 2, key: '2-line', skipped: [1] })
     expect(decide(start, day(6), [sent(1, 0), sent(2, 2), sent(3, 4)], connected)).toMatchObject({ key: '4b-so-what' })
-    expect(decide(start, day(4), [sent(1, 0), sent(2, 2)], { ...fresh, templates: 3 })).toEqual({ kind: 'wait', skipped: [3] })
-    expect(decide(start, day(11), [1, 2, 3, 4, 5].map((s) => sent(s, (s - 1) * 2)), { ...fresh, docs: 1 })).toEqual({ kind: 'wait', skipped: [6] })
+    expect(decide(start, day(4), [sent(1, 0), sent(2, 2)], { ...fresh, templates: 3 })).toEqual({ kind: 'send', slot: 4, key: '4-connect-again', skipped: [3] })
+    expect(decide(start, day(11), [1, 2, 3, 4, 5].map((s) => sent(s, (s - 1) * 2)), { ...fresh, docs: 1 })).toEqual({ kind: 'send', slot: 7, key: '7-partner', skipped: [6] })
+  })
+
+  it('waits for a maker whose start day is still ahead', () => {
+    expect(decide(new Date('2026-11-09T00:00:00Z'), day(0), [], fresh)).toEqual({ kind: 'wait', skipped: [] })
   })
 
   it('catches up one email at a time after a missed run', () => {

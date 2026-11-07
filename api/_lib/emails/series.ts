@@ -12,13 +12,12 @@ export interface Facts {
 
 export interface Done { slot: number; at: Date; sent: boolean }
 
-/** Seven slots, by day since the maker started. Slot 4 is one of two emails. */
-export const SLOTS: { slot: number; day: number }[] = [
-  { slot: 1, day: 0 }, { slot: 2, day: 2 }, { slot: 3, day: 4 }, { slot: 4, day: 6 }, { slot: 5, day: 8 }, { slot: 6, day: 11 }, { slot: 7, day: 14 },
+/** Seven slots in order. `gap` is the days to wait after the previous email that was sent: the series follows the
+    maker's stage, not the calendar, so a slot they don't need is skipped and the next one moves up. */
+export const SLOTS: { slot: number; gap: number }[] = [
+  { slot: 1, gap: 0 }, { slot: 2, gap: 2 }, { slot: 3, gap: 2 }, { slot: 4, gap: 2 }, { slot: 5, gap: 2 }, { slot: 6, gap: 3 }, { slot: 7, gap: 3 },
 ]
 
-/** At most one email every two days, whatever the schedule says. */
-export const GAP_DAYS = 2
 const DAY = 86_400_000
 
 /** The email a slot sends for these facts, or null when the maker has already done what it asks. */
@@ -40,19 +39,19 @@ export type Decision =
   | { kind: 'wait'; skipped: number[] }
   | { kind: 'done' }
 
-/** The next step for one maker: slots already due but not wanted are skipped, then the first wanted one is sent,
-    unless an email went out less than GAP_DAYS ago. Calendar days in UTC, so a 9:00 run counts whole days. */
+/** The next step for one maker: slots they don't need are skipped, then the first one they do is sent once its gap
+    since the last email has passed (at once if nothing has been sent yet). Whole UTC days, so a 9:00 run counts days.
+    `started` keeps a maker out until their start day. */
 export function decide(started: Date, now: Date, done: Done[], f: Facts): Decision {
-  const days = Math.floor((utcDay(now) - utcDay(started)) / DAY)
+  if (utcDay(now) < utcDay(started)) return { kind: 'wait', skipped: [] }
   const handled = new Set(done.map((d) => d.slot))
   const lastSent = done.filter((d) => d.sent).reduce<number | null>((m, d) => Math.max(m ?? 0, utcDay(d.at)), null)
   const skipped: number[] = []
-  for (const { slot, day } of SLOTS) {
+  for (const { slot, gap } of SLOTS) {
     if (handled.has(slot)) continue
-    if (day > days) return { kind: 'wait', skipped }
     const key = emailFor(slot, f)
     if (!key) { skipped.push(slot); continue }
-    if (lastSent !== null && (utcDay(now) - lastSent) / DAY < GAP_DAYS) return { kind: 'wait', skipped }
+    if (lastSent !== null && (utcDay(now) - lastSent) / DAY < gap) return { kind: 'wait', skipped }
     return { kind: 'send', slot, key, skipped }
   }
   return skipped.length ? { kind: 'wait', skipped } : { kind: 'done' }
