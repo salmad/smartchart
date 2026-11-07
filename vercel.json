@@ -13,6 +13,7 @@
     { "source": "/api/prefs", "destination": "/api/account?route=prefs" },
     { "source": "/api/tool", "destination": "/api/account?route=tool" },
     { "source": "/api/unsubscribe", "destination": "/api/account?route=email-unsub" },
+    { "source": "/api/email-click", "destination": "/api/account?route=email-click" },
     { "source": "/api/auth/:path*", "destination": "/api/auth" },
     { "source": "/api/v1/:tool*", "destination": "/api/v1?tool=:tool*" },
     { "source": "/mcp/v1", "destination": "/api/mcp" },

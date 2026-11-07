@@ -15,6 +15,9 @@ const SCHEMA = [
   `create table if not exists email_makers (user_id text primary key, email text not null, name text not null default '', started date not null, existing boolean not null, token text not null unique, unsubscribed_at timestamptz, enrolled timestamptz not null default now())`,
   // One row per slot: 'sending' is written before the send, so a retried or doubled run never sends twice.
   `create table if not exists email_sends (user_id text not null, slot integer not null, key text not null, status text not null check (status in ('sending','sent','skipped','failed')), resend_id text, error text, at timestamptz not null default now(), primary key (user_id, slot))`,
+  // Clicks from the email into the site: the first one's time, and how many.
+  `alter table email_sends add column if not exists clicked_at timestamptz`,
+  `alter table email_sends add column if not exists clicks integer not null default 0`,
 ]
 
 export function emailStore(url: string) {
@@ -68,6 +71,11 @@ export function emailStore(url: string) {
     settle: (userId: string, slot: number, result: { id: string } | { error: string }) => q(
       `update email_sends set status = $3, resend_id = $4, error = $5, at = now() where user_id = $1 and slot = $2`,
       [userId, slot, 'id' in result ? 'sent' : 'failed', 'id' in result ? result.id : null, 'error' in result ? result.error : null]),
+
+    /** Records a click on email `key`: by the maker whose ref it is, else by `userId` (signed in), else nothing. */
+    click: (key: string, ref: string, userId: string | null) => q(
+      `update email_sends set clicked_at = coalesce(clicked_at, now()), clicks = clicks + 1
+       where key = $1 and status = 'sent' and user_id = coalesce((select user_id from email_makers where token = $2), $3)`, [key, ref, userId]),
 
     unsubscribe: async (token: string): Promise<boolean> =>
       (await q(`update email_makers set unsubscribed_at = coalesce(unsubscribed_at, now()) where token = $1 returning user_id`, [token])).length > 0,

@@ -42,13 +42,13 @@ describe('engagement email series', () => {
 })
 
 describe('engagement email templates', () => {
-  const vars = { first: 'Ada', existing: false, deck: null, unsubscribeUrl: 'https://www.occamslides.com/api/unsubscribe?t=x' }
+  const vars = { first: 'Ada', existing: false, deck: null, unsubscribeUrl: 'https://www.occamslides.com/api/unsubscribe?t=x', ref: 'ref1' }
 
   it('sends every site link through its /em/ entry path, for analytics', () => {
     const { html } = renderEmail('1-connect', vars)
     const links = [...html.matchAll(/href="(https:\/\/www\.occamslides\.com[^"]*)"/g)].map((m) => m[1]).filter((l) => !l.includes('/api/'))
     expect(links.length).toBeGreaterThan(0)
-    for (const l of links) expect(l).toMatch(/^https:\/\/www\.occamslides\.com\/em\/1-connect\//)
+    for (const l of links) expect(l).toMatch(/^https:\/\/www\.occamslides\.com\/em\/1-connect\/.*(?:&amp;|[?&])r=ref1/)
   })
 
   it('greets returning makers differently on day 0 and carries unsubscribe', () => {

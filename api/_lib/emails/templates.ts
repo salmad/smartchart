@@ -12,6 +12,8 @@ export interface EmailVars {
   /** Their latest deck, for email 5. */
   deck: { name: string; id: string } | null
   unsubscribeUrl: string
+  /** The maker's private ref, carried on site links so a click is recorded against them (email-click). */
+  ref: string
 }
 
 export interface RenderedEmail { subject: string; html: string; text: string }
@@ -63,13 +65,17 @@ function text(b: Block): string {
 interface Spec { subject: string; preview: string; eyebrow: string; title: string; body: Block[] }
 
 /** A link into the site through /em/<email>: the app records that path as the visit (Vercel Web Analytics shows
-    visits per email in Pages), then moves on to `rest`. src/app/email-entry.ts does the move. */
-export const entry = (key: EmailKey, rest = '/') => `${SITE}/em/${key}${rest}`
-/** A short video, through the site first so the click is counted like any other (email-entry.ts forwards it). */
-const watch = (key: EmailKey, id: string) => entry(key, `/watch/${id}`)
+    visits per email in Pages) and the click against the maker (`r`), then moves on to `rest`. See src/app/email-entry.ts. */
+export const entry = (key: EmailKey, ref: string, rest = '/') => {
+  const url = new URL(`${SITE}/em/${key}${rest}`)
+  url.searchParams.set('r', ref)
+  return url.toString()
+}
 
 function specFor(key: EmailKey, v: EmailVars): Spec {
-  const at = (rest?: string) => entry(key, rest)
+  const at = (rest?: string) => entry(key, v.ref, rest)
+  /** A short video, through the site first so the click is counted like any other (email-entry.ts forwards it). */
+  const watch = (_key: EmailKey, id: string) => at(`/watch/${id}`)
   switch (key) {
     case '1-connect': return {
       subject: 'Set up Occam in Claude', preview: 'Connect your Occam account to Claude, ChatGPT or Cursor.',
@@ -171,7 +177,7 @@ export function renderEmail(key: EmailKey, v: EmailVars): RenderedEmail {
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${C.paper}"><tr><td align="center" style="padding:32px 16px 40px">
   <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px">
     <tr><td style="padding:0 8px 20px">
-      <a href="${entry(key)}" style="text-decoration:none;color:${C.type}"><img src="${IMG}mark.png" width="24" height="24" alt="" style="vertical-align:middle;border:0;border-radius:6px">
+      <a href="${entry(key, v.ref)}" style="text-decoration:none;color:${C.type}"><img src="${IMG}mark.png" width="24" height="24" alt="" style="vertical-align:middle;border:0;border-radius:6px">
       <span style="vertical-align:middle;margin-left:8px;font:800 20px/1 ${DISPLAY};font-stretch:78%;letter-spacing:-.01em;color:${C.type}">Occam</span></a>
     </td></tr>
     <tr><td class="card" style="background:${C.card};border-radius:20px;box-shadow:0 0 0 1px ${C.rule},0 1px 2px rgba(18,18,17,.04);padding:40px 40px 12px">

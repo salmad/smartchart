@@ -43,7 +43,7 @@ async function run(store: EmailStore, live: boolean, now = new Date()) {
     if (d.kind !== 'send') { report.push({ email: m.email, day, action: d.kind + skippedNote }); continue }
     if (!live) { report.push({ email: m.email, day, action: `would send ${d.key}${skippedNote}` }); continue }
     if (!(await store.claim(m.userId, d.slot, d.key))) { report.push({ email: m.email, day, action: `slot ${d.slot} already taken` }); continue }
-    const vars: EmailVars = { first: firstName(m.name), existing: m.existing, deck: d.key === '5-cagr' ? await store.latestDeck(m.userId) : null, unsubscribeUrl: unsubscribeUrl(m.token) }
+    const vars: EmailVars = { first: firstName(m.name), existing: m.existing, deck: d.key === '5-cagr' ? await store.latestDeck(m.userId) : null, unsubscribeUrl: unsubscribeUrl(m.token), ref: m.token }
     const result = await send(m.email, d.key, vars, `${m.userId}-${d.slot}`)
     await store.settle(m.userId, d.slot, result)
     report.push({ email: m.email, day, action: 'id' in result ? `sent ${d.key}` : `failed ${d.key}: ${result.error}` })
@@ -61,7 +61,7 @@ export async function emailCron(request: Request): Promise<Response> {
   if (test) {
     const results = []
     for (const key of KEYS) {
-      const vars: EmailVars = { first: 'Sam', existing: true, deck: { id: 'example', name: 'Acme board deck' }, unsubscribeUrl: unsubscribeUrl('test') }
+      const vars: EmailVars = { first: 'Sam', existing: true, deck: { id: 'example', name: 'Acme board deck' }, unsubscribeUrl: unsubscribeUrl('test'), ref: 'test' }
       results.push({ key, ...(await send(test, key, vars, `test-${test}-${key}-${Date.now()}`)) })
     }
     return Response.json({ test, results })
@@ -73,6 +73,21 @@ export async function emailCron(request: Request): Promise<Response> {
 const page = (title: string, body: string) => new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
 <body style="margin:0;background:#F5F5F3;font:16px/1.6 -apple-system,Helvetica,Arial,sans-serif;color:#121211"><main style="max-width:480px;margin:15vh auto;padding:0 16px">
 <p style="font-weight:700;font-size:20px;margin:0 0 16px">Occam</p>${body}</main></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+
+/** email-click: the app posts { email, r } when someone arrives from an email. The click is recorded against the maker
+    the ref belongs to, or else the signed-in user; the first click time is kept and every click counted. */
+export function emailClick(deps: { userFrom: (request: Request) => Promise<{ id: string } | null> }) {
+  return async (request: Request): Promise<Response> => {
+    const url = process.env.DATABASE_URL
+    if (request.method !== 'POST' || !url) return new Response(null, { status: 204 })
+    const body = (await request.json().catch(() => ({}))) as { email?: unknown; r?: unknown }
+    const key = typeof body.email === 'string' ? body.email : '', ref = typeof body.r === 'string' ? body.r : ''
+    if (!/^[\w-]{1,40}$/.test(key)) return new Response(null, { status: 204 })
+    const user = ref ? null : await deps.userFrom(request).catch(() => null)
+    await emailStore(url).click(key, ref, user?.id ?? null)
+    return new Response(null, { status: 204 })
+  }
+}
 
 export async function emailUnsubscribe(request: Request): Promise<Response> {
   const token = new URL(request.url).searchParams.get('t') ?? ''
