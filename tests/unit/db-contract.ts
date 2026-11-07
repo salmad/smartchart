@@ -432,5 +432,25 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(typeof await db.docComment(bob.id, doc, { remove: { id: 'c_nope' } }, ctx(9, 'Bob'))).toBe('string')
       expect((await db.docComments(bob.id, doc))?.map((c) => c.id)).toEqual(['c_3', 'c_6'])
     })
+
+    it('proposals: an editor adds and dismisses; a viewer cannot add', async () => {
+      const db = await make(), { ann, bob, id } = people(), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      await db.putDoc(ann.id, doc, 'Memo', '# Memo', 0, ws)
+      await join(db, ann, ws, bob, 'viewer')
+      const base = { blockIds: ['intro'], mode: 'insert' as const, markdown: '- a', label: 'Split', why: 'Easier to scan', by: 'Ann', at: 1, rev: 1 }
+      expect(await db.docProposal(ann.id, doc, { add: { ...base, id: 'p_1' } }, { id: 'p_1' })).toMatchObject([{ id: 'p_1', label: 'Split' }])
+      expect(typeof await db.docProposal(bob.id, doc, { add: { ...base, id: 'p_2' } }, { id: 'p_2' })).toBe('string')
+      expect(await db.docProposal(ann.id, doc, { dismiss: 'p_1' }, { id: 'p_x' })).toEqual([])
+    })
+
+    it('a 21st pending proposal is refused', async () => {
+      const db = await make(), { ann, id } = people(), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      await db.putDoc(ann.id, doc, 'Memo', '# Memo', 0, ws)
+      const base = { blockIds: ['intro'], mode: 'insert' as const, markdown: '- a', label: 'Split', why: 'Easier', by: 'Ann', at: 1, rev: 1 }
+      for (let i = 0; i < 20; i++) await db.docProposal(ann.id, doc, { add: { ...base, id: `p_${i}` } }, { id: `p_${i}` })
+      expect(typeof await db.docProposal(ann.id, doc, { add: { ...base, id: 'p_21' } }, { id: 'p_21' })).toBe('string')
+    })
   })
 }

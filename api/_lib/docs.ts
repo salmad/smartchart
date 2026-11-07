@@ -2,6 +2,7 @@
 // Built from its dependencies so tests run it against a fake database and user. Writing in a doc's editor comes in M4.
 import type { UserFrom } from './auth.js'
 import { MAX_COMMENT, newCommentId, type CommentOp } from '../../src/engine/comments.js'
+import type { ProposalOp } from '../../src/engine/docs/proposals.js'
 import { parseDoc } from '../../src/engine/docs/parse.js'
 import { serializeDoc } from '../../src/engine/docs/serialize.js'
 import { NO_COMMENT, type Db, type DocPresence } from './db.js'
@@ -40,6 +41,12 @@ function commentOp(v: unknown): CommentOp | null {
   return null
 }
 
+/** Dismiss a stored proposal (approval is a normal save, then dismiss). */
+function proposalOp(v: unknown): ProposalOp | null {
+  const d = typeof (v && typeof v === 'object' ? (v as { dismiss?: unknown }).dismiss : null) === 'string' ? (v as { dismiss: string }).dismiss.trim() : ''
+  return d && ID.test(d) ? { dismiss: d } : null
+}
+
 export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
   return async (request: Request): Promise<Response> => {
     const db = deps.db()
@@ -68,6 +75,10 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
       const c = ID.test(id) ? await db.docComments(user.id, id) : null
       return c ? Response.json(c, { headers: NO_STORE }) : NO_DOC()
     }
+    if (request.method === 'GET' && id && q.get('proposals') !== null) {
+      const p = ID.test(id) ? await db.docProposals(user.id, id) : null
+      return p ? Response.json(p, { headers: NO_STORE }) : NO_DOC()
+    }
     // The page tree: how many pages sit below this doc, and moving it.
     if (request.method === 'GET' && id && q.get('subpages') !== null) return ID.test(id) ? subpages(db, user.id, { kind: 'doc', id }, NO_DOC) : NO_DOC()
     if ((request.method === 'PUT' || request.method === 'POST') && id && q.get('move') !== null)
@@ -85,6 +96,14 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
       const r = await db.docComment(user.id, id, op, { id: newCommentId([]) + Math.random().toString(36).slice(2, 6), by: user.name, now: Date.now() })
       if (r === 'foreign') return NO_DOC()
       return typeof r === 'string' ? err(r === NO_COMMENT ? 404 : 403, r) : Response.json(r)
+    }
+    if (request.method === 'PUT' && id && q.get('proposal')) {
+      if (!ID.test(id)) return NO_DOC()
+      const op = proposalOp(await request.json().catch(() => null))
+      if (!op) return err(400, 'Bad proposal.')
+      const r = await db.docProposal(user.id, id, op, { id: `p_${Date.now().toString(36)}` })
+      if (r === 'foreign') return NO_DOC()
+      return typeof r === 'string' ? err(403, r) : Response.json(r)
     }
 
     if (request.method === 'GET' && !id) return ws && ID.test(ws) ? Response.json(await db.listDocs(user.id, ws)) : err(400, 'Say which workspace.')

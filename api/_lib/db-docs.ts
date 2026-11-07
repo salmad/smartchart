@@ -4,6 +4,7 @@ import { KEEP } from '../../src/engine/versions.js'
 import type { DocTree } from '../../src/engine/docs/versions.js'
 import type { Block } from '../../src/engine/docs/types.js'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments.js'
+import { MAX_DOC_PROPOSALS, type DocProposal } from '../../src/engine/docs/proposals.js'
 import { rolesFor, type Action, type Role } from './access.js'
 import { may, roleOf } from './db-decks.js'
 import { NO_COMMENT, type Db, type DocPresence, type DocVersion, type Q } from './db.js'
@@ -12,7 +13,7 @@ const R = (a: Action) => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
 const docRead = (u: string, id: string, roles: string) => `exists (select 1 from docs where docs.id = ${id} and ${may('docs', u, roles)})`
 
-type Calls = 'getDocMeta' | 'setDocPresence' | 'docVersionHead' | 'writeDocVersion' | 'listDocVersions' | 'docBlobs' | 'docComments' | 'docComment'
+type Calls = 'getDocMeta' | 'setDocPresence' | 'docVersionHead' | 'writeDocVersion' | 'listDocVersions' | 'docBlobs' | 'docComments' | 'docComment' | 'docProposals' | 'docProposal'
 
 export function docCalls(q: Q): Pick<Db, Calls> {
   const comments = async (u: string, id: string) =>
@@ -85,6 +86,25 @@ export function docCalls(q: Q): Pick<Db, Calls> {
            and exists (select 1 from jsonb_array_elements(comments) c where ${allowed}) returning comments`,
         resolve ? [...params, R('read')] : params)
       return r[0] ? r[0].comments : why(u, id, cid, resolve ? 'resolve' : 'remove')
+    },
+    docProposals: async (u, id) =>
+      (await q<{ proposals: DocProposal[] }>(`select proposals from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')]))[0]?.proposals ?? null,
+    docProposal: async (u, id, op, _ctx) => {
+      if ('add' in op) {
+        const r = await q<{ proposals: DocProposal[] }>(
+          `update docs set proposals = proposals || jsonb_build_array($3::jsonb) where id = $2 and ${may('docs', '$1', '$4')}
+             and jsonb_array_length(proposals) < $5 returning proposals`, [u, id, JSON.stringify(op.add), R('write'), MAX_DOC_PROPOSALS])
+        if (r[0]) return r[0].proposals
+        const read = await q<{ proposals: DocProposal[] }>(`select proposals from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')])
+        if (!read[0]) return 'foreign'
+        return read[0].proposals.length >= MAX_DOC_PROPOSALS ? 'This doc has too many suggestions.' : 'You can view this doc, not change it.'
+      }
+      const pid = op.dismiss
+      const r = await q<{ proposals: DocProposal[] }>(
+        `update docs set proposals = (select coalesce(jsonb_agg(p order by ord), '[]'::jsonb) from jsonb_array_elements(proposals) with ordinality as e(p, ord) where p->>'id' <> $3)
+         where id = $2 and ${may('docs', '$1', '$4')} and exists (select 1 from jsonb_array_elements(proposals) p where p->>'id' = $3) returning proposals`,
+        [u, id, pid, R('write')])
+      return r[0] ? r[0].proposals : 'foreign'
     },
   }
 }

@@ -7,7 +7,10 @@ import { giveIds } from './parse.js'
 import { validateDoc } from './validate.js'
 import type { Block, Doc, FigureBody, FigureKind } from './types.js'
 
+export const MAX_DOC_PROPOSALS = 20
+
 export type ProposalMode = 'replace' | 'insert'
+export type ProposalOp = { add: DocProposal } | { dismiss: string }
 export interface DocProposal {
   id: string
   blockIds: string[]

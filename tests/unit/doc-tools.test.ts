@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
@@ -94,10 +97,51 @@ describe('doc tools', () => {
     const text = (await db.getDoc('u1', docId))?.text, rev = (await db.getDoc('u1', docId))?.rev
     const r = await ok('check_doc', { docId }) as { checks: { blockId: string; id: string; ok: boolean }[] }
     expect(r.checks.some((c) => c.blockId === bare.changed[0] && c.id === 'R8' && !c.ok)).toBe(true)
-    expect(r.checks[0].ok).toBe(false)
+    expect(r.checks.some((c) => !c.ok)).toBe(true)
     expect((await db.getDoc('u1', docId))?.text).toBe(text)
     expect((await db.getDoc('u1', docId))?.rev).toBe(rev)
     expect(validateDoc(parseDoc(text ?? '').doc).errors).toEqual([])
+  })
+
+  it('propose_block stores a checked proposal', async () => {
+    const { ok, db } = world()
+    const docId = String((await ok('create_doc', { title: 'P' })).docId)
+    await ok('create_block', { docId, after: 'end', markdown: 'One two three.' })
+    const para = ((await ok('get_doc', { docId })).blocks as Blocks).find((b) => b.type === 'paragraph')?.blockId ?? ''
+    expect(para).not.toBe('')
+    const r = await ok('propose_block', { docId, blockIds: [para], mode: 'replace', markdown: 'One two three.', label: 'Same', why: 'Reformat only' }) as { proposed: string; keeps: string; mode: string }
+    expect(r).toMatchObject({ keeps: 'all', mode: 'replace' })
+    expect((await db.docProposals('u1', docId))?.some((p) => p.id === r.proposed)).toBe(true)
+  })
+
+  it('propose_block refuses a text proposal that drops words', async () => {
+    const { ok, call } = world()
+    const docId = String((await ok('create_doc', { title: 'P' })).docId)
+    await ok('create_block', { docId, after: 'end', markdown: 'One two three.' })
+    const para = ((await ok('get_doc', { docId })).blocks as Blocks).find((b) => b.type === 'paragraph')?.blockId ?? ''
+    expect(para).not.toBe('')
+    expect(await call('propose_block', { docId, blockIds: [para], mode: 'replace', markdown: 'One two.', label: 'Cut', why: 'Shorter' })).toMatchObject({
+      ok: false,
+      error: { code: 'bad_input', message: expect.stringContaining('every word') },
+    })
+  })
+
+  it('check_doc lists D7 first on the wall-of-text fixture and makes no jev call when the doc has no tables', async () => {
+    const jev = fakeJev()
+    const db = fakeDb()
+    const deps = { db, origin: 'https://app.test', jev, now: () => 1_000_000 }
+    const call = (name: string, input: unknown) => runTool(name, input, caller(), deps)
+    const ok = async (name: string, input: unknown) => { const r = await call(name, input); if (!r.ok) throw new Error(`${name}: ${r.error.message}`); return r.result }
+    await db.ensureWorkspace({ id: 'u1', email: 'u1@x.y', name: '' })
+    const ws = (await db.listWorkspaces('u1'))[0]?.id ?? ''
+    expect(ws).not.toBe('')
+    const fixture = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures/docs/wall-of-text.md'), 'utf8')
+    const docId = 'doc_wall'
+    await db.putDoc('u1', docId, 'Reels', serializeDoc(parseDoc(fixture).doc), 0, ws)
+    const r = await ok('check_doc', { docId }) as { checks: { id: string; ok: boolean }[]; next?: string }
+    expect(r.checks[0]).toMatchObject({ id: 'D7', ok: false })
+    expect(jev.calls).toHaveLength(0)
+    expect(r.next).toContain('Walls of text first')
   })
 })
 
@@ -106,6 +150,7 @@ describe('guide and templates for docs', () => {
     const { ok } = world()
     const g = await ok('get_guide', { style: 'doc' }) as { guide: string }
     expect(g.guide).toContain('caption'); expect(g.guide).toContain('20 rows')
+    expect(g.guide).toContain('wall of text'); expect(g.guide).toContain('propose_block')
     const l = await ok('list_templates', { style: 'doc' }) as { templates: { template: string }[] }
     expect(l.templates.map((t) => t.template)).toEqual(expect.arrayContaining(['chart', 'table', 'callout']))
     const t = await ok('get_template', { template: 'chart', style: 'doc' }) as { card: { fields: Record<string, unknown>; rules: string[] }; example: unknown }

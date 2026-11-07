@@ -33,7 +33,10 @@ A doc is a title, an optional subtitle, and blocks in order: headings (\`##\` se
 - Headings and figures keep their ids. A heading's id comes from its words when it is first written; link to it with [the plan](#plan).
 - Markdown here is small: \`## \` heading, \`### \` subheading, \`- \` bullets, \`1. \` numbers, \`> \` quote, \`---\` divider, **bold**, [[focus]], [links](https://…) and [section links](#id). Indent a list item two spaces to put it under the item above (three levels at most). A line that begins with one of those marks but is plain text starts with a backslash.
 - Pages nest: pass \`parent\` to create_doc to start a doc under another page (a doc or a deck), and move_page to move one; keep a deck's supporting docs under the deck.
-- Write sections as short, argued paragraphs; put evidence in figures. One idea per section. Open each section with its answer.`,
+- Write sections as short, argued paragraphs; put evidence in figures. One idea per section. Open each section with its answer.
+- A doc should read through its exhibits; a wall of text fails check_doc (D7).
+- Prefer grouped tables (group rows) to flat ones whenever rows fall into categories.
+- propose_block leaves a suggestion on a block for the user to approve in place; use it when the change replaces the user's own words.`,
   `# Figures
 - Give every figure a caption that says what it shows, and a source in \`source\` (or a \`footnote\`) when it shows figures. Link the source: \`[FCA report](https://…)\`.
 - A chart, table or number figure carries the user's figures exactly as given. Never invent a figure or a source; leave \`source\` out and tell the user instead.

@@ -74,6 +74,12 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       return c
     },
     docComment: (docId, op, by, now) => db.docComment(uid, docId, op, { id: `c_${now.toString(36)}`, by, now }),
+    docProposals: async (docId) => {
+      const p = await db.docProposals(uid, docId)
+      if (p === null) throw new ToolError('not_found', `No doc ${docId}.`, 'list_docs shows your docs.')
+      return p
+    },
+    docProposal: (docId, op, _by, now) => db.docProposal(uid, docId, op, { id: `p_${now.toString(36)}${Math.random().toString(36).slice(2, 5)}` }),
     addImage: async (img) => {
       const store = deps.store === undefined ? blobStore() : deps.store
       if (!store) throw new ToolError('refused', 'Pictures are not set up on this server.', 'Tell the user; slides without pictures still work.')

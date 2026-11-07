@@ -112,10 +112,20 @@ export const docTools = [
     run: async (ctx, { blockId }) => { const file = fileOf(ctx), b = identify(file.doc).find((x) => x.id === blockId)?.block; return written(ctx, file, deleteBlock(file.doc, blockId), b ? { deleted: { blockId, preview: preview(b) } } : {}); } }),
 
   tool<{ docId: string }>({ name: "check_doc", title: "Check the doc", group: "checks", scope: "doc", annotations: READ,
-    description: "Judge the doc's figures: units, sources, one focus, sorted bars, figures the caption claims, table judgements that read faster as marks, a figure with no caption, an empty section. By blockId, failed checks first. Advice only: fix what a small edit fixes and tell the user about the rest; never invent a source or a figure to clear a check. Writes nothing. One model call when the doc has tables.",
+    description: "Judge the doc's figures and structure: units, sources, one focus, sorted bars, figures the caption claims, table judgements that read faster as marks, a figure with no caption, an empty section, and walls of text (D4–D7). By blockId; D4–D7 rank first. Advice only: fix what a small edit fixes and tell the user about the rest; never invent a source or a figure to clear a check. Writes nothing. No model call when the doc has no tables.",
     input: { type: "object", additionalProperties: false, required: ["docId"], properties: { docId: DOC_ID } },
     run: async (ctx) => {
-      const all = await checkDoc(fileOf(ctx).doc, ctx.jev), soft = all.filter((c) => /^S\d/.test(c.id)), checks = all.filter((c) => !/^S\d/.test(c.id)).sort((a, b) => Number(a.ok) - Number(b.ok));
-      return { result: { checks, ...(soft.length ? { suggestions: soft.map((c) => `${c.blockId}: ${c.msg}`) } : {}) } };
+      const doc = fileOf(ctx).doc;
+      const hasTables = doc.blocks.some((b) => b.type === "figure" && b.kind === "table");
+      const all = await checkDoc(doc, hasTables ? ctx.jev : undefined);
+      const soft = all.filter((c) => /^S\d/.test(c.id));
+      const readOrder = ["D7", "D6", "D5", "D4"];
+      const rank = (id: string) => { const i = readOrder.indexOf(id); return i >= 0 ? i : 50; };
+      const checks = all.filter((c) => !/^S\d/.test(c.id)).sort((a, b) => rank(a.id) - rank(b.id) || Number(a.ok) - Number(b.ok));
+      const wall = checks.some((c) => /^D[4-7]$/.test(c.id) && !c.ok);
+      const next = wall
+        ? "Walls of text first: for each D4–D6 block, restructure it (grouped tables where rows fall into categories, steps for sequences, value cards for figures in sentences, bold-label bullets for long paragraphs). Write it yourself, or leave it for the user with propose_block when it replaces their own words."
+        : undefined;
+      return { result: { checks, ...(soft.length ? { suggestions: soft.map((c) => `${c.blockId}: ${c.msg}`) } : {}), ...(next ? { next } : {}) } };
     } }),
 ];

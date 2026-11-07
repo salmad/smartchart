@@ -44,6 +44,8 @@ export interface AccountPort {
   docBlobs(docId: string, hashes: string[]): Promise<{ hash: string; block: Block }[]>;
   docComments(docId: string): Promise<DocComment[]>;
   docComment(docId: string, op: CommentOp, by: string, now: number): Promise<DocComment[] | string>;
+  docProposals(docId: string): Promise<import("../docs/proposals.js").DocProposal[]>;
+  docProposal(docId: string, op: import("../docs/proposals.js").ProposalOp, by: string, now: number): Promise<import("../docs/proposals.js").DocProposal[] | string>;
   /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
   addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind; from?: string }>;
 }

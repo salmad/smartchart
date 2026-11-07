@@ -4,13 +4,14 @@ import { KEEP, type Version } from '../../src/engine/versions'
 import type { Slide } from '../../src/engine/types'
 import type { Block } from '../../src/engine/docs/types'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments'
+import { MAX_DOC_PROPOSALS, type DocProposal, type ProposalOp } from '../../src/engine/docs/proposals'
 import { appendKey, canAdd, canMove, descendants, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
     deck from before workspaces, which only its maker can reach). */
 export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence; parent?: PageRef | null; sortKey?: string | null }
-export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; share?: string | null; presence?: DocPresence; comments?: DocComment[]; parent?: PageRef | null; sortKey?: string | null }
+export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; share?: string | null; presence?: DocPresence; comments?: DocComment[]; proposals?: DocProposal[]; parent?: PageRef | null; sortKey?: string | null }
 export type FakeDb = Db & FakeWorkspaces & {
   rows: Map<string, FakeRow>
   docs: Map<string, FakeDoc>
@@ -258,6 +259,23 @@ export function fakeDb(): FakeDb {
         if (c.userId !== u) return 'Only the author can delete a comment.'
         list.splice(list.indexOf(c), 1)
       }
+      return structuredClone(list)
+    },
+    docProposals: async (u, id) => { const d = docIf(u, id, 'read'); return d ? structuredClone(d.proposals ?? []) : null },
+    docProposal: async (u, id, op: ProposalOp, ctx) => {
+      const d = docs.get(id)
+      if (!d || !can(role(u, d), 'read')) return 'foreign'
+      const list = d.proposals ??= []
+      if ('add' in op) {
+        if (!can(role(u, d), 'write')) return 'You can view this doc, not change it.'
+        if (list.length >= MAX_DOC_PROPOSALS) return 'This doc has too many suggestions.'
+        list.push({ ...op.add, id: ctx.id })
+        return structuredClone(list)
+      }
+      if (!can(role(u, d), 'write')) return 'foreign'
+      const i = list.findIndex((x) => x.id === op.dismiss)
+      if (i < 0) return 'foreign'
+      list.splice(i, 1)
       return structuredClone(list)
     },
     getUserLook: async (u) => userPrefs.get(u) ?? null,
