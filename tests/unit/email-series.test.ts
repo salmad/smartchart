@@ -47,7 +47,7 @@ describe('engagement email templates', () => {
   })
 
   it('greets returning makers differently on day 0 and carries unsubscribe', () => {
-    expect(renderEmail('1-connect', { ...vars, existing: true }).text).toContain('You’ve made slides in Occam')
+    expect(renderEmail('1-connect', { ...vars, existing: true }).text).toContain('You can now use Occam from Claude')
     expect(renderEmail('7-partner', vars).html).toContain('api/unsubscribe?t=x')
   })
 })
