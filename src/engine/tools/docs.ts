@@ -2,6 +2,7 @@
    returns the doc's blocks again, because a text block's id changes when its words do. Edits are pure functions of the doc:
    the service saves what they return. */
 import { checkDoc, figureSuggestions } from "../docs/checks.js";
+import { readabilityChecks } from "../docs/readability.js";
 import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind } from "../docs/types.js";
 import { createFigure, createText, deleteBlock, identify, moveBlock, setLook, updateFigure, writeText, type Edit } from "../docs/ops.js";
 import { textsOf } from "../docs/nest.js";
@@ -47,7 +48,8 @@ const object = (v: unknown, what: string): Record<string, unknown> => {
 function written(ctx: ToolContext, file: DocFile, e: Edit, extra: Record<string, unknown> = {}): HandlerOut {
   if (typeof e === "string") throw refuse(e);
   const v = validateDoc(e.doc), next = file.doc.blocks.length < 2 && e.doc.blocks.length < 2 ? "" : "When the doc says what the user asked, check_doc judges it.";
-  const suggestions = v.errors.length ? [] : figureSuggestions(e.doc, e.ids);
+  const read = v.errors.length ? [] : readabilityChecks(e.doc).filter((c) => !c.ok);
+  const suggestions = v.errors.length ? [] : [...read.map((c) => `${c.blockId}: [${c.id}] ${c.msg}`), ...figureSuggestions(e.doc, e.ids)];
   return { result: { applied: true, rev: ctx.rev, changed: e.ids, blocks: blocksOf(e.doc), ...(v.warnings.length ? { warnings: v.warnings } : {}), ...(suggestions.length ? { suggestions } : {}), ...extra, ...(next ? { next } : {}) }, file: { ...file, doc: e.doc } };
 }
 

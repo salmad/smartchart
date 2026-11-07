@@ -8,10 +8,11 @@ import { plain } from '../slides/schema.js'
 import type { Slide } from '../types.js'
 import { asSlide } from './figure.js'
 import { identify } from './ops.js'
+import { readabilityChecks } from './readability.js'
 import type { Doc, FigureBlock } from './types.js'
 
 /** `id` is a slide check's own (R4 R5 R8 R9 R11 R13 R14 R15 S2 S3 S4 S5 J9 J10) or the doc's: D1 a figure has no caption,
-    D2 a section is empty, D3 a figure could not be read. */
+    D2 a section is empty, D3 a figure could not be read, D4–D7 readability on prose and exhibits. */
 export interface DocCheck { blockId: string; id: string; ok: boolean; msg: string }
 
 const CARRIED = new Set(['R5', 'R8', 'R9', 'R11', 'R13', 'R14', 'R15'])
@@ -69,6 +70,7 @@ export async function checkDoc(doc: Doc, jev?: JevFn): Promise<DocCheck[]> {
       out.push({ blockId: b.id, id: 'D3', ok: false, msg: 'The figure could not be read: check each value against its card (get_template)' })
     }
   }
+  out.push(...readabilityChecks(doc))
   return out
 }
 

@@ -21,6 +21,23 @@ describe('figureChecks', () => {
     expect(get(figureChecks(fig('chart', body)), 'R4')?.ok).toBe(true)
     expect(get(figureChecks(fig('chart', two)), 'R4')?.ok).toBe(false)
   })
+  it('R8 and R13 stay quiet on a table of words', () => {
+    const body = {
+      caption: 'Named reels',
+      table: {
+        columns: [{ label: 'Name' }, { label: 'Note' }],
+        rows: [
+          { cells: ['1. The 3-second test', 'Short'] },
+          { cells: ['2 a.m.', 'Night'] },
+          { cells: ['5 s', 'Offset'] },
+        ],
+      },
+    }
+    const cs = figureChecks(fig('table', body, 't'))
+    expect(cs.some((c) => c.id === 'R8' && !c.ok)).toBe(false)
+    expect(cs.some((c) => c.id === 'R13' && !c.ok)).toBe(false)
+  })
+
   it('R13 and R14: mixed units in a column; bars not sorted', () => {
     const t = start('table')
     t.table?.rows?.push({ cells: ['Odd', '12%', 'Soon'] })
