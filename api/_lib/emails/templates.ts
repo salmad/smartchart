@@ -93,14 +93,14 @@ function specFor(key: EmailKey, v: EmailVars): Spec {
         { button: 'Watch a 29-second example', href: watch(key, 'NwgboFYXgcY') },
       ] }
     case '3-templates': return {
-      subject: 'Choosing a slide template in Occam', preview: 'Pick the template by what the slide needs to show.',
-      eyebrow: 'Guide', title: 'Pick the template by what the slide shows.',
+      subject: 'How to pick a slide template in Occam', preview: 'Choose the template by what the slide needs to show.',
+      eyebrow: 'Guide', title: 'Pick a template by what the slide shows.',
       body: [
-        { p: 'Occam has 30 slide templates, each built for one job. Choose by what the slide needs to show:' },
+        { p: 'When you add a slide in Occam, you choose a template first. Pick it by what the slide needs to show:' },
         { list: ['**Comparing options:** scoring table, with ✓, ✗ and Harvey balls', '**Positioning:** matrix, with notes on the right saying why', '**Numbers side by side:** table', '**Plans over time:** timeline, with the critical path marked'] },
         { slide: 'templates-grid.jpg', alt: 'Four Occam slides: a scoring table, a matrix with notes on the right, a margin table and a launch timeline', label: 'Scoring, matrix, table, timeline' },
-        { p: 'Occam sets the fonts, colours and spacing, so every deck keeps one look.' },
-        { button: 'See all 30 templates', href: at('/new') },
+        { p: 'To add one, open a deck and choose Add slide, or ask your agent: “Add a scoring table comparing the four options.”' },
+        { button: 'Open the template list', href: at('/new') },
       ] }
     case '4-connect-again': return {
       subject: 'Finish setting up Occam in Claude', preview: 'Your account isn’t connected to an agent yet.',
@@ -113,13 +113,13 @@ function specFor(key: EmailKey, v: EmailVars): Spec {
         { button: 'Connect your agent', href: at('/?connect=1') },
       ] }
     case '4b-so-what': return {
-      subject: 'How to turn a slide topic into a point', preview: 'A short guide to titles, with an example.',
-      eyebrow: 'Guide', title: 'A topic names the slide. *A point says what it means.*',
+      subject: 'Slide titles: topic or point?', preview: 'How to check your titles, with an example.',
+      eyebrow: 'Guide', title: 'Topic or point? *Check your titles.*',
       body: [
-        { p: 'When a title only names the topic, readers have to work out the conclusion themselves. Compare:' },
+        { p: 'Readers take in the title first. If it only names the topic, they have to work out the conclusion from the chart. Compare:' },
         { list: ['**Topic:** ARR bridge, FY25 to FY26', '**Point:** ARR reaches £17.5m in FY26; new customers add £6.2m of the £7.7m growth'] },
         { slide: 's15-consulting.jpg', alt: 'A waterfall slide whose title states that new customers add £6.2m of the £7.7m growth', label: 'Waterfall with a point as its title' },
-        { p: 'To fix a whole deck, ask your agent: “Rewrite each title as the point the slide proves.” Occam flags any that are still topics.' },
+        { p: 'To check a deck, read only the titles in order. If they don’t tell the story, ask your agent: “Rewrite each title as the point the slide proves.”' },
         { button: 'Watch a 25-second example', href: watch(key, 'T-4zj3FsNeA') },
       ] }
     case '5-cagr': return {
@@ -134,13 +134,12 @@ function specFor(key: EmailKey, v: EmailVars): Spec {
         v.deck ? { button: `Open ${v.deck.name}`, href: at(`/d/${encodeURIComponent(v.deck.id)}`) } : { button: 'Open Occam', href: at() },
       ] }
     case '6-docs': return {
-      subject: 'How to write a doc in Occam', preview: 'PRDs, memos and teardowns, with the same charts and checks.',
-      eyebrow: 'Guide', title: 'Docs in Occam. *Same charts, same checks.*',
+      subject: 'Writing docs in Occam', preview: 'When to use a doc instead of a deck, and how to start one.',
+      eyebrow: 'Guide', title: 'Use a doc when it will be read, not presented.',
       body: [
-        { p: 'Use a doc when the content will be read rather than presented: a PRD, a memo or a competitor teardown.' },
+        { p: 'Occam has docs as well as decks. Use one for a PRD, a memo or a competitor teardown.' },
         { slide: 'doc-prd.jpg', alt: 'An Occam doc: a product requirements document with goals and a decision callout', label: 'Product requirements doc' },
-        { p: 'Docs use the same charts, tables and checks as slides, and your agent can write them the same way. A doc can also sit under a deck as the detail behind it.' },
-        { p: 'To start one, choose New doc in the sidebar and pick a PRD, a competitor teardown or a legal memo.' },
+        { p: 'Docs take the same charts and tables as slides, and Occam checks them the same way. To start one, choose New doc in the sidebar and pick a starter, or ask your agent: “Write a one-page PRD for …”.' },
         { button: 'Start a doc', href: at('/?new=doc') },
       ] }
     case '7-partner': return {
