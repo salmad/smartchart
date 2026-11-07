@@ -13,9 +13,10 @@ interface Props {
   target: 'deck' | 'doc'
   id: string | null
   onPdf?: () => void
+  docExport?: { markdown: () => void; html: () => void; pdf: () => void }
 }
 
-export function ShareMenu({ target, id, onPdf }: Props) {
+export function ShareMenu({ target, id, onPdf, docExport }: Props) {
   const [open, setOpen] = useState(false), [link, setLink] = useState<Link>({ state: 'loading' }), [copied, setCopied] = useState(false)
   const [working, setWorking] = useState(false)
 
@@ -41,7 +42,7 @@ export function ShareMenu({ target, id, onPdf }: Props) {
         className="grid w-80 gap-4 rounded-[14px] border-line-2 bg-raise p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
         <h2 className="text-[14px] font-medium text-ink">{target === 'doc' ? 'Share this doc' : 'Share this deck'}</h2>
         {id && <section className="grid gap-3">
-        <p className="-mt-2 text-[12.5px] text-ink-3">{target === 'doc' ? 'Anyone with the link can read it. It always shows the latest version.' : 'Anyone with the link can read it and present it. It always shows the latest version.'}</p>
+        <p className="-mt-2 text-[12.5px] text-ink-3">{target === 'doc' ? 'Anyone with the link can read it — no sign-in. It always shows the latest version.' : 'Anyone with the link can read it and present it. It always shows the latest version.'}</p>
         {link.state === 'on' ? (
           <>
             <div className="flex items-center gap-2">
@@ -72,6 +73,24 @@ export function ShareMenu({ target, id, onPdf }: Props) {
             <span className="text-[12px] text-ink-3">One slide per page, for email and board packs.</span>
           </span>
         </button>}
+        {docExport && <hr className="-mx-4 border-line" />}
+        {docExport && (
+          <section className="grid gap-0.5">
+            <p className="px-2 text-[12px] font-medium text-ink-3">Download</p>
+            <button type="button" onClick={() => { setOpen(false); docExport.markdown() }} className="-m-0 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
+              <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
+              <span className="grid"><span className="text-[13px] text-ink">Markdown</span><span className="text-[12px] text-ink-3">Source with live figure blocks.</span></span>
+            </button>
+            <button type="button" onClick={() => { setOpen(false); docExport.html() }} className="-m-0 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
+              <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
+              <span className="grid"><span className="text-[13px] text-ink">HTML</span><span className="text-[12px] text-ink-3">Rendered page to open or send.</span></span>
+            </button>
+            <button type="button" onClick={() => { setOpen(false); docExport.pdf() }} className="-m-0 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
+              <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
+              <span className="grid"><span className="text-[13px] text-ink">PDF</span><span className="text-[12px] text-ink-3">Print or save as PDF.</span></span>
+            </button>
+          </section>
+        )}
       </PopoverContent>
     </Popover>
   )

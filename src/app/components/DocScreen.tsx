@@ -28,6 +28,9 @@ import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
 import { ReadBar } from './docs/DocBar'
 import { ShareMenu } from './ShareMenu'
+import { PrintDoc } from './PrintDoc'
+import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
+import { fileName } from '@/app/download'
 import type { PageRef } from '@/engine/pages/tree'
 import { Crumbs } from './Crumbs'
 import type { Crumb } from './sidebar/usePageCrumbs'
@@ -83,6 +86,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const [side, setSide] = useState<'comments' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
   const [comments, setComments] = useState<DocComment[]>(() => docs.peek?.(id)?.comments ?? []), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
+  const [printing, setPrinting] = useState(false)
   const blocks = useRef(new Map<string, Block>())
   const shown = preview?.doc && preview.doc !== 'missing' && !preview.current ? preview.doc : parsed
   const drawn = useMemo(() => (shown ? { ...shown, theme: look.theme, ...(look.accent ? { accent: look.accent } : {}) } : null), [shown, look.theme, look.accent])
@@ -243,8 +247,14 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
       {/* The bar stays while the next doc is read, so its buttons do not blink; Edit waits for the doc. */}
       {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} others={live.others} comments={commenting}
         look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }}
-        share={shareId ? <ShareMenu target="doc" id={shareId} /> : null} />)}
-      {body(<><div ref={page} />{record && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}</>)}
+        share={shareId ? <ShareMenu target="doc" id={shareId}
+          docExport={record ? {
+            markdown: () => exportDocMarkdown(record.name, record.text),
+            html: () => { if (page.current) exportDocHtml(record.name, page.current) },
+            pdf: () => setPrinting(true),
+          } : undefined} /> : null} />)}
+      {body(<><div ref={page} data-doc-print-root />{record && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}</>)}
+      {printing && record && <PrintDoc name={fileName(record.name)} onDone={() => setPrinting(false)} />}
     </>
   )
 }

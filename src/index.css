@@ -89,3 +89,17 @@
   .print-slide { break-after: page; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .print-slide:last-child { break-after: auto; }
 }
+
+/* Doc → PDF: hide chrome, print the article (doc.css unfolds sections). */
+@media print {
+  body[data-printing-doc] { overflow: visible; background: none; }
+  body[data-printing-doc] [data-shared-chrome] { display: none !important; }
+  body[data-printing-doc] [data-doc-print-root],
+  body[data-printing-doc] [data-doc-print-root] * { visibility: visible; }
+  body[data-printing-doc] :not([data-doc-print-root]):not([data-doc-print-root] *) { visibility: hidden; }
+  body[data-printing-doc] [data-doc-print-root] { position: absolute; left: 0; top: 0; width: 100%; }
+  body[data-printing-doc] .doc-toc, body[data-printing-doc] .doc-toc-mini,
+  body[data-printing-doc] .fold, body[data-printing-doc] .fig-expand, body[data-printing-doc] .fig-checks { display: none !important; }
+  body[data-printing-doc] .doc-sec.folded > .sec-body { display: block; }
+  body[data-printing-doc] .doc-fig { break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

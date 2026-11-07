@@ -19,4 +19,5 @@ test('a shared doc opens for a signed-out visitor', async ({ page }) => {
   await expect(article.getByRole('heading', { name: 'Market', level: 2 })).toBeVisible()
   await expect(article.getByText('A short read.')).toBeVisible()
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
+  await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
 })

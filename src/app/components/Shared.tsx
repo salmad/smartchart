@@ -6,6 +6,10 @@ import { SharedDocView } from './SharedDoc'
 import { Button } from './ui/button'
 import { newLiveKey, openPresentation, usePublishDeck } from '@/app/presenter-channel'
 import { PrintDeck } from './PrintDeck'
+import { PrintDoc } from './PrintDoc'
+import { DocExportMenu } from './DocExportMenu'
+import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
+import { fileName } from '@/app/download'
 import { pdfName } from '../pdf-name'
 import { ReadSlides, type ReadSlidesHandle } from './ReadSlides'
 
@@ -13,7 +17,8 @@ type Load = { state: 'loading' } | { state: 'off' } | { state: 'error' } | { sta
 
 export function Shared({ token }: { token: string }) {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
-  const [printing, setPrinting] = useState(false), liveKey = useMemo(newLiveKey, [])
+  const [printing, setPrinting] = useState(false), [docPrinting, setDocPrinting] = useState(false), liveKey = useMemo(newLiveKey, [])
+  const docRoot = useRef<HTMLDivElement | null>(null)
   const slides = useRef<ReadSlidesHandle>(null)
   usePublishDeck(load.state === 'ready' && load.shared.kind === 'deck' ? load.shared.deck : null, liveKey)
 
@@ -41,25 +46,37 @@ export function Shared({ token }: { token: string }) {
   // ⌘P prints the deck, one slide per page, not the page around it.
   useEffect(() => {
     if (!name) return
-    const key = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); setPrinting(true) } }
+    const key = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== 'p') return
+      e.preventDefault()
+      if (load.state === 'ready' && load.shared.kind === 'doc') setDocPrinting(true)
+      else setPrinting(true)
+    }
     document.addEventListener('keydown', key)
     return () => document.removeEventListener('keydown', key)
-  }, [name])
+  }, [name, load])
 
   if (load.state === 'loading') return <div className="h-full bg-app-bg" />
   if (load.state !== 'ready') return <Gone error={load.state === 'error'} />
   if (load.shared.kind === 'doc') {
+    const { shared } = load
     return (
-      <div className="flex h-full flex-col overflow-hidden bg-app-bg text-ink">
-        <header className="flex h-14 flex-none items-center gap-3 border-b border-line px-5 max-[900px]:px-4">
+      <div className="flex h-full flex-col overflow-hidden bg-app-bg text-ink" data-shared-doc>
+        <header data-shared-chrome className="flex h-14 flex-none items-center gap-3 border-b border-line px-5 max-[900px]:px-4">
           <a href="/home" className="whitespace-nowrap text-[13px] font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-[13px] text-ink-3">/</span>
-          <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{load.shared.name}</h1>
+          <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{shared.name}</h1>
+          <DocExportMenu
+            onMarkdown={() => exportDocMarkdown(shared.name, shared.text)}
+            onHtml={() => { if (docRoot.current) exportDocHtml(shared.name, docRoot.current) }}
+            onPdf={() => setDocPrinting(true)}
+          />
         </header>
-        <SharedDocView shared={load.shared} />
-        <footer className="flex-none border-t border-line py-6 text-center text-[12.5px] text-ink-3">
+        <SharedDocView shared={shared} onReady={(root) => { docRoot.current = root }} />
+        <footer data-shared-chrome className="flex-none border-t border-line py-6 text-center text-[12.5px] text-ink-3">
           Made with <a href="/home" className="text-ink-2 underline decoration-line-2 underline-offset-4 hover:text-ink">Occam</a>
         </footer>
+        {docPrinting && <PrintDoc name={fileName(shared.name)} onDone={() => setDocPrinting(false)} />}
       </div>
     )
   }

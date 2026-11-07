@@ -413,7 +413,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
         : docOnScreen
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} chatOpen={chatOpen} onToggleChat={toggleChat} offline={healthKnown && !s.live} modelsLive={s.live}
           look={{ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }}
-          shareId={backup ? null : docOnScreen} /></Suspense>
+          shareId={backup ? docOnScreen : null} /></Suspense>
         : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
