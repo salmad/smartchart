@@ -45,9 +45,9 @@ Every content slide shares one frame. Cover and section are frame variants with 
 | `footnote` | optional; ≤ 2 lines together with `source` | optional, rare |
 | `source` | optional; renderer adds "Source:" | optional, rare |
 | `caption` (chart, table) | written by default: what is shown, plainly (measure, scope, period, then " · " and the unit); exactly 1 line, ≤ 48 characters; a table counts it as 1 row of its budget | optional, only when asked |
-| `notesTitle` (with notes) | optional, only when asked or offered as a suggestion: "Notes", "What drives it"; exactly 1 line, ≤ 20 characters; not with a takeaway | same |
+| `notesTitle` (with notes) | written with every set of notes (warning when missing): a label that says what the notes do for the exhibit ("Why margin rises"), else "Drivers" or "Observations"; no filler ("Key", "Main"); exactly 1 line, ≤ 20 characters; fine with a takeaway | optional, only when asked |
 
-**Exhibit heads (2026-09-28).** The caption sits over the chart or table on a hairline; the unit after the last " · " is set quieter. With notes and a notes heading, both columns get one header row on one line (a missing caption leaves its side blank). With a caption alone, the notes keep the full column height from the body line.
+**Exhibit heads (2026-09-28).** The caption sits over the chart or table on a hairline; the unit after the last " · " is set quieter. With notes and a notes heading, both columns get one header row on one line (a missing caption leaves its side blank). With a caption alone, the notes still start under the header row, level with the exhibit. (2026-11-07, measured against current McKinsey decks: the label matches the caption in size and weight; notes stack from the top at one fixed gap with no rules, the lead bold at body size; spare height collects below them.)
 
 Derived, never written by the agent: page number, section number, note numbers, default kicker, footer (deck setting).
 

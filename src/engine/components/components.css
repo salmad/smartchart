@@ -39,27 +39,31 @@
 /* ═════════════ Split layout: main ⅔ + side ⅓ (chart/table + notes, text + number) ═════════════ */
 .split { display: grid; grid-template-columns: 1.3fr .7fr; gap: 88px; }
 .notes { display: flex; flex-direction: column; min-height: 0; }
-/* Notes share the column's height in equal bands, so a short set never leaves the lower half empty beside the
-   body; a band grows past its share only when its note needs it. */
-.note { flex: 1 1 0; display: grid; grid-template-columns: 76px 1fr; align-content: start; padding: 24px 0; border-bottom: 1px solid var(--line); }
-.note:first-child { padding-top: 0; }
-.note:last-child { border-bottom: 0; padding-bottom: 0; }
-.note .n { font: 600 30px/1.2 var(--mono); color: var(--focus); }
-.note h4 { font-size: 32px; font-weight: 600; line-height: 1.2; }
-.note p { margin-top: 8px; font-size: 25px; line-height: 1.4; color: var(--fg-2); }
-.style-pitch .note h4 { font-size: 40px; }
+/* Notes stack from the top at one fixed gap, with no rules between them; spare height collects below the last
+   note (as top-firm commentary columns do). The lead is bold at body size, so the label over the column, which
+   matches the caption, outranks it. Pitch keeps its larger lead: its notes are mostly a lead alone. */
+.note { display: grid; grid-template-columns: 60px 1fr; align-content: start; padding-bottom: 30px; }
+.note:last-child { padding-bottom: 0; }
+.note .n { font: 600 25px/1.4 var(--mono); color: var(--focus); }
+.note h4 { font-size: 25px; font-weight: 700; line-height: 1.4; }
+.note p { margin-top: 2px; font-size: 25px; line-height: 1.4; color: var(--fg-2); }
+.style-pitch .note { grid-template-columns: 76px 1fr; }
+.style-pitch .note .n { font-size: 30px; line-height: 1.2; }
+.style-pitch .note h4 { font-size: 40px; font-weight: 600; line-height: 1.2; }
+.style-pitch .note p { margin-top: 8px; }
 /* Beside notes, a short table shares their height: rows grow evenly instead of leaving a hole below. */
 .split.with-table > .main .tbl { height: 100%; }
 .split > .main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .split > .main > .chart { flex: 1; min-height: 0; }
-/* Exhibit caption: what the chart or table shows, over a hairline. With notes, a header row on one line. */
-.cap { font-size: 26px; line-height: 1.2; font-weight: 600; color: var(--fg); padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+/* Exhibit caption: what the chart or table shows, over a hairline. With notes, a header row on one line: the
+   caption and the notes label are one tier, set above the notes' text. */
+.cap { font-size: 31px; line-height: 1; font-weight: 600; color: var(--fg); padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 .cap span { font-weight: 400; color: var(--muted); }
 .cap.blank { border-bottom: 0; padding: 0; }
-.style-pitch .cap { font-size: 30px; }
+.style-pitch .cap { font-size: 30px; line-height: 1.2; }
 .cap + .chart, .cap + .tbl { margin-top: 28px; }
 .split.has-head { grid-template-rows: auto 1fr; row-gap: 28px; }
-.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > .notes { grid-column: 2; grid-row: 1 / span 2; }
+.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > .notes { grid-column: 2; grid-row: 2; }
 .big-v { font-size: 420px; line-height: .8; color: var(--focus); white-space: nowrap; }
 .big-v.neg { color: var(--neg); } .big-v.pos { color: var(--pos); }
 .style-consulting .big-v { font-weight: 800; font-stretch: 78%; font-size: 360px; }

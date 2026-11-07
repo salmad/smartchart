@@ -170,10 +170,14 @@ test("charts and tables take an optional one-line caption and notes heading, in 
   assert.ok(errs({ ...s, notesTitle: "x".repeat(21) }).some((e) => e.startsWith("notesTitle")));
 });
 
-test("a notes heading does not go with a takeaway", () => {
-  const s = chart({ categories: cats, format: "£{v}m", series: [REV] }, { notesTitle: "Notes", takeaway: "So what.", notes: [{ title: "a" }, { title: "b" }, { title: "c" }] });
-  assert.ok(errs(s).some((e) => e.startsWith("notesTitle: a notes heading and a takeaway")));
-  assert.ok(!errs({ ...s, takeaway: undefined }).some((e) => e.startsWith("notesTitle")));
+test("consulting notes carry a label, which may sit beside a takeaway; filler labels and missing ones warn", () => {
+  const s = chart({ categories: cats, format: "£{v}m", series: [REV] }, { notesTitle: "Why margin rises", takeaway: "So what.", notes: [{ title: "a" }, { title: "b" }, { title: "c" }] });
+  const label = (x: unknown, style: Style = "consulting") => validate(x, style).warnings.filter((w) => w.startsWith("notesTitle"));
+  assert.ok(!errs(s).some((e) => e.startsWith("notesTitle")));
+  assert.deepEqual(label(s), []);
+  assert.match(label({ ...s, notesTitle: undefined }).join(), /no label/);
+  assert.deepEqual(label({ ...s, notesTitle: undefined, subtitle: "It grew." }, "pitch"), []);
+  assert.match(label({ ...s, notesTitle: "Key insights" }).join(), /filler/);
 });
 
 const GROUPED = { kind: "timeline", periods: ["Q1", "Q2", "Q3", "Q4"], rows: [

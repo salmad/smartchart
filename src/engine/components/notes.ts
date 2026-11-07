@@ -10,7 +10,7 @@ export const notesHTML = (notes: Note[], base: string): string => `<div class="n
   <div><h4${at(`${p}.title`, "md")}>${md(n.title)}</h4>${n.text ? `<p${at(`${p}.text`, "md")}>${md(n.text)}</p>` : ""}</div></div>`; }).join("")}</div>`;
 
 /* Split body: main ⅔ + notes ⅓. With a notes heading, both columns get a header row on one line (a missing
-   caption stays blank). With a caption alone, the notes keep the column's full height from the body line. */
+   caption stays blank). With a caption alone, the notes still start under the header row, level with the exhibit. */
 export const splitHTML = (f: Furniture, main: string, extra: string, base: string): string => {
   const cap = join(base, "caption");
   const head = f.notesTitle ? capHTML(f.caption, "", cap) + capHTML(f.notesTitle, "notes-h", join(base, "notesTitle")) : f.caption ? capHTML(f.caption, "", cap) : "";

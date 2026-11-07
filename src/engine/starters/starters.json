@@ -143,6 +143,7 @@
     "caption": "Income and gross margin, years 1–5 · £m, %",
     "kicker": "Unit economics",
     "title": "[[Interchange]] catches up with interest by year 4, lifting gross margin from 12% to 38%",
+    "notesTitle": "Why margin rises",
     "notes": [
      {
       "title": "Interest leads early",
@@ -814,6 +815,7 @@
     "caption": "AI model providers compared, 2026",
     "kicker": "Competition",
     "title": "Acme offers [[five times the context]] of the nearest provider with a free tier",
+    "notesTitle": "Where rivals lag",
     "notes": [
      {
       "title": "Closed APIs bill at once",
@@ -1052,6 +1054,7 @@
       }
      ]
     },
+    "notesTitle": "Why the gap is open",
     "notes": [
      {
       "title": "Lenders: limit only",
@@ -1606,6 +1609,7 @@
     "caption": "Revenue to gross margin, year 4 · £m",
     "kicker": "Unit economics",
     "title": "[[Bad debt]] is the largest cost between £42m of revenue and a £16m gross margin",
+    "notesTitle": "Where margin goes",
     "notes": [
      {
       "title": "Funding is fixed",
@@ -2456,6 +2460,7 @@
      "src": "/starters/img/acme-app-screenshot-2400x1500.webp",
      "alt": "The Acme cash flow screen: a 90-day forecast dipping to £14,820 when VAT is due, and a suggested £12,000 draw"
     },
+    "notesTitle": "How it works",
     "notes": [
      {
       "title": "Forecast from live data",

@@ -75,6 +75,7 @@
     "footnote",
     "kicker",
     "notes",
+    "notesTitle",
     "source",
     "takeaway",
     "template",
@@ -428,6 +429,7 @@
     "caption",
     "kicker",
     "notes",
+    "notesTitle",
     "source",
     "table",
     "template",
@@ -555,6 +557,7 @@
     "footnote",
     "kicker",
     "notes",
+    "notesTitle",
     "source",
     "template",
     "title"
@@ -883,6 +886,7 @@
     "chart",
     "kicker",
     "notes",
+    "notesTitle",
     "source",
     "template",
     "title"
@@ -1434,6 +1438,7 @@
     "caption",
     "image",
     "notes",
+    "notesTitle",
     "template",
     "title"
    ],

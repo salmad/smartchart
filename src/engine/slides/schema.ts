@@ -261,7 +261,7 @@ const HALF_CHART = f("object", "A chart for half the slide.", { fields: {
 
 /* An exhibit caption over a chart or table, and an optional heading over its notes. */
 const CAPTION = f("text", "What the chart or table shows, stated plainly: the measure, its scope and period, then ' · ' and the unit. 'Annual recurring revenue, FY25–FY26 · £m', 'SME cards compared'. One line. Consulting: always write one. Pitch: leave it out unless the user asks.", { max: 48 });
-const NOTES_TITLE = f("text", "A one- or two-word heading over the notes: 'Notes', 'What drives it'. Only when the user asks for it; never by default. Not with a takeaway.", { max: 20 });
+const NOTES_TITLE = f("text", "What the notes do for the exhibit: 'Why margin rises', else 'Drivers' or 'Observations'; no 'Key'. Consulting: always. Pitch: if asked.", { max: 20 });
 
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
@@ -867,15 +867,20 @@ function checkMatrix(c: Chart, path: string, out: Out): void {
 
 const count = <T extends object>(list: readonly (T | null | undefined)[] | undefined, key: keyof T) => (list || []).filter((x) => x && x[key]).length;
 
-function checkNotes(s: Slide, style: Style, out: Out): void {
+/** Words that only decorate a label: every note is a note, none is less key than another. */
+const FILLER = /\b(key|main|important|notable|top)\b/i;
+
+function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMITS): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
   const textLen = list.reduce((sum, n) => sum + (n?.text ? plain(n.text).length : 0), 0);
   // Measured on the review page: the notes column holds about 300 characters of note text, 200 beside a takeaway.
   const total = s.takeaway ? 200 : 300;
   if (textLen > total) out.errors.push(`notes[].text: ${textLen} characters in total; ${s.takeaway ? "with a takeaway " : ""}the limit is ${total}. Shorten the notes${s.takeaway ? " or drop the takeaway" : ""}.`);
-  // The heading takes a header row from the notes column; with a takeaway there is no room for both.
-  if (s.notesTitle && s.takeaway) out.errors.push("notesTitle: a notes heading and a takeaway do not fit together. Drop the notes heading, or the takeaway.");
+  // On a slide the label sits on the caption's line and the notes start under it (a doc lists notes under the
+  // figure, with no label). Checks warn, they never write one.
+  if (list.length && style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push(`notesTitle: the notes have no label. Add one that says what they do for the ${s.template === "table" ? "table" : "exhibit"} ('Why margin rises'), or 'Drivers' / 'Observations'.`);
+  if (s.notesTitle && FILLER.test(s.notesTitle)) out.warnings.push(`notesTitle: "${s.notesTitle}" leans on a filler word. Say what the notes do ('Why margin rises'), or use 'Drivers' / 'Observations'.`);
 }
 
 /* Rules every table shares, the table template's and a half table's: cells per column, column flags, marks,
@@ -968,7 +973,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       if (style === "pitch" && s.takeaway && s.chart?.kind === "ranked" && (s.chart.ranking || []).length > 6)
         out.errors.push(`chart.ranking: ${s.chart.ranking?.length} items; pitch with a takeaway takes at most 6. Merge the smallest into 'Other' or drop the takeaway.`);
       if (!s.notes?.length) break;
-      checkNotes(s, style, out);
+      checkNotes(s, style, out, limits);
       const kind = s.chart?.kind || "bars", cats = s.chart?.categories || [], series = s.chart?.series || [];
       const items = s.chart?.items || [], periods = s.chart?.periods || [], rows = s.chart?.rows || [], annotations = s.chart?.annotations || [];
       if (kind === "waterfall" && items.length > 7) out.errors.push(`chart.items: ${items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
@@ -1014,7 +1019,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
       if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
       if (s.notes?.length) {
-        checkNotes(s, style, out);
+        checkNotes(s, style, out, limits);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
         if (n > 4) out.errors.push(`table.columns: ${n} columns; with notes at most 4. Drop a column or the notes.`);
         (t.rows || []).forEach((r, i) => { if (r?.style === "group") return; const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
@@ -1053,7 +1058,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       break;
     }
     case "image": {
-      if (s.notes?.length) { checkNotes(s, style, out); if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a picture at most 3.`); }
+      if (s.notes?.length) { checkNotes(s, style, out, limits); if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a picture at most 3.`); }
       const alt = s.image?.alt;
       if (typeof alt === "string" && /\.(png|jpe?g|webp|gif|svg|heic)$/i.test(alt.trim())) out.errors.push("image.alt: a file name. Say what the picture shows, in words.");
       break;

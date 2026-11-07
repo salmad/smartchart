@@ -185,7 +185,10 @@ function pictures(st: Style, frame: (id: TemplateId) => Partial<Slide>, notes: (
 
 function withExhibitHeads(s: Slide & { name: string }, st: Style): Slide & { name: string } {
   const caption = s.template === "chart" || (s.template === "table" && st === "consulting" && s.notes?.length) ? { caption: `${W(max(s.template, st, "caption") - 5)} · £m` } : {};
+  // Consulting labels every set of notes, at its longest; pitch only when asked (the waterfall case shows one).
+  const label = { notesTitle: W(max(s.template, st, "notesTitle")) };
+  if (st === "consulting" && s.notes?.length) return { ...s, ...caption, ...label };
   if (s.name !== "Stress · waterfall + notes") return { ...s, ...caption };
   const { takeaway: _dropped, ...rest } = s;
-  return { ...rest, ...caption, notesTitle: W(max(s.template, st, "notesTitle")) };
+  return { ...rest, ...caption, ...label };
 }
