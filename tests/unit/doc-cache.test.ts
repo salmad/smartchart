@@ -13,6 +13,7 @@ function inner(docs: Record<string, Doc>, comments: DocComment[] = []): DocRepo 
     list: async () => [], get: async (id) => docs[id] ?? null, save: async (d) => { docs[d.id] = { ...d, updated: 2 }; return null },
     remove: async (id) => delete docs[id], meta: async () => null, known: () => 1, presence: async () => undefined,
     versions: async () => [], blobs: async () => ({}), comments: async () => comments, comment: async () => comments,
+    proposals: async () => [], proposal: async () => [],
   }
 }
 const load = async () => (await import('@/app/doc-cache')).cachedDocRepo

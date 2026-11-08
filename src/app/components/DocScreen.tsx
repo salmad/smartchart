@@ -26,7 +26,9 @@ import { VersionsPanel } from './VersionsPanel'
 import { anchorsOf } from './docs/anchors'
 import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
+import { DocChecks } from './docs/DocChecks'
 import { ReadBar } from './docs/DocBar'
+import { useDocProposals } from './docs/useDocProposals'
 import { ShareMenu } from './ShareMenu'
 import { PrintDoc } from './PrintDoc'
 import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
@@ -83,7 +85,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const docKey = useMemo(() => (parsed ? JSON.stringify(parsed.blocks) : ''), [parsed])
   const [docChips, setDocChips] = useState<{ key: string; pills: Pill[] } | null>(null)
   const me = authorOf(account), live = useDocLive(docs, id, editing, me)
-  const [side, setSide] = useState<'comments' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
+  const [side, setSide] = useState<'comments' | 'checks' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
   const [comments, setComments] = useState<DocComment[]>(() => docs.peek?.(id)?.comments ?? []), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
   const [printing, setPrinting] = useState(false)
@@ -180,13 +182,24 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   }
   const mine = (c: DocComment) => c.userId === account.id || c.userId === 'local'
   const reveal = (anchor: string) => {
-    const el = pageEl?.querySelector<HTMLElement>(`[id="${CSS.escape(anchor)}"]`), sec = el?.closest<HTMLElement>('.doc-sec')
+    const el = pageEl?.querySelector<HTMLElement>(`[id="${CSS.escape(anchor)}"], [data-block="${CSS.escape(anchor)}"]`), sec = el?.closest<HTMLElement>('.doc-sec')
     if (sec?.classList.contains('folded')) sec.querySelector<HTMLElement>(':scope > h2 > .fold')?.click()
     el?.scrollIntoView({ block: 'center' })
   }
+  const loadProposals = useCallback(() => docs.proposals(id), [docs, id])
+  const dismissProposal = useCallback((pid: string) => docs.proposal(id, { dismiss: pid }), [docs, id])
+  const checksState = useDocProposals({ docId: id, doc: parsed, rev: docs.known(id), canEdit, loadStored: loadProposals, dismissStored: dismissProposal })
   const pick = useCallback((t: CommentTarget) => { setTarget(t); setSide('comments') }, [])
   const toggleComments = () => setSide((s) => (s === 'comments' ? null : 'comments'))
+  const toggleChecks = () => {
+    setSide((s) => {
+      const next = s === 'checks' ? null : 'checks'
+      if (next === 'checks') void checksState.openPanel()
+      return next
+    })
+  }
   const commenting = { open: side === 'comments', count: comments.filter((c) => !c.done).length, onToggle: toggleComments }
+  const checking = { open: side === 'checks', count: checksState.badge.count, pass: checksState.badge.pass, onToggle: toggleChecks }
 
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
 
@@ -228,6 +241,11 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         canResolve={(c) => canEdit || mine(c)} canDelete={mine} onShow={reveal} onHover={setRing} onClose={() => { setSide(null); setTarget(null); setRing(null) }}
         onAdd={(text) => { void comment({ add: { text, anchor: target?.anchor ?? 'doc', ...(target?.quote ? { quote: target.quote } : {}) } }); setTarget(null) }}
         onResolve={(cid) => void comment({ resolve: { id: cid } })} onDelete={(cid) => void comment({ remove: { id: cid } })} />}
+      {side === 'checks' && parsed && (
+        <DocChecks verdict={checksState.verdict} readability={checksState.readability} figures={checksState.figures} proposals={checksState.proposals}
+          loading={checksState.loading} canEdit={canEdit} onShow={reveal} onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
+          onClose={() => setSide(null)} />
+      )}
     </div>
   )
 
@@ -235,7 +253,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     const DocEditing = docEditing.get()
     return (
       <Suspense fallback={<>{header(null)}{body(null)}</>}>
-        <DocEditing doc={parsed} docId={id} look={{ theme: look.theme, accent: look.accent ?? undefined }} save={save} onDone={() => setEditing(false)} comments={commenting}
+        <DocEditing doc={parsed} docId={id} look={{ theme: look.theme, accent: look.accent ?? undefined }} save={save} onDone={() => setEditing(false)} comments={commenting} checks={checking}
           stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
           {(bar, editor) => <>{header(bar)}{body(editor)}</>}
         </DocEditing>
@@ -245,7 +263,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   return (
     <>
       {/* The bar stays while the next doc is read, so its buttons do not blink; Edit waits for the doc. */}
-      {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} others={live.others} comments={commenting}
+      {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} others={live.others} checks={checking} comments={commenting}
         look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }}
         share={shareId ? <ShareMenu target="doc" id={shareId}
           docExport={record ? {

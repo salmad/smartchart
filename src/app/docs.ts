@@ -5,6 +5,7 @@ import { parseDoc } from '@/engine/docs/parse'
 import { docTree, type DocTree } from '@/engine/docs/versions'
 import type { Block } from '@/engine/docs/types'
 import { newCommentId, type CommentOp, type DocComment } from '@/engine/comments'
+import type { DocProposal, ProposalOp } from '@/engine/docs/proposals'
 import type { PageRef } from '@/engine/pages/tree'
 import { DOC_VERSIONS_KEY as VERSIONS, DOCS_KEY as DOCS, placeNew, removeBranch } from './local-pages'
 import { refOf } from './pages-wire'
@@ -40,6 +41,8 @@ export interface DocRepo {
   comments(id: string): Promise<DocComment[]>
   /** The doc's comments after the change, or why not as a sentence. */
   comment(id: string, op: CommentOp): Promise<DocComment[] | string>
+  proposals(id: string): Promise<DocProposal[]>
+  proposal(id: string, op: ProposalOp): Promise<DocProposal[] | string>
   /** The copy kept in memory from an earlier read or save (see cachedDocRepo); null when there is none. */
   peek?(id: string): { doc: Doc | null; comments: DocComment[] } | null
   /** The kept copy, from memory or this browser. */
@@ -118,13 +121,26 @@ export function remoteDocRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: 
         return !Array.isArray(body) && typeof body?.error === 'string' ? body.error : DOC_FAILED[r.status] ?? `The server answered ${r.status}.`
       } catch { return OFFLINE }
     },
+    proposals: async (id) => {
+      const r = await call(`?id=${encodeURIComponent(id)}&proposals`)
+      const p: unknown = r.ok ? await r.json() : []
+      return Array.isArray(p) ? p as DocProposal[] : []
+    },
+    proposal: async (id, op) => {
+      try {
+        const r = await call(`?id=${encodeURIComponent(id)}&proposal=1`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(op) })
+        const body = (await r.json().catch(() => null)) as DocProposal[] | { error?: unknown } | null
+        if (r.ok && Array.isArray(body)) return body
+        return !Array.isArray(body) && typeof body?.error === 'string' ? body.error : DOC_FAILED[r.status] ?? `The server answered ${r.status}.`
+      } catch { return OFFLINE }
+    },
   }
 }
 
 export const DOCS_KEY = DOCS
 export const DOC_VERSIONS_KEY = VERSIONS
 
-type Stored = Doc & { rev?: number; comments?: DocComment[]; parent?: PageRef | null; sortKey?: string | null }
+type Stored = Doc & { rev?: number; comments?: DocComment[]; proposals?: DocProposal[]; parent?: PageRef | null; sortKey?: string | null }
 interface LocalVersions { list: (DocVersionRow & { key: string })[]; blobs: Record<string, Block> }
 const LOCAL_ME = 'You'
 
@@ -166,7 +182,7 @@ export function localDocRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): Do
       const at = was ? { parent: was.parent ?? null, sortKey: was.sortKey ?? null } : placeNew(storage, doc.workspaceId, doc.parent)
       if ('refused' in at) return at.refused
       const { parent: _asked, ...rest } = doc
-      all[doc.id] = { ...rest, updated, rev, comments: was?.comments, parent: at.parent, sortKey: at.sortKey }
+      all[doc.id] = { ...rest, updated, rev, comments: was?.comments, proposals: was?.proposals, parent: at.parent, sortKey: at.sortKey }
       if (!write(all)) return 'This browser’s storage is full.'
       revs.set(doc.id, rev)
       record(doc.id, doc.text, rev, opts?.label)
@@ -193,6 +209,19 @@ export function localDocRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): Do
         else list.splice(list.indexOf(c), 1)
       }
       d.comments = list
+      return write(all) ? structuredClone(list) : 'This browser’s storage is full.'
+    },
+    proposals: async (id) => structuredClone(read()[id]?.proposals ?? []),
+    proposal: async (id, op) => {
+      const all = read(), d = all[id]
+      if (!d) return 'No such doc.'
+      const list = d.proposals ?? []
+      if ('dismiss' in op) {
+        const i = list.findIndex((x) => x.id === op.dismiss)
+        if (i < 0) return 'No such suggestion.'
+        list.splice(i, 1)
+      }
+      d.proposals = list
       return write(all) ? structuredClone(list) : 'This browser’s storage is full.'
     },
   }

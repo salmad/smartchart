@@ -1,7 +1,7 @@
 /* The doc's controls in the bar: who else is editing, Look and Versions while reading, the comments toggle, Edit while reading (editors and owners
    only), and while editing the stale-save notice, Discard and Save. */
 import { useState, type ReactNode } from 'react'
-import { History, MessageSquare, Palette } from 'lucide-react'
+import { CircleCheck, ClipboardCheck, History, MessageSquare, Palette } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { cn } from '@/app/lib/utils'
@@ -20,6 +20,23 @@ export function Presence({ names }: { names: string[] }) {
   )
 }
 
+/** Checks toggle: gold count when something needs attention, a tick when all pass. */
+export function ChecksToggle({ open, count, pass, onClick }: { open: boolean; count: number; pass: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={open} aria-label={pass ? 'Checks pass' : count ? `Checks, ${count} to look at` : 'Checks'} title="Checks"
+      className={cn('relative flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-ink-3 transition-colors hover:bg-panel hover:text-ink aria-pressed:bg-panel aria-pressed:text-ink', count ? 'px-2' : 'w-8')}>
+      {pass ? <CircleCheck aria-hidden className="size-[17px] text-ok" strokeWidth={1.75} />
+        : <ClipboardCheck aria-hidden className="size-[17px]" strokeWidth={1.75} />}
+      {!pass && count > 0 && (
+        <>
+          <i aria-hidden className="absolute right-1 top-1 size-1.5 rounded-full bg-gold" />
+          <span className="font-mono text-[11px] tabular-nums text-ink-2">{count}</span>
+        </>
+      )}
+    </button>
+  )
+}
+
 /** The comments toggle, with the open count beside the icon once there is one. */
 export function CommentsToggle({ open, count, onClick }: { open: boolean; count: number; onClick: () => void }) {
   return (
@@ -34,7 +51,7 @@ export function CommentsToggle({ open, count, onClick }: { open: boolean; count:
 interface Panel { open: boolean; onToggle: () => void }
 
 /** Look (editors only) and Versions sit beside the comments toggle, as on a deck. Both are for reading: a draft can't be overwritten under you. */
-export function ReadBar({ canEdit, onEdit, others, comments, look, versions, share }: { canEdit: boolean; onEdit: () => void; others: string[]; comments: Panel & { count: number }; look: Panel | null; versions: Panel; share?: ReactNode }) {
+export function ReadBar({ canEdit, onEdit, others, checks, comments, look, versions, share }: { canEdit: boolean; onEdit: () => void; others: string[]; checks: Panel & { count: number; pass: boolean }; comments: Panel & { count: number }; look: Panel | null; versions: Panel; share?: ReactNode }) {
   return (
     <div className="flex items-center gap-2">
       <Presence names={others} />
@@ -43,6 +60,7 @@ export function ReadBar({ canEdit, onEdit, others, comments, look, versions, sha
         <Toggle open={versions.open} onClick={versions.onToggle} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>
       </div>
       {share}
+      <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} onClick={checks.onToggle} />
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       {canEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
     </div>
@@ -71,7 +89,7 @@ function IssueList({ label, items, soft }: { label: string; items: string[]; sof
 /** A newer version exists (or a save was refused for it): the sentence, then Reload and Copy my text. */
 interface Stale { by: string | null; onReload: () => void; onCopy: () => Promise<boolean>; refused: boolean }
 
-export function EditBar({ edit, onDiscard, stale, comments }: { edit: DocEdit; onDiscard: () => void; stale: Stale | null; comments: { open: boolean; count: number; onToggle: () => void } }) {
+export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: DocEdit; onDiscard: () => void; stale: Stale | null; checks?: { open: boolean; count: number; pass: boolean; onToggle: () => void }; comments: { open: boolean; count: number; onToggle: () => void } }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => { if (await stale?.onCopy()) { setCopied(true); window.setTimeout(() => setCopied(false), 2000) } }
   return (
@@ -103,6 +121,7 @@ export function EditBar({ edit, onDiscard, stale, comments }: { edit: DocEdit; o
             </>
           )}
       </div>
+      {checks && <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} onClick={checks.onToggle} />}
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       <Button size="sm" variant="ghost" onClick={onDiscard} disabled={edit.saving}>Discard</Button>
       <Button size="sm" onClick={() => void edit.save()} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>

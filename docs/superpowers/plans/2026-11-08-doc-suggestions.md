@@ -261,7 +261,7 @@ the earlier draft sections.
 - [ ] **Step 2:** Run `npx vitest run tests/unit/doc-proposals-hook.test.ts`. Expected: FAIL.
 - [ ] **Step 3:** Implement the hook and panel.
 - [ ] **Step 4:** Run the tests and `npm run build`. Expected: PASS.
-- [ ] **Step 5: Commit** "Show a doc's checks and suggestions in a panel".
+- [x] **Step 5: Commit** "Show a doc's checks and suggestions in a panel".
 
 ### Task 6: Original ⇄ Suggestion switch, Approve and Cancel
 

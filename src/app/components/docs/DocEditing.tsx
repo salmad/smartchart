@@ -17,10 +17,11 @@ interface Props {
   /** Someone else saved a newer version, or this save was refused for it. */
   stale: { by: string | null; onReload: () => void; refused: boolean } | null
   comments: { open: boolean; count: number; onToggle: () => void }
+  checks?: { open: boolean; count: number; pass: boolean; onToggle: () => void }
   children: (bar: ReactNode, page: ReactNode) => ReactNode
 }
 
-export function DocEditing({ doc, docId, look, save, onDone, stale, comments, children }: Props) {
+export function DocEditing({ doc, docId, look, save, onDone, stale, comments, checks, children }: Props) {
   const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone })
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])
 
@@ -40,5 +41,5 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
     return () => { document.removeEventListener('keydown', key); window.removeEventListener('beforeunload', leave) }
   }, [edit])
 
-  return <>{children(<EditBar edit={edit} onDiscard={discard} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />, <DocEditor edit={edit} theme={look.theme} accent={look.accent} docId={docId} />)}</>
+  return <>{children(<EditBar edit={edit} onDiscard={discard} checks={checks} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />, <DocEditor edit={edit} theme={look.theme} accent={look.accent} docId={docId} />)}</>
 }
