@@ -54,7 +54,7 @@ export const cellMainlyNumeric = (text: string): boolean => {
   return kept.length > t.length / 2;
 };
 const tableHasNumericData = (s: Slide) => s.template !== "table" || !s.table?.rows?.length || (s.table.rows || []).some((r) =>
-  (r.cells || []).some((c) => cellMainlyNumeric(String(c && typeof c === "object" ? c.value : c ?? ""))));
+  (r.cells || []).slice(1).some((c) => cellMainlyNumeric(String(c && typeof c === "object" ? c.value : c ?? ""))));
 
 /** R8: in consulting, a slide that claims figures says where they come from, in its source or a footnote. A quote names its speaker. */
 function sourceCheck(s: Slide): Check | null {

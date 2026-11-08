@@ -117,6 +117,15 @@ test("R8: in consulting, any figure claim says where it comes from, in a source 
   assert.equal(get(steps({}), "R8", "pitch"), undefined);
 });
 
+test("R8: a word table stays quiet when only its row labels are numbers", () => {
+  const timeline: Slide = { template: "table", title: "Europe comes first, then the US", table: { columns: [{ label: "Year" }, { label: "Move" }],
+    rows: [{ cells: ["2024", "Launch in Europe"] }, { cells: ["2025", "Expand to the US"] }] } };
+  assert.equal(get(timeline, "R8"), undefined);
+  const figures: Slide = { ...timeline, table: { columns: [{ label: "Year" }, { label: "Raise" }],
+    rows: [{ cells: ["2024", "£4m"] }, { cells: ["2025", "£12m"] }] } };
+  assert.equal(get(figures, "R8")?.ok, false);
+});
+
 test("R8 reaches the slides without a title and the two-chart slide; a quote names its speaker", () => {
   const num: Slide = { template: "number", number: { value: "£1.4bn", caption: "of SME spend goes on personal cards." } } as Slide;
   assert.equal(get(num, "R8")?.ok, false);
