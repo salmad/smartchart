@@ -5,6 +5,7 @@ import type { DocTree } from '../../src/engine/docs/versions.js'
 import type { Block } from '../../src/engine/docs/types.js'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments.js'
 import { MAX_DOC_PROPOSALS, type DocProposal } from '../../src/engine/docs/proposals.js'
+import { MAX_QUIET } from '../../src/engine/docs/checks.js'
 import { rolesFor, type Action, type Role } from './access.js'
 import { may, roleOf } from './db-decks.js'
 import { NO_COMMENT, type Db, type DocPresence, type DocVersion, type Q } from './db.js'
@@ -13,7 +14,7 @@ const R = (a: Action) => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
 const docRead = (u: string, id: string, roles: string) => `exists (select 1 from docs where docs.id = ${id} and ${may('docs', u, roles)})`
 
-type Calls = 'getDocMeta' | 'setDocPresence' | 'docVersionHead' | 'writeDocVersion' | 'listDocVersions' | 'docBlobs' | 'docComments' | 'docComment' | 'docProposals' | 'docProposal'
+type Calls = 'getDocMeta' | 'setDocPresence' | 'docVersionHead' | 'writeDocVersion' | 'listDocVersions' | 'docBlobs' | 'docComments' | 'docComment' | 'docProposals' | 'docProposal' | 'docQuiet' | 'docQuietSet'
 
 export function docCalls(q: Q): Pick<Db, Calls> {
   const comments = async (u: string, id: string) =>
@@ -106,6 +107,20 @@ export function docCalls(q: Q): Pick<Db, Calls> {
          where id = $2 and ${may('docs', '$1', '$4')} and exists (select 1 from jsonb_array_elements(proposals) p where p->>'id' = $3) returning proposals`,
         [u, id, pid, R('write')])
       return r[0] ? r[0].proposals : 'foreign'
+    },
+    docQuiet: async (u, id) =>
+      (await q<{ quiet: string[] }>(`select quiet from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')]))[0]?.quiet ?? null,
+    docQuietSet: async (u, id, op) => {
+      const next = op.on
+        ? `case when quiet @> jsonb_build_array($3::text) then quiet else quiet || jsonb_build_array($3::text) end`
+        : `(select coalesce(jsonb_agg(k order by ord), '[]'::jsonb) from jsonb_array_elements(quiet) with ordinality as e(k, ord) where k <> to_jsonb($3::text))`
+      const r = await q<{ quiet: string[] }>(
+        `update docs set quiet = ${next} where id = $2 and ${may('docs', '$1', '$4')} and ($5::boolean is false or jsonb_array_length(quiet) < $6) returning quiet`,
+        [u, id, op.key, R('write'), op.on, MAX_QUIET])
+      if (r[0]) return r[0].quiet
+      const read = await q<{ quiet: string[] }>(`select quiet from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')])
+      if (!read[0]) return 'foreign'
+      return read[0].quiet.length >= MAX_QUIET ? 'This doc has too many dismissed checks.' : 'You can view this doc, not change it.'
     },
   }
 }

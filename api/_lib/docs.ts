@@ -3,6 +3,7 @@
 import type { UserFrom } from './auth.js'
 import { MAX_COMMENT, newCommentId, type CommentOp } from '../../src/engine/comments.js'
 import type { ProposalOp } from '../../src/engine/docs/proposals.js'
+import { MAX_QUIET_KEY, type QuietOp } from '../../src/engine/docs/checks.js'
 import { parseDoc } from '../../src/engine/docs/parse.js'
 import { serializeDoc } from '../../src/engine/docs/serialize.js'
 import { NO_COMMENT, type Db, type DocPresence } from './db.js'
@@ -47,6 +48,12 @@ function proposalOp(v: unknown): ProposalOp | null {
   return d && ID.test(d) ? { dismiss: d } : null
 }
 
+/** Dismiss a check by its key, or bring it back. */
+function quietOp(v: unknown): QuietOp | null {
+  const o = v && typeof v === 'object' ? v as { key?: unknown; on?: unknown } : null
+  return o && typeof o.key === 'string' && o.key.trim() && o.key.length <= MAX_QUIET_KEY && typeof o.on === 'boolean' ? { key: o.key, on: o.on } : null
+}
+
 export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
   return async (request: Request): Promise<Response> => {
     const db = deps.db()
@@ -79,6 +86,10 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
       const p = ID.test(id) ? await db.docProposals(user.id, id) : null
       return p ? Response.json(p, { headers: NO_STORE }) : NO_DOC()
     }
+    if (request.method === 'GET' && id && q.get('quiet') !== null) {
+      const k = ID.test(id) ? await db.docQuiet(user.id, id) : null
+      return k ? Response.json(k, { headers: NO_STORE }) : NO_DOC()
+    }
     // The page tree: how many pages sit below this doc, and moving it.
     if (request.method === 'GET' && id && q.get('subpages') !== null) return ID.test(id) ? subpages(db, user.id, { kind: 'doc', id }, NO_DOC) : NO_DOC()
     if ((request.method === 'PUT' || request.method === 'POST') && id && q.get('move') !== null)
@@ -102,6 +113,14 @@ export function docsHandler(deps: { userFrom: UserFrom; db: () => Db | null }) {
       const op = proposalOp(await request.json().catch(() => null))
       if (!op) return err(400, 'Bad proposal.')
       const r = await db.docProposal(user.id, id, op, { id: `p_${Date.now().toString(36)}` })
+      if (r === 'foreign') return NO_DOC()
+      return typeof r === 'string' ? err(403, r) : Response.json(r)
+    }
+    if (request.method === 'PUT' && id && q.get('quiet')) {
+      if (!ID.test(id)) return NO_DOC()
+      const op = quietOp(await request.json().catch(() => null))
+      if (!op) return err(400, 'Bad check.')
+      const r = await db.docQuietSet(user.id, id, op)
       if (r === 'foreign') return NO_DOC()
       return typeof r === 'string' ? err(403, r) : Response.json(r)
     }

@@ -10,18 +10,28 @@ const DOC_TOOLS = new Set([
   'list_doc_versions', 'restore_doc_version', 'list_doc_comments', 'resolve_doc_comment',
 ])
 
-const views = TOOLS.filter((t) => DOC_TOOLS.has(t.name)).map(openAiView)
+// A fix the writer asked for from the Checks panel: the agent reads and leaves a suggestion, and cannot write the doc.
+const PROPOSE_TOOLS = new Set(['get_guide', 'get_template', 'get_doc', 'check_doc', 'list_doc_comments', 'propose_block'])
+
+const viewsOf = (names: Set<string>) => TOOLS.filter((t) => names.has(t.name)).map(openAiView)
+const views = viewsOf(DOC_TOOLS), proposeViews = viewsOf(PROPOSE_TOOLS)
+const PROPOSE_ONLY = 'This turn you can only suggest: read the doc, then leave each change as a suggestion with propose_block (adjacent blockIds; a figure suggestion replaces the figure with the whole fixed figure). The writer reviews and approves it in place. When the fix needs something only the writer knows (a source, a figure, a date), propose nothing and say in one sentence what you need.'
 const MAX = 12
 
-export interface DocTurnArgs { text: string; docId: string; history: ChatMessage[]; runTool(name: string, input: Record<string, unknown>): Promise<Record<string, unknown>> }
+export interface DocTurnArgs {
+  text: string; docId: string; history: ChatMessage[]; runTool(name: string, input: Record<string, unknown>): Promise<Record<string, unknown>>
+  /** 'propose': the agent may read and propose_block, nothing else (a fix asked for from the Checks panel). */
+  mode?: 'edit' | 'propose'
+}
 export interface DocTurnResult { reply: string; modelCalls: number; toolCalls: number; ms: number }
 
-export async function runDocTurn({ text, docId, history, runTool }: DocTurnArgs): Promise<DocTurnResult> {
-  const system = `${docGuideText()}\n\nYou edit one doc at a time. The open doc id is ${docId}. Start with get_doc if you need its blocks. Use blockIds from the last result; read again after each write. End with check_doc when the doc matches what the user asked. ${OFFER_SUGGESTIONS}`
+export async function runDocTurn({ text, docId, history, runTool, mode = 'edit' }: DocTurnArgs): Promise<DocTurnResult> {
+  const propose = mode === 'propose', allowed = propose ? PROPOSE_TOOLS : DOC_TOOLS
+  const system = `${docGuideText()}\n\nYou edit one doc at a time. The open doc id is ${docId}. Start with get_doc if you need its blocks. Use blockIds from the last result; read again after each write. ${propose ? PROPOSE_ONLY : `End with check_doc when the doc matches what the user asked. ${OFFER_SUGGESTIONS}`}`
   const messages: ChatMessage[] = [{ role: 'system', content: system }, ...history, { role: 'user', content: text }]
   let modelCalls = 0, toolCalls = 0, t0 = performance.now(), reply = ''
   for (let step = 0; step < MAX; step++) {
-    const { message, ms } = await agentStep({ messages, tools: views, model: undefined })
+    const { message, ms } = await agentStep({ messages, tools: propose ? proposeViews : views, model: undefined })
     modelCalls++; t0 += ms
     if (message.tool_calls?.length) {
       messages.push(message)
@@ -29,8 +39,8 @@ export async function runDocTurn({ text, docId, history, runTool }: DocTurnArgs)
         toolCalls++
         const name = c.function.name, args = JSON.parse(c.function.arguments || '{}') as Record<string, unknown>
         const tool = toolByName(name)
-        if (!tool || !DOC_TOOLS.has(name)) {
-          messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify({ error: `Tool ${name} is not available in the doc editor.` }) })
+        if (!tool || !allowed.has(name)) {
+          messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify({ error: propose ? `Tool ${name} is not available: leave the change with propose_block.` : `Tool ${name} is not available in the doc editor.` }) })
           continue
         }
         // Only tools that take a docId get the open doc's; get_template, get_guide and the rest reject unknown fields.

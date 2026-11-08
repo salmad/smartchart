@@ -230,6 +230,16 @@ describe('docs API', () => {
     expect((await D.docs('PUT', '?id=doc_2&comment=1', { add: { text: 'Hi', anchor: 'intro' } })).status).toBe(404)
     expect((await C.docs('PUT', '?id=doc_2&comment=1', { resolve: { id: 'c_nope' } })).status).toBe(404)
 
+    // A dismissed check is kept with the doc: an editor dismisses, everyone who can read sees it, a viewer cannot.
+    const key = 'fig_1:R8:Figures with no source'
+    expect(await json(A.docs('PUT', '?id=doc_2&quiet=1', { key, on: true }))).toEqual([key])
+    expect(await json(A.docs('PUT', '?id=doc_2&quiet=1', { key, on: true }))).toEqual([key])
+    expect(await json(C.docs('GET', '?id=doc_2&quiet'))).toEqual([key])
+    expect((await C.docs('PUT', '?id=doc_2&quiet=1', { key, on: false })).status).toBe(403)
+    expect((await D.docs('GET', '?id=doc_2&quiet')).status).toBe(404)
+    expect((await A.docs('PUT', '?id=doc_2&quiet=1', { key })).status).toBe(400)
+    expect(await json(A.docs('PUT', '?id=doc_2&quiet=1', { key, on: false }))).toEqual([])
+
     // Another editor save is a new version (a pause past GROUP_MS is not needed: a changed doc by a new key is added or folded).
     expect((await A.docs('PUT', '', { ...doc, text: doc.text + '\nMore.\n', baseRev: 1 })).status).toBe(200)
     expect((await json<unknown[]>(A.docs('GET', '?id=doc_2&versions'))).length).toBeGreaterThanOrEqual(1)

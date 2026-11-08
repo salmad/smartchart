@@ -5,13 +5,14 @@ import type { Slide } from '../../src/engine/types'
 import type { Block } from '../../src/engine/docs/types'
 import { MAX_DOC_COMMENTS, type DocComment } from '../../src/engine/comments'
 import { MAX_DOC_PROPOSALS, type DocProposal, type ProposalOp } from '../../src/engine/docs/proposals'
+import { MAX_QUIET } from '../../src/engine/docs/checks'
 import { appendKey, canAdd, canMove, descendants, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
     deck from before workspaces, which only its maker can reach). */
 export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence; parent?: PageRef | null; sortKey?: string | null }
-export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; share?: string | null; presence?: DocPresence; comments?: DocComment[]; proposals?: DocProposal[]; parent?: PageRef | null; sortKey?: string | null }
+export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; share?: string | null; presence?: DocPresence; comments?: DocComment[]; proposals?: DocProposal[]; quiet?: string[]; parent?: PageRef | null; sortKey?: string | null }
 export type FakeDb = Db & FakeWorkspaces & {
   rows: Map<string, FakeRow>
   docs: Map<string, FakeDoc>
@@ -277,6 +278,16 @@ export function fakeDb(): FakeDb {
       if (i < 0) return 'foreign'
       list.splice(i, 1)
       return structuredClone(list)
+    },
+    docQuiet: async (u, id) => { const d = docIf(u, id, 'read'); return d ? [...(d.quiet ?? [])] : null },
+    docQuietSet: async (u, id, op) => {
+      const d = docs.get(id)
+      if (!d || !can(role(u, d), 'read')) return 'foreign'
+      if (!can(role(u, d), 'write')) return 'You can view this doc, not change it.'
+      const list = d.quiet ??= []
+      if (op.on && !list.includes(op.key)) { if (list.length >= MAX_QUIET) return 'This doc has too many dismissed checks.'; list.push(op.key) }
+      if (!op.on) d.quiet = list.filter((k) => k !== op.key)
+      return [...d.quiet]
     },
     getUserLook: async (u) => userPrefs.get(u) ?? null,
     setUserLook: async (u, look) => { userPrefs.set(u, look); return true },

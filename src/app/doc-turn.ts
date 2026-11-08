@@ -9,24 +9,30 @@ export interface DocTurnDeps {
   setHistory: (h: ChatMessage[]) => void
   setMessages: (fn: (m: Message[]) => Message[]) => void
   onDone: () => void
+  /** 'propose' when the turn may only leave suggestions; `shown` is what the chat shows for the ask. */
+  mode?: 'edit' | 'propose'
+  shown?: string
 }
 
-export async function sendDocTurn(text: string, deps: DocTurnDeps): Promise<void> {
+/** One turn of the doc agent; the agent's reply, or null when it failed (the chat says why). */
+export async function sendDocTurn(text: string, deps: DocTurnDeps): Promise<string | null> {
   const ask = text.trim()
-  if (!ask) return
-  deps.setMessages((m) => [...m, { kind: 'user', text: ask }, { kind: 'bot', text: '', sub: 'Working…' }])
+  if (!ask) return null
+  deps.setMessages((m) => [...m, { kind: 'user', text: deps.shown ?? ask }, { kind: 'bot', text: '', sub: 'Working…' }])
   const history = deps.getHistory()
   history.push({ role: 'user', content: ask })
   try {
-    const r = await runDocTurn({ text: ask, docId: deps.docId, history, runTool: (name, input) => callAppTool(name, input) })
+    const r = await runDocTurn({ text: ask, docId: deps.docId, history, mode: deps.mode, runTool: (name, input) => callAppTool(name, input) })
     history.push({ role: 'assistant', content: r.reply })
     deps.setHistory(history)
     const secs = (r.ms / 1000).toFixed(1)
     const sub = `${r.modelCalls} model call${r.modelCalls === 1 ? '' : 's'} · ${r.toolCalls} tool call${r.toolCalls === 1 ? '' : 's'} · ${secs}s`
     deps.setMessages((m) => { const out = m.slice(); out[out.length - 1] = { kind: 'bot', text: r.reply, sub }; return out })
     deps.onDone()
+    return r.reply
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Something went wrong.'
     deps.setMessages((m) => { const out = m.slice(); out[out.length - 1] = { kind: 'bot', text: msg, sub: '' }; return out })
+    return null
   }
 }

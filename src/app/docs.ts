@@ -6,6 +6,7 @@ import { docTree, type DocTree } from '@/engine/docs/versions'
 import type { Block } from '@/engine/docs/types'
 import { newCommentId, type CommentOp, type DocComment } from '@/engine/comments'
 import type { DocProposal, ProposalOp } from '@/engine/docs/proposals'
+import type { QuietOp } from '@/engine/docs/checks'
 import type { PageRef } from '@/engine/pages/tree'
 import { DOC_VERSIONS_KEY as VERSIONS, DOCS_KEY as DOCS, placeNew, removeBranch } from './local-pages'
 import { refOf } from './pages-wire'
@@ -43,6 +44,10 @@ export interface DocRepo {
   comment(id: string, op: CommentOp): Promise<DocComment[] | string>
   proposals(id: string): Promise<DocProposal[]>
   proposal(id: string, op: ProposalOp): Promise<DocProposal[] | string>
+  /** The checks a writer dismissed on this doc (checkKey). */
+  quiet?(id: string): Promise<string[]>
+  /** Dismiss a check or bring it back; the dismissed checks after, or why not as a sentence. */
+  setQuiet?(id: string, op: QuietOp): Promise<string[] | string>
   /** The copy kept in memory from an earlier read or save (see cachedDocRepo); null when there is none. */
   peek?(id: string): { doc: Doc | null; comments: DocComment[] } | null
   /** The kept copy, from memory or this browser. */
@@ -134,13 +139,26 @@ export function remoteDocRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: 
         return !Array.isArray(body) && typeof body?.error === 'string' ? body.error : DOC_FAILED[r.status] ?? `The server answered ${r.status}.`
       } catch { return OFFLINE }
     },
+    quiet: async (id) => {
+      const r = await call(`?id=${encodeURIComponent(id)}&quiet`).catch(() => null)
+      const k: unknown = r?.ok ? await r.json() : []
+      return Array.isArray(k) ? k.filter((x): x is string => typeof x === 'string') : []
+    },
+    setQuiet: async (id, op) => {
+      try {
+        const r = await call(`?id=${encodeURIComponent(id)}&quiet=1`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(op) })
+        const body = (await r.json().catch(() => null)) as string[] | { error?: unknown } | null
+        if (r.ok && Array.isArray(body)) return body
+        return !Array.isArray(body) && typeof body?.error === 'string' ? body.error : DOC_FAILED[r.status] ?? `The server answered ${r.status}.`
+      } catch { return OFFLINE }
+    },
   }
 }
 
 export const DOCS_KEY = DOCS
 export const DOC_VERSIONS_KEY = VERSIONS
 
-type Stored = Doc & { rev?: number; comments?: DocComment[]; proposals?: DocProposal[]; parent?: PageRef | null; sortKey?: string | null }
+type Stored = Doc & { rev?: number; comments?: DocComment[]; proposals?: DocProposal[]; quiet?: string[]; parent?: PageRef | null; sortKey?: string | null }
 interface LocalVersions { list: (DocVersionRow & { key: string })[]; blobs: Record<string, Block> }
 const LOCAL_ME = 'You'
 
@@ -182,7 +200,7 @@ export function localDocRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): Do
       const at = was ? { parent: was.parent ?? null, sortKey: was.sortKey ?? null } : placeNew(storage, doc.workspaceId, doc.parent)
       if ('refused' in at) return at.refused
       const { parent: _asked, ...rest } = doc
-      all[doc.id] = { ...rest, updated, rev, comments: was?.comments, proposals: was?.proposals, parent: at.parent, sortKey: at.sortKey }
+      all[doc.id] = { ...rest, updated, rev, comments: was?.comments, proposals: was?.proposals, quiet: was?.quiet, parent: at.parent, sortKey: at.sortKey }
       if (!write(all)) return 'This browser’s storage is full.'
       revs.set(doc.id, rev)
       record(doc.id, doc.text, rev, opts?.label)
@@ -223,6 +241,14 @@ export function localDocRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): Do
       }
       d.proposals = list
       return write(all) ? structuredClone(list) : 'This browser’s storage is full.'
+    },
+    quiet: async (id) => [...(read()[id]?.quiet ?? [])],
+    setQuiet: async (id, op) => {
+      const all = read(), d = all[id]
+      if (!d) return 'No such doc.'
+      const list = (d.quiet ?? []).filter((k) => k !== op.key)
+      d.quiet = op.on ? [...list, op.key] : list
+      return write(all) ? [...d.quiet] : 'This browser’s storage is full.'
     },
   }
 }

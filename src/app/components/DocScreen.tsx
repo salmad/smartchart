@@ -29,7 +29,7 @@ import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
 import { DocChecks } from './docs/DocChecks'
 import { ReadBar } from './docs/DocBar'
-import { useDocProposals } from './docs/useDocProposals'
+import { useDocChecks } from './docs/useDocChecks'
 import { ShareMenu } from './ShareMenu'
 import { PrintDoc } from './PrintDoc'
 import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
@@ -79,7 +79,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const [messages, setMessages] = useState<Message[]>([])
   const historyRef = useRef<ChatMessage[]>([])
   const [chatBusy, setChatBusy] = useState(false)
-  const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null)
+  const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null), [mainEl, setMainEl] = useState<HTMLElement | null>(null)
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => docs.peek?.(id)?.doc ?? null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
   const parsed = useMemo(() => (record ? parseDoc(record.text).doc : null), [record])
@@ -147,10 +147,10 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   }, [record, drawn, editing])
   // The page redrawn gives a ring a new element to wear.
   useEffect(() => {
-    const el = ring && pageEl ? pageEl.querySelector<HTMLElement>(`[id="${CSS.escape(ring)}"]`) : null, on = el?.matches('.doc-sec') ? el.querySelector<HTMLElement>(':scope > h2') : el
+    const el = ring && mainEl ? mainEl.querySelector<HTMLElement>(`[id="${CSS.escape(ring)}"], [data-block="${CSS.escape(ring)}"]`) : null, on = el?.matches('.doc-sec') ? el.querySelector<HTMLElement>(':scope > h2') : el
     on?.classList.add('doc-ring')
     return () => on?.classList.remove('doc-ring')
-  }, [ring, pageEl, drawn])
+  }, [ring, mainEl, pageEl, drawn, editing])
 
   useEffect(() => {
     if (!pageEl || editing || !activeProposal) return
@@ -191,20 +191,30 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     if (typeof r === 'string') setCommentError(r); else { setCommentError(null); setComments(r) }
   }
   const mine = (c: DocComment) => c.userId === account.id || c.userId === 'local'
-  const reveal = (anchor: string) => {
-    const el = pageEl?.querySelector<HTMLElement>(`[id="${CSS.escape(anchor)}"], [data-block="${CSS.escape(anchor)}"]`), sec = el?.closest<HTMLElement>('.doc-sec')
+  const reveal = useCallback((anchor: string) => {
+    const el = mainEl?.querySelector<HTMLElement>(`[id="${CSS.escape(anchor)}"], [data-block="${CSS.escape(anchor)}"]`), sec = el?.closest<HTMLElement>('.doc-sec')
     if (sec?.classList.contains('folded')) sec.querySelector<HTMLElement>(':scope > h2 > .fold')?.click()
-    el?.scrollIntoView({ block: 'center' })
-  }
-  const loadProposals = useCallback(() => docs.proposals(id), [docs, id])
-  const dismissProposal = useCallback((pid: string) => docs.proposal(id, { dismiss: pid }), [docs, id])
-  const checksState = useDocProposals({ docId: id, doc: parsed, rev: docs.known(id), canEdit, loadStored: loadProposals, dismissStored: dismissProposal })
+    // On a phone the panel is a sheet over the lower part of the screen: the block goes to the top.
+    el?.scrollIntoView({ block: window.matchMedia('(max-width: 900px)').matches ? 'start' : 'center' })
+  }, [mainEl])
+  const showBlock = useCallback((blockId: string | null) => { setRing(blockId); if (blockId) reveal(blockId) }, [reveal])
+  const review = (p: DocProposal) => { setActiveProposal(p); if (canEdit && !editing && !preview && record) startEditing() }
+  const fixBlocked = !canEdit ? 'Only editors can ask Occam to fix a check.' : editing ? 'Save or discard your changes to ask Occam.' : offline || !modelsLive ? 'Occam’s models are offline right now.' : chatBusy ? 'Occam is answering in the chat; try again when it’s done.' : null
+  const proposeTurn = useCallback((text: string, shown: string) => {
+    setChatBusy(true)
+    return sendDocTurn(text, { docId: id, mode: 'propose', shown, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => {} }).finally(() => setChatBusy(false))
+  }, [id])
+  const openChecks = useCallback(() => setSide('checks'), [])
+  const checks = useDocChecks({ docs, id, doc: parsed, canEdit, root: mainEl, fixBlocked, turn: proposeTurn, show: showBlock, openPanel: openChecks, onReview: (p) => review(p) })
+  const checksState = checks.state
+  // The panel opened (from the bar or a figure's badge): suggestions are read again, and Occam's asked for once per revision.
+  useEffect(() => { if (side === 'checks') void checksState.openPanel() }, [side]) // eslint-disable-line react-hooks/exhaustive-deps
   const pick = useCallback((t: CommentTarget) => { setTarget(t); setSide('comments') }, [])
   const toggleComments = () => setSide((s) => (s === 'comments' ? null : 'comments'))
   const toggleChecks = () => {
     setSide((s) => {
       const next = s === 'checks' ? null : 'checks'
-      if (next === 'checks') void checksState.openPanel()
+      if (!next) checks.reset()
       return next
     })
   }
@@ -236,7 +246,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
         onSend={(text) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }}
         onClear={() => { setMessages([]); historyRef.current = [] }} />
-      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg">
+      {/* On a phone the checks are a sheet over the page's foot: room below, so the last block can scroll above it. */}
+      <main ref={setMainEl} className={`min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg ${side === 'checks' ? 'max-[900px]:pb-[45dvh]' : ''}`}>
         {!editing && preview && record && shown && <DocPreview version={preview.v} current={preview.current} ready={preview.doc === 'missing' ? 'missing' : !!preview.doc} busy={restoring}
           what={describeDocDiff(preview.before?.tree ?? null, preview.v.tree)} onRestore={() => void restore()} onBack={() => setPreview(null)} />}
         {state === 'missing' && <p className="px-8 py-10 text-[13.5px] text-ink-2">That doc isn’t in this workspace.</p>}
@@ -252,11 +263,10 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         onAdd={(text) => { void comment({ add: { text, anchor: target?.anchor ?? 'doc', ...(target?.quote ? { quote: target.quote } : {}) } }); setTarget(null) }}
         onResolve={(cid) => void comment({ resolve: { id: cid } })} onDelete={(cid) => void comment({ remove: { id: cid } })} />}
       {side === 'checks' && parsed && (
-        <DocChecks verdict={checksState.verdict} readability={checksState.readability} figures={checksState.figures} proposals={checksState.proposals}
-          loading={checksState.loading} canEdit={canEdit} onShow={reveal}
-          onPick={(p) => { setActiveProposal(p); if (canEdit && !editing && !preview && record) startEditing() }}
+        <DocChecks doc={parsed} checks={checksState.checks} count={checksState.badge.count} quiet={checks.quiet} proposals={checksState.proposals}
+          loading={checksState.loading} canEdit={canEdit} actions={checks.actions} error={checks.error} onPick={review}
           onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
-          onClose={() => setSide(null)} />
+          onClose={() => { setSide(null); checks.reset() }} />
       )}
     </div>
   )

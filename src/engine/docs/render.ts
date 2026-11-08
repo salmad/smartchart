@@ -4,13 +4,15 @@ import type { Theme } from '../types.js'
 import { esc, md } from '../components/text.js'
 import { outlineTree, type OutlineSection } from './parse.js'
 import { codeFigureHTML, figureHTML } from './figure.js'
-import { figureChecks } from './checks.js'
+import { checkKey, figureChecks } from './checks.js'
+import { identify } from './ops.js'
 import type { Block, Doc, ListBlock } from './types.js'
 
 /** A doc's theme when it names none: paper suits long reading (M3 swaps in the workspace's brand). */
 export const DEFAULT_THEME: Theme = 'paper'
 
-/** The figure's failed code checks as a native <details>: a count, and the messages when opened. Nothing when none fail. */
+/** The figure's failed code checks as a native <details>: a count, and the messages when opened, each a button the app
+    answers (it opens the check in the Checks panel; data-check-key names it). Nothing when none fail. */
 function badgeHTML(f: Extract<Block, { type: 'figure' }>): string {
   let failed: ReturnType<typeof figureChecks>
   try { failed = figureChecks(f).filter((c) => !c.ok) } catch { return '' }
@@ -18,7 +20,7 @@ function badgeHTML(f: Extract<Block, { type: 'figure' }>): string {
   const hard = failed.filter((c) => !/^S\d/.test(c.id)), soft = failed.filter((c) => /^S\d/.test(c.id))
   const summary = hard.length ? `${hard.length} check${hard.length === 1 ? '' : 's'}` : 'Could be better'
   const say = (msg: string) => msg.replace(/^The /, '').replace(/\.$/, '')
-  const rows = [...hard, ...soft].map((c) => `<li>${esc(say(c.msg))}</li>`).join('')
+  const rows = [...hard, ...soft].map((c) => `<li><button type="button" class="fig-check" data-check="${esc(c.id)}" data-check-key="${esc(checkKey(c))}">${esc(say(c.msg))}</button></li>`).join('')
   return `<details class="fig-checks"><summary>${summary}</summary><ul>${rows}</ul></details>`
 }
 
@@ -31,13 +33,15 @@ export function listHTML(l: ListBlock): string {
   return `<${l.type === 'bullets' ? 'ul' : 'ol'} class="doc-list">${items}</${l.type === 'bullets' ? 'ul' : 'ol'}>`
 }
 
-/** One block as HTML. A ## heading is the bare <h2 id>: only docHTML wraps it in its section. */
-export function blockHTML(b: Block, theme: Theme): string {
+/** One block as HTML. A ## heading is the bare <h2 id>: only docHTML wraps it in its section. `at` is a text block's id
+    (ops.identify), drawn as data-block so a check or comment can point at it. */
+export function blockHTML(b: Block, theme: Theme, at?: string): string {
+  const named = at ? ` data-block="${esc(at)}"` : ''
   switch (b.type) {
     case 'heading': { const t = `h${b.level}`; return `<${t} id="${b.id}">${md(b.text)}</${t}>` }
-    case 'paragraph': return `<p>${md(b.text)}</p>`
-    case 'bullets': case 'numbered': return listHTML(b)
-    case 'quote': return `<blockquote><p>${md(b.text)}</p></blockquote>`
+    case 'paragraph': return `<p${named}>${md(b.text)}</p>`
+    case 'bullets': case 'numbered': return named ? listHTML(b).replace(/^<(ul|ol) /, `<$1${named} `) : listHTML(b)
+    case 'quote': return `<blockquote${named}><p>${md(b.text)}</p></blockquote>`
     case 'divider': return '<hr>'
     case 'code': return codeFigureHTML(b, theme)
     case 'figure': return figureHTML(b, theme, true, badgeHTML(b))
@@ -60,9 +64,9 @@ export function docHTML(doc: Doc): string {
   const theme = doc.theme ?? DEFAULT_THEME, tree = outlineTree(doc)
   const list = tocList(tree)
   let body = '', open = false
-  for (const b of doc.blocks) {
+  for (const { id, block: b } of identify(doc)) {
     if (b.type === 'heading' && b.level === 2) { body += `${open ? '</div></section>' : ''}${sectionOpen(b.id, b.text)}`; open = true; continue }
-    body += blockHTML(b, theme)
+    body += blockHTML(b, theme, id)
   }
   if (open) body += '</div></section>'
   const head = `<header class="doc-head"><h1 class="doc-title">${md(doc.title)}</h1>${doc.subtitle ? `<p class="doc-sub">${md(doc.subtitle)}</p>` : ''}</header>`

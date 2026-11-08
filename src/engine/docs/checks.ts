@@ -15,6 +15,14 @@ import type { Doc, FigureBlock } from './types.js'
     D2 a section is empty, D3 a figure could not be read, D4–D7 readability on prose and exhibits. */
 export interface DocCheck { blockId: string; id: string; ok: boolean; msg: string }
 
+/** A check's name when a writer dismisses it: its block, its id and its words, so a block that changes brings it back. */
+export const checkKey = (c: Pick<DocCheck, 'blockId' | 'id' | 'msg'>) => `${c.blockId}:${c.id}:${c.msg}`.slice(0, MAX_QUIET_KEY)
+export const MAX_QUIET_KEY = 400
+/** How many dismissed checks a doc keeps. */
+export const MAX_QUIET = 200
+/** Dismiss a check (on) or bring it back (off), by its checkKey. */
+export interface QuietOp { key: string; on: boolean }
+
 const CARRIED = new Set(['R5', 'R8', 'R9', 'R11', 'R13', 'R14', 'R15'])
 
 /** The figure as the slide the checks read: its caption is the title. */

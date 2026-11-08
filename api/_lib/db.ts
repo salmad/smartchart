@@ -7,6 +7,7 @@ import type { Block } from '../../src/engine/docs/types.js'
 import type { DocTree } from '../../src/engine/docs/versions.js'
 import type { CommentOp, DocComment } from '../../src/engine/comments.js'
 import type { DocProposal, ProposalOp } from '../../src/engine/docs/proposals.js'
+import type { QuietOp } from '../../src/engine/docs/checks.js'
 import type { PageRef, PageSummary, Slot } from '../../src/engine/pages/tree.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
@@ -157,6 +158,10 @@ export interface Db {
   docComment(userId: string, id: string, op: CommentOp, ctx: { id: string; by: string; now: number }): Promise<DocComment[] | 'foreign' | string>
   docProposals(userId: string, id: string): Promise<DocProposal[] | null>
   docProposal(userId: string, id: string, op: ProposalOp, ctx: { id: string }): Promise<DocProposal[] | 'foreign' | string>
+  /** The checks a writer dismissed on this doc (checkKey), for everyone who reads it. Null when the user may not read the doc. */
+  docQuiet(userId: string, id: string): Promise<string[] | null>
+  /** Dismiss a check or bring it back (editors). The doc's dismissed checks after, 'foreign', or why not as a sentence. */
+  docQuietSet(userId: string, id: string, op: QuietOp): Promise<string[] | 'foreign' | string>
 }
 
 /* First tree keys: per workspace, decks and docs numbered together newest first, as the sidebar shows them today. The number is
@@ -214,6 +219,8 @@ const SCHEMA = [
   `create table if not exists doc_blobs (doc_id text not null, hash text not null, block jsonb not null, primary key (doc_id, hash))`,
   `alter table docs add column if not exists comments jsonb not null default '[]'::jsonb`,
   `alter table docs add column if not exists proposals jsonb not null default '[]'::jsonb`,
+  // Checks a writer dismissed (checkKey strings): kept with the doc so they stop nagging everyone who opens it.
+  `alter table docs add column if not exists quiet jsonb not null default '[]'::jsonb`,
   // The page tree: a parent (named by kind and id, as decks and docs may share an id) and a fractional order key, on both tables.
   // sort_key stays nullable: a page made by an old server before the backfill below must not fail, and null reads as before all.
   `alter table decks add column if not exists parent_kind text`,

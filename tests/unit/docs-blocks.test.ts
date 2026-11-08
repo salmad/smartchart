@@ -1,6 +1,7 @@
 /* Blocks keyed in memory: the ops on text blocks, blockHTML, ids and the file round trip. */
 import { test, expect } from 'vitest'
 import { blockHTML, docHTML } from '@/engine/docs/render'
+import { identify } from '@/engine/docs/ops'
 import { giveIds, parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
 import { insertAfter, keyed, mergeBack, moveBlock, splitText, unkeyed } from '@/engine/docs/blocks'
@@ -10,9 +11,10 @@ import type { Block, Doc } from '@/engine/docs/types'
 const p = (text: string): Block => ({ type: 'paragraph', text })
 const texts = (blocks: Block[]) => blocks.map((b) => ('text' in b ? b.text : b.type))
 
-test('blockHTML of a paragraph is the <p> docHTML writes', () => {
-  const b = p('Hello **bold**')
-  expect(docHTML({ title: 'T', blocks: [b] })).toContain(blockHTML(b, 'paper'))
+test('blockHTML of a paragraph is the <p> docHTML writes, named by its block id', () => {
+  const b = p('Hello **bold**'), doc = { title: 'T', blocks: [b] }, id = identify(doc)[0].id
+  expect(docHTML(doc)).toContain(blockHTML(b, 'paper', id))
+  expect(blockHTML(b, 'paper', id)).toBe(`<p data-block="${id}">Hello <strong>bold</strong></p>`)
   expect(blockHTML({ type: 'heading', level: 2, id: 'a', text: 'A' }, 'paper')).toBe('<h2 id="a">A</h2>')
 })
 

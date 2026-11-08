@@ -1,7 +1,7 @@
 /* Doc checks and suggestions: code verdict on every doc; Occam proposals on open (editors only); agent rows from the server. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { proposeDoc as defaultProposeDoc } from '@/engine/agent/propose'
-import { checkDoc, type DocCheck } from '@/engine/docs/checks'
+import { checkDoc, checkKey, type DocCheck } from '@/engine/docs/checks'
 import { identify } from '@/engine/docs/ops'
 import type { DocProposal } from '@/engine/docs/proposals'
 import type { Doc } from '@/engine/docs/types'
@@ -15,8 +15,9 @@ export function proposalsInDoc(doc: Doc, list: DocProposal[]): DocProposal[] {
 
 const mergeProposals = (stored: DocProposal[], occam: DocProposal[]) => [...stored, ...occam]
 
-export function badgeFor(checks: DocCheck[], proposalCount: number): { count: number; pass: boolean } {
-  const failed = checks.filter((c) => !c.ok).length
+/** The one count the bar and the panel both show: open checks (failed, not dismissed) and stored suggestions. */
+export function badgeFor(checks: DocCheck[], proposalCount: number, quiet: ReadonlySet<string> = new Set()): { count: number; pass: boolean } {
+  const failed = checks.filter((c) => !c.ok && !quiet.has(checkKey(c))).length
   const count = failed + proposalCount
   return { count, pass: count === 0 }
 }
@@ -50,10 +51,14 @@ interface Options {
   canEdit: boolean
   loadStored: () => Promise<DocProposal[]>
   dismissStored: (id: string) => Promise<DocProposal[] | string>
+  /** Checks a writer dismissed (checkKey): left out of the count. */
+  quiet?: ReadonlySet<string>
   proposeDoc?: ProposeFn
 }
 
-export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissStored, proposeDoc = defaultProposeDoc }: Options) {
+const NONE: ReadonlySet<string> = new Set()
+
+export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissStored, quiet = NONE, proposeDoc = defaultProposeDoc }: Options) {
   const [checks, setChecks] = useState<DocCheck[]>([])
   const [stored, setStored] = useState<DocProposal[]>([])
   const [occam, setOccam] = useState<DocProposal[]>([])
@@ -85,7 +90,14 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
   const readability = useMemo(() => checks.filter((c) => /^D[4-7]$/.test(c.id)), [checks])
   const figures = useMemo(() => checks.filter((c) => !/^D[4-7]$/.test(c.id)), [checks])
   const proposals = useMemo(() => mergeProposals(stored, occam), [stored, occam])
-  const badge = useMemo(() => badgeFor(checks, stored.length), [checks, stored.length])
+  const badge = useMemo(() => badgeFor(checks, stored.length, quiet), [checks, stored.length, quiet])
+
+  /** The stored suggestions read again (after an agent left one), shown and returned. */
+  const refreshStored = useCallback(async () => {
+    const list = doc ? proposalsInDoc(doc, await loadStored()) : []
+    setStored(list)
+    return list
+  }, [doc, loadStored])
 
   const openPanel = useCallback(async () => {
     if (!doc) return
@@ -124,5 +136,6 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
     proposals,
     badge,
     dismiss,
+    refreshStored,
   }
 }
