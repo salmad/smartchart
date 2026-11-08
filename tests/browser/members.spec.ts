@@ -1,5 +1,6 @@
 /* Members, invites and the viewer's view, signed in with the API mocked (the browser tests run without a database). */
 import { test, expect, type Page } from '@playwright/test'
+import { editDeck } from './deck-edit'
 
 type Ws = { id: string; name: string; role: 'owner' | 'editor' | 'viewer'; personal: boolean; members: number; usedAt: number | null }
 const deckData = (title: string) => ({ id: 'd_1', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: 1,
@@ -93,10 +94,7 @@ test('an invite that can’t be used says why', async ({ page }) => {
 test('a save refused as a viewer’s says so, and isn’t retried', async ({ page }) => {
   const saves = await account(page, { workspaces: () => [acme('editor')], role: 'editor', put: () => ({ status: 403, json: { error: 'You can view this deck, not edit it.' } }) })
   await page.goto('/d/d_1')
-  await page.locator('[data-strip-thumb]').first().waitFor()
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Paper' }).click()
-  await page.keyboard.press('Escape')
+  await editDeck(page)
   await expect.poll(() => saves.length).toBe(1)
   await expect(page.getByText('You can view this deck, not edit it.')).toBeVisible()
   // The warning itself is a change to the chat, so one more save follows it (refused quietly); nothing retries on a timer.

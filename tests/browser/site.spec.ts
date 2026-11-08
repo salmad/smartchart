@@ -1,7 +1,8 @@
 /* The public site and accounts: real slides with no fit issues, the before/after by keyboard, the prompt waiting
    through sign-in, and the decks sidebar against a mocked account. */
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page, type Route } from '@playwright/test'
 import { devAccount } from './dev-account'
+import { editDeck } from './deck-edit'
 
 async function site(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 })
@@ -123,13 +124,9 @@ test('signed in, / opens the last deck; the sidebar lists summaries, switches de
   expect(decks.map((d) => d.id)).toEqual(['d_b'])
 })
 
-/** A real edit, so the deck saves: opening a deck alone does not. */
-async function edit(page: Page) {
-  await page.locator('[data-strip-thumb]').first().waitFor()
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Paper' }).click()
-  await page.keyboard.press('Escape')
-}
+const edit = editDeck
+/** A save of the deck; edit mode also sends presence pings to the same URL, which these mocks answer as if they were fine. */
+const isSave = (r: Route) => r.request().method() === 'PUT' && !new URL(r.request().url()).searchParams.has('presence')
 
 const oneDeck = { id: 'd_a', name: 'Acme', updated: 1, data: { id: 'd_a', style: 'consulting', theme: 'ink', accent: null, current: 0, history: [], working: [], messages: [], updated: 1,
   items: [{ id: 's', slide: { template: 'cover', title: 'Acme', subtitle: 'Board update.' }, status: 'ok', errors: [], warnings: [], checks: [] }] } }
@@ -138,7 +135,7 @@ test('a failed save is retried, with one message, and a browser copy kept until 
   let puts = 0 // the first two saves fail (the second follows the warning at once), then the retry succeeds
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
   await page.route('**/api/decks**', (r) => {
-    if (r.request().method() === 'PUT') return ++puts <= 2 ? r.fulfill({ status: 500, json: {} }) : r.fulfill({ json: { ok: true } })
+    if (isSave(r)) return ++puts <= 2 ? r.fulfill({ status: 500, json: {} }) : r.fulfill({ json: { ok: true } })
     return r.fulfill({ json: oneDeck })
   })
   await page.goto('/d/d_a')
@@ -151,7 +148,7 @@ test('a failed save is retried, with one message, and a browser copy kept until 
 
 test('when the session ends, a save asks to sign in again', async ({ page }) => {
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
-  await page.route('**/api/decks**', (r) => r.request().method() === 'PUT' ? r.fulfill({ status: 401, json: { error: 'Sign in to see your decks.' } }) : r.fulfill({ json: oneDeck }))
+  await page.route('**/api/decks**', (r) => isSave(r) ? r.fulfill({ status: 401, json: { error: 'Sign in to see your decks.' } }) : r.fulfill({ json: oneDeck }))
   await page.goto('/d/d_a')
   await edit(page)
   await expect(page.getByRole('dialog')).toContainText('Sign in again')
@@ -164,7 +161,7 @@ test('a save refused as stale reads the newer deck, merges it and saves again, w
   await page.route('**/api/auth/get-session**', (r) => r.fulfill({ json: { user: { id: 'u1', email: 'a@example.com', name: 'Ann', image: null }, session: {} } }))
   await page.route('**/api/decks**', (r) => {
     const url = new URL(r.request().url())
-    if (r.request().method() === 'PUT') {
+    if (isSave(r)) {
       bodies.push(r.request().postDataJSON() as { baseRev: number })
       if (!refused) { refused = true; return r.fulfill({ status: 409, json: { error: 'This deck changed somewhere else.' } }) }
       return r.fulfill({ json: { ok: true, rev: 3 } })

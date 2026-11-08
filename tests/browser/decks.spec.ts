@@ -1,6 +1,7 @@
 /* The sidebar keeps its order while you move between pages, and while you edit one: the order is the user's (page tree spec, section 3). */
 import { test, expect } from '@playwright/test'
 import { signInAsDev } from './dev-account'
+import { editDeck } from './deck-edit'
 
 signInAsDev()
 const KEY = 'smartchart.journey.decks.v1'
@@ -25,10 +26,8 @@ test('opening decks from the sidebar does not reorder them, and neither does an 
   expect((await order()).map((t) => t.split('\n')[0])).toEqual(['Alpha', 'Beta', 'Gamma'])
   expect(await page.evaluate((k) => Object.values(JSON.parse(localStorage.getItem(k) ?? '{}').decks).map((d) => (d as { updated: number }).updated), KEY)).toEqual([3000, 2000, 1000])
 
-  // An edit (the palette) is a real change: Beta saves, and stays where it is.
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await page.getByRole('group', { name: 'Palette' }).getByRole('button', { name: 'Paper' }).click()
-  await page.keyboard.press('Escape')
+  // An edit (speaker notes) is a real change: Beta saves, and stays where it is.
+  await editDeck(page)
   await page.waitForTimeout(600)
   await expect.poll(() => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? '{}').decks.b.updated, KEY)).toBeGreaterThan(2000)
   await sidebar.getByText('Alpha').click()

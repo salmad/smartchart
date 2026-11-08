@@ -57,7 +57,8 @@ test('on a phone, the sidebar and agent toggles open the workspace and chat', as
   await expect(decks(page)).toHaveCount(0)
   await page.getByRole('button', { name: 'Show the sidebar' }).click()
   await expect(decks(page)).toBeVisible()
-  await page.getByRole('button', { name: 'Close the sidebar' }).click()
+  // The backdrop fills the screen under the sidebar: tap the strip the sidebar leaves uncovered, as a person would.
+  await page.getByRole('button', { name: 'Close the sidebar' }).click({ position: { x: 380, y: 420 } })
   await expect(decks(page)).toHaveCount(0)
   if (await page.getByRole('button', { name: 'Hide the agent' }).isVisible()) await page.getByRole('button', { name: 'Hide the agent' }).click()
   await expect(page.getByRole('complementary', { name: 'Chat' })).toBeHidden()

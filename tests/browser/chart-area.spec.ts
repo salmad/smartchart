@@ -9,7 +9,7 @@ const FILL = '.doc figure[data-kind="chart"] svg path[fill="url(#gA)"]'
 
 async function seed(page: Page) {
   await page.addInitScript((t) => {
-    localStorage.setItem('smartchart.devAccount', '1')
+    localStorage.setItem('smartchart.devAccount', '1'); localStorage.setItem('smartchart.agentNudge.dismissed.dev', '1')
     if (sessionStorage.getItem('seeded')) return
     localStorage.setItem('smartchart.docs.v1', JSON.stringify({ doc_t: { id: 'doc_t', name: 'Test doc', text: t, updated: 1, workspaceId: 'ws_local' } }))
     sessionStorage.setItem('seeded', '1')

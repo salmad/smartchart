@@ -18,11 +18,8 @@ export function useDocFold({ root, docId, editor }: Options) {
       sec.classList.toggle('folded', fold)
       sec.querySelector(':scope > h2 > .fold')?.setAttribute('aria-expanded', String(!fold))
     }
+    // Section ids come from the editor's schema (Section): writing them here made the editor redraw every section.
     const wire = () => {
-      root.querySelectorAll<HTMLElement>('.doc-sec').forEach((sec) => {
-        const h2 = sec.querySelector<HTMLElement>(':scope > h2')
-        if (h2?.id) sec.id = h2.id
-      })
       drawIcons(root)
       for (const id of load(store)) { const sec = root.querySelector<HTMLElement>(`.doc-sec[id="${CSS.escape(id)}"]`); if (sec) setFold(sec, true) }
     }

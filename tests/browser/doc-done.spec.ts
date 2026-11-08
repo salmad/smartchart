@@ -52,8 +52,10 @@ test('creates a doc, writes a section, inserts and edits a chart and a table, an
   await page.keyboard.type(' Ltd')
   await doneInPlace(page)
 
-  await page.locator('.doc-editing .sec-body > p', { hasText: 'We start with five percent' }).click()
-  await page.keyboard.press('End')
+  const para = page.locator('.doc-editing .sec-body > p', { hasText: 'We start with five percent' })
+  await para.click()
+  // End stops at the end of the visual line, and justified text can wrap this one: put the caret after its last word.
+  await para.evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s?.removeAllRanges(); s?.addRange(r) })
   await page.keyboard.press('Enter')
   await page.keyboard.type('/chart')
   await page.keyboard.press('Enter')

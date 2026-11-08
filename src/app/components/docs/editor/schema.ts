@@ -2,7 +2,8 @@
    div.sec-body), so doc.css and components.css apply unchanged. Every container says what the Block union says it may
    hold, and nothing the file cannot write is offered: no italic, no code marks, no hard breaks, one quote text. */
 import { InputRule, Mark, markInputRule, Node, textblockTypeInputRule } from '@tiptap/core'
-import { Fragment } from '@tiptap/pm/model'
+import { Fragment, type DOMOutputSpec } from '@tiptap/pm/model'
+import { ChevronDown } from 'lucide'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -48,12 +49,37 @@ export const SectionHead = Node.create({
   renderHTML: ({ node }) => {
     const id = node.attrs.id as string
     return ['h2', id ? { id } : {},
-      ['button', { class: 'fold', type: 'button', 'aria-expanded': 'true', 'aria-label': 'Fold section', contenteditable: 'false' }, ['i', { 'data-lucide': 'chevron-down' }]],
+      ['button', { class: 'fold', type: 'button', 'aria-expanded': 'true', 'aria-label': 'Fold section', contenteditable: 'false' }, CHEVRON],
       ['span', { class: 'sec-h-text' }, 0]]
   },
 })
+/* The fold chevron drawn by the editor itself, as drawIcons would draw it: a page script swapping an <i> for it inside
+   the editor's heading made ProseMirror redraw the section, figures and all, in the middle of a click. */
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const CHEVRON: DOMOutputSpec = (() => {
+  const [, attrs, kids = []] = ChevronDown
+  return [`${SVG_NS} svg`, { ...attrs, 'data-lucide': 'chevron-down', 'stroke-width': 1.5, class: 'lucide lucide-chevron-down' },
+    ...kids.map(([tag, a]): DOMOutputSpec => [`${SVG_NS} ${tag}`, a])] as DOMOutputSpec
+})()
 export const SectionBody = Node.create({ name: 'sectionBody', content: 'block*', renderHTML: () => ['div', { class: 'sec-body' }, 0] })
-export const Section = Node.create({ name: 'section', content: 'sectionHead sectionBody', renderHTML: () => ['section', { class: 'doc-sec' }, 0] })
+/* A section carries its head's id, as the read view's does (folding and Contents find sections by it). The editor
+   sets it here, never the page: a foreign change to this element made ProseMirror redraw the section, figures and
+   all, in the middle of a click. Classes the fold control adds (folded) are not the editor's to undo. */
+export const Section = Node.create({
+  name: 'section', content: 'sectionHead sectionBody',
+  renderHTML: () => ['section', { class: 'doc-sec' }, 0],
+  addNodeView: () => ({ node }) => {
+    const dom = document.createElement('section')
+    dom.className = 'doc-sec'
+    const setId = (n: typeof node) => { const id = String(n.firstChild?.attrs.id ?? ''); if (id) dom.id = id; else dom.removeAttribute('id') }
+    setId(node)
+    return {
+      dom, contentDOM: dom,
+      update: (n) => { if (n.type.name !== 'section') return false; setId(n); return true },
+      ignoreMutation: (m) => m.type === 'attributes' && m.target === dom,
+    }
+  },
+})
 
 /** The base nodes and marks, in the shape of the Block union. */
 export const schemaExtensions = () => [

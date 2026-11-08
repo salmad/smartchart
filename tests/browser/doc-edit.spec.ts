@@ -6,7 +6,7 @@ const DOC = ['---', 'title: Test doc', '---', '', '## Plan {#plan}', '', 'First 
 /** The dev account with one doc, seeded once: a reload keeps what the test saved. */
 async function seed(page: Page, text = DOC) {
   await page.addInitScript((t) => {
-    localStorage.setItem('smartchart.devAccount', '1')
+    localStorage.setItem('smartchart.devAccount', '1'); localStorage.setItem('smartchart.agentNudge.dismissed.dev', '1')
     if (sessionStorage.getItem('seeded')) return
     localStorage.setItem('smartchart.docs.v1', JSON.stringify({ doc_t: { id: 'doc_t', name: 'Test doc', text: t, updated: 1, workspaceId: 'ws_local' } }))
     sessionStorage.setItem('seeded', '1')
@@ -74,12 +74,12 @@ test('enter splits, backspace joins, and the saved paragraph is the original', a
 test('enter on an empty list item ends the list', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing li').nth(1).click()
+  await page.locator('.doc-editing .ProseMirror li').nth(1).click()
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
-  await expect(page.locator('.doc-editing li')).toHaveCount(3)
+  await expect(page.locator('.doc-editing .ProseMirror li')).toHaveCount(3)
   await page.keyboard.press('Enter')
-  await expect(page.locator('.doc-editing li')).toHaveCount(2)
+  await expect(page.locator('.doc-editing .ProseMirror li')).toHaveCount(2)
   await page.keyboard.type('After the list.')
   await expect(page.locator('.doc-editing .sec-body > :last-child')).toHaveText('After the list.')
   await expect(page.locator('.doc-editing .sec-body > :last-child')).toHaveJSProperty('tagName', 'P')
@@ -209,11 +209,11 @@ test('/ then Esc leaves the / as text; a heading from the menu is a heading', as
 test('the handle moves a block up and down, and deletes it', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing ul').hover()
+  await page.locator('.doc-editing .ProseMirror ul').hover()
   await page.getByRole('button', { name: 'Block menu' }).click()
   await page.getByRole('menuitem', { name: 'Move up' }).click()
   await expect.poll(() => order(page)).toEqual(['h2 Plan', 'ul onetwo', 'p First paragr'])
-  await page.locator('.doc-editing ul').hover()
+  await page.locator('.doc-editing .ProseMirror ul').hover()
   await page.getByRole('button', { name: 'Block menu' }).click()
   await page.getByRole('menuitem', { name: 'Delete' }).click()
   await expect.poll(() => order(page)).toEqual(['h2 Plan', 'p First paragr'])
@@ -233,7 +233,7 @@ test('dragging a block by its handle reorders it, and the saved order matches', 
   await seed(page)
   await edit(page)
   await page.locator('.doc-editing h2').hover()
-  const grip = page.getByRole('button', { name: 'Block menu' }), box = await grip.boundingBox(), ul = await page.locator('.doc-editing ul').boundingBox()
+  const grip = page.getByRole('button', { name: 'Block menu' }), box = await grip.boundingBox(), ul = await page.locator('.doc-editing .ProseMirror ul').boundingBox()
   if (!box || !ul) throw new Error('no handle')
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
@@ -302,7 +302,8 @@ test('⌘S with a figure open and changed saves the figure too', async ({ page }
   expect((await saved(page)).text).toContain('Revolut Business Ltd')
 })
 
-test('a figure with an error is not closed by Save: the doc stays in edit and says why', async ({ page }) => {
+// A person's Save is relaxed: a figure that would not fit its layout still saves; its checks warn, they never block.
+test('a figure that overflows its layout still saves: Save closes it and keeps the words', async ({ page }) => {
   await seed(page)
   await edit(page)
   await insert(page, 'table')
@@ -311,9 +312,8 @@ test('a figure with an error is not closed by Save: the doc stays in edit and sa
   await page.keyboard.press('End')
   await page.keyboard.type(' and a name long enough that no table cell takes it, however wide the column runs on the page')
   await page.keyboard.press(`${mod}+s`)
-  await expect(page.locator('[data-figure-edit] [role="alert"]')).toBeVisible()
-  await expect(page.locator('.doc-editing')).toBeVisible()
-  expect((await saved(page)).text).not.toContain('long enough')
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  await expect.poll(async () => (await saved(page)).text).toContain('long enough')
 })
 
 /* Task 5 (M5): a figure's checks badge in the editor. */
@@ -344,7 +344,8 @@ test('clearing a figure’s source in place and pressing Done brings the badge; 
   await newLine(page)
   await page.keyboard.type('/chart')
   await page.keyboard.press('Enter')
-  await expect(page.locator('.doc-editing .fig-checks')).toHaveCount(0)
+  // A new chart fails no check (a soft "Could be better" may show; that is not a failed check).
+  await expect(page.locator('.doc-editing .fig-checks summary', { hasText: /\d+ checks?/ })).toHaveCount(0)
   await page.locator('.doc-editing figure[data-kind="chart"]').click()
   await expect(page.locator('[data-figure-edit] [data-editing]')).toBeVisible()
   const src = page.locator('[data-figure-edit] .fig-src [data-path="source"]')
@@ -384,10 +385,10 @@ test('Markdown shortcuts: a list, numbers, a quote, a subheading, a divider and 
   await expect(page.locator('.doc-editing h3')).toHaveText('Sub')
   await page.keyboard.press('Enter')
   await page.keyboard.type('- bullet')
-  await expect(page.locator('.doc-editing ul li').filter({ hasText: 'bullet' })).toHaveCount(1)
+  await expect(page.locator('.doc-editing .ProseMirror ul li').filter({ hasText: 'bullet' })).toHaveCount(1)
   await page.keyboard.press('Enter'); await page.keyboard.press('Enter')
   await page.keyboard.type('1. step one')
-  await expect(page.locator('.doc-editing ol li')).toHaveText(['step one'])
+  await expect(page.locator('.doc-editing .ProseMirror ol li')).toHaveText(['step one'])
   await page.keyboard.press('Enter'); await page.keyboard.press('Enter')
   await page.keyboard.type('> said')
   await expect(page.locator('.doc-editing blockquote')).toHaveText('said')
@@ -409,12 +410,12 @@ test('Markdown shortcuts: a list, numbers, a quote, a subheading, a divider and 
 test('Tab nests a list item, three levels at most, and the file shows the nesting', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing li').nth(1).click()
+  await page.locator('.doc-editing .ProseMirror li').nth(1).click()
   await page.keyboard.press('Tab')
-  await expect(page.locator('.doc-editing li li')).toHaveCount(1)
+  await expect(page.locator('.doc-editing .ProseMirror li li')).toHaveCount(1)
   await page.keyboard.press('Enter'); await page.keyboard.type('three'); await page.keyboard.press('Tab')
   await page.keyboard.press('Enter'); await page.keyboard.type('four'); await page.keyboard.press('Tab')
-  await expect(page.locator('.doc-editing li li li li')).toHaveCount(0)
+  await expect(page.locator('.doc-editing .ProseMirror li li li li')).toHaveCount(0)
   await saveDoc(page)
   expect((await saved(page)).text).toContain('- one\n  - two\n    - three')
 })
@@ -511,7 +512,7 @@ test('an open figure keeps its unsaved edit while the text around it changes sha
   const cell = page.locator('[data-figure-edit] td[data-path]').first()
   await cell.click(); await page.keyboard.press('End'); await page.keyboard.type(' Ltd')
   // Elsewhere: a paragraph becomes a section heading, and a block moves.
-  await page.locator('.doc-editing li').first().click()
+  await page.locator('.doc-editing .ProseMirror li').first().click()
   await page.keyboard.press('Alt+Shift+ArrowUp')
   await expect.poll(() => order(page)).toEqual(['h2 Plan', 'p First paragr', 'ul onetwo', 'figure:table SME card iss'])
   await page.locator('.doc-editing .sec-body > p').first().click()
@@ -526,11 +527,11 @@ test('an open figure keeps its unsaved edit while the text around it changes sha
 test('"## " typed in a list item or a quote leaves the list and the quote alone', async ({ page }) => {
   await seed(page)
   await edit(page)
-  await page.locator('.doc-editing li').nth(1).click()
+  await page.locator('.doc-editing .ProseMirror li').nth(1).click()
   await page.keyboard.press('End'); await page.keyboard.press('Enter')
   await page.keyboard.type('## ')
   await expect(page.locator('.doc-editing h2')).toHaveCount(1)
-  await expect(page.locator('.doc-editing li')).toHaveText(['one', 'two', '## '])
+  await expect(page.locator('.doc-editing .ProseMirror li')).toHaveText(['one', 'two', '## '])
 })
 
 test('Markdown pasted as text comes in as lists, quotes, bold and links; typing [+x+] and [a](https://b.co) makes marks', async ({ page }) => {
@@ -540,7 +541,7 @@ test('Markdown pasted as text comes in as lists, quotes, bold and links; typing 
   await page.keyboard.press('End'); await page.keyboard.press('Enter')
   await paste(page, 'Intro with **bold** and [a link](https://example.com).\n\n- item\n  - child\n\n> said\n\n### Sub heading')
   await expect(page.locator('.doc-editing strong')).toHaveText('bold')
-  await expect(page.locator('.doc-editing li li')).toHaveText('child')
+  await expect(page.locator('.doc-editing .ProseMirror li li')).toHaveText('child')
   await expect(page.locator('.doc-editing blockquote')).toHaveText('said')
   await expect(page.locator('.doc-editing h3')).toHaveText('Sub heading')
   await page.keyboard.press('Enter'); await page.keyboard.press('Enter')

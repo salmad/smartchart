@@ -25,5 +25,6 @@ test('the site’s colours are offered with where they come from; the one picked
   await expect(list).toContainText('too close to')
   await list.getByRole('button', { name: /#7C5CFF/ }).click()
   await expect(list.getByRole('button', { name: /#7C5CFF/ })).toHaveAttribute('aria-pressed', 'true')
-  await expect.poll(() => page.evaluate(() => (JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{}') as { decks?: Record<string, { accent?: string }> }).decks?.d_b?.accent)).toBe('#7C5CFF')
+  // The accent is the user's (their look, on every deck and doc), not the deck's.
+  await expect.poll(() => page.evaluate(() => (JSON.parse(localStorage.getItem('smartchart.user.look.v1.dev') ?? '{}') as { accent?: string }).accent)).toBe('#7C5CFF')
 })

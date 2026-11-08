@@ -62,7 +62,7 @@ test.describe('speaker notes in edit mode', () => {
   test.beforeEach(async ({ page }) => {
     const deck = { active: 'd1', decks: { d1: { id: 'd1', style: 'consulting', theme: 'ink', accent: null, current: 0, updated: 1, history: [], working: [], messages: [],
       items: [{ id: 'a', slide: slides[1], status: 'ok', errors: [], warnings: [], checks: [] }] } } }
-    await page.addInitScript((d) => { localStorage.setItem('smartchart.devAccount', '1'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('smartchart.journey.decks.v1', JSON.stringify(d)); sessionStorage.setItem('seeded', '1') } }, deck)
+    await page.addInitScript((d) => { localStorage.setItem('smartchart.devAccount', '1'); localStorage.setItem('smartchart.agentNudge.dismissed.dev', '1'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('smartchart.journey.decks.v1', JSON.stringify(d)); sessionStorage.setItem('seeded', '1') } }, deck)
   })
   test('are typed under the slide, saved with it, and never drawn on it', async ({ page }) => {
     await page.goto('/d/d1')

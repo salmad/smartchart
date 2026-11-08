@@ -57,7 +57,7 @@ async function seed(page: Page) {
   await page.route('**/api/glm**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ proposals: [] }) })
   })
-  await page.addInitScript(() => localStorage.setItem('smartchart.devAccount', '1'))
+  await page.addInitScript(() => { localStorage.setItem('smartchart.devAccount', '1'); localStorage.setItem('smartchart.agentNudge.dismissed.dev', '1') })
   await page.goto('/')
   await page.evaluate(([text, proposals, docId]) => {
     localStorage.setItem('smartchart.docs.v1', JSON.stringify({
