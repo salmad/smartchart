@@ -157,6 +157,14 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
   border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg);
 }
 
+/* Proposal preview (editor decorations and read-view marks; never inside .fig canvas). */
+.doc-proposal-marked { box-shadow: inset 3px 0 0 var(--gold); padding-left: 10px; margin-left: -10px; }
+.doc-editing .doc-proposal-hidden { display: none !important; }
+.doc-proposal-widget { margin: 12px 0 16px; padding: 14px 16px; border: 1px dashed var(--gold); border-radius: 10px; background: color-mix(in srgb, var(--gold) 6%, var(--bg)); }
+.doc-proposal-chip { margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--gold); }
+.doc-proposal-body .doc-fig { margin-top: 0; }
+.doc-proposal-note { margin: 0; font-size: 13px; color: var(--fg-2); }
+
 @media (max-width: 640px) {
   .doc { padding-top: 40px; }
   .doc-title { font-size: 34px; }

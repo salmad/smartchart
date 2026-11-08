@@ -13,6 +13,8 @@ import { plainOf } from '@/engine/slides/markup'
 import type { Block, Doc, FigureBody } from '@/engine/docs/types'
 import type { Theme } from '@/engine/types'
 import { docExtensions } from './editor'
+import type { ProposalOptions, ProposalView } from './editor/proposal'
+import { refreshProposalDecorations } from './editor/proposal'
 import { findFigure, setOpenKey, type FigureHost } from './editor/figure'
 
 export interface DocEdit {
@@ -44,7 +46,16 @@ export interface DocEdit {
   /** For the slash menu: the editor hands it every key first. */
   onKey: { current: (e: KeyboardEvent) => boolean }
 }
-interface Options { doc: Doc; theme: Theme; accent: string | undefined; save: (doc: Doc) => Promise<string | null>; onDone: () => void }
+interface Options {
+  doc: Doc
+  theme: Theme
+  accent: string | undefined
+  save: (doc: Doc, opts?: { label?: string }) => Promise<string | null>
+  onDone: () => void
+  proposalView?: () => ProposalView | null
+  /** Bumped when the active proposal or Original/Suggestion mode changes. */
+  proposalTick?: number
+}
 
 const MEASURE_MS = 300
 
@@ -74,7 +85,7 @@ export function docOf(base: Doc, json: ProseNode): Doc {
   return { ...base, title: h.title, subtitle, blocks: giveIds(tidy(h.blocks)) }
 }
 
-export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEdit {
+export function useDocEdit({ doc, theme, accent, save, onDone, proposalView, proposalTick = 0 }: Options): DocEdit {
   const [figure, setFigureKey] = useState<string | null>(null), [slot, setSlot] = useState<HTMLElement | null>(null)
   const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null), [blockers, setBlockers] = useState<string[]>([]), [warnings, setWarnings] = useState<string[]>([]), [tick, setTick] = useState(0)
   const done = useRef<((force?: boolean) => string | null) | null>(null), initial = useRef<PMNode | null>(null), look = useRef({ theme, accent }), onKey = useRef<(e: KeyboardEvent) => boolean>(() => false)
@@ -89,14 +100,24 @@ export function useDocEdit({ doc, theme, accent, save, onDone }: Options): DocEd
   }), [])
   const open = useRef<(key: string | null) => void>(() => {}), slots = useRef(new Map<string, HTMLElement>())
 
+  const proposalOpts = useMemo<ProposalOptions | undefined>(() => (proposalView ? {
+    getDoc: () => { const e = editorRef.current; return e ? docOf(doc, e.getJSON() as ProseNode) : doc },
+    view: proposalView,
+    theme: () => look.current.theme,
+  } : undefined), [doc, proposalView])
+
   const editor = useEditor({
-    extensions: docExtensions(host, { originals: () => doc.blocks, slash: (e) => onKey.current(e) }),
+    extensions: docExtensions(host, { originals: () => doc.blocks, slash: (e) => onKey.current(e) }, proposalOpts),
     content: toProse({ title: doc.title, subtitle: doc.subtitle ?? '', blocks: doc.blocks }),
     editorProps: { attributes: { class: 'doc-body', spellcheck: 'true' } },
     shouldRerenderOnTransaction: false,
     onCreate: ({ editor: e }) => { initial.current = e.state.doc },
     onTransaction: () => setTick((t) => t + 1),
-  }, [doc])
+  }, [doc, proposalOpts])
+
+  useEffect(() => {
+    if (editor && proposalView) refreshProposalDecorations(editor)
+  }, [editor, proposalView, proposalTick])
 
   editorRef.current = editor
   // A figure deleted while it was open is no longer open.

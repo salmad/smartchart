@@ -291,7 +291,7 @@ the earlier draft sections.
 - [ ] **Step 2:** Run `npx vitest run tests/unit/docs-proposal-plugin.test.ts`. Expected: FAIL.
 - [ ] **Step 3:** Implement the plugin, the bar and the wiring.
 - [ ] **Step 4:** Run the tests, `npm run build` and `npm run lint`. Expected: PASS.
-- [ ] **Step 5: Commit** "Swap a suggestion in and out of its block, then approve or cancel".
+- [x] **Step 5: Commit** "Swap a suggestion in and out of its block, then approve or cancel".
 
 ### Task 7: End to end and live check
 

@@ -8,6 +8,7 @@ import { serializeDoc } from '@/engine/docs/serialize'
 import { describeDocDiff, docFrom } from '@/engine/docs/versions'
 import { plainOf } from '@/engine/slides/markup'
 import type { Block, Doc } from '@/engine/docs/types'
+import type { DocProposal } from '@/engine/docs/proposals'
 import type { Theme } from '@/engine/types'
 import type { Account } from '@/app/auth'
 import { DOC_STALE, type Doc as DocRecord, type DocRepo, type DocVersionRow } from '@/app/docs'
@@ -88,6 +89,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const [side, setSide] = useState<'comments' | 'checks' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
   const [comments, setComments] = useState<DocComment[]>(() => docs.peek?.(id)?.comments ?? []), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
+  const [activeProposal, setActiveProposal] = useState<DocProposal | null>(null)
   const [printing, setPrinting] = useState(false)
   const blocks = useRef(new Map<string, Block>())
   const shown = preview?.doc && preview.doc !== 'missing' && !preview.current ? preview.doc : parsed
@@ -98,7 +100,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const [openId, setOpenId] = useState(id)
   if (openId !== id) {
     const kept = docs.peek?.(id)
-    setOpenId(id); setEditing(false); setState(kept?.doc ?? null); setPreview(null); setSide(null); setComments(kept?.comments ?? [])
+    setOpenId(id); setEditing(false); setState(kept?.doc ?? null); setPreview(null); setSide(null); setComments(kept?.comments ?? []); setActiveProposal(null)
   }
   useEffect(() => {
     if (canEdit) whenIdle(() => void docEditing.preload())
@@ -149,6 +151,14 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     on?.classList.add('doc-ring')
     return () => on?.classList.remove('doc-ring')
   }, [ring, pageEl, drawn])
+
+  useEffect(() => {
+    if (!pageEl || editing || !activeProposal) return
+    const id = activeProposal.blockIds[0]
+    const el = pageEl.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"], [data-block="${CSS.escape(id)}"]`)
+    el?.classList.add('doc-proposal-marked')
+    return () => el?.classList.remove('doc-proposal-marked')
+  }, [pageEl, activeProposal, editing, drawn])
 
   const save = useCallback(async (doc: Doc, opts?: { label?: string }) => {
     if (!record) return 'This doc is gone.'
@@ -243,7 +253,9 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         onResolve={(cid) => void comment({ resolve: { id: cid } })} onDelete={(cid) => void comment({ remove: { id: cid } })} />}
       {side === 'checks' && parsed && (
         <DocChecks verdict={checksState.verdict} readability={checksState.readability} figures={checksState.figures} proposals={checksState.proposals}
-          loading={checksState.loading} canEdit={canEdit} onShow={reveal} onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
+          loading={checksState.loading} canEdit={canEdit} onShow={reveal}
+          onPick={(p) => setActiveProposal(p)}
+          onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
           onClose={() => setSide(null)} />
       )}
     </div>
@@ -254,6 +266,8 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     return (
       <Suspense fallback={<>{header(null)}{body(null)}</>}>
         <DocEditing doc={parsed} docId={id} look={{ theme: look.theme, accent: look.accent ?? undefined }} save={save} onDone={() => setEditing(false)} comments={commenting} checks={checking}
+          proposals={checksState.proposals} activeProposal={activeProposal} onActiveProposal={setActiveProposal}
+          onDismissProposal={async (pid) => { await checksState.dismiss(pid) }}
           stale={refused || live.newer ? { by: live.others[0] ?? null, refused, onReload: () => { setEditing(false); setReload((n) => n + 1) } } : null}>
           {(bar, editor) => <>{header(bar)}{body(editor)}</>}
         </DocEditing>

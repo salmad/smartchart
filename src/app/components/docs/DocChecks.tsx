@@ -13,11 +13,12 @@ interface Props {
   loading: boolean
   canEdit: boolean
   onShow: (blockId: string) => void
+  onPick?: (proposal: DocProposal) => void
   onDismiss?: (id: string) => void
   onClose: () => void
 }
 
-export function DocChecks({ verdict, readability, figures, proposals, loading, canEdit, onShow, onDismiss, onClose }: Props) {
+export function DocChecks({ verdict, readability, figures, proposals, loading, canEdit, onShow, onPick, onDismiss, onClose }: Props) {
   const [figOpen, setFigOpen] = useState(false)
   const wall = verdict && !verdict.ok
   const passed = readability.filter((c) => c.ok)
@@ -50,7 +51,7 @@ export function DocChecks({ verdict, readability, figures, proposals, loading, c
             <ul className="grid gap-2">
               {proposals.map((p) => (
                 <li key={p.id}>
-                  <button type="button" onClick={() => onShow(p.blockIds[0])}
+                  <button type="button" onClick={() => { onShow(p.blockIds[0]); onPick?.(p) }}
                     className="grid w-full cursor-pointer gap-0.5 rounded-lg border border-line bg-panel p-3 text-left transition-colors hover:border-line-2">
                     <span className="text-[13px] font-medium text-ink">{p.label}</span>
                     <span className="text-[12.5px] text-ink-2">{p.why}</span>
