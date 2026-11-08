@@ -30,6 +30,7 @@ import { DocComments, type CommentTarget } from './docs/DocComments'
 import { DocChecks } from './docs/DocChecks'
 import { ReadBar } from './docs/DocBar'
 import { useDocChecks } from './docs/useDocChecks'
+import { countText } from './docs/useDocProposals'
 import { ShareMenu } from './ShareMenu'
 import { PrintDoc } from './PrintDoc'
 import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
@@ -215,7 +216,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     })
   }
   const commenting = { open: side === 'comments', count: comments.filter((c) => !c.done).length, onToggle: toggleComments }
-  const checking = { open: side === 'checks', count: checksState.badge.count, pass: checksState.badge.pass, onToggle: toggleChecks }
+  const checking = { open: side === 'checks', count: checksState.badge.count, pass: checksState.badge.pass, label: countText(checksState.badge), onToggle: toggleChecks }
 
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
 
@@ -259,7 +260,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         onAdd={(text) => { void comment({ add: { text, anchor: target?.anchor ?? 'doc', ...(target?.quote ? { quote: target.quote } : {}) } }); setTarget(null) }}
         onResolve={(cid) => void comment({ resolve: { id: cid } })} onDelete={(cid) => void comment({ remove: { id: cid } })} />}
       {side === 'checks' && parsed && (
-        <DocChecks doc={parsed} checks={checksState.checks} count={checksState.badge.count} quiet={checks.quiet} proposals={checksState.proposals}
+        <DocChecks doc={parsed} checks={checksState.checks} count={checksState.badge.count} countLabel={countText(checksState.badge)} quiet={checks.quiet} proposals={checksState.proposals}
           loading={checksState.loading} canEdit={canEdit} actions={checks.actions} error={checks.error} onPick={review}
           onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
           onClose={() => { setSide(null); checks.reset() }} />

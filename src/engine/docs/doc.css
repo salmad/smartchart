@@ -169,12 +169,31 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
 }
 
 /* Proposal preview (editor decorations and read-view marks; never inside .fig canvas). */
-.doc-proposal-marked { box-shadow: inset 3px 0 0 var(--gold); padding-left: 10px; margin-left: -10px; }
+.doc-proposal-marked { box-shadow: inset 3px 0 0 var(--focus); padding-left: 10px; margin-left: -10px; }
 .doc-editing .doc-proposal-hidden { display: none !important; }
-.doc-proposal-widget { margin: 12px 0 16px; padding: 14px 16px; border: 1px dashed var(--gold); border-radius: 10px; background: color-mix(in srgb, var(--gold) 6%, var(--bg)); }
-.doc-proposal-chip { margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--gold); }
+.doc-proposal-widget { margin: 12px 0 16px; padding: 14px 16px; border: 1px dashed var(--focus); border-radius: 10px; background: color-mix(in srgb, var(--focus) 6%, var(--bg)); }
+.doc-proposal-chip { margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--focus); }
 .doc-proposal-body .doc-fig { margin-top: 0; }
 .doc-proposal-note { margin: 0; font-size: 13px; color: var(--fg-2); }
+/* A suggestion's margin mark: before its block, out of the flow, hung in the left gutter beside the block's first line
+   (as the fold control hangs beside a heading). Narrow pages have no gutter: there it is a small line above the block.
+   The page is its containing block, so the mark scrolls with the page it sits in. */
+.doc { position: relative; }
+.doc-sugg {
+  position: absolute; z-index: 2; margin: 0 0 0 -38px; height: 26px; min-width: 26px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--focus) 40%, transparent); border-radius: 999px; background: var(--bg);
+  color: var(--focus); font: 600 11px/1 var(--text); cursor: pointer; transition: background-color .15s ease;
+}
+.doc-sugg:hover { background: color-mix(in srgb, var(--focus) 12%, var(--bg)); }
+.doc-sugg:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.doc-sugg-text { display: none; }
+.doc-sugg-n { font-family: var(--mono); font-weight: 500; }
+@media (max-width: 819px) {
+  .doc-sugg { position: static; margin: 20px 0 -8px; padding: 0 10px; }
+  .doc-sugg-text { display: inline; }
+  .doc-sugg-n { display: none; }
+}
+@media print { .doc-sugg { display: none; } }
 
 @media (max-width: 640px) {
   .doc { padding-top: 40px; }

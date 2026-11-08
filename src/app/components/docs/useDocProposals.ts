@@ -1,10 +1,12 @@
-/* Doc checks and suggestions: code verdict on every doc; Occam proposals on open (editors only); agent rows from the server. */
+/* Doc checks and suggestions: code checks on every doc; Occam's suggestions when an editor opens it (one model call per
+   change, kept in this browser); agent suggestions from the server. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { proposeDoc as defaultProposeDoc } from '@/engine/agent/propose'
 import { checkDoc, checkKey, type DocCheck } from '@/engine/docs/checks'
 import { identify } from '@/engine/docs/ops'
 import type { DocProposal } from '@/engine/docs/proposals'
 import type { Doc } from '@/engine/docs/types'
+import { dropSuggestion, keepSuggestions, keptSuggestions, suggestionSig } from './occamCache'
 
 type ProposeFn = typeof defaultProposeDoc
 
@@ -15,11 +17,17 @@ export function proposalsInDoc(doc: Doc, list: DocProposal[]): DocProposal[] {
 
 const mergeProposals = (stored: DocProposal[], occam: DocProposal[]) => [...stored, ...occam]
 
-/** The one count the bar and the panel both show: open checks (failed, not dismissed) and stored suggestions. */
-export function badgeFor(checks: DocCheck[], proposalCount: number, quiet: ReadonlySet<string> = new Set()): { count: number; pass: boolean } {
+/** The one count the bar and the panel both show: open checks (failed, not dismissed) and suggestions, and each part. */
+export function badgeFor(checks: DocCheck[], proposalCount: number, quiet: ReadonlySet<string> = new Set()): { count: number; pass: boolean; checks: number; suggestions: number } {
   const failed = checks.filter((c) => !c.ok && !quiet.has(checkKey(c))).length
   const count = failed + proposalCount
-  return { count, pass: count === 0 }
+  return { count, pass: count === 0, checks: failed, suggestions: proposalCount }
+}
+
+/** "2 checks · 1 suggestion", "1 check", "3 suggestions"; empty when there is nothing. */
+export function countText(b: { checks: number; suggestions: number }): string {
+  const part = (n: number, one: string) => (n ? `${n} ${one}${n === 1 ? '' : 's'}` : '')
+  return [part(b.checks, 'check'), part(b.suggestions, 'suggestion')].filter(Boolean).join(' · ')
 }
 
 export function createDocProposalsRunner(deps: {
@@ -53,19 +61,22 @@ interface Options {
   dismissStored: (id: string) => Promise<DocProposal[] | string>
   /** Checks a writer dismissed (checkKey): left out of the count. */
   quiet?: ReadonlySet<string>
+  /** The models answer: Occam's suggestions are asked for only then. */
+  live?: boolean
   proposeDoc?: ProposeFn
 }
 
 const NONE: ReadonlySet<string> = new Set()
 
-export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissStored, quiet = NONE, proposeDoc = defaultProposeDoc }: Options) {
+export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissStored, quiet = NONE, live = true, proposeDoc = defaultProposeDoc }: Options) {
   const [checks, setChecks] = useState<DocCheck[]>([])
   const [stored, setStored] = useState<DocProposal[]>([])
   const [occam, setOccam] = useState<DocProposal[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const occamRev = useRef<number | null>(null)
   const runRef = useRef<AbortController | null>(null)
+  const revRef = useRef(rev)
+  revRef.current = rev
 
   useEffect(() => {
     if (!doc) { setChecks([]); return }
@@ -80,18 +91,30 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
     return () => { go = false }
   }, [docId, doc, loadStored])
 
-  // A new revision, or a check dismissed or restored: Occam's suggestions are asked for again on the next open.
+  // Occam's suggestions, as soon as an editor has the doc: from this browser when made for these blocks and dismissed
+  // checks, else one model call (none when the doc reads well). A newer doc aborts the call.
   useEffect(() => {
-    occamRev.current = null
     runRef.current?.abort()
+    if (!doc || !canEdit) { setOccam([]); setLoading(false); return }
+    const sig = suggestionSig(doc, quiet), kept = keptSuggestions(docId, sig)
+    if (kept) { setOccam(proposalsInDoc(doc, kept)); setLoading(false); return }
     setOccam([])
-  }, [docId, rev, quiet])
+    if (!live) { setLoading(false); return }
+    const ctl = new AbortController()
+    runRef.current = ctl
+    setLoading(true)
+    void proposeDoc(doc, { rev: revRef.current, signal: ctl.signal, quiet })
+      .then((list) => { if (ctl.signal.aborted) return; const next = proposalsInDoc(doc, list); keepSuggestions(docId, sig, next); setOccam(next) })
+      .catch(() => { if (!ctl.signal.aborted) setOccam([]) })
+      .finally(() => { if (!ctl.signal.aborted) setLoading(false) })
+    return () => ctl.abort()
+  }, [docId, doc, canEdit, quiet, live, proposeDoc])
 
   const verdict = useMemo(() => checks.find((c) => c.id === 'D7') ?? null, [checks])
   const readability = useMemo(() => checks.filter((c) => /^D[4-7]$/.test(c.id)), [checks])
   const figures = useMemo(() => checks.filter((c) => !/^D[4-7]$/.test(c.id)), [checks])
   const proposals = useMemo(() => mergeProposals(stored, occam), [stored, occam])
-  const badge = useMemo(() => badgeFor(checks, stored.length, quiet), [checks, stored.length, quiet])
+  const badge = useMemo(() => badgeFor(checks, proposals.length, quiet), [checks, proposals.length, quiet])
 
   /** The stored suggestions read again (after an agent left one), shown and returned. */
   const refreshStored = useCallback(async () => {
@@ -100,30 +123,19 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
     return list
   }, [doc, loadStored])
 
+  /** The panel opened: agents' suggestions read again (Occam's are already in hand). */
   const openPanel = useCallback(async () => {
     if (!doc) return
     setOpen(true)
-    runRef.current?.abort()
-    const ctl = new AbortController()
-    runRef.current = ctl
-    const freshStored = proposalsInDoc(doc, await loadStored())
-    setStored(freshStored)
-    if (canEdit && occamRev.current !== rev) {
-      setLoading(true)
-      try {
-        const next = proposalsInDoc(doc, await proposeDoc(doc, { rev, signal: ctl.signal, quiet }))
-        if (!ctl.signal.aborted) { setOccam(next); occamRev.current = rev }
-      } catch { if (!ctl.signal.aborted) setOccam([]) }
-      finally { if (!ctl.signal.aborted) setLoading(false) }
-    }
-  }, [doc, rev, canEdit, loadStored, proposeDoc, quiet])
+    setStored(proposalsInDoc(doc, await loadStored()))
+  }, [doc, loadStored])
 
   const dismiss = useCallback(async (id: string) => {
-    if (!stored.some((p) => p.id === id)) { setOccam((list) => list.filter((p) => p.id !== id)); return }
+    if (!stored.some((p) => p.id === id)) { dropSuggestion(docId, id); setOccam((list) => list.filter((p) => p.id !== id)); return }
     const r = await dismissStored(id)
     if (typeof r === 'string') return
     setStored(doc ? proposalsInDoc(doc, r) : r)
-  }, [dismissStored, doc, stored])
+  }, [dismissStored, doc, stored, docId])
 
   return {
     open,

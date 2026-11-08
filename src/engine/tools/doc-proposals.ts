@@ -29,7 +29,7 @@ export const docProposalTools = [
           required: ["kind", "body"],
           properties: { kind: { type: "string", enum: [...FIGURE_KINDS] }, body: { description: "The figure's fields, as get_template gives them." } },
         },
-        label: { type: "string", description: "Short button label (at most 40 characters)." },
+        label: { type: "string", description: "Short title, shown whole (at most 60 characters)." },
         why: { type: "string", description: "One sentence on why (at most 160 characters)." },
       },
     },

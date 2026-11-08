@@ -28,8 +28,8 @@ test('checks group under their blocks in doc order, the whole doc first, named i
 test('one count: open checks and stored suggestions, less what was dismissed', () => {
   const quiet = new Set([checkKey(checks[0])])
   expect(openChecks(checks, quiet)).toHaveLength(2)
-  expect(badgeFor(checks, 1, quiet)).toEqual({ count: 3, pass: false })
-  expect(badgeFor(checks.map((c) => ({ ...c, ok: true })), 0)).toEqual({ count: 0, pass: true })
+  expect(badgeFor(checks, 1, quiet)).toEqual({ count: 3, pass: false, checks: 2, suggestions: 1 })
+  expect(badgeFor(checks.map((c) => ({ ...c, ok: true })), 0)).toEqual({ count: 0, pass: true, checks: 0, suggestions: 0 })
 })
 
 test('a dismissed check leaves its figure’s badge, and the badge goes when none is left', () => {

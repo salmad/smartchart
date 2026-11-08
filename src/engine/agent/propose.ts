@@ -4,7 +4,7 @@ import { describe as card, MENU } from '../slides/schema.js'
 import { identify } from '../docs/ops.js'
 import { readabilityChecks } from '../docs/readability.js'
 import { checkKey, type DocCheck } from '../docs/checks.js'
-import { checkProposal, type DocProposal, type ProposalMode } from '../docs/proposals.js'
+import { checkProposal, MAX_PROPOSAL_LABEL, type DocProposal, type ProposalMode } from '../docs/proposals.js'
 import { CALLOUT_FIELDS } from '../docs/validate.js'
 import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind } from '../docs/types.js'
 
@@ -62,7 +62,7 @@ Each suggestion targets adjacent blockIds only. mode is replace or insert.
 Prefer grouped tables when rows fall into categories; steps for sequences; value cards for figures in sentences; bold-label bullets for long paragraphs.
 Text suggestions keep every word (kind "text", body is Markdown). Figure suggestions may condense only if every number, name and quoted phrase is kept; otherwise use insert above the block.
 Never invent figures or sources. Every number must come from the named blocks.
-Reply with JSON only: {"proposals":[{"blockIds":["…"],"mode":"replace"|"insert","kind":"table"|"chart"|…|"text","label":"≤40 chars","why":"one line","body":{…}|"markdown"}]}. Omit id, by and at.`
+Reply with JSON only: {"proposals":[{"blockIds":["…"],"mode":"replace"|"insert","kind":"table"|"chart"|…|"text","label":"≤40 chars, whole words","why":"one line","body":{…}|"markdown"}]}. Omit id, by and at.`
 
 export function proposeMessages(doc: Doc, failed: DocCheck[]): ChatMessage[] {
   const issues = failed.filter((c) => /^D[4-6]$/.test(c.id) && !c.ok).map((c) => `${c.blockId}: [${c.id}] ${c.msg}`).join('\n')
@@ -88,8 +88,16 @@ export function parseProposals(text: string): RawProposal[] {
     && (p.mode === 'replace' || p.mode === 'insert') && typeof p.label === 'string' && typeof p.why === 'string' && typeof p.kind === 'string')
 }
 
+/** The model's title, whole when it fits; past the limit, cut at a word, never inside one. */
+export function titleOf(label: string): string {
+  const t = label.trim().replace(/\s+/g, ' ')
+  if (t.length <= MAX_PROPOSAL_LABEL) return t
+  const cut = t.slice(0, MAX_PROPOSAL_LABEL - 1), at = cut.lastIndexOf(' ')
+  return `${(at > 20 ? cut.slice(0, at) : cut).replace(/[\s,;:–—-]+$/, '')}…`
+}
+
 const toProposal = (raw: RawProposal, rev: number, at: number, id: string): DocProposal => {
-  const base = { id, blockIds: raw.blockIds, mode: raw.mode, label: raw.label.trim().slice(0, 40), why: raw.why.trim().slice(0, 160), by: 'Occam', at, rev }
+  const base = { id, blockIds: raw.blockIds, mode: raw.mode, label: titleOf(raw.label), why: raw.why.trim().slice(0, 160), by: 'Occam', at, rev }
   if (raw.kind === 'text') return { ...base, markdown: String(raw.body ?? '') }
   if (!isFigureKind(raw.kind)) return { ...base, markdown: String(raw.body ?? '') }
   return { ...base, figure: { kind: raw.kind, body: raw.body as FigureBody } }

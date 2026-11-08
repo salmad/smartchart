@@ -21,9 +21,10 @@ export function Presence({ names }: { names: string[] }) {
 }
 
 /** Checks toggle: gold count when something needs attention, a tick when all pass. */
-export function ChecksToggle({ open, count, pass, onClick }: { open: boolean; count: number; pass: boolean; onClick: () => void }) {
+export function ChecksToggle({ open, count, pass, label, onClick }: { open: boolean; count: number; pass: boolean; label?: string; onClick: () => void }) {
+  const what = label || `${count} to look at`
   return (
-    <button type="button" onClick={onClick} aria-pressed={open} aria-label={pass ? 'Checks pass' : count ? `Checks, ${count} to look at` : 'Checks'} title="Checks"
+    <button type="button" onClick={onClick} aria-pressed={open} aria-label={pass ? 'Checks pass' : count ? `Checks, ${what}` : 'Checks'} title={count ? `Checks: ${what}` : 'Checks'}
       className={cn('relative flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-ink-3 transition-colors hover:bg-panel hover:text-ink aria-pressed:bg-panel aria-pressed:text-ink', count ? 'px-2' : 'w-8')}>
       {pass ? <CircleCheck aria-hidden className="size-[17px] text-ok" strokeWidth={1.75} />
         : <ClipboardCheck aria-hidden className="size-[17px]" strokeWidth={1.75} />}
@@ -51,7 +52,7 @@ export function CommentsToggle({ open, count, onClick }: { open: boolean; count:
 interface Panel { open: boolean; onToggle: () => void }
 
 /** Look (editors only) and Versions sit beside the comments toggle, as on a deck. Both are for reading: a draft can't be overwritten under you. */
-export function ReadBar({ canEdit, onEdit, others, checks, comments, look, versions, share }: { canEdit: boolean; onEdit: () => void; others: string[]; checks: Panel & { count: number; pass: boolean }; comments: Panel & { count: number }; look: Panel | null; versions: Panel; share?: ReactNode }) {
+export function ReadBar({ canEdit, onEdit, others, checks, comments, look, versions, share }: { canEdit: boolean; onEdit: () => void; others: string[]; checks: Panel & { count: number; pass: boolean; label?: string }; comments: Panel & { count: number }; look: Panel | null; versions: Panel; share?: ReactNode }) {
   return (
     <div className="flex items-center gap-2">
       <Presence names={others} />
@@ -60,7 +61,7 @@ export function ReadBar({ canEdit, onEdit, others, checks, comments, look, versi
         <Toggle open={versions.open} onClick={versions.onToggle} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>
       </div>
       {share}
-      <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} onClick={checks.onToggle} />
+      <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} label={checks.label} onClick={checks.onToggle} />
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       {canEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
     </div>
@@ -89,7 +90,7 @@ function IssueList({ label, items, soft }: { label: string; items: string[]; sof
 /** A newer version exists (or a save was refused for it): the sentence, then Reload and Copy my text. */
 interface Stale { by: string | null; onReload: () => void; onCopy: () => Promise<boolean>; refused: boolean }
 
-export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: DocEdit; onDiscard: () => void; stale: Stale | null; checks?: { open: boolean; count: number; pass: boolean; onToggle: () => void }; comments: { open: boolean; count: number; onToggle: () => void } }) {
+export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: DocEdit; onDiscard: () => void; stale: Stale | null; checks?: { open: boolean; count: number; pass: boolean; label?: string; onToggle: () => void }; comments: { open: boolean; count: number; onToggle: () => void } }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => { if (await stale?.onCopy()) { setCopied(true); window.setTimeout(() => setCopied(false), 2000) } }
   return (
@@ -121,7 +122,7 @@ export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: Do
             </>
           )}
       </div>
-      {checks && <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} onClick={checks.onToggle} />}
+      {checks && <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} label={checks.label} onClick={checks.onToggle} />}
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       <Button size="sm" variant="ghost" onClick={onDiscard} disabled={edit.saving}>Discard</Button>
       <Button size="sm" onClick={() => void edit.save()} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>

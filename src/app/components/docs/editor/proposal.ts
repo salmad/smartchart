@@ -10,11 +10,15 @@ import type { DocProposal } from '@/engine/docs/proposals'
 import { previewDoc, type ProposalShowing } from '../proposal-preview'
 import { blockIdsInOrder } from '../proposal-preview'
 import { entries } from './structure'
+import { byFirstBlock, suggestionMark } from '../suggestionMarks'
 
 export interface ProposalView {
-  proposal: DocProposal
+  /** The suggestion shown in place; null when none is open. */
+  proposal: DocProposal | null
   showing: ProposalShowing
   canEdit: boolean
+  /** Every suggestion, each marked in the margin beside its block; a mark opens it. */
+  marks?: { list: DocProposal[]; open: (p: DocProposal) => void }
 }
 
 export interface ProposalOptions {
@@ -30,7 +34,9 @@ export function refreshProposalDecorations(editor: Editor) {
 }
 
 const previewHTML = (proposal: DocProposal, doc: Doc, theme: 'ink' | 'paper') => {
-  const shown = previewDoc(doc, proposal, 'suggestion')
+  // A suggestion that no longer applies (its block changed, or it breaks a rule) says so; it never takes the editor down.
+  let shown: Doc
+  try { shown = previewDoc(doc, proposal, 'suggestion') } catch (e) { return `<p class="doc-proposal-note">${e instanceof Error ? e.message : 'This suggestion no longer applies.'}</p>` }
   if (proposal.markdown) {
     const parsed = parseText(proposal.markdown)
     if (typeof parsed === 'string') return `<p class="doc-proposal-note">${parsed}</p>`
@@ -63,12 +69,22 @@ export const ProposalPreview = Extension.create<ProposalOptions>({
       props: {
         decorations(state) {
           const view = opt().view()
-          if (!view?.proposal) return DecorationSet.empty
+          if (!view) return DecorationSet.empty
           const doc = opt().getDoc()
-          const range = entryRange(doc, view.proposal.blockIds)
-          if (!range) return DecorationSet.empty
           const flat = entries(state.doc)
           const decs: Decoration[] = []
+          // Margin marks: every suggested block but the one open.
+          if (view.marks) {
+            const order = blockIdsInOrder(doc), open = view.marks.open
+            for (const [id, list] of byFirstBlock(view.marks.list)) {
+              const e = flat[order.indexOf(id)]
+              if (!e || view.proposal?.blockIds[0] === id) continue
+              decs.push(Decoration.widget(e.pos, () => suggestionMark(list, open), { side: -1, key: `sugg-${list.map((p) => p.id).join('-')}`, stopEvent: () => true, ignoreSelection: true }))
+            }
+          }
+          if (!view.proposal) return DecorationSet.create(state.doc, decs)
+          const range = entryRange(doc, view.proposal.blockIds)
+          if (!range) return DecorationSet.create(state.doc, decs)
           const theme = opt().theme()
           for (let i = range.from; i <= range.to; i++) {
             const e = flat[i]

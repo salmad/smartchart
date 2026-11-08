@@ -1,5 +1,5 @@
 /* Edit mode for a doc: the draft, the editor page and its bar, ⌘S / ⌘Z, and asking before changes are dropped. */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Doc } from '@/engine/docs/types'
 import type { Theme } from '@/engine/types'
 import type { DocProposal } from '@/engine/docs/proposals'
@@ -10,6 +10,7 @@ import { EditBar } from './DocBar'
 import { ProposalBar } from './ProposalBar'
 import { proposalsForBlock, type ProposalShowing } from './proposal-preview'
 import { useDocEdit } from './useDocEdit'
+import type { ProposalView } from './editor/proposal'
 import { serializeDoc } from '@/engine/docs/serialize'
 
 interface Props {
@@ -22,7 +23,7 @@ interface Props {
   /** Someone else saved a newer version, or this save was refused for it. */
   stale: { by: string | null; onReload: () => void; refused: boolean } | null
   comments: { open: boolean; count: number; onToggle: () => void }
-  checks?: { open: boolean; count: number; pass: boolean; onToggle: () => void }
+  checks?: { open: boolean; count: number; pass: boolean; label?: string; onToggle: () => void }
   proposals?: DocProposal[]
   activeProposal?: DocProposal | null
   onActiveProposal?: (p: DocProposal | null) => void
@@ -38,8 +39,12 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
   const active = grouped[proposalIndex] ?? activeProposal
   useEffect(() => { setProposalIndex(Math.max(0, grouped.findIndex((p) => p.id === activeProposal?.id))); setShowing('suggestion') }, [activeProposal?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- reset only when another suggestion is picked
   const [tick, setTick] = useState(0)
-  useEffect(() => setTick((n) => n + 1), [active?.id, showing])
-  const proposalView = useMemo(() => () => (active ? { proposal: active, showing, canEdit: true } : null), [active, showing])
+  useEffect(() => setTick((n) => n + 1), [active?.id, showing, proposals])
+  // Every suggestion has a margin mark; one opened shows in place.
+  // Read through a ref, so the editor (built with this function) is never made again when a suggestion comes or goes.
+  const viewNow = useRef<ProposalView>({ proposal: null, showing, canEdit: true })
+  viewNow.current = { proposal: active ?? null, showing, canEdit: true, marks: { list: proposals, open: (p: DocProposal) => onActiveProposal?.(p) } }
+  const proposalView = useCallback(() => viewNow.current, [])
   const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone, proposalView, proposalTick: tick })
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])
 

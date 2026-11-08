@@ -8,6 +8,8 @@ import { validateDoc } from './validate.js'
 import type { Block, Doc, FigureBody, FigureKind } from './types.js'
 
 export const MAX_DOC_PROPOSALS = 20
+/** A suggestion's title: a short line, shown whole (it wraps). */
+export const MAX_PROPOSAL_LABEL = 60
 
 export type ProposalMode = 'replace' | 'insert'
 export type ProposalOp = { add: DocProposal } | { dismiss: string }
@@ -73,7 +75,7 @@ const adjacent = (doc: Doc, blockIds: string[]): number[] | null => {
 }
 
 export function checkProposal(doc: Doc, p: DocProposal): { ok: true; keeps: Keeps; mode: ProposalMode } | { ok: false; error: string } {
-  if (p.label.length > 40) return { ok: false, error: 'label: at most 40 characters.' }
+  if (p.label.length > MAX_PROPOSAL_LABEL) return { ok: false, error: `label: at most ${MAX_PROPOSAL_LABEL} characters.` }
   if (p.why.length > 160) return { ok: false, error: 'why: at most 160 characters.' }
   if (!!p.figure === !!p.markdown) return { ok: false, error: 'Give exactly one of figure or markdown.' }
   const is = adjacent(doc, p.blockIds)

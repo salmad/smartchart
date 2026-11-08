@@ -12,8 +12,9 @@ import { CheckList, type RowActions } from './CheckList'
 interface Props {
   doc: Doc
   checks: DocCheck[]
-  /** Open checks and stored suggestions: the number the bar shows too. */
+  /** Open checks and suggestions: the number the bar shows too, and in words ("2 checks · 1 suggestion"). */
   count: number
+  countLabel: string
   quiet: ReadonlySet<string>
   proposals: DocProposal[]
   loading: boolean
@@ -25,7 +26,7 @@ interface Props {
   onClose: () => void
 }
 
-export function DocChecks({ doc, checks, count, quiet, proposals, loading, canEdit, actions, error, onPick, onDismiss, onClose }: Props) {
+export function DocChecks({ doc, checks, count, countLabel, quiet, proposals, loading, canEdit, actions, error, onPick, onDismiss, onClose }: Props) {
   const failed = useMemo(() => checks.filter((c) => !c.ok), [checks])
   const open = useMemo(() => groupChecks(doc, failed).map((g) => ({ ...g, rows: g.rows.filter((r) => !quiet.has(r.key)) })).filter((g) => g.rows.length), [doc, failed, quiet])
   const dismissed = useMemo(() => groupChecks(doc, failed).flatMap((g) => g.rows.filter((r) => quiet.has(r.key))), [doc, failed, quiet])
@@ -38,7 +39,7 @@ export function DocChecks({ doc, checks, count, quiet, proposals, loading, canEd
         <div className="grid gap-0.5">
           <h2 className="text-[14px] font-medium text-ink">Checks</h2>
           {count
-            ? <p className="text-[13px] font-medium text-ink" data-check-summary>{count} to look at</p>
+            ? <p className="text-[13px] font-medium text-ink" data-check-summary>{countLabel}</p>
             : <p className="flex items-center gap-1.5 text-[13px] text-ink-2" data-check-summary><CircleCheck aria-hidden className="size-4 text-ok" strokeWidth={1.75} />Reads well</p>}
           <p className="text-[12.5px] text-ink-3">{count ? 'Pick one to see it in the doc.' : dismissed.length ? `Nothing open; ${dismissed.length} dismissed.` : 'Structure and every figure pass.'}</p>
         </div>
@@ -59,7 +60,7 @@ export function DocChecks({ doc, checks, count, quiet, proposals, loading, canEd
                 <li key={p.id}>
                   <button type="button" onClick={() => { actions.onShow(p.blockIds[0]); onPick?.(p) }}
                     className="grid w-full cursor-pointer gap-0.5 rounded-lg border border-line bg-panel p-3 text-left transition-colors hover:border-line-2">
-                    <span className="text-[13px] font-medium text-ink">{p.label}</span>
+                    <span className="text-[13px] font-medium text-ink [overflow-wrap:anywhere]">{p.label}</span>
                     <span className="text-[12.5px] text-ink-2">{p.why}</span>
                     <span className="text-[11.5px] text-ink-3">{p.by}</span>
                   </button>
