@@ -1,6 +1,9 @@
 /* The Checks panel's state for DocScreen: checks and suggestions, dismissals, fixes, the picked check and the figure
    badges that open it. */
-import { useCallback } from 'react'
+import { useCallback, type MutableRefObject } from 'react'
+import { sendDocTurn } from '@/app/doc-turn'
+import type { ChatMessage } from '@/engine/agent/llm'
+import type { Message } from '@/app/store'
 import { proposeDoc } from '@/engine/agent/propose'
 import type { DocProposal } from '@/engine/docs/proposals'
 import type { Doc } from '@/engine/docs/types'
@@ -18,8 +21,10 @@ interface Options {
   canEdit: boolean
   /** The page the doc is drawn in (read view or editor): badges are found and blocks are shown there. */
   root: HTMLElement | null
-  fixBlocked: string | null
-  turn: (text: string, shown: string) => Promise<string | null>
+  /** What stops Occam taking a fix now. */
+  gate: { editing: boolean; live: boolean; busy: boolean }
+  /** The doc chat: a fix is a turn there (propose-only), so the writer sees it. */
+  chat: { history: MutableRefObject<ChatMessage[]>; setMessages: (fn: (m: Message[]) => Message[]) => void; setBusy: (b: boolean) => void }
   /** Scroll to a block and ring it; null clears the ring. */
   show: (blockId: string | null) => void
   /** Open the Checks panel (from a figure's badge). */
@@ -27,7 +32,14 @@ interface Options {
   onReview: (p: DocProposal) => void
 }
 
-export function useDocChecks({ docs, id, doc, canEdit, root, fixBlocked, turn, show, openPanel, onReview }: Options) {
+export function useDocChecks({ docs, id, doc, canEdit, root, gate, chat, show, openPanel, onReview }: Options) {
+  const fixBlocked = !canEdit ? 'Only editors can ask Occam to fix a check.' : gate.editing ? 'Save or discard your changes to ask Occam.'
+    : !gate.live ? 'Occam’s models are offline right now.' : gate.busy ? 'Occam is answering in the chat; try again when it’s done.' : null
+  const { history, setMessages, setBusy } = chat
+  const turn = useCallback((text: string, shown: string) => {
+    setBusy(true)
+    return sendDocTurn(text, { docId: id, mode: 'propose', shown, getHistory: () => history.current, setHistory: (h) => { history.current = h }, setMessages, onDone: () => {} }).finally(() => setBusy(false))
+  }, [id, history, setMessages, setBusy])
   const loadStored = useCallback(() => docs.proposals(id), [docs, id])
   const dismissStored = useCallback((pid: string) => docs.proposal(id, { dismiss: pid }), [docs, id])
   const { quiet, setQuiet, error } = useQuietChecks(docs, id)

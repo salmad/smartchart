@@ -40,7 +40,7 @@ export function DocChecks({ doc, checks, count, quiet, proposals, loading, canEd
           {count
             ? <p className="text-[13px] font-medium text-ink" data-check-summary>{count} to look at</p>
             : <p className="flex items-center gap-1.5 text-[13px] text-ink-2" data-check-summary><CircleCheck aria-hidden className="size-4 text-ok" strokeWidth={1.75} />Reads well</p>}
-          <p className="text-[12.5px] text-ink-3">{count ? 'Pick one to see it in the doc.' : 'Structure and every figure pass.'}</p>
+          <p className="text-[12.5px] text-ink-3">{count ? 'Pick one to see it in the doc.' : dismissed.length ? `Nothing open; ${dismissed.length} dismissed.` : 'Structure and every figure pass.'}</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close checks"
           className="-mr-1 -mt-1 grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink">

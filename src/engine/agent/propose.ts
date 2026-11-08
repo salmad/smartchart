@@ -3,7 +3,7 @@ import { complete as defaultComplete, type ChatMessage } from './llm.js'
 import { describe as card, MENU } from '../slides/schema.js'
 import { identify } from '../docs/ops.js'
 import { readabilityChecks } from '../docs/readability.js'
-import type { DocCheck } from '../docs/checks.js'
+import { checkKey, type DocCheck } from '../docs/checks.js'
 import { checkProposal, type DocProposal, type ProposalMode } from '../docs/proposals.js'
 import { CALLOUT_FIELDS } from '../docs/validate.js'
 import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind } from '../docs/types.js'
@@ -119,12 +119,13 @@ const splitValid = (doc: Doc, list: RawProposal[], rev: number, at: number): { g
   return { good: good.slice(0, MAX), bad }
 }
 
-/** In-app only: uses injectable complete (default: Haiku via /api/glm). Returns [] when the doc already reads well. */
+/** In-app only: uses injectable complete (default: Haiku via /api/glm). Returns [] when the doc already reads well, or
+    when every failed check is one the writer dismissed (`quiet`, by checkKey). */
 export async function proposeDoc(
   doc: Doc,
-  opts: { rev: number; complete?: CompleteFn; signal?: AbortSignal; now?: () => number },
+  opts: { rev: number; complete?: CompleteFn; signal?: AbortSignal; now?: () => number; quiet?: ReadonlySet<string> },
 ): Promise<DocProposal[]> {
-  const reads = readabilityChecks(doc)
+  const reads = readabilityChecks(doc).filter((c) => c.ok || !opts.quiet?.has(checkKey(c)))
   const d7ok = reads.find((c) => c.id === 'D7')?.ok ?? true
   const d46 = reads.some((c) => /^D[4-6]$/.test(c.id) && !c.ok)
   if (d7ok && !d46) return []

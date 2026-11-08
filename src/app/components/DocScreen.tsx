@@ -199,13 +199,9 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   }, [mainEl])
   const showBlock = useCallback((blockId: string | null) => { setRing(blockId); if (blockId) reveal(blockId) }, [reveal])
   const review = (p: DocProposal) => { setActiveProposal(p); if (canEdit && !editing && !preview && record) startEditing() }
-  const fixBlocked = !canEdit ? 'Only editors can ask Occam to fix a check.' : editing ? 'Save or discard your changes to ask Occam.' : offline || !modelsLive ? 'Occam’s models are offline right now.' : chatBusy ? 'Occam is answering in the chat; try again when it’s done.' : null
-  const proposeTurn = useCallback((text: string, shown: string) => {
-    setChatBusy(true)
-    return sendDocTurn(text, { docId: id, mode: 'propose', shown, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => {} }).finally(() => setChatBusy(false))
-  }, [id])
   const openChecks = useCallback(() => setSide('checks'), [])
-  const checks = useDocChecks({ docs, id, doc: parsed, canEdit, root: mainEl, fixBlocked, turn: proposeTurn, show: showBlock, openPanel: openChecks, onReview: (p) => review(p) })
+  const checks = useDocChecks({ docs, id, doc: parsed, canEdit, root: mainEl, gate: { editing, live: modelsLive && !offline, busy: chatBusy },
+    chat: { history: historyRef, setMessages, setBusy: setChatBusy }, show: showBlock, openPanel: openChecks, onReview: (p) => review(p) })
   const checksState = checks.state
   // The panel opened (from the bar or a figure's badge): suggestions are read again, and Occam's asked for once per revision.
   useEffect(() => { if (side === 'checks') void checksState.openPanel() }, [side]) // eslint-disable-line react-hooks/exhaustive-deps

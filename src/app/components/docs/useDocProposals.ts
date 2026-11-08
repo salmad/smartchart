@@ -80,11 +80,12 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
     return () => { go = false }
   }, [docId, doc, loadStored])
 
+  // A new revision, or a check dismissed or restored: Occam's suggestions are asked for again on the next open.
   useEffect(() => {
     occamRev.current = null
     runRef.current?.abort()
     setOccam([])
-  }, [docId, rev])
+  }, [docId, rev, quiet])
 
   const verdict = useMemo(() => checks.find((c) => c.id === 'D7') ?? null, [checks])
   const readability = useMemo(() => checks.filter((c) => /^D[4-7]$/.test(c.id)), [checks])
@@ -110,12 +111,12 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
     if (canEdit && occamRev.current !== rev) {
       setLoading(true)
       try {
-        const next = proposalsInDoc(doc, await proposeDoc(doc, { rev, signal: ctl.signal }))
+        const next = proposalsInDoc(doc, await proposeDoc(doc, { rev, signal: ctl.signal, quiet }))
         if (!ctl.signal.aborted) { setOccam(next); occamRev.current = rev }
       } catch { if (!ctl.signal.aborted) setOccam([]) }
       finally { if (!ctl.signal.aborted) setLoading(false) }
     }
-  }, [doc, rev, canEdit, loadStored, proposeDoc])
+  }, [doc, rev, canEdit, loadStored, proposeDoc, quiet])
 
   const dismiss = useCallback(async (id: string) => {
     if (!stored.some((p) => p.id === id)) { setOccam((list) => list.filter((p) => p.id !== id)); return }

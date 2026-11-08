@@ -38,6 +38,8 @@ export function useFigureBadges(root: HTMLElement | null, quiet: ReadonlySet<str
       onPick(b.dataset.checkKey)
     }
     root.addEventListener('click', click)
-    return () => { cancelAnimationFrame(frame); watch.disconnect(); root.removeEventListener('click', click) }
+    // The badge's messages look clickable only where this answers them (doc.css).
+    root.setAttribute('data-checks-live', '')
+    return () => { cancelAnimationFrame(frame); watch.disconnect(); root.removeEventListener('click', click); root.removeAttribute('data-checks-live') }
   }, [root, quiet, onPick])
 }

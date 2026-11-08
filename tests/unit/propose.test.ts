@@ -7,6 +7,8 @@ import type { CompleteFn } from '../../src/engine/agent/propose'
 import { identify } from '../../src/engine/docs/ops'
 import { parseDoc } from '../../src/engine/docs/parse'
 import { checkProposal } from '../../src/engine/docs/proposals'
+import { checkKey } from '../../src/engine/docs/checks'
+import { readabilityChecks } from '../../src/engine/docs/readability'
 import type { Doc } from '../../src/engine/docs/types'
 
 const fixture = (name: string) =>
@@ -29,6 +31,18 @@ describe('proposeDoc', () => {
     calls.length = 0
     const doc = parseDoc(fixture('reels.md')).doc
     expect(await proposeDoc(doc, { rev: 1, complete: fakeComplete('{}') })).toEqual([])
+    expect(calls).toHaveLength(0)
+  })
+
+  it('a doc whose only failed checks were dismissed makes no call', async () => {
+    calls.length = 0
+    const doc = parseDoc(fixture('checks.md')).doc
+    const failed = readabilityChecks(doc).filter((c) => !c.ok)
+    expect(failed.map((c) => c.id)).toEqual(['D4'])
+    expect(await proposeDoc(doc, { rev: 1, complete: fakeComplete('{"proposals":[]}') })).toEqual([])
+    expect(calls).toHaveLength(1)
+    calls.length = 0
+    expect(await proposeDoc(doc, { rev: 1, complete: fakeComplete('{}'), quiet: new Set(failed.map(checkKey)) })).toEqual([])
     expect(calls).toHaveLength(0)
   })
 
