@@ -196,6 +196,13 @@ the earlier draft sections.
 - Create: `src/engine/agent/propose.ts`
 - Test: `tests/unit/propose.test.ts`
 
+**Model and attribution (not MCP):**
+- `proposeDoc` is for the in-app checks panel only. It calls injectable `complete`, defaulting to `complete()` in
+  `src/engine/agent/llm.ts` (the same path as `suggestDoc`: `/api/glm`, OpenRouter Haiku when
+  `LLM_PROVIDER=openrouter`, quota via `modelGate`). Proposals are attributed `by: 'Occam'`.
+- MCP and REST agents never call `proposeDoc`; they use the outside model and `propose_block` (`by: ctx.client`).
+  Agent proposals persist on the doc; Occam's are cached client-side per revision.
+
 **Interfaces:**
 - Consumes: `checkProposal`, `DocProposal` and `readabilityChecks`.
 - Produces:
@@ -221,7 +228,7 @@ the earlier draft sections.
 - [ ] **Step 2:** Run `npx vitest run tests/unit/propose.test.ts`. Expected: FAIL.
 - [ ] **Step 3:** Implement `proposeDoc`.
 - [ ] **Step 4:** Run the tests. Expected: PASS.
-- [ ] **Step 5: Commit** "Occam proposes readable structure for a doc".
+- [x] **Step 5: Commit** "Occam proposes readable structure for a doc".
 
 ### Task 5: Checks panel in the doc bar
 

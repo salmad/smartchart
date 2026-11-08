@@ -163,9 +163,11 @@ The preview is a ProseMirror decoration or widget over the block (the figure nod
     phrase. Code checks this. It is labelled "condensed", and hovering shows what was cut.
   - When a figure can't keep every fact, it is offered only as `insert`: above the block, with the text kept.
 - **Who makes suggestions.**
-  - **In the app:** Occam's model makes them, only for editors, counted toward their daily quota. Readers and share
+  - **In the app:** `proposeDoc` (not the composer pills' `suggestDoc`) makes them through `complete()` → `/api/glm`
+    (Haiku on OpenRouter by default), only for editors, counted toward their daily quota; `by: 'Occam'`. Readers and share
     links see only the code verdict.
-  - **Over MCP:** Occam spends no model call. `check_doc` returns the code findings (D4–D7, ranked first) and a pointer
+  - **Over MCP:** Occam spends no model call. The client's model does the work; `propose_block` validates and stores
+    with `by` set to the agent client name. `check_doc` returns the code findings (D4–D7, ranked first) and a pointer
     to the figure catalogue and the grouped-table preference, and the outside agent comes up with the improvements
     itself.
   - **New tool `propose_block { docId, blockIds, mode, figure | markdown, why }`:** lets an agent leave a suggestion on
