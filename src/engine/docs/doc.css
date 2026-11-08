@@ -1,26 +1,31 @@
 /* The doc's frame, as slides.css is the slide's: the page, its type, the contents, folding, and the box each figure's
    canvas sits in. Components are styled by components.css alone; nothing here reaches inside a canvas. */
 
-/* ═════════════ Page: one left edge; text keeps a 720px measure, figures run on to 1040px, the contents beside ═════════════ */
+/* ═════════════ Page: one left edge and one right edge (text and figures share a 720px measure), the contents beside ═════════════ */
 .doc {
-  --measure: 720px;
-  display: grid; grid-template-columns: minmax(16px, 1fr) minmax(0, var(--doc-wide, 1040px)) minmax(16px, 1fr); align-content: start;
+  --measure: var(--doc-wide, 720px);
+  display: grid; grid-template-columns: minmax(16px, 1fr) minmax(0, var(--measure)) minmax(16px, 1fr); align-content: start;
   padding: 72px 0 160px; min-height: 100%;
   background: var(--bg); color: var(--fg); font-family: var(--text); font-size: 17px; line-height: 1.6;
   -webkit-font-smoothing: antialiased; font-kerning: normal;
 }
 .doc-head, .doc-sec > h2, .doc-body > h3, .doc-toc, .doc-toc-mini, .fig-take, .fig-src, .fig-checks { text-align: left; }
-/* Body copy: flush both edges within the measure (headings and chrome stay ragged right). */
+/* Body copy: flush both edges on a wide screen, where the full 720px measure gives each line room to spread; flush
+   left below it, where a browser's line-by-line justifying opens wide word gaps. On trial (owner, 2026-11-08). */
 :is(.doc-body, .sec-body) > p,
-:is(.doc-body, .sec-body) > blockquote p { text-align: justify; hyphens: auto; text-wrap: pretty; }
+:is(.doc-body, .sec-body) > blockquote p { text-wrap: pretty; }
+@media (min-width: 1180px) {
+  :is(.doc-body, .sec-body) > p,
+  :is(.doc-body, .sec-body) > blockquote p { text-align: justify; hyphens: auto; }
+}
 .doc *, .doc *::before, .doc *::after { box-sizing: border-box; }
 .doc-head, .doc-body { grid-column: 2; min-width: 0; }
 .doc-head, .doc-sec > h2, .doc-body > :not(.doc-sec, .doc-fig), .sec-body > :not(.doc-fig) { max-width: var(--measure); }
 .doc-toc { display: none; }
 /* Room on the left for the fold control that hangs beside each heading. */
-@media (min-width: 820px) { .doc { grid-template-columns: minmax(56px, 1fr) minmax(0, var(--doc-wide, 1040px)) minmax(32px, 1fr); } }
+@media (min-width: 820px) { .doc { grid-template-columns: minmax(56px, 1fr) minmax(0, var(--measure)) minmax(32px, 1fr); } }
 @media (min-width: 1180px) {
-  .doc { grid-template-columns: minmax(0, 1fr) minmax(0, var(--doc-wide, 1040px)) 220px minmax(0, 1fr); column-gap: 64px; }
+  .doc { grid-template-columns: minmax(0, 1fr) minmax(0, var(--measure)) 220px minmax(0, 1fr); column-gap: 64px; }
   .doc-toc { display: block; grid-column: 3; grid-row: 1 / span 2; align-self: start; position: sticky; top: 72px; }
   .doc-toc-mini { display: none; }
 }
@@ -79,14 +84,15 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
 .doc-toc-mini summary::-webkit-details-marker { display: none; }
 .doc-toc-mini[open] summary { margin-bottom: 12px; }
 .toc-sec { margin: 0; }
-.toc-sec > summary { cursor: pointer; list-style: none; }
+/* The branch's chevron hangs in the gutter left of its link, so the link keeps the leaves' line and indent. */
+.toc-sec > summary { position: relative; cursor: pointer; list-style: none; }
 .toc-sec > summary::-webkit-details-marker { display: none; }
 .toc-sec > summary::before {
-  content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 0 2px;
+  content: ""; position: absolute; left: -14px; top: 12px; width: 6px; height: 6px;
   border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
-  transform: rotate(-45deg); transition: transform .15s ease; vertical-align: middle;
+  transform: rotate(-45deg); transition: transform .15s ease;
 }
-.toc-sec[open] > summary::before { transform: rotate(45deg); margin-bottom: 1px; }
+.toc-sec[open] > summary::before { top: 10px; transform: rotate(45deg); }
 .toc-sec > ol { margin: 4px 0 8px; }
 
 /* ═════════════ Folding: the control hangs in the gutter, so headings line up with the text ═════════════ */
@@ -105,17 +111,16 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
   .fold { position: static; flex: none; margin-left: -6px; }
 }
 
-/* ═════════════ Figures: a canvas the width of a slide's body, scaled to its frame by mount.ts ═════════════ */
-.doc-fig { position: relative; margin: 40px 0 0; }
-.doc-fig:is([data-kind="callout"], [data-kind="code"]) { max-width: var(--measure); margin-top: 24px; }
+/* ═════════════ Figures: a canvas at half size, as wide as the measure lets it be (mount.ts) ═════════════ */
+.doc-fig { position: relative; margin: 40px 0 0; max-width: var(--measure); }
+.doc-fig:is([data-kind="callout"], [data-kind="code"]) { margin-top: 24px; }
 .fig-frame { position: relative; overflow: hidden; }
 .fig {
-  position: absolute; top: 0; left: 0; width: 1664px; transform-origin: 0 0; transform: scale(var(--s, .625));
+  position: absolute; top: 0; left: 0; width: var(--w, 1440px); transform-origin: 0 0; transform: scale(var(--s, .5));
   display: flex; flex-direction: column; background: var(--bg); color: var(--fg); font-family: var(--text); font-size: var(--body);
   line-height: 1.38; text-align: left; -webkit-font-smoothing: antialiased; font-kerning: normal; font-variant-ligatures: none; font-synthesis: none;
 }
-.fig.k-callout, .fig.k-code { width: var(--w, 1152px); }
-.fig.k-chart, .fig.k-pair, .fig.k-image { height: 640px; }
+.fig.k-chart, .fig.k-pair, .fig.k-image { height: 800px; }
 .fig:is(.k-chart, .k-pair, .k-image) > .grow { flex: 1; min-height: 0; }
 /* The caption's hairline keeps the slide's gap above whatever follows it, not only a chart or a table. */
 .fig > .cap + :not(.chart, .tbl) { margin-top: 28px; }
@@ -151,7 +156,7 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
 .fig-dialog { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--bg); color: var(--fg); }
 .fig-dialog::backdrop { background: var(--bg); }
 .fig-scroll { height: 100%; overflow: auto; padding: 64px 16px 32px; }
-.fig-dialog .fig-frame { width: 1040px; }
+.fig-dialog .fig-frame { width: var(--measure); }
 .fig-close {
   position: fixed; top: 12px; right: 12px; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; cursor: pointer;
   border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg);

@@ -47,7 +47,9 @@ export function CommentTriggers({ page, theme, onPick }: Props) {
       if (!id) return
       const r = head ? (() => { const g = document.createRange(); g.selectNodeContents(head.querySelector('a') ?? head); return g.getBoundingClientRect() })() : el.getBoundingClientRect()
       const name = head ? head.textContent?.trim() ?? '' : 'figure'
-      setHover({ x: head ? r.right + 8 + 14 : r.right - 8 - 16, y: head ? r.top + r.height / 2 : r.top + 8 + 16, target: { anchor: id }, label: `Comment on “${name}”` })
+      // On a figure, inside its top-right corner; one slot to the left when the figure's Expand button holds the corner.
+      const expand = fig?.querySelector<HTMLElement>(':scope > .fig-expand'), shift = expand && expand.offsetParent ? expand.offsetWidth + 8 : 0
+      setHover({ x: head ? r.right + 8 + 14 : r.right - 8 - 16 - shift, y: head ? r.top + r.height / 2 : r.top + 8 + 16, target: { anchor: id }, label: `Comment on “${name}”` })
     }
     const away = (e: MouseEvent) => { if (!(e.relatedTarget instanceof Element && e.relatedTarget.closest('[data-comment-trigger]'))) setHover(null) }
     const clear = () => setHover(null)

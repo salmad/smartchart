@@ -30,9 +30,18 @@ test('a focus line with no area field is filled; the right-click item turns it o
   await expect(page.locator('[data-figure-edit] [data-editing]')).toBeVisible()
   // The focus line itself: a point on its stroke (the box around a line is mostly empty).
   const rightClickFocusLine = async () => {
-    const at = await page.locator('[data-figure-edit] path.ln.c-focus').first().evaluate((p: SVGPathElement) => {
-      const pt = p.getPointAtLength(p.getTotalLength() * 0.6), m = p.getScreenCTM() as DOMMatrix
-      return { x: m.a * pt.x + m.c * pt.y + m.e, y: m.b * pt.x + m.d * pt.y + m.f }
+    // A whole pixel on the stroke of the line on top (the browser floors a fractional point, which can step off a thin
+    // line; the figure as read sits under the edit surface, with its own copy of the line).
+    const at = await page.evaluate(() => {
+      for (const p of document.querySelectorAll<SVGPathElement>('[data-figure-edit] path.ln.c-focus')) {
+        const m = p.getScreenCTM() as DOMMatrix
+        for (let i = 0; i < 90; i++) {
+          const f = 0.6 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.005, pt = p.getPointAtLength(p.getTotalLength() * f)
+          const x = Math.round(m.a * pt.x + m.c * pt.y + m.e), y = Math.round(m.b * pt.x + m.d * pt.y + m.f)
+          if (document.elementFromPoint(x, y) === p) return { x, y }
+        }
+      }
+      throw new Error('no whole pixel on the focus line')
     })
     await page.mouse.click(at.x, at.y, { button: 'right' })
     // Opened from the keyboard: a menu that opens under the pointer gives hover nothing to move.

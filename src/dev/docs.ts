@@ -4,7 +4,6 @@ import '@/engine/components/components.css'
 import '@/engine/docs/doc.css'
 import { BLOCK_STARTERS, DOC_STARTERS, starterDoc } from '@/engine/starters'
 import { mountDoc } from '@/engine/docs/mount'
-import { FIG_WIDTH } from '@/engine/docs/figure'
 import { chartLabelLints, colourLints } from '@/engine/slides/lints'
 import { esc } from '@/engine/components/text'
 import type { Doc } from '@/engine/docs/types'
@@ -37,7 +36,7 @@ void Promise.all(['800 100px Archivo', '900 100px Archivo', '400 30px Geist', '6
   .then(() => document.fonts.ready).then(() => {
     mountDoc(root, doc, blocks ? 'dev-blocks' : `dev-${starter.id}`)
     const figs = [...root.querySelectorAll<HTMLElement>('.doc-fig .fig')]
-    const issues = figs.flatMap((fig) => [...chartLabelLints(fig, FIG_WIDTH), ...colourLints(fig)].map((m) => `#${fig.closest<HTMLElement>('.doc-fig')?.id ?? 'code'}: ${m}`))
+    const issues = figs.flatMap((fig) => [...chartLabelLints(fig, fig.offsetWidth), ...colourLints(fig)].map((m) => `#${fig.closest<HTMLElement>('.doc-fig')?.id ?? 'code'}: ${m}`))
     bar.insertAdjacentHTML('beforeend', `<span class="summary">${figs.length} figures · ${issues.length} issues</span>${issues.length ? `<ul>${issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}`)
     window.__docs = { issues }
   })

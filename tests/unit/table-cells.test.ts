@@ -59,6 +59,14 @@ test('group rows: one cell, exempt from the column count, warn below 6 rows or w
   expect(errs(T(cols(3), data(9)))).toMatch(/table\.rows: 9 rows; at most 8/)
 })
 
+test('eight rows or more with no group headings are asked to group (Minto); seven, or grouped, are not', () => {
+  const g = (h: string) => ({ cells: [h], style: 'group' as const })
+  const data = (n: number) => Array.from({ length: n }, (_, i) => row(`R${i}`, '1', '2'))
+  expect(warns(T(cols(3), data(8)))).toMatch(/table\.rows: 8 rows with no group headings\. Group them into 2–4 sets/)
+  expect(warns(T(cols(3), data(7)))).not.toMatch(/no group headings/)
+  expect(warns(T(cols(3), [g('Fees'), ...data(4), g('Limits'), ...data(4)]))).not.toMatch(/no group headings/)
+})
+
 test('budget: bullets rows, group rows and header icons cost lines', () => {
   // 7 rows with 3 one-line bullets each = 7 × (1.2 + 3 × 0.75) = 24.15 > 10.5
   const heavy = Array.from({ length: 7 }, (_, i) => row(`R${i}`, 'x', { value: 'y', bullets: ['a', 'b', 'c'] }))

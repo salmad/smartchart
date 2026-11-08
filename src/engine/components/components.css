@@ -505,3 +505,26 @@
 
 /* ═════════════ Code: as written, mono on a quiet panel ═════════════ */
 .code { font: 400 22px/1.5 var(--mono); color: var(--fg-2); background: var(--surface); padding: 28px 32px; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
+
+/* ═════════════ Doc figures: the doc's own four sizes ═════════════
+   A doc draws its canvas at half size (docs/figure.ts DOC_SCALE), so these design sizes read as the page's whole pixels:
+   title 17 (the body's size, as an exhibit title is), text 15, labels 13, small print 12. An exhibit's text sits under
+   the prose, as in a research report; display type stays on slides. */
+.fig { --lbl: 26px; --lbl-s: 24px; --body: 30px; }
+.fig .cap { font-size: 34px; }
+.fig :is(.card h3, .cards.framed h3, .steps .h, .sum .lead, .team h3, .end b, .ann b, .tgt b) {
+  font-family: var(--text); font-weight: 600; font-stretch: 100%; text-transform: none; font-size: 34px; line-height: 1.25; }
+.fig .shout { text-transform: none; }
+.fig.style-consulting .big-v { font-size: 112px; }
+.fig .cards.value .v { font-size: 72px; }
+.fig :is(.tbl td, .note h4, .note p, .note .n, .card .bullets, .cards.framed .bullets, .card p, .sum p, .steps p, .steps .t) { font-size: 30px; }
+.fig.k-callout .callout p { font-size: 34px; }
+/* Table: one header style; cells wrap onto tidy lines and hang from the top, so a two-line cell never floats its row. */
+.fig .tbl td { line-height: 1.35; vertical-align: top; padding-top: 14px; padding-bottom: 14px; text-wrap: pretty; }
+.fig .tbl th, .fig .tbl th:not(:first-child) { font: 600 26px/1.25 var(--text); letter-spacing: 0; text-transform: none; color: var(--fg-2); vertical-align: bottom; }
+.fig .tbl :is(td small, td.al-text small, td.has-bul .bullets, td.score.has-note small) { font-size: 26px; }
+.fig .tbl td.status > .pill, .fig .mk-key, .fig .cards.framed .who { font-size: 24px; }
+/* A value card's number, name and text read as one item: the title's and the text's own margins space them. */
+.fig .cards.value { row-gap: 0; }
+.fig .callout .co-l { font-size: 24px; }
+.fig .code { font-size: 26px; }

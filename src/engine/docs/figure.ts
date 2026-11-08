@@ -1,5 +1,5 @@
-/* A doc figure: a shared component on a canvas as wide as a slide's body, so it lays out exactly as on a slide, then
-   scaled to its frame (mount.ts). With notes, the canvas holds the slide's own split; on a narrow frame the notes leave
+/* A doc figure: a shared component on a canvas at half size (DOC_SCALE), as wide as its frame allows, laid out by the
+   slide's own fitters (mount.ts). With notes, the canvas holds the slide's own split; on a narrow frame the notes leave
    the canvas and follow it as a list in the doc's text. Paths inside are the body's own ("table.rows[0]…"); the block
    is named by data-block. */
 import type { Callout, Slide, Theme } from '../types.js'
@@ -16,16 +16,15 @@ import { calloutHTML } from '../components/callout.js'
 import { codeHTML } from '../components/code.js'
 import type { CodeBlock, FigureBlock, FigureKind } from './types.js'
 
-/** The slide body's width (1920 − 2 × 128): a figure is laid out as it would be on a slide. */
-export const FIG_WIDTH = 1664
-/** A figure's scale at full width (1040 / 1664). A callout or code is words that wrap, not a layout: its canvas takes
-    whatever width gives its frame this scale, so it reads at a figure's size in the text column and on a phone alike. */
-export const TEXT_SCALE = 0.625
+/** One scale for every figure: its words keep the doc's sizes (components.css, "Doc figures") at any width, and the canvas
+    takes whatever width that gives its frame, so a table wraps rather than shrinks. */
+export const DOC_SCALE = 0.5
 export const isText = (kind: string): boolean => kind === 'callout' || kind === 'code'
-/** The canvas's design width for a frame: a figure's is fixed; words take the frame's width at TEXT_SCALE. */
-export const widthOf = (kind: string, frame: number): number => (isText(kind) ? frame / TEXT_SCALE : FIG_WIDTH)
-/** Design heights for the kinds that fill a box (a slide body gives a chart about 640px); the rest take their content's. */
-export const FIXED_HEIGHT: Partial<Record<FigureKind, number>> = { chart: 640, pair: 640, image: 640 }
+/** The narrowest canvas a slide's layout holds together in (a pair, three summary columns, a five-column table). Under a
+    frame of MIN_CANVAS × DOC_SCALE (600px: a phone) the canvas stops narrowing and shrinks instead, and the figure expands. */
+export const MIN_CANVAS = 1200
+/** The canvas's design width for a frame; words (a callout, code) always reflow at the doc's size. */
+export const widthOf = (kind: string, frame: number): number => (isText(kind) ? frame / DOC_SCALE : Math.max(MIN_CANVAS, frame / DOC_SCALE))
 /** The extra split class per kind, as the slide body sets it. */
 const SPLIT: Partial<Record<FigureKind, string>> = { chart: 'grow', table: 'with-table', image: 'grow with-pic', pair: 'grow' }
 

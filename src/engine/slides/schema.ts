@@ -892,6 +892,9 @@ function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
   if (s.notesTitle && FILLER.test(s.notesTitle)) out.warnings.push(`notesTitle: "${s.notesTitle}" leans on a filler word. Say what the notes do ('Why margin rises'), or use 'Drivers' / 'Observations'.`);
 }
 
+/** From this many rows, a table with no group headings is asked to group them. */
+export const GROUP_FROM = 8
+
 /* Rules every table shares, the table template's and a half table's: cells per column, column flags, marks,
    header icons, bullets, status labels and group headings. `half`: no bullets at half width. */
 function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half = false, limits: Limits = SLIDE_LIMITS): void {
@@ -970,6 +973,9 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
   });
   // Group headings.
   const groups = rows.map((r, i) => (r?.style === "group" ? i : -1)).filter((i) => i >= 0);
+  // A long flat list is hard to take in (Minto): eight rows or more read faster under 2–4 headings that name what each
+  // set has in common. An ordered series (years, a ranking) is the exception; the writer judges, the check only asks.
+  if (!groups.length && data >= GROUP_FROM) out.warnings.push(`${base}.rows: ${data} rows with no group headings. Group them into 2–4 sets under headings that say what each set shares (a row with style "group"), unless the rows are one ordered series such as years or a ranking.`);
   if (groups.length) {
     if (data < 6) out.warnings.push(`${base}: group headings with ${data} rows; use them only with 6 or more.`);
     groups.forEach((g, k) => {

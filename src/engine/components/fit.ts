@@ -62,6 +62,14 @@ export function sizeTable(root: HTMLElement, k: number): void {
       data.forEach((c, j) => { c.style.width = `${((fits[j] ? need[j] : (room * w - short) / wrapping) / w * 100).toFixed(2)}%`; });
       return;
     }
+    // A doc table: a short column (a status, a number, a mark) keeps its one-line width and the text columns take the
+    // rest, so the words wrap in the columns that hold words; when every column fits, each grows with its own width.
+    if (wrap && !bul.size) {
+      const sum = need.reduce((a, b) => a + b, 0), free = room * w;
+      const short = data.reduce((a, _, j) => a + (fits[j] ? need[j] : 0), 0), wrapping = fits.filter((f) => !f).length;
+      data.forEach((c, j) => { c.style.width = `${((sum <= free ? need[j] * free / sum : fits[j] ? need[j] : (free - short) / wrapping) / w * 100).toFixed(2)}%`; });
+      return;
+    }
     if (!grp && total === data.length) return;
     data.forEach((c, j) => { c.style.width = `${(room * shares[j] / total * 100).toFixed(2)}%`; });
   });
@@ -99,7 +107,8 @@ export function alignHalves(root: HTMLElement, k: number): void {
     : Math.min(y(pair.getBoundingClientRect().bottom), Math.max(...bodies.map((b) => y(b.getBoundingClientRect().top))) + tallest * 1.5);
   for (const h of halves) {
     const b = body(h);
-    if (!b || h.querySelector(".plot")) continue;
+    // A doc's table (a figure canvas) keeps its rows' height: its cells hang from the top, so stretching opens gaps.
+    if (!b || h.querySelector(".plot") || (b.matches(".tbl") && root.classList.contains("fig"))) continue;
     const top = y(b.getBoundingClientRect().top), natural = b.getBoundingClientRect().height / k;
     if (floor - top > natural + 1) b.style.height = `${floor - top}px`;
   }

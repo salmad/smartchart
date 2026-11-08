@@ -1,4 +1,4 @@
-/* The doc read view on the dev page: contents, figures scaled to their frame, folding (kept, and open in print), links
+/* The doc read view on the dev page: contents, figures at half size and as wide as their frame, folding (kept, and open in print), links
    that unfold, notes beside or below, and figures that expand on a phone. */
 import { test, expect, type Page } from '@playwright/test'
 import { DOC_STARTERS, starterDoc } from '@/engine/starters'
@@ -8,10 +8,10 @@ const open = async (page: Page, doc: string, query = '') => {
   await page.goto(`/src/dev/docs.html?doc=${doc}${query}`)
   await page.waitForFunction(() => window.__docs)
 }
-/** A figure's frame height against its canvas's design height at the frame's scale (1664 design px wide). */
+/** A figure's frame height against its canvas's design height at the doc's scale (half size). */
 const fit = (page: Page, id: string) => page.locator(`#${id} .fig-frame`).evaluate((frame) => {
   const fig = frame.querySelector<HTMLElement>('.fig')
-  return { frame: frame.getBoundingClientRect().height, want: (fig?.offsetHeight ?? 0) * frame.clientWidth / 1664 }
+  return { frame: frame.getBoundingClientRect().height, want: (fig?.offsetHeight ?? 0) * .5 }
 })
 
 test.use({ viewport: { width: 1440, height: 900 } })
@@ -83,7 +83,7 @@ test('on a phone, a figure expands', async ({ page }) => {
   await open(page, 'legal-memo')
   await page.locator('#by-country .fig-expand').click()
   await expect(page.locator('dialog[open] .fig-frame')).toBeVisible()
-  expect(await page.locator('dialog[open] .fig-frame').evaluate((el) => el.clientWidth)).toBe(1040)
+  expect(await page.locator('dialog[open] .fig-frame').evaluate((el) => el.clientWidth)).toBe(720)
   await page.keyboard.press('Escape')
   await expect(page.locator('dialog[open]')).toHaveCount(0)
 })
@@ -91,7 +91,7 @@ test('on a phone, a figure expands', async ({ page }) => {
 test('every doc starter is clean at three widths', async ({ page }) => {
   test.setTimeout(120_000)
   const found: string[] = []
-  for (const s of DOC_STARTERS) for (const theme of ['paper', 'ink']) for (const width of [343, 720, 1040]) {
+  for (const s of DOC_STARTERS) for (const theme of ['paper', 'ink']) for (const width of [343, 560, 720]) {
     await open(page, s.id, `&theme=${theme}&width=${width}`)
     const issues = await page.evaluate(() => window.__docs?.issues ?? ['no result'])
     found.push(...issues.map((i) => `${s.id} ${theme} ${width}: ${i}`))

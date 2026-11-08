@@ -5,7 +5,7 @@ import type { Theme } from '../types.js'
 import { allocate } from '../slides/colours.js'
 import { alignHalves, drawIcons, fitPictures, fitValues, sizeTable, stackIcons } from '../components/fit.js'
 import { drawCharts } from '../components/charts/hosts.js'
-import { asSlide, canvas, figureCanvasHTML, isText, widthOf } from './figure.js'
+import { asSlide, canvas, figureCanvasHTML, isText, MIN_CANVAS, DOC_SCALE, widthOf } from './figure.js'
 import { DEFAULT_THEME, docHTML } from './render.js'
 import type { Doc, FigureBlock } from './types.js'
 
@@ -14,26 +14,22 @@ import type { Doc, FigureBlock } from './types.js'
 export const loadFaces = (): Promise<unknown> => Promise.all(['800 100px Archivo', '900 100px Archivo', '400 30px Geist', '600 30px Geist', "500 20px 'Geist Mono'"].map((f) => document.fonts.load(f))).then(() => document.fonts.ready)
 
 /** Under this frame width the notes leave the canvas, and the figure can be expanded. */
-const NARROW = 600
+const NARROW = MIN_CANVAS * DOC_SCALE
 
-/** Scale the canvas to its frame, and give the frame the canvas's height at that scale. */
-function size(frame: HTMLElement, fig: HTMLElement, kind: string) {
-  const width = widthOf(kind, frame.clientWidth), k = frame.clientWidth / width
-  if (isText(kind)) fig.style.setProperty('--w', `${width}px`)
-  fig.style.setProperty('--s', String(k))
-  frame.style.setProperty('height', `${fig.offsetHeight * k}px`)
-}
+/** Give the frame the canvas's height at its scale. */
+const size = (frame: HTMLElement, fig: HTMLElement) => frame.style.setProperty('height', `${fig.offsetHeight * frame.clientWidth / fig.offsetWidth}px`)
 
 /** Lay out one figure: the canvas for its frame's width (notes beside, or below on a narrow frame), its colours,
     the component fitters and charts as on a slide, then its scale. `f` is null for code. */
 export function mountFigure(frame: HTMLElement, f: FigureBlock | null, theme: Theme, accent: string | undefined): void {
   const fig = frame.querySelector<HTMLElement>(':scope > .fig'), w = frame.clientWidth
   if (!fig || !w) return
-  const kind = f?.kind ?? 'code', k = w / widthOf(kind, w), beside = w >= NARROW
+  const kind = f?.kind ?? 'code', width = widthOf(kind, w), k = w / width, beside = w >= NARROW
   if (f?.body.notes?.length) fig.innerHTML = figureCanvasHTML(f, beside)
   frame.dataset.mode = beside ? 'beside' : 'narrow'
   frame.closest('.doc-fig')?.classList.toggle('narrow', !beside)
-  if (isText(kind)) fig.style.setProperty('--w', `${w / k}px`)
+  frame.dataset.w = String(w)
+  fig.style.setProperty('--w', `${width}px`)
   fig.style.setProperty('--s', String(k))
   const s = f ? asSlide(f) : null, colours = allocate(s, theme, accent)
   for (const [key, v] of Object.entries(colours.vars)) fig.style.setProperty(`--${key}`, v)
@@ -41,17 +37,17 @@ export function mountFigure(frame: HTMLElement, f: FigureBlock | null, theme: Th
   sizeTable(fig, k); stackIcons(fig, k)
   if (s) drawCharts(fig, s, theme, accent, colours)
   drawIcons(fig); fitPictures(fig, k); alignHalves(fig, k)
-  size(frame, fig, kind)
+  size(frame, fig)
 }
 
-/** Every figure under `root` laid out once it has a width, again when it crosses NARROW, and otherwise only rescaled: the
-    fitters measure in design pixels, so their work holds at any scale (a figure in a folded section waits). */
+/** Every figure under `root` laid out once it has a width, and again whenever that width changes: the scale is fixed, so a
+    new width is a new layout (a figure in a folded section waits). */
 export function fitFigures(root: HTMLElement, blockOf: (frame: HTMLElement) => FigureBlock | null, theme: Theme, accent: string | undefined): { disconnect(): void } {
   const fit = (frame: HTMLElement) => {
     const w = frame.clientWidth, fig = frame.querySelector<HTMLElement>(':scope > .fig')
     if (!w || !fig) return
-    if (frame.dataset.mode !== (w >= NARROW ? 'beside' : 'narrow')) mountFigure(frame, blockOf(frame), theme, accent)
-    else size(frame, fig, blockOf(frame)?.kind ?? 'code')
+    if (frame.dataset.w !== String(w)) mountFigure(frame, blockOf(frame), theme, accent)
+    else size(frame, fig)
   }
   const sizes = new ResizeObserver((entries) => entries.forEach((e) => fit(e.target as HTMLElement)))
   root.querySelectorAll<HTMLElement>('.doc-fig > .fig-frame').forEach((frame) => { fit(frame); sizes.observe(frame) })
