@@ -28,11 +28,13 @@ export async function runDocTurn({ text, docId, history, runTool }: DocTurnArgs)
       for (const c of message.tool_calls) {
         toolCalls++
         const name = c.function.name, args = JSON.parse(c.function.arguments || '{}') as Record<string, unknown>
-        if (!toolByName(name) || !DOC_TOOLS.has(name)) {
+        const tool = toolByName(name)
+        if (!tool || !DOC_TOOLS.has(name)) {
           messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify({ error: `Tool ${name} is not available in the doc editor.` }) })
           continue
         }
-        const input = { ...args, docId: typeof args.docId === 'string' ? args.docId : docId }
+        // Only tools that take a docId get the open doc's; get_template, get_guide and the rest reject unknown fields.
+        const input = tool.input.properties?.docId && typeof args.docId !== 'string' ? { ...args, docId } : args
         try {
           const result = await runTool(name, input)
           messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify(result) })

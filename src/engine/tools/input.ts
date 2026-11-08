@@ -10,7 +10,10 @@ export function checkInput(schema: JsonSchema, value: unknown, path = ""): strin
   const at = path || "input";
   if (schema.oneOf) return schema.oneOf.some((s) => !checkInput(s, value, path).length) ? [] : [`${at}: ${schema.description ?? "does not match any allowed form"}`];
   if (schema.enum) return schema.enum.includes(value) ? [] : [`${at}: must be one of ${schema.enum.join(", ")}`];
-  if (schema.type && !fits(schema.type, value)) return [`${at}: must be ${article(schema.type)}`];
+  if (schema.type && !fits(schema.type, value)) {
+    const asText = (schema.type === "object" || schema.type === "array") && typeof value === "string" && /^\s*[[{]/.test(value);
+    return [`${at}: must be ${article(schema.type)}${asText ? ", not JSON text: pass the object itself" : ""}`];
+  }
   if (schema.type === "number" || schema.type === "integer") {
     const n = value as number;
     if (schema.minimum !== undefined && n < schema.minimum) return [`${at}: at least ${schema.minimum}`];

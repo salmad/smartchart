@@ -17,6 +17,9 @@ describe('checkInput', () => {
     expect(checkInput(schema, { on: 'yes', style: 'fancy', extra: 1 })).toEqual([
       'deckId: required', 'on: must be a boolean', 'style: must be one of consulting, pitch', 'extra: not a known field (known: deckId, on, style, set)'])
   })
+  it('says when an object came as JSON text', () => {
+    expect(checkInput(schema, { deckId: 'd', set: '{"a":1}' })).toEqual(['set: must be an object, not JSON text: pass the object itself'])
+  })
 })
 
 describe('deck document', () => {
