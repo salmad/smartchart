@@ -1124,7 +1124,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Check the doc",
     },
-    "description": "Judge the doc's figures: units, sources, one focus, sorted bars, figures the caption claims, table judgements that read faster as marks, a figure with no caption, an empty section. By blockId, failed checks first. Advice only: fix what a small edit fixes and tell the user about the rest; never invent a source or a figure to clear a check. Writes nothing. One model call when the doc has tables.",
+    "description": "Judge the doc's figures and structure: units, sources, one focus, sorted bars, figures the caption claims, table judgements that read faster as marks, a figure with no caption, an empty section, and walls of text (D4–D7). By blockId; D4–D7 rank first. Advice only: fix what a small edit fixes and tell the user about the rest; never invent a source or a figure to clear a check. Writes nothing. No model call when the doc has no tables.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1259,6 +1259,90 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "resolve_doc_comment",
     "title": "Resolve a doc comment",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Propose a doc change",
+    },
+    "description": "Leave a suggestion on adjacent blocks for the user to approve in place. Use when a restructure would replace their own words. Checked before it is stored; nothing applies until they approve.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "blockIds": {
+          "description": "Adjacent blockIds to replace or insert before.",
+          "items": {
+            "type": "string",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "docId": {
+          "description": "The doc id.",
+          "type": "string",
+        },
+        "figure": {
+          "additionalProperties": false,
+          "properties": {
+            "body": {
+              "description": "The figure's fields, as get_template gives them.",
+            },
+            "kind": {
+              "enum": [
+                "chart",
+                "table",
+                "number",
+                "cards",
+                "steps",
+                "summary",
+                "pair",
+                "image",
+                "team",
+                "logos",
+                "callout",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "body",
+          ],
+          "type": "object",
+        },
+        "label": {
+          "description": "Short button label (at most 40 characters).",
+          "type": "string",
+        },
+        "markdown": {
+          "type": "string",
+        },
+        "mode": {
+          "enum": [
+            "replace",
+            "insert",
+          ],
+          "type": "string",
+        },
+        "why": {
+          "description": "One sentence on why (at most 160 characters).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "docId",
+        "blockIds",
+        "mode",
+        "label",
+        "why",
+      ],
+      "type": "object",
+    },
+    "name": "propose_block",
+    "title": "Propose a doc change",
   },
   {
     "annotations": {

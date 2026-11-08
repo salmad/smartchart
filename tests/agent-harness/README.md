@@ -25,3 +25,11 @@ npx vite-node tests/agent-harness/docs-mcp.ts [--only=<id>] [--steps=60]   # fro
 ```
 
 First run (2026-10-19, Haiku 5.5): all three docs parse and validate with no errors and meet their briefs; 13, 26 and 13 tool calls, 2, 7 and 4 refused writes (character limits and a misplaced `source`, each named by path and fixed on the next call; one `read_slide` on a doc id); `check_doc` returned warnings only and left each doc's text and rev unchanged. The competitor doc was read at full size in the app: summary, revenue chart, scorecard, every figure with its caption and the given source.
+
+## Doc suggestions (`proposeDoc`)
+
+```bash
+npx vite-node tests/agent-harness/doc-suggestions.ts   # needs OPENROUTER_API_KEY in .env
+```
+
+Runs `proposeDoc` on `wall-of-text.md` and `reels.md`; writes `docs/temp/doc-suggestions-run.md`.
