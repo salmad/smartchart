@@ -17,6 +17,12 @@ Revenue reached **774** in Q3 per "Board pack".
 - **EU:** soft
 `).doc
 
+const firstPara = (d: Doc) => {
+  const p = identify(d).find((x) => x.block.type === 'paragraph')
+  if (!p) throw new Error('no paragraph')
+  return p
+}
+
 const base = (over: Partial<DocProposal>): DocProposal => ({
   id: 'p1', blockIds: [], mode: 'replace', label: 'Try as grouped table', why: 'Easier to scan', by: 'Occam', at: 1, rev: 1, ...over,
 })
@@ -60,6 +66,18 @@ describe('keepCheck', () => {
     expect(k.keeps).toBe('drops')
     expect(k.dropped.some((x) => x.includes('774'))).toBe(true)
   })
+
+  it('a number inside a longer one is not kept: 1774 does not keep 774, and one digit counts', () => {
+    const table = (cells: string[]) => ({ figure: { kind: 'table' as const, body: { caption: 'Q', source: 'S', table: { columns: [{ label: 'A' }], rows: cells.map((c) => ({ cells: [c] })) } } } })
+    expect(keepCheck('Revenue reached 774', table(['1774'])).dropped).toContain('774')
+    expect(keepCheck('Opened 3 stores', table(['Opened', 'stores'])).dropped).toContain('3')
+  })
+
+  it('a condensed table lists the words it leaves out', () => {
+    const k = keepCheck('Revenue reached 774 overall', { figure: { kind: 'table', body: { caption: 'Revenue', source: 'S', table: { columns: [{ label: 'Revenue' }], rows: [{ cells: ['774'] }] } } } })
+    expect(k.keeps).toBe('facts')
+    expect(k.dropped).toEqual(expect.arrayContaining(['reached', 'overall']))
+  })
 })
 
 describe('checkProposal', () => {
@@ -71,7 +89,7 @@ describe('checkProposal', () => {
   })
 
   it('a figure replace that drops facts becomes insert', () => {
-    const id = identify(doc()).find((x) => x.block.type === 'paragraph')!.id
+    const id = firstPara(doc()).id
     const r = checkProposal(doc(), base({
       blockIds: [id],
       mode: 'replace',
@@ -92,7 +110,7 @@ describe('checkProposal', () => {
   })
 
   it('an invalid cell (41 characters) is refused with the path', () => {
-    const id = identify(doc()).find((x) => x.block.type === 'paragraph')!.id
+    const id = firstPara(doc()).id
     const long = 'x'.repeat(41)
     const r = checkProposal(doc(), base({
       blockIds: [id],
@@ -113,18 +131,25 @@ describe('checkProposal', () => {
 describe('applyProposal', () => {
   it('replace swaps the blocks, insert keeps them', () => {
     const d = doc()
-    const para = identify(d).find((x) => x.block.type === 'paragraph')!
+    const para = firstPara(d)
     const p: DocProposal = {
       ...base({ blockIds: [para.id], markdown: 'Revenue reached **774** in Q3 per "Board pack".' }),
       figure: undefined,
     }
     const replaced = applyProposal(d, p)
     expect(replaced.blocks.some((b) => b.type === 'paragraph' && b.text.includes('774'))).toBe(true)
-    const ins = applyProposal(d, { ...p, mode: 'insert', blockIds: [para.id] })
+    const ins = applyProposal(d, base({ blockIds: [para.id], mode: 'insert', figure: { kind: 'callout', body: { tone: 'note', text: 'Board pack figure.' } } }))
     expect(ins.blocks.length).toBeGreaterThan(d.blocks.length)
+  })
+
+  it('a text suggestion cannot insert: the words would show twice', () => {
+    const para = firstPara(doc())
+    const r = checkProposal(doc(), base({ blockIds: [para.id], mode: 'insert', markdown: 'Revenue reached **774** in Q3 per "Board pack".' }))
+    expect(r.ok).toBe(false)
   })
 
   it('with a stale blockId throws not_found', () => {
     expect(() => applyProposal(doc(), base({ blockIds: ['nope'] }))).toThrow(ToolError)
+    try { applyProposal(doc(), base({ blockIds: ['nope'] })) } catch (e) { expect((e as ToolError).code).toBe('not_found') }
   })
 })

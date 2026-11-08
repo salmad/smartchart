@@ -17,7 +17,8 @@ export function keepsLabel(doc: Doc, p: DocProposal): string {
 export function keepsTitle(doc: Doc, p: DocProposal): string | undefined {
   const checked = checkProposal(doc, p)
   if (!checked.ok || !checked.keeps.dropped.length) return undefined
-  return `Drops: ${checked.keeps.dropped.join(', ')}`
+  const list = checked.keeps.dropped
+  return `Leaves out: ${list.slice(0, 12).join(', ')}${list.length > 12 ? '…' : ''}`
 }
 
 /** Preview doc for rendering only; the stored doc is unchanged until Approve. */

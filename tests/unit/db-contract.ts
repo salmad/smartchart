@@ -444,6 +444,17 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.docProposal(ann.id, doc, { dismiss: 'p_1' }, { id: 'p_x' })).toEqual([])
     })
 
+    it('proposals: the store gives each one its id, whatever the caller sent', async () => {
+      const db = await make(), { ann, id } = people(), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      await db.putDoc(ann.id, doc, 'Memo', '# Memo', 0, ws)
+      const base = { blockIds: ['intro'], mode: 'insert' as const, markdown: '- a', label: 'Split', why: 'Easier to scan', by: 'Ann', at: 1, rev: 1 }
+      await db.docProposal(ann.id, doc, { add: { ...base, id: 'pending' } }, { id: 'p_a' })
+      const two = await db.docProposal(ann.id, doc, { add: { ...base, id: 'pending' } }, { id: 'p_b' })
+      expect(Array.isArray(two) && two.map((p) => p.id)).toEqual(['p_a', 'p_b'])
+      expect(await db.docProposal(ann.id, doc, { dismiss: 'p_a' }, { id: 'p_x' })).toMatchObject([{ id: 'p_b' }])
+    })
+
     it('a 21st pending proposal is refused', async () => {
       const db = await make(), { ann, id } = people(), doc = id('doc')
       const ws = await seedUser(db, ann)

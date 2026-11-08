@@ -95,7 +95,7 @@ test('Versions is not offered while editing', async ({ page }) => {
 
 test('Look: the palette and accent change the page, persist, and are not offered while editing', async ({ page }) => {
   await seed(page)
-  await page.getByRole('button', { name: 'Look' }).click()
+  await page.getByRole('button', { name: 'Look', exact: true }).click()
   const look = page.getByRole('complementary', { name: 'Doc look' })
   await expect(look.getByRole('group', { name: 'Deck style' })).toHaveCount(0)
   await look.getByRole('button', { name: 'Ink' }).click()
@@ -104,5 +104,5 @@ test('Look: the palette and accent change the page, persist, and are not offered
   await page.reload()
   await expect(page.locator('.doc.theme-ink')).toBeVisible()
   await edit(page)
-  await expect(page.getByRole('button', { name: 'Look' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Look', exact: true })).toHaveCount(0)
 })

@@ -34,9 +34,13 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
   const [showing, setShowing] = useState<ProposalShowing>('suggestion')
   const [proposalIndex, setProposalIndex] = useState(0)
   const [proposalBusy, setProposalBusy] = useState(false)
-  const proposalTick = useMemo(() => (activeProposal ? 1 : 0) + (showing === 'suggestion' ? 2 : 0), [activeProposal?.id, showing])
-  const proposalView = useMemo(() => () => (activeProposal ? { proposal: activeProposal, showing, canEdit: true } : null), [activeProposal, showing])
-  const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone, proposalView, proposalTick })
+  const grouped = useMemo(() => (activeProposal ? proposalsForBlock(activeProposal.blockIds[0], proposals) : []), [activeProposal, proposals])
+  const active = grouped[proposalIndex] ?? activeProposal
+  useEffect(() => { setProposalIndex(Math.max(0, grouped.findIndex((p) => p.id === activeProposal?.id))); setShowing('suggestion') }, [activeProposal?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- reset only when another suggestion is picked
+  const [tick, setTick] = useState(0)
+  useEffect(() => setTick((n) => n + 1), [active?.id, showing])
+  const proposalView = useMemo(() => () => (active ? { proposal: active, showing, canEdit: true } : null), [active, showing])
+  const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone, proposalView, proposalTick: tick })
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])
 
   // The words as they would be saved, for the clipboard.
@@ -55,27 +59,23 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
     return () => { document.removeEventListener('keydown', key); window.removeEventListener('beforeunload', leave) }
   }, [edit])
 
-  const grouped = activeProposal ? proposalsForBlock(activeProposal.blockIds[0], proposals) : []
-  const active = grouped[proposalIndex] ?? activeProposal
-  useEffect(() => { if (activeProposal) setShowing('suggestion') }, [activeProposal?.id])
-
   const approve = async () => {
     if (!active) return
     const cur = edit.current()
     if (!cur) return
+    let next: Doc
+    // The block was edited since the suggestion was made: its id is gone, so the suggestion no longer applies.
+    try { next = applyProposal(cur, active) } catch { await onDismissProposal?.(active.id); onActiveProposal?.(null); return }
     setProposalBusy(true)
-    const next = applyProposal(cur, active)
-    edit.editor?.commands.setContent(toProse({ title: next.title, subtitle: next.subtitle ?? '', blocks: next.blocks }))
-    const why = await save(next, { label: `Suggestion: ${active.label}` })
-    setProposalBusy(false)
-    if (!why) {
-      if (active.by !== 'Occam' && onDismissProposal) await onDismissProposal(active.id)
-      onActiveProposal?.(null)
-    }
+    try {
+      edit.editor?.commands.setContent(toProse({ title: next.title, subtitle: next.subtitle ?? '', blocks: next.blocks }))
+      const why = await save(next, { label: `Suggestion: ${active.label}` })
+      if (!why) { await onDismissProposal?.(active.id); onActiveProposal?.(null) }
+    } finally { setProposalBusy(false) }
   }
   const cancel = async () => {
     if (!active) return
-    if (active.by !== 'Occam' && onDismissProposal) await onDismissProposal(active.id)
+    await onDismissProposal?.(active.id)
     onActiveProposal?.(null)
   }
 

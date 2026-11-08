@@ -57,7 +57,7 @@ export function DocChecks({ verdict, readability, figures, proposals, loading, c
                     <span className="text-[12.5px] text-ink-2">{p.why}</span>
                     <span className="text-[11.5px] text-ink-3">{p.by}</span>
                   </button>
-                  {canEdit && onDismiss && p.by !== 'Occam' && (
+                  {canEdit && onDismiss && (
                     <button type="button" className="mt-1 text-[12px] text-ink-3 hover:text-ink" onClick={() => void onDismiss(p.id)}>Dismiss</button>
                   )}
                 </li>

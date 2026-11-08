@@ -17,21 +17,21 @@ const DOC_ID = 'doc_t'
 
 const paraId = identify(parseDoc(WALL).doc).find(
   (x) => x.block.type === 'paragraph' && x.block.text.includes('forty-one'),
-)!.id
+)?.id ?? ''
 
-const STORED: DocProposal = {
-  id: 'prop_table',
+const table = (id: string, label: string, caption: string): DocProposal => ({
+  id,
   blockIds: [paraId],
   mode: 'insert',
-  label: 'Opens by format',
+  label,
   why: 'Skim the split',
-  by: 'Occam',
+  by: 'Claude',
   at: 1,
   rev: 1,
   figure: {
     kind: 'table',
     body: {
-      caption: 'Where opens start',
+      caption,
       source: 'App telemetry',
       table: {
         columns: [{ label: 'Format' }, { label: 'Share' }],
@@ -44,10 +44,14 @@ const STORED: DocProposal = {
       },
     },
   },
-}
+})
+// Two suggestions on one block: the first is cancelled, the second approved.
+const STORED = [table('prop_a', 'Opens by format', 'Where opens start'), table('prop_b', 'Format split', 'Opens by format')]
 
-const check = checkProposal(parseDoc(WALL).doc, STORED)
-if (!check.ok) throw new Error(`fixture proposal invalid: ${check.error}`)
+for (const p of STORED) {
+  const check = checkProposal(parseDoc(WALL).doc, p)
+  if (!check.ok) throw new Error(`fixture proposal invalid: ${check.error}`)
+}
 
 async function seed(page: Page) {
   await page.route('**/api/glm**', async (route) => {
@@ -55,7 +59,7 @@ async function seed(page: Page) {
   })
   await page.addInitScript(() => localStorage.setItem('smartchart.devAccount', '1'))
   await page.goto('/')
-  await page.evaluate(([text, proposal, docId]) => {
+  await page.evaluate(([text, proposals, docId]) => {
     localStorage.setItem('smartchart.docs.v1', JSON.stringify({
       [docId]: {
         id: docId,
@@ -64,7 +68,7 @@ async function seed(page: Page) {
         updated: 1,
         rev: 1,
         workspaceId: 'ws_local',
-        proposals: [proposal],
+        proposals,
       },
     }))
   }, [WALL, STORED, DOC_ID] as const)
@@ -95,16 +99,16 @@ const openChecks = async (page: Page) => {
   await expect(panel.getByRole('heading', { name: 'Suggestions' })).toBeVisible({ timeout: 30_000 })
 }
 
-const edit = async (page: Page) => {
-  const btn = page.getByRole('button', { name: 'Edit', exact: true })
-  if (await btn.isVisible()) await btn.click()
-  await expect(page.locator('.doc-editing')).toBeVisible()
-}
+const storedIds = (page: Page) => page.evaluate((id) => {
+  const d = JSON.parse(localStorage.getItem('smartchart.docs.v1') ?? '{}') as Record<string, { proposals?: { id: string }[] }>
+  return (d[id]?.proposals ?? []).map((p) => p.id)
+}, DOC_ID)
 
-const pickSuggestion = async (page: Page) => {
-  await page.getByRole('complementary', { name: 'Checks' }).getByRole('button', { name: 'Opens by format' }).click()
-  await edit(page)
-  await expect(page.locator('.doc-proposal-widget')).toBeVisible()
+/** Picks a suggestion in the Checks panel: from the read view, that opens the editor with it shown in place. */
+const pickSuggestion = async (page: Page, label: string) => {
+  await page.getByRole('complementary', { name: 'Checks' }).getByRole('button', { name: new RegExp(`^${label}`) }).click()
+  await expect(page.locator('.doc-editing')).toBeVisible()
+  await expect(page.locator('.doc-proposal-widget')).toContainText(label)
 }
 
 const flip = async (page: Page, which: 'Original' | 'Suggestion') => {
@@ -118,7 +122,7 @@ test('wall of text: cancel after flipping leaves the doc and versions alone; app
 
   await openChecks(page)
   await expect(page.getByText('Reads as a wall of text')).toBeVisible()
-  await pickSuggestion(page)
+  await pickSuggestion(page, 'Opens by format')
 
   await flip(page, 'Original')
   await expect(page.locator('.doc-proposal-widget')).toBeHidden()
@@ -130,8 +134,9 @@ test('wall of text: cancel after flipping leaves the doc and versions alone; app
   await expect(page.locator('.doc-proposal-widget')).toBeHidden()
   expect(await savedText(page)).toBe(before)
   expect(await versionCount(page)).toBe(versionsBefore)
+  await expect.poll(() => storedIds(page)).toEqual(['prop_b'])
 
-  await pickSuggestion(page)
+  await pickSuggestion(page, 'Format split')
   await flip(page, 'Original')
   await flip(page, 'Suggestion')
   await flip(page, 'Original')
@@ -142,6 +147,7 @@ test('wall of text: cancel after flipping leaves the doc and versions alone; app
   await expect(page.locator('.doc-editing figure table')).toBeVisible({ timeout: 15_000 })
   expect(await savedText(page)).not.toBe(before)
   expect(await versionCount(page)).toBe(versionsBefore + 1)
+  await expect.poll(() => storedIds(page)).toEqual([])
 
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
@@ -149,5 +155,5 @@ test('wall of text: cancel after flipping leaves the doc and versions alone; app
 
   await page.getByRole('button', { name: 'Versions' }).click()
   const panel = page.getByRole('complementary', { name: 'Versions' })
-  await expect(panel).toContainText('Suggestion: Opens by format')
+  await expect(panel).toContainText('Suggestion: Format split')
 })

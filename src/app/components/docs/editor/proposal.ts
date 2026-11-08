@@ -81,7 +81,13 @@ export const ProposalPreview = Extension.create<ProposalOptions>({
           if (view.showing === 'suggestion') {
             const wrap = document.createElement('div')
             wrap.className = 'doc-proposal-widget'
-            wrap.innerHTML = `<p class="doc-proposal-chip">✦ ${view.proposal.label}</p><div class="doc-proposal-body">${previewHTML(view.proposal, doc, theme)}</div>`
+            const chip = document.createElement('p')
+            chip.className = 'doc-proposal-chip'
+            chip.textContent = `✦ ${view.proposal.label}`
+            const body = document.createElement('div')
+            body.className = 'doc-proposal-body'
+            body.innerHTML = previewHTML(view.proposal, doc, theme)
+            wrap.append(chip, body)
             decs.push(Decoration.widget(start.pos, wrap, { side: -1 }))
           } else if (view.canEdit) {
             const chip = document.createElement('p')

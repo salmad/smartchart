@@ -254,7 +254,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
       {side === 'checks' && parsed && (
         <DocChecks verdict={checksState.verdict} readability={checksState.readability} figures={checksState.figures} proposals={checksState.proposals}
           loading={checksState.loading} canEdit={canEdit} onShow={reveal}
-          onPick={(p) => setActiveProposal(p)}
+          onPick={(p) => { setActiveProposal(p); if (canEdit && !editing && !preview && record) startEditing() }}
           onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
           onClose={() => setSide(null)} />
       )}

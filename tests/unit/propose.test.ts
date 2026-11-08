@@ -7,9 +7,16 @@ import type { CompleteFn } from '../../src/engine/agent/propose'
 import { identify } from '../../src/engine/docs/ops'
 import { parseDoc } from '../../src/engine/docs/parse'
 import { checkProposal } from '../../src/engine/docs/proposals'
+import type { Doc } from '../../src/engine/docs/types'
 
 const fixture = (name: string) =>
   readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), `../fixtures/docs/${name}`), 'utf8')
+
+const firstPara = (doc: Doc) => {
+  const p = identify(doc).find(({ block }) => block.type === 'paragraph')
+  if (!p) throw new Error('no paragraph')
+  return p
+}
 
 const calls: { messages: unknown; max_tokens?: number }[] = []
 const fakeComplete = (text: string | ((n: number) => string)): CompleteFn => async (args) => {
@@ -28,14 +35,13 @@ describe('proposeDoc', () => {
   it('proposals come back checked, best first, at most 5', async () => {
     calls.length = 0
     const doc = parseDoc(fixture('wall-of-text.md')).doc
-    const para = identify(doc).find(({ block }) => block.type === 'paragraph')
-    expect(para?.id).toBeTruthy()
-    const paraText = para!.block.type === 'paragraph' ? para!.block.text : ''
+    const para = firstPara(doc)
+    const paraText = para.block.type === 'paragraph' ? para.block.text : ''
     const bullets = paraText.split(/\s+/).filter(Boolean).map((w) => `- ${w}`).join('\n')
     const payload = {
       proposals: [
         {
-          blockIds: [para!.id],
+          blockIds: [para.id],
           mode: 'replace' as const,
           kind: 'text',
           label: 'Bold-label bullets',
@@ -66,11 +72,10 @@ describe('proposeDoc', () => {
   it('an invalid proposal is repaired once, then dropped', async () => {
     calls.length = 0
     const doc = parseDoc(fixture('wall-of-text.md')).doc
-    const para = identify(doc).find(({ block }) => block.type === 'paragraph')
-    expect(para?.id).toBeTruthy()
+    const para = firstPara(doc)
     const bad = {
       proposals: [{
-        blockIds: [para!.id],
+        blockIds: [para.id],
         mode: 'replace' as const,
         kind: 'table',
         label: 'Try as grouped table',
@@ -80,7 +85,7 @@ describe('proposeDoc', () => {
     }
     const good = {
       proposals: [{
-        blockIds: [para!.id],
+        blockIds: [para.id],
         mode: 'insert' as const,
         kind: 'callout',
         label: 'Callout note',

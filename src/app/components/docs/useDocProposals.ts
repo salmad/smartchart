@@ -77,6 +77,7 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
 
   useEffect(() => {
     occamRev.current = null
+    runRef.current?.abort()
     setOccam([])
   }, [docId, rev])
 
@@ -105,10 +106,11 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
   }, [doc, rev, canEdit, loadStored, proposeDoc])
 
   const dismiss = useCallback(async (id: string) => {
+    if (!stored.some((p) => p.id === id)) { setOccam((list) => list.filter((p) => p.id !== id)); return }
     const r = await dismissStored(id)
     if (typeof r === 'string') return
     setStored(doc ? proposalsInDoc(doc, r) : r)
-  }, [dismissStored, doc])
+  }, [dismissStored, doc, stored])
 
   return {
     open,

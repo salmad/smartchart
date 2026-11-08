@@ -33,22 +33,20 @@ const NAME = /\b[A-Z][a-z]{2,}\b/g
 
 const wordsOf = (text: string) => plain(text).toLowerCase().match(WORD)?.filter((w) => !STOP.has(w)) ?? []
 
-const factsOf = (text: string) => {
-  const nums = numbersIn(plain(text)).map(String)
-  const quotes = [...plain(text).matchAll(QUOTE)].map((m) => m[1])
-  const names = [...plain(text).matchAll(NAME)].map((m) => m[0])
-  return [...nums, ...quotes, ...names]
-}
-
 const bodyText = (p: Pick<DocProposal, 'figure' | 'markdown'>) =>
   p.markdown ?? (p.figure ? JSON.stringify(p.figure.body) : '')
 
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 export function keepCheck(original: string, proposal: Pick<DocProposal, 'figure' | 'markdown'>): Keeps {
   const origWords = wordsOf(original), nextWords = new Set(wordsOf(bodyText(proposal)))
-  if (origWords.every((w) => nextWords.has(w))) return { keeps: 'all', dropped: [] }
-  const origFacts = factsOf(original), nextPlain = plain(bodyText(proposal))
-  const missing = origFacts.filter((f) => f.length > 1 && !nextPlain.includes(f))
-  if (!missing.length) return { keeps: 'facts', dropped: [] }
+  const cut = [...new Set(origWords.filter((w) => !nextWords.has(w)))]
+  if (!cut.length) return { keeps: 'all', dropped: [] }
+  const nextPlain = plain(bodyText(proposal)), nextNums = new Set(numbersIn(nextPlain).map(String))
+  const nums = numbersIn(plain(original)).map(String)
+  const words = [...plain(original).matchAll(QUOTE)].map((m) => m[1]).concat([...plain(original).matchAll(NAME)].map((m) => m[0]))
+  const missing = [...new Set([...nums.filter((n) => !nextNums.has(n)), ...words.filter((w) => !new RegExp(`(^|[^\\w])${escRe(w)}($|[^\\w])`).test(nextPlain))])]
+  if (!missing.length) return { keeps: 'facts', dropped: cut }
   return { keeps: 'drops', dropped: missing }
 }
 
@@ -71,8 +69,7 @@ const adjacent = (doc: Doc, blockIds: string[]): number[] | null => {
   const idents = identify(doc)
   const is = blockIds.map((id) => idents.findIndex((x) => x.id === id))
   if (is.some((i) => i < 0)) return null
-  for (let k = 1; k < is.length; k++) if (is[k] !== is[k - 1]! + 1) return null
-  return is
+  return is.every((v, k) => k === 0 || v === is[k - 1] + 1) ? is : null
 }
 
 export function checkProposal(doc: Doc, p: DocProposal): { ok: true; keeps: Keeps; mode: ProposalMode } | { ok: false; error: string } {
@@ -84,6 +81,7 @@ export function checkProposal(doc: Doc, p: DocProposal): { ok: true; keeps: Keep
   const original = originalOf(doc, p.blockIds)
   const keeps = keepCheck(original, p)
   if (p.markdown && keeps.keeps !== 'all') return { ok: false, error: 'A text suggestion keeps every word.' }
+  if (p.markdown && p.mode === 'insert') return { ok: false, error: 'A text suggestion replaces its blocks; insert would repeat the words.' }
   let mode = p.mode
   if (p.figure && p.mode === 'replace' && keeps.keeps === 'drops') mode = 'insert'
   const probe = { title: 'x', blocks: [] as Block[] }
@@ -98,11 +96,11 @@ export function checkProposal(doc: Doc, p: DocProposal): { ok: true; keeps: Keep
 }
 
 export function applyProposal(doc: Doc, p: DocProposal): Doc {
-  const checked = checkProposal(doc, p)
-  if (!checked.ok) throw new ToolError('bad_input', checked.error, 'Fix the proposal and try again.')
   const is = adjacent(doc, p.blockIds)
   if (!is) throw new ToolError('not_found', 'No such block.', 'get_doc shows the blocks.')
-  const start = is[0]!, end = is[is.length - 1]!
+  const checked = checkProposal(doc, p)
+  if (!checked.ok) throw new ToolError('bad_input', checked.error, 'Fix the proposal and try again.')
+  const start = is[0], end = is[is.length - 1]
   const inserted: Block[] = p.figure
     ? [{ type: 'figure', kind: p.figure.kind, id: '', body: p.figure.body }]
     : (parseText(p.markdown ?? '') as Block[])

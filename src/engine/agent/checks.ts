@@ -47,13 +47,14 @@ const claimText = (s: Slide) => [s.title, s.subtitle, s.takeaway, s.number?.capt
   ...(s.steps || []).map((x) => x.text), ...(s.people || []).map((p) => p?.text), ...(s.halves || []).flatMap((h) => [...(h.bullets || []), ...(h.points || []), h.number?.caption])].filter(Boolean).map((t) => plain(t)).join(" ");
 /** A table cell that is mostly digits, currency or units counts as numeric; word lists do not. */
 export const cellMainlyNumeric = (text: string): boolean => {
-  const t = plain(text);
+  const t = plain(text).replace(/\s+/g, "");
   if (!t) return false;
-  const kept = t.replace(/[^\d.,%£$€]/g, "");
-  return kept.length >= t.length / 2;
+  // A point or comma counts only inside a number, so "2 a.m." is words.
+  const kept = t.replace(/(?<=\d)[.,](?=\d)/g, "0").replace(/[^\d%£$€]/g, "");
+  return kept.length > t.length / 2;
 };
 const tableHasNumericData = (s: Slide) => s.template !== "table" || !s.table?.rows?.length || (s.table.rows || []).some((r) =>
-  (r.cells || []).slice(1).some((c) => cellMainlyNumeric(String(c && typeof c === "object" ? c.value : c ?? ""))));
+  (r.cells || []).some((c) => cellMainlyNumeric(String(c && typeof c === "object" ? c.value : c ?? ""))));
 
 /** R8: in consulting, a slide that claims figures says where they come from, in its source or a footnote. A quote names its speaker. */
 function sourceCheck(s: Slide): Check | null {

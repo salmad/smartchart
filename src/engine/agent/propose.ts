@@ -138,7 +138,7 @@ export async function proposeDoc(
     return []
   }
   const first = parseProposals(text)
-  let { good, bad } = splitValid(doc, first, opts.rev, at)
+  const { good, bad } = splitValid(doc, first, opts.rev, at)
   if (bad.length) {
     try {
       const repaired = await complete({ messages: repairMessages(doc, bad), max_tokens: 4000, temperature: 0.3, signal: opts.signal })

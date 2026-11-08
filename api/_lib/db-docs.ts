@@ -89,11 +89,12 @@ export function docCalls(q: Q): Pick<Db, Calls> {
     },
     docProposals: async (u, id) =>
       (await q<{ proposals: DocProposal[] }>(`select proposals from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')]))[0]?.proposals ?? null,
-    docProposal: async (u, id, op, _ctx) => {
+    docProposal: async (u, id, op, ctx) => {
       if ('add' in op) {
+        const p: DocProposal = { ...op.add, id: ctx.id }
         const r = await q<{ proposals: DocProposal[] }>(
           `update docs set proposals = proposals || jsonb_build_array($3::jsonb) where id = $2 and ${may('docs', '$1', '$4')}
-             and jsonb_array_length(proposals) < $5 returning proposals`, [u, id, JSON.stringify(op.add), R('write'), MAX_DOC_PROPOSALS])
+             and jsonb_array_length(proposals) < $5 returning proposals`, [u, id, JSON.stringify(p), R('write'), MAX_DOC_PROPOSALS])
         if (r[0]) return r[0].proposals
         const read = await q<{ proposals: DocProposal[] }>(`select proposals from docs where id = $2 and ${may('docs', '$1', '$3')}`, [u, id, R('read')])
         if (!read[0]) return 'foreign'
