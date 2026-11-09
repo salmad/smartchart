@@ -13,6 +13,7 @@ import { shortDate } from './dates'
 import { GANTT_ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
 import { GanttListRow } from './GanttList'
 import { GanttScaleRow, GanttTimelineBody, GanttTimelineGrid, useGanttLayout } from './GanttTimeline'
+import { useBarDrag } from './useBarDrag'
 interface Props {
   state: RoadmapState
   view: ViewSettings
@@ -22,9 +23,10 @@ interface Props {
   act: (op: RoadmapOp) => 'ok' | string
   onOpenIssue?: (id: string) => void
   todayRequest: number
+  said?: string | null
 }
 
-export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, canEdit: _canEdit, act: _act }: Props) {
+export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, canEdit, act, said }: Props) {
   const live = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
   const allRows = useMemo(() => tableRows(state, view, today), [state, view, today])
   const filtersActive = view.chips.length > 0
@@ -33,6 +35,9 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
   const range = useMemo(() => ganttRange(live, today, view.scale), [live, today, view.scale])
   const px = PX_PER_DAY[view.scale]
   const { width, axis } = useGanttLayout(range, px)
+
+  const openIssue = useCallback((id: string) => { onOpenIssue?.(id) }, [onOpenIssue])
+  const barDrag = useBarDrag({ axis, canEdit, act, onOpen: openIssue })
 
   const marks = useMemo(() => {
     const fmt = (iso: string) => shortDate(iso, today)
@@ -91,6 +96,7 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
 
   return (
     <section role="region" aria-label="Timeline" className="flex min-h-0 flex-1 flex-col">
+      {said && <p role="status" className="border-b border-line bg-panel px-4 py-2 text-[12.5px] text-ink-2">{said}</p>}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onScroll={onScroll}>
         <div className="grid w-max min-w-full grid-cols-[330px_1fr]">
           <div className="sticky left-0 top-0 z-30 h-[30px] border-b border-line bg-app-bg" />
@@ -130,7 +136,8 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
                 markOf={markOf}
                 axis={axis}
                 width={width}
-                onOpenIssue={onOpenIssue}
+                canEdit={canEdit}
+                barDrag={barDrag}
               />
             ))}
             {padBottom > 0 && <GanttPadSvg h={padBottom} width={width} />}

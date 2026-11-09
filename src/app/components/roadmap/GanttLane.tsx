@@ -1,8 +1,14 @@
+import { useCallback, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { daysBetween, type Mark } from '@/engine/roadmaps/gantt'
 import type { TableRow } from '@/engine/roadmaps/view'
+import { cn } from '@/app/lib/utils'
 import type { Axis } from './ganttAxis'
+import { barDraggable, barHitMode, barLaneCursor } from './ganttBarDrag'
+import type { useBarDrag } from './useBarDrag'
 
 const H = 32
+
+type BarDragApi = ReturnType<typeof useBarDrag>
 
 interface LaneProps {
   row: TableRow
@@ -10,7 +16,10 @@ interface LaneProps {
   axis: Axis
   width: number
   groupSpan?: { start: string; due: string } | null
-  onOpenIssue?: (id: string) => void
+  canEdit: boolean
+  preview: { id: string; start: string; due: string } | null
+  dragging: boolean
+  barDrag: BarDragApi
 }
 
 function laneDataAttrs(mark: Mark): Record<string, string | undefined> {
@@ -23,7 +32,7 @@ function laneDataAttrs(mark: Mark): Record<string, string | undefined> {
     }
   }
   if (mark.kind === 'bracket') {
-    return { 'data-mark': 'bracket', 'data-alert': mark.alert ? 'true' : undefined }
+    return { 'data-mark': 'bracket', 'data-alert': mark.alert ? 'true' : undefined, 'data-own': mark.own ? 'true' : 'false' }
   }
   return {
     'data-mark': 'milestone',
@@ -118,28 +127,97 @@ function alertMark(mark: Mark): boolean {
   return mark.kind !== 'none' && 'alert' in mark && !!mark.alert
 }
 
-export function GanttLane({ row, mark, axis, width, groupSpan, onOpenIssue }: LaneProps) {
+function markForDraw(
+  mark: Mark,
+  preview: { id: string; start: string; due: string } | null,
+  issueId: string | undefined,
+): Mark {
+  if (!preview || !issueId || preview.id !== issueId) return mark
+  if (mark.kind === 'bar' || (mark.kind === 'bracket' && mark.own)) {
+    if (preview.start === preview.due) {
+      const lbl = (mark.kind === 'bar' || mark.kind === 'bracket') ? mark.label : ''
+      return {
+        kind: 'milestone',
+        day: preview.start,
+        done: mark.kind === 'bar' ? mark.done : false,
+        alert: mark.kind === 'bar' ? mark.alert : mark.kind === 'bracket' ? mark.alert : false,
+        label: lbl ?? `${preview.start}`,
+      }
+    }
+    if (mark.kind === 'bar') {
+      return { ...mark, start: preview.start, due: preview.due }
+    }
+    return { ...mark, start: preview.start, due: preview.due }
+  }
+  if (mark.kind === 'milestone') {
+    return { ...mark, day: preview.start }
+  }
+  return mark
+}
+
+export function GanttLane({ row, mark, axis, width, groupSpan, canEdit, preview, dragging, barDrag }: LaneProps) {
   const issueId = row.kind === 'issue' ? row.issue.id : undefined
+  const issueStart = row.kind === 'issue' ? row.issue.start : null
+  const issueDue = row.kind === 'issue' ? row.issue.due : null
+  const [hoverX, setHoverX] = useState<number | null>(null)
 
   let draw: Mark = mark
   if (row.kind === 'group' && groupSpan) {
     draw = { kind: 'bracket', start: groupSpan.start, due: groupSpan.due, own: false, alert: false, label: null }
+  } else if (issueId) {
+    draw = markForDraw(mark, preview, issueId)
   }
 
   const text = labelFor(draw)
   const endX = labelEndX(draw, axis)
   const attrs = row.kind === 'issue' ? laneDataAttrs(mark) : draw.kind === 'bracket' ? { 'data-mark': 'bracket' } : {}
 
+  const bracketHint = mark.kind === 'bracket' && !mark.own ? 'Dates come from its sub-issues.' : undefined
+  const cursor = barLaneCursor(canEdit, mark, hoverX, issueStart, issueDue, axis, dragging && preview?.id === issueId)
+  const draggable = !!(issueId && issueStart && issueDue && barDraggable(mark))
+
+  const onPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLDivElement>) => {
+      if (!issueId) return
+      if (mark.kind === 'bracket' && !mark.own) return
+      const el = e.currentTarget
+      const rect = el.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      if (draggable) {
+        const mode = barHitMode(x, issueStart!, issueDue!, axis, mark)
+        if (mode) {
+          barDrag.handlers(issueId, issueStart!, issueDue!, mode).onPointerDown(e.nativeEvent, el)
+          return
+        }
+      }
+      barDrag.clickToOpen(issueId).onPointerDown(e.nativeEvent, el)
+    },
+    [axis, barDrag, draggable, issueDue, issueId, issueStart, mark],
+  )
+
   return (
     <div
-      className="relative z-[1] h-8 border-b border-hair"
       data-issue={issueId}
       {...attrs}
-      onClick={issueId ? () => onOpenIssue?.(issueId) : undefined}
-      role={issueId ? 'button' : undefined}
-      tabIndex={issueId ? 0 : undefined}
+      title={bracketHint}
+      className={cn(
+        'relative z-[1] h-8 border-b border-hair',
+        cursor === 'grab' && 'cursor-grab',
+        cursor === 'grabbing' && 'cursor-grabbing',
+        cursor === 'ew-resize' && 'cursor-ew-resize',
+      )}
+      onPointerDown={issueId ? onPointerDown : undefined}
+      onPointerMove={
+        issueId && canEdit && draggable
+          ? (e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              setHoverX(e.clientX - rect.left)
+            }
+          : undefined
+      }
+      onPointerLeave={draggable ? () => setHoverX(null) : undefined}
     >
-      <svg width={width} height={H} className="block overflow-visible">
+      <svg width={width} height={H} className="pointer-events-none block overflow-visible">
         {draw.kind !== 'none' && markGraphic(draw, axis)}
         {text && (
           <text

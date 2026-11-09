@@ -43,6 +43,25 @@ export function activityItems(
       items.push({ at: e.at, label: `${who} moved` })
       continue
     }
+    if (e.what === 'set') {
+      const rest = e.changes.filter((c) => c.path !== 'start' && c.path !== 'due')
+      if (e.changes.some((c) => c.path === 'start' || c.path === 'due')) {
+        items.push({ at: e.at, label: `${who} set dates` })
+      }
+      for (const ch of rest) {
+        if (ch.path === 'title') items.push({ at: e.at, label: `${who} set title` })
+        else if (ch.path === 'status' && typeof ch.to === 'string') items.push({ at: e.at, label: `${who} set status to ${STATUS_LABEL[ch.to as keyof typeof STATUS_LABEL] ?? ch.to}` })
+        else if (ch.path === 'assignee') items.push({ at: e.at, label: `${who} set assignee` })
+        else if (ch.path === 'body') items.push({ at: e.at, label: `${who} updated the description` })
+        else if (ch.path === 'fields') items.push({ at: e.at, label: `${who} set fields` })
+        else if (ch.path.startsWith('fields.')) {
+          const fid = ch.path.slice('fields.'.length)
+          const field = fields.find((f) => f.id === fid)
+          items.push({ at: e.at, label: `${who} set ${field?.name ?? 'a field'}` })
+        }
+      }
+      continue
+    }
     for (const ch of e.changes) {
       if (ch.path === 'title') items.push({ at: e.at, label: `${who} set title` })
       else if (ch.path === 'status' && typeof ch.to === 'string') items.push({ at: e.at, label: `${who} set status to ${STATUS_LABEL[ch.to as keyof typeof STATUS_LABEL] ?? ch.to}` })

@@ -161,6 +161,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   act={act}
                   onOpenIssue={openIssue}
                   todayRequest={todayRequest}
+                  said={view.said}
                 />
               )}
             </div>

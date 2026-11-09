@@ -14,6 +14,9 @@ import { dateSpan } from '@/engine/roadmaps/rollup'
 import { shortDate } from './dates'
 import { GanttLane } from './GanttLane'
 import { makeAxis, type Axis } from './ganttAxis'
+import type { useBarDrag } from './useBarDrag'
+
+type BarDragApi = ReturnType<typeof useBarDrag>
 
 export type { Axis } from './ganttAxis'
 
@@ -153,7 +156,8 @@ export function GanttTimelineBody({
   markOf,
   axis,
   width,
-  onOpenIssue,
+  canEdit,
+  barDrag,
 }: {
   row: TableRow
   allRows: TableRow[]
@@ -162,7 +166,8 @@ export function GanttTimelineBody({
   markOf: (id: string) => Mark
   axis: Axis
   width: number
-  onOpenIssue?: (id: string) => void
+  canEdit: boolean
+  barDrag: BarDragApi
 }) {
   const group = row.kind === 'group' ? groupSpan(live, allRows, absIndex) : null
   const mark = row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' as const }
@@ -173,7 +178,10 @@ export function GanttTimelineBody({
       axis={axis}
       width={width}
       groupSpan={group}
-      onOpenIssue={onOpenIssue}
+      canEdit={canEdit}
+      preview={barDrag.preview}
+      dragging={barDrag.dragging}
+      barDrag={barDrag}
     />
   )
 }
