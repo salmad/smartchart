@@ -314,3 +314,15 @@ test('issue panel, body edit, comment, full page and sub-issue', async ({ page }
   await page.keyboard.press('Enter')
   await expect(page.getByRole('complementary', { name: 'Issue panel' }).getByText('Launch checklist paragraph.')).toBeVisible()
 })
+
+test('apple-bar 1440 table and panel', async ({ page }) => {
+  test.skip(!process.env.APPLE_BAR_CAPTURE, 'Set APPLE_BAR_CAPTURE=1 to refresh docs/temp screenshot')
+  await openFreshRoadmap(page)
+  await seedSixIssues(page)
+  await page.reload()
+  await page.getByRole('button', { name: 'Hide the sidebar' }).click()
+  await page.getByRole('row', { name: /UK launch/ }).click()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('complementary', { name: 'Issue panel' })).toBeVisible()
+  await page.screenshot({ path: 'docs/temp/roadmap-m1-table-panel-1440.png' })
+})
