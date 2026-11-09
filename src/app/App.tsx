@@ -331,7 +331,8 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, tick: docTick, saved: s.items.length > 0,
     open: docOnScreen ? { kind: 'doc', id: docOnScreen } : s.deckId ? { kind: 'deck', id: s.deckId } : null })
   const docName = usePageName({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, open: docOnScreen ? { kind: 'doc', id: docOnScreen } : null })
-  const openPage = (ref: { kind: 'deck' | 'doc'; id: string }) => leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : `/doc/${ref.id}`)
+  const openPage = (ref: { kind: 'deck' | 'doc' | 'roadmap'; id: string }) =>
+    leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : ref.kind === 'doc' ? `/doc/${ref.id}` : `/r/${ref.id}`)
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
     onTheme: (theme: Theme) => applyLook({ theme }),

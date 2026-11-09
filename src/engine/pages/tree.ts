@@ -1,11 +1,11 @@
-/* The page tree: docs and decks nested in one workspace. Pure helpers over a flat list of pages, shared by the sidebar, the
-   server's checks and the fake Db, so every place applies the same rules and says the same sentences. */
+/* The page tree: docs, decks and roadmaps nested in one workspace. Pure helpers over a flat list of pages, shared by the
+   sidebar, the server's checks and the fake Db, so every place applies the same rules and says the same sentences. */
 
-export type PageKind = 'deck' | 'doc'
+export type PageKind = 'deck' | 'doc' | 'roadmap'
 /** A deck and a doc may share an id (clients choose ids), so a page is always named by kind and id together. */
 export interface PageRef { kind: PageKind; id: string }
 export interface PageNode extends PageRef { parent: PageRef | null; sortKey: string | null }
-/** One page of the tree as the sidebar needs it. `slides` is a deck's slide count (null for a doc). */
+/** One page of the tree as the sidebar needs it. `slides` is a deck's slide count (null for a doc or roadmap). */
 export interface PageSummary extends PageNode { name: string; updated: number; slides: number | null }
 
 /** Levels from the top: a page at the top is level 1. */

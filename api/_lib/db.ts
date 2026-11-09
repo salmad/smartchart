@@ -137,10 +137,12 @@ export interface Db {
   /** Move a page under `to.parent` (null: the top), right after or before a sibling, else last. Changes only the page's parent and
       order key: no revision, no version, no `updated_at`. Answers 'ok', 'foreign' (the user can't read the page), or a sentence. */
   movePage(userId: string, page: PageRef, to: { parent: PageRef | null; workspaceId?: string } & Slot): Promise<'ok' | 'foreign' | string>
-  /** Every deck and doc in the workspace the user can read, for the tree (up to MAX_PAGES). */
+  /** Every deck, doc and roadmap in the workspace the user can read, for the tree (up to MAX_PAGES). */
   listPages(userId: string, workspaceId: string): Promise<PageSummary[]>
   /** Deletes the doc and every page below it, with their versions and blobs. */
   deleteDoc(userId: string, id: string): Promise<boolean>
+  createRoadmap(userId: string, r: { id: string; name: string; prefix: string; workspaceId: string; parent?: PageRef }): Promise<'ok' | 'foreign' | string>
+  deleteRoadmap(userId: string, id: string): Promise<boolean>
   getDocMeta(userId: string, id: string): Promise<{ rev: number; presence: DocPresence; role: Role } | null>
   /** Editor and up. */
   setDocPresence(userId: string, id: string, p: DocPresence): Promise<boolean>
@@ -233,6 +235,22 @@ const SCHEMA = [
   `create index if not exists docs_parent on docs (workspace_id, parent_id)`,
   BACKFILL('decks', 'deck'),
   BACKFILL('docs', 'doc'),
+  `create table if not exists roadmaps (id text primary key, workspace_id text not null, user_id text not null, name text not null,
+    prefix text not null, fields jsonb not null default '[]', next_number integer not null default 1, seq bigint not null default 0,
+    parent_kind text, parent_id text, sort_key text, share_id text, updated_at timestamptz not null default now())`,
+  `create index if not exists roadmaps_ws on roadmaps (workspace_id, updated_at desc)`,
+  `create index if not exists roadmaps_parent on roadmaps (workspace_id, parent_id)`,
+  `create table if not exists issues (id text primary key, roadmap_id text not null, number integer not null, parent_id text, sort_key text not null,
+    title text not null, status text not null, assignee text, start_date date, due_date date, body text not null default '', body_rev integer not null default 0,
+    fields jsonb not null default '{}', comments jsonb not null default '[]', seq bigint not null, created_by text not null,
+    created_at timestamptz not null default now(), updated_at timestamptz not null default now(), deleted_at timestamptz)`,
+  `create unique index if not exists issues_number on issues (roadmap_id, number)`,
+  `create index if not exists issues_parent on issues (roadmap_id, parent_id)`,
+  `create index if not exists issues_seq on issues (roadmap_id, seq)`,
+  `create index if not exists issues_fields on issues using gin (fields)`,
+  `create table if not exists issue_events (roadmap_id text not null, issue_id text, user_id text not null, by_client text not null,
+    seq bigint not null, at timestamptz not null default now(), what text not null, changes jsonb not null default '[]')`,
+  `create index if not exists issue_events_seq on issue_events (roadmap_id, seq)`,
 ]
 
 /** One query; the schema is ready before the first. */

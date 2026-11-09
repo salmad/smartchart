@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEventHandler, type PointerEvent, type FocusEventHandler, type KeyboardEventHandler } from 'react'
-import { ChevronRight, FilePlus2, FileText, FolderInput, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
+import { ChevronRight, FilePlus2, FileText, FolderInput, Map, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { keyOf, MAX_DEPTH, type PageKind, type PageRef } from '@/engine/pages/tree'
 import { MENU_ICON, MENU_ITEM } from '../menu'
@@ -55,7 +55,7 @@ const noun = (row: Row) => row.ref.kind
 
 /** One page of the tree: chevron, kind glyph, name, and the ··· menu for editors. Its time is the tooltip. */
 export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuOpen, onOpen, onAhead, onToggle, onRename, onAdd, onMove, onDelete, onKeyDown, onFocus, drag, dragging, into }: Props) {
-  const Glyph = row.ref.kind === 'doc' ? FileText : Presentation
+  const Glyph = row.ref.kind === 'doc' ? FileText : row.ref.kind === 'roadmap' ? Map : Presentation
   // The two menus are mounted when the pointer or the keyboard first reaches the row (or a menu is asked for): a thousand rows
   // with two menus each cost more than the whole rest of the tree.
   const [armed, setArmed] = useState(false), [addOpen, setAddOpen] = useState(false)

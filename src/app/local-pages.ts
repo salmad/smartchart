@@ -40,6 +40,7 @@ export function placeNew(s: LocalStorage | undefined, ws: string | undefined, pa
 
 /** Writes a page's parent and key. False when the page is not stored or the browser refuses the write. */
 export function setPlace(s: LocalStorage | undefined, page: PageRef, parent: PageRef | null, sortKey: string): boolean {
+  if (page.kind === 'roadmap') return false
   if (page.kind === 'deck') {
     const d = decksOf(s), r = d.decks[page.id]
     if (!r) return false
@@ -55,12 +56,12 @@ export function setPlace(s: LocalStorage | undefined, page: PageRef, parent: Pag
 /** Removes the page and every page below it, with their versions, as the server does. False when the page is not stored. */
 export function removeBranch(s: LocalStorage | undefined, page: PageRef): boolean {
   const d = decksOf(s), docs = docsOf(s)
-  if (!(page.kind === 'deck' ? d.decks[page.id] : docs[page.id])) return false
+  if (page.kind === 'roadmap' || !(page.kind === 'deck' ? d.decks[page.id] : docs[page.id])) return false
   const doomed = [page, ...descendants(localNodes(s), page)]
   const dv = read<Record<string, unknown>>(s, DECK_VERSIONS_KEY, {}), ov = read<Record<string, unknown>>(s, DOC_VERSIONS_KEY, {})
   for (const p of doomed) {
     if (p.kind === 'deck') { delete d.decks[p.id]; delete dv[p.id]; if (d.active === p.id) d.active = null }
-    else { delete docs[p.id]; delete ov[p.id] }
+    else if (p.kind === 'doc') { delete docs[p.id]; delete ov[p.id] }
   }
   // Versions are a convenience here: a full browser still loses the pages, so the answer is the pages' write.
   write(s, DECK_VERSIONS_KEY, dv); write(s, DOC_VERSIONS_KEY, ov)

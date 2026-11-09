@@ -79,7 +79,9 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
   // A page with a request on its way opens once that has been answered: its stored copy is not up to date before.
   const openPage = (ref: PageRef) => void actions.settled(ref).then(() => {
     if (onDismiss && matchMedia('(max-width: 900px)').matches) onDismiss()
-    return ref.kind === 'deck' ? onOpenDeck(ref.id) : onOpenDoc(ref.id)
+    if (ref.kind === 'deck') return onOpenDeck(ref.id)
+    if (ref.kind === 'doc') return onOpenDoc(ref.id)
+    globalThis.location.assign(`/r/${ref.id}`)
   })
 
   // Switching opens the deck last used in that workspace from cache when possible; list fills in behind.

@@ -21,7 +21,7 @@ export interface PageRepo {
 
 const GONE = 'That page is gone.'
 const MOVE_FAILED: Record<number, string> = { 401: 'Your session ended.', 404: GONE }
-const route = (kind: PageRef['kind']) => (kind === 'deck' ? 'decks' : 'docs')
+const route = (kind: PageRef['kind']) => (kind === 'deck' ? 'decks' : kind === 'doc' ? 'docs' : 'roadmaps')
 
 export function remotePageRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: { fetcher?: typeof fetch; onSignedOut?: () => void } = {}): PageRepo {
   const call = async (url: string, init?: RequestInit) => {
@@ -34,9 +34,9 @@ export function remotePageRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
       const r = await call(`/api/pages?workspace=${encodeURIComponent(ws)}`)
       if (!r.ok) throw new Error(`pages: ${r.status}`)
       return ((await r.json()) as Partial<PageSummary>[]).flatMap((p): PageSummary[] => {
-        const kind = p.kind === 'deck' || p.kind === 'doc' ? p.kind : null
+        const kind = p.kind === 'deck' || p.kind === 'doc' || p.kind === 'roadmap' ? p.kind : null
         return kind && typeof p.id === 'string'
-          ? [{ kind, id: p.id, name: p.name || (kind === 'deck' ? 'Untitled deck' : 'Untitled doc'), updated: Number(p.updated) || 0,
+          ? [{ kind, id: p.id, name: p.name || (kind === 'deck' ? 'Untitled deck' : kind === 'doc' ? 'Untitled doc' : 'Untitled roadmap'), updated: Number(p.updated) || 0,
               slides: typeof p.slides === 'number' ? p.slides : null, parent: refOf(p.parent), sortKey: typeof p.sortKey === 'string' ? p.sortKey : null }]
           : []
       })

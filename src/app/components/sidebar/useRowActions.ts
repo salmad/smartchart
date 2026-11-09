@@ -86,11 +86,17 @@ export function useRowActions(d: Deps): RowActions {
       const { repos } = deps.current
       // The branch goes with it, as the server does it; each deleted page tells the app, which leaves only if it is the open one.
       act(op(ref, (r) => { const gone = [ref, ...descendants(r, ref)]; return r.filter((p) => !gone.some((g) => is(g, p))) }),
-        [`Couldn’t delete “${name}”.`, 'It’s back in your list.'], async () => ((await (ref.kind === 'deck' ? repos.decks.remove(ref.id) : repos.docs.remove(ref.id))) ? null : ''))
-      for (const p of [ref, ...below]) if (p.kind === 'deck') deps.current.onDeckDeleted(p.id); else deps.current.onDocDeleted(p.id)
+        [`Couldn’t delete “${name}”.`, 'It’s back in your list.'], async () => {
+          if (ref.kind === 'deck') return (await repos.decks.remove(ref.id)) ? null : ''
+          if (ref.kind === 'doc') return (await repos.docs.remove(ref.id)) ? null : ''
+          const r = await fetch(`/api/roadmaps?id=${encodeURIComponent(ref.id)}`, { method: 'DELETE', credentials: 'same-origin' })
+          return r.ok ? null : ''
+        })
+      for (const p of [ref, ...below]) { if (p.kind === 'deck') deps.current.onDeckDeleted(p.id); else if (p.kind === 'doc') deps.current.onDocDeleted(p.id) }
     },
     rename: ({ ref, name: was }, name) => {
       const named = (r: PageSummary[]) => r.map((p) => (is(p, ref) ? { ...p, name } : p))
+      if (ref.kind === 'roadmap') return
       if (ref.kind === 'deck') {
         act(op(ref, named), [`Couldn’t rename “${was}”.`, 'It has its old name back.'], async () => {
           const { decks } = deps.current.repos, deck = await decks.get(ref.id)

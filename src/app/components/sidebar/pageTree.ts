@@ -7,7 +7,7 @@ import { showThenFetch } from '@/app/swr'
 /** The stored name of a workspace's page list. */
 export const pageList = (workspaceId: string) => `pages:${workspaceId}`
 export const isPages = (v: unknown): v is PageSummary[] => Array.isArray(v) && v.every((p) => !!p && typeof p === 'object'
-  && ((p as PageSummary).kind === 'deck' || (p as PageSummary).kind === 'doc') && typeof (p as PageSummary).id === 'string' && typeof (p as PageSummary).name === 'string' && typeof (p as PageSummary).updated === 'number')
+  && ((p as PageSummary).kind === 'deck' || (p as PageSummary).kind === 'doc' || (p as PageSummary).kind === 'roadmap') && typeof (p as PageSummary).id === 'string' && typeof (p as PageSummary).name === 'string' && typeof (p as PageSummary).updated === 'number')
 
 export interface TreeState {
   /** Null until the first load. */

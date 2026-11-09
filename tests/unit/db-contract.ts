@@ -1,6 +1,7 @@
 // The Db contract: what every Db (the fake and the SQL one) must do about workspaces, members, invites and docs.
 // Each test makes its own users, so the suite runs on a shared database too.
 import { describe, expect, it } from 'vitest'
+import { canMove } from '../../src/engine/pages/tree'
 import type { Db } from '../../api/_lib/db'
 import type { Role } from '../../api/_lib/access'
 import type { Slide } from '../../src/engine/types'
@@ -231,6 +232,21 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.putDoc(ann.id, doc, 'Memo', '# Memo 2', 0)).toBe('conflict')
       expect(await db.putDoc(ann.id, doc, 'Memo', '# Memo 2', 1)).toEqual({ rev: 2 })
       expect(await db.deleteDoc(ann.id, doc)).toBe(true)
+      expect(await db.getDoc(ann.id, doc)).toBeNull()
+    })
+
+    it('a roadmap is a page: listed, nested under, counted, cyclable, and deleted with its subpages', async () => {
+      const db = await make(), { ann, id } = people(), rm = id('rm'), doc = id('doc')
+      const ws = await seedUser(db, ann)
+      expect(await db.createRoadmap(ann.id, { id: rm, name: 'Plan', prefix: 'PLN', workspaceId: ws })).toBe('ok')
+      expect((await db.listPages(ann.id, ws)).find((p) => p.id === rm)).toMatchObject({ kind: 'roadmap', slides: null, parent: null })
+      await db.putDoc(ann.id, doc, 'Memo', '# M', 0, ws, { kind: 'roadmap', id: rm })
+      expect(await db.countSubpages(ann.id, { kind: 'roadmap', id: rm })).toBe(1)
+      const pages = await db.listPages(ann.id, ws)
+      expect(canMove(pages, { kind: 'roadmap', id: rm }, { kind: 'doc', id: doc })).toBe('A page can’t go inside itself or its subpages.')
+      expect(await db.movePage(ann.id, { kind: 'roadmap', id: rm }, { parent: { kind: 'doc', id: doc } })).toBe('A page can’t go inside itself or its subpages.')
+      expect(await db.deleteRoadmap(ann.id, rm)).toBe(true)
+      expect((await db.listPages(ann.id, ws)).map((p) => p.id)).toEqual([])
       expect(await db.getDoc(ann.id, doc)).toBeNull()
     })
 

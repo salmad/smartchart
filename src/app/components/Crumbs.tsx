@@ -1,7 +1,7 @@
 import type { PageRef } from '@/engine/pages/tree'
 import type { Crumb } from './sidebar/usePageCrumbs'
 
-const hrefOf = (r: PageRef) => (r.kind === 'deck' ? `/d/${r.id}` : `/doc/${r.id}`)
+const hrefOf = (r: PageRef) => (r.kind === 'deck' ? `/d/${r.id}` : r.kind === 'doc' ? `/doc/${r.id}` : `/r/${r.id}`)
 /** Past three pages above the title, the middle ones fold into an ellipsis: the first and the last two stay. */
 const SHOWN = 3
 
