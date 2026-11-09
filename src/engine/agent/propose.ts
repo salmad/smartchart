@@ -10,7 +10,7 @@ import { FIGURE_KINDS, type Block, type Doc, type FigureBody, type FigureKind } 
 
 export type CompleteFn = typeof defaultComplete
 
-const MAX = 5
+const MAX = 8
 
 type RawProposal = {
   blockIds: string[]
@@ -57,7 +57,8 @@ function catalogue(): string {
   }).join('\n')
 }
 
-const RULES = `Up to ${MAX} suggestions, best first (most reading time saved, section main points first).
+const RULES = `Up to ${MAX} suggestions across the doc, best first (most reading time saved, section main points first).
+When a block fails readability, offer up to 2 different shapes on the same blockIds when both work (e.g. grouped table and bold-lead bullets) so the writer can compare.
 Each suggestion targets adjacent blockIds only. mode is replace or insert.
 Prefer grouped tables when rows fall into categories; steps for sequences; value cards for figures in sentences; bold-label bullets for long paragraphs.
 Text suggestions keep every word (kind "text", body is Markdown). Figure suggestions may condense only if every number, name and quoted phrase is kept; otherwise use insert above the block.

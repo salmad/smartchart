@@ -3,10 +3,11 @@ import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { Editor } from '@tiptap/core'
+import { loadFaces, mountFigure } from '@/engine/docs/mount'
 import { blockHTML } from '@/engine/docs/render'
 import { parseText } from '@/engine/docs/ops'
 import type { Doc, FigureBlock } from '@/engine/docs/types'
-import type { DocProposal } from '@/engine/docs/proposals'
+import { checkProposal, type DocProposal } from '@/engine/docs/proposals'
 import { previewDoc, type ProposalShowing } from '../proposal-preview'
 import { blockIdsInOrder } from '../proposal-preview'
 import { entries } from './structure'
@@ -25,6 +26,7 @@ export interface ProposalOptions {
   getDoc: () => Doc
   view: () => ProposalView | null
   theme: () => 'ink' | 'paper'
+  accent: () => string | undefined
 }
 
 const KEY = new PluginKey('proposalDecor')
@@ -50,6 +52,14 @@ const previewHTML = (proposal: DocProposal, doc: Doc, theme: 'ink' | 'paper') =>
   return ''
 }
 
+const mountFigures = (root: HTMLElement, proposal: DocProposal, theme: 'ink' | 'paper', accent: string | undefined) => {
+  if (!proposal.figure) return
+  const block: FigureBlock = { type: 'figure', kind: proposal.figure.kind, id: 'preview', body: proposal.figure.body }
+  for (const frame of root.querySelectorAll<HTMLElement>('.doc-fig > .fig-frame')) {
+    void loadFaces().then(() => mountFigure(frame, block, theme, accent))
+  }
+}
+
 const entryRange = (doc: Doc, blockIds: string[]) => {
   const order = blockIdsInOrder(doc)
   const indices = blockIds.map((id) => order.indexOf(id)).filter((i) => i >= 0).sort((a, b) => a - b)
@@ -59,7 +69,7 @@ const entryRange = (doc: Doc, blockIds: string[]) => {
 
 export const ProposalPreview = Extension.create<ProposalOptions>({
   name: 'proposalPreview',
-  addOptions: () => ({ getDoc: () => ({ title: '', blocks: [] }), view: () => null, theme: () => 'ink' }),
+  addOptions: () => ({ getDoc: () => ({ title: '', blocks: [] }), view: () => null, theme: () => 'ink', accent: () => undefined }),
 
   addProseMirrorPlugins() {
     const opt = () => this.options
@@ -86,11 +96,14 @@ export const ProposalPreview = Extension.create<ProposalOptions>({
           const range = entryRange(doc, view.proposal.blockIds)
           if (!range) return DecorationSet.create(state.doc, decs)
           const theme = opt().theme()
+          const accent = opt().accent()
+          const checked = checkProposal(doc, view.proposal)
+          const mode = checked.ok ? checked.mode : view.proposal.mode
+          const swapIn = view.showing === 'suggestion' && mode === 'replace'
           for (let i = range.from; i <= range.to; i++) {
             const e = flat[i]
             if (!e) continue
-            const hide = view.showing === 'suggestion'
-            decs.push(Decoration.node(e.pos, e.pos + e.node.nodeSize, { class: hide ? 'doc-proposal-hidden' : 'doc-proposal-marked' }))
+            decs.push(Decoration.node(e.pos, e.pos + e.node.nodeSize, { class: swapIn ? 'doc-proposal-hidden' : 'doc-proposal-marked' }))
           }
           const start = flat[range.from]
           if (!start) return DecorationSet.create(state.doc, decs)
@@ -103,6 +116,7 @@ export const ProposalPreview = Extension.create<ProposalOptions>({
             const body = document.createElement('div')
             body.className = 'doc-proposal-body'
             body.innerHTML = previewHTML(view.proposal, doc, theme)
+            mountFigures(body, view.proposal, theme, accent)
             wrap.append(chip, body)
             decs.push(Decoration.widget(start.pos, wrap, { side: -1 }))
           } else if (view.canEdit) {

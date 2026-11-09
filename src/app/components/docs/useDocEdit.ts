@@ -104,6 +104,7 @@ export function useDocEdit({ doc, theme, accent, save, onDone, proposalView, pro
     getDoc: () => { const e = editorRef.current; return e ? docOf(doc, e.getJSON() as ProseNode) : doc },
     view: proposalView,
     theme: () => look.current.theme,
+    accent: () => look.current.accent,
   } : undefined), [doc, proposalView])
 
   const editor = useEditor({
