@@ -2,7 +2,8 @@ import type { FieldDef, Issue, MemberLite, Roadmap } from '@/engine/roadmaps/typ
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { keyOf } from '@/engine/roadmaps/fields'
 import { progress } from '@/engine/roadmaps/rollup'
-import { issueTree } from '@/engine/roadmaps/tree'
+import { canParent, issueTree } from '@/engine/roadmaps/tree'
+import { toast } from 'sonner'
 import { StatusCell } from './cells/StatusCell'
 import { PersonCell } from './cells/PersonCell'
 import { DateCell } from './cells/DateCell'
@@ -49,7 +50,8 @@ export function IssueProperties({ issue, roadmap, fields, issues, members, canEd
     act({ op: 'set', ids: [issue.id], props: props as import('@/engine/roadmaps/ops').IssueProps })
   }
 
-  const parentChoices = issues.filter((i) => i.deletedAt === null && i.id !== issue.id)
+  const live = issues.filter((i) => i.deletedAt === null)
+  const parentChoices = live.filter((i) => i.id !== issue.id && canParent(live, issue.id, i.id) === 'ok')
 
   return (
     <div className={rail ? 'text-[12px]' : 'rounded-lg border border-line/60 bg-panel/40 px-3 py-2'} aria-label="Properties">
@@ -73,7 +75,8 @@ export function IssueProperties({ issue, roadmap, fields, issues, members, canEd
             aria-label="Parent issue"
             onChange={(e) => {
               const parentId = e.target.value || null
-              act({ op: 'move', id: issue.id, parentId })
+              const out = act({ op: 'move', id: issue.id, parentId })
+              if (out !== 'ok') toast(out)
             }}
           >
             <option value="">No parent</option>

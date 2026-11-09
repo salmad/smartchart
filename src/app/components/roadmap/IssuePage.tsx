@@ -20,21 +20,26 @@ interface Props {
   look: { theme: Theme; accent?: string }
   onBack: () => void
   onOpenIssue: (id: string) => void
+  said: string | null
 }
 
 export function IssuePage(props: Props) {
   const { issue, roadmapId, repo } = props
-  const { detail, loading, setDetail } = useIssueDetail(repo, roadmapId, issue.id)
+  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id)
+  const { said, ...rest } = props
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-11 shrink-0 items-center border-b border-line px-4">
         <Button variant="ghost" size="sm" onClick={props.onBack}>Back to table</Button>
       </div>
+      {said && <p role="status" className="border-b border-line bg-panel px-8 py-2 text-[12.5px] text-ink-2">{said}</p>}
       <IssueDetailView
-        {...props}
+        key={issue.id}
+        {...rest}
         detail={detail}
         detailLoading={loading}
+        detailError={error}
         layout="page"
         onDetail={(patch) => setDetail(mergeIssueDetail(detail, patch))}
       />

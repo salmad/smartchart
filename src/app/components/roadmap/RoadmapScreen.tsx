@@ -116,6 +116,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               act={act}
               repo={repo}
               look={lookProps}
+              said={view.said}
               onBack={() => go(`/r/${id}`)}
               onOpenIssue={openIssue}
             />

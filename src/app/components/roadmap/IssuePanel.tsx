@@ -26,7 +26,7 @@ interface Props {
 
 export function IssuePanel(props: Props) {
   const { issue, roadmapId, repo, onClose } = props
-  const { detail, loading, setDetail } = useIssueDetail(repo, roadmapId, issue.id)
+  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id)
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -53,9 +53,11 @@ export function IssuePanel(props: Props) {
         </button>
       </div>
       <IssueDetailView
+        key={issue.id}
         {...props}
         detail={detail}
         detailLoading={loading}
+        detailError={error}
         layout="panel"
         onDetail={(patch) => setDetail(mergeIssueDetail(detail, patch))}
       />

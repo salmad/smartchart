@@ -18,6 +18,7 @@ interface Props {
   members: MemberLite[]
   detail: IssueDetail | null
   detailLoading: boolean
+  detailError: string | null
   canEdit: boolean
   act: (op: RoadmapOp) => 'ok' | string
   repo: RoadmapRepo
@@ -35,6 +36,7 @@ export function IssueDetailView({
   members,
   detail,
   detailLoading,
+  detailError,
   canEdit,
   act,
   repo,
@@ -68,6 +70,7 @@ export function IssueDetailView({
         </div>
       )}
       {detailLoading && !detail && <p className="mt-4 text-[13px] text-ink-2">Loading description…</p>}
+      {detailError && <p role="alert" className="mt-4 text-[13px] text-bad">{detailError}</p>}
       <IssueBody
         roadmapId={roadmap.id}
         issueId={issue.id}
@@ -88,7 +91,7 @@ export function IssueDetailView({
         canEdit={canEdit}
         onComment={async (text) => {
           const r = await repo.comment(roadmap.id, issue.id, text)
-          if (typeof r === 'string') return
+          if (typeof r === 'string') throw new Error(r)
           const d = await repo.detail(roadmap.id, issue.id)
           if (d) onDetail(d)
           else onDetail({ comments: r })

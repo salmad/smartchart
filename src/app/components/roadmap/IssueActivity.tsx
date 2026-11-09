@@ -16,15 +16,20 @@ interface Props {
 export function IssueActivity({ issue, events, comments, fields, members, canEdit, onComment }: Props) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [commentError, setCommentError] = useState<string | null>(null)
   const items = activityItems(issue, events, comments, members, fields)
 
   const send = async () => {
     const t = text.trim()
     if (!t || busy) return
     setBusy(true)
+    setCommentError(null)
     try {
       await onComment(t)
       setText('')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Couldn’t post the comment.'
+      setCommentError(msg)
     } finally {
       setBusy(false)
     }
@@ -39,15 +44,18 @@ export function IssueActivity({ issue, events, comments, fields, members, canEdi
         ))}
       </ol>
       {canEdit && (
-        <div className="mt-3 flex gap-2">
-          <textarea
-            className="min-h-[72px] flex-1 resize-y rounded border border-line bg-app-bg px-2 py-1.5 text-[13px] text-ink outline-none focus:border-gold/50"
-            aria-label="Comment"
-            placeholder="Add a comment…"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <Button size="sm" disabled={!text.trim() || busy} onClick={() => void send()}>Post</Button>
+        <div className="mt-3 flex flex-col gap-2">
+          {commentError && <p role="alert" className="text-[12.5px] text-bad">{commentError}</p>}
+          <div className="flex gap-2">
+            <textarea
+              className="min-h-[72px] flex-1 resize-y rounded border border-line bg-app-bg px-2 py-1.5 text-[13px] text-ink outline-none focus:border-gold/50"
+              aria-label="Comment"
+              placeholder="Add a comment…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <Button size="sm" disabled={!text.trim() || busy} onClick={() => void send()}>Post</Button>
+          </div>
         </div>
       )}
     </section>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { GripVertical } from 'lucide-react'
 import type { Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { keyOf } from '@/engine/roadmaps/fields'
@@ -32,24 +33,52 @@ export function SubIssues({ parent, roadmap, issues, canEdit, act, onOpen }: Pro
     setComposing(false)
   }
 
-  const move = (id: string, dir: -1 | 1) => {
-    const i = kids.findIndex((k) => k.id === id)
-    const swap = kids[i + dir]
-    if (!swap) return
-    act(dir < 0 ? { op: 'move', id, parentId: parent.id, before: swap.id } : { op: 'move', id, parentId: parent.id, after: swap.id })
+  const moveKid = (from: number, to: number) => {
+    if (to < 0 || to >= kids.length || from === to) return
+    const id = kids[from].id
+    const target = kids[to]
+    const out = to < from
+      ? act({ op: 'move', id, parentId: parent.id, before: target.id })
+      : act({ op: 'move', id, parentId: parent.id, after: target.id })
+    if (out !== 'ok') return
   }
 
   return (
     <section className="mt-6" aria-label="Sub-issues">
       <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Sub-issues</h3>
-      <ul className="space-y-0.5">
+      <ul className="space-y-0.5" data-sub-issues={parent.id}>
         {kids.map((kid, idx) => (
-          <li key={kid.id} className="flex items-center gap-2 rounded px-1 py-1 hover:bg-raise/60">
+          <li key={kid.id} data-sub-issue-row={kid.id} className="flex items-center gap-2 rounded px-1 py-1 hover:bg-raise/60">
             {canEdit && (
-              <span className="flex flex-col gap-0.5 text-ink-3">
-                <button type="button" className="leading-none disabled:opacity-30" disabled={idx === 0} aria-label={`Move ${kid.title} up`} onClick={() => move(kid.id, -1)}>↑</button>
-                <button type="button" className="leading-none disabled:opacity-30" disabled={idx === kids.length - 1} aria-label={`Move ${kid.title} down`} onClick={() => move(kid.id, 1)}>↓</button>
-              </span>
+              <button
+                type="button"
+                aria-label={`Move ${kid.title}`}
+                className="grid size-7 shrink-0 cursor-grab place-items-center rounded text-ink-3 hover:text-ink active:cursor-grabbing"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  const grip = e.currentTarget
+                  grip.setPointerCapture(e.pointerId)
+                  let over = idx
+                  const rows = () => [...grip.closest('[data-sub-issues]')?.querySelectorAll('[data-sub-issue-row]') ?? []] as HTMLElement[]
+                  const pick = (ev: PointerEvent) => {
+                    const y = ev.clientY
+                    const ix = rows().findIndex((el) => {
+                      const b = el.getBoundingClientRect()
+                      return y >= b.top && y <= b.bottom
+                    })
+                    if (ix >= 0) over = ix
+                  }
+                  const up = () => {
+                    grip.removeEventListener('pointermove', pick)
+                    grip.removeEventListener('pointerup', up)
+                    if (over !== idx) moveKid(idx, over)
+                  }
+                  grip.addEventListener('pointermove', pick)
+                  grip.addEventListener('pointerup', up)
+                }}
+              >
+                <GripVertical className="size-3.5" strokeWidth={1.75} />
+              </button>
             )}
             <StatusGlyph status={kid.status} />
             <button type="button" className="min-w-0 flex-1 truncate text-left text-[13px] text-ink hover:text-gold" onClick={() => onOpen(kid.id)}>
