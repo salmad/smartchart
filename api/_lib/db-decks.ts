@@ -29,23 +29,35 @@ const parentOf = (r: PageCols): PageRef | null => {
   return k && r.parent_id ? { kind: k, id: r.parent_id } : null
 }
 const TABLE = { deck: 'decks', doc: 'docs', roadmap: 'roadmaps' } as const
+type PageTable = 'decks' | 'docs' | 'roadmaps'
+const PAGE_TABLES: PageTable[] = ['decks', 'docs', 'roadmaps']
+const PAGE_KIND: Record<PageTable, PageRef['kind']> = { decks: 'deck', docs: 'doc', roadmaps: 'roadmap' }
+
+/** Union of the three page tables; each branch from `select`, optional `where(t)` (e.g. workspace + may). */
+export function pagesUnion(
+  select: (t: PageTable, kind: PageRef['kind']) => string,
+  where?: (t: PageTable) => string,
+): string {
+  return PAGE_TABLES.map((t) => {
+    const clause = where?.(t)
+    return `${select(t, PAGE_KIND[t])}${clause ? ` where ${clause}` : ''}`
+  }).join('\n  union all ')
+}
+
 /** Parent links for every page kind (cycle checks and tree walks). */
-const PAGE_LINKS = `select 'deck' as kind, id, parent_kind, parent_id from decks
-  union all select 'doc', id, parent_kind, parent_id from docs
-  union all select 'roadmap', id, parent_kind, parent_id from roadmaps`
-/** One row per page in the tree (no access filter: callers add workspace and may). */
-export const PAGES_SQL = `select 'deck' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at as updated from decks
-  union all select 'doc', id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at from docs
-  union all select 'roadmap', id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at from roadmaps`
+const PAGE_LINKS = pagesUnion((t, kind) => `select '${kind}' as kind, id, parent_kind, parent_id from ${t}`)
+
+/** One row per page in the tree (no access filter). */
+export const PAGES_SQL = pagesUnion((t, kind) => (t === 'decks'
+  ? `select '${kind}' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at as updated from ${t}`
+  : `select '${kind}' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at from ${t}`))
 
 export function deckCalls(q: Q): Pick<Db, Calls> {
-  void PAGES_SQL
   /** Every page of a workspace as the tree sees it (no access check: callers pass a workspace they may edit in, or get an empty list). */
+  const wsMay = (t: PageTable) => `workspace_id = $2 and ${may(t, '$1', '$3')}`
   const nodesIn = async (u: string, ws: string): Promise<PageNode[]> => (await q<PageCols & { kind: PageRef['kind']; id: string }>(
     `select kind, id, parent_kind, parent_id, sort_key from (
-       select 'deck' as kind, id, parent_kind, parent_id, sort_key from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
-       union all select 'doc', id, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}
-       union all select 'roadmap', id, parent_kind, parent_id, sort_key from roadmaps where workspace_id = $2 and ${may('roadmaps', '$1', '$3')}) p limit ${MAX_PAGES}`,
+       ${pagesUnion((t, kind) => `select '${kind}' as kind, id, parent_kind, parent_id, sort_key from ${t}`, wsMay)}) p limit ${MAX_PAGES}`,
     [u, ws, R('read')])).map((r) => ({ kind: r.kind, id: r.id, parent: parentOf(r), sortKey: r.sort_key }))
   /** The page and everything below it, deleted with their versions and blobs; false when the caller may not edit the page.
       The write right is the workspace's, the same for every page in it, so it is checked once, on the page named. A page made
@@ -193,10 +205,9 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
     // The tree call: decks and docs together, with no per-kind cap of 200 (the tree needs every page or it shows holes).
     listPages: async (u, ws) => (await q<PageCols & { kind: PageRef['kind']; id: string; name: string; updated: string | Date; slides: number | null }>(
       `select kind, id, name, updated, slides, parent_kind, parent_id, sort_key from (
-         select 'deck' as kind, id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides, parent_kind, parent_id, sort_key
-           from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
-         union all select 'doc', id, name, updated_at, null, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}
-         union all select 'roadmap', id, name, updated_at, null, parent_kind, parent_id, sort_key from roadmaps where workspace_id = $2 and ${may('roadmaps', '$1', '$3')}) p
+         ${pagesUnion((t, kind) => (t === 'decks'
+           ? `select '${kind}' as kind, id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides, parent_kind, parent_id, sort_key from ${t}`
+           : `select '${kind}' as kind, id, name, updated_at, null, parent_kind, parent_id, sort_key from ${t}`), wsMay)}) p
        order by updated desc limit ${MAX_PAGES}`, [u, ws, R('read')]))
       .map((r): PageSummary => ({ kind: r.kind, id: r.id, name: r.name, updated: ms(r.updated), slides: r.slides === null ? null : Number(r.slides), parent: parentOf(r), sortKey: r.sort_key })),
     movePage: async (u, page, to) => {
