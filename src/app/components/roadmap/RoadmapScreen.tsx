@@ -44,6 +44,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const [viewSettings, setViewSettings] = useViewSettings(id)
   const [fieldsOpen, setFieldsOpen] = useState(false)
   const [panelId, setPanelId] = useState<string | null>(null)
+  const [todayRequest, setTodayRequest] = useState(0)
   const title = view.state?.roadmap.name ?? name ?? ''
   const customFields = view.state?.roadmap.fields ?? []
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
@@ -99,7 +100,15 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
           <span className="truncate text-ink-2">{title}</span>
         </nav>
         {view.state && (
-          <TopBar canEdit={canEdit} fields={customFields} view={viewSettings} onView={setViewSettings} onFields={() => setFieldsOpen(true)} onNewIssue={() => { setPanelId(null); setNewIssue((n) => n + 1) }} />
+          <TopBar
+            canEdit={canEdit}
+            fields={customFields}
+            view={viewSettings}
+            onView={setViewSettings}
+            onFields={() => setFieldsOpen(true)}
+            onNewIssue={() => { setPanelId(null); setNewIssue((n) => n + 1) }}
+            onToday={() => setTodayRequest((n) => n + 1)}
+          />
         )}
         <AccountMenu account={account} />
       </header>
@@ -128,18 +137,22 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
           {view.state && !routeIssue && showTable && (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               {hasIssues && <FilterBar fields={customFields} view={viewSettings} issueCount={liveCount} onChange={setViewSettings} />}
-              <IssueTable
-                state={view.state}
-                view={viewSettings}
-                members={view.members}
-                today={today}
-                onView={setViewSettings}
-                canEdit={canEdit}
-                act={act}
-                said={view.said}
-                onOpenIssue={openIssue}
-                newIssue={newIssue}
-              />
+              {viewSettings.layout === 'table' ? (
+                <IssueTable
+                  state={view.state}
+                  view={viewSettings}
+                  members={view.members}
+                  today={today}
+                  onView={setViewSettings}
+                  canEdit={canEdit}
+                  act={act}
+                  said={view.said}
+                  onOpenIssue={openIssue}
+                  newIssue={newIssue}
+                />
+              ) : (
+                <section aria-label="Timeline" className="min-h-0 flex-1" data-today-request={todayRequest} />
+              )}
             </div>
           )}
           {view.state && !routeIssue && panelId && openIssueRow && (

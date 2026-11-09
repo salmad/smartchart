@@ -52,7 +52,7 @@ export function TableHead({ columns, fields }: { columns: string[]; fields: Fiel
     <thead className="sticky top-0 z-10 bg-app-bg">
       <tr className="h-9 border-b border-line text-[11.5px] text-ink-3">
         <th scope="col" className="w-6 px-1 font-medium" />
-        <th scope="col" className="w-8 px-2 font-medium" />
+        <th scope="col" className="w-8 px-2 font-medium">Status</th>
         <th scope="col" className="w-20 px-2 font-medium">Key</th>
         <th scope="col" className="min-w-[200px] px-2 font-medium">Title</th>
         {columns.map((c) => (

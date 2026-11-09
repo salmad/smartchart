@@ -12,6 +12,8 @@ function mergeView(raw: Partial<ViewSettings>): ViewSettings {
     collapsed: raw.collapsed ?? DEFAULT_VIEW.collapsed,
     groupBy: raw.groupBy ?? null,
     sort: raw.sort ?? DEFAULT_VIEW.sort,
+    layout: raw.layout ?? DEFAULT_VIEW.layout,
+    scale: raw.scale ?? DEFAULT_VIEW.scale,
   }
 }
 

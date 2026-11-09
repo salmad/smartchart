@@ -3,6 +3,8 @@ import type { ViewSettings } from '@/engine/roadmaps/view'
 import { Button } from '../ui/button'
 import { cn } from '@/app/lib/utils'
 import { DisplayMenu } from './DisplayMenu'
+import { GanttControls } from './GanttControls'
+import type { Scale } from '@/engine/roadmaps/gantt'
 
 interface Props {
   canEdit: boolean
@@ -11,15 +13,43 @@ interface Props {
   onView: (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
   onFields?: () => void
   onNewIssue?: () => void
+  onToday?: () => void
 }
 
-/** Roadmap chrome below the crumbs: one tab (Table), Display, Fields, and New issue. */
-export function TopBar({ canEdit, fields, view, onView, onFields, onNewIssue }: Props) {
+const tabClass = (active: boolean) =>
+  cn(
+    'rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-colors',
+    active ? 'bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line)]' : 'text-ink-3 hover:text-ink',
+  )
+
+/** Roadmap chrome below the crumbs: Table / Gantt tabs, Display, Fields, and New issue. */
+export function TopBar({ canEdit, fields, view, onView, onFields, onNewIssue, onToday }: Props) {
+  const setLayout = (layout: ViewSettings['layout']) => onView({ ...view, layout })
+  const setScale = (scale: Scale) => onView({ ...view, scale })
+
   return (
     <div className="flex flex-none items-center gap-2">
       <nav aria-label="Roadmap views" className="flex items-center gap-0.5 rounded-lg border border-line bg-panel p-0.5">
-        <span className={cn('rounded-md px-2.5 py-1 text-[12.5px] font-medium text-ink', 'bg-raise shadow-[0_0_0_1px_theme(colors.line)]')}>Table</span>
+        <button
+          type="button"
+          className={tabClass(view.layout === 'table')}
+          aria-pressed={view.layout === 'table'}
+          onClick={() => setLayout('table')}
+        >
+          Table
+        </button>
+        <button
+          type="button"
+          className={tabClass(view.layout === 'gantt')}
+          aria-pressed={view.layout === 'gantt'}
+          onClick={() => setLayout('gantt')}
+        >
+          Gantt
+        </button>
       </nav>
+      {view.layout === 'gantt' && onToday && (
+        <GanttControls scale={view.scale} onScale={setScale} onToday={onToday} />
+      )}
       <DisplayMenu fields={fields} view={view} onChange={onView} />
       {canEdit && (
         <>

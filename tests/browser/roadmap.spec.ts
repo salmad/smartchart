@@ -1,26 +1,9 @@
 /* Roadmaps on the dev account: create from the sidebar, empty table screen, kept across reload. */
 import { test, expect } from '@playwright/test'
-import { signInAsDev } from './dev-account'
+import { EMPTY, openFreshRoadmap, ROADMAPS_KEY, seedSixIssues, signInRoadmapTests } from './roadmap-helpers'
 
-signInAsDev()
+signInRoadmapTests()
 test.use({ viewport: { width: 1440, height: 900 } })
-
-const EMPTY = 'No issues yet. Press C or New issue to add the first.'
-
-async function openFreshRoadmap(page: import('@playwright/test').Page, { checkPrefix = false } = {}) {
-  await page.goto('/new')
-  await page.getByRole('button', { name: /^(Show|Hide) the sidebar$/ }).waitFor()
-  const show = page.getByRole('button', { name: 'Show the sidebar' })
-  if (await show.isVisible()) await show.click()
-  await page.getByRole('navigation', { name: 'Workspace' }).getByRole('button', { name: 'New page' }).click()
-  await page.getByRole('menuitem', { name: 'New roadmap' }).click()
-  const dialog = page.getByRole('dialog', { name: 'New roadmap' })
-  await dialog.getByLabel('Name').fill('SME credit launch')
-  if (checkPrefix) await expect(dialog.getByLabel('Prefix')).toHaveValue('SCL')
-  await dialog.getByRole('button', { name: 'Create roadmap' }).click()
-  await expect(page).toHaveURL(/\/r\/rm_[\w-]+$/)
-  await expect(page.getByText(EMPTY)).toBeVisible()
-}
 
 test('creates a roadmap from the sidebar and shows the empty table screen', async ({ page }) => {
   await openFreshRoadmap(page, { checkPrefix: true })
@@ -61,68 +44,6 @@ test('adds a choice field from Fields and shows it in the table header', async (
   await confirm.getByRole('button', { name: 'Delete' }).click()
   await expect(fieldsAgain.getByRole('button', { name: 'Delete France' })).toHaveCount(0)
 })
-
-const ROADMAPS_KEY = 'smartchart.roadmaps.v1'
-
-async function seedSixIssues(page: import('@playwright/test').Page) {
-  const id = /\/r\/(rm_[\w-]+)/.exec(page.url())?.[1]
-  if (!id) throw new Error('Expected a roadmap URL')
-  await page.evaluate(
-    ({ roadmapId, key }) => {
-      const now = Date.now()
-      const row = (over: Record<string, unknown>) => ({
-        parentId: null,
-        sortKey: 'a',
-        title: 'Issue',
-        status: 'todo',
-        assignee: null,
-        start: null,
-        due: null,
-        fields: {},
-        bodyRev: 0,
-        seq: 1,
-        createdBy: 'local',
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null,
-        body: '',
-        comments: [],
-        ...over,
-      })
-      const all = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, {
-        issues: unknown[]
-        fields: unknown[]
-        nextNumber: number
-        seq: number
-      }>
-      const rm = all[roadmapId]
-      if (!rm) return
-      rm.fields = [
-        {
-          id: 'f_country',
-          name: 'Country',
-          type: 'choice',
-          options: [
-            { id: 'uk', name: 'UK', emoji: '🇬🇧' },
-            { id: 'fr', name: 'France', emoji: '🇫🇷' },
-          ],
-        },
-      ]
-      rm.issues = [
-        row({ id: 'i_uk', number: 1, sortKey: 'a', title: 'UK launch', fields: { f_country: 'uk' } }),
-        row({ id: 'i_done', number: 2, sortKey: 'b', parentId: 'i_uk', title: 'Shipped piece', status: 'done' }),
-        row({ id: 'i_blk', number: 3, sortKey: 'c', parentId: 'i_uk', title: 'Blocked piece', status: 'blocked' }),
-        row({ id: 'i_fr', number: 4, sortKey: 'd', title: 'France launch', fields: { f_country: 'fr' } }),
-        row({ id: 'i_fr_a', number: 5, sortKey: 'e', parentId: 'i_fr', title: 'France task A' }),
-        row({ id: 'i_fr_b', number: 6, sortKey: 'f', parentId: 'i_fr', title: 'France task B', status: 'in_progress' }),
-      ]
-      rm.nextNumber = 7
-      rm.seq = 6
-      localStorage.setItem(key, JSON.stringify(all))
-    },
-    { roadmapId: id, key: ROADMAPS_KEY },
-  )
-}
 
 test('table nesting, filters, grouping and saved view', async ({ page }) => {
   await openFreshRoadmap(page)

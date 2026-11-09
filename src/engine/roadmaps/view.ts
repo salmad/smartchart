@@ -1,3 +1,4 @@
+import type { Scale } from './gantt.js'
 import { buildIndex } from './index.js'
 import { progress } from './rollup.js'
 import type { FieldDef, FieldValue, Issue, RoadmapState, Status } from './types.js'
@@ -15,6 +16,8 @@ export interface ViewSettings {
   sort: 'order' | 'due' | 'start' | 'status' | 'updated'
   columns: string[]
   collapsed: string[]
+  layout: 'table' | 'gantt'
+  scale: Scale
 }
 
 export type TableRow =
@@ -27,6 +30,8 @@ export const DEFAULT_VIEW: ViewSettings = {
   sort: 'order',
   columns: ['status', 'assignee', 'start', 'due'],
   collapsed: [],
+  layout: 'table',
+  scale: 'month',
 }
 
 const DONE: Status[] = ['done', 'cancelled']
