@@ -164,10 +164,10 @@ Thin harness, as the rest of Occam: give the models tools, keep logic in renderi
 
 ## Milestones
 
-1. **Roadmap and table.** Page kind, data, fields editor (add, rename, reorder, delete fields and options), issues, the table with nesting, grouping, filters, editing in place, the issue panel and full page with the doc body, comments, the event log, live updates, the local copy and optimistic writes.
-2. **Gantt.**
-3. **Matrix**, and Duplicate.
-4. **Checks, agent and MCP, roadmap to slide.**
+1. **Roadmap and table.** Shipped (M1). Page kind, data, fields editor (add, rename, reorder, delete fields and options), issues, the table with nesting, grouping, filters, editing in place, the issue panel and full page with the doc body, comments, the event log, live updates, the local copy and optimistic writes.
+2. **Gantt.** Shipped (M2). Plan: `docs/superpowers/plans/2026-11-09-roadmaps-m2-gantt.md`.
+3. **Matrix**, and Duplicate. Spec: `docs/superpowers/specs/2026-11-10-roadmaps-m3-matrix-design.md`.
+4. **Checks, agent and MCP, roadmap to slide.** Spec: `docs/superpowers/specs/2026-11-10-roadmaps-m4-checks-agent-design.md` (M4a Checks; M4b agent/MCP/slide outlined for a later plan).
 
 Each milestone gets its own plan. Unit tests for everything in `src/engine/roadmaps/`; a browser test per view (create a roadmap, add issues, see them in the view).
 
