@@ -14,7 +14,7 @@ description: >-
 
 The pipeline lives in `shorts/` (a standalone Remotion package; run every command from `shorts/`). You write one file per episode, `public/episodes/<slug>/short.json`; the scripts voice it, time it, render it and check it. Everything visual is code you configure, never design per episode.
 
-Read before writing any script: [voice.md](voice.md) (how the narration is performed: register, the arc, the turn, tags) and [scenes.md](scenes.md) (scene types, and which one shows what the narration names). Editorial craft (hooks, formats, what the data says): [reference.md](reference.md).
+Read before writing any script: [voice.md](voice.md) (how the narration is performed: register, the arc, the turn, tags) and [scenes.md](scenes.md) (scene types, and which one shows what the narration names). Editorial craft (hooks, formats, what the data says): [reference.md](reference.md). Scoring hooks, with the user's own notes as anchors: [hooks.md](hooks.md).
 
 ## The goal
 
@@ -39,7 +39,7 @@ Copy this checklist into the episode's `notes.md` and tick as you go. ⏸ marks 
 Read `shorts/ledger.md`. Formats and hook styles that beat the channel median get more slots; ones that lost get one more try with a different hook, then drop.
 
 ### 1. Angle and hook ⏸
-`npm run new -- <slug>`. In `notes.md`, fill the angle: who it's for, the one pain or payoff, the format (see reference.md, formats), who would send it to whom, the series (consulting craft, boss feedback decoded, watch it fix it), and its **business potential** 0–3 (0 Occam is irrelevant, 3 Occam is how the fix gets done; prefer 2–3) with where Occam shows on screen. Write **three hooks** of different kinds (problem, result, contrarian, error, number). Show the user the angle and the three hooks; recommend one.
+`npm run new -- <slug>`. In `notes.md`, fill the angle: who it's for, the one pain or payoff, the format (see reference.md, formats), who would send it to whom, the series (consulting craft, boss feedback decoded, watch it fix it), and its **business potential** 0–3 (0 Occam is irrelevant, 3 Occam is how the fix gets done; prefer 2–3) with where Occam shows on screen. Write **three hooks** of different kinds (problem, result, contrarian, error, number, quote, desire), each with its say, text, Frame 0 and turn, labelled top, middle or bottom of the funnel. Score each against [hooks.md](hooks.md) and rewrite any that fail a gate or score 0 on lines 1–4. Show the user the angle, the three hooks and their scores; recommend one. When the user leaves a note on a hook, add it to hooks.md's anchors.
 
 ### 2. Script ⏸
 Write `short.json` (fields in [scenes.md](scenes.md)): hook → 2–4 beats → recap. Rules:
