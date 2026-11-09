@@ -179,7 +179,6 @@ export function GanttLane({ row, mark, axis, width, groupSpan, canEdit, preview,
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
       if (!issueId) return
-      if (mark.kind === 'bracket' && !mark.own) return
       const el = e.currentTarget
       const rect = el.getBoundingClientRect()
       const x = e.clientX - rect.left

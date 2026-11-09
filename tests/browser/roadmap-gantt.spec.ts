@@ -84,14 +84,42 @@ test('draws bars, a bracket, a milestone and alert labels', async ({ page }) => 
   await expect(page.getByRole('complementary', { name: 'Issue panel' })).toBeVisible()
 })
 
+async function scrollBarClearOfList(
+  page: import('@playwright/test').Page,
+  issueId: string,
+  from: 'center' | 'left' | 'right' = 'center',
+) {
+  await page.evaluate(
+    ({ id, from }) => {
+      const laneEl = document.querySelector(`[data-issue="${id}"]`) as HTMLElement | null
+      const scroll = laneEl?.closest('.overflow-auto') as HTMLElement | null
+      const sticky = scroll?.querySelector('.sticky.left-0.bg-app-bg') as HTMLElement | null
+      if (!laneEl || !scroll || !sticky) return
+      const bar = laneEl.querySelector('rect')
+      if (!bar) return
+      const listRight = sticky.getBoundingClientRect().right
+      const barRect = bar.getBoundingClientRect()
+      let anchor = barRect.left + barRect.width / 2
+      if (from === 'left') anchor = barRect.left + 3
+      if (from === 'right') anchor = barRect.right - 3
+      const clearX = listRight + 12
+      if (anchor < clearX) scroll.scrollLeft -= clearX - anchor
+      const viewRight = scroll.getBoundingClientRect().right - 8
+      if (barRect.right > viewRight) scroll.scrollLeft += barRect.right - viewRight
+    },
+    { id: issueId, from },
+  )
+}
+
 async function dragOnLane(
   page: import('@playwright/test').Page,
   issueId: string,
   dx: number,
   from: 'center' | 'left' | 'right' = 'center',
 ) {
-  await page.evaluate(
-    ({ id, dx, from }) => {
+  await scrollBarClearOfList(page, issueId, from)
+  const hit = await page.evaluate(
+    ({ id, from }) => {
       const laneEl = document.querySelector(`[data-issue="${id}"]`) as HTMLElement | null
       const bar = laneEl?.querySelector('rect')
       if (!laneEl || !bar) throw new Error(`No bar for ${id}`)
@@ -100,25 +128,16 @@ async function dragOnLane(
       if (from === 'left') x = r.left + 3
       if (from === 'right') x = r.right - 3
       const y = r.top + r.height / 2
-      const down = (type: string, cx: number) =>
-        new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          clientX: cx,
-          clientY: y,
-          button: 0,
-          pointerId: 1,
-          isPrimary: true,
-          pointerType: 'mouse',
-        })
-      laneEl.dispatchEvent(down('pointerdown', x))
-      for (let i = 1; i <= 5; i++) {
-        window.dispatchEvent(down('pointermove', x + (dx * i) / 5))
-      }
-      window.dispatchEvent(down('pointerup', x + dx))
+      return { x, y }
     },
-    { id: issueId, dx, from },
+    { id: issueId, from },
   )
+  await page.mouse.move(hit.x, hit.y)
+  await page.mouse.down()
+  for (let i = 1; i <= 5; i++) {
+    await page.mouse.move(hit.x + (dx * i) / 5, hit.y, { steps: 2 })
+  }
+  await page.mouse.up()
 }
 
 test('drags a bar, its end, and a click still opens', async ({ page }) => {
@@ -132,15 +151,6 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
   await nav.getByRole('button', { name: 'Gantt' }).click()
   const lane = (id: string) => page.getByRole('region', { name: 'Timeline' }).locator(`[data-issue="${id}"]`)
   await lane('i_fr_b').waitFor()
-  await page.evaluate((id) => {
-    const laneEl = document.querySelector(`[data-issue="${id}"]`)
-    const scroll = laneEl?.closest('.overflow-auto') as HTMLElement | null
-    if (!laneEl || !scroll) return
-    const laneRect = laneEl.getBoundingClientRect()
-    const box = scroll.getBoundingClientRect()
-    if (laneRect.left < box.left + 340) scroll.scrollLeft -= box.left + 340 - laneRect.left
-    if (laneRect.right > box.right - 8) scroll.scrollLeft += laneRect.right - box.right + 24
-  }, 'i_fr_b')
 
   await dragOnLane(page, 'i_fr_b', 60)
 
@@ -171,17 +181,22 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
   await expect(panel).toBeVisible()
   await expect(activity.getByText(/set dates/i)).toHaveCount(linesBefore)
 
+  await panel.getByRole('button', { name: 'Close issue panel' }).click()
+  await expect(panel).toBeHidden()
+
   await page.evaluate(() => localStorage.setItem('smartchart.roadmapWriteGate', '1'))
   await page.route('**/api/roadmaps?writeGate=1**', async (route) => {
+    await new Promise((r) => setTimeout(r, 1500))
     await route.fulfill({ status: 500, body: 'fail' })
   })
 
   await dragOnLane(page, 'i_fr_b', 12)
-  await expect(lane('i_fr_b')).toHaveAttribute('data-mark', 'milestone')
-  await expect(page.getByText(/offline|couldn't be reached|server can't be reached|Couldn’t save/i)).toBeVisible({ timeout: 10_000 })
-  await expect(lane('i_fr_b')).toHaveAttribute('data-mark', 'milestone')
-
   await nav.getByRole('button', { name: 'Table' }).click()
+  await expect(row.getByRole('button', { name: 'Start date: 2026-12-17' })).toBeVisible()
+  await expect(row.getByRole('button', { name: 'Due date: 2026-12-17' })).toBeVisible()
+  await expect(page.getByText(/offline|couldn't be reached|server can't be reached|Couldn’t save/i)).toBeVisible({
+    timeout: 10_000,
+  })
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-15' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-15' })).toBeVisible()
 })
