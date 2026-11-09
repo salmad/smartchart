@@ -1,3 +1,5 @@
+export type Role = 'owner' | 'editor' | 'viewer'
+
 export const STATUSES = ['backlog', 'todo', 'in_progress', 'blocked', 'done', 'cancelled'] as const
 export type Status = (typeof STATUSES)[number]
 
@@ -70,6 +72,18 @@ export interface RoadmapState {
   roadmap: Roadmap
   issues: Issue[]
 }
+
+export interface MemberLite {
+  id: string
+  name: string
+  email: string
+}
+
+export type LoadedRoadmap = RoadmapState & { role: Role; members: MemberLite[] }
+
+export type Changes = { seq: number; roadmap: Roadmap | null; issues: Issue[]; events: IssueEvent[] }
+
+export type IssueDetail = { body: string; bodyRev: number; comments: IssueComment[]; events: IssueEvent[] }
 
 export interface IssueComment {
   id: string

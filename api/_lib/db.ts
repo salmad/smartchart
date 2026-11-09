@@ -9,8 +9,11 @@ import type { CommentOp, DocComment } from '../../src/engine/comments.js'
 import type { DocProposal, ProposalOp } from '../../src/engine/docs/proposals.js'
 import type { QuietOp } from '../../src/engine/docs/checks.js'
 import type { PageRef, PageSummary, Slot } from '../../src/engine/pages/tree.js'
+import type { Issue, IssueComment, LoadedRoadmap, Changes, IssueDetail } from '../../src/engine/roadmaps/types.js'
+import type { RoadmapOp } from '../../src/engine/roadmaps/ops.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
+import { roadmapCalls } from './db-roadmaps.js'
 import { docCalls } from './db-docs.js'
 import { prefsCalls } from './db-prefs.js'
 import { workspaceCalls } from './db-workspaces.js'
@@ -142,6 +145,12 @@ export interface Db {
   /** Deletes the doc and every page below it, with their versions and blobs. */
   deleteDoc(userId: string, id: string): Promise<boolean>
   createRoadmap(userId: string, r: { id: string; name: string; prefix: string; workspaceId: string; parent?: PageRef }): Promise<'ok' | 'foreign' | string>
+  getRoadmap(userId: string, id: string): Promise<LoadedRoadmap | null>
+  roadmapChanges(userId: string, id: string, since: number): Promise<Changes | null>
+  writeRoadmap(userId: string, id: string, op: RoadmapOp, byClient: string): Promise<{ seq: number; changed: Issue[] } | 'foreign' | string>
+  getIssueDetail(userId: string, id: string, issueId: string): Promise<IssueDetail | null>
+  putIssueBody(userId: string, id: string, issueId: string, body: string, baseRev: number): Promise<{ bodyRev: number; seq: number } | 'conflict' | 'foreign' | string>
+  addIssueComment(userId: string, id: string, issueId: string, c: IssueComment): Promise<IssueComment[] | 'foreign' | string>
   deleteRoadmap(userId: string, id: string): Promise<boolean>
   getDocMeta(userId: string, id: string): Promise<{ rev: number; presence: DocPresence; role: Role } | null>
   /** Editor and up. */
@@ -283,6 +292,7 @@ export function makeDb(url: string): Db {
   }
   return {
     ...deckCalls(q),
+    ...roadmapCalls(q, tx),
     ...docCalls(q),
     ...workspaceCalls(q, tx),
     ...prefsCalls(q),

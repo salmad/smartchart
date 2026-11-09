@@ -8,16 +8,19 @@ import { MAX_DOC_PROPOSALS, type DocProposal, type ProposalOp } from '../../src/
 import { MAX_QUIET } from '../../src/engine/docs/checks'
 import { appendKey, canAdd, canMove, descendants, NO_EDIT, NO_PAGE, slotKey, type PageNode, type PageRef } from '../../src/engine/pages/tree'
 import { fakeWorkspaces, type FakeWorkspaces } from './fake-db-workspaces'
+import { fakeRoadmapCalls, type FakeIssueRow, type FakeRoadmapRow } from './fake-db-roadmaps'
 
 /** An in-memory Db with the same access rules as the SQL one. `user` is who made the deck; `ws` its workspace (null on a
     deck from before workspaces, which only its maker can reach). */
 export type FakeRow = DeckRow & { user: string; ws: string | null; share?: string | null; named: boolean; presence: Presence; parent?: PageRef | null; sortKey?: string | null }
 export type FakeDoc = { id: string; ws: string; user: string; name: string; text: string; rev: number; updated: number; share?: string | null; presence?: DocPresence; comments?: DocComment[]; proposals?: DocProposal[]; quiet?: string[]; parent?: PageRef | null; sortKey?: string | null }
-export type FakeRoadmap = { id: string; ws: string; user: string; name: string; prefix: string; updated: number; parent?: PageRef | null; sortKey?: string | null }
+export type FakeRoadmap = FakeRoadmapRow
 export type FakeDb = Db & FakeWorkspaces & {
   rows: Map<string, FakeRow>
   docs: Map<string, FakeDoc>
   roadmaps: Map<string, FakeRoadmap>
+  issues: Map<string, FakeIssueRow>
+  issueEvents: (import('../../src/engine/roadmaps/types').IssueEvent & { roadmapId: string; seq: number })[]
   events: (DeckEventRow & { user: string; deck: string })[]
   keys: Map<string, KeyRow & { hash: string; created: number }>
   rate: Map<string, number>
@@ -32,6 +35,8 @@ export function fakeDb(): FakeDb {
   const rows = new Map<string, FakeRow>()
   const docs = new Map<string, FakeDoc>()
   const roadmaps = new Map<string, FakeRoadmap>()
+  const issues = new Map<string, FakeIssueRow>()
+  const issueEvents: FakeDb['issueEvents'] = []
   const userPrefs = new Map<string, unknown>()
   const agentOnboarding = new Map<string, { agentNudgeDismissed?: boolean; agentConnectDone?: boolean }>()
   const events: FakeDb['events'] = []
@@ -86,7 +91,11 @@ export function fakeDb(): FakeDb {
         for (let i = docVersions.length - 1; i >= 0; i--) if (docVersions[i].doc === p.id) docVersions.splice(i, 1)
         for (const k of docBlobStore.keys()) if (k.startsWith(`${p.id}:`)) docBlobStore.delete(k)
         docs.delete(p.id)
-      } else roadmaps.delete(p.id)
+      } else {
+        for (const [iid, row] of [...issues.entries()]) if (row.roadmapId === p.id) issues.delete(iid)
+        for (let i = issueEvents.length - 1; i >= 0; i--) if (issueEvents[i].roadmapId === p.id) issueEvents.splice(i, 1)
+        roadmaps.delete(p.id)
+      }
     }
     return true
   }
@@ -95,7 +104,13 @@ export function fakeDb(): FakeDb {
     return { id, name, updated, slides: d.items?.length ?? 0, style: d.style, theme: null, accent: null, shared: !!share, parent: parent ?? null, sortKey: sortKey ?? null }
   }
   return {
-    ...ws, rows, docs, roadmaps, events, keys, rate, calls, versions, blobStore, docVersions, docBlobStore,
+    ...ws, rows, docs, roadmaps, issues, issueEvents, events, keys, rate, calls, versions, blobStore, docVersions, docBlobStore,
+    ...fakeRoadmapCalls({
+      roadmaps, issues, issueEvents, roadmapIf, role, tick: () => Date.now() + ++clock,
+      memberIds: (w) => [...ws.members.values()].filter((m) => m.ws === w).map((m) => m.userId),
+      membersLite: (w) => [...ws.members.values()].filter((m) => m.ws === w).map((m) => ({ id: m.userId, name: m.name, email: m.email })),
+      place, removeTree: async (u, page) => removeTree(u, page),
+    }),
     deckRole: async (u, id) => role(u, rows.get(id)),
     versionHead: async (u, id) => {
       const v = deckIf(u, id, 'read') && versions.filter((x) => x.deck === id).at(-1)
@@ -220,18 +235,6 @@ export function fakeDb(): FakeDb {
       return { rev }
     },
     deleteDoc: async (u, id) => removeTree(u, { kind: 'doc', id }),
-    createRoadmap: async (u, r) => {
-      if (roadmaps.has(r.id)) return 'foreign'
-      const at = place(u, r.workspaceId, r.parent)
-      if ('refused' in at) return at.refused
-      const name = r.name.trim(), prefix = r.prefix.trim()
-      if (!name) return 'Every roadmap needs a name.'
-      if (!prefix) return 'Every roadmap needs a prefix.'
-      if (at.ws === false || at.ws === null) return 'foreign'
-      roadmaps.set(r.id, { id: r.id, ws: at.ws, user: u, name, prefix, updated: Date.now() + ++clock, parent: at.parent, sortKey: at.key })
-      return 'ok'
-    },
-    deleteRoadmap: async (u, id) => removeTree(u, { kind: 'roadmap', id }),
     countSubpages: async (u, page) => {
       const r = page.kind === 'deck' ? rows.get(page.id) : page.kind === 'doc' ? docs.get(page.id) : roadmaps.get(page.id)
       return r && can(role(u, r), 'read') ? (r.ws ? descendants(nodesIn(r.ws), page).length : 0) : null

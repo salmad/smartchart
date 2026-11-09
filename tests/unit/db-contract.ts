@@ -1,7 +1,9 @@
 // The Db contract: what every Db (the fake and the SQL one) must do about workspaces, members, invites and docs.
 // Each test makes its own users, so the suite runs on a shared database too.
 import { describe, expect, it } from 'vitest'
-import { canMove } from '../../src/engine/pages/tree'
+import { canMove, NO_EDIT } from '../../src/engine/pages/tree'
+import { ISSUE_CYCLE } from '../../src/engine/roadmaps/tree'
+import type { FieldDef } from '../../src/engine/roadmaps/types'
 import type { Db } from '../../api/_lib/db'
 import type { Role } from '../../api/_lib/access'
 import type { Slide } from '../../src/engine/types'
@@ -233,6 +235,51 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.putDoc(ann.id, doc, 'Memo', '# Memo 2', 1)).toEqual({ rev: 2 })
       expect(await db.deleteDoc(ann.id, doc)).toBe(true)
       expect(await db.getDoc(ann.id, doc)).toBeNull()
+    })
+
+    it('roadmap storage: create, writes, changes, body and delete', async () => {
+      const db = await make(), { ann, bob, cy, id } = people()
+      const ws = await seedUser(db, ann)
+      const rm = id('rm'), i1 = id('i'), i2 = id('i'), child = id('i')
+      expect(await db.createRoadmap(ann.id, { id: rm, name: 'Plan', prefix: 'PLN', workspaceId: ws })).toBe('ok')
+      const loaded = await db.getRoadmap(ann.id, rm)
+      expect(loaded?.issues).toEqual([])
+      expect(loaded?.members.map((m) => [m.id, m.name, m.email])).toEqual([[ann.id, ann.name, ann.email]])
+      await join(db, ann, ws, cy, 'viewer')
+      expect(await db.writeRoadmap(cy.id, rm, { op: 'create', issues: [{ id: i1, parentId: null, title: 'One' }] }, 'app')).toBe(NO_EDIT)
+      expect(await db.getRoadmap(bob.id, rm)).toBeNull()
+      expect(await db.writeRoadmap(bob.id, rm, { op: 'create', issues: [{ id: i1, parentId: null, title: 'One' }] }, 'app')).toBe('foreign')
+      expect(await db.writeRoadmap(ann.id, rm, { op: 'create', issues: [{ id: i1, parentId: null, title: 'One' }] }, 'app')).toMatchObject({ seq: expect.any(Number) })
+      await join(db, ann, ws, bob, 'editor')
+      const [a, b] = await Promise.all([
+        db.writeRoadmap(ann.id, rm, { op: 'set', ids: [i1], props: { title: 'Alpha' } }, 'a'),
+        db.writeRoadmap(bob.id, rm, { op: 'set', ids: [i1], props: { status: 'done' } }, 'b'),
+      ])
+      expect(a).toMatchObject({ seq: expect.any(Number) })
+      expect(b).toMatchObject({ seq: expect.any(Number) })
+      const after = await db.getRoadmap(ann.id, rm)
+      expect(after?.issues.find((x) => x.id === i1)).toMatchObject({ title: 'Alpha', status: 'done' })
+      const since = (a as { seq: number }).seq
+      await db.writeRoadmap(ann.id, rm, { op: 'create', issues: [{ id: i2, parentId: null, title: 'Two' }] }, 'app')
+      const delta = await db.roadmapChanges(ann.id, rm, since)
+      expect(delta?.issues.map((x) => x.id).sort()).toEqual([i1, i2].sort())
+      expect(delta?.issues.find((x) => x.id === i1)?.title).toBe('Alpha')
+      expect(delta?.issues.some((x) => x.id === i2)).toBe(true)
+      await db.writeRoadmap(ann.id, rm, { op: 'create', issues: [{ id: child, parentId: i1, title: 'Child' }] }, 'app')
+      expect(await db.writeRoadmap(ann.id, rm, { op: 'move', id: i1, parentId: child }, 'app')).toBe(ISSUE_CYCLE)
+      const country: FieldDef = { id: 'f1', name: 'Country', type: 'choice', options: [{ id: 'uk', name: 'UK' }] }
+      await db.writeRoadmap(ann.id, rm, { op: 'roadmap', fields: [country] }, 'app')
+      await db.writeRoadmap(ann.id, rm, { op: 'set', ids: [i1, i2], props: { fields: { f1: 'uk' } } }, 'app')
+      await db.writeRoadmap(ann.id, rm, { op: 'roadmap', fields: [] }, 'app')
+      expect((await db.getRoadmap(ann.id, rm))?.issues.every((x) => !('f1' in x.fields))).toBe(true)
+      const detail = await db.getIssueDetail(ann.id, rm, i1)
+      expect(detail?.bodyRev).toBe(0)
+      expect(await db.putIssueBody(ann.id, rm, i1, '# Hello', 0)).toMatchObject({ bodyRev: 1, seq: expect.any(Number) })
+      expect(await db.putIssueBody(ann.id, rm, i1, '# Stale', 0)).toBe('conflict')
+      expect(await db.deleteRoadmap(ann.id, rm)).toBe(true)
+      expect(await db.getRoadmap(ann.id, rm)).toBeNull()
+      expect(await db.getIssueDetail(ann.id, rm, i1)).toBeNull()
+      expect(await db.roadmapChanges(ann.id, rm, 0)).toBeNull()
     })
 
     it('a roadmap is a page: listed, nested under, counted, cyclable, and deleted with its subpages', async () => {
