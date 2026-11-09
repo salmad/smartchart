@@ -1,5 +1,6 @@
-import { useCallback, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { daysBetween, type Mark } from '@/engine/roadmaps/gantt'
+import type { IssueDatesGhost } from './useIssueDatesDrop'
 import type { TableRow } from '@/engine/roadmaps/view'
 import { cn } from '@/app/lib/utils'
 import type { Axis } from './ganttAxis'
@@ -20,6 +21,10 @@ interface LaneProps {
   preview: { id: string; start: string; due: string } | null
   dragging: boolean
   barDrag: BarDragApi
+  datesGhost: IssueDatesGhost | null
+  onDatesOver: (e: ReactDragEvent<HTMLDivElement>) => void
+  onDatesLeave: () => void
+  onDatesDrop: (e: ReactDragEvent<HTMLDivElement>) => void
 }
 
 function laneDataAttrs(mark: Mark): Record<string, string | undefined> {
@@ -155,7 +160,38 @@ function markForDraw(
   return mark
 }
 
-export function GanttLane({ row, mark, axis, width, groupSpan, canEdit, preview, dragging, barDrag }: LaneProps) {
+function dropGhostGraphic(start: string, due: string, axis: Axis) {
+  const px = axis.px
+  const x = axis.xOf(start)
+  const w = (daysBetween(start, due) + 1) * px
+  return (
+    <rect
+      x={x}
+      y={9}
+      width={w}
+      height={14}
+      rx={4}
+      strokeWidth={1}
+      className="fill-ink/15 stroke-ink/30 pointer-events-none"
+    />
+  )
+}
+
+export function GanttLane({
+  row,
+  mark,
+  axis,
+  width,
+  groupSpan,
+  canEdit,
+  preview,
+  dragging,
+  barDrag,
+  datesGhost,
+  onDatesOver,
+  onDatesLeave,
+  onDatesDrop,
+}: LaneProps) {
   const issueId = row.kind === 'issue' ? row.issue.id : undefined
   const issueStart = row.kind === 'issue' ? row.issue.start : null
   const issueDue = row.kind === 'issue' ? row.issue.due : null
@@ -172,7 +208,10 @@ export function GanttLane({ row, mark, axis, width, groupSpan, canEdit, preview,
   const endX = labelEndX(draw, axis)
   const attrs = row.kind === 'issue' ? laneDataAttrs(mark) : draw.kind === 'bracket' ? { 'data-mark': 'bracket' } : {}
 
+  const noDatesHint = mark.kind === 'none' ? 'Drag the issue here to give it dates' : undefined
   const bracketHint = mark.kind === 'bracket' && !mark.own ? 'Dates come from its sub-issues.' : undefined
+  const title = noDatesHint ?? bracketHint
+  const showDatesGhost = !!(issueId && datesGhost && datesGhost.laneId === issueId)
   const cursor = barLaneCursor(canEdit, mark, hoverX, issueStart, issueDue, axis, dragging && preview?.id === issueId)
   const draggable = !!(issueId && issueStart && issueDue && barDraggable(mark))
 
@@ -198,7 +237,10 @@ export function GanttLane({ row, mark, axis, width, groupSpan, canEdit, preview,
     <div
       data-issue={issueId}
       {...attrs}
-      title={bracketHint}
+      title={title}
+      onDragOver={canEdit ? onDatesOver : undefined}
+      onDragLeave={canEdit ? onDatesLeave : undefined}
+      onDrop={canEdit ? onDatesDrop : undefined}
       className={cn(
         'relative z-[1] h-8 border-b border-hair',
         cursor === 'grab' && 'cursor-grab',
@@ -217,6 +259,7 @@ export function GanttLane({ row, mark, axis, width, groupSpan, canEdit, preview,
       onPointerLeave={draggable ? () => setHoverX(null) : undefined}
     >
       <svg width={width} height={H} className="pointer-events-none block overflow-visible">
+        {showDatesGhost && dropGhostGraphic(datesGhost.start, datesGhost.due, axis)}
         {draw.kind !== 'none' && markGraphic(draw, axis)}
         {text && (
           <text

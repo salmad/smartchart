@@ -14,6 +14,7 @@ import { GANTT_ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
 import { GanttListRow } from './GanttList'
 import { GanttScaleRow, GanttTimelineBody, GanttTimelineGrid, useGanttLayout } from './GanttTimeline'
 import { useBarDrag } from './useBarDrag'
+import { useIssueDatesDrop } from './useIssueDatesDrop'
 interface Props {
   state: RoadmapState
   view: ViewSettings
@@ -38,6 +39,7 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
 
   const openIssue = useCallback((id: string) => { onOpenIssue?.(id) }, [onOpenIssue])
   const barDrag = useBarDrag({ axis, canEdit, act, onOpen: openIssue })
+  const datesDrop = useIssueDatesDrop({ axis, canEdit, act })
 
   const marks = useMemo(() => {
     const fmt = (iso: string) => shortDate(iso, today)
@@ -109,6 +111,8 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
                 key={rowKey(row)}
                 row={row}
                 mark={row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' }}
+                canEdit={canEdit}
+                datesDrop={datesDrop}
                 onToggleCollapse={onToggleCollapse}
                 onOpenIssue={onOpenIssue}
               />
@@ -138,6 +142,7 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
                 width={width}
                 canEdit={canEdit}
                 barDrag={barDrag}
+                datesDrop={datesDrop}
               />
             ))}
             {padBottom > 0 && <GanttPadSvg h={padBottom} width={width} />}

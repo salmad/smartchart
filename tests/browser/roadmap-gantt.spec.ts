@@ -200,3 +200,40 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-15' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-15' })).toBeVisible()
 })
+
+test('drops a dateless issue onto the timeline', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedSixIssues(page, {
+    i_done: { start: '2026-10-01', due: '2026-10-20', status: 'done' },
+    i_fr_b: { start: undefined, due: undefined },
+  })
+  await page.reload()
+
+  const nav = page.getByRole('navigation', { name: 'Roadmap views' })
+  await nav.getByRole('button', { name: 'Gantt' }).click()
+  const timeline = page.getByRole('region', { name: 'Timeline' })
+
+  const listRow = timeline.locator('[data-list-issue="i_fr_b"]')
+  const lane = timeline.locator('[data-issue="i_fr_b"]')
+  await expect(listRow).toHaveAttribute('draggable', 'true')
+  await expect(timeline.locator('[data-list-issue="i_done"]')).toHaveAttribute('draggable', 'false')
+
+  await lane.hover()
+  await expect(lane).toHaveAttribute('title', 'Drag the issue here to give it dates')
+
+  const dropInLane = await page.evaluate(() => {
+    const region = document.querySelector('[aria-label="Timeline"]')
+    if (!region) throw new Error('No timeline')
+    const dec = [...region.querySelectorAll('text')].find((t) => t.textContent === 'Dec')
+    if (!dec) throw new Error('No Dec tick')
+    const tickLineX = Number(dec.getAttribute('x')) - 6
+    return { x: tickLineX + 6 * 6, y: 16 }
+  })
+
+  await listRow.dragTo(lane, { targetPosition: dropInLane })
+
+  await nav.getByRole('button', { name: 'Table' }).click()
+  const row = page.locator('tr', { hasText: 'France task B' })
+  await expect(row.getByRole('button', { name: 'Start date: 2026-12-07' })).toBeVisible()
+  await expect(row.getByRole('button', { name: 'Due date: 2026-12-20' })).toBeVisible()
+})

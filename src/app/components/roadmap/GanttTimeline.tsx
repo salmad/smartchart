@@ -15,8 +15,10 @@ import { shortDate } from './dates'
 import { GanttLane } from './GanttLane'
 import { makeAxis, type Axis } from './ganttAxis'
 import type { useBarDrag } from './useBarDrag'
+import type { useIssueDatesDrop } from './useIssueDatesDrop'
 
 type BarDragApi = ReturnType<typeof useBarDrag>
+type DatesDropApi = ReturnType<typeof useIssueDatesDrop>
 
 export type { Axis } from './ganttAxis'
 
@@ -158,6 +160,7 @@ export function GanttTimelineBody({
   width,
   canEdit,
   barDrag,
+  datesDrop,
 }: {
   row: TableRow
   allRows: TableRow[]
@@ -168,9 +171,11 @@ export function GanttTimelineBody({
   width: number
   canEdit: boolean
   barDrag: BarDragApi
+  datesDrop: DatesDropApi
 }) {
   const group = row.kind === 'group' ? groupSpan(live, allRows, absIndex) : null
   const mark = row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' as const }
+  const laneId = row.kind === 'issue' ? row.issue.id : ''
   return (
     <GanttLane
       row={row}
@@ -182,6 +187,10 @@ export function GanttTimelineBody({
       preview={barDrag.preview}
       dragging={barDrag.dragging}
       barDrag={barDrag}
+      datesGhost={datesDrop.ghost}
+      onDatesOver={datesDrop.laneOver(laneId)}
+      onDatesLeave={datesDrop.laneLeave}
+      onDatesDrop={datesDrop.laneDrop}
     />
   )
 }

@@ -3,15 +3,20 @@ import type { TableRow } from '@/engine/roadmaps/view'
 import type { Mark } from '@/engine/roadmaps/gantt'
 import { StatusGlyph } from './StatusGlyph'
 import { cn } from '@/app/lib/utils'
+import { listRowDatesDraggable, type useIssueDatesDrop } from './useIssueDatesDrop'
+
+type DatesDropApi = ReturnType<typeof useIssueDatesDrop>
 
 interface Props {
   row: TableRow
   mark: Mark | null
+  canEdit: boolean
+  datesDrop: DatesDropApi
   onToggleCollapse: (id: string) => void
   onOpenIssue?: (id: string) => void
 }
 
-export function GanttListRow({ row, mark, onToggleCollapse, onOpenIssue }: Props) {
+export function GanttListRow({ row, mark, canEdit, datesDrop, onToggleCollapse, onOpenIssue }: Props) {
   if (row.kind === 'group') {
     return (
       <div className="flex h-8 items-center gap-3 border-b border-hair bg-panel px-4 text-[12px] text-ink-2">
@@ -24,15 +29,22 @@ export function GanttListRow({ row, mark, onToggleCollapse, onOpenIssue }: Props
   }
 
   const { issue, depth, dim, hasChildren, open } = row
-  const noDates = mark?.kind === 'none'
+  const issueMark = mark ?? { kind: 'none' as const }
+  const noDates = issueMark.kind === 'none'
+  const draggable = listRowDatesDraggable(canEdit, issueMark)
 
   return (
     <div
       data-list-issue={issue.id}
       data-dim={dim ? 'true' : undefined}
+      draggable={draggable}
+      onDragStart={draggable ? datesDrop.listDragStart(issue.id) : undefined}
+      onDragEnd={draggable ? datesDrop.listDragEnd : undefined}
       className={cn(
-        'flex h-8 cursor-default items-center gap-1.5 border-b border-hair px-2 text-[12.5px] text-ink',
+        'flex h-8 items-center gap-1.5 border-b border-hair px-2 text-[12.5px] text-ink',
         dim && 'opacity-50',
+        draggable && 'cursor-grab active:cursor-grabbing',
+        !draggable && 'cursor-default',
       )}
       onClick={() => onOpenIssue?.(issue.id)}
     >
