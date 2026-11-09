@@ -32,6 +32,12 @@ export function useRowDrag({ issues, canEdit, act, onRefused }: Options) {
     if (drop) {
       e.preventDefault()
       e.dataTransfer.dropEffect = 'move'
+      return
+    }
+    // Allow `drop` to fire so a refused re-parent can show its sentence (invalid zones still need preventDefault).
+    if (issueDropRefusal(issues, dragId, overId, y)) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'none'
     }
   }, [dragId, issues])
 
