@@ -315,6 +315,77 @@ test('issue panel, body edit, comment, full page and sub-issue', async ({ page }
   await expect(page.getByRole('complementary', { name: 'Issue panel' }).getByText('Launch checklist paragraph.')).toBeVisible()
 })
 
+test('removes a whole field: the confirm counts its use, the column goes, and it stays gone after reload', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await page.getByRole('button', { name: 'Fields' }).click()
+  const fields = page.getByRole('dialog', { name: 'Fields' })
+  await fields.getByRole('button', { name: 'Add field' }).click()
+  await page.getByRole('menuitem', { name: 'Choice' }).click()
+  await fields.getByLabel('Field name').fill('Country')
+  await fields.getByLabel('Field name').blur()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible({ timeout: 10_000 })
+
+  await page.getByRole('button', { name: 'Fields' }).click()
+  await fields.getByRole('button', { name: 'Delete Country' }).click()
+  const confirm = page.getByRole('dialog', { name: 'Delete “Country”?' })
+  await expect(confirm).toContainText('0 issues')
+  await confirm.getByRole('button', { name: 'Delete' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('columnheader', { name: 'Country' })).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText(EMPTY)).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Country' })).toHaveCount(0)
+})
+
+test('panel pickers: due date from the calendar and cleared, parent moved with search', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedSixIssues(page)
+  await page.reload()
+  const row = page.locator('tr', { hasText: 'Blocked piece' })
+  await row.click()
+  await page.keyboard.press('Enter')
+  const panel = page.getByRole('complementary', { name: 'Issue panel' })
+  await expect(panel.getByRole('button', { name: 'Parent issue' })).toContainText('UK launch')
+
+  await panel.getByRole('button', { name: 'Due date: none' }).click()
+  await page.locator('[data-radix-popper-content-wrapper] button', { hasText: /^15$/ }).first().click()
+  await expect(panel.getByRole('button', { name: /^Due date: \d{4}-\d{2}-15$/ })).toBeVisible()
+  await expect(row.getByRole('button', { name: /^Due date: \d{4}-\d{2}-15$/ })).toBeVisible()
+
+  await panel.getByRole('button', { name: /^Due date: / }).click()
+  await page.getByRole('button', { name: 'Clear date' }).click()
+  await expect(row.getByRole('button', { name: 'Due date: none' })).toBeVisible()
+
+  await panel.getByRole('button', { name: 'Parent issue' }).click()
+  await page.getByPlaceholder('Find an issue…').fill('France launch')
+  await page.getByRole('option', { name: /France launch/ }).click()
+  await expect(panel.getByRole('button', { name: 'Parent issue' })).toContainText('France launch')
+
+  await page.reload()
+  await page.locator('tr', { hasText: 'Blocked piece' }).click()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('complementary', { name: 'Issue panel' }).getByRole('button', { name: 'Parent issue' })).toContainText('France launch')
+})
+
+test('with the Paper look the issue body still reads on the dark panel', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedSixIssues(page)
+  await page.evaluate((key) => {
+    const all = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, { issues: { id: string; body: string; bodyRev: number }[] }>
+    for (const rm of Object.values(all)) for (const i of rm.issues) if (i.id === 'i_uk') { i.body = '# UK launch\n\nLaunch checklist paragraph.\n'; i.bodyRev = 1 }
+    localStorage.setItem(key, JSON.stringify(all))
+    localStorage.setItem('smartchart.user.look.v1.dev', JSON.stringify({ theme: 'paper', accent: null }))
+  }, ROADMAPS_KEY)
+  await page.reload()
+  await page.locator('tr', { hasText: 'UK launch' }).click()
+  await page.keyboard.press('Enter')
+  const body = page.getByRole('complementary', { name: 'Issue panel' }).getByText('Launch checklist paragraph.')
+  await expect(body).toBeVisible()
+  const [r, g, b] = await body.evaluate((el) => (getComputedStyle(el).color.match(/\d+/g) ?? []).slice(0, 3).map(Number))
+  expect(Math.min(r, g, b)).toBeGreaterThan(150)
+})
+
 test('apple-bar 1440 table and panel', async ({ page }) => {
   test.skip(!process.env.APPLE_BAR_CAPTURE, 'Set APPLE_BAR_CAPTURE=1 to refresh docs/temp screenshot')
   await openFreshRoadmap(page)

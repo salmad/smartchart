@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Account } from '@/app/auth'
 import type { RoadmapRepo } from '@/app/roadmaps'
 import type { PageRef } from '@/engine/pages/tree'
+import type { Theme } from '@/engine/types'
 import { go } from '@/app/route'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { useUserLook } from '@/app/useUserLook'
@@ -66,7 +67,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const live = view.state?.issues.filter((i) => i.deletedAt === null) ?? []
   const openId = routeIssue ?? panelId
   const openIssueRow = openId ? live.find((i) => i.id === openId) ?? null : null
-  const lookProps = { theme: look.theme, accent: look.accent ?? undefined }
+  // The roadmap's chrome is dark whatever the user's Look, so an issue's body draws on Ink (Paper's dark type would vanish on it).
+  const lookProps: { theme: Theme; accent?: string } = { theme: 'ink', accent: look.accent ?? undefined }
 
   useEffect(() => {
     const ids = new Set(customFields.map((f) => f.id))
