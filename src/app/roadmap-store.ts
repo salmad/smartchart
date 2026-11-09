@@ -92,6 +92,19 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
     }
   }
 
+  const poll = async () => {
+    if (!base || closed) return
+    try {
+      const ch = await repo.changes(id, base.roadmap.seq)
+      if (!ch || !base) return
+      if (ch.roadmap) base = { ...base, roadmap: ch.roadmap }
+      if (ch.issues.length) mergeIssues(ch.issues)
+      if (ch.seq > base.roadmap.seq) base = { ...base, roadmap: { ...base.roadmap, seq: ch.seq } }
+      repo.keep(id, base)
+      refresh()
+    } catch { /* next poll */ }
+  }
+
   refresh()
 
   return {
@@ -125,20 +138,20 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
           refresh()
           return out
         }
-        const saved = base
-        if (!saved) {
-          pending = pending.filter((p) => p !== op)
-          refresh()
-          return out
-        }
-        const settled = applyOp({ roadmap: saved.roadmap, issues: saved.issues }, op, opCtx())
-        if (!('refused' in settled)) {
-          base = { ...saved, roadmap: settled.state.roadmap, issues: settled.state.issues }
-          if (out.seq > base.roadmap.seq) base = { ...base, roadmap: { ...base.roadmap, seq: out.seq } }
+        // The server's rows are the truth (numbers, keys, seq). The roadmap's seq stays where the last poll left it, so
+        // the next poll still fetches what other tabs wrote before this save; the poll right after makes that quick.
+        if (base) {
+          const settled = applyOp({ roadmap: base.roadmap, issues: base.issues }, op, opCtx())
+          if (!('refused' in settled)) {
+            const { name, fields } = settled.state.roadmap
+            base = { ...base, roadmap: { ...base.roadmap, name, fields } }
+          }
+          mergeIssues(out.changed)
           repo.keep(id, base)
         }
         pending = pending.filter((p) => p !== op)
         refresh()
+        void poll()
         return out
       }).catch(() => {
         pending = pending.filter((p) => p !== op)
@@ -148,18 +161,7 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
       return 'ok'
     },
 
-    async poll() {
-      if (!base || closed) return
-      try {
-        const ch = await repo.changes(id, base.roadmap.seq)
-        if (!ch) return
-        if (ch.roadmap) base = { ...base, roadmap: ch.roadmap }
-        if (ch.issues.length) mergeIssues(ch.issues)
-        if (ch.seq > base.roadmap.seq) base = { ...base, roadmap: { ...base.roadmap, seq: ch.seq } }
-        repo.keep(id, base)
-        refresh()
-      } catch { /* next poll */ }
-    },
+    poll: () => poll(),
 
     close() {
       closed = true

@@ -49,7 +49,7 @@ describe('localRoadmapRepo', () => {
     const repo = localRoadmapRepo(storage)
     expect(await repo.create({ id: 'rm_1', name: 'Launch', prefix: 'LN', workspaceId: LOCAL_WORKSPACE })).toBeNull()
     expect((await pages.list(LOCAL_WORKSPACE)).find((p) => p.id === 'rm_1')).toMatchObject({ kind: 'roadmap', name: 'Launch' })
-    expect(await repo.write('rm_1', { op: 'create', issues: [{ id: 'i_1', parentId: null, title: 'One' }] })).toEqual({ seq: expect.any(Number) })
+    expect(await repo.write('rm_1', { op: 'create', issues: [{ id: 'i_1', parentId: null, title: 'One' }] })).toMatchObject({ seq: expect.any(Number), changed: [expect.objectContaining({ id: 'i_1' })] })
     const again = localRoadmapRepo(storage)
     const r = await again.get('rm_1')
     expect(r?.issues.map((i) => i.id)).toEqual(['i_1'])

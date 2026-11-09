@@ -18,7 +18,8 @@ export { ROADMAPS_KEY }
 export interface RoadmapRepo {
   get(id: string): Promise<LoadedRoadmap | null>
   changes(id: string, since: number): Promise<Changes | null>
-  write(id: string, op: RoadmapOp): Promise<{ seq: number } | string>
+  /** The saved rows come back as the server wrote them (keys, numbers, seq). */
+  write(id: string, op: RoadmapOp): Promise<{ seq: number; changed: Issue[] } | string>
   detail(id: string, issueId: string): Promise<IssueDetail | null>
   putBody(id: string, issueId: string, text: string, baseRev: number): Promise<{ bodyRev: number } | 'stale' | string>
   comment(id: string, issueId: string, text: string, replyTo?: string): Promise<IssueComment[] | string>
@@ -86,8 +87,8 @@ export function remoteRoadmapRepo({ fetcher = (...a) => fetch(...a), onSignedOut
     write: async (id, op) => {
       try {
         const r = await call(`?id=${encodeURIComponent(id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op }) })
-        const body = (await r.json().catch(() => null)) as { seq?: number; error?: unknown } | null
-        if (r.ok && typeof body?.seq === 'number') return { seq: body.seq }
+        const body = (await r.json().catch(() => null)) as { seq?: number; changed?: Issue[]; error?: unknown } | null
+        if (r.ok && typeof body?.seq === 'number') return { seq: body.seq, changed: Array.isArray(body.changed) ? body.changed : [] }
         if (r.status === 403 && typeof body?.error === 'string') return body.error
         if (typeof body?.error === 'string' && body.error) return body.error
         return ROADMAP_FAILED[r.status] ?? `The server answered ${r.status}.`
@@ -205,7 +206,7 @@ export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>)
         else m.issues.push(next)
       }
       for (const e of r.events) m.events.push({ ...e, seq: m.seq })
-      return write(all) ? { seq: m.seq } : 'This browser’s storage is full.'
+      return write(all) ? { seq: m.seq, changed: structuredClone(r.changed) } : 'This browser’s storage is full.'
     },
     detail: async (id, issueId) => {
       const m = read()[id], row = m?.issues.find((i) => i.id === issueId)

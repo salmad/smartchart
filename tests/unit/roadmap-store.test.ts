@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { applyOp, type RoadmapOp } from '@/engine/roadmaps/ops'
-import type { Changes, LoadedRoadmap } from '@/engine/roadmaps/types'
+import type { Changes, LoadedRoadmap, RoadmapState } from '@/engine/roadmaps/types'
 import type { RoadmapRepo } from '@/app/roadmaps'
 import { roadmapStore } from '@/app/roadmap-store'
 import { ctx, issue, state } from './roadmap-builders'
@@ -31,7 +31,7 @@ function repo(partial: Partial<RoadmapRepo> & { writeDelay?: number; failWrite?:
       const r = applyOp({ roadmap: kept.roadmap, issues: kept.issues }, op, ctx)
       if ('refused' in r) return r.refused
       kept = { ...kept, roadmap: r.state.roadmap, issues: r.state.issues }
-      return { seq: kept.roadmap.seq }
+      return { seq: kept.roadmap.seq, changed: r.changed }
     },
     detail: async () => null,
     putBody: async () => 'stale',
@@ -69,7 +69,7 @@ describe('roadmapStore', () => {
 
   it('poll keeps our pending status while showing another user’s assignee', async () => {
     const snap = loaded()
-    const r = repo({})
+    const r = repo({ writeDelay: 1 }) // the save stays in flight: the status is still pending when the poll lands
     r.keep('rm_1', snap)
     let serverLive = false
     r.changes = async (_id, since) => {
@@ -97,7 +97,7 @@ describe('roadmapStore', () => {
     const r: RoadmapRepo = {
       get: () => new Promise(() => undefined),
       changes: () => new Promise(() => undefined),
-      write: async () => ({ seq: 1 }),
+      write: async () => ({ seq: 1, changed: [] }),
       detail: async () => null,
       putBody: async () => 'stale',
       comment: async () => [],
@@ -132,5 +132,38 @@ describe('roadmapStore', () => {
       if (order.length < 2) r.writeGate?.()
       expect(order).toEqual(['First', 'Second'])
     })
+  })
+
+  it('two tabs: each shows the other’s write after its own save, with the server’s keys', async () => {
+    let server: RoadmapState = state({ id: 'rm_1', seq: 1, nextNumber: 2 }, [issue({ id: 'a', number: 1, seq: 1 })])
+    const meta = { role: 'owner' as const, members: [{ id: 'ann', name: 'Ann', email: 'a' }, { id: 'bob', name: 'Bob', email: 'b' }] }
+    const tab = (): RoadmapRepo => {
+      let kept: LoadedRoadmap | null = null
+      return {
+        get: async () => ({ ...structuredClone(server), ...meta }),
+        changes: async (_id, since) => ({ seq: server.roadmap.seq, roadmap: server.roadmap.seq > since ? server.roadmap : null, issues: server.issues.filter((i) => i.seq > since), events: [] }),
+        write: async (_id, op) => {
+          const r = applyOp(server, op, ctx)
+          if ('refused' in r) return r.refused
+          server = r.state
+          return { seq: r.state.roadmap.seq, changed: r.changed }
+        },
+        detail: async () => null, putBody: async () => 'stale', comment: async () => [], create: async () => null, remove: async () => true,
+        kept: async () => kept, keep: (_id, r) => { kept = r },
+      }
+    }
+    const a = roadmapStore(tab(), 'rm_1', { by: 'ann', now: () => 1 })
+    const b = roadmapStore(tab(), 'rm_1', { by: 'bob', now: () => 1 })
+    await a.open(); await b.open()
+    b.act({ op: 'set', ids: ['a'], props: { assignee: 'bob' } })
+    await vi.waitFor(() => expect(server.roadmap.seq).toBe(2))
+    a.act({ op: 'set', ids: ['a'], props: { status: 'done' } })
+    await vi.waitFor(() => expect(a.get().state?.issues[0]).toMatchObject({ status: 'done', assignee: 'bob' }))
+    a.act({ op: 'create', issues: [{ id: 'n', parentId: null, title: 'New' }] })
+    await vi.waitFor(() => expect(server.issues.some((i) => i.id === 'n')).toBe(true))
+    b.act({ op: 'create', issues: [{ id: 'm', parentId: null, title: 'Other' }] })
+    await vi.waitFor(() => expect(b.get().state?.issues.find((i) => i.id === 'm')?.number).toBe(3))
+    await b.poll()
+    expect(b.get().state?.issues.find((i) => i.id === 'n')?.number).toBe(2)
   })
 })
