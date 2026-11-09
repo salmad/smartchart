@@ -1,7 +1,7 @@
 import { useCallback, useState, type DragEvent } from 'react'
 import type { Issue } from '@/engine/roadmaps/types'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
-import { issueDropTarget } from './issueDrop'
+import { issueDropRefusal, issueDropTarget } from './issueDrop'
 
 const MIME = 'application/x-occam-issue'
 
@@ -41,7 +41,11 @@ export function useRowDrag({ issues, canEdit, act, onRefused }: Options) {
     const y = (e.clientY - rect.top) / Math.max(1, rect.height)
     const target = issueDropTarget(issues, dragId, overId, y)
     setDragId(null)
-    if (!target) return
+    if (!target) {
+      const refusal = issueDropRefusal(issues, dragId, overId, y)
+      if (refusal) onRefused(refusal)
+      return
+    }
     e.preventDefault()
     const out = act({ op: 'move', id: dragId, parentId: target.parentId, before: target.before, after: target.after })
     if (out !== 'ok') onRefused(out)

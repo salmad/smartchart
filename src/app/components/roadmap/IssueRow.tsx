@@ -86,7 +86,7 @@ export function ComposeIssueRow({ draft, depth, columns, onTitle, onCommit }: Co
             autoFocus
             value={draft.title}
             onChange={(e) => onTitle(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onCommit() } }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onCommit() } }}
             className="min-w-0 flex-1 rounded border-0 bg-transparent text-ink outline-none ring-1 ring-line focus:ring-gold"
             aria-label="New issue title"
             placeholder="Issue title"
@@ -136,8 +136,8 @@ export function IssueDataRow({
       onDragOver={drag.over(issue.id)}
       onDrop={drag.dropOn(issue.id)}
       onClick={(e) => {
+        if ((e.target as HTMLElement).closest('[data-skip-select]')) return
         onFocus()
-        if (canEdit && (e.target as HTMLElement).closest('[data-skip-select]')) return
         if (canEdit) onSelect(e.shiftKey)
       }}
       className={cn(

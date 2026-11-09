@@ -1,12 +1,19 @@
 import { useCallback, useEffect, type RefObject } from 'react'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
-import { newIssueId } from './issueIds'
 
 export interface ComposeDraft {
   id: string
   parentId: string | null
   after?: string
   title: string
+}
+
+function editingField(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return true
+  if (target.isContentEditable) return true
+  return !!target.closest('[contenteditable=""], [contenteditable="true"]')
 }
 
 interface Options {
@@ -58,6 +65,7 @@ export function useTableKeys({
     if (!el) return
     const onKey = (e: KeyboardEvent) => {
       if (!canEdit) return
+      if (editingField(e.target)) return
       const mod = e.metaKey || e.ctrlKey
       if (compose && e.key === 'Enter') {
         e.preventDefault()
@@ -103,11 +111,5 @@ export function useTableKeys({
     return () => el.removeEventListener('keydown', onKey)
   }, [canEdit, commitCompose, compose, focusId, moveFocus, onStartCompose, root, selection, setCompose])
 
-  const beginCompose = useCallback((child: boolean, focused: { id: string; parentId: string | null } | null) => {
-    const parentId = child ? focused?.id ?? null : focused?.parentId ?? null
-    const after = child ? undefined : focused?.id
-    setCompose({ id: newIssueId(), parentId, after, title: '' })
-  }, [setCompose])
-
-  return { commitCompose, beginCompose }
+  return { commitCompose }
 }

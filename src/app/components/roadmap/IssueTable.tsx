@@ -1,22 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { FieldDef, MemberLite, RoadmapState } from '@/engine/roadmaps/types'
+import { toast } from 'sonner'
+import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
-import { subtree } from '@/engine/roadmaps/tree'
 import { IssueDataRow, IssueGroupRow, ComposeIssueRow } from './IssueRow'
 import { BulkBar } from './BulkBar'
-import { offerDeleteUndo } from './UndoToast'
+import { IssueDeleteDialog } from './IssueDeleteDialog'
 import { useSelection } from './useSelection'
 import { useRowDrag } from './useRowDrag'
 import { useTableKeys, type ComposeDraft } from './useTableKeys'
+import { liveColumns, ROW_H, rowSlice, TableHead, visibleRows, VIRT } from './issueTableView'
 import { newIssueId } from './issueIds'
-import { Button } from '../ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
-
-const ROW_H = 34
-const VIRT = 200
-const OVERSCAN = 8
 
 interface Props {
   state: RoadmapState
@@ -27,78 +22,6 @@ interface Props {
   canEdit: boolean
   act: (op: RoadmapOp) => 'ok' | string
   said: string | null
-}
-
-function visibleRows(rows: TableRow[], filtersActive: boolean): TableRow[] {
-  if (filtersActive) return rows
-  const out: TableRow[] = []
-  const openAt: boolean[] = []
-  for (const row of rows) {
-    if (row.kind === 'group') {
-      out.push(row)
-      continue
-    }
-    const { depth, open, hasChildren } = row
-    while (openAt.length > depth) openAt.pop()
-    let show = true
-    for (let i = 0; i < depth; i++) {
-      if (!openAt[i]) {
-        show = false
-        break
-      }
-    }
-    if (show) {
-      out.push(row)
-      openAt[depth] = !hasChildren || open
-    }
-  }
-  return out
-}
-
-function liveColumns(view: ViewSettings, fields: FieldDef[]): string[] {
-  const cols: string[] = []
-  for (const id of view.columns) {
-    if (id === 'assignee' || id === 'start' || id === 'due') cols.push(id)
-    else if (fields.some((f) => f.id === id)) cols.push(id)
-  }
-  return cols
-}
-
-function headerLabel(id: string, fields: FieldDef[]): string {
-  if (id === 'assignee') return 'Assignee'
-  if (id === 'start') return 'Start'
-  if (id === 'due') return 'Due'
-  return fields.find((f) => f.id === id)?.name ?? id
-}
-
-function TableHead({ columns, fields }: { columns: string[]; fields: FieldDef[] }) {
-  return (
-    <thead className="sticky top-0 z-10 bg-app-bg">
-      <tr className="h-9 border-b border-line text-[11.5px] text-ink-3">
-        <th scope="col" className="w-6 px-1 font-medium" />
-        <th scope="col" className="w-8 px-2 font-medium" />
-        <th scope="col" className="w-24 px-2 font-medium">Key</th>
-        <th scope="col" className="min-w-[200px] px-2 font-medium">Title</th>
-        {columns.map((c) => (
-          <th key={c} scope="col" className="w-28 px-2 font-medium">
-            {headerLabel(c, fields)}
-          </th>
-        ))}
-        <th scope="col" className="w-20 px-2 font-medium">Progress</th>
-      </tr>
-    </thead>
-  )
-}
-
-function rowSlice(length: number, scrollTop: number, viewHeight: number): { start: number; end: number } {
-  if (length <= VIRT) return { start: 0, end: length }
-  let start = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
-  let end = Math.min(length, Math.ceil((scrollTop + viewHeight) / ROW_H) + OVERSCAN)
-  if (start >= length) {
-    start = Math.max(0, length - VIRT)
-    end = length
-  }
-  return { start, end }
 }
 
 export function IssueTable({ state, view, members, today, onView, canEdit, act, said }: Props) {
@@ -150,11 +73,13 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     selection,
   })
 
+  const onRefused = useCallback((msg: string) => { toast(msg) }, [])
+
   const drag = useRowDrag({
     issues: liveIssues,
     canEdit,
     act,
-    onRefused: () => undefined,
+    onRefused,
   })
 
   useEffect(() => {
@@ -206,34 +131,6 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     act({ op: 'set', ids, props })
     selection.clear()
   }
-
-  const runDelete = (ids: string[]) => {
-    const total = new Set<string>()
-    let sub = 0
-    for (const id of ids) {
-      const nodes = subtree(liveIssues, id)
-      for (const n of nodes) {
-        if (id !== n.id) sub++
-        total.add(n.id)
-      }
-    }
-    const label = sub > 0
-      ? `Deleted${ids.length > 1 ? ` ${ids.length} issues` : ''} and ${sub} sub-issue${sub === 1 ? '' : 's'}.`
-      : `Deleted${ids.length > 1 ? ` ${ids.length} issues` : ' issue'}.`
-    act({ op: 'delete', ids })
-    offerDeleteUndo(label, () => act({ op: 'restore', ids }))
-    selection.clear()
-    setDeleteIds(null)
-  }
-
-  const pendingDelete = deleteIds
-    ? (() => {
-        let sub = 0
-        for (const id of deleteIds) sub += subtree(liveIssues, id).length - 1
-        const root = liveIssues.find((i) => i.id === deleteIds[0])
-        return { sub, title: root?.title ?? 'issue' }
-      })()
-    : null
 
   const composeDepth = useMemo(() => {
     if (!compose) return 0
@@ -320,22 +217,13 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
           </tbody>
         </table>
       </div>
-      <Dialog open={!!deleteIds?.length} onOpenChange={(o) => { if (!o) setDeleteIds(null) }}>
-        <DialogContent aria-describedby={undefined}>
-          <DialogTitle>Delete {pendingDelete?.title}?</DialogTitle>
-          <DialogDescription className="text-[13px] text-ink-2">
-            {pendingDelete && pendingDelete.sub > 0
-              ? `This issue and ${pendingDelete.sub} sub-issue${pendingDelete.sub === 1 ? '' : 's'} will be removed.`
-              : 'This issue will be removed.'}
-          </DialogDescription>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={() => setDeleteIds(null)}>Cancel</Button>
-            <Button variant="default" className="bg-bad text-app-bg hover:bg-bad/90" onClick={() => deleteIds && runDelete(deleteIds)}>
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <IssueDeleteDialog
+        deleteIds={deleteIds}
+        liveIssues={liveIssues}
+        onClose={() => setDeleteIds(null)}
+        act={act}
+        onDeleted={selection.clear}
+      />
     </div>
   )
 }

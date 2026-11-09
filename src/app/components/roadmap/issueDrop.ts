@@ -46,3 +46,19 @@ export function issueDropTarget(
   }
   return { parentId, after: row.id }
 }
+
+/** When a drop is rejected by tree rules, return the refusal sentence (silent no-ops return null). */
+export function issueDropRefusal(
+  issues: Issue[],
+  draggedId: string,
+  overId: string,
+  y: number,
+): string | null {
+  if (issueDropTarget(issues, draggedId, overId, y)) return null
+  const row = issues.find((i) => i.id === overId)
+  const dragged = issues.find((i) => i.id === draggedId)
+  if (!row || !dragged || row.id === draggedId) return null
+  const parentId = y < 1 / 3 || y > 2 / 3 ? row.parentId : row.id
+  const check = canParent(issues, draggedId, parentId)
+  return check === 'ok' ? null : check
+}
