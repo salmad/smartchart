@@ -44,9 +44,15 @@ export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen
   const hasIssues = liveCount > 0
   const showTable = hasIssues || customFields.length > 0
   const knownFields = useRef<Set<string>>(new Set())
+  const fieldsPrimed = useRef(false)
 
   useEffect(() => {
     const ids = new Set(customFields.map((f) => f.id))
+    if (!fieldsPrimed.current) {
+      knownFields.current = ids
+      fieldsPrimed.current = true
+      return
+    }
     const added = [...ids].filter((id) => !knownFields.current.has(id))
     knownFields.current = ids
     if (!added.length) return
