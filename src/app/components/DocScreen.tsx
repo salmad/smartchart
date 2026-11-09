@@ -261,7 +261,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         onResolve={(cid) => void comment({ resolve: { id: cid } })} onDelete={(cid) => void comment({ remove: { id: cid } })} />}
       {side === 'checks' && parsed && (
         <DocChecks doc={parsed} checks={checksState.checks} count={checksState.badge.count} countLabel={countText(checksState.badge)} quiet={checks.quiet} proposals={checksState.proposals}
-          loading={checksState.loading} canEdit={canEdit} actions={checks.actions} error={checks.error} onPick={review}
+          loading={checksState.occamOn && checksState.loading} canEdit={canEdit} actions={checks.actions} error={checks.error} onPick={review}
           onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
           onClose={() => { setSide(null); checks.reset() }} />
       )}

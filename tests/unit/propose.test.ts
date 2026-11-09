@@ -77,7 +77,7 @@ describe('proposeDoc', () => {
       complete: fakeComplete(JSON.stringify(payload)),
       now: () => 9,
     })
-    expect(out.length).toBeLessThanOrEqual(5)
+    expect(out.length).toBeLessThanOrEqual(8)
     expect(out.length).toBe(1)
     expect(out[0].by).toBe('Occam')
     expect(checkProposal(doc, out[0]).ok).toBe(true)
@@ -119,5 +119,6 @@ describe('proposeDoc', () => {
     const sys = proposeMessages(doc, []).find((m) => m.role === 'system')?.content ?? ''
     expect(sys).toMatch(/group/i)
     expect(sys).toMatch(/40/)
+    expect(sys).toMatch(/2 different shapes/i)
   })
 })

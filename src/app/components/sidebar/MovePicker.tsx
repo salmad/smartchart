@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileText, Presentation } from 'lucide-react'
+import { FileText, GanttChart, Presentation } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import type { PageRef, PageSummary } from '@/engine/pages/tree'
 import { Button } from '../ui/button'
@@ -55,7 +55,7 @@ export function MovePicker({ page, pages, onMove, onClose, workspaces = [], curr
               className={cn(option, PAD[0], picked === TOP ? 'bg-panel text-ink' : 'text-ink-2 hover:bg-panel')}>Top level</button>
           )}
           {shown.map((t) => {
-            const k = `${t.ref.kind}:${t.ref.id}`, Glyph = t.ref.kind === 'doc' ? FileText : Presentation
+            const k = `${t.ref.kind}:${t.ref.id}`, Glyph = t.ref.kind === 'doc' ? FileText : t.ref.kind === 'roadmap' ? GanttChart : Presentation
             return (
               <button key={k} type="button" role="option" aria-selected={picked === k} aria-disabled={t.reason ? true : undefined} title={t.reason ?? undefined}
                 onClick={() => { if (!t.reason) setPicked(k) }} onDoubleClick={() => { if (!t.reason) void go() }}

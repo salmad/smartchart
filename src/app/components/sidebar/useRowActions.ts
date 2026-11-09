@@ -7,6 +7,7 @@ import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
+import type { RoadmapRepo } from '@/app/roadmaps'
 import { ordered, type Op } from '@/app/optimistic'
 import { pageList } from './pageTree'
 
@@ -14,17 +15,20 @@ import { pageList } from './pageTree'
 const NOTICE_MS = 6000
 
 interface Deps {
-  repos: { decks: DeckRepo; docs: DocRepo }
+  repos: { decks: DeckRepo; docs: DocRepo; roadmaps: RoadmapRepo }
   /** The workspace on screen, whose list the changes belong to. */
   wsId: string | null
   onDeckDeleted: (id: string) => void
   onDocDeleted: (id: string) => void
+  onRoadmapDeleted: (id: string) => void
   onOpenDoc: (id: string) => void
+  onOpenRoadmap: (id: string) => void
   /** A doc was renamed on the server: the one on screen is read again. */
   onDocRenamed: () => void
 }
 
 export interface NewDoc { id: string; name: string; text: string; workspaceId: string; parent?: PageRef }
+export interface NewRoadmap { id: string; name: string; prefix: string; workspaceId: string; parent?: PageRef }
 
 export interface RowActions {
   /** The pending changes, to lay over every read of the page list. */
@@ -43,6 +47,7 @@ export interface RowActions {
   remove: (page: { ref: PageRef; name: string }, below?: readonly PageRef[]) => void
   rename: (page: { ref: PageRef; name: string }, name: string) => void
   createDoc: (doc: NewDoc) => void
+  createRoadmap: (roadmap: NewRoadmap) => void
 }
 
 export function useRowActions(d: Deps): RowActions {
@@ -86,11 +91,20 @@ export function useRowActions(d: Deps): RowActions {
       const { repos } = deps.current
       // The branch goes with it, as the server does it; each deleted page tells the app, which leaves only if it is the open one.
       act(op(ref, (r) => { const gone = [ref, ...descendants(r, ref)]; return r.filter((p) => !gone.some((g) => is(g, p))) }),
-        [`Couldn’t delete “${name}”.`, 'It’s back in your list.'], async () => ((await (ref.kind === 'deck' ? repos.decks.remove(ref.id) : repos.docs.remove(ref.id))) ? null : ''))
-      for (const p of [ref, ...below]) if (p.kind === 'deck') deps.current.onDeckDeleted(p.id); else deps.current.onDocDeleted(p.id)
+        [`Couldn’t delete “${name}”.`, 'It’s back in your list.'], async () => {
+          if (ref.kind === 'deck') return (await repos.decks.remove(ref.id)) ? null : ''
+          if (ref.kind === 'doc') return (await repos.docs.remove(ref.id)) ? null : ''
+          return (await repos.roadmaps.remove(ref.id)) ? null : ''
+        })
+      for (const p of [ref, ...below]) {
+        if (p.kind === 'deck') deps.current.onDeckDeleted(p.id)
+        else if (p.kind === 'doc') deps.current.onDocDeleted(p.id)
+        else if (p.kind === 'roadmap') deps.current.onRoadmapDeleted(p.id)
+      }
     },
     rename: ({ ref, name: was }, name) => {
       const named = (r: PageSummary[]) => r.map((p) => (is(p, ref) ? { ...p, name } : p))
+      if (ref.kind === 'roadmap') return
       if (ref.kind === 'deck') {
         act(op(ref, named), [`Couldn’t rename “${was}”.`, 'It has its old name back.'], async () => {
           const { decks } = deps.current.repos, deck = await decks.get(ref.id)
@@ -108,6 +122,11 @@ export function useRowActions(d: Deps): RowActions {
       const ref: PageRef = { kind: 'doc', id: doc.id }, parent = doc.parent ?? null
       act(op(ref, (r) => (r.some((p) => is(p, ref)) ? r : [...r, { ...ref, name: doc.name, updated: Date.now(), slides: null, parent: parent && r.some((p) => is(p, parent)) ? parent : null, sortKey: appendKey(r, parent) }])),
         ['Couldn’t create the doc.', 'Try again.'], () => deps.current.repos.docs.save(doc), () => deps.current.onOpenDoc(doc.id))
+    },
+    createRoadmap: (roadmap) => {
+      const ref: PageRef = { kind: 'roadmap', id: roadmap.id }, parent = roadmap.parent ?? null
+      act(op(ref, (r) => (r.some((p) => is(p, ref)) ? r : [...r, { ...ref, name: roadmap.name, updated: Date.now(), slides: null, parent: parent && r.some((p) => is(p, parent)) ? parent : null, sortKey: appendKey(r, parent) }])),
+        ['Couldn’t create the roadmap.', 'Try again.'], () => deps.current.repos.roadmaps.create(roadmap), () => deps.current.onOpenRoadmap(roadmap.id))
     },
   }
 }

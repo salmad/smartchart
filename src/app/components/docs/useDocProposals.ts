@@ -6,6 +6,7 @@ import { checkDoc, checkKey, type DocCheck } from '@/engine/docs/checks'
 import { identify } from '@/engine/docs/ops'
 import type { DocProposal } from '@/engine/docs/proposals'
 import type { Doc } from '@/engine/docs/types'
+import { docBlockSuggestionsEnabled } from '@/app/features'
 import { dropSuggestion, keepSuggestions, keptSuggestions, suggestionSig } from './occamCache'
 
 type ProposeFn = typeof defaultProposeDoc
@@ -93,9 +94,11 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
 
   // Occam's suggestions, as soon as an editor has the doc: from this browser when made for these blocks and dismissed
   // checks, else one model call (none when the doc reads well). A newer doc aborts the call.
+  const occamOn = docBlockSuggestionsEnabled()
+
   useEffect(() => {
     runRef.current?.abort()
-    if (!doc || !canEdit) { setOccam([]); setLoading(false); return }
+    if (!doc || !canEdit || !occamOn) { setOccam([]); setLoading(false); return }
     const sig = suggestionSig(doc, quiet), kept = keptSuggestions(docId, sig)
     if (kept) { setOccam(proposalsInDoc(doc, kept)); setLoading(false); return }
     setOccam([])
@@ -108,7 +111,7 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
       .catch(() => { if (!ctl.signal.aborted) setOccam([]) })
       .finally(() => { if (!ctl.signal.aborted) setLoading(false) })
     return () => ctl.abort()
-  }, [docId, doc, canEdit, quiet, live, proposeDoc])
+  }, [docId, doc, canEdit, quiet, live, proposeDoc, occamOn])
 
   const verdict = useMemo(() => checks.find((c) => c.id === 'D7') ?? null, [checks])
   const readability = useMemo(() => checks.filter((c) => /^D[4-7]$/.test(c.id)), [checks])
@@ -150,5 +153,6 @@ export function useDocProposals({ docId, doc, rev, canEdit, loadStored, dismissS
     badge,
     dismiss,
     refreshStored,
+    occamOn,
   }
 }

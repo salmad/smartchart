@@ -1,0 +1,140 @@
+import type { FieldDef, Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
+import type { RoadmapOp } from '@/engine/roadmaps/ops'
+import type { RoadmapRepo } from '@/app/roadmaps'
+import type { IssueDetail } from '@/engine/roadmaps/types'
+import { keyOf } from '@/engine/roadmaps/fields'
+import type { Theme } from '@/engine/types'
+import { IssueTitle } from './IssueTitle'
+import { IssueProperties } from './IssueProperties'
+import { IssueBody } from './IssueBody'
+import { SubIssues } from './SubIssues'
+import { IssueActivity } from './IssueActivity'
+
+interface Props {
+  issue: Issue
+  roadmap: Roadmap
+  fields: FieldDef[]
+  issues: Issue[]
+  members: MemberLite[]
+  detail: IssueDetail | null
+  detailLoading: boolean
+  detailError: string | null
+  canEdit: boolean
+  act: (op: RoadmapOp) => 'ok' | string
+  repo: RoadmapRepo
+  look: { theme: Theme; accent?: string }
+  layout: 'panel' | 'page'
+  onOpenIssue: (id: string) => void
+  onDetail: (patch: Partial<IssueDetail> | IssueDetail) => void
+}
+
+export function IssueDetailView({
+  issue,
+  roadmap,
+  fields,
+  issues,
+  members,
+  detail,
+  detailLoading,
+  detailError,
+  canEdit,
+  act,
+  repo,
+  look,
+  layout,
+  onOpenIssue,
+  onDetail,
+}: Props) {
+  const body = detail?.body ?? ''
+  const bodyRev = detail?.bodyRev ?? issue.bodyRev
+  const events = detail?.events ?? []
+  const comments = detail?.comments ?? []
+  const parent = issue.parentId ? issues.find((i) => i.id === issue.parentId && i.deletedAt === null) ?? null : null
+  // The breadcrumb names the issue's choice values, as v7 does ("In Underwriting · UK · CL").
+  const tags = fields.flatMap((f) => (f.type === 'choice' ? f.options?.filter((o) => o.id === issue.fields[f.id]).map((o) => o.name) ?? [] : []))
+
+  const main = (
+  <>
+      <p className="mb-1 flex min-w-0 items-center gap-1.5 text-[12px] text-ink-3">
+        <span className="font-mono">{keyOf(roadmap, issue)}</span>
+        {parent && (
+          <>
+            <span aria-hidden>·</span>
+            <button type="button" className="truncate hover:text-ink" onClick={() => onOpenIssue(parent.id)}>In {parent.title}</button>
+          </>
+        )}
+        {tags.map((t) => (
+          <span key={t} className="flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden>·</span>{t}</span>
+        ))}
+      </p>
+      <IssueTitle title={issue.title} canEdit={canEdit} act={act} issueId={issue.id} as={layout === 'page' ? 'h1' : 'h2'} />
+      {layout === 'panel' && (
+        <div className="mt-3">
+          <IssueProperties
+            issue={issue}
+            roadmap={roadmap}
+            fields={fields}
+            issues={issues}
+            members={members}
+            canEdit={canEdit}
+            act={act}
+            layout="stack"
+            onOpenIssue={onOpenIssue}
+          />
+        </div>
+      )}
+      {detailLoading && !detail && <p className="mt-4 text-[13px] text-ink-2">Loading description…</p>}
+      {detailError && <p role="alert" className="mt-4 text-[13px] text-bad">{detailError}</p>}
+      <IssueBody
+        roadmapId={roadmap.id}
+        issueId={issue.id}
+        issueTitle={issue.title}
+        body={body}
+        bodyRev={bodyRev}
+        canEdit={canEdit}
+        look={look}
+        repo={repo}
+        onSaved={(rev, text) => onDetail({ bodyRev: rev, body: text })}
+      />
+      <SubIssues parent={issue} roadmap={roadmap} issues={issues} members={members} canEdit={canEdit} act={act} onOpen={onOpenIssue} />
+      <IssueActivity
+        issue={issue}
+        events={events}
+        comments={comments}
+        fields={fields}
+        members={members}
+        canEdit={canEdit}
+        onComment={async (text) => {
+          const r = await repo.comment(roadmap.id, issue.id, text)
+          if (typeof r === 'string') throw new Error(r)
+          const d = await repo.detail(roadmap.id, issue.id)
+          if (d) onDetail(d)
+          else onDetail({ comments: r })
+        }}
+      />
+    </>
+  )
+
+  if (layout === 'page') {
+    return (
+      <div className="flex min-h-0 flex-1 gap-8 px-8 py-6 max-[900px]:flex-col max-[900px]:px-4">
+        <div className="min-w-0 flex-1 overflow-y-auto">{main}</div>
+        <aside className="w-64 shrink-0 overflow-y-auto border-l border-line pl-6 max-[900px]:w-full max-[900px]:border-l-0 max-[900px]:border-t max-[900px]:pl-0 max-[900px]:pt-4">
+          <IssueProperties
+            issue={issue}
+            roadmap={roadmap}
+            fields={fields}
+            issues={issues}
+            members={members}
+            canEdit={canEdit}
+            act={act}
+            layout="rail"
+            onOpenIssue={onOpenIssue}
+          />
+        </aside>
+      </div>
+    )
+  }
+
+  return <div className="overflow-y-auto px-4 py-4">{main}</div>
+}

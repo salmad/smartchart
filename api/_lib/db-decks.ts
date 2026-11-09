@@ -21,17 +21,43 @@ const ms = (t: string | Date) => new Date(t).getTime()
 
 type Calls = 'deckRole' | 'listDecks' | 'getDeck' | 'putDeck' | 'deleteDeck' | 'shareDeck' | 'sharedDeck' | 'getDeckMeta' | 'sharedRev' | 'shareDoc' | 'sharedDoc'
   | 'setPresence' | 'addEvents' | 'eventsSince' | 'versionHead' | 'writeVersion' | 'listVersions' | 'blobs' | 'listDocs' | 'getDoc' | 'putDoc' | 'deleteDoc' | 'listPages' | 'movePage' | 'countSubpages'
+  | 'createRoadmap' | 'deleteRoadmap'
 
-type PageCols = { parent_kind: 'deck' | 'doc' | null; parent_id: string | null; sort_key: string | null }
-const parentOf = (r: PageCols): PageRef | null => (r.parent_kind && r.parent_id ? { kind: r.parent_kind, id: r.parent_id } : null)
-const TABLE = { deck: 'decks', doc: 'docs' } as const
+type PageCols = { parent_kind: PageRef['kind'] | null; parent_id: string | null; sort_key: string | null }
+const parentOf = (r: PageCols): PageRef | null => {
+  const k = r.parent_kind
+  return k && r.parent_id ? { kind: k, id: r.parent_id } : null
+}
+const TABLE = { deck: 'decks', doc: 'docs', roadmap: 'roadmaps' } as const
+type PageTable = 'decks' | 'docs' | 'roadmaps'
+const PAGE_TABLES: PageTable[] = ['decks', 'docs', 'roadmaps']
+const PAGE_KIND: Record<PageTable, PageRef['kind']> = { decks: 'deck', docs: 'doc', roadmaps: 'roadmap' }
+
+/** Union of the three page tables; each branch from `select`, optional `where(t)` (e.g. workspace + may). */
+export function pagesUnion(
+  select: (t: PageTable, kind: PageRef['kind']) => string,
+  where?: (t: PageTable) => string,
+): string {
+  return PAGE_TABLES.map((t) => {
+    const clause = where?.(t)
+    return `${select(t, PAGE_KIND[t])}${clause ? ` where ${clause}` : ''}`
+  }).join('\n  union all ')
+}
+
+/** Parent links for every page kind (cycle checks and tree walks). */
+const PAGE_LINKS = pagesUnion((t, kind) => `select '${kind}' as kind, id, parent_kind, parent_id from ${t}`)
+
+/** One row per page in the tree (no access filter). */
+export const PAGES_SQL = pagesUnion((t, kind) => (t === 'decks'
+  ? `select '${kind}' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at as updated from ${t}`
+  : `select '${kind}' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at from ${t}`))
 
 export function deckCalls(q: Q): Pick<Db, Calls> {
   /** Every page of a workspace as the tree sees it (no access check: callers pass a workspace they may edit in, or get an empty list). */
-  const nodesIn = async (u: string, ws: string): Promise<PageNode[]> => (await q<PageCols & { kind: 'deck' | 'doc'; id: string }>(
+  const wsMay = (t: PageTable) => `workspace_id = $2 and ${may(t, '$1', '$3')}`
+  const nodesIn = async (u: string, ws: string): Promise<PageNode[]> => (await q<PageCols & { kind: PageRef['kind']; id: string }>(
     `select kind, id, parent_kind, parent_id, sort_key from (
-       select 'deck' as kind, id, parent_kind, parent_id, sort_key from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
-       union all select 'doc', id, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}) p limit ${MAX_PAGES}`,
+       ${pagesUnion((t, kind) => `select '${kind}' as kind, id, parent_kind, parent_id, sort_key from ${t}`, wsMay)}) p limit ${MAX_PAGES}`,
     [u, ws, R('read')])).map((r) => ({ kind: r.kind, id: r.id, parent: parentOf(r), sortKey: r.sort_key }))
   /** The page and everything below it, deleted with their versions and blobs; false when the caller may not edit the page.
       The write right is the workspace's, the same for every page in it, so it is checked once, on the page named. A page made
@@ -47,11 +73,16 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
     }
     const all = [page, ...descendants(await nodesIn(u, ws), page)]
     const ids = (kind: PageRef['kind']) => all.filter((p) => p.kind === kind).map((p) => p.id)
-    const decks = ids('deck'), docs = ids('doc')
+    const decks = ids('deck'), docs = ids('doc'), maps = ids('roadmap')
     const gone = (await q(`delete from ${t} where id = $1 and workspace_id = $2 returning id`, [page.id, ws])).length > 0
     if (!gone) return false
     await q('delete from decks where id = any($1::text[]) and workspace_id = $2', [decks, ws])
     await q('delete from docs where id = any($1::text[]) and workspace_id = $2', [docs, ws])
+    await q('delete from roadmaps where id = any($1::text[]) and workspace_id = $2', [maps, ws])
+    if (maps.length) {
+      await q('delete from issue_events where roadmap_id = any($1::text[])', [maps])
+      await q('delete from issues where roadmap_id = any($1::text[])', [maps])
+    }
     await q('delete from deck_versions where deck_id = any($1::text[])', [decks]); await q('delete from deck_blobs where deck_id = any($1::text[])', [decks])
     await q('delete from doc_versions where doc_id = any($1::text[])', [docs]); await q('delete from doc_blobs where doc_id = any($1::text[])', [docs])
     return true
@@ -172,11 +203,11 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
       `select id, name, updated_at as updated, workspace_id as "workspaceId", parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')} order by updated_at desc limit 200`,
       [u, ws, R('read')])).map(({ parent_kind, parent_id, sort_key, ...d }) => ({ ...d, updated: ms(d.updated), parent: parentOf({ parent_kind, parent_id, sort_key }), sortKey: sort_key })),
     // The tree call: decks and docs together, with no per-kind cap of 200 (the tree needs every page or it shows holes).
-    listPages: async (u, ws) => (await q<PageCols & { kind: 'deck' | 'doc'; id: string; name: string; updated: string | Date; slides: number | null }>(
+    listPages: async (u, ws) => (await q<PageCols & { kind: PageRef['kind']; id: string; name: string; updated: string | Date; slides: number | null }>(
       `select kind, id, name, updated, slides, parent_kind, parent_id, sort_key from (
-         select 'deck' as kind, id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides, parent_kind, parent_id, sort_key
-           from decks where workspace_id = $2 and ${may('decks', '$1', '$3')}
-         union all select 'doc', id, name, updated_at, null, parent_kind, parent_id, sort_key from docs where workspace_id = $2 and ${may('docs', '$1', '$3')}) p
+         ${pagesUnion((t, kind) => (t === 'decks'
+           ? `select '${kind}' as kind, id, name, updated_at as updated, jsonb_array_length(coalesce(data->'items', '[]'::jsonb)) as slides, parent_kind, parent_id, sort_key from ${t}`
+           : `select '${kind}' as kind, id, name, updated_at, null, parent_kind, parent_id, sort_key from ${t}`), wsMay)}) p
        order by updated desc limit ${MAX_PAGES}`, [u, ws, R('read')]))
       .map((r): PageSummary => ({ kind: r.kind, id: r.id, name: r.name, updated: ms(r.updated), slides: r.slides === null ? null : Number(r.slides), parent: parentOf(r), sortKey: r.sort_key })),
     movePage: async (u, page, to) => {
@@ -196,13 +227,12 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
         if (addOk !== 'ok') return addOk
         const key = appendKey(targetNodes, parent)
         const deckIds = all.filter((p) => p.kind === 'deck').map((p) => p.id), docIds = all.filter((p) => p.kind === 'doc').map((p) => p.id)
+        const roadmapIds = all.filter((p) => p.kind === 'roadmap').map((p) => p.id)
         if (deckIds.length) await q(`update decks set workspace_id = $2 where id = any($1::text[]) and workspace_id = $3`, [deckIds, target, at.ws])
         if (docIds.length) await q(`update docs set workspace_id = $2 where id = any($1::text[]) and workspace_id = $3`, [docIds, target, at.ws])
-        const root = page.kind === 'deck'
-          ? await q(`update decks set parent_kind = $2, parent_id = $3, sort_key = $4 where id = $1 and workspace_id = $5 returning id`,
-            [page.id, parent?.kind ?? null, parent?.id ?? null, key, target])
-          : await q(`update docs set parent_kind = $2, parent_id = $3, sort_key = $4 where id = $1 and workspace_id = $5 returning id`,
-            [page.id, parent?.kind ?? null, parent?.id ?? null, key, target])
+        if (roadmapIds.length) await q(`update roadmaps set workspace_id = $2 where id = any($1::text[]) and workspace_id = $3`, [roadmapIds, target, at.ws])
+        const root = await q(`update ${t} set parent_kind = $2, parent_id = $3, sort_key = $4 where id = $1 and workspace_id = $5 returning id`,
+          [page.id, parent?.kind ?? null, parent?.id ?? null, key, target])
         return root.length ? 'ok' : 'foreign'
       }
       const nodes = await nodesIn(u, at.ws), ok = canMove(nodes, page, to.parent)
@@ -217,7 +247,7 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
              with recursive up(kind, id, depth) as (
                select $2::text, $3::text, 0
                union all select p.parent_kind, p.parent_id, up.depth + 1
-                 from up join (select 'deck' as kind, id, parent_kind, parent_id from decks union all select 'doc', id, parent_kind, parent_id from docs) p
+                 from up join (${PAGE_LINKS}) p
                    on p.kind = up.kind and p.id = up.id where p.parent_id is not null and up.depth < 20)
              select 1 from up where kind = $8 and id = $1)
          returning id`, [page.id, to.parent?.kind ?? null, to.parent?.id ?? null, slot.key, at.ws, u, R('write'), page.kind])
@@ -242,6 +272,19 @@ export function deckCalls(q: Q): Pick<Db, Calls> {
       return ins[0] ? { rev: ins[0].rev } : refused('docs', u, id)
     },
     deleteDoc: (u, id) => deleteTree(u, { kind: 'doc', id }),
+    createRoadmap: async (u, r) => {
+      const at = await place(u, r.workspaceId, r.parent)
+      if ('refused' in at) return at.refused
+      const name = r.name.trim(), prefix = r.prefix.trim()
+      if (!name) return 'Every roadmap needs a name.'
+      if (!prefix) return 'Every roadmap needs a prefix.'
+      const ins = await q<{ id: string }>(
+        `insert into roadmaps (id, workspace_id, user_id, name, prefix, parent_kind, parent_id, sort_key) select $1, h.ws, $2, $3, $4, $5, $6, $7 from ${home('$8', '$2')} h
+         where h.ws is not null and ${editorIn('h.ws', '$2', '$9')} on conflict (id) do nothing returning id`,
+        [r.id, u, name, prefix, at.parent?.kind ?? null, at.parent?.id ?? null, at.key, at.ws, R('write')])
+      return ins.length ? 'ok' : 'foreign'
+    },
+    deleteRoadmap: (u, id) => deleteTree(u, { kind: 'roadmap', id }),
     countSubpages: async (u, page) => {
       const t = TABLE[page.kind]
       const ws = (await q<{ ws: string | null }>(`select workspace_id as ws from ${t} where id = $2 and ${may(t, '$1', '$3')}`, [u, page.id, R('read')]))[0]

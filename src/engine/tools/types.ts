@@ -20,7 +20,7 @@ export interface DocFile { id: string; name: string; doc: Doc }
 export interface Presence { busy?: { by: string; until: number }; editing?: { slideId: string; until: number } }
 export type EventWhat = "created" | "updated" | "template" | "moved" | "deleted" | "deck" | "comment";
 export interface DeckEvent { slideId: string | null; what: EventWhat; paths: string[] }
-export interface PageRefOut { kind: "doc" | "deck"; id: string }
+export interface PageRefOut { kind: "doc" | "deck" | "roadmap"; id: string }
 export interface DeckListItem { deckId: string; name: string; style: Style; slides: number; updated: number; shared: boolean; parent: PageRefOut | null }
 export interface WorkspaceItem { workspaceId: string; name: string; role: "owner" | "editor" | "viewer" }
 export interface AccountPort {

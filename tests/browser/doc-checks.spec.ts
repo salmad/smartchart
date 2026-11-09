@@ -40,8 +40,8 @@ const quietStored = (page: Page) => page.evaluate((id) => (JSON.parse(localStora
 test('one honest count: figure warnings keep the panel from saying Reads well, and the bar says the same', async ({ page }) => {
   await seed(page)
   await openPanel(page)
-  await expect(summary(page)).toHaveText('2 to look at')
-  await expect(page.getByRole('button', { name: 'Checks, 2 to look at' })).toBeVisible()
+  await expect(summary(page)).toHaveText('2 checks')
+  await expect(page.getByRole('button', { name: 'Checks, 2 checks' })).toBeVisible()
   await expect(panel(page)).not.toContainText('Reads well')
   // Each check sits under the block it is about, named in the doc's words.
   await expect(panel(page).getByRole('region', { name: 'Chart “Mid-market revenue · £m”' })).toContainText(NO_SOURCE)
@@ -56,7 +56,7 @@ test('picking a check shows its block; Dismiss is kept with the doc and Restore 
   await expect(fig).toHaveClass(/doc-ring/)
   await expect(fig).toBeInViewport()
   await panel(page).getByRole('button', { name: 'Dismiss', exact: true }).click()
-  await expect(summary(page)).toHaveText('1 to look at')
+  await expect(summary(page)).toHaveText('1 check')
   await expect(fig).not.toHaveClass(/doc-ring/)
   await expect(fig.locator('.fig-checks')).toBeHidden()
   await expect.poll(() => quietStored(page)).toHaveLength(1)
@@ -64,11 +64,11 @@ test('picking a check shows its block; Dismiss is kept with the doc and Restore 
   // Kept per doc: still dismissed after a reload.
   await page.reload()
   await openPanel(page)
-  await expect(summary(page)).toHaveText('1 to look at')
+  await expect(summary(page)).toHaveText('1 check')
   await expect(page.locator('.doc figure#fig_mix .fig-checks')).toBeHidden()
   await panel(page).getByRole('button', { name: '1 dismissed' }).click()
   await panel(page).getByRole('button', { name: 'Restore' }).click()
-  await expect(summary(page)).toHaveText('2 to look at')
+  await expect(summary(page)).toHaveText('2 checks')
   await expect(page.locator('.doc figure#fig_mix .fig-checks')).toBeVisible()
   await expect.poll(() => quietStored(page)).toHaveLength(0)
 })

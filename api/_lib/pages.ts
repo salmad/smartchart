@@ -10,7 +10,7 @@ const err = (status: number, error: string) => Response.json({ error }, { status
 /** A page named in a request body, or undefined when it is not one. */
 export function pageRef(v: unknown): PageRef | undefined {
   const o = (v && typeof v === 'object' ? v : {}) as { kind?: unknown; id?: unknown }
-  return (o.kind === 'deck' || o.kind === 'doc') && typeof o.id === 'string' && ID.test(o.id) ? { kind: o.kind, id: o.id } : undefined
+  return (o.kind === 'deck' || o.kind === 'doc' || o.kind === 'roadmap') && typeof o.id === 'string' && ID.test(o.id) ? { kind: o.kind, id: o.id } : undefined
 }
 
 /** The `parent` of a new page: absent or null for the top, a page, or 'bad' when it is something else. */

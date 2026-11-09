@@ -9,7 +9,9 @@ import { go, useRoute } from './route'
 import { localDeckRepo } from './store'
 import { localDocRepo, remoteDocRepo } from './docs'
 import { localPageRepo, remotePageRepo } from './pages'
+import { localRoadmapRepo, remoteRoadmapRepo } from './roadmaps'
 import { localWorkspaceRepo, remoteWorkspaceRepo } from './workspaces'
+import { Toaster } from './components/ui/sonner'
 
 // One screen per route: the site, the editor and the shared views load only when they are shown.
 const App = lazy(() => import('./App').then((m) => ({ default: m.App })))
@@ -45,10 +47,11 @@ function Screens() {
   const workspaces = useMemo(() => (dev ? localWorkspaceRepo() : remoteWorkspaceRepo({ onSignedOut: () => setEnded(true) })), [dev])
   const docs = useMemo(() => (dev ? cachedDocRepo(localDocRepo()) : cachedDocRepo(remoteDocRepo({ onSignedOut: () => setEnded(true) }), session?.id)), [dev, session?.id])
   const pages = useMemo(() => (dev ? localPageRepo() : remotePageRepo({ onSignedOut: () => setEnded(true) })), [dev])
+  const roadmaps = useMemo(() => (dev ? localRoadmapRepo() : remoteRoadmapRepo({ onSignedOut: () => setEnded(true), account: session?.id })), [dev, session?.id])
   const backup = useMemo(() => (dev ? null : localDeckRepo()), [dev])
   useEffect(() => setEnded(false), [live])
   // The frame index.html painted for the editor stays until the editor has its own; any other screen replaces it at once.
-  useEffect(() => { if (session === null || !['home', 'new', 'deck', 'doc'].includes(route.name)) bootDone() }, [session, route.name])
+  useEffect(() => { if (session === null || !['home', 'new', 'deck', 'doc', 'roadmap'].includes(route.name)) bootDone() }, [session, route.name])
   const joined = useCallback(() => go('/', { replace: true }), [])
 
   // A deck shared by link is for anyone who has it: no session needed, nothing of the viewer's own is shown.
@@ -75,7 +78,8 @@ function Screens() {
   // Keyed by account, not by deck: a new deck's URL becoming /d/:id after its first save must not restart it.
   return (
     <>
-      <App key={session.id} route={route} account={session} repo={repo} backup={backup} workspaces={workspaces} docs={docs} pages={pages} onWorkspace={(id) => { workspace.current = id }} />
+      <App key={session.id} route={route} account={session} repo={repo} backup={backup} workspaces={workspaces} docs={docs} roadmaps={roadmaps} pages={pages} onWorkspace={(id) => { workspace.current = id }} />
+      <Toaster position="bottom-center" richColors closeButton />
       <SignIn open={ended} onOpenChange={setEnded} returnTo={location.pathname} title="Sign in again"
         lede="Your session ended. Your deck is kept in this browser until you sign in and it saves to your account." />
     </>

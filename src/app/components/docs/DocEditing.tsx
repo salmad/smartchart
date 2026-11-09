@@ -12,6 +12,7 @@ import { proposalsForBlock, type ProposalShowing } from './proposal-preview'
 import { useDocEdit } from './useDocEdit'
 import type { ProposalView } from './editor/proposal'
 import { serializeDoc } from '@/engine/docs/serialize'
+import { docBlockSuggestionsEnabled } from '@/app/features'
 
 interface Props {
   doc: Doc
@@ -43,7 +44,11 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
   // Every suggestion has a margin mark; one opened shows in place.
   // Read through a ref, so the editor (built with this function) is never made again when a suggestion comes or goes.
   const viewNow = useRef<ProposalView>({ proposal: null, showing, canEdit: true })
-  viewNow.current = { proposal: active ?? null, showing, canEdit: true, marks: { list: proposals, open: (p: DocProposal) => onActiveProposal?.(p) } }
+  const marksOn = docBlockSuggestionsEnabled()
+  viewNow.current = {
+    proposal: active ?? null, showing, canEdit: true,
+    ...(marksOn ? { marks: { list: proposals, open: (p: DocProposal) => onActiveProposal?.(p) } } : {}),
+  }
   const proposalView = useCallback(() => viewNow.current, [])
   const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone, proposalView, proposalTick: tick })
   const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])

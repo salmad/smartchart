@@ -13,6 +13,7 @@ import { checkKey } from '@/engine/docs/checks'
 import { useCheckActions, useQuietChecks } from './useCheckActions'
 import { useDocProposals } from './useDocProposals'
 import { useFigureBadges } from './useFigureBadges'
+import { docBlockSuggestionsEnabled } from '@/app/features'
 import { useSuggestionMarks } from './suggestionMarks'
 
 interface Options {
@@ -56,7 +57,7 @@ export function useDocChecks({ docs, id, doc, canEdit, root, gate, chat, show, o
   const fromBadge = useCallback((key: string) => { openPanel(); pickKey(key) }, [openPanel, pickKey])
   useFigureBadges(root, quiet, fromBadge)
   // The read view's margin marks (the editor draws its own); editors only, as only they can take one.
-  useSuggestionMarks(root, state.proposals, onReview, canEdit && !gate.editing)
+  useSuggestionMarks(root, state.proposals, onReview, docBlockSuggestionsEnabled() && canEdit && !gate.editing)
 
   const actions: RowActions = {
     selected: acts.selected,

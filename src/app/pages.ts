@@ -3,7 +3,7 @@
    this browser for the dev account, where the same rules from engine/pages/tree.ts are applied to the stored pages. */
 import { canMove, descendants, slotKey, type PageRef, type PageSummary, type Slot } from '@/engine/pages/tree'
 import { deckName, loadStore } from './store'
-import { DOCS_KEY, localNodes, setPlace, type LocalStorage } from './local-pages'
+import { DOCS_KEY, ROADMAPS_KEY, localNodes, setPlace, type LocalStorage } from './local-pages'
 import { refOf } from './pages-wire'
 import { OFFLINE } from './workspaces'
 
@@ -21,7 +21,7 @@ export interface PageRepo {
 
 const GONE = 'That page is gone.'
 const MOVE_FAILED: Record<number, string> = { 401: 'Your session ended.', 404: GONE }
-const route = (kind: PageRef['kind']) => (kind === 'deck' ? 'decks' : 'docs')
+const route = (kind: PageRef['kind']) => (kind === 'deck' ? 'decks' : kind === 'doc' ? 'docs' : 'roadmaps')
 
 export function remotePageRepo({ fetcher = (...a) => fetch(...a), onSignedOut }: { fetcher?: typeof fetch; onSignedOut?: () => void } = {}): PageRepo {
   const call = async (url: string, init?: RequestInit) => {
@@ -34,9 +34,9 @@ export function remotePageRepo({ fetcher = (...a) => fetch(...a), onSignedOut }:
       const r = await call(`/api/pages?workspace=${encodeURIComponent(ws)}`)
       if (!r.ok) throw new Error(`pages: ${r.status}`)
       return ((await r.json()) as Partial<PageSummary>[]).flatMap((p): PageSummary[] => {
-        const kind = p.kind === 'deck' || p.kind === 'doc' ? p.kind : null
+        const kind = p.kind === 'deck' || p.kind === 'doc' || p.kind === 'roadmap' ? p.kind : null
         return kind && typeof p.id === 'string'
-          ? [{ kind, id: p.id, name: p.name || (kind === 'deck' ? 'Untitled deck' : 'Untitled doc'), updated: Number(p.updated) || 0,
+          ? [{ kind, id: p.id, name: p.name || (kind === 'deck' ? 'Untitled deck' : kind === 'doc' ? 'Untitled doc' : 'Untitled roadmap'), updated: Number(p.updated) || 0,
               slides: typeof p.slides === 'number' ? p.slides : null, parent: refOf(p.parent), sortKey: typeof p.sortKey === 'string' ? p.sortKey : null }]
           : []
       })
@@ -66,10 +66,14 @@ export function localPageRepo(storage?: LocalStorage): PageRepo {
     list: async (ws) => {
       const nodes = localNodes(storage, ws), decks = loadStore(storage).decks
       let docs: Record<string, { name?: string; updated?: number }> = {}
+      let roadmaps: Record<string, { name?: string; updated?: number }> = {}
       try { docs = (JSON.parse((storage ?? localStorage).getItem(DOCS_KEY) ?? 'null') as typeof docs | null) ?? {} } catch { /* none */ }
+      try { roadmaps = (JSON.parse((storage ?? localStorage).getItem(ROADMAPS_KEY) ?? 'null') as typeof roadmaps | null) ?? {} } catch { /* none */ }
       return nodes.map((n): PageSummary => n.kind === 'deck'
         ? { ...n, name: deckName(decks[n.id]), updated: decks[n.id].updated || 0, slides: decks[n.id].items?.length ?? 0 }
-        : { ...n, name: docs[n.id]?.name ?? '', updated: docs[n.id]?.updated ?? 0, slides: null })
+        : n.kind === 'roadmap'
+          ? { ...n, name: roadmaps[n.id]?.name ?? '', updated: roadmaps[n.id]?.updated ?? 0, slides: null }
+          : { ...n, name: docs[n.id]?.name ?? '', updated: docs[n.id]?.updated ?? 0, slides: null })
     },
     move: async (page, to) => {
       const nodes = localNodes(storage)
