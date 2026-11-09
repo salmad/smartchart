@@ -1,5 +1,5 @@
-import type { FieldDef, FieldType, Issue, Roadmap } from './types'
-import { MAX_FIELDS, MAX_OPTIONS } from './types'
+import type { FieldDef, FieldType, Issue, Roadmap } from './types.js'
+import { MAX_FIELDS, MAX_OPTIONS } from './types.js'
 
 const FIELD_TYPES = new Set<FieldType>(['choice', 'text', 'number', 'date', 'person'])
 

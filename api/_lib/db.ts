@@ -248,6 +248,8 @@ const SCHEMA = [
     prefix text not null, fields jsonb not null default '[]', next_number integer not null default 1, seq bigint not null default 0,
     parent_kind text, parent_id text, sort_key text, share_id text, updated_at timestamptz not null default now())`,
   `create index if not exists roadmaps_ws on roadmaps (workspace_id, updated_at desc)`,
+  // The write that last bumped seq; every other statement in that write's transaction applies only while it is this one.
+  `alter table roadmaps add column if not exists write_id text`,
   `create index if not exists roadmaps_parent on roadmaps (workspace_id, parent_id)`,
   `create table if not exists issues (id text primary key, roadmap_id text not null, number integer not null, parent_id text, sort_key text not null,
     title text not null, status text not null, assignee text, start_date date, due_date date, body text not null default '', body_rev integer not null default 0,

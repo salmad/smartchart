@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { applyOp } from '../../src/engine/roadmaps/ops.js'
 import type { FieldDef, Issue, IssueComment, IssueEvent } from '../../src/engine/roadmaps/types.js'
 import { NO_EDIT } from '../../src/engine/pages/tree.js'
@@ -92,25 +93,53 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
     return { kind: 'ok' as const, m, state: { roadmap, issues: rows.map(toIssue) }, readSeq: Number(m.seq) }
   }
 
-  const upsertIssue = (row: Issue, roadmapId: string): [string, unknown[]] => {
+  // Every write bumps the roadmap's seq from the value it read and stamps write_id with its own token. Postgres
+  // serialises writers on that row; a loser's bump matches nothing, and each later statement in its transaction is gated
+  // on the token, so it writes nothing and retries on fresh rows.
+  const gate = (rm: string, tok: string) => `exists (select 1 from roadmaps where id = ${rm} and write_id = ${tok})`
+  const token = () => randomBytes(12).toString('base64url')
+
+  const bump = (id: string, readSeq: number, seq: number, tok: string, u: string): [string, unknown[]] => [
+    `update roadmaps set seq = $2, write_id = $4, updated_at = now() where id = $1 and seq = $3 and ${may('roadmaps', '$5', '$6')} returning seq`,
+    [id, seq, readSeq, tok, u, R('write')],
+  ]
+
+  /** Lost races retry on fresh rows, three times at most; `null` from `attempt` means it lost. */
+  const retrying = async <T>(attempt: () => Promise<T | null>): Promise<T | string> => {
+    for (let i = 0; i < 3; i++) {
+      const r = await attempt()
+      if (r !== null) return r
+    }
+    return BUSY
+  }
+
+  // body_rev is not written here: only putIssueBody moves it.
+  const upsertIssue = (row: Issue, roadmapId: string, tok: string): [string, unknown[]] => {
     const params: unknown[] = [
       row.id, roadmapId, row.number, row.parentId, row.sortKey, row.title, row.status, row.assignee,
       row.start, row.due, row.bodyRev, JSON.stringify(row.fields), Number(row.seq), row.createdBy,
-      new Date(row.createdAt), new Date(row.updatedAt), row.deletedAt ? new Date(row.deletedAt) : null,
+      new Date(row.createdAt), new Date(row.updatedAt), row.deletedAt ? new Date(row.deletedAt) : null, tok,
     ]
     return [`insert into issues (id, roadmap_id, number, parent_id, sort_key, title, status, assignee, start_date, due_date, body_rev, fields, seq, created_by, created_at, updated_at, deleted_at)
-      values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17)
-      on conflict (id) do update set number = excluded.number, parent_id = excluded.parent_id, sort_key = excluded.sort_key, title = excluded.title, status = excluded.status,
-        assignee = excluded.assignee, start_date = excluded.start_date, due_date = excluded.due_date, body_rev = excluded.body_rev, fields = excluded.fields,
+      select $1, $2, $3::integer, $4, $5, $6, $7, $8, $9::date, $10::date, $11::integer, $12::jsonb, $13::bigint, $14, $15::timestamptz, $16::timestamptz, $17::timestamptz
+      where ${gate('$2', '$18')}
+      on conflict (id) do update set parent_id = excluded.parent_id, sort_key = excluded.sort_key, title = excluded.title, status = excluded.status,
+        assignee = excluded.assignee, start_date = excluded.start_date, due_date = excluded.due_date, fields = excluded.fields,
         seq = excluded.seq, updated_at = excluded.updated_at, deleted_at = excluded.deleted_at
       where issues.roadmap_id = excluded.roadmap_id`, params]
   }
 
-  const insertEvent = (roadmapId: string, seq: number, e: IssueEvent, u: string): [string, unknown[]] => [
+  const insertEvent = (roadmapId: string, seq: number, e: IssueEvent, u: string, tok: string): [string, unknown[]] => [
     `insert into issue_events (roadmap_id, issue_id, user_id, by_client, seq, at, what, changes)
-     values ($1,$2,$3,$4,$5,to_timestamp($6/1000.0),$7,$8::jsonb)`,
-    [roadmapId, e.issueId, u, e.byClient, seq, e.at, e.what, JSON.stringify(e.changes)],
+     select $1, $2, $3, $4, $5::bigint, to_timestamp($6::float8 / 1000.0), $7, $8::jsonb where ${gate('$1', '$9')}`,
+    [roadmapId, e.issueId, u, e.byClient, seq, e.at, e.what, JSON.stringify(e.changes), tok],
   ]
+
+  /** NO_EDIT for a viewer, 'foreign' for anyone else who can't write. */
+  const refuseWrite = async (u: string, id: string) => (await readRoadmap(u, id, R('read')) ? NO_EDIT : 'foreign')
+
+  const issueRow = async (id: string, issueId: string) =>
+    (await q<{ body_rev: number }>(`select body_rev from issues where id = $1 and roadmap_id = $2`, [issueId, id]))[0] ?? null
 
   return {
     getRoadmap: async (u, id) => {
@@ -128,28 +157,26 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
         [u, id, since, R('read')])
       return { seq, roadmap: seq > since ? loaded.roadmap : null, issues, events: evs.map(toEvent) }
     },
-    writeRoadmap: async (u, id, op, byClient) => {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const read = await loadForOp(u, id)
-        if (read.kind === 'foreign') return 'foreign'
-        if (read.kind === 'view') return NO_EDIT
-        const now = Date.now()
-        const applied = applyOp(read.state, op, { by: u, byClient, now, members: await memberIds(read.m.workspace_id) })
-        if ('refused' in applied) return applied.refused
-        const { state, changed, events } = applied
-        const { roadmap } = state
-        const stmts: [string, unknown[]][] = [[
-          `update roadmaps set name = $3, fields = $4::jsonb, next_number = $5, seq = $6, updated_at = now()
-           where id = $1 and seq = $2 and workspace_id = $7 and ${may('roadmaps', '$8', '$9')} returning seq`,
-          [id, read.readSeq, roadmap.name, JSON.stringify(roadmap.fields), roadmap.nextNumber, roadmap.seq, read.m.workspace_id, u, R('write')],
-        ]]
-        for (const row of changed) stmts.push(upsertIssue(row, id))
-        for (const e of events) stmts.push(insertEvent(id, roadmap.seq, e, u))
-        const out = await tx(stmts)
-        if ((out[0] as { seq: string | number }[])[0]) return { seq: roadmap.seq, changed }
-      }
-      return BUSY
-    },
+    writeRoadmap: async (u, id, op, byClient) => retrying(async () => {
+      const read = await loadForOp(u, id)
+      if (read.kind === 'foreign') return 'foreign'
+      if (read.kind === 'view') return NO_EDIT
+      const now = Date.now()
+      const applied = applyOp(read.state, op, { by: u, byClient, now, members: await memberIds(read.m.workspace_id) })
+      if ('refused' in applied) return applied.refused
+      const { state, changed, events } = applied
+      const { roadmap } = state
+      const tok = token()
+      const stmts: [string, unknown[]][] = [[
+        `update roadmaps set name = $3, fields = $4::jsonb, next_number = $5, seq = $6, write_id = $10, updated_at = now()
+         where id = $1 and seq = $2 and workspace_id = $7 and ${may('roadmaps', '$8', '$9')} returning seq`,
+        [id, read.readSeq, roadmap.name, JSON.stringify(roadmap.fields), roadmap.nextNumber, roadmap.seq, read.m.workspace_id, u, R('write'), tok],
+      ]]
+      for (const row of changed) stmts.push(upsertIssue(row, id, tok))
+      for (const e of events) stmts.push(insertEvent(id, roadmap.seq, e, u, tok))
+      const out = await tx(stmts)
+      return (out[0] as unknown[])[0] ? { seq: roadmap.seq, changed } : null
+    }),
     getIssueDetail: async (u, id, issueId) => {
       const m = await readRoadmap(u, id, R('read'))
       if (!m) return null
@@ -163,48 +190,38 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
         [id, issueId])
       return { body: row[0].body, bodyRev: row[0].body_rev, comments: row[0].comments, events: evs.map(toEvent) }
     },
-    putIssueBody: async (u, id, issueId, body, baseRev) => {
+    putIssueBody: async (u, id, issueId, body, baseRev) => retrying(async () => {
       const m = await readRoadmap(u, id, R('write'))
-      if (!m) {
-        const canRead = await readRoadmap(u, id, R('read'))
-        return canRead ? NO_EDIT : 'foreign'
-      }
-      const readSeq = Number(m.seq)
-      const now = Date.now()
-      const nextSeq = readSeq + 1
+      if (!m) return refuseWrite(u, id)
+      const cur = await issueRow(id, issueId)
+      if (!cur) return 'foreign'
+      if (cur.body_rev !== baseRev) return 'conflict'
+      const readSeq = Number(m.seq), seq = readSeq + 1, tok = token(), now = Date.now()
       const out = await tx([
-        [`update roadmaps set seq = $2, updated_at = now() where id = $1 and seq = $3 and ${may('roadmaps', '$4', '$5')} returning seq`,
-          [id, nextSeq, readSeq, u, R('write')]],
-        [`update issues set body = $4, body_rev = $5, updated_at = to_timestamp($6/1000.0), seq = $7
-          where id = $2 and roadmap_id = $1 and body_rev = $8 returning id`,
-          [id, issueId, nextSeq, body, baseRev + 1, now, nextSeq, baseRev]],
-        insertEvent(id, nextSeq, { issueId, by: u, byClient: 'app', at: now, what: 'set', changes: [{ path: 'body', from: null, to: body }] }, u),
+        bump(id, readSeq, seq, tok, u),
+        [`update issues set body = $3, body_rev = body_rev + 1, seq = $4, updated_at = to_timestamp($5::float8 / 1000.0)
+          where id = $1 and roadmap_id = $2 and body_rev = $6 and ${gate('$2', '$7')} returning body_rev`,
+          [issueId, id, body, seq, now, baseRev, tok]],
+        insertEvent(id, seq, { issueId, by: u, byClient: 'app', at: now, what: 'set', changes: [{ path: 'body', from: null, to: body }] }, u, tok),
       ])
-      if ((out[0] as { seq: string | number }[])[0] && (out[1] as { id: string }[])[0]) return { bodyRev: baseRev + 1, seq: nextSeq }
-      const exists = await q(`select 1 from issues where id = $2 and roadmap_id = $3`, [issueId, id])
-      if (!exists.length) return 'foreign'
-      return 'conflict'
-    },
-    addIssueComment: async (u, id, issueId, c) => {
+      if (!(out[0] as unknown[])[0]) return null
+      return (out[1] as unknown[])[0] ? { bodyRev: baseRev + 1, seq } : 'conflict'
+    }),
+    addIssueComment: async (u, id, issueId, c) => retrying(async () => {
       const m = await readRoadmap(u, id, R('write'))
-      if (!m) {
-        const canRead = await readRoadmap(u, id, R('read'))
-        return canRead ? NO_EDIT : 'foreign'
-      }
-      const now = Date.now()
-      const upd = await q<{ comments: IssueComment[]; seq: string | number }>(
-        `update issues set comments = comments || $4::jsonb, updated_at = now(), seq = (select seq + 1 from roadmaps r where r.id = $3)
-         where id = $2 and roadmap_id = $3
-         and exists (select 1 from roadmaps r where r.id = $3 and ${may('roadmaps', '$1', '$5')})
-         returning comments, (select seq from roadmaps where id = $3) as seq`,
-        [u, issueId, id, JSON.stringify([c]), R('write')])
-      if (!upd[0]) return 'foreign'
-      const seq = Number(upd[0].seq)
-      await tx([
-        [`update roadmaps set seq = $2, updated_at = now() where id = $1`, [id, seq]],
-        insertEvent(id, seq, { issueId, by: u, byClient: 'app', at: now, what: 'commented', changes: [{ path: 'comment', from: null, to: c.text }] }, u),
+      if (!m) return refuseWrite(u, id)
+      if (!(await issueRow(id, issueId))) return 'foreign'
+      const readSeq = Number(m.seq), seq = readSeq + 1, tok = token(), now = Date.now()
+      const out = await tx([
+        bump(id, readSeq, seq, tok, u),
+        [`update issues set comments = comments || $3::jsonb, seq = $4, updated_at = now()
+          where id = $1 and roadmap_id = $2 and ${gate('$2', '$5')} returning comments`,
+          [issueId, id, JSON.stringify([c]), seq, tok]],
+        insertEvent(id, seq, { issueId, by: u, byClient: 'app', at: now, what: 'commented', changes: [{ path: 'comment', from: null, to: c.text }] }, u, tok),
       ])
-      return upd[0].comments
-    },
+      if (!(out[0] as unknown[])[0]) return null
+      const row = (out[1] as { comments: IssueComment[] }[])[0]
+      return row ? row.comments : 'foreign'
+    }),
   }
 }

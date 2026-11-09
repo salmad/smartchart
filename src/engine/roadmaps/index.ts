@@ -1,4 +1,4 @@
-import type { Issue } from './types'
+import type { Issue } from './types.js'
 
 const bySibling = (a: Issue, b: Issue) => {
   if (a.sortKey !== b.sortKey) return a.sortKey < b.sortKey ? -1 : 1

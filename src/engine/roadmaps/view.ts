@@ -1,7 +1,7 @@
-import { buildIndex } from './index'
-import { progress } from './rollup'
-import type { FieldDef, FieldValue, Issue, RoadmapState, Status } from './types'
-import { STATUS_LABEL, STATUSES } from './types'
+import { buildIndex } from './index.js'
+import { progress } from './rollup.js'
+import type { FieldDef, FieldValue, Issue, RoadmapState, Status } from './types.js'
+import { STATUS_LABEL, STATUSES } from './types.js'
 
 export type Chip =
   | { on: 'status'; is: boolean; values: Status[] }

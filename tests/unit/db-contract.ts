@@ -282,6 +282,30 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.roadmapChanges(ann.id, rm, 0)).toBeNull()
     })
 
+    it('a property, a body and a comment written at once all land, each under its own seq', async () => {
+      const db = await make(), { ann, bob, id } = people()
+      const ws = await seedUser(db, ann)
+      const rm = id('rm'), i1 = id('i')
+      await db.createRoadmap(ann.id, { id: rm, name: 'Plan', prefix: 'PLN', workspaceId: ws })
+      await join(db, ann, ws, bob, 'editor')
+      const made = await db.writeRoadmap(ann.id, rm, { op: 'create', issues: [{ id: i1, parentId: null, title: 'One' }] }, 'app')
+      const s0 = (made as { seq: number }).seq
+      const [set, body, comments] = await Promise.all([
+        db.writeRoadmap(bob.id, rm, { op: 'set', ids: [i1], props: { status: 'in_progress' } }, 'b'),
+        db.putIssueBody(ann.id, rm, i1, '# Plan', 0),
+        db.addIssueComment(ann.id, rm, i1, { id: id('c'), by: ann.id, text: 'Looks right', at: 1 }),
+      ])
+      expect(set).toMatchObject({ seq: expect.any(Number) })
+      expect(body).toMatchObject({ bodyRev: 1 })
+      expect(comments).toHaveLength(1)
+      const delta = await db.roadmapChanges(ann.id, rm, s0)
+      expect(delta?.seq).toBe(s0 + 3)
+      expect(delta?.issues.find((x) => x.id === i1)).toMatchObject({ status: 'in_progress', bodyRev: 1 })
+      const detail = await db.getIssueDetail(ann.id, rm, i1)
+      expect(detail).toMatchObject({ body: '# Plan', bodyRev: 1, comments: [{ text: 'Looks right' }] })
+      expect(detail?.events.map((e) => e.what).sort()).toEqual(['commented', 'created', 'set', 'set'])
+    })
+
     it('a roadmap is a page: listed, nested under, counted, cyclable, and deleted with its subpages', async () => {
       const db = await make(), { ann, id } = people(), rm = id('rm'), doc = id('doc')
       const ws = await seedUser(db, ann)

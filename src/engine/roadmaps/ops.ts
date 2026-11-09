@@ -1,7 +1,7 @@
-import { checkFieldDefs, checkFieldPatch, isIsoDate, pruneInvalidFieldValues, stripField } from './fields'
-import type { FieldDef, FieldValue, Issue, IssueEvent, RoadmapState, Status } from './types'
-import { MAX_TITLE, STATUSES } from './types'
-import { canParent, siblingKey, subtree } from './tree'
+import { checkFieldDefs, checkFieldPatch, isIsoDate, pruneInvalidFieldValues, stripField } from './fields.js'
+import type { FieldDef, FieldValue, Issue, IssueEvent, RoadmapState, Status } from './types.js'
+import { MAX_TITLE, STATUSES } from './types.js'
+import { canParent, siblingKey, subtree } from './tree.js'
 
 export type IssueProps = Partial<Pick<Issue, 'title' | 'status' | 'assignee' | 'start' | 'due'>> & {
   fields?: Record<string, FieldValue | null>

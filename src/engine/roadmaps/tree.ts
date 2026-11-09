@@ -1,8 +1,8 @@
-import { keyBetween } from '../pages/tree'
-import { buildIndex } from './index'
-import type { Issue } from './types'
-import { MAX_DEPTH } from './types'
-import { dateSpan, progress } from './rollup'
+import { keyBetween } from '../pages/tree.js'
+import { buildIndex } from './index.js'
+import type { Issue } from './types.js'
+import { MAX_DEPTH } from './types.js'
+import { dateSpan, progress } from './rollup.js'
 
 export { buildIndex, dateSpan, progress }
 

@@ -1,5 +1,5 @@
-import { buildIndex } from './index'
-import type { Issue, Status } from './types'
+import { buildIndex } from './index.js'
+import type { Issue, Status } from './types.js'
 
 function score(status: Status): number {
   if (status === 'done') return 1
