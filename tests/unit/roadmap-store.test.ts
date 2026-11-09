@@ -67,15 +67,25 @@ describe('roadmapStore', () => {
   })
 
   it('poll keeps our pending status while showing another user’s assignee', async () => {
-    const kept = loaded()
+    const snap = loaded()
     const r = repo({})
-    r.keep('rm_1', kept)
+    r.keep('rm_1', snap)
+    let serverLive = false
+    r.changes = async (_id, since) => {
+      if (!serverLive || since >= 99) return null
+      return {
+        seq: 99,
+        roadmap: { ...snap.roadmap, seq: 99 },
+        issues: [{ ...snap.issues[0], assignee: 'bob', seq: 99 }],
+        events: [],
+      } satisfies Changes
+    }
     const store = roadmapStore(r, 'rm_1', { by: 'ann', now: () => 1 })
     await store.open()
+    await vi.waitFor(() => expect(store.get().state).not.toBeNull())
+    expect(store.get().state?.issues[0].assignee).toBeNull()
     store.act({ op: 'set', ids: ['a'], props: { status: 'in_progress' } })
-    kept.issues[0] = { ...kept.issues[0], assignee: 'bob', seq: 99 }
-    kept.roadmap = { ...kept.roadmap, seq: 99 }
-    r.keep('rm_1', kept)
+    serverLive = true
     await store.poll()
     expect(store.get().state?.issues[0].status).toBe('in_progress')
     expect(store.get().state?.issues[0].assignee).toBe('bob')
@@ -104,7 +114,7 @@ describe('roadmapStore', () => {
 
   it('two acts on one issue send in order', async () => {
     const order: string[] = []
-    const r = repo({})
+    const r = repo({ writeDelay: 1 })
     const base = r
     const wrapped: RoadmapRepo = {
       ...r,
@@ -117,6 +127,9 @@ describe('roadmapStore', () => {
     await store.open()
     store.act({ op: 'set', ids: ['a'], props: { title: 'First' } })
     store.act({ op: 'set', ids: ['a'], props: { title: 'Second' } })
-    await vi.waitFor(() => expect(order).toEqual(['First', 'Second']))
+    await vi.waitFor(() => {
+      if (order.length < 2) r.writeGate?.()
+      expect(order).toEqual(['First', 'Second'])
+    })
   })
 })

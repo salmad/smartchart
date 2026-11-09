@@ -131,7 +131,11 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
         pending = pending.filter((p) => p !== op)
         notify()
         return out
-      }).catch(() => undefined)
+      }).catch(() => {
+        pending = pending.filter((p) => p !== op)
+        said = 'Couldn’t save.'
+        notify()
+      })
       return 'ok'
     },
 
