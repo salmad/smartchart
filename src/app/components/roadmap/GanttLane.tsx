@@ -25,6 +25,7 @@ interface LaneProps {
   onDatesOver: (e: ReactDragEvent<HTMLDivElement>) => void
   onDatesLeave: () => void
   onDatesDrop: (e: ReactDragEvent<HTMLDivElement>) => void
+  today: string
 }
 
 function laneDataAttrs(mark: Mark): Record<string, string | undefined> {
@@ -132,6 +133,16 @@ function alertMark(mark: Mark): boolean {
   return mark.kind !== 'none' && 'alert' in mark && !!mark.alert
 }
 
+function labelAnchorX(endX: number, text: string, today: string, axis: Axis): number {
+  const start = endX + 6
+  const estW = text.length * 6.5
+  const todayX = axis.xOf(today) + axis.px / 2
+  if (start < todayX + 8 && start + estW > todayX - 8) {
+    return Math.max(4, endX - estW - 6)
+  }
+  return start
+}
+
 function markForDraw(
   mark: Mark,
   preview: { id: string; start: string; due: string } | null,
@@ -191,6 +202,7 @@ export function GanttLane({
   onDatesOver,
   onDatesLeave,
   onDatesDrop,
+  today,
 }: LaneProps) {
   const issueId = row.kind === 'issue' ? row.issue.id : undefined
   const issueStart = row.kind === 'issue' ? row.issue.start : null
@@ -263,7 +275,7 @@ export function GanttLane({
         {draw.kind !== 'none' && markGraphic(draw, axis)}
         {text && (
           <text
-            x={endX + 6}
+            x={labelAnchorX(endX, text, today, axis)}
             y={17}
             className={alertMark(draw) ? 'fill-bad text-[11.5px]' : 'fill-ink-2 text-[11.5px]'}
           >

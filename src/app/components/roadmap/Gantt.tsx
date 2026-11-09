@@ -143,6 +143,7 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
                 canEdit={canEdit}
                 barDrag={barDrag}
                 datesDrop={datesDrop}
+                today={today}
               />
             ))}
             {padBottom > 0 && <GanttPadSvg h={padBottom} width={width} />}

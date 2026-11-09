@@ -76,9 +76,11 @@ export function GanttScaleRow({
         {tickList.map((t: Tick) => (
           <g key={t.iso}>
             <line x1={t.x} x2={t.x} y1={0} y2={SCALE_H} className="stroke-line" strokeWidth={1} />
-            <text x={t.x + 6} y={19} className="fill-ink-3 text-[11px]">
-              {t.label}
-            </text>
+            {scale === 'week' && t.iso === today ? null : (
+              <text x={t.x + 6} y={19} className="fill-ink-3 text-[11px]">
+                {t.label}
+              </text>
+            )}
           </g>
         ))}
         <TodayLine axis={axis} today={today} height={SCALE_H} />
@@ -161,6 +163,7 @@ export function GanttTimelineBody({
   canEdit,
   barDrag,
   datesDrop,
+  today,
 }: {
   row: TableRow
   allRows: TableRow[]
@@ -172,6 +175,7 @@ export function GanttTimelineBody({
   canEdit: boolean
   barDrag: BarDragApi
   datesDrop: DatesDropApi
+  today: string
 }) {
   const group = row.kind === 'group' ? groupSpan(live, allRows, absIndex) : null
   const mark = row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' as const }
@@ -191,6 +195,7 @@ export function GanttTimelineBody({
       onDatesOver={datesDrop.laneOver(laneId)}
       onDatesLeave={datesDrop.laneLeave}
       onDatesDrop={datesDrop.laneDrop}
+      today={today}
     />
   )
 }

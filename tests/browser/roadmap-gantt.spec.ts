@@ -237,3 +237,30 @@ test('drops a dateless issue onto the timeline', async ({ page }) => {
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-07' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-20' })).toBeVisible()
 })
+
+test('apple-bar 1440 gantt scales', async ({ page }) => {
+  test.skip(!process.env.APPLE_BAR_CAPTURE, 'Set APPLE_BAR_CAPTURE=1 to refresh docs/temp screenshot')
+  const yesterday = new Date()
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1)
+  const yesterdayIso = yesterday.toISOString().slice(0, 10)
+
+  await openFreshRoadmap(page)
+  await seedSixIssues(page, {
+    i_done: { start: '2026-10-01', due: '2026-10-20', status: 'done' },
+    i_blk: { start: '2026-10-05', due: yesterdayIso, status: 'blocked' },
+    i_fr_a: { start: '2027-04-01', due: '2027-04-01' },
+    i_fr_b: { start: undefined, due: undefined },
+  })
+  await page.reload()
+
+  const nav = page.getByRole('navigation', { name: 'Roadmap views' })
+  await nav.getByRole('button', { name: 'Gantt' }).click()
+  await page.getByRole('button', { name: 'Hide the sidebar' }).click()
+  const scale = page.getByRole('radiogroup', { name: 'Scale' })
+  await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible()
+
+  for (const s of ['Week', 'Month', 'Quarter'] as const) {
+    await scale.getByRole('radio', { name: s }).click()
+    await page.screenshot({ path: `docs/temp/roadmap-m2-gantt-1440-${s.toLowerCase()}.png` })
+  }
+})
