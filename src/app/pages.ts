@@ -3,7 +3,7 @@
    this browser for the dev account, where the same rules from engine/pages/tree.ts are applied to the stored pages. */
 import { canMove, descendants, slotKey, type PageRef, type PageSummary, type Slot } from '@/engine/pages/tree'
 import { deckName, loadStore } from './store'
-import { DOCS_KEY, localNodes, setPlace, type LocalStorage } from './local-pages'
+import { DOCS_KEY, ROADMAPS_KEY, localNodes, setPlace, type LocalStorage } from './local-pages'
 import { refOf } from './pages-wire'
 import { OFFLINE } from './workspaces'
 
@@ -66,10 +66,14 @@ export function localPageRepo(storage?: LocalStorage): PageRepo {
     list: async (ws) => {
       const nodes = localNodes(storage, ws), decks = loadStore(storage).decks
       let docs: Record<string, { name?: string; updated?: number }> = {}
+      let roadmaps: Record<string, { name?: string; updated?: number }> = {}
       try { docs = (JSON.parse((storage ?? localStorage).getItem(DOCS_KEY) ?? 'null') as typeof docs | null) ?? {} } catch { /* none */ }
+      try { roadmaps = (JSON.parse((storage ?? localStorage).getItem(ROADMAPS_KEY) ?? 'null') as typeof roadmaps | null) ?? {} } catch { /* none */ }
       return nodes.map((n): PageSummary => n.kind === 'deck'
         ? { ...n, name: deckName(decks[n.id]), updated: decks[n.id].updated || 0, slides: decks[n.id].items?.length ?? 0 }
-        : { ...n, name: docs[n.id]?.name ?? '', updated: docs[n.id]?.updated ?? 0, slides: null })
+        : n.kind === 'roadmap'
+          ? { ...n, name: roadmaps[n.id]?.name ?? '', updated: roadmaps[n.id]?.updated ?? 0, slides: null }
+          : { ...n, name: docs[n.id]?.name ?? '', updated: docs[n.id]?.updated ?? 0, slides: null })
     },
     move: async (page, to) => {
       const nodes = localNodes(storage)
