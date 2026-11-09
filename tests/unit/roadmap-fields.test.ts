@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { checkFieldDefs, checkValue, checkValues, keyOf, stripField, type FieldDef } from '../../src/engine/roadmaps/fields'
+import { checkFieldDefs, checkValue, checkValues, keyOf, stripField } from '../../src/engine/roadmaps/fields'
+import type { FieldDef } from '../../src/engine/roadmaps/types'
 import { issue, roadmap } from './roadmap-builders'
 
 describe('roadmap fields', () => {
@@ -24,4 +25,11 @@ describe('roadmap fields', () => {
   })
 
   it('makes readable keys', () => expect(keyOf(roadmap({ prefix: 'SME' }), { number: 142 })).toBe('SME-142'))
+
+  it('refuses a person who is not in the workspace and non-finite numbers', () => {
+    const owner: FieldDef = { id: 'o1', name: 'Owner', type: 'person' }
+    expect(checkValue(owner, 'ann', ['ann'])).toBe('ok')
+    expect(checkValue(owner, 'stranger', ['ann'])).toMatch(/workspace member/)
+    expect(checkValue({ id: 'n1', name: 'Size', type: 'number' }, Infinity)).toMatch(/number/)
+  })
 })

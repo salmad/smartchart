@@ -1,22 +1,14 @@
 import { keyBetween } from '../pages/tree'
+import { buildIndex } from './index'
 import type { Issue } from './types'
 import { MAX_DEPTH } from './types'
 import { dateSpan, progress } from './rollup'
 
-export { dateSpan, progress }
+export { buildIndex, dateSpan, progress }
 
 export const NO_ISSUE = 'No such issue.'
 export const ISSUE_CYCLE = 'An issue can’t go inside itself or its sub-issues.'
 export const ISSUE_TOO_DEEP = `Issues nest ${MAX_DEPTH} levels deep at most.`
-
-function live(issues: Issue[]): Issue[] {
-  return issues.filter((i) => i.deletedAt === null)
-}
-
-const bySibling = (a: Issue, b: Issue) => {
-  if (a.sortKey !== b.sortKey) return a.sortKey < b.sortKey ? -1 : 1
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-}
 
 export interface IssueTree {
   roots: Issue[]
@@ -25,22 +17,20 @@ export interface IssueTree {
 }
 
 export function issueTree(issues: Issue[]): IssueTree {
-  const list = live(issues)
-  const children = (parentId: string | null) =>
-    list.filter((i) => i.parentId === parentId).sort(bySibling)
+  const idx = buildIndex(issues)
   return {
-    roots: children(null),
-    children,
-    get: (id) => list.find((i) => i.id === id),
+    roots: idx.children(null),
+    children: (id) => idx.children(id),
+    get: (id) => idx.byId.get(id),
   }
 }
 
 export function ancestors(issues: Issue[], id: string): Issue[] {
-  const byId = new Map(live(issues).map((i) => [i.id, i]))
+  const idx = buildIndex(issues)
   const out: Issue[] = []
-  let cur = byId.get(id)?.parentId ?? null
+  let cur = idx.byId.get(id)?.parentId ?? null
   while (cur) {
-    const p = byId.get(cur)
+    const p = idx.byId.get(cur)
     if (!p) break
     out.push(p)
     cur = p.parentId
@@ -49,39 +39,53 @@ export function ancestors(issues: Issue[], id: string): Issue[] {
 }
 
 export function subtree(issues: Issue[], id: string): Issue[] {
-  const tree = issueTree(issues)
-  const root = tree.get(id)
+  const idx = buildIndex(issues)
+  const root = idx.byId.get(id)
   if (!root) return []
   const out: Issue[] = []
   const walk = (node: Issue) => {
     out.push(node)
-    for (const c of tree.children(node.id)) walk(c)
+    for (const c of idx.children(node.id)) walk(c)
   }
   walk(root)
   return out
 }
 
-function depthOf(issues: Issue[], id: string): number {
-  return ancestors(issues, id).length + 1
+function depthOf(idx: ReturnType<typeof buildIndex>, id: string): number {
+  let n = 0
+  let cur = idx.byId.get(id)
+  while (cur?.parentId) {
+    n++
+    cur = idx.byId.get(cur.parentId)
+  }
+  return n + 1
 }
 
+const heightCache = new WeakMap<Issue[], Map<string, number>>()
+
 function heightBelow(issues: Issue[], id: string): number {
-  const kids = issueTree(issues).children(id)
-  if (!kids.length) return 1
-  return 1 + Math.max(...kids.map((k) => heightBelow(issues, k.id)))
+  let memo = heightCache.get(issues)
+  if (!memo) {
+    memo = new Map()
+    heightCache.set(issues, memo)
+  }
+  const hit = memo.get(id)
+  if (hit !== undefined) return hit
+  const idx = buildIndex(issues)
+  const kids = idx.children(id)
+  const h = kids.length ? 1 + Math.max(...kids.map((k) => heightBelow(issues, k.id))) : 1
+  memo.set(id, h)
+  return h
 }
 
 export function canParent(issues: Issue[], id: string, parentId: string | null): 'ok' | string {
-  const tree = issueTree(issues)
-  const moving = tree.get(id)
-  if (parentId === null) {
-    if (moving) return 'ok'
-    return 'ok'
-  }
-  const parent = tree.get(parentId)
+  if (parentId === null) return 'ok'
+  const idx = buildIndex(issues)
+  const moving = idx.byId.get(id)
+  const parent = idx.byId.get(parentId)
   if (!parent) return NO_ISSUE
   if (moving && (id === parentId || subtree(issues, id).some((n) => n.id === parentId))) return ISSUE_CYCLE
-  const parentDepth = depthOf(issues, parentId)
+  const parentDepth = depthOf(idx, parentId)
   const h = moving ? heightBelow(issues, id) : 1
   if (parentDepth + h > MAX_DEPTH) return ISSUE_TOO_DEEP
   return 'ok'

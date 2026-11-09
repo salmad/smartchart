@@ -50,4 +50,11 @@ describe('roadmap tree', () => {
     expect(issueTree([...t, issue({ id: 'd', parentId: 'u', deletedAt: 1 })]).children('u').map((i) => i.id)).toEqual(['f', 'x'])
   })
 
+  it('computes progress over thousands of issues quickly', () => {
+    const rows = [issue({ id: 'root', parentId: null })]
+    for (let i = 0; i < 5000; i++) rows.push(issue({ id: `leaf-${i}`, parentId: 'root', status: i % 4 === 0 ? 'done' : 'todo' }))
+    const t0 = performance.now()
+    progress(rows, 'root')
+    expect(performance.now() - t0).toBeLessThan(100)
+  })
 })

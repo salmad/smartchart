@@ -1,4 +1,4 @@
-import { checkFieldDefs, checkValues, stripField } from './fields'
+import { checkFieldDefs, checkFieldPatch, isIsoDate, pruneInvalidFieldValues, stripField } from './fields'
 import type { FieldDef, FieldValue, Issue, IssueEvent, RoadmapState, Status } from './types'
 import { MAX_TITLE, STATUSES } from './types'
 import { canParent, siblingKey, subtree } from './tree'
@@ -35,7 +35,17 @@ function ev(ctx: OpCtx, what: IssueEvent['what'], issueId: string | null, change
   return { issueId, by: ctx.by, byClient: ctx.byClient, at: ctx.now, what, changes }
 }
 
+function validateDate(v: string | null): 'ok' | string {
+  if (v === null) return 'ok'
+  if (!isIsoDate(v)) return 'Dates must be YYYY-MM-DD.'
+  return 'ok'
+}
+
 function validateDates(start: string | null, due: string | null): 'ok' | string {
+  const a = validateDate(start)
+  if (a !== 'ok') return a
+  const b = validateDate(due)
+  if (b !== 'ok') return b
   if (start !== null && due !== null && start > due) return 'Start must be before due.'
   return 'ok'
 }
@@ -55,6 +65,7 @@ function applyProps(
   const changes: IssueEvent['changes'] = []
 
   if (props.title !== undefined) {
+    if (typeof props.title !== 'string') return { refused: 'Every issue needs a title.' }
     const title = props.title.trim()
     if (!title) return { refused: 'Every issue needs a title.' }
     if (title.length > MAX_TITLE) return { refused: `Titles are ${MAX_TITLE} characters at most.` }
@@ -93,13 +104,13 @@ function applyProps(
     }
   }
   if (props.fields) {
+    const check = checkFieldPatch(defs, props.fields, members)
+    if (check !== 'ok') return { refused: check }
     const merged = { ...next.fields }
     for (const [k, v] of Object.entries(props.fields)) {
       if (v === null) delete merged[k]
       else merged[k] = v
     }
-    const check = checkValues(defs, merged)
-    if (check !== 'ok') return { refused: check }
     if (JSON.stringify(merged) !== JSON.stringify(target.fields)) {
       changes.push({ path: 'fields', from: target.fields, to: merged })
       next.fields = merged
@@ -118,6 +129,25 @@ function markedSubtree(issues: Issue[], rootId: string, mark: number): Issue[] {
     for (const c of marked.filter((i) => i.parentId === id)) walk(c.id)
   }
   walk(rootId)
+  return out
+}
+
+function issuesToRestore(all: Issue[], startId: string): Issue[] {
+  const byId = new Map(all.map((i) => [i.id, i]))
+  let cur = byId.get(startId)
+  if (!cur?.deletedAt) return []
+  const seen = new Set<string>()
+  const out: Issue[] = []
+  while (cur) {
+    if (cur.deletedAt) {
+      for (const n of markedSubtree(all, cur.id, cur.deletedAt)) {
+        if (seen.has(n.id)) continue
+        seen.add(n.id)
+        out.push(n)
+      }
+    }
+    cur = cur.parentId ? byId.get(cur.parentId) : undefined
+  }
   return out
 }
 
@@ -143,8 +173,10 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
       const parentCheck = canParent(draft.issues, row.id, row.parentId)
       if (parentCheck !== 'ok') return { refused: parentCheck }
       if (get(row.id)) return { refused: 'That issue already exists.' }
+      if (typeof row.title !== 'string') return { refused: 'Every issue needs a title.' }
       const title = row.title.trim()
-      if (!title || title.length > MAX_TITLE) return { refused: `Titles are ${MAX_TITLE} characters at most.` }
+      if (!title) return { refused: 'Every issue needs a title.' }
+      if (title.length > MAX_TITLE) return { refused: `Titles are ${MAX_TITLE} characters at most.` }
       const parent = row.parentId ? get(row.parentId) : undefined
       if (row.parentId && !parent) return { refused: 'No such issue.' }
       let next: Issue = {
@@ -198,22 +230,32 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
       ]),
     )
   } else if (op.op === 'delete') {
+    const at = ctx.now
+    const gone = new Set<string>()
     for (const id of op.ids) {
       const root = get(id)
-      if (!root || root.deletedAt !== null) return { refused: 'No such issue.' }
-      const at = ctx.now
+      if (!root) return { refused: 'No such issue.' }
+      if (root.deletedAt !== null || gone.has(id)) continue
       for (const node of subtree(draft.issues, id)) {
+        if (gone.has(node.id)) continue
+        gone.add(node.id)
         write({ ...node, deletedAt: at })
         events.push(ev(ctx, 'deleted', node.id, [{ path: 'deletedAt', from: null, to: at }]))
       }
     }
   } else if (op.op === 'restore') {
+    const back = new Set<string>()
     for (const id of op.ids) {
-      const root = get(id)
-      if (!root?.deletedAt) return { refused: 'No such issue.' }
-      for (const node of markedSubtree(draft.issues, id, root.deletedAt)) {
+      if (back.has(id)) continue
+      const nodes = issuesToRestore(draft.issues, id)
+      if (!nodes.length) return { refused: 'No such issue.' }
+      for (const node of nodes) {
+        if (back.has(node.id)) continue
+        back.add(node.id)
+        const live = get(node.id)
+        if (live?.deletedAt === null) continue
         write({ ...node, deletedAt: null })
-        events.push(ev(ctx, 'restored', node.id, [{ path: 'deletedAt', from: root.deletedAt, to: null }]))
+        events.push(ev(ctx, 'restored', node.id, [{ path: 'deletedAt', from: node.deletedAt, to: null }]))
       }
     }
   } else if (op.op === 'roadmap') {
@@ -227,9 +269,16 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         for (const row of stripField(draft.issues, fieldId)) write(row)
       }
       draft.roadmap.fields = op.fields
+      for (const row of pruneInvalidFieldValues(draft.issues, op.fields, ctx.members)) {
+        const before = get(row.id)
+        if (!before) continue
+        write(row)
+        events.push(ev(ctx, 'set', row.id, [{ path: 'fields', from: before.fields, to: row.fields }]))
+      }
       events.push(ev(ctx, 'fields', null, [{ path: 'fields', from: s.roadmap.fields, to: op.fields }]))
     }
     if (op.name !== undefined) {
+      if (typeof op.name !== 'string') return { refused: 'Every roadmap needs a name.' }
       const name = op.name.trim()
       if (!name) return { refused: 'Every roadmap needs a name.' }
       if (name !== draft.roadmap.name) {

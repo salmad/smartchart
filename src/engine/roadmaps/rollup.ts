@@ -1,12 +1,5 @@
+import { buildIndex } from './index'
 import type { Issue, Status } from './types'
-
-function live(issues: Issue[]): Issue[] {
-  return issues.filter((i) => i.deletedAt === null)
-}
-
-function childrenOf(issues: Issue[], parentId: string | null): Issue[] {
-  return live(issues).filter((i) => i.parentId === parentId)
-}
 
 function score(status: Status): number {
   if (status === 'done') return 1
@@ -14,43 +7,56 @@ function score(status: Status): number {
   return 0
 }
 
-/** Leaf issues under `id` (descendants with no live children). */
-function leavesUnder(issues: Issue[], id: string): Issue[] {
-  const out: Issue[] = []
-  const walk = (parentId: string) => {
-    const kids = childrenOf(issues, parentId)
-    if (!kids.length) {
-      const self = live(issues).find((i) => i.id === parentId)
-      if (self) out.push(self)
-      return
-    }
-    for (const k of kids) walk(k.id)
+function leavesUnder(idx: ReturnType<typeof buildIndex>, id: string): Issue[] {
+  const kids = idx.children(id)
+  if (!kids.length) {
+    const self = idx.byId.get(id)
+    return self ? [self] : []
   }
-  walk(id)
-  return out
+  return kids.flatMap((k) => leavesUnder(idx, k.id))
 }
 
 /** 0..1, or null when every counted leaf is Cancelled. */
 export function progress(issues: Issue[], id: string): number | null {
-  const leaves = leavesUnder(issues, id).filter((i) => i.status !== 'cancelled')
+  const idx = buildIndex(issues)
+  const leaves = leavesUnder(idx, id).filter((i) => i.status !== 'cancelled')
   if (!leaves.length) return null
   const sum = leaves.reduce((n, i) => n + score(i.status), 0)
   return sum / leaves.length
 }
 
+const dateMemo = new WeakMap<Issue[], Map<string, { start: string | null; due: string | null }>>()
+
 export function dateSpan(issues: Issue[], id: string): { start: string | null; due: string | null } {
-  const self = live(issues).find((i) => i.id === id)
-  if (!self) return { start: null, due: null }
-  if (self.start !== null && self.due !== null) return { start: self.start, due: self.due }
-  const kids = childrenOf(issues, id)
-  let start: string | null = null
-  let due: string | null = null
+  let memo = dateMemo.get(issues)
+  if (!memo) {
+    memo = new Map()
+    dateMemo.set(issues, memo)
+  }
+  const hit = memo.get(id)
+  if (hit) return hit
+
+  const idx = buildIndex(issues)
+  const self = idx.byId.get(id)
+  if (!self) {
+    const empty = { start: null, due: null }
+    memo.set(id, empty)
+    return empty
+  }
+  if (self.start !== null && self.due !== null) {
+    const span = { start: self.start, due: self.due }
+    memo.set(id, span)
+    return span
+  }
+  const kids = idx.children(id)
+  let start: string | null = self.start
+  let due: string | null = self.due
   for (const k of kids) {
     const span = dateSpan(issues, k.id)
     if (span.start !== null && (start === null || span.start < start)) start = span.start
     if (span.due !== null && (due === null || span.due > due)) due = span.due
   }
-  if (self.start !== null) start = self.start
-  if (self.due !== null) due = self.due
-  return { start, due }
+  const span = { start, due }
+  memo.set(id, span)
+  return span
 }

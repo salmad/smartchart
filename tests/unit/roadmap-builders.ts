@@ -1,14 +1,18 @@
+import { keyBetween } from '../../src/engine/pages/tree'
 import type { FieldDef, Issue, Roadmap, RoadmapState } from '../../src/engine/roadmaps/types'
 import type { OpCtx } from '../../src/engine/roadmaps/ops'
 
 const now = 1_700_000_000_000
+let lastSortKey: string | null = null
 
 export function issue(over: Partial<Issue> = {}): Issue {
+  const sortKey = over.sortKey ?? keyBetween(lastSortKey, null)
+  if (!over.sortKey) lastSortKey = sortKey
   return {
     id: 'iss_test',
     number: 1,
     parentId: null,
-    sortKey: 'a',
+    sortKey,
     title: 'Untitled',
     status: 'todo',
     assignee: null,
