@@ -1,5 +1,5 @@
 import { PanelLeft } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Account } from '@/app/auth'
 import type { RoadmapRepo } from '@/app/roadmaps'
 import type { PageRef } from '@/engine/pages/tree'
@@ -43,6 +43,18 @@ export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen
   const liveCount = view.state?.issues.filter((i) => i.deletedAt === null).length ?? 0
   const hasIssues = liveCount > 0
   const showTable = hasIssues || customFields.length > 0
+  const knownFields = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const ids = new Set(customFields.map((f) => f.id))
+    const added = [...ids].filter((id) => !knownFields.current.has(id))
+    knownFields.current = ids
+    if (!added.length) return
+    setViewSettings((v) => {
+      const next = added.filter((id) => !v.columns.includes(id))
+      return next.length ? { ...v, columns: [...v.columns, ...next] } : v
+    })
+  }, [customFields, setViewSettings])
 
   return (
     <div className="flex h-full flex-col bg-app-bg">

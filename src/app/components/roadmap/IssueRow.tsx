@@ -47,7 +47,7 @@ export function IssueGroupRow({ row, colCount }: GroupProps) {
 
 export function IssueDataRow({ row, roadmap, fields, columns, members, allIssues, onToggleCollapse }: IssueProps) {
   const { issue, depth, dim, hasChildren, open } = row
-  const parentProg = progress(allIssues, issue.id)
+  const parentProg = hasChildren ? progress(allIssues, issue.id) : null
   const member = members.find((m) => m.id === issue.assignee)
 
   return (

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FieldDef, MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { tableRows } from '@/engine/roadmaps/view'
@@ -6,6 +6,7 @@ import { IssueDataRow, IssueGroupRow } from './IssueRow'
 
 const ROW_H = 34
 const VIRT = 200
+const OVERSCAN = 8
 
 interface Props {
   state: RoadmapState
@@ -15,7 +16,8 @@ interface Props {
   onView: (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
 }
 
-function visibleRows(rows: TableRow[]): TableRow[] {
+function visibleRows(rows: TableRow[], filtersActive: boolean): TableRow[] {
+  if (filtersActive) return rows
   const out: TableRow[] = []
   const openAt: boolean[] = []
   for (const row of rows) {
@@ -46,9 +48,6 @@ function liveColumns(view: ViewSettings, fields: FieldDef[]): string[] {
     if (id === 'assignee' || id === 'start' || id === 'due') cols.push(id)
     else if (fields.some((f) => f.id === id)) cols.push(id)
   }
-  for (const f of fields) {
-    if (!cols.includes(f.id)) cols.push(f.id)
-  }
   return cols
 }
 
@@ -77,9 +76,21 @@ function TableHead({ columns, fields }: { columns: string[]; fields: FieldDef[] 
   )
 }
 
+function rowSlice(length: number, scrollTop: number, viewHeight: number): { start: number; end: number } {
+  if (length <= VIRT) return { start: 0, end: length }
+  let start = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
+  let end = Math.min(length, Math.ceil((scrollTop + viewHeight) / ROW_H) + OVERSCAN)
+  if (start >= length) {
+    start = Math.max(0, length - VIRT)
+    end = length
+  }
+  return { start, end }
+}
+
 export function IssueTable({ state, view, members, today, onView }: Props) {
   const all = useMemo(() => tableRows(state, view, today), [state, view, today])
-  const rows = useMemo(() => visibleRows(all), [all])
+  const filtersActive = view.chips.length > 0
+  const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
   const columns = useMemo(() => liveColumns(view, state.roadmap.fields), [view.columns, state.roadmap.fields])
   const colCount = 3 + columns.length + 1
 
@@ -94,21 +105,32 @@ export function IssueTable({ state, view, members, today, onView }: Props) {
   )
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [window, setWindow] = useState({ start: 0, end: rows.length })
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewHeight, setViewHeight] = useState(900)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setViewHeight(el.clientHeight)
+  }, [rows.length])
+
+  const slice = useMemo(
+    () => rowSlice(rows.length, scrollTop, viewHeight),
+    [rows.length, scrollTop, viewHeight],
+  )
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
-    if (!el || rows.length <= VIRT) return
+    if (!el) return
     const top = el.scrollTop
     const h = el.clientHeight
-    const start = Math.max(0, Math.floor(top / ROW_H) - 8)
-    const end = Math.min(rows.length, Math.ceil((top + h) / ROW_H) + 8)
-    setWindow((w) => (w.start === start && w.end === end ? w : { start, end }))
-  }, [rows.length])
+    setScrollTop((t) => (t === top ? t : top))
+    setViewHeight((vh) => (vh === h ? vh : h))
+  }, [])
 
-  const body = rows.length > VIRT ? rows.slice(window.start, window.end) : rows
-  const padTop = rows.length > VIRT ? window.start * ROW_H : 0
-  const padBottom = rows.length > VIRT ? (rows.length - window.end) * ROW_H : 0
+  const body = rows.length > VIRT ? rows.slice(slice.start, slice.end) : rows
+  const padTop = rows.length > VIRT ? slice.start * ROW_H : 0
+  const padBottom = rows.length > VIRT ? (rows.length - slice.end) * ROW_H : 0
 
   const shared = {
     roadmap: state.roadmap,
