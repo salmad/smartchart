@@ -13,6 +13,7 @@ import { DeleteDeck } from '../DeleteDeck'
 import { MovePicker } from './MovePicker'
 import { Members } from './Members'
 import { NewDoc } from './NewDoc'
+import { NewRoadmap } from '../roadmap/NewRoadmap'
 import { pathTo, type Row } from './flatten'
 import { PageTree as PageTreePanel } from './PageTree.tsx'
 import { usePageTree } from './usePageTree'
@@ -28,10 +29,11 @@ interface Props {
   rows: RowActions
   repos: { decks: DeckRepo; docs: DocRepo; pages: PageRepo; workspaces: WorkspaceRepo }
   /** The deck held in the editor (its name is live, and it lists before its first save), and the doc on screen. */
-  open: { deck: { id: string | null; name: string; slides: number; parent: PageRef | null }; doc: string | null; docTick: number }
+  open: { deck: { id: string | null; name: string; slides: number; parent: PageRef | null }; doc: string | null; roadmap: string | null; docTick: number }
   busy: boolean
   onOpenDeck: (id: string) => void; onNewDeck: (parent: PageRef | null) => void
   onOpenDoc: (id: string) => void
+  onOpenRoadmap: (id: string) => void
   /** The open deck is renamed through the editor, so its live state and its next save agree. */
   onRenameOpenDeck: (name: string) => void
   /** The signed-in user's id, for their own row in Members. */
@@ -42,17 +44,19 @@ interface Props {
 
 const BLANK_TITLE = 'Untitled doc'
 const newDocId = () => `doc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+const newRoadmapId = () => `rm_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 /** The workspace down the left (Notion's shape): its name and switcher at the top, then its pages as one tree of docs and
     decks. Hidden with ⌘\\. Editors and owners make, rename and delete; a viewer only opens and expands. */
-export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onRenameOpenDeck, me, onDismiss }: Props) {
+export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNewDeck, onOpenDoc, onOpenRoadmap, onRenameOpenDeck, me, onDismiss }: Props) {
   const size = useSidebarWidth()
   const wsId = ws.current?.id ?? null, canWrite = ws.current?.role !== 'viewer'
   const [renaming, setRenaming] = useState<{ kind: PageKind | 'workspace'; row?: Row } | null>(null)
   const [doomed, setDoomed] = useState<{ row: Row; subpages: number } | null>(null), [said, setSaid] = useState<string | null>(null), [making, setMaking] = useState<{ parent: PageRef | null } | null>(() => (linkParam('new') === 'doc' ? { parent: null } : null))
+  const [makingRoadmap, setMakingRoadmap] = useState<{ parent: PageRef | null } | null>(() => (linkParam('new') === 'roadmap' ? { parent: null } : null))
   const [members, setMembers] = useState(false), [moving, setMoving] = useState<Row | null>(null)
   const { deck } = open
-  const openRef: PageRef | null = open.doc !== null ? { kind: 'doc', id: open.doc } : deck.id ? { kind: 'deck', id: deck.id } : null
+  const openRef: PageRef | null = open.doc !== null ? { kind: 'doc', id: open.doc } : open.roadmap !== null ? { kind: 'roadmap', id: open.roadmap } : deck.id ? { kind: 'deck', id: deck.id } : null
   const tree = usePageTree({ repo: repos.pages, workspaceId: wsId, viewer: me, open: openRef, deck, pendingParent: deck.parent, tick: open.docTick,
     ops: actions.ops, account: me === DEV_ACCOUNT.id ? undefined : me })
   // Once the server has answered a change, the list is read again, so it says what the server says; a change it accepted is let go of then.
@@ -81,7 +85,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
     if (onDismiss && matchMedia('(max-width: 900px)').matches) onDismiss()
     if (ref.kind === 'deck') return onOpenDeck(ref.id)
     if (ref.kind === 'doc') return onOpenDoc(ref.id)
-    globalThis.location.assign(`/r/${ref.id}`)
+    return onOpenRoadmap(ref.id)
   })
 
   // Switching opens the deck last used in that workspace from cache when possible; list fills in behind.
@@ -130,6 +134,9 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
     const name = s ? starterDoc(s).title || s.label : BLANK_TITLE, text = s ? s.markdown.join('\n') : serializeDoc({ title: BLANK_TITLE, blocks: [] })
     if (wsId) actions.createDoc({ id: newDocId(), name, text, workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
   }
+  const createRoadmap = async (name: string, prefix: string) => {
+    if (wsId) actions.createRoadmap({ id: newRoadmapId(), name, prefix, workspaceId: wsId, ...(makingRoadmap?.parent ? { parent: makingRoadmap.parent } : {}) })
+  }
 
   return (
     <>
@@ -146,7 +153,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto] overflow-y-auto pb-4">
         <PageTreePanel rows={rows} failed={tree.failed} canWrite={canWrite} busy={busy} onOpen={openPage} onToggle={tree.toggle} onAhead={readAhead}
-          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={(row) => void askDelete(row)} pages={tree.pages} />
+          onNew={(kind, parent) => (kind === 'doc' ? setMaking({ parent }) : kind === 'roadmap' ? setMakingRoadmap({ parent }) : onNewDeck(parent))} onRename={(row) => setRenaming({ kind: row.ref.kind, row })} onPick={setMoving} onMove={(ref, to) => tree.move(ref, to)} onDelete={(row) => void askDelete(row)} pages={tree.pages} />
         {(tree.notice ?? said) && <p role="status" className="mx-2 mt-1 rounded-lg bg-panel px-2.5 py-2 text-[12.5px] leading-[1.4] text-ink-2">{tree.notice ?? said}</p>}
       </div>
 
@@ -165,6 +172,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
         }} />
       {actions.notice && <p role="alert" className="border-t border-line px-4 py-3 text-[12.5px] leading-[1.45] text-ink-2">{actions.notice}</p>}
       <NewDoc open={making !== null} onCreate={createDoc} onClose={() => setMaking(null)} />
+      <NewRoadmap open={makingRoadmap !== null} onCreate={createRoadmap} onClose={() => setMakingRoadmap(null)} />
       {/* Leaving opens the most recently used workspace that is left. */}
       <Members workspace={members ? ws.current : null} repo={repos.workspaces} me={me} onClose={() => setMembers(false)}
         onLeft={() => { setMembers(false); void ws.reload().then(() => onNewDeck(null)) }} />

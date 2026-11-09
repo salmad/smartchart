@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react'
 import type { Style } from '@/engine/types'
 
 export type Route = { name: 'home' } | { name: 'site' } | { name: 'new' } | { name: 'deck'; id: string } | { name: 'shared'; token: string } | { name: 'present' } | { name: 'presenter' }
-  | { name: 'doc'; id: string } | { name: 'invite'; token: string }
+  | { name: 'doc'; id: string } | { name: 'roadmap'; id: string; issue?: string } | { name: 'invite'; token: string }
 
 export function parseRoute(path: string): Route {
   if (path === '/new') return { name: 'new' }
@@ -18,6 +18,8 @@ export function parseRoute(path: string): Route {
   if (invite) return { name: 'invite', token: invite[1] }
   const doc = /^\/doc\/([\w-]+)$/.exec(path)
   if (doc) return { name: 'doc', id: doc[1] }
+  const roadmap = /^\/r\/([\w-]+)(?:\/([\w-]+))?$/.exec(path)
+  if (roadmap) return { name: 'roadmap', id: roadmap[1], ...(roadmap[2] ? { issue: roadmap[2] } : {}) }
   const m = /^\/d\/([\w-]+)$/.exec(path)
   return m ? { name: 'deck', id: m[1] } : { name: 'home' }
 }

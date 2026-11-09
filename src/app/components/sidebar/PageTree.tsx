@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { FileText, Plus, Presentation } from 'lucide-react'
+import { FileText, GanttChart, Plus, Presentation } from 'lucide-react'
 import { keyOf, type PageKind, type PageRef, type PageSummary } from '@/engine/pages/tree'
 import { MENU_ICON, MENU_ITEM } from '../menu'
 import { Button } from '../ui/button'
@@ -100,6 +100,7 @@ export function PageTree({ rows, failed, canWrite, busy, onOpen, onAhead, onTogg
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[150px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
               <DropdownMenuItem onSelect={() => onNew('doc', null)} className={MENU_ITEM}><FileText {...MENU_ICON} />New doc</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onNew('roadmap', null)} className={MENU_ITEM}><GanttChart {...MENU_ICON} />New roadmap</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onNew('deck', null)} className={MENU_ITEM}><Presentation {...MENU_ICON} />New deck</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

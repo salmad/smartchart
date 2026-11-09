@@ -27,7 +27,8 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let closed = false
 
-  const notify = () => { subs.forEach((fn) => fn()) }
+  let snapshot: RoadmapView = { state: null, role: null, members: [], error: null, said: null }
+  const refresh = () => { snapshot = view(); subs.forEach((fn) => fn()) }
 
   const opCtx = (): OpCtx => ({
     by: ctx.by,
@@ -68,7 +69,7 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
     base = r
     repo.keep(id, r)
     error = null
-    notify()
+    refresh()
   }
 
   const syncFromServer = async (kept: LoadedRoadmap | null) => {
@@ -80,19 +81,21 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
         if (ch.issues.length) mergeIssues(ch.issues)
         if (ch.seq > (base?.roadmap.seq ?? 0) && base) base = { ...base, roadmap: { ...base.roadmap, seq: ch.seq } }
         if (base) repo.keep(id, base)
-        notify()
+        refresh()
         return
       }
       const full = await repo.get(id)
-      if (!full) { error = GONE; notify(); return }
+      if (!full) { error = GONE; refresh(); return }
       paint(full)
     } catch {
-      if (!base) { error = 'Couldn’t read the roadmap.'; notify() }
+      if (!base) { error = 'Couldn’t read the roadmap.'; refresh() }
     }
   }
 
+  refresh()
+
   return {
-    get: view,
+    get: () => snapshot,
     subscribe(fn: () => void) { subs.add(fn); return () => { subs.delete(fn) } },
 
     async open() {
@@ -113,13 +116,13 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
       if ('refused' in trial) return trial.refused
       said = null
       pending = [...pending, op]
-      notify()
+      refresh()
       queue.run(id, async () => {
         const out = await repo.write(id, op)
         if (typeof out === 'string') {
           pending = pending.filter((p) => p !== op)
           said = out
-          notify()
+          refresh()
           return out
         }
         const settled = applyOp({ roadmap: base!.roadmap, issues: base!.issues }, op, opCtx())
@@ -129,12 +132,12 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
           repo.keep(id, base)
         }
         pending = pending.filter((p) => p !== op)
-        notify()
+        refresh()
         return out
       }).catch(() => {
         pending = pending.filter((p) => p !== op)
         said = 'Couldn’t save.'
-        notify()
+        refresh()
       })
       return 'ok'
     },
@@ -148,7 +151,7 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
         if (ch.issues.length) mergeIssues(ch.issues)
         if (ch.seq > base.roadmap.seq) base = { ...base, roadmap: { ...base.roadmap, seq: ch.seq } }
         repo.keep(id, base)
-        notify()
+        refresh()
       } catch { /* next poll */ }
     },
 

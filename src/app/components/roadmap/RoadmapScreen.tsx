@@ -1,0 +1,63 @@
+import { PanelLeft } from 'lucide-react'
+import type { ReactNode } from 'react'
+import type { Account } from '@/app/auth'
+import type { RoadmapRepo } from '@/app/roadmaps'
+import type { PageRef } from '@/engine/pages/tree'
+import { AccountMenu } from '../AccountMenu'
+import { Toggle } from '../Bar'
+import { Crumbs } from '../Crumbs'
+import type { Crumb } from '../sidebar/usePageCrumbs'
+import { useRoadmap } from './useRoadmap'
+import { TopBar } from './TopBar'
+
+const EMPTY = 'No issues yet. Press C or New issue to add the first.'
+
+interface Props {
+  id: string
+  issue?: string
+  repo: RoadmapRepo
+  account: Account
+  workspace: string | null
+  canEdit: boolean
+  sidebar: ReactNode
+  sidebarOpen: boolean
+  onToggleSidebar: () => void
+  onSite: () => void
+  crumbs?: Crumb[]
+  onOpenPage?: (ref: PageRef) => void
+  name?: string
+}
+
+/** A roadmap in the workspace shell: sidebar, bar, and (for M1) the empty table surface. */
+export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen, onToggleSidebar, onSite, crumbs, onOpenPage, name }: Props) {
+  const { view } = useRoadmap(repo, id, account.id)
+  const title = view.state?.roadmap.name ?? name ?? ''
+
+  return (
+    <div className="flex h-full flex-col bg-app-bg">
+      <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
+        <div className="flex flex-none items-center gap-0.5">
+          <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
+        </div>
+        <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
+          <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
+          <span aria-hidden className="text-ink-3">/</span>
+          <Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} />
+          <span className="truncate text-ink-2">{title}</span>
+        </nav>
+        <TopBar canEdit={canEdit} />
+        <AccountMenu account={account} />
+      </header>
+      <div className="flex h-[calc(100%-56px)] min-h-0 max-[900px]:h-auto max-[900px]:flex-col">
+        {sidebar}
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg">
+          {view.error && <p className="px-8 py-10 text-[13.5px] text-ink-2">{view.error}</p>}
+          {!view.error && !view.state && <p className="px-8 py-10 text-[13.5px] text-ink-2">Opening the roadmap…</p>}
+          {view.state && !view.state.issues.length && (
+            <p className="px-8 py-10 text-[13.5px] text-ink-2">{EMPTY}</p>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}

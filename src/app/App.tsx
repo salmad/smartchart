@@ -41,6 +41,7 @@ import { recheckInIdle } from './recheck'
 import { useWorkspace } from './components/sidebar/useWorkspace'
 import { useRowActions } from './components/sidebar/useRowActions'
 import type { DocRepo } from './docs'
+import type { RoadmapRepo } from './roadmaps'
 import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
 import type { UserLook } from '@/engine/look'
@@ -51,6 +52,7 @@ import { lazyScreen, whenIdle } from './lazy-screen'
 // Screens not needed for the first paint load when they are first shown; the doc screen also loads once the browser is idle
 // after boot, so the first doc opened does not wait for it.
 const docScreen = lazyScreen(() => import('./components/DocScreen').then((m) => m.DocScreen))
+const roadmapScreen = lazyScreen(() => import('./components/roadmap/RoadmapScreen').then((m) => m.RoadmapScreen))
 const ViewDeck = lazy(() => import('./components/ViewDeck').then((m) => ({ default: m.ViewDeck })))
 const PrintDeck = lazy(() => import('./components/PrintDeck').then((m) => ({ default: m.PrintDeck })))
 
@@ -68,6 +70,7 @@ interface Props {
   backup: DeckRepo | null
   workspaces: WorkspaceRepo
   docs: DocRepo
+  roadmaps: RoadmapRepo
   /** The workspace's page tree: nesting and order. */
   pages: PageRepo
   /** Hears the workspace open in the app: a new deck is saved there. */
@@ -75,7 +78,7 @@ interface Props {
 }
 
 /** The editor for one deck: loads it and saves it. */
-export function App({ route, account, repo, backup, workspaces, docs, pages, onWorkspace }: Props) {
+export function App({ route, account, repo, backup, workspaces, docs, roadmaps, pages, onWorkspace }: Props) {
   const [s, app] = useAppState()
   const frame = useRef<HTMLDivElement>(null), measurerRef = useRef<Measurer | null>(null)
   const cacheId = account.id === DEV_ACCOUNT.id ? undefined : account.id
@@ -92,7 +95,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   useEffect(() => {
     if (!booted) return
     bootDone()
-    whenIdle(() => void docScreen.preload())
+    whenIdle(() => { void docScreen.preload(); void roadmapScreen.preload() })
   }, [booted])
   // Your decks (⌘\) and the chat (⌘L) down the left. The chat is open unless hidden; the decks start hidden on a
   // laptop-width window, where the slide needs the room, until the maker opens them.
@@ -237,6 +240,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   // than the deck held behind it.
   const switching = route.name === 'deck' && booted && route.id !== s.deckId && opened !== route.id
   const [lastDoc, setLastDoc] = useState<string | null>(null)
+  const roadmapOnScreen = route.name === 'roadmap' ? route.id : null
   const docOnScreen = route.name === 'doc' ? route.id : switching ? lastDoc : null
   if (docOnScreen !== lastDoc) setLastDoc(docOnScreen)
 
@@ -247,7 +251,7 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
       const saved = toSaved(app.getState())
       if (!saved) return
       // A doc on screen keeps its URL; the deck held behind it still saves.
-      if (location.pathname !== `/d/${saved.id}` && route.name !== 'doc' && !switching) go(`/d/${saved.id}`, { replace: true })
+      if (location.pathname !== `/d/${saved.id}` && route.name !== 'doc' && route.name !== 'roadmap' && !switching) go(`/d/${saved.id}`, { replace: true })
       if (unsaved(saved)) void persist(saved)
     }, config.saveDelayMs)
     return () => clearTimeout(t)
@@ -294,8 +298,11 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   const [docTick, setDocTick] = useState(0)
   // Rename, delete and new doc in the sidebar show at once and are sent behind the scenes (see useRowActions).
   const rows = useRowActions({
-    repos: { decks: repo, docs }, wsId: ws.current?.id ?? null, onDeckDeleted, onOpenDoc: (id) => leaveTo(`/doc/${id}`), onDocRenamed: () => setDocTick((t) => t + 1),
+    repos: { decks: repo, docs, roadmaps }, wsId: ws.current?.id ?? null, onDeckDeleted,
+    onOpenDoc: (id) => leaveTo(`/doc/${id}`), onOpenRoadmap: (id) => leaveTo(`/r/${id}`),
+    onDocRenamed: () => setDocTick((t) => t + 1),
     onDocDeleted: (id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') },
+    onRoadmapDeleted: (id) => { if (route.name === 'roadmap' && route.id === id) leaveTo('/') },
   })
   // Delete from the deck menu: the open deck goes at once, and a new one starts in its place.
   const deleteDeck = useCallback(() => {
@@ -328,9 +335,12 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
   // The presentation opens in its own tab and follows this deck as it is edited.
   const present = useCallback(() => { if (!locked(app.getState()) && app.getState().items.length) openPresentation(liveKey, app.getState().current) }, [app, liveKey])
   // The pages above the open one, for the header (read from the same list as the sidebar).
-  const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, tick: docTick, saved: s.items.length > 0,
-    open: docOnScreen ? { kind: 'doc', id: docOnScreen } : s.deckId ? { kind: 'deck', id: s.deckId } : null })
+  const openPageRef: PageRef | null = roadmapOnScreen ? { kind: 'roadmap', id: roadmapOnScreen }
+    : docOnScreen ? { kind: 'doc', id: docOnScreen }
+      : s.deckId ? { kind: 'deck', id: s.deckId } : null
+  const crumbs = usePageCrumbs({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, tick: docTick, saved: s.items.length > 0, open: openPageRef })
   const docName = usePageName({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, open: docOnScreen ? { kind: 'doc', id: docOnScreen } : null })
+  const roadmapName = usePageName({ repo: pages, workspaceId: ws.current?.id ?? null, account: account.id === DEV_ACCOUNT.id ? undefined : account.id, open: roadmapOnScreen ? { kind: 'roadmap', id: roadmapOnScreen } : null })
   const openPage = (ref: { kind: 'deck' | 'doc' | 'roadmap'; id: string }) =>
     leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : ref.kind === 'doc' ? `/doc/${ref.id}` : `/r/${ref.id}`)
   const bar = {
@@ -401,14 +411,18 @@ export function App({ route, account, repo, backup, workspaces, docs, pages, onW
 
   // The workspace down the left (⌘\), beside the editor or a doc.
   const sidebar = decksOpen && <Sidebar ws={ws} repos={{ decks: repo, docs, pages, workspaces }} rows={rows} busy={locked(s)}
-    open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length, parent: s.pendingParent }, doc: docOnScreen, docTick }}
+    open={{ deck: { id: s.deckId, name: deckName({ name: s.name, items: s.items }), slides: s.items.length, parent: s.pendingParent }, doc: docOnScreen, roadmap: roadmapOnScreen, docTick }}
     onOpenDeck={(id) => leaveTo(`/d/${id}`)} onNewDeck={startDeck}
-    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} onDismiss={toggleDecks} />
+    onOpenDoc={(id) => leaveTo(`/doc/${id}`)} onOpenRoadmap={(id) => leaveTo(`/r/${id}`)} onRenameOpenDeck={bar.onRename} me={account.id} onDismiss={toggleDecks} />
 
   const DocScreen = docScreen.get()
+  const RoadmapScreen = roadmapScreen.get()
   return (
     <TooltipProvider delayDuration={400}>
-      {!docOnScreen && readOnly
+      {roadmapOnScreen
+        ? <Suspense fallback={<div className="h-full bg-app-bg" />}><RoadmapScreen id={roadmapOnScreen} issue={route.name === 'roadmap' ? route.issue : undefined} repo={roadmaps} account={account} workspace={ws.current?.id ?? null}
+          canEdit={s.role !== 'viewer'} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} crumbs={crumbs} onOpenPage={openPage} name={roadmapName} /></Suspense>
+        : !docOnScreen && readOnly
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><ViewDeck deck={deck} name={deckName({ name: s.name, items: s.items })} ids={s.items.map((it) => it.id)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks}
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
         : docOnScreen
