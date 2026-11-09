@@ -8,12 +8,13 @@ import { keysHandler } from './_lib/keys.js'
 import { shareHandler } from './_lib/share.js'
 import { prefsHandler } from './_lib/prefs.js'
 import { workspacesHandler } from './_lib/workspaces.js'
+import { roadmapsHandler } from './_lib/roadmaps.js'
 import { appToolHandler } from './_lib/app-tool.js'
 import { emailClick, emailCron, emailUnsubscribe } from './_lib/emails/handler.js'
 
 const deps = { userFrom, db: getDb }
 const routes: Record<string, (request: Request) => Promise<Response> | Response> = {
-  keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), pages: pagesHandler(deps), workspaces: workspacesHandler(deps), prefs: prefsHandler(deps),
+  keys: keysHandler(deps), share: shareHandler(deps), docs: docsHandler(deps), pages: pagesHandler(deps), workspaces: workspacesHandler(deps), prefs: prefsHandler(deps), roadmaps: roadmapsHandler(deps),
   tool: appToolHandler(deps),
   // The engagement emails: the daily cron and the unsubscribe link (api/_lib/emails/handler.ts).
   'email-cron': emailCron, 'email-unsub': emailUnsubscribe, 'email-click': emailClick(deps),
