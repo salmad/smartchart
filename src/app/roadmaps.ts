@@ -149,6 +149,18 @@ interface StoredRoadmap {
 
 const LOCAL_USER = 'local'
 const LOCAL_MEMBERS = [{ id: LOCAL_USER, name: 'You', email: 'dev@local' }]
+const WRITE_GATE = '/api/roadmaps?writeGate=1'
+
+async function localWriteGate(store: Pick<Storage, 'getItem'>): Promise<'ok' | typeof OFFLINE> {
+  try {
+    if (store.getItem('smartchart.roadmapWriteGate') !== '1') return 'ok'
+    const r = await fetch(WRITE_GATE, { credentials: 'same-origin' })
+    if (r.status >= 500) return OFFLINE
+    return 'ok'
+  } catch {
+    return OFFLINE
+  }
+}
 
 /** The dev account's roadmaps in this browser; ops run through applyOp as on the server. */
 export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>): RoadmapRepo {
@@ -172,6 +184,8 @@ export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>)
       return { seq: m.seq, roadmap: m.seq > since ? loadState(m).roadmap : null, issues, events }
     },
     write: async (id, op) => {
+      const gated = await localWriteGate(store())
+      if (gated !== 'ok') return gated
       const all = read(), m = all[id]
       if (!m) return GONE
       const now = tick()

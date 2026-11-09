@@ -11,6 +11,7 @@ import { localDocRepo, remoteDocRepo } from './docs'
 import { localPageRepo, remotePageRepo } from './pages'
 import { localRoadmapRepo, remoteRoadmapRepo } from './roadmaps'
 import { localWorkspaceRepo, remoteWorkspaceRepo } from './workspaces'
+import { Toaster } from './components/ui/sonner'
 
 // One screen per route: the site, the editor and the shared views load only when they are shown.
 const App = lazy(() => import('./App').then((m) => ({ default: m.App })))
@@ -78,6 +79,7 @@ function Screens() {
   return (
     <>
       <App key={session.id} route={route} account={session} repo={repo} backup={backup} workspaces={workspaces} docs={docs} roadmaps={roadmaps} pages={pages} onWorkspace={(id) => { workspace.current = id }} />
+      <Toaster position="bottom-center" richColors closeButton />
       <SignIn open={ended} onOpenChange={setEnded} returnTo={location.pathname} title="Sign in again"
         lede="Your session ended. Your deck is kept in this browser until you sign in and it saves to your account." />
     </>

@@ -87,7 +87,16 @@ export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen
           {view.state && showTable && (
             <>
               {hasIssues && <FilterBar fields={customFields} view={viewSettings} issueCount={liveCount} onChange={setViewSettings} />}
-              <IssueTable state={view.state} view={viewSettings} members={view.members} today={today} onView={setViewSettings} />
+              <IssueTable
+                state={view.state}
+                view={viewSettings}
+                members={view.members}
+                today={today}
+                onView={setViewSettings}
+                canEdit={canEdit}
+                act={act}
+                said={view.said}
+              />
             </>
           )}
           {view.state && !showTable && (
