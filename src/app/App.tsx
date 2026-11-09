@@ -299,7 +299,8 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
   // Rename, delete and new doc in the sidebar show at once and are sent behind the scenes (see useRowActions).
   const rows = useRowActions({
     repos: { decks: repo, docs, roadmaps }, wsId: ws.current?.id ?? null, onDeckDeleted,
-    onOpenDoc: (id) => leaveTo(`/doc/${id}`), onOpenRoadmap: (id) => leaveTo(`/r/${id}`),
+    onOpenDoc: (id) => leaveTo(`/doc/${id}`),
+    onOpenRoadmap: (id) => { setDocTick((t) => t + 1); leaveTo(`/r/${id}`) },
     onDocRenamed: () => setDocTick((t) => t + 1),
     onDocDeleted: (id) => { if (route.name === 'doc' && route.id === id) leaveTo('/') },
     onRoadmapDeleted: (id) => { if (route.name === 'roadmap' && route.id === id) leaveTo('/') },

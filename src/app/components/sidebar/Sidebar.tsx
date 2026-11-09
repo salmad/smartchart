@@ -5,7 +5,7 @@ import { starterDoc, type DocStarter } from '@/engine/starters'
 import type { DeckRepo } from '@/app/store'
 import type { DocRepo } from '@/app/docs'
 import type { PageRepo } from '@/app/pages'
-import type { WorkspaceRepo } from '@/app/workspaces'
+import { LOCAL_WORKSPACE, type WorkspaceRepo } from '@/app/workspaces'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { lastDeckIdInWorkspace } from '@/app/cached-decks'
 import { dropLinkParam, linkParam } from '@/app/email-links'
@@ -135,7 +135,8 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
     if (wsId) actions.createDoc({ id: newDocId(), name, text, workspaceId: wsId, ...(making?.parent ? { parent: making.parent } : {}) })
   }
   const createRoadmap = async (name: string, prefix: string) => {
-    if (wsId) actions.createRoadmap({ id: newRoadmapId(), name, prefix, workspaceId: wsId, ...(makingRoadmap?.parent ? { parent: makingRoadmap.parent } : {}) })
+    const workspaceId = wsId ?? LOCAL_WORKSPACE
+    actions.createRoadmap({ id: newRoadmapId(), name, prefix, workspaceId, ...(makingRoadmap?.parent ? { parent: makingRoadmap.parent } : {}) })
   }
 
   return (
