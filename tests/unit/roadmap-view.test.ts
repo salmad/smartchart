@@ -103,6 +103,29 @@ describe('roadmap view', () => {
     ])
   })
 
+  it('shows a matching grandchild under a collapsed ancestor', () => {
+    const issues = [
+      issue({ id: 'g', parentId: null, sortKey: 'a' }),
+      issue({ id: 'p', parentId: 'g', sortKey: 'a', title: 'Parent' }),
+      issue({ id: 'c', parentId: 'p', sortKey: 'a', title: 'Child', status: 'blocked' }),
+    ]
+    const s = state({ fields: [] }, issues)
+    const rows = tableRows(
+      s,
+      view({
+        chips: [{ on: 'status', is: true, values: ['blocked'] }],
+        collapsed: ['g', 'p'],
+      }),
+      today,
+    )
+    const issueRows = rows.filter((r) => r.kind === 'issue')
+    expect(issueRows.map((r) => [r.issue.id, r.dim, r.open])).toEqual([
+      ['g', true, false],
+      ['p', true, false],
+      ['c', false, true],
+    ])
+  })
+
   it('puts count and progress on group rows', () => {
     const issues = [
       issue({ id: 'a', status: 'todo', sortKey: 'a' }),

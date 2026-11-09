@@ -129,7 +129,7 @@ function branchVisible(
   if (matchesFilters(node, chips, today)) return true
   if (collapsed.has(id)) {
     for (const k of idx.children(id)) {
-      if (matchesFilters(k, chips, today)) return true
+      if (matchesFilters(k, chips, today) || branchVisible(k.id, idx, chips, today, collapsed)) return true
     }
     return false
   }
@@ -162,7 +162,7 @@ function groupKey(
   return { key: sid, label: opt?.name ?? sid }
 }
 
-function appendIssues(
+function walkVisibleIssues(
   out: TableRow[],
   issues: Issue[],
   idx: ReturnType<typeof buildIndex>,
@@ -170,16 +170,12 @@ function appendIssues(
   today: string,
   collapsed: Set<string>,
   sort: ViewSettings['sort'],
+  roots: Issue[],
   depth: number,
 ): { count: number; progressSum: number; progressN: number } {
   let count = 0
   let progressSum = 0
   let progressN = 0
-  const roots = sortSiblings(
-    idx.children(null).filter((i) => branchVisible(i.id, idx, chips, today, collapsed)),
-    sort,
-  )
-  void issues
   const walk = (node: Issue, d: number) => {
     const kids = idx.children(node.id)
     const hasChildren = kids.length > 0
@@ -193,18 +189,31 @@ function appendIssues(
       progressSum += p
       progressN++
     }
-    if (!open) {
-      for (const k of sortSiblings(kids, sort)) {
-        if (matchesFilters(k, chips, today)) walk(k, d + 1)
-      }
-      return
-    }
-    for (const k of sortSiblings(kids.filter((c) => branchVisible(c.id, idx, chips, today, collapsed)), sort)) {
-      walk(k, d + 1)
-    }
+    const nextKids = sortSiblings(
+      kids.filter((c) => branchVisible(c.id, idx, chips, today, collapsed)),
+      sort,
+    )
+    for (const k of nextKids) walk(k, d + 1)
   }
   for (const r of roots) walk(r, depth)
   return { count, progressSum, progressN }
+}
+
+function appendIssues(
+  out: TableRow[],
+  issues: Issue[],
+  idx: ReturnType<typeof buildIndex>,
+  chips: Chip[],
+  today: string,
+  collapsed: Set<string>,
+  sort: ViewSettings['sort'],
+  depth: number,
+): { count: number; progressSum: number; progressN: number } {
+  const roots = sortSiblings(
+    idx.children(null).filter((i) => branchVisible(i.id, idx, chips, today, collapsed)),
+    sort,
+  )
+  return walkVisibleIssues(out, issues, idx, chips, today, collapsed, sort, roots, depth)
 }
 
 export function liveChips(defs: FieldDef[], chips: Chip[]): Chip[] {
@@ -265,7 +274,7 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string): Tabl
     let progressN = 0
     const groupIssues: TableRow[] = []
     for (const top of bucket.tops) {
-      const partial = emitSubtree(groupIssues, live, idx, top, chips, today, collapsed, v.sort, 0)
+      const partial = walkVisibleIssues(groupIssues, live, idx, chips, today, collapsed, v.sort, [top], 0)
       count += partial.count
       progressSum += partial.progressSum
       progressN += partial.progressN
@@ -276,45 +285,4 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string): Tabl
   }
 
   return out
-}
-
-function emitSubtree(
-  out: TableRow[],
-  issues: Issue[],
-  idx: ReturnType<typeof buildIndex>,
-  top: Issue,
-  chips: Chip[],
-  today: string,
-  collapsed: Set<string>,
-  sort: ViewSettings['sort'],
-  depth: number,
-): { count: number; progressSum: number; progressN: number } {
-  let count = 0
-  let progressSum = 0
-  let progressN = 0
-  const walk = (node: Issue, d: number) => {
-    const kids = idx.children(node.id)
-    const hasChildren = kids.length > 0
-    const open = !collapsed.has(node.id)
-    const selfMatch = matchesFilters(node, chips, today)
-    const dim = chips.length > 0 && !selfMatch
-    out.push({ kind: 'issue', issue: node, depth: d, dim, hasChildren, open })
-    count++
-    const p = progress(issues, node.id)
-    if (p !== null) {
-      progressSum += p
-      progressN++
-    }
-    if (!open) {
-      for (const k of sortSiblings(kids, sort)) {
-        if (matchesFilters(k, chips, today)) walk(k, d + 1)
-      }
-      return
-    }
-    for (const k of sortSiblings(kids.filter((c) => branchVisible(c.id, idx, chips, today, collapsed)), sort)) {
-      walk(k, d + 1)
-    }
-  }
-  walk(top, depth)
-  return { count, progressSum, progressN }
 }
