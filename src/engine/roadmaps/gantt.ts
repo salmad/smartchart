@@ -102,8 +102,8 @@ function liveDates(issues: Issue[]): string[] {
   const out: string[] = []
   for (const i of issues) {
     if (i.deletedAt !== null) continue
-    if (i.start !== null) out.push(i.start)
-    if (i.due !== null) out.push(i.due)
+    if (i.start != null) out.push(i.start)
+    if (i.due != null) out.push(i.due)
   }
   return out
 }
@@ -268,7 +268,7 @@ function alertLabel(self: Issue, today: string, overdueDue: string | null): { al
 
 function leafMark(self: Issue, today: string, fmt: (iso: string) => string): Mark {
   const { start, due, title } = self
-  if (start !== null && due !== null) {
+  if (start != null && due != null) {
     if (start === due) {
       const { alert, label: alertLbl } = alertLabel(self, today, due)
       const showAlert = alert && alertLbl !== null
@@ -311,7 +311,7 @@ export function markFor(issues: Issue[], id: string, today: string, fmt: (iso: s
   const hasKids = idx.children(id).length > 0
   if (!hasKids) return leafMark(self, today, fmt)
 
-  const ownBoth = self.start !== null && self.due !== null
+  const ownBoth = self.start != null && self.due != null
   const span = dateSpan(issues, id)
   if (span.start === null || span.due === null) return { kind: 'none' }
 

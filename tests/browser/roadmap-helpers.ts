@@ -82,7 +82,11 @@ export async function seedSixIssues(
       ]
       for (const i of issues) {
         const patch = overrides[String(i.id)]
-        if (patch) Object.assign(i, patch)
+        if (patch) {
+          for (const [key, val] of Object.entries(patch)) {
+            if (val !== undefined) i[key] = val
+          }
+        }
       }
       rm.issues = issues
       rm.nextNumber = 7

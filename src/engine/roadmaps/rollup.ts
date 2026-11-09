@@ -43,18 +43,18 @@ export function dateSpan(issues: Issue[], id: string): { start: string | null; d
     memo.set(id, empty)
     return empty
   }
-  if (self.start !== null && self.due !== null) {
+  if (self.start != null && self.due != null) {
     const span = { start: self.start, due: self.due }
     memo.set(id, span)
     return span
   }
   const kids = idx.children(id)
-  let start: string | null = self.start
-  let due: string | null = self.due
+  let start: string | null = self.start ?? null
+  let due: string | null = self.due ?? null
   for (const k of kids) {
     const span = dateSpan(issues, k.id)
-    if (span.start !== null && (start === null || span.start < start)) start = span.start
-    if (span.due !== null && (due === null || span.due > due)) due = span.due
+    if (span.start != null && (start == null || span.start < start)) start = span.start
+    if (span.due != null && (due == null || span.due > due)) due = span.due
   }
   const span = { start, due }
   memo.set(id, span)

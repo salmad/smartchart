@@ -16,6 +16,7 @@ import { FieldsEditor } from './FieldsEditor'
 import { TopBar } from './TopBar'
 import { FilterBar } from './FilterBar'
 import { IssueTable } from './IssueTable'
+import { Gantt } from './Gantt'
 import { useViewSettings } from './useViewSettings'
 import { IssuePanel } from './IssuePanel'
 import { IssuePage } from './IssuePage'
@@ -151,7 +152,16 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   newIssue={newIssue}
                 />
               ) : (
-                <section aria-label="Timeline" className="min-h-0 flex-1" data-today-request={todayRequest} />
+                <Gantt
+                  state={view.state}
+                  view={viewSettings}
+                  today={today}
+                  onView={setViewSettings}
+                  canEdit={canEdit}
+                  act={act}
+                  onOpenIssue={openIssue}
+                  todayRequest={todayRequest}
+                />
               )}
             </div>
           )}

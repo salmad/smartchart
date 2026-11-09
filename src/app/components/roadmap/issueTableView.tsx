@@ -2,6 +2,7 @@ import type { FieldDef } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 
 export const ROW_H = 34
+export const GANTT_ROW_H = 32
 export const VIRT = 200
 export const OVERSCAN = 8
 
@@ -66,10 +67,10 @@ export function TableHead({ columns, fields }: { columns: string[]; fields: Fiel
   )
 }
 
-export function rowSlice(length: number, scrollTop: number, viewHeight: number): { start: number; end: number } {
+export function rowSlice(length: number, scrollTop: number, viewHeight: number, rowH = ROW_H): { start: number; end: number } {
   if (length <= VIRT) return { start: 0, end: length }
-  let start = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
-  let end = Math.min(length, Math.ceil((scrollTop + viewHeight) / ROW_H) + OVERSCAN)
+  let start = Math.max(0, Math.floor(scrollTop / rowH) - OVERSCAN)
+  let end = Math.min(length, Math.ceil((scrollTop + viewHeight) / rowH) + OVERSCAN)
   if (start >= length) {
     start = Math.max(0, length - VIRT)
     end = length
