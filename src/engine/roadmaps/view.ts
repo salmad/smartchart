@@ -262,13 +262,14 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string): Tabl
   }
 
   const keys = [...buckets.keys()].sort((a, b) => {
-    const la = buckets.get(a)!.label
-    const lb = buckets.get(b)!.label
+    const la = buckets.get(a)?.label ?? ''
+    const lb = buckets.get(b)?.label ?? ''
     return la.localeCompare(lb)
   })
 
   for (const key of keys) {
-    const bucket = buckets.get(key)!
+    const bucket = buckets.get(key)
+    if (!bucket) continue
     let count = 0
     let progressSum = 0
     let progressN = 0
