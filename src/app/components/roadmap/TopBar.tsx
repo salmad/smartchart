@@ -4,10 +4,11 @@ import { cn } from '@/app/lib/utils'
 
 interface Props {
   canEdit: boolean
+  onFields?: () => void
 }
 
 /** Roadmap chrome below the crumbs: one tab (Table), Display, Fields (Task 11), and New issue. */
-export function TopBar({ canEdit }: Props) {
+export function TopBar({ canEdit, onFields }: Props) {
   return (
     <div className="flex flex-none items-center gap-2">
       <nav aria-label="Roadmap views" className="flex items-center gap-0.5 rounded-lg border border-line bg-panel p-0.5">
@@ -19,7 +20,7 @@ export function TopBar({ canEdit }: Props) {
       </Button>
       {canEdit && (
         <>
-          <Button variant="ghost" size="sm" className="h-8 text-ink-3 hover:text-ink" disabled>Fields</Button>
+          <Button variant="ghost" size="sm" className="h-8 text-ink-3 hover:text-ink" onClick={onFields}>Fields</Button>
           <Button size="sm" variant="outline" disabled>New issue</Button>
         </>
       )}
