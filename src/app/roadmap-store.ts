@@ -125,9 +125,15 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
           refresh()
           return out
         }
-        const settled = applyOp({ roadmap: base!.roadmap, issues: base!.issues }, op, opCtx())
+        const saved = base
+        if (!saved) {
+          pending = pending.filter((p) => p !== op)
+          refresh()
+          return out
+        }
+        const settled = applyOp({ roadmap: saved.roadmap, issues: saved.issues }, op, opCtx())
         if (!('refused' in settled)) {
-          base = { ...base!, roadmap: settled.state.roadmap, issues: settled.state.issues }
+          base = { ...saved, roadmap: settled.state.roadmap, issues: settled.state.issues }
           if (out.seq > base.roadmap.seq) base = { ...base, roadmap: { ...base.roadmap, seq: out.seq } }
           repo.keep(id, base)
         }

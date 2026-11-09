@@ -189,32 +189,33 @@ export function IssueDataRow({
           <span className="truncate">{issue.title}</span>
         </div>
       </td>
-      {columns.map((col) => (
-        <td key={col} className="w-28 whitespace-nowrap px-2 text-ink-2" data-skip-select>
-          {col === 'assignee' ? (
-            <PersonCell
-              assignee={issue.assignee}
-              members={members}
-              disabled={!canEdit}
-              onPick={(id) => patch({ assignee: id })}
-            />
-          ) : col === 'start' ? (
-            <DateCell value={issue.start} label="Start date" disabled={!canEdit} onPick={(v) => patch({ start: v })} />
-          ) : col === 'due' ? (
-            <DateCell value={issue.due} label="Due date" disabled={!canEdit} onPick={(v) => patch({ due: v })} />
-          ) : (
-            fieldDef(col) && (
+      {columns.map((col) => {
+        const custom = fieldDef(col)
+        return (
+          <td key={col} className="w-28 whitespace-nowrap px-2 text-ink-2" data-skip-select>
+            {col === 'assignee' ? (
+              <PersonCell
+                assignee={issue.assignee}
+                members={members}
+                disabled={!canEdit}
+                onPick={(id) => patch({ assignee: id })}
+              />
+            ) : col === 'start' ? (
+              <DateCell value={issue.start} label="Start date" disabled={!canEdit} onPick={(v) => patch({ start: v })} />
+            ) : col === 'due' ? (
+              <DateCell value={issue.due} label="Due date" disabled={!canEdit} onPick={(v) => patch({ due: v })} />
+            ) : custom ? (
               <FieldCell
-                field={fieldDef(col)!}
+                field={custom}
                 value={issue.fields[col]}
                 members={members}
                 disabled={!canEdit}
                 onPick={(v) => patch({ fields: { [col]: v } })}
               />
-            )
-          )}
-        </td>
-      ))}
+            ) : null}
+          </td>
+        )
+      })}
       <td className="w-20 px-2">
         {parentProg !== null && <ProgressBar value={parentProg} />}
       </td>

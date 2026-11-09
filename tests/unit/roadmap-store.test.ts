@@ -27,9 +27,10 @@ function repo(partial: Partial<RoadmapRepo> & { writeDelay?: number; failWrite?:
       writes.push(op)
       if (partial.writeDelay) await writePromise()
       if (partial.failWrite) return 'Offline.'
-      const r = applyOp({ roadmap: kept!.roadmap, issues: kept!.issues }, op, ctx)
+      if (!kept) return 'Gone.'
+      const r = applyOp({ roadmap: kept.roadmap, issues: kept.issues }, op, ctx)
       if ('refused' in r) return r.refused
-      kept = { ...kept!, roadmap: r.state.roadmap, issues: r.state.issues }
+      kept = { ...kept, roadmap: r.state.roadmap, issues: r.state.issues }
       return { seq: kept.roadmap.seq }
     },
     detail: async () => null,

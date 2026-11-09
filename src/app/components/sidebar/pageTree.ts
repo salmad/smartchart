@@ -68,7 +68,8 @@ export function createPageTree(repo: PageRepo, workspaceId: string, account?: st
 
     const base = state.pages
     const inBase = !!base?.some((p) => is(p, page))
-    const saved = inBase && base ? base.find((p) => is(p, page))! : before
+    const hit = inBase && base ? base.find((p) => is(p, page)) : undefined
+    const saved = hit ?? before
 
     epoch++; moving++
     if (inBase && base) {
@@ -76,7 +77,7 @@ export function createPageTree(repo: PageRepo, workspaceId: string, account?: st
         notice: null,
         pages: cross
           ? base.filter((p) => !new Set([keyOf(page), ...descendants(list, page).map(keyOf)]).has(keyOf(p)))
-          : base.map((p) => (is(p, page) ? { ...p, parent, sortKey: slot!.key } : p)),
+          : base.map((p) => (is(p, page) ? { ...p, parent, sortKey: slot?.key ?? saved.sortKey } : p)),
       })
     } else set({ notice: null })
 

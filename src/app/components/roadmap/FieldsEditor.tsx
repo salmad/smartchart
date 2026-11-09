@@ -66,8 +66,9 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
       apply(fields.filter((f) => f.id !== pending.fieldId))
     } else {
       const field = fields.find((f) => f.id === pending.fieldId)
-      if (!field?.options) return
-      apply(fields.map((f) => (f.id === pending.fieldId ? { ...f, options: f.options!.filter((o) => o.id !== pending.optionId) } : f)))
+      const options = field?.options
+      if (!options) return
+      apply(fields.map((f) => (f.id === pending.fieldId ? { ...f, options: options.filter((o) => o.id !== pending.optionId) } : f)))
     }
     setPending(null)
   }
@@ -150,7 +151,8 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                           onPatch={(options) => patchField(f.id, { options })}
                           onDelete={(optionId, name) => setPending({ kind: 'option', fieldId: f.id, optionId, name, count: countOptionUse(issues, f.id, optionId) })}
                           onMove={(from, to) => {
-                            const opts = [...f.options!]
+                            if (!f.options) return
+                            const opts = [...f.options]
                             const [row] = opts.splice(from, 1)
                             opts.splice(to, 0, row)
                             patchField(f.id, { options: opts })
