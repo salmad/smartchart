@@ -11,7 +11,7 @@ interface Props {
   onOpenIssue?: (id: string) => void
 }
 
-export function GanttListRow({ row, mark, onToggleCollapse }: Props) {
+export function GanttListRow({ row, mark, onToggleCollapse, onOpenIssue }: Props) {
   if (row.kind === 'group') {
     return (
       <div className="flex h-8 items-center gap-3 border-b border-hair bg-panel px-4 text-[12px] text-ink-2">
@@ -34,6 +34,7 @@ export function GanttListRow({ row, mark, onToggleCollapse }: Props) {
         'flex h-8 cursor-default items-center gap-1.5 border-b border-hair px-2 text-[12.5px] text-ink',
         dim && 'opacity-50',
       )}
+      onClick={() => onOpenIssue?.(issue.id)}
     >
       {Array.from({ length: depth }).map((_, i) => (
         <span key={i} className="inline-block w-5 shrink-0" aria-hidden />

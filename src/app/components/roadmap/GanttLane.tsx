@@ -132,7 +132,7 @@ export function GanttLane({ row, mark, axis, width, groupSpan, onOpenIssue }: La
 
   return (
     <div
-      className="h-8 border-b border-hair"
+      className="relative z-[1] h-8 border-b border-hair"
       data-issue={issueId}
       {...attrs}
       onClick={issueId ? () => onOpenIssue?.(issueId) : undefined}

@@ -291,7 +291,7 @@ function leafMark(self: Issue, today: string, fmt: (iso: string) => string): Mar
     }
   }
   const day = due ?? start
-  if (day === null) return { kind: 'none' }
+  if (day == null) return { kind: 'none' }
   const { alert, label: alertLbl } = alertLabel(self, today, due)
   const showAlert = alert && alertLbl !== null
   return {

@@ -82,42 +82,65 @@ export function GanttScaleRow({
   )
 }
 
-function TodayLine({ axis, today, height }: { axis: Axis; today: string; height: number }) {
+function TodayLine({ axis, today, height, tag = true }: { axis: Axis; today: string; height: number; tag?: boolean }) {
   const x = axis.xOf(today) + axis.px / 2
   const label = shortDate(today, today)
   const tagW = label.length * 6.5 + 10
   return (
     <g>
       <line x1={x} x2={x} y1={0} y2={height} className="stroke-gold" strokeWidth={1} />
-      <rect
-        x={x - 1}
-        y={0}
-        width={2}
-        height={height}
-        className="fill-none pointer-events-none"
-        role="separator"
-        aria-label={label}
-      />
-      <rect x={x + 4} y={4} width={tagW} height={18} rx={4} className="fill-raise stroke-gold/40" strokeWidth={1} />
-      <text x={x + 9} y={16} className="fill-gold text-[10.5px]">
-        {label}
-      </text>
+      {tag ? (
+        <>
+          <rect
+            x={x - 1}
+            y={0}
+            width={2}
+            height={height}
+            className="fill-none pointer-events-none"
+            role="separator"
+            aria-label={label}
+          />
+          <rect x={x + 4} y={4} width={tagW} height={18} rx={4} className="fill-raise stroke-gold/40" strokeWidth={1} />
+          <text x={x + 9} y={16} className="fill-gold text-[10.5px]">
+            {label}
+          </text>
+        </>
+      ) : null}
     </g>
   )
 }
 
-export function GanttTimelineGrid({ range, scale, today, width }: { range: Range; scale: Scale; today: string; width: number }) {
+export function GanttTimelineGrid({
+  range,
+  scale,
+  today,
+  width,
+  axis,
+  height,
+}: {
+  range: Range
+  scale: Scale
+  today: string
+  width: number
+  axis: Axis
+  height: number
+}) {
   const tickList = useMemo(() => ticks(range, scale, today), [range, scale, today])
+  const weekends = scale === 'week' ? weekendRects(range, axis) : []
   return (
     <svg
       width={width}
-      height="100%"
-      className="pointer-events-none absolute inset-0"
+      height={height}
+      className="pointer-events-none absolute inset-0 z-0"
       aria-hidden
     >
-      {tickList.map((t) => (
-        <line key={t.iso} x1={t.x} x2={t.x} y1={0} y2="100%" className="stroke-line" strokeWidth={1} />
+      {weekends.map((w, i) => (
+        <rect key={i} x={w.x} y={0} width={w.w} height={height} className="fill-panel" />
       ))}
+      {tickList.map((t) => (
+        <line key={t.iso} x1={t.x} x2={t.x} y1={0} y2={height} className="stroke-line" strokeWidth={1} />
+      ))}
+      <TodayLine axis={axis} today={today} height={height} tag={false} />
     </svg>
   )
 }

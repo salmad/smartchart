@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Issue, RoadmapState } from '@/engine/roadmaps/types'
+import type { RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
@@ -12,9 +12,7 @@ import {
 import { shortDate } from './dates'
 import { GANTT_ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
 import { GanttListRow } from './GanttList'
-import { GanttScaleRow, GanttTimelineBody, useGanttLayout } from './GanttTimeline'
-import type { Axis } from './ganttAxis'
-
+import { GanttScaleRow, GanttTimelineBody, GanttTimelineGrid, useGanttLayout } from './GanttTimeline'
 interface Props {
   state: RoadmapState
   view: ViewSettings
@@ -69,6 +67,7 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
   const body = rows.length > VIRT ? rows.slice(slice.start, slice.end) : rows
   const padTop = rows.length > VIRT ? slice.start * GANTT_ROW_H : 0
   const padBottom = rows.length > VIRT ? (rows.length - slice.end) * GANTT_ROW_H : 0
+  const timelineHeight = rows.length * GANTT_ROW_H
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
@@ -97,23 +96,45 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
           <div className="sticky left-0 top-0 z-30 h-[30px] border-b border-line bg-app-bg" />
           <GanttScaleRow range={range} scale={view.scale} today={today} width={width} axis={axis} />
 
-          {padTop > 0 && <GanttPad h={padTop} width={width} />}
-          {body.map((row, i) => (
-            <GanttRowPair
-              key={rowKey(row)}
-              row={row}
-              allRows={rows}
-              absIndex={rows.length > VIRT ? slice.start + i : i}
-              live={live}
-              mark={row.kind === 'issue' ? markOf(row.issue.id) : null}
-              markOf={markOf}
-              axis={axis}
+          <div className="sticky left-0 z-10 bg-app-bg">
+            {padTop > 0 && <GanttListPad h={padTop} />}
+            {body.map((row) => (
+              <GanttListRow
+                key={rowKey(row)}
+                row={row}
+                mark={row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' }}
+                onToggleCollapse={onToggleCollapse}
+                onOpenIssue={onOpenIssue}
+              />
+            ))}
+            {padBottom > 0 && <GanttListPad h={padBottom} />}
+          </div>
+
+          <div className="relative">
+            <GanttTimelineGrid
+              range={range}
+              scale={view.scale}
+              today={today}
               width={width}
-              onToggleCollapse={onToggleCollapse}
-              onOpenIssue={onOpenIssue}
+              axis={axis}
+              height={timelineHeight}
             />
-          ))}
-          {padBottom > 0 && <GanttPad h={padBottom} width={width} />}
+            {padTop > 0 && <GanttPadSvg h={padTop} width={width} />}
+            {body.map((row, i) => (
+              <GanttTimelineBody
+                key={rowKey(row)}
+                row={row}
+                allRows={rows}
+                absIndex={rows.length > VIRT ? slice.start + i : i}
+                live={live}
+                markOf={markOf}
+                axis={axis}
+                width={width}
+                onOpenIssue={onOpenIssue}
+              />
+            ))}
+            {padBottom > 0 && <GanttPadSvg h={padBottom} width={width} />}
+          </div>
         </div>
       </div>
     </section>
@@ -124,64 +145,10 @@ function rowKey(row: TableRow): string {
   return row.kind === 'group' ? `g-${row.key}` : row.issue.id
 }
 
-function GanttPad({ h, width }: { h: number; width: number }) {
-  return (
-    <>
-      <div className="sticky left-0 z-10 bg-app-bg" aria-hidden>
-        <svg height={h} width={330} className="block" aria-hidden />
-      </div>
-      <GanttPadSvg h={h} width={width} />
-    </>
-  )
+function GanttListPad({ h }: { h: number }) {
+  return <svg height={h} width={330} className="block" aria-hidden />
 }
 
 function GanttPadSvg({ h, width }: { h: number; width: number }) {
-  return <svg height={h} width={width} className="block" aria-hidden />
-}
-
-function GanttRowPair({
-  row,
-  allRows,
-  absIndex,
-  live,
-  mark,
-  markOf,
-  axis,
-  width,
-  onToggleCollapse,
-  onOpenIssue,
-}: {
-  row: TableRow
-  allRows: TableRow[]
-  absIndex: number
-  live: Issue[]
-  mark: Mark | null
-  markOf: (id: string) => Mark
-  axis: Axis
-  width: number
-  onToggleCollapse: (id: string) => void
-  onOpenIssue?: (id: string) => void
-}) {
-  return (
-    <>
-      <div className="sticky left-0 z-10 bg-app-bg">
-        <GanttListRow
-          row={row}
-          mark={mark ?? { kind: 'none' }}
-          onToggleCollapse={onToggleCollapse}
-          onOpenIssue={onOpenIssue}
-        />
-      </div>
-      <GanttTimelineBody
-        row={row}
-        allRows={allRows}
-        absIndex={absIndex}
-        live={live}
-        markOf={markOf}
-        axis={axis}
-        width={width}
-        onOpenIssue={onOpenIssue}
-      />
-    </>
-  )
+  return <svg height={h} width={width} className="relative z-[1] block" aria-hidden />
 }

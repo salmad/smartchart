@@ -10,6 +10,7 @@ import {
   markFor,
   ticks,
 } from '../../src/engine/roadmaps/gantt'
+import { dateSpan } from '../../src/engine/roadmaps/rollup'
 import { issue } from './roadmap-builders'
 
 const today = '2026-11-09'
@@ -210,6 +211,21 @@ describe('roadmap gantt engine', () => {
   describe('dropDates', () => {
     it(`spans ${DROP_DAYS} days from the drop day`, () => {
       expect(dropDates('2026-11-09')).toEqual({ start: '2026-11-09', due: '2026-11-22' })
+    })
+  })
+
+  describe('undefined issue dates', () => {
+    it('dateSpan rolls up children when parent start/due are undefined', () => {
+      const issues = [
+        issue({ id: 'p', start: undefined, due: undefined }),
+        issue({ id: 'c', parentId: 'p', start: '2026-11-02', due: '2026-11-30' }),
+      ]
+      expect(dateSpan(issues, 'p')).toEqual({ start: '2026-11-02', due: '2026-11-30' })
+    })
+
+    it('markFor treats undefined dates as undated', () => {
+      const issues = [issue({ id: 'leaf', start: undefined, due: undefined })]
+      expect(markFor(issues, 'leaf', today, () => 'x')).toEqual({ kind: 'none' })
     })
   })
 })
