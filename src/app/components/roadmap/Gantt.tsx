@@ -5,6 +5,7 @@ import { tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import {
   PX_PER_DAY,
+  daysBetween,
   ganttRange,
   markFor,
   type Mark,
@@ -89,12 +90,15 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
     setViewHeight(el.clientHeight)
   }, [rows.length])
 
+  // Recenter on Today or scale change only — not when issues/range change after a drag or live update.
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    const todayX = axis.xOf(today) + px / 2
+    const todayX = daysBetween(range.from, today) * px + px / 2
     el.scrollLeft = Math.max(0, todayX - el.clientWidth / 4)
-  }, [axis, today, px, todayRequest])
+    // range/today/px read from render; deps are only Today and scale — not issue writes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayRequest, view.scale])
 
   return (
     <section role="region" aria-label="Timeline" className="flex min-h-0 flex-1 flex-col">

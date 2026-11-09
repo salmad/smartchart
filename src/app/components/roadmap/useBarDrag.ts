@@ -33,8 +33,11 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
   const [preview, setPreview] = useState<{ id: string; start: string; due: string } | null>(null)
   const [dragging, setDragging] = useState(false)
   const dragRef = useRef<DragState | null>(null)
+  const dragCleanupRef = useRef<(() => void) | null>(null)
 
   const cancel = useCallback(() => {
+    dragCleanupRef.current?.()
+    dragCleanupRef.current = null
     dragRef.current = null
     setPreview(null)
     setDragging(false)
@@ -121,12 +124,14 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
         }
 
         const cleanup = () => {
+          dragCleanupRef.current = null
           window.removeEventListener('pointermove', onMove)
           window.removeEventListener('pointerup', end)
           window.removeEventListener('pointercancel', end)
           window.removeEventListener('mousemove', onMove)
           window.removeEventListener('mouseup', end)
         }
+        dragCleanupRef.current = cleanup
 
         window.addEventListener('pointermove', onMove)
         window.addEventListener('pointerup', end)

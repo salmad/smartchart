@@ -15,7 +15,8 @@ export function makeAxis(range: Range, px: number): Axis {
       return daysBetween(range.from, iso) * px
     },
     dayAt(x: number) {
-      const day = Math.round(x / px)
+      const maxDay = daysBetween(range.from, range.to)
+      const day = Math.min(maxDay, Math.max(0, Math.floor(x / px)))
       return addDays(range.from, day)
     },
   }
