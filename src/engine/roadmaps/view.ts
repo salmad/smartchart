@@ -25,7 +25,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   chips: [],
   groupBy: null,
   sort: 'order',
-  columns: ['status', 'assignee', 'due', 'start'],
+  columns: ['status', 'assignee', 'start', 'due'],
   collapsed: [],
 }
 

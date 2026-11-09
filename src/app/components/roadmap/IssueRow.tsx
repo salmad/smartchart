@@ -9,6 +9,8 @@ import { PersonCell } from './cells/PersonCell'
 import { DateCell } from './cells/DateCell'
 import { FieldCell } from './cells/FieldCell'
 import { ProgressBar } from './ProgressBar'
+import { Checkbox } from '../ui/checkbox'
+import { todayIso } from './dates'
 import { cn } from '@/app/lib/utils'
 import type { DragEvent } from 'react'
 import type { ComposeDraft } from './useTableKeys'
@@ -54,7 +56,7 @@ interface ComposeProps extends ColProps {
 
 export function IssueGroupRow({ row, colCount }: GroupProps) {
   return (
-    <tr className="h-[34px] border-b border-line/40 bg-panel text-[12px] text-ink-2">
+    <tr className="h-[34px] border-b border-hair bg-panel text-[12px] text-ink-2">
       <td colSpan={colCount} className="px-4">
         <div className="flex items-center gap-3">
           <span className="font-medium text-ink">{row.label}</span>
@@ -74,7 +76,7 @@ export function IssueGroupRow({ row, colCount }: GroupProps) {
 
 export function ComposeIssueRow({ draft, depth, columns, onTitle, onCommit }: ComposeProps) {
   return (
-    <tr className="h-[34px] border-b border-line/40 bg-raise/40 text-[12px]">
+    <tr className="h-[34px] border-b border-hair bg-raise/40 text-[12px]">
       <td className="w-6 px-1" />
       <td className="w-8 px-2" />
       <td className="w-24 px-2 font-mono text-ink-3">…</td>
@@ -120,6 +122,7 @@ export function IssueDataRow({
   drag,
 }: IssueProps) {
   const { issue, depth, dim, hasChildren, open } = row
+  const late = !!issue.due && issue.due < todayIso() && issue.status !== 'done' && issue.status !== 'cancelled'
   const parentProg = hasChildren ? progress(allIssues, issue.id) : null
 
   const patch = (props: Record<string, unknown>) => {
@@ -144,20 +147,18 @@ export function IssueDataRow({
       }}
       onDoubleClick={() => onOpen?.()}
       className={cn(
-        'h-[34px] border-b border-line/40 text-[12px] text-ink outline-none',
+        'group h-[34px] border-b border-hair text-[12.5px] text-ink outline-none hover:bg-white/[.025]',
         dim && 'opacity-45',
-        focused && 'bg-raise/60 ring-1 ring-inset ring-line',
-        selected && 'bg-panel',
+        (focused || selected) && 'bg-white/[.045] shadow-[inset_2px_0_0_theme(colors.ink)] hover:bg-white/[.045]',
         drag.dragging === issue.id && 'opacity-40',
       )}
     >
       <td className="w-6 px-1" data-skip-select>
-        <input
-          type="checkbox"
+        <Checkbox
           checked={selected}
-          onChange={() => onSelect(false)}
+          onCheckedChange={() => onSelect(false)}
           aria-label={`Select ${issue.title}`}
-          className="size-3.5 accent-gold"
+          className="size-3.5 rounded-[3px] border-line-2 opacity-0 shadow-none transition-opacity focus-visible:opacity-100 group-hover:opacity-100 data-[state=checked]:border-ink data-[state=checked]:bg-ink data-[state=checked]:text-app-bg data-[state=checked]:opacity-100"
         />
       </td>
       <td className="w-8 px-2" data-skip-select>
@@ -167,7 +168,7 @@ export function IssueDataRow({
           onPick={(status) => { act({ op: 'set', ids: [issue.id], props: { status } }) }}
         />
       </td>
-      <td className="w-24 whitespace-nowrap px-2 font-mono text-ink-3">{keyOf(roadmap, issue)}</td>
+      <td className="w-20 whitespace-nowrap px-2 font-mono text-[12px] text-ink-3">{keyOf(roadmap, issue)}</td>
       <td className="min-w-[200px] max-w-[420px] px-2">
         <div className="flex min-w-0 items-center gap-1">
           {Array.from({ length: depth }).map((_, i) => (
@@ -192,7 +193,7 @@ export function IssueDataRow({
       {columns.map((col) => {
         const custom = fieldDef(col)
         return (
-          <td key={col} className="w-28 whitespace-nowrap px-2 text-ink-2" data-skip-select>
+          <td key={col} className="w-24 whitespace-nowrap px-2 text-ink-2" data-skip-select>
             {col === 'assignee' ? (
               <PersonCell
                 assignee={issue.assignee}
@@ -203,7 +204,7 @@ export function IssueDataRow({
             ) : col === 'start' ? (
               <DateCell value={issue.start} label="Start date" disabled={!canEdit} onPick={(v) => patch({ start: v })} />
             ) : col === 'due' ? (
-              <DateCell value={issue.due} label="Due date" disabled={!canEdit} onPick={(v) => patch({ due: v })} />
+              <DateCell value={issue.due} label="Due date" late={late} disabled={!canEdit} onPick={(v) => patch({ due: v })} />
             ) : custom ? (
               <FieldCell
                 field={custom}

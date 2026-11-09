@@ -72,13 +72,10 @@ export function FilterBar({ fields, view, issueCount, onChange }: Props) {
         </PopoverContent>
       </Popover>
       <span className="flex-1" />
-      {group && (
-        <p className="text-[12px] text-ink-3">
-          Group by <span className="font-medium text-ink-2">{group}</span>
-          {' · '}
-          {issueCount} {issueCount === 1 ? 'issue' : 'issues'}
-        </p>
-      )}
+      <p className="text-[12px] text-ink-3">
+        {group && <>Group by <span className="font-medium text-ink-2">{group}</span>{' · '}</>}
+        {issueCount} {issueCount === 1 ? 'issue' : 'issues'}
+      </p>
     </div>
   )
 }

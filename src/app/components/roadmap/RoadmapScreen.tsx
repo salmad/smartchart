@@ -48,7 +48,9 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
   const liveCount = view.state?.issues.filter((i) => i.deletedAt === null).length ?? 0
   const hasIssues = liveCount > 0
-  const showTable = hasIssues || customFields.length > 0
+  // New issue bumps this; the table opens a compose row at the end for each bump (and shows itself to do it).
+  const [newIssue, setNewIssue] = useState(0)
+  const showTable = hasIssues || customFields.length > 0 || newIssue > 0
   const knownFields = useRef<Set<string>>(new Set())
   const fieldsPrimed = useRef(false)
 
@@ -95,7 +97,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
           <span className="truncate text-ink-2">{title}</span>
         </nav>
         {view.state && (
-          <TopBar canEdit={canEdit} fields={customFields} view={viewSettings} onView={setViewSettings} onFields={() => setFieldsOpen(true)} />
+          <TopBar canEdit={canEdit} fields={customFields} view={viewSettings} onView={setViewSettings} onFields={() => setFieldsOpen(true)} onNewIssue={() => { setPanelId(null); setNewIssue((n) => n + 1) }} />
         )}
         <AccountMenu account={account} />
       </header>
@@ -134,6 +136,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                 act={act}
                 said={view.said}
                 onOpenIssue={openIssue}
+                newIssue={newIssue}
               />
             </div>
           )}

@@ -19,11 +19,11 @@ export function IssueTitle({ title, canEdit, act, issueId, as: Tag = 'h2' }: Pro
     act({ op: 'set', ids: [issueId], props: { title: t } })
   }
 
-  if (!canEdit) return <Tag className="text-[17px] font-semibold tracking-[-.01em] text-ink">{title}</Tag>
+  if (!canEdit) return <Tag className="text-[20px] font-semibold tracking-[-.015em] text-ink">{title}</Tag>
 
   return (
     <input
-      className="w-full border-0 bg-transparent p-0 text-[17px] font-semibold tracking-[-.01em] text-ink outline-none focus:ring-0"
+      className="w-full border-0 bg-transparent p-0 text-[20px] font-semibold tracking-[-.015em] text-ink outline-none focus:ring-0"
       aria-label="Issue title"
       value={draft}
       onChange={(e) => setDraft(e.target.value)}

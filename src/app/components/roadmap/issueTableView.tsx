@@ -53,10 +53,10 @@ export function TableHead({ columns, fields }: { columns: string[]; fields: Fiel
       <tr className="h-9 border-b border-line text-[11.5px] text-ink-3">
         <th scope="col" className="w-6 px-1 font-medium" />
         <th scope="col" className="w-8 px-2 font-medium" />
-        <th scope="col" className="w-24 px-2 font-medium">Key</th>
+        <th scope="col" className="w-20 px-2 font-medium">Key</th>
         <th scope="col" className="min-w-[200px] px-2 font-medium">Title</th>
         {columns.map((c) => (
-          <th key={c} scope="col" className="w-28 px-2 font-medium">
+          <th key={c} scope="col" className="w-24 px-2 font-medium">
             {headerLabel(c, fields)}
           </th>
         ))}

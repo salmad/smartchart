@@ -278,10 +278,10 @@ test('issue panel, body edit, comment, full page and sub-issue', async ({ page }
   await page.getByLabel('Choose assignee').getByRole('option', { name: 'You' }).click()
   await expect(row.getByRole('button', { name: 'Assignee: You' })).toBeVisible({ timeout: 5000 })
 
-  await panel.getByRole('button', { name: 'Edit' }).click()
+  await panel.getByRole('button', { name: 'Add a description…' }).click()
   const editor = page.locator('.ProseMirror').first()
   await editor.waitFor()
-  await editor.click()
+  await editor.locator('p:not(.doc-sub)').first().click()
   await page.keyboard.type('Launch checklist paragraph.')
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('button', { name: 'Edit' }).waitFor({ timeout: 15_000 })

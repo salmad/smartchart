@@ -202,6 +202,16 @@ ol.doc-list > li > .doc-list { grid-column: 2; }
   .doc-sec > h2 { margin-top: 48px; font-size: 26px; }
 }
 
+/* ═════════════ Embedded: a doc inside an app panel (an issue's body) ═════════════
+   The panel names the page, so no header and no contents; one column at panel type sizes, whatever the window's width. */
+.doc-embed .doc { display: block; padding: 0; min-height: 0; background: transparent; font-size: 14px; line-height: 1.6; }
+.doc-embed :is(.doc-head, .doc-toc, .doc-toc-mini, .doc-title, .doc-sub) { display: none; }
+.doc-embed :is(.doc-body, .sec-body) > p,
+.doc-embed :is(.doc-body, .sec-body) > blockquote p { text-align: left; hyphens: manual; }
+.doc-embed .doc-sec > h2 { margin-top: 24px; font-family: var(--text); font-weight: 600; font-stretch: 100%; font-size: 15px; line-height: 1.4; letter-spacing: 0; }
+.doc-embed :is(.doc-body, .sec-body) > h3 { margin-top: 18px; font-size: 14px; }
+.doc-embed .doc-fig { margin-top: 20px; }
+
 /* ═════════════ Print: every section open, no controls ═════════════ */
 @media print {
   .doc { display: block; padding: 0; }

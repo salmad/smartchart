@@ -69,7 +69,8 @@ export function docHTML(doc: Doc): string {
     body += blockHTML(b, theme, id)
   }
   if (open) body += '</div></section>'
-  const head = `<header class="doc-head"><h1 class="doc-title">${md(doc.title)}</h1>${doc.subtitle ? `<p class="doc-sub">${md(doc.subtitle)}</p>` : ''}</header>`
+  // No title, no header: an issue's body sits under the issue's own title.
+  const head = !doc.title && !doc.subtitle ? '' : `<header class="doc-head"><h1 class="doc-title">${md(doc.title)}</h1>${doc.subtitle ? `<p class="doc-sub">${md(doc.subtitle)}</p>` : ''}</header>`
   const nav = tree.length ? `<nav class="doc-toc" aria-label="Contents"><p class="toc-h">Contents</p>${list}</nav>` : ''
   const mini = tree.length ? `<details class="doc-toc-mini"><summary>Contents</summary>${list}</details>` : ''
   return `<article class="doc theme-${theme}" data-links>${head}${nav}<div class="doc-body">${mini}${body}</div></article>`

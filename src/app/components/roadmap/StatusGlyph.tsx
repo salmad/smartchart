@@ -9,7 +9,7 @@ interface Props {
 
 /** Linear-style status circle: outline, half, tick, or red blocked. */
 export function StatusGlyph({ status, className }: Props) {
-  const base = cn('size-3 shrink-0 rounded-full', className)
+  const base = cn('inline-block size-3 shrink-0 rounded-full align-[-1px]', className)
 
   if (status === 'done') {
     return (

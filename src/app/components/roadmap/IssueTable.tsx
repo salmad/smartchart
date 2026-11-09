@@ -23,9 +23,11 @@ interface Props {
   act: (op: RoadmapOp) => 'ok' | string
   said: string | null
   onOpenIssue?: (id: string) => void
+  /** Bumped by the top bar's New issue: open a top-level compose row at the end. */
+  newIssue?: number
 }
 
-export function IssueTable({ state, view, members, today, onView, canEdit, act, said, onOpenIssue }: Props) {
+export function IssueTable({ state, view, members, today, onView, canEdit, act, said, onOpenIssue, newIssue = 0 }: Props) {
   const all = useMemo(() => tableRows(state, view, today), [state, view, today])
   const filtersActive = view.chips.length > 0
   const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
@@ -60,6 +62,10 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     const after = asChild ? undefined : focusedIssue?.id
     setCompose({ id: newIssueId(), parentId, after, title: '' })
   }, [focusedIssue])
+
+  useEffect(() => {
+    if (newIssue > 0) setCompose({ id: newIssueId(), parentId: null, title: '' })
+  }, [newIssue])
 
   const { commitCompose } = useTableKeys({
     root: rootRef,

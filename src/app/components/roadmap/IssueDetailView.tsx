@@ -49,10 +49,24 @@ export function IssueDetailView({
   const bodyRev = detail?.bodyRev ?? issue.bodyRev
   const events = detail?.events ?? []
   const comments = detail?.comments ?? []
+  const parent = issue.parentId ? issues.find((i) => i.id === issue.parentId && i.deletedAt === null) ?? null : null
+  // The breadcrumb names the issue's choice values, as v7 does ("In Underwriting · UK · CL").
+  const tags = fields.flatMap((f) => (f.type === 'choice' ? f.options?.filter((o) => o.id === issue.fields[f.id]).map((o) => o.name) ?? [] : []))
 
   const main = (
   <>
-      <p className="font-mono text-[12px] text-ink-3">{keyOf(roadmap, issue)}</p>
+      <p className="mb-1 flex min-w-0 items-center gap-1.5 text-[12px] text-ink-3">
+        <span className="font-mono">{keyOf(roadmap, issue)}</span>
+        {parent && (
+          <>
+            <span aria-hidden>·</span>
+            <button type="button" className="truncate hover:text-ink" onClick={() => onOpenIssue(parent.id)}>In {parent.title}</button>
+          </>
+        )}
+        {tags.map((t) => (
+          <span key={t} className="flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden>·</span>{t}</span>
+        ))}
+      </p>
       <IssueTitle title={issue.title} canEdit={canEdit} act={act} issueId={issue.id} as={layout === 'page' ? 'h1' : 'h2'} />
       {layout === 'panel' && (
         <div className="mt-3">
@@ -74,6 +88,7 @@ export function IssueDetailView({
       <IssueBody
         roadmapId={roadmap.id}
         issueId={issue.id}
+        issueTitle={issue.title}
         body={body}
         bodyRev={bodyRev}
         canEdit={canEdit}
@@ -104,7 +119,7 @@ export function IssueDetailView({
     return (
       <div className="flex min-h-0 flex-1 gap-8 px-8 py-6 max-[900px]:flex-col max-[900px]:px-4">
         <div className="min-w-0 flex-1 overflow-y-auto">{main}</div>
-        <aside className="w-64 shrink-0 overflow-y-auto border-l border-line/50 pl-6 max-[900px]:w-full max-[900px]:border-l-0 max-[900px]:border-t max-[900px]:pl-0 max-[900px]:pt-4">
+        <aside className="w-64 shrink-0 overflow-y-auto border-l border-line pl-6 max-[900px]:w-full max-[900px]:border-l-0 max-[900px]:border-t max-[900px]:pl-0 max-[900px]:pt-4">
           <IssueProperties
             issue={issue}
             roadmap={roadmap}

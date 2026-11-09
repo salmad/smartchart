@@ -10,10 +10,11 @@ interface Props {
   view: ViewSettings
   onView: (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
   onFields?: () => void
+  onNewIssue?: () => void
 }
 
 /** Roadmap chrome below the crumbs: one tab (Table), Display, Fields, and New issue. */
-export function TopBar({ canEdit, fields, view, onView, onFields }: Props) {
+export function TopBar({ canEdit, fields, view, onView, onFields, onNewIssue }: Props) {
   return (
     <div className="flex flex-none items-center gap-2">
       <nav aria-label="Roadmap views" className="flex items-center gap-0.5 rounded-lg border border-line bg-panel p-0.5">
@@ -23,7 +24,7 @@ export function TopBar({ canEdit, fields, view, onView, onFields }: Props) {
       {canEdit && (
         <>
           <Button variant="ghost" size="sm" className="h-8 text-ink-3 hover:text-ink" onClick={onFields}>Fields</Button>
-          <Button size="sm" variant="outline" disabled>New issue</Button>
+          <Button size="sm" className="h-8" onClick={onNewIssue}>New issue</Button>
         </>
       )}
     </div>

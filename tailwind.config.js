@@ -10,7 +10,7 @@ const site = {
 }
 
 const app = {
-  'app-bg': '#0A0A0B', panel: '#111113', raise: '#18181B', line: 'rgba(255,255,255,.08)', 'line-2': 'rgba(255,255,255,.14)',
+  'app-bg': '#0A0A0B', panel: '#111113', raise: '#18181B', line: 'rgba(255,255,255,.08)', hair: 'rgba(255,255,255,.04)', 'line-2': 'rgba(255,255,255,.14)',
   ink: '#EDEDEF', 'ink-2': '#A1A1AA', 'ink-3': '#71717A', ok: '#7BD88F', gold: '#E8B94A', warn: '#F2B35B', bad: '#FF6B57',
 }
 
