@@ -22,9 +22,10 @@ interface Props {
   canEdit: boolean
   act: (op: RoadmapOp) => 'ok' | string
   said: string | null
+  onOpenIssue?: (id: string) => void
 }
 
-export function IssueTable({ state, view, members, today, onView, canEdit, act, said }: Props) {
+export function IssueTable({ state, view, members, today, onView, canEdit, act, said, onOpenIssue }: Props) {
   const all = useMemo(() => tableRows(state, view, today), [state, view, today])
   const filtersActive = view.chips.length > 0
   const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
@@ -70,6 +71,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     canEdit,
     act,
     onStartCompose: startCompose,
+    onOpenIssue,
     selection,
   })
 
@@ -192,6 +194,10 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
                   focused={focusId === row.issue.id}
                   selected={selection.selected.has(row.issue.id)}
                   onFocus={() => { setFocusId(row.issue.id); rootRef.current?.focus() }}
+                  onOpen={() => {
+                    onOpenIssue?.(row.issue.id)
+                    requestAnimationFrame(() => rootRef.current?.focus())
+                  }}
                   onSelect={(extend) => selection.toggle(row.issue.id, extend)}
                   drag={{ start: drag.start, end: drag.end, over: drag.over, dropOn: drag.dropOn, dragging: drag.dragId }}
                   {...shared}

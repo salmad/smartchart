@@ -1,8 +1,11 @@
 import { PanelLeft } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Account } from '@/app/auth'
 import type { RoadmapRepo } from '@/app/roadmaps'
 import type { PageRef } from '@/engine/pages/tree'
+import { go } from '@/app/route'
+import { DEV_ACCOUNT } from '@/app/dev-account'
+import { useUserLook } from '@/app/useUserLook'
 import { AccountMenu } from '../AccountMenu'
 import { Toggle } from '../Bar'
 import { Crumbs } from '../Crumbs'
@@ -13,7 +16,8 @@ import { TopBar } from './TopBar'
 import { FilterBar } from './FilterBar'
 import { IssueTable } from './IssueTable'
 import { useViewSettings } from './useViewSettings'
-
+import { IssuePanel } from './IssuePanel'
+import { IssuePage } from './IssuePage'
 const EMPTY = 'No issues yet. Press C or New issue to add the first.'
 
 interface Props {
@@ -33,10 +37,12 @@ interface Props {
 }
 
 /** A roadmap in the workspace shell: sidebar, bar, filters and the issue table. */
-export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen, onToggleSidebar, onSite, crumbs, onOpenPage, name }: Props) {
+export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, sidebar, sidebarOpen, onToggleSidebar, onSite, crumbs, onOpenPage, name }: Props) {
   const { view, act } = useRoadmap(repo, id, account.id)
+  const { look } = useUserLook(account.id, account.id !== DEV_ACCOUNT.id)
   const [viewSettings, setViewSettings] = useViewSettings(id)
   const [fieldsOpen, setFieldsOpen] = useState(false)
+  const [panelId, setPanelId] = useState<string | null>(null)
   const title = view.state?.roadmap.name ?? name ?? ''
   const customFields = view.state?.roadmap.fields ?? []
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
@@ -45,6 +51,20 @@ export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen
   const showTable = hasIssues || customFields.length > 0
   const knownFields = useRef<Set<string>>(new Set())
   const fieldsPrimed = useRef(false)
+
+  useEffect(() => {
+    if (routeIssue) setPanelId(null)
+  }, [routeIssue])
+
+  const openIssue = useCallback((issueId: string) => {
+    if (routeIssue) go(`/r/${id}/${issueId}`)
+    else setPanelId(issueId)
+  }, [id, routeIssue])
+
+  const live = view.state?.issues.filter((i) => i.deletedAt === null) ?? []
+  const openId = routeIssue ?? panelId
+  const openIssueRow = openId ? live.find((i) => i.id === openId) ?? null : null
+  const lookProps = { theme: look.theme, accent: look.accent ?? undefined }
 
   useEffect(() => {
     const ids = new Set(customFields.map((f) => f.id))
@@ -81,11 +101,27 @@ export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen
       </header>
       <div className="flex h-[calc(100%-56px)] min-h-0 max-[900px]:h-auto max-[900px]:flex-col">
         {sidebar}
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-app-bg">
+        <main className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-app-bg">
           {view.error && <p className="px-8 py-10 text-[13.5px] text-ink-2">{view.error}</p>}
           {!view.error && !view.state && <p className="px-8 py-10 text-[13.5px] text-ink-2">Opening the roadmap…</p>}
-          {view.state && showTable && (
-            <>
+          {view.state && routeIssue && openIssueRow && (
+            <IssuePage
+              roadmapId={id}
+              issue={openIssueRow}
+              roadmap={view.state.roadmap}
+              fields={customFields}
+              issues={live}
+              members={view.members}
+              canEdit={canEdit}
+              act={act}
+              repo={repo}
+              look={lookProps}
+              onBack={() => go(`/r/${id}`)}
+              onOpenIssue={openIssue}
+            />
+          )}
+          {view.state && !routeIssue && showTable && (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               {hasIssues && <FilterBar fields={customFields} view={viewSettings} issueCount={liveCount} onChange={setViewSettings} />}
               <IssueTable
                 state={view.state}
@@ -96,10 +132,28 @@ export function RoadmapScreen({ id, repo, account, canEdit, sidebar, sidebarOpen
                 canEdit={canEdit}
                 act={act}
                 said={view.said}
+                onOpenIssue={openIssue}
               />
-            </>
+            </div>
           )}
-          {view.state && !showTable && (
+          {view.state && !routeIssue && panelId && openIssueRow && (
+            <IssuePanel
+              roadmapId={id}
+              issue={openIssueRow}
+              roadmap={view.state.roadmap}
+              fields={customFields}
+              issues={live}
+              members={view.members}
+              canEdit={canEdit}
+              act={act}
+              repo={repo}
+              look={lookProps}
+              onClose={() => setPanelId(null)}
+              onFullPage={() => go(`/r/${id}/${panelId}`)}
+              onOpenIssue={openIssue}
+            />
+          )}
+          {view.state && !routeIssue && !showTable && (
             <p className="px-8 py-10 text-[13.5px] text-ink-2">{EMPTY}</p>
           )}
         </main>

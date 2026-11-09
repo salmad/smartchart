@@ -30,6 +30,7 @@ interface IssueProps extends ColProps {
   focused: boolean
   selected: boolean
   onFocus: () => void
+  onOpen?: () => void
   onSelect: (extend: boolean) => void
   drag: {
     start: (id: string) => (e: DragEvent<HTMLTableRowElement>) => void
@@ -114,6 +115,7 @@ export function IssueDataRow({
   focused,
   selected,
   onFocus,
+  onOpen,
   onSelect,
   drag,
 }: IssueProps) {
@@ -138,8 +140,9 @@ export function IssueDataRow({
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('[data-skip-select]')) return
         onFocus()
-        if (canEdit) onSelect(e.shiftKey)
+        if (canEdit && e.shiftKey) onSelect(true)
       }}
+      onDoubleClick={() => onOpen?.()}
       className={cn(
         'h-[34px] border-b border-line/40 text-[12px] text-ink outline-none',
         dim && 'opacity-45',

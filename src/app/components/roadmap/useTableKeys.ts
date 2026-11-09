@@ -26,6 +26,7 @@ interface Options {
   canEdit: boolean
   act: (op: RoadmapOp) => 'ok' | string
   onStartCompose: (child: boolean) => void
+  onOpenIssue?: (id: string) => void
   selection: { toggle: (id: string, extend: boolean) => void; selectAll: () => void }
 }
 
@@ -39,6 +40,7 @@ export function useTableKeys({
   canEdit,
   act,
   onStartCompose,
+  onOpenIssue,
   selection,
 }: Options) {
   const moveFocus = useCallback((dir: -1 | 1) => {
@@ -92,6 +94,11 @@ export function useTableKeys({
         moveFocus(-1)
         return
       }
+      if (e.key === 'Enter' && !compose && focusId && !mod) {
+        e.preventDefault()
+        onOpenIssue?.(focusId)
+        return
+      }
       if (e.key.toLowerCase() === 'c' && !mod && !e.shiftKey) {
         e.preventDefault()
         onStartCompose(false)
@@ -109,7 +116,7 @@ export function useTableKeys({
     }
     el.addEventListener('keydown', onKey)
     return () => el.removeEventListener('keydown', onKey)
-  }, [canEdit, commitCompose, compose, focusId, moveFocus, onStartCompose, root, selection, setCompose])
+  }, [canEdit, commitCompose, compose, focusId, moveFocus, onOpenIssue, onStartCompose, root, selection, setCompose])
 
   return { commitCompose }
 }
