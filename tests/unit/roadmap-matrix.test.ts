@@ -226,6 +226,60 @@ describe('roadmap matrix', () => {
     }
   })
 
+  it('in_progress chip dims parent and puts the country issue in the UK cell', () => {
+    const s = state({ fields: [workstream, countryField] }, workedIssues())
+    const grid = matrixGrid(
+      s,
+      workedView({ chips: [{ on: 'status', is: true, values: ['in_progress'] }] }),
+      today,
+    )
+    const u = grid.rows.find((r) => r.kind === 'issue' && r.issue.id === 'U')
+    expect(u?.kind).toBe('issue')
+    if (u?.kind !== 'issue') return
+    expect(u.dim).toBe(true)
+    expect(cellIds(u.cells[0])).toEqual(['U-uk'])
+    const uk = grid.rows.find((r) => r.kind === 'issue' && r.issue.id === 'U-uk')
+    if (uk?.kind === 'issue') expect(cellIds(uk.cells[0])).toEqual(['U-uk'])
+  })
+
+  it('in_progress chip keeps group progress on leaves the chip hides', () => {
+    const s = state({ fields: [workstream, countryField] }, workedIssues())
+    const grid = matrixGrid(
+      s,
+      workedView({ chips: [{ on: 'status', is: true, values: ['in_progress'] }] }),
+      today,
+    )
+    const vendors = grid.rows.find((r) => r.kind === 'group' && r.key === 'vendors')
+    expect(vendors?.kind).toBe('group')
+    if (vendors?.kind === 'group') {
+      expect(vendors.cells[0].issueIds).toEqual(['U-uk'])
+      expect(vendors.cells[0].progress).toBeCloseTo(0.5)
+      expect(progressUnder(s.issues, vendors.cells[0].issueIds)).toBeCloseTo(0.5)
+    }
+  })
+
+  it('two-field columns list used pairs only, not the full cartesian', () => {
+    const issues = [
+      issue({ id: 'h1', fields: { card: 'debit', account: 'retail' }, sortKey: 'a' }),
+      issue({ id: 'h2', fields: { card: 'credit', account: 'retail' }, sortKey: 'b' }),
+    ]
+    const s = state({ fields: [cardField, accountField] }, issues)
+    const grid = matrixGrid(
+      s,
+      view({
+        matrix: {
+          ...DEFAULT_MATRIX,
+          cols: ['card', 'account'],
+          pins: [],
+        },
+      }),
+      today,
+    )
+    const keys = grid.cols.map((c) => c.parts.map((p) => p.optionId).join('×'))
+    expect(keys).toEqual(['debit×retail', 'credit×retail'])
+    expect(grid.cols).toHaveLength(2)
+  })
+
   it('two-field columns cross pins with used options only', () => {
     const issues = [
       issue({ id: 'h1', fields: { card: 'debit', account: 'retail' }, sortKey: 'a' }),
