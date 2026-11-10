@@ -102,7 +102,7 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
   }, [cols.length, focus, keyRows])
 
   useEffect(() => {
-    if (!focus || !rootRef.current) return
+    if (!focus) return
     const row = rows.findIndex((r) => r.kind === 'issue' && r.issue.id === focus.issueId)
     if (row >= 0 && rows.length > VIRT) {
       const top = row * MATRIX_ROW_H
@@ -111,9 +111,17 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
         el.scrollTop = Math.max(0, top - MATRIX_ROW_H)
       }
     }
-    const btn = rootRef.current.querySelector(`button[data-matrix-cell="${focus.issueId}:${focus.col}"]`)
-    if (btn instanceof HTMLButtonElement) btn.focus({ preventScroll: true })
   }, [focus, rows])
+
+  useEffect(() => {
+    if (!focus || !rootRef.current) return
+    const root = rootRef.current
+    const ae = document.activeElement
+    const inPortal = ae instanceof Element && ae.closest('[data-radix-popper-content-wrapper]')
+    if (ae && ae !== document.body && !root.contains(ae) && !inPortal) return
+    const btn = root.querySelector(`button[data-matrix-cell="${focus.issueId}:${focus.col}"]`)
+    if (btn instanceof HTMLButtonElement) btn.focus({ preventScroll: true })
+  }, [focus.issueId, focus.col])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
