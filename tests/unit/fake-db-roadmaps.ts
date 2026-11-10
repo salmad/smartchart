@@ -1,4 +1,4 @@
-import { applyOp } from '../../src/engine/roadmaps/ops'
+import { applyOp, type RoadmapOp } from '../../src/engine/roadmaps/ops'
 import type { Issue, IssueComment, IssueEvent, FieldDef } from '../../src/engine/roadmaps/types'
 import { NO_EDIT, type PageRef } from '../../src/engine/pages/tree'
 import { can, type Action, type Role } from '../../api/_lib/access'
@@ -41,7 +41,7 @@ export function fakeRoadmapCalls(deps: {
     issues: [...issues.values()].filter((i) => i.roadmapId === m.id).map(({ roadmapId: _r, body: _b, comments: _c, ...issue }) => structuredClone(issue)),
   })
 
-  const saveOp = (m: FakeRoadmapRow, result: { state: { roadmap: { name: string; fields: FieldDef[]; nextNumber: number; seq: number }; issues: Issue[] }; changed: Issue[]; events: IssueEvent[] }) => {
+  const saveOp = (m: FakeRoadmapRow, op: RoadmapOp, result: { state: { roadmap: { name: string; fields: FieldDef[]; nextNumber: number; seq: number }; issues: Issue[] }; changed: Issue[]; events: IssueEvent[] }) => {
     m.name = result.state.roadmap.name
     m.fields = structuredClone(result.state.roadmap.fields)
     m.nextNumber = result.state.roadmap.nextNumber
@@ -49,7 +49,12 @@ export function fakeRoadmapCalls(deps: {
     m.updated = tick()
     for (const row of result.changed) {
       const prev = issues.get(row.id)
-      issues.set(row.id, { ...structuredClone(row), roadmapId: m.id, body: prev?.body ?? '', comments: prev?.comments ?? [] })
+      let body = prev?.body ?? ''
+      if (op.op === 'duplicate') {
+        const sourceId = op.copies.find((c) => c.id === row.id)?.sourceId
+        if (sourceId) body = issues.get(sourceId)?.body ?? ''
+      }
+      issues.set(row.id, { ...structuredClone(row), roadmapId: m.id, body, comments: prev?.comments ?? [] })
     }
     for (const e of result.events) issueEvents.push({ ...e, roadmapId: m.id, seq: result.state.roadmap.seq })
     return { seq: m.seq, changed: structuredClone(result.changed) }
@@ -94,7 +99,7 @@ export function fakeRoadmapCalls(deps: {
       const now = Date.now()
       const r = applyOp(loadState(m), op, { by: u, byClient, now, members: memberIds(m.ws) })
       if ('refused' in r) return r.refused
-      return saveOp(m, r)
+      return saveOp(m, op, r)
     },
     getIssueDetail: async (u, id, issueId) => {
       const m = roadmapIf(u, id, 'read')

@@ -282,6 +282,19 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.roadmapChanges(ann.id, rm, 0)).toBeNull()
     })
 
+    it('duplicate copies issue body and leaves comments empty', async () => {
+      const db = await make(), { ann, id } = people()
+      const ws = await seedUser(db, ann)
+      const rm = id('rm'), i1 = id('i'), i2 = id('i'), c1 = id('c')
+      await db.createRoadmap(ann.id, { id: rm, name: 'Plan', prefix: 'PLN', workspaceId: ws })
+      await db.writeRoadmap(ann.id, rm, { op: 'create', issues: [{ id: i1, parentId: null, title: 'Source' }] }, 'app')
+      expect(await db.putIssueBody(ann.id, rm, i1, '# Brief', 0)).toMatchObject({ bodyRev: 1 })
+      await db.addIssueComment(ann.id, rm, i1, { id: c1, by: ann.id, text: 'Note', at: 1 })
+      expect(await db.writeRoadmap(ann.id, rm, { op: 'duplicate', copies: [{ id: i2, sourceId: i1 }] }, 'app')).toMatchObject({ seq: expect.any(Number) })
+      expect(await db.getIssueDetail(ann.id, rm, i2)).toMatchObject({ body: '# Brief', bodyRev: 0, comments: [] })
+      expect((await db.getIssueDetail(ann.id, rm, i1))?.comments).toHaveLength(1)
+    })
+
     it('a property, a body and a comment written at once all land, each under its own seq', async () => {
       const db = await make(), { ann, bob, id } = people()
       const ws = await seedUser(db, ann)

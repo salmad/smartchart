@@ -55,4 +55,16 @@ describe('localRoadmapRepo', () => {
     expect(r?.issues.map((i) => i.id)).toEqual(['i_1'])
     expect(r?.issues[0].title).toBe('One')
   })
+
+  it('duplicate copies issue body and leaves comments empty', async () => {
+    const storage = mem()
+    const repo = localRoadmapRepo(storage)
+    await repo.create({ id: 'rm_1', name: 'Launch', prefix: 'LN', workspaceId: LOCAL_WORKSPACE })
+    await repo.write('rm_1', { op: 'create', issues: [{ id: 'i_src', parentId: null, title: 'Source' }] })
+    expect(await repo.putBody('rm_1', 'i_src', '# Brief', 0)).toMatchObject({ bodyRev: 1 })
+    await repo.comment('rm_1', 'i_src', 'Note')
+    expect(await repo.write('rm_1', { op: 'duplicate', copies: [{ id: 'i_copy', sourceId: 'i_src' }] })).toMatchObject({ seq: expect.any(Number) })
+    expect(await repo.detail('rm_1', 'i_copy')).toMatchObject({ body: expect.stringContaining('Brief'), bodyRev: 0, comments: [] })
+    expect((await repo.detail('rm_1', 'i_src'))?.comments).toHaveLength(1)
+  })
 })

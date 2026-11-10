@@ -199,8 +199,12 @@ export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>)
       m.updated = now
       for (const row of r.changed) {
         const prev = m.issues.find((i) => i.id === row.id)
-        const base = prev ?? { body: '', comments: [] as IssueComment[] }
-        const next = { ...structuredClone(row), body: base.body, comments: base.comments }
+        let body = prev?.body ?? ''
+        if (op.op === 'duplicate') {
+          const sourceId = op.copies.find((c) => c.id === row.id)?.sourceId
+          if (sourceId) body = m.issues.find((i) => i.id === sourceId)?.body ?? ''
+        }
+        const next = { ...structuredClone(row), body, comments: prev?.comments ?? [] }
         const i = m.issues.findIndex((x) => x.id === row.id)
         if (i >= 0) m.issues[i] = next
         else m.issues.push(next)

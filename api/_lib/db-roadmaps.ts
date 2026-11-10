@@ -172,7 +172,17 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
          where id = $1 and seq = $2 and workspace_id = $7 and ${may('roadmaps', '$8', '$9')} returning seq`,
         [id, read.readSeq, roadmap.name, JSON.stringify(roadmap.fields), roadmap.nextNumber, roadmap.seq, read.m.workspace_id, u, R('write'), tok],
       ]]
-      for (const row of changed) stmts.push(upsertIssue(row, id, tok))
+      for (const row of changed) {
+        stmts.push(upsertIssue(row, id, tok))
+        if (op.op === 'duplicate') {
+          const sourceId = op.copies.find((c) => c.id === row.id)?.sourceId
+          if (sourceId) {
+            stmts.push([`update issues set body = src.body from issues src
+              where issues.id = $1 and issues.roadmap_id = $2 and src.id = $3 and src.roadmap_id = $2 and ${gate('$2', '$4')}`,
+              [row.id, id, sourceId, tok]])
+          }
+        }
+      }
       for (const e of events) stmts.push(insertEvent(id, roadmap.seq, e, u, tok))
       const out = await tx(stmts)
       return (out[0] as unknown[])[0] ? { seq: roadmap.seq, changed } : null
