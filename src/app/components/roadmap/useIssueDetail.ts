@@ -5,7 +5,7 @@ import { peekIssueDetail, rememberIssueDetail } from './issueDetailCache'
 
 const DETAIL_LOAD_FAILED = 'Couldn’t load the description and activity.'
 
-export function useIssueDetail(repo: RoadmapRepo, roadmapId: string, issueId: string | null) {
+export function useIssueDetail(repo: RoadmapRepo, roadmapId: string, issueId: string | null, issueSeq?: number) {
   const [detail, setDetail] = useState<IssueDetail | null>(() => (issueId ? peekIssueDetail(roadmapId, issueId) : null))
   const [loading, setLoading] = useState(() => issueId !== null && detail === null)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +40,7 @@ export function useIssueDetail(repo: RoadmapRepo, roadmapId: string, issueId: st
         setError(DETAIL_LOAD_FAILED)
       })
     return () => { go = false }
-  }, [repo, roadmapId, issueId])
+  }, [repo, roadmapId, issueId, issueSeq])
 
   const replace = (next: IssueDetail) => {
     if (issueId) rememberIssueDetail(roadmapId, issueId, next)

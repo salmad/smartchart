@@ -1,14 +1,18 @@
 import type { FieldDef } from '@/engine/roadmaps/types'
+import type { MatrixRow } from '@/engine/roadmaps/matrix'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 
 export const ROW_H = 34
 export const GANTT_ROW_H = 32
+export const MATRIX_ROW_H = 34
 export const VIRT = 200
 export const OVERSCAN = 8
 
-export function visibleRows(rows: TableRow[], filtersActive: boolean): TableRow[] {
+type WalkRow = TableRow | MatrixRow
+
+export function visibleRows<T extends WalkRow>(rows: T[], filtersActive: boolean): T[] {
   if (filtersActive) return rows
-  const out: TableRow[] = []
+  const out: T[] = []
   const openAt: boolean[] = []
   for (const row of rows) {
     if (row.kind === 'group') {

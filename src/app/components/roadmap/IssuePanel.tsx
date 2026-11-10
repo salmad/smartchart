@@ -26,7 +26,7 @@ interface Props {
 
 export function IssuePanel(props: Props) {
   const { issue, roadmapId, repo, onClose } = props
-  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id)
+  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq)
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {

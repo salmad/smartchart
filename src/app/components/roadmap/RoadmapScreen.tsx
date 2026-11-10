@@ -165,7 +165,14 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   said={view.said}
                 />
               ) : (
-                <Matrix state={view.state} view={viewSettings} />
+                <Matrix
+                  state={view.state}
+                  view={viewSettings}
+                  members={view.members}
+                  today={today}
+                  onView={setViewSettings}
+                  onOpenIssue={openIssue}
+                />
               )}
             </div>
           )}

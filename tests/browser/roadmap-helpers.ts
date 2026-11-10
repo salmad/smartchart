@@ -25,6 +25,109 @@ export async function openFreshRoadmap(page: import('@playwright/test').Page, { 
 
 type IssueSeed = { start?: string; due?: string; status?: string }
 
+/** Worked matrix example from the M3 spec (Workstream × Country). */
+export async function seedWorkedMatrix(page: import('@playwright/test').Page) {
+  const id = /\/r\/(rm_[\w-]+)/.exec(page.url())?.[1]
+  if (!id) throw new Error('Expected a roadmap URL')
+  await page.evaluate(
+    ({ roadmapId, key }) => {
+      const now = Date.now()
+      const row = (base: Record<string, unknown>) => ({
+        parentId: null,
+        sortKey: 'a',
+        title: 'Issue',
+        status: 'todo',
+        assignee: null,
+        start: null,
+        due: null,
+        fields: {},
+        bodyRev: 0,
+        seq: 1,
+        createdBy: 'local',
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+        body: '',
+        comments: [],
+        ...base,
+      })
+      const all = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, {
+        issues: unknown[]
+        fields: unknown[]
+        nextNumber: number
+        seq: number
+      }>
+      const rm = all[roadmapId]
+      if (!rm) return
+      rm.fields = [
+        { id: 'ws', name: 'Workstream', type: 'choice', options: [{ id: 'vendors', name: 'Vendors' }] },
+        {
+          id: 'country',
+          name: 'Country',
+          type: 'choice',
+          options: [
+            { id: 'uk', name: 'UK' },
+            { id: 'fr', name: 'France' },
+            { id: 'sg', name: 'Singapore' },
+          ],
+        },
+      ]
+      rm.issues = [
+        row({ id: 'U', number: 1, sortKey: 'a', title: 'Underwriting', fields: { ws: 'vendors' } }),
+        row({
+          id: 'U-uk',
+          number: 2,
+          parentId: 'U',
+          sortKey: 'a',
+          title: 'Underwriting',
+          status: 'in_progress',
+          due: '2027-02-01',
+          fields: { ws: 'vendors', country: 'uk' },
+        }),
+        row({
+          id: 'T1',
+          number: 3,
+          parentId: 'U-uk',
+          sortKey: 'a',
+          title: 'Send RFP',
+          status: 'done',
+          fields: { ws: 'vendors', country: 'uk' },
+        }),
+        row({
+          id: 'T2',
+          number: 4,
+          parentId: 'U-uk',
+          sortKey: 'b',
+          title: 'Chase',
+          status: 'blocked',
+          due: '2026-01-01',
+          fields: { ws: 'vendors', country: 'uk' },
+        }),
+        row({
+          id: 'U-fr',
+          number: 5,
+          parentId: 'U',
+          sortKey: 'b',
+          title: 'Underwriting',
+          fields: { ws: 'vendors', country: 'fr' },
+        }),
+        row({
+          id: 'U-sg',
+          number: 6,
+          parentId: 'U',
+          sortKey: 'c',
+          title: 'Underwriting',
+          fields: { ws: 'vendors', country: 'sg' },
+        }),
+      ]
+      rm.nextNumber = 7
+      rm.seq = 6
+      localStorage.setItem(key, JSON.stringify(all))
+    },
+    { roadmapId: id, key: ROADMAPS_KEY },
+  )
+}
+
 export async function seedSixIssues(
   page: import('@playwright/test').Page,
   over: Record<string, IssueSeed> = {},
