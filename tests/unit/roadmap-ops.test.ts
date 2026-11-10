@@ -127,4 +127,104 @@ describe('roadmap ops', () => {
     expect(r.state.issues.every((i) => !('f1' in i.fields))).toBe(true)
     expect(r.events.some((e) => e.what === 'fields')).toBe(true)
   })
+
+  it('duplicates a subtree once when parent and child are selected', () => {
+    const base = state({ nextNumber: 10 }, [
+      issue({ id: 'p', parentId: null, title: 'UK' }),
+      issue({ id: 'c', parentId: 'p', title: 'Task' }),
+    ])
+    const r = ok(
+      applyOp(
+        base,
+        {
+          op: 'duplicate',
+          copies: [
+            { id: 'p2', sourceId: 'p' },
+            { id: 'c2', sourceId: 'c' },
+          ],
+        },
+        ctx,
+      ),
+    )
+    expect(r.state.issues.map((i) => i.id).sort()).toEqual(['c', 'c2', 'p', 'p2'])
+    expect(r.state.issues.find((i) => i.id === 'c2')).toMatchObject({ parentId: 'p2', title: 'Task' })
+    expect(r.events).toHaveLength(2)
+    expect(r.events.every((e) => e.what === 'created')).toBe(true)
+    expect(r.events.find((e) => e.issueId === 'p2')?.changes).toEqual([
+      { path: 'title', from: null, to: 'UK' },
+      { path: 'duplicatedFrom', from: null, to: 'p' },
+    ])
+  })
+
+  it('places duplicate roots after their sources in sibling order', () => {
+    const base = state({ nextNumber: 1 }, [
+      issue({ id: 'f', parentId: null }),
+      issue({ id: 'a', parentId: 'f', sortKey: 'a' }),
+      issue({ id: 'b', parentId: 'f', sortKey: 'b' }),
+    ])
+    const r = ok(
+      applyOp(
+        base,
+        {
+          op: 'duplicate',
+          copies: [
+            { id: 'a2', sourceId: 'a' },
+            { id: 'b2', sourceId: 'b' },
+          ],
+        },
+        ctx,
+      ),
+    )
+    expect(issueTree(r.state.issues).children('f').map((i) => i.id)).toEqual(['a', 'a2', 'b', 'b2'])
+  })
+
+  it('numbers duplicated issues in preorder and copies fields and status', () => {
+    const base = state({ nextNumber: 42, fields: [country] }, [
+      issue({ id: 'p', parentId: null, status: 'in_progress', fields: { f1: 'uk' } }),
+      issue({ id: 'c', parentId: 'p', status: 'done', assignee: 'bob', start: '2026-01-01', due: '2026-03-01' }),
+    ])
+    const r = ok(
+      applyOp(
+        base,
+        {
+          op: 'duplicate',
+          copies: [
+            { id: 'p2', sourceId: 'p' },
+            { id: 'c2', sourceId: 'c' },
+          ],
+        },
+        ctx,
+      ),
+    )
+    expect(r.state.issues.find((i) => i.id === 'p2')).toMatchObject({
+      number: 42,
+      status: 'in_progress',
+      fields: { f1: 'uk' },
+      bodyRev: 0,
+      createdBy: 'ann',
+    })
+    expect(r.state.issues.find((i) => i.id === 'c2')).toMatchObject({
+      number: 43,
+      status: 'done',
+      assignee: 'bob',
+      start: '2026-01-01',
+      due: '2026-03-01',
+      bodyRev: 0,
+    })
+    expect(r.state.roadmap.nextNumber).toBe(44)
+  })
+
+  it('refuses duplicate ops that break the rules without changing state', () => {
+    const base = state({ nextNumber: 1 }, [issue({ id: 'a', parentId: null }), issue({ id: 'c', parentId: 'a' })])
+    const dup = (copies: { id: string; sourceId: string }[]) => applyOp(base, { op: 'duplicate', copies }, ctx)
+
+    expect(dup([])).toEqual({ refused: 'Select an issue to duplicate.' })
+    expect(dup([{ id: 'z', sourceId: 'nope' }])).toEqual({ refused: 'No such issue.' })
+    expect(dup([{ id: 'a2', sourceId: 'a' }, { id: 'a3', sourceId: 'a' }])).toEqual({ refused: 'Each copy needs its own id.' })
+    expect(dup([{ id: 'a', sourceId: 'a' }])).toEqual({ refused: 'That issue already exists.' })
+    expect(dup([{ id: 'a2', sourceId: 'a' }])).toEqual({ refused: 'Duplicate needs a new id for each issue.' })
+    expect(dup([{ id: 'a2', sourceId: 'a' }, { id: 'a2', sourceId: 'c' }])).toEqual({ refused: 'Each copy needs its own id.' })
+    expect(dup([{ id: 'p2', sourceId: 'a' }, { id: 'c2', sourceId: 'c' }])).not.toHaveProperty('refused')
+    expect(base.issues).toHaveLength(2)
+  })
 })

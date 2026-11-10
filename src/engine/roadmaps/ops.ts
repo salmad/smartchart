@@ -1,7 +1,7 @@
 import { checkFieldDefs, checkFieldPatch, isIsoDate, pruneInvalidFieldValues, stripField } from './fields.js'
 import type { FieldDef, FieldValue, Issue, IssueEvent, RoadmapState, Status } from './types.js'
 import { MAX_TITLE, STATUSES } from './types.js'
-import { canParent, siblingKey, subtree } from './tree.js'
+import { canParent, issueTree, siblingKey, subtree } from './tree.js'
 
 export type IssueProps = Partial<Pick<Issue, 'title' | 'status' | 'assignee' | 'start' | 'due'>> & {
   fields?: Record<string, FieldValue | null>
@@ -14,6 +14,7 @@ export type RoadmapOp =
   | { op: 'delete'; ids: string[] }
   | { op: 'restore'; ids: string[] }
   | { op: 'roadmap'; name?: string; fields?: FieldDef[] }
+  | { op: 'duplicate'; copies: { id: string; sourceId: string }[] }
 
 export interface OpCtx {
   by: string
@@ -130,6 +131,32 @@ function markedSubtree(issues: Issue[], rootId: string, mark: number): Issue[] {
   }
   walk(rootId)
   return out
+}
+
+function liveSubtree(issues: Issue[], rootId: string): Issue[] {
+  const tree = issueTree(issues)
+  const root = tree.get(rootId)
+  if (!root || root.deletedAt !== null) return []
+  const out: Issue[] = []
+  const walk = (node: Issue) => {
+    if (node.deletedAt !== null) return
+    out.push(node)
+    for (const c of tree.children(node.id)) walk(c)
+  }
+  walk(root)
+  return out
+}
+
+function selectionRoots(copies: { sourceId: string }[], issues: Issue[]): string[] {
+  const sourceIds = new Set(copies.map((c) => c.sourceId))
+  const tree = issueTree(issues)
+  const roots: string[] = []
+  for (const sourceId of sourceIds) {
+    const src = tree.get(sourceId)
+    if (!src) continue
+    if (src.parentId === null || !sourceIds.has(src.parentId)) roots.push(sourceId)
+  }
+  return roots
 }
 
 function issuesToRestore(all: Issue[], startId: string): Issue[] {
@@ -258,6 +285,108 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         events.push(ev(ctx, 'restored', node.id, [{ path: 'deletedAt', from: node.deletedAt, to: null }]))
       }
     }
+  } else if (op.op === 'duplicate') {
+    if (!op.copies.length) return { refused: 'Select an issue to duplicate.' }
+
+    const bySource = new Map<string, string>()
+    for (const { id, sourceId } of op.copies) {
+      if (bySource.has(sourceId)) return { refused: 'Each copy needs its own id.' }
+      bySource.set(sourceId, id)
+    }
+
+    const newIds = op.copies.map((c) => c.id)
+    if (new Set(newIds).size !== newIds.length) return { refused: 'Each copy needs its own id.' }
+    for (const id of newIds) {
+      if (get(id)) return { refused: 'That issue already exists.' }
+    }
+
+    const sourceIds = new Set(bySource.keys())
+    for (const sourceId of sourceIds) {
+      const src = get(sourceId)
+      const isRoot = !src?.parentId || !sourceIds.has(src.parentId)
+      if (isRoot && (!src || src.deletedAt !== null)) return { refused: 'No such issue.' }
+    }
+
+    const roots = selectionRoots(op.copies, draft.issues).sort((a, b) => {
+      const ia = get(a)!
+      const ib = get(b)!
+      if (ia.parentId !== ib.parentId) return ia.sortKey.localeCompare(ib.sortKey)
+      return ia.sortKey.localeCompare(ib.sortKey)
+    })
+
+    for (const rootId of roots) {
+      for (const node of liveSubtree(draft.issues, rootId)) {
+        if (!bySource.has(node.id)) return { refused: 'Duplicate needs a new id for each issue.' }
+      }
+    }
+
+    const tree = issueTree(draft.issues)
+    const toCreate: Issue[] = []
+    for (const rootId of roots) {
+      toCreate.push(...liveSubtree(draft.issues, rootId))
+    }
+
+    let nextNum = draft.roadmap.nextNumber
+    const dupRoots = new Set(roots)
+
+    for (const source of toCreate) {
+      const newId = bySource.get(source.id)!
+      let parentId: string | null
+      let sortKey: string
+
+      if (dupRoots.has(source.id)) {
+        parentId = source.parentId
+        sortKey = siblingKey(draft.issues, parentId, { after: source.id })
+      } else {
+        const mappedParent = source.parentId ? bySource.get(source.parentId) : null
+        if (!source.parentId || !mappedParent) {
+          return { refused: 'Duplicate needs a new id for each issue.' }
+        }
+        parentId = mappedParent
+        const srcSiblings = tree.children(source.parentId).filter((i) => i.deletedAt === null)
+        const idx = srcSiblings.findIndex((s) => s.id === source.id)
+        let after: string | undefined
+        for (let j = idx - 1; j >= 0; j--) {
+          const prevNew = bySource.get(srcSiblings[j].id)
+          if (prevNew && draft.issues.some((i) => i.id === prevNew)) {
+            after = prevNew
+            break
+          }
+        }
+        sortKey = siblingKey(draft.issues, parentId, after ? { after } : {})
+      }
+
+      const parentCheck = canParent(draft.issues, newId, parentId)
+      if (parentCheck !== 'ok') return { refused: parentCheck }
+
+      const next: Issue = {
+        id: newId,
+        number: nextNum,
+        parentId,
+        sortKey,
+        title: source.title,
+        status: source.status,
+        assignee: source.assignee,
+        start: source.start,
+        due: source.due,
+        fields: { ...source.fields },
+        bodyRev: 0,
+        seq,
+        createdBy: ctx.by,
+        createdAt: ctx.now,
+        updatedAt: ctx.now,
+        deletedAt: null,
+      }
+      nextNum += 1
+      write(next)
+      events.push(
+        ev(ctx, 'created', newId, [
+          { path: 'title', from: null, to: next.title },
+          { path: 'duplicatedFrom', from: null, to: source.id },
+        ]),
+      )
+    }
+    draft.roadmap.nextNumber = nextNum
   } else if (op.op === 'roadmap') {
     if (op.fields !== undefined) {
       const check = checkFieldDefs(op.fields)
