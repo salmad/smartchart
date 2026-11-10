@@ -81,7 +81,7 @@ export function SubIssues({ parent, roadmap, issues, canEdit, act, onOpen }: Pro
               </button>
             )}
             <StatusGlyph status={kid.status} />
-            <button type="button" className="min-w-0 flex-1 truncate text-left text-[13px] text-ink hover:text-gold" onClick={() => onOpen(kid.id)}>
+            <button type="button" className="min-w-0 flex-1 truncate text-left text-[13px] text-ink hover:text-ink-2" onClick={() => onOpen(kid.id)}>
               <span className="font-mono text-ink-3">{keyOf(roadmap, kid)}</span> {kid.title}
             </button>
           </li>
@@ -91,8 +91,9 @@ export function SubIssues({ parent, roadmap, issues, canEdit, act, onOpen }: Pro
         composing ? (
           <input
             autoFocus
-            className="mt-2 w-full rounded border border-line bg-app-bg px-2 py-1.5 text-[13px] text-ink outline-none focus:border-gold/50"
+            className="mt-1 w-full border-0 bg-transparent px-1 py-1 text-[13px] text-ink outline-none ring-0 placeholder:text-ink-3 shadow-[inset_2px_0_0_theme(colors.ink)] focus:ring-0"
             aria-label="New sub-issue title"
+            placeholder="Sub-issue title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => {

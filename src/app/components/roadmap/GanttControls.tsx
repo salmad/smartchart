@@ -18,7 +18,7 @@ export function GanttControls({ scale, onScale, onToday }: Props) {
         value={scale}
         onValueChange={(v) => { if (v) onScale(v as Scale) }}
         aria-label="Scale"
-        className="rounded-lg border border-line bg-panel p-0.5"
+        className="rounded-md p-0.5"
       >
         {SCALES.map((s) => (
           <ToggleGroupItem
@@ -27,7 +27,7 @@ export function GanttControls({ scale, onScale, onToday }: Props) {
             aria-label={SCALE_LABEL[s]}
             className={cn(
               'h-7 rounded-md border-0 px-2.5 text-[12.5px] font-medium text-ink-3 shadow-none',
-              'data-[state=on]:bg-raise data-[state=on]:text-ink data-[state=on]:shadow-[0_0_0_1px_theme(colors.line)]',
+              'hover:bg-white/[.03] hover:text-ink data-[state=on]:bg-raise data-[state=on]:text-ink data-[state=on]:shadow-none data-[state=on]:hover:bg-raise',
             )}
           >
             {SCALE_LABEL[s]}

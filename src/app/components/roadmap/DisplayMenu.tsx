@@ -56,7 +56,7 @@ export function DisplayMenu({ fields, view, onChange }: Props) {
                 type="button"
                 className={cn(
                   'rounded-md px-2 py-1 text-[12px]',
-                  view.sort === s.id ? 'bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line)]' : 'text-ink-2 hover:text-ink',
+                  view.sort === s.id ? 'bg-raise font-medium text-ink' : 'text-ink-2 hover:text-ink',
                 )}
                 onClick={() => onChange({ ...view, sort: s.id })}
               >
@@ -125,7 +125,7 @@ function GroupPick({ label, on, onClick }: { label: string; on: boolean; onClick
       type="button"
       className={cn(
         'rounded-md px-2 py-1 text-left text-[12px]',
-        on ? 'bg-raise font-medium text-ink shadow-[0_0_0_1px_theme(colors.line)]' : 'text-ink-2 hover:text-ink',
+        on ? 'bg-raise font-medium text-ink' : 'text-ink-2 hover:text-ink',
       )}
       onClick={onClick}
     >

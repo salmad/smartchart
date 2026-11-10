@@ -12,11 +12,11 @@ interface Props {
 export function FilterChip({ chip, fields, onRemove }: Props) {
   const label = chipLabel(chip, fields)
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-line bg-raise px-2 py-0.5 text-[12px] text-ink-2">
+    <span className="inline-flex h-6 items-center gap-1 rounded-md bg-white/[.04] px-2 text-[12px] text-ink-2">
       <span>{label}</span>
       <button
         type="button"
-        className="text-ink-3 hover:text-ink"
+        className="-mr-0.5 rounded p-0.5 text-ink-3 hover:bg-white/[.06] hover:text-ink"
         aria-label={`Remove ${label}`}
         onClick={onRemove}
       >

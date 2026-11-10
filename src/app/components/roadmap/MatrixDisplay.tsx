@@ -162,7 +162,7 @@ function Pick({ label, on, onClick }: { label: string; on: boolean; onClick: () 
       aria-pressed={on}
       className={cn(
         'rounded-md px-2 py-1 text-left text-[12px]',
-        on ? 'bg-raise font-medium text-ink shadow-[0_0_0_1px_theme(colors.line)]' : 'text-ink-2 hover:text-ink',
+        on ? 'bg-raise font-medium text-ink' : 'text-ink-2 hover:text-ink',
       )}
       onClick={onClick}
     >

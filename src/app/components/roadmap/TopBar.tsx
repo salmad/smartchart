@@ -20,7 +20,7 @@ interface Props {
 const tabClass = (active: boolean) =>
   cn(
     'rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-colors',
-    active ? 'bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line)]' : 'text-ink-3 hover:text-ink',
+    active ? 'bg-raise text-ink' : 'text-ink-3 hover:bg-white/[.03] hover:text-ink',
   )
 
 /** Roadmap chrome below the crumbs: Table / Gantt tabs, Display, Fields, and New issue. */
@@ -30,7 +30,7 @@ export function TopBar({ canEdit, fields, view, checksBadge = 0, onView, onField
 
   return (
     <div className="flex flex-none items-center gap-2">
-      <nav aria-label="Roadmap views" className="flex items-center gap-0.5 rounded-lg border border-line bg-panel p-0.5">
+      <nav aria-label="Roadmap views" className="flex items-center gap-0.5 rounded-md p-0.5">
         <button
           type="button"
           className={tabClass(view.layout === 'table')}

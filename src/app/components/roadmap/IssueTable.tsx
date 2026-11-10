@@ -169,6 +169,9 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
         <table className="w-full min-w-[640px] border-collapse text-left">
           <TableHead columns={columns} fields={state.roadmap.fields} />
         </table>
+        <p className="px-2 py-8 text-[13px] text-ink-3">
+          {filtersActive ? 'No issues match these filters.' : 'No issues yet. Press C or New issue to add the first.'}
+        </p>
       </div>
     )
   }

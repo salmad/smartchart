@@ -76,7 +76,7 @@ export function IssueGroupRow({ row, colCount }: GroupProps) {
 
 export function ComposeIssueRow({ draft, depth, columns, onTitle, onCommit }: ComposeProps) {
   return (
-    <tr className="h-[34px] border-b border-hair bg-raise/40 text-[12px]">
+    <tr className="h-[34px] border-b border-hair bg-white/[.045] text-[12.5px] shadow-[inset_2px_0_0_theme(colors.ink)]">
       <td className="w-6 px-1" />
       <td className="w-8 px-2" />
       <td className="w-24 px-2 font-mono text-ink-3">…</td>
@@ -90,7 +90,7 @@ export function ComposeIssueRow({ draft, depth, columns, onTitle, onCommit }: Co
             value={draft.title}
             onChange={(e) => onTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onCommit() } }}
-            className="min-w-0 flex-1 rounded border-0 bg-transparent text-ink outline-none ring-1 ring-line focus:ring-gold"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[12.5px] text-ink outline-none ring-0 placeholder:text-ink-3 focus:ring-0"
             aria-label="New issue title"
             placeholder="Issue title"
           />

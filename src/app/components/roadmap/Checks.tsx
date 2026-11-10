@@ -14,9 +14,9 @@ export function Checks({ report, hasIssues, onOpen }: Props) {
   return (
     <section role="region" aria-label="Checks" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
       {!hasIssues && (
-        <p className="border-b border-line px-8 py-6 text-[13.5px] text-ink-2">Nothing to look at.</p>
+        <p className="px-8 pb-2 pt-6 text-[13px] text-ink-3">No issues on this roadmap yet.</p>
       )}
-      <ul className="divide-y divide-line">
+      <ul className="divide-y divide-hair">
         {CHECK_IDS.map((id) => {
           const card = report.cards.find((c) => c.id === id) ?? { id, count: 0, issueIds: [] }
           const copy = CHECK_COPY[id]
@@ -36,7 +36,7 @@ export function Checks({ report, hasIssues, onOpen }: Props) {
           )
           if (count === 0) {
             return (
-              <li key={id} className="flex w-full items-center gap-4 px-8 py-4 text-left">
+              <li key={id} className="flex w-full items-center gap-4 px-8 py-3.5 text-left">
                 {inner}
               </li>
             )
@@ -45,7 +45,7 @@ export function Checks({ report, hasIssues, onOpen }: Props) {
             <li key={id}>
               <button
                 type="button"
-                className="flex w-full items-center gap-4 px-8 py-4 text-left hover:bg-raise/60"
+                className="flex w-full items-center gap-4 px-8 py-3.5 text-left transition-colors hover:bg-white/[.03]"
                 aria-label={`${copy.label}, ${count} issues`}
                 onClick={() => onOpen(id)}
               >

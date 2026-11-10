@@ -39,7 +39,7 @@ export function FieldCell({ field, value, members, disabled, onPick }: Props) {
         disabled={disabled}
         value={value === undefined ? '' : String(value)}
         onChange={(e) => onPick(e.target.value || null)}
-        className="w-full min-w-0 rounded border-0 bg-transparent px-1 py-0.5 text-[12px] text-ink-2 hover:bg-raise focus:bg-raise focus:outline-none focus:ring-1 focus:ring-line"
+        className="w-full min-w-0 rounded border-0 bg-transparent px-1 py-0.5 text-[12px] text-ink-2 hover:bg-raise focus:bg-raise focus:outline-none focus:ring-0"
         aria-label={field.name}
       />
     )
@@ -54,7 +54,7 @@ export function FieldCell({ field, value, members, disabled, onPick }: Props) {
           const t = e.target.value
           onPick(t === '' ? null : Number(t))
         }}
-        className="h-7 border-0 bg-transparent px-1 text-[12px] shadow-none hover:bg-raise focus-visible:ring-1"
+        className="h-7 border-0 bg-transparent px-1 text-[12px] shadow-none hover:bg-raise focus-visible:ring-0"
         aria-label={field.name}
       />
     )
@@ -65,7 +65,7 @@ export function FieldCell({ field, value, members, disabled, onPick }: Props) {
         disabled={disabled}
         value={value === undefined ? '' : String(value)}
         onChange={(e) => onPick(e.target.value.trim() === '' ? null : e.target.value)}
-        className="h-7 border-0 bg-transparent px-1 text-[12px] shadow-none hover:bg-raise focus-visible:ring-1"
+        className="h-7 border-0 bg-transparent px-1 text-[12px] shadow-none hover:bg-raise focus-visible:ring-0"
         aria-label={field.name}
       />
     )

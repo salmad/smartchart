@@ -28,7 +28,7 @@ export function FilterBar({ fields, view, issueCount, onChange }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2">
+    <div className="flex flex-wrap items-center gap-2 border-b border-hair px-4 py-1.5">
       {view.chips.map((chip, i) => {
         const live = liveChips(fields, [chip])[0]
         if (!live) return null
