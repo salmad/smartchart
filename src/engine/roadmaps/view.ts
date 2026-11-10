@@ -76,12 +76,12 @@ function chipMatches(issue: Issue, chip: Chip, today: string): boolean {
   }
 }
 
-function matchesFilters(issue: Issue, chips: Chip[], today: string): boolean {
+export function matchesChips(issue: Issue, chips: Chip[], today: string): boolean {
   if (!chips.length) return true
   return chips.every((c) => chipMatches(issue, c, today))
 }
 
-function sortSiblings(list: Issue[], sort: ViewSettings['sort']): Issue[] {
+export function sortIssues(list: Issue[], sort: ViewSettings['sort']): Issue[] {
   const out = [...list]
   const statusRank = new Map(STATUSES.map((s, i) => [s, i]))
   out.sort((a, b) => {
@@ -131,10 +131,10 @@ function branchVisible(
 ): boolean {
   const node = idx.byId.get(id)
   if (!node) return false
-  if (matchesFilters(node, chips, today)) return true
+  if (matchesChips(node, chips, today)) return true
   if (collapsed.has(id)) {
     for (const k of idx.children(id)) {
-      if (matchesFilters(k, chips, today) || branchVisible(k.id, idx, chips, today, collapsed)) return true
+      if (matchesChips(k, chips, today) || branchVisible(k.id, idx, chips, today, collapsed)) return true
     }
     return false
   }
@@ -185,7 +185,7 @@ function walkVisibleIssues(
     const kids = idx.children(node.id)
     const hasChildren = kids.length > 0
     const open = !collapsed.has(node.id)
-    const selfMatch = matchesFilters(node, chips, today)
+    const selfMatch = matchesChips(node, chips, today)
     const dim = chips.length > 0 && !selfMatch
     out.push({ kind: 'issue', issue: node, depth: d, dim, hasChildren, open })
     count++
@@ -194,7 +194,7 @@ function walkVisibleIssues(
       progressSum += p
       progressN++
     }
-    const nextKids = sortSiblings(
+    const nextKids = sortIssues(
       kids.filter((c) => branchVisible(c.id, idx, chips, today, collapsed)),
       sort,
     )
@@ -214,7 +214,7 @@ function appendIssues(
   sort: ViewSettings['sort'],
   depth: number,
 ): { count: number; progressSum: number; progressN: number } {
-  const roots = sortSiblings(
+  const roots = sortIssues(
     idx.children(null).filter((i) => branchVisible(i.id, idx, chips, today, collapsed)),
     sort,
   )
@@ -254,7 +254,7 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string): Tabl
     return out
   }
 
-  const tops = sortSiblings(
+  const tops = sortIssues(
     idx.children(null).filter((i) => branchVisible(i.id, idx, chips, today, collapsed)),
     v.sort,
   )

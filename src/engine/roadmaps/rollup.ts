@@ -25,6 +25,30 @@ export function progress(issues: Issue[], id: string): number | null {
   return sum / leaves.length
 }
 
+function isDescendantOf(idx: ReturnType<typeof buildIndex>, id: string, ancestorId: string): boolean {
+  let cur = idx.byId.get(id)?.parentId ?? null
+  while (cur !== null) {
+    if (cur === ancestorId) return true
+    cur = idx.byId.get(cur)?.parentId ?? null
+  }
+  return false
+}
+
+/** Leaf pool under ids. An id inside another id in the set is skipped. */
+export function progressUnder(issues: Issue[], ids: string[]): number | null {
+  const idx = buildIndex(issues)
+  const pool: Issue[] = []
+  for (const id of ids) {
+    if (!idx.byId.has(id)) continue
+    if (ids.some((other) => other !== id && isDescendantOf(idx, id, other))) continue
+    pool.push(...leavesUnder(idx, id))
+  }
+  const leaves = pool.filter((i) => i.status !== 'cancelled')
+  if (!leaves.length) return null
+  const sum = leaves.reduce((n, i) => n + score(i.status), 0)
+  return sum / leaves.length
+}
+
 const dateMemo = new WeakMap<Issue[], Map<string, { start: string | null; due: string | null }>>()
 
 export function dateSpan(issues: Issue[], id: string): { start: string | null; due: string | null } {
