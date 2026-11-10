@@ -63,16 +63,28 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
   const open = useCallback((id: string) => { onOpenIssue?.(id) }, [onOpenIssue])
 
   const keyRows = useMemo(
-    () => rows.map((r) => (r.kind === 'group' ? { kind: 'group' as const } : { kind: 'issue' as const, cells: r.cells })),
+    () =>
+      rows.map((r) =>
+        r.kind === 'group'
+          ? { kind: 'group' as const }
+          : { kind: 'issue' as const, issueId: r.issue.id, cells: r.cells },
+      ),
     [rows],
   )
 
   const onActivate = useCallback(
-    (row: number, col: number) => {
-      const r = rows[row]
-      if (r.kind !== 'issue') return
+    (issueId: string, col: number) => {
+      const r = rows.find((row) => row.kind === 'issue' && row.issue.id === issueId)
+      if (!r || r.kind !== 'issue') return
       const cell = r.cells[col]
-      if (cell.kind === 'one') open(cell.issueId)
+      if (cell.kind === 'one') {
+        open(cell.issueId)
+        return
+      }
+      if (cell.kind === 'many') {
+        const btn = rootRef.current?.querySelector(`button[data-matrix-cell="${issueId}:${col}"]`)
+        if (btn instanceof HTMLButtonElement) btn.click()
+      }
     },
     [open, rows],
   )
@@ -80,10 +92,28 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
   useMatrixKeys({ root: rootRef, rows: keyRows, colCount: cols.length, focus, setFocus, onActivate })
 
   useEffect(() => {
-    if (focus) return
-    const f = firstMatrixFocus(keyRows, cols.length)
-    if (f) setFocus(f)
+    if (!focus) {
+      const f = firstMatrixFocus(keyRows, cols.length)
+      if (f) setFocus(f)
+      return
+    }
+    const live = keyRows.some((r) => r.kind === 'issue' && r.issueId === focus.issueId)
+    if (!live) setFocus(firstMatrixFocus(keyRows, cols.length))
   }, [cols.length, focus, keyRows])
+
+  useEffect(() => {
+    if (!focus || !rootRef.current) return
+    const row = rows.findIndex((r) => r.kind === 'issue' && r.issue.id === focus.issueId)
+    if (row >= 0 && rows.length > VIRT) {
+      const top = row * MATRIX_ROW_H
+      const el = scrollRef.current
+      if (el && (top < el.scrollTop || top + MATRIX_ROW_H > el.scrollTop + el.clientHeight)) {
+        el.scrollTop = Math.max(0, top - MATRIX_ROW_H)
+      }
+    }
+    const btn = rootRef.current.querySelector(`button[data-matrix-cell="${focus.issueId}:${focus.col}"]`)
+    if (btn instanceof HTMLButtonElement) btn.focus({ preventScroll: true })
+  }, [focus, rows])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
@@ -137,14 +167,12 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
             </tr>
           </thead>
           <tbody>
-            {padTop > 0 && <MatrixPad rows={padTop / MATRIX_ROW_H} cols={cols.length} />}
-            {body.map((row, i) => {
-              const rowIndex = rows.length > VIRT ? slice.start + i : i
-              return (
+            {padTop > 0 && <MatrixPad h={padTop} cols={cols.length} />}
+            {body.map((row) => (
                 <tr
                   key={matrixRowKey(row)}
                   data-matrix-row={row.kind === 'group' ? `group:${row.key}` : row.issue.id}
-                  className="h-[34px]"
+                  className="h-[48px]"
                 >
                   <MatrixTitleCell
                     row={row}
@@ -174,15 +202,15 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
                           cell={cell}
                           show={view.matrix.show}
                           today={today}
-                          focused={focus?.row === rowIndex && focus.col === ci}
-                          onFocus={() => setFocus({ row: rowIndex, col: ci })}
+                          cellTag={`${row.issue.id}:${ci}`}
+                          focused={focus?.issueId === row.issue.id && focus.col === ci}
+                          onFocus={() => setFocus({ issueId: row.issue.id, col: ci })}
                           onOpen={open}
                         />
                       ))}
                 </tr>
-              )
-            })}
-            {padBottom > 0 && <MatrixPad rows={padBottom / MATRIX_ROW_H} cols={cols.length} />}
+            ))}
+            {padBottom > 0 && <MatrixPad h={padBottom} cols={cols.length} />}
           </tbody>
         </table>
       </div>
@@ -211,10 +239,12 @@ function MatrixColHead({ col }: { col: MatrixCol }) {
   )
 }
 
-function MatrixPad({ rows: n, cols }: { rows: number; cols: number }) {
+function MatrixPad({ h, cols }: { h: number; cols: number }) {
   return (
-    <tr aria-hidden style={{ height: n * MATRIX_ROW_H }}>
-      <td colSpan={cols + 1} />
+    <tr aria-hidden className="border-0">
+      <td colSpan={cols + 1} className="p-0 leading-[0]">
+        <svg height={h} width={1} className="block w-full" aria-hidden />
+      </td>
     </tr>
   )
 }

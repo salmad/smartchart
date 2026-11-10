@@ -20,6 +20,7 @@ interface IssueCellProps {
   cell: Cell
   show: MatrixSettings['show']
   today: string
+  cellTag: string
   focused: boolean
   onFocus: () => void
   onOpen: (id: string) => void
@@ -119,6 +120,7 @@ export function MatrixIssueCell({
   cell,
   show,
   today,
+  cellTag,
   focused,
   onFocus,
   onOpen,
@@ -141,6 +143,7 @@ export function MatrixIssueCell({
           issues={issues}
           ids={cell.issueIds}
           label={label}
+          cellTag={cellTag}
           focused={focused}
           onFocus={onFocus}
           onOpen={onOpen}
@@ -165,8 +168,12 @@ export function MatrixIssueCell({
       <button
         type="button"
         tabIndex={focused ? 0 : -1}
+        data-matrix-cell={cellTag}
         aria-label={aria}
-        className="flex w-full flex-col items-center gap-0.5 rounded px-1 py-0.5 outline-none hover:bg-white/[.03] focus-visible:ring-1 focus-visible:ring-line"
+        className={cn(
+          'flex w-full flex-col items-center gap-0.5 rounded px-1 py-0.5 outline-none hover:bg-white/[.03] focus-visible:ring-1 focus-visible:ring-line',
+          focused && 'ring-1 ring-line',
+        )}
         onFocus={onFocus}
         onClick={() => onOpen(issue.id)}
       >

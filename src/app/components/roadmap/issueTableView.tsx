@@ -4,7 +4,8 @@ import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 
 export const ROW_H = 34
 export const GANTT_ROW_H = 32
-export const MATRIX_ROW_H = 34
+/** Default matrix show stacks status, quarter, and progress (~48px with cell padding). */
+export const MATRIX_ROW_H = 48
 export const VIRT = 200
 export const OVERSCAN = 8
 

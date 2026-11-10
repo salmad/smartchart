@@ -2,7 +2,7 @@ import { useCallback, useEffect, type RefObject } from 'react'
 import type { MatrixCell as Cell } from '@/engine/roadmaps/matrix'
 
 export interface MatrixFocus {
-  row: number
+  issueId: string
   col: number
 }
 
@@ -20,7 +20,16 @@ function editingField(target: EventTarget | null): boolean {
 
 interface RowSlice {
   kind: 'group' | 'issue'
+  issueId?: string
   cells?: Cell[]
+}
+
+function rowOf(rows: RowSlice[], issueId: string): number {
+  return rows.findIndex((r) => r.kind === 'issue' && r.issueId === issueId)
+}
+
+function popoverOpen(root: HTMLElement): boolean {
+  return !!root.querySelector('[data-radix-popper-content-wrapper]')
 }
 
 interface Options {
@@ -29,14 +38,15 @@ interface Options {
   colCount: number
   focus: MatrixFocus | null
   setFocus: (f: MatrixFocus | null) => void
-  onActivate: (row: number, col: number) => void
+  onActivate: (issueId: string, col: number) => void
 }
 
 export function useMatrixKeys({ root, rows, colCount, focus, setFocus, onActivate }: Options) {
   const nextSpot = useCallback(
-    (row: number, col: number, dRow: number, dCol: number): MatrixFocus | null => {
-      let r = row
+    (issueId: string, col: number, dRow: number, dCol: number): MatrixFocus | null => {
+      let r = rowOf(rows, issueId)
       let c = col
+      if (r < 0) return null
       for (let n = 0; n < rows.length * colCount + 2; n++) {
         r += dRow
         c += dCol
@@ -44,7 +54,7 @@ export function useMatrixKeys({ root, rows, colCount, focus, setFocus, onActivat
         const rowSlice = rows[r]
         if (rowSlice.kind === 'group') continue
         const cell = rowSlice.cells?.[c]
-        if (cell && cellFocusable(cell)) return { row: r, col: c }
+        if (cell && cellFocusable(cell) && rowSlice.issueId) return { issueId: rowSlice.issueId, col: c }
       }
       return null
     },
@@ -57,35 +67,34 @@ export function useMatrixKeys({ root, rows, colCount, focus, setFocus, onActivat
     const onKey = (e: KeyboardEvent) => {
       if (editingField(e.target)) return
       if (!focus) return
+      if (popoverOpen(el) && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        const n = nextSpot(focus.row, focus.col, 1, 0)
+        const n = nextSpot(focus.issueId, focus.col, 1, 0)
         if (n) setFocus(n)
         return
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault()
-        const n = nextSpot(focus.row, focus.col, -1, 0)
+        const n = nextSpot(focus.issueId, focus.col, -1, 0)
         if (n) setFocus(n)
         return
       }
       if (e.key === 'ArrowRight') {
         e.preventDefault()
-        const n = nextSpot(focus.row, focus.col, 0, 1)
+        const n = nextSpot(focus.issueId, focus.col, 0, 1)
         if (n) setFocus(n)
         return
       }
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
-        const n = nextSpot(focus.row, focus.col, 0, -1)
+        const n = nextSpot(focus.issueId, focus.col, 0, -1)
         if (n) setFocus(n)
         return
       }
       if (e.key === 'Enter') {
         e.preventDefault()
-        const target = document.activeElement
-        if (target instanceof HTMLElement) target.click()
-        else onActivate(focus.row, focus.col)
+        onActivate(focus.issueId, focus.col)
       }
     }
     el.addEventListener('keydown', onKey)
@@ -98,7 +107,7 @@ export function firstMatrixFocus(rows: RowSlice[], colCount: number): MatrixFocu
     if (rows[r].kind === 'group') continue
     for (let c = 0; c < colCount; c++) {
       const cell = rows[r].cells?.[c]
-      if (cell && cellFocusable(cell)) return { row: r, col: c }
+      if (cell && cellFocusable(cell) && rows[r].issueId) return { issueId: rows[r].issueId!, col: c }
     }
   }
   return null

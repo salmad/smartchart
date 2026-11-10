@@ -15,7 +15,7 @@ export function MatrixTitleCell({ row, roadmap, onToggleCollapse, onOpenIssue }:
     return (
       <th
         scope="row"
-        className="sticky left-0 z-[1] h-[34px] min-w-[280px] max-w-[360px] border-b border-hair bg-panel px-3 text-left text-[12px] font-medium text-ink"
+        className="sticky left-0 z-[1] h-[48px] min-w-[280px] max-w-[360px] border-b border-hair bg-panel px-3 text-left text-[12px] font-medium text-ink"
       >
         <div className="flex items-center gap-2">
           <span>{row.label}</span>
@@ -32,7 +32,7 @@ export function MatrixTitleCell({ row, roadmap, onToggleCollapse, onOpenIssue }:
     <th
       scope="row"
       className={cn(
-        'sticky left-0 z-[1] h-[34px] min-w-[280px] max-w-[360px] border-b border-hair bg-app-bg px-2 text-left text-[12.5px] font-normal text-ink',
+        'sticky left-0 z-[1] h-[48px] min-w-[280px] max-w-[360px] border-b border-hair bg-app-bg px-2 text-left text-[12.5px] font-normal text-ink',
         dim && 'opacity-45',
       )}
     >
