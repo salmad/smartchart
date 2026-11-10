@@ -145,7 +145,9 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     if (!ids.length) return
     const copies = buildDuplicateCopies(ids, liveIssues, newIssueId)
     if (!copies.length) return
-    if (act({ op: 'duplicate', copies }) === 'ok') selection.replace(copies.map((c) => c.id))
+    const out = act({ op: 'duplicate', copies })
+    if (out === 'ok') selection.replace(copies.map((c) => c.id))
+    else onRefused(out)
   }
 
   const composeDepth = useMemo(() => {
