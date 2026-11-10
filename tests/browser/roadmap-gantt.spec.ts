@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { openFreshRoadmap, seedSixIssues, signInRoadmapTests } from './roadmap-helpers'
+import { addStatusFilter, openFreshRoadmap, seedSixIssues, signInRoadmapTests } from './roadmap-helpers'
 
 signInRoadmapTests()
 test.use({ viewport: { width: 1440, height: 900 } })
@@ -13,13 +13,13 @@ test('switches to Gantt and keeps it after reload', async ({ page }) => {
   await nav.getByRole('button', { name: 'Gantt' }).click()
   await expect(nav.getByRole('button', { name: 'Gantt' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible()
-  const scale = page.getByRole('radiogroup', { name: 'Scale' })
-  await expect(scale.getByRole('radio', { name: 'Month' })).toBeChecked()
+  const scale = page.getByRole('group', { name: 'Scale' })
+  await expect(scale.getByRole('button', { name: 'Month' })).toHaveAttribute('aria-pressed', 'true')
 
-  await scale.getByRole('radio', { name: 'Quarter' }).click()
+  await scale.getByRole('button', { name: 'Quarter' }).click()
   await page.reload()
   await expect(nav.getByRole('button', { name: 'Gantt' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(scale.getByRole('radio', { name: 'Quarter' })).toBeChecked()
+  await expect(scale.getByRole('button', { name: 'Quarter' })).toHaveAttribute('aria-pressed', 'true')
 
   await nav.getByRole('button', { name: 'Table' }).click()
   await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
@@ -73,8 +73,7 @@ test('draws bars, a bracket, a milestone and alert labels', async ({ page }) => 
   await expect(page.getByText('Shipped piece')).toHaveCount(0)
 
   await nav.getByRole('button', { name: 'Gantt' }).click()
-  await page.getByRole('button', { name: 'Filter' }).click()
-  await page.getByRole('button', { name: 'Status is Blocked', exact: true }).click()
+  await addStatusFilter(page, 'Blocked')
   await expect(timeline.locator('[data-list-issue="i_uk"]')).toHaveAttribute('data-dim', 'true')
   await expect(page.getByText('Blocked piece')).toBeVisible()
 
@@ -219,7 +218,7 @@ test('drops a dateless issue onto the timeline', async ({ page }) => {
   await expect(timeline.locator('[data-list-issue="i_done"]')).toHaveAttribute('draggable', 'false')
 
   await lane.hover()
-  await expect(lane).toHaveAttribute('title', 'Drag the issue here to give it dates')
+  await expect(lane).toHaveAttribute('title', 'Click or drag here from the list to give it dates')
 
   const dropInLane = await page.evaluate(() => {
     const region = document.querySelector('[aria-label="Timeline"]')
@@ -231,6 +230,36 @@ test('drops a dateless issue onto the timeline', async ({ page }) => {
   })
 
   await listRow.dragTo(lane, { targetPosition: dropInLane })
+
+  await nav.getByRole('button', { name: 'Table' }).click()
+  const row = page.locator('tr', { hasText: 'France task B' })
+  await expect(row.getByRole('button', { name: 'Start date: 2026-12-07' })).toBeVisible()
+  await expect(row.getByRole('button', { name: 'Due date: 2026-12-20' })).toBeVisible()
+})
+
+test('clicks a dateless lane to set dates', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedSixIssues(page, {
+    i_fr_b: { start: undefined, due: undefined },
+  })
+  await page.reload()
+
+  const nav = page.getByRole('navigation', { name: 'Roadmap views' })
+  await nav.getByRole('button', { name: 'Gantt' }).click()
+  const timeline = page.getByRole('region', { name: 'Timeline' })
+  const lane = timeline.locator('[data-issue="i_fr_b"]')
+
+  const clickInLane = await page.evaluate(() => {
+    const region = document.querySelector('[aria-label="Timeline"]')
+    if (!region) throw new Error('No timeline')
+    const dec = [...region.querySelectorAll('text')].find((t) => t.textContent === 'Dec')
+    if (!dec) throw new Error('No Dec tick')
+    const tickLineX = Number(dec.getAttribute('x')) - 6
+    return { x: tickLineX + 6 * 6, y: 16 }
+  })
+
+  await lane.click({ position: clickInLane })
+  await expect(lane).toHaveAttribute('data-mark', 'bar')
 
   await nav.getByRole('button', { name: 'Table' }).click()
   const row = page.locator('tr', { hasText: 'France task B' })
@@ -256,11 +285,28 @@ test('apple-bar 1440 gantt scales', async ({ page }) => {
   const nav = page.getByRole('navigation', { name: 'Roadmap views' })
   await nav.getByRole('button', { name: 'Gantt' }).click()
   await page.getByRole('button', { name: 'Hide the sidebar' }).click()
-  const scale = page.getByRole('radiogroup', { name: 'Scale' })
+  const scale = page.getByRole('group', { name: 'Scale' })
   await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible()
 
   for (const s of ['Week', 'Month', 'Quarter'] as const) {
-    await scale.getByRole('radio', { name: s }).click()
+    await scale.getByRole('button', { name: s }).click()
     await page.screenshot({ path: `docs/temp/roadmap-m2-gantt-1440-${s.toLowerCase()}.png` })
   }
+})
+
+test('New issue works from the Gantt: a title row at the end of the list, then the issue', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedSixIssues(page)
+  await page.reload()
+
+  const nav = page.getByRole('navigation', { name: 'Roadmap views' })
+  await nav.getByRole('button', { name: 'Gantt' }).click()
+  await page.getByRole('button', { name: 'New issue' }).click()
+  const title = page.getByLabel('New issue title')
+  await expect(title).toBeFocused()
+  await title.fill('Launch review')
+  await title.press('Enter')
+  await expect(page.getByLabel('New issue title')).toHaveCount(0)
+  await expect(page.getByText('Launch review')).toBeVisible()
+  await expect(page.locator('[data-list-issue]', { hasText: 'Launch review' }).getByText('No dates')).toBeVisible()
 })

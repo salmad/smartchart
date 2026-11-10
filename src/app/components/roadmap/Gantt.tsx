@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { RoadmapState } from '@/engine/roadmaps/types'
+import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
@@ -13,11 +13,14 @@ import {
 import { shortDate } from './dates'
 import { GANTT_ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
 import { GanttListRow } from './GanttList'
+import { GanttCompose } from './GanttCompose'
+import { newIssueId } from './issueIds'
 import { GanttScaleRow, GanttTimelineBody, GanttTimelineGrid, useGanttLayout } from './GanttTimeline'
 import { useBarDrag } from './useBarDrag'
 import { useIssueDatesDrop } from './useIssueDatesDrop'
 interface Props {
   state: RoadmapState
+  members: MemberLite[]
   view: ViewSettings
   today: string
   onView: (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
@@ -26,11 +29,16 @@ interface Props {
   onOpenIssue?: (id: string) => void
   todayRequest: number
   said?: string | null
+  /** Bumped by the top bar's New issue: open a compose row at the end of the list. */
+  newIssue?: number
 }
 
-export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, canEdit, act, said }: Props) {
+export function Gantt({ state, members, view, today, onView, onOpenIssue, todayRequest, canEdit, act, said, newIssue = 0 }: Props) {
+  const [composing, setComposing] = useState(false)
+  useEffect(() => { if (newIssue > 0 && canEdit) setComposing(true) }, [newIssue, canEdit])
   const live = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
-  const allRows = useMemo(() => tableRows(state, view, today), [state, view, today])
+  const names = useMemo(() => new Map(members.map((m) => [m.id, m.name])), [members])
+  const allRows = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
   const filtersActive = view.chips.length > 0
   const rows = useMemo(() => visibleRows(allRows, filtersActive), [allRows, filtersActive])
 
@@ -104,8 +112,8 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
     <section role="region" aria-label="Timeline" className="flex min-h-0 flex-1 flex-col">
       {said && <p role="status" className="border-b border-line bg-panel px-4 py-2 text-[12.5px] text-ink-2">{said}</p>}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onScroll={onScroll}>
-        <div className="grid w-max min-w-full grid-cols-[330px_1fr]">
-          <div className="sticky left-0 top-0 z-30 h-[30px] border-b border-line bg-app-bg" />
+        <div className="grid w-max min-w-full grid-cols-[360px_1fr]">
+          <div className="sticky left-0 top-0 z-30 flex h-9 items-center border-b border-line bg-app-bg pl-[68px] text-[11.5px] font-medium text-ink-3">Title</div>
           <GanttScaleRow range={range} scale={view.scale} today={today} width={width} axis={axis} />
 
           <div className="sticky left-0 z-10 bg-app-bg">
@@ -114,6 +122,8 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
               <GanttListRow
                 key={rowKey(row)}
                 row={row}
+                roadmap={state.roadmap}
+                person={view.groupBy?.on === 'assignee'}
                 mark={row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' }}
                 canEdit={canEdit}
                 datesDrop={datesDrop}
@@ -122,6 +132,15 @@ export function Gantt({ state, view, today, onView, onOpenIssue, todayRequest, c
               />
             ))}
             {padBottom > 0 && <GanttListPad h={padBottom} />}
+            {composing && (
+              <GanttCompose
+                onCancel={() => setComposing(false)}
+                onCommit={(title) => {
+                  act({ op: 'create', issues: [{ id: newIssueId(), parentId: null, title }] })
+                  setComposing(false)
+                }}
+              />
+            )}
           </div>
 
           <div className="relative">
@@ -163,7 +182,7 @@ function rowKey(row: TableRow): string {
 }
 
 function GanttListPad({ h }: { h: number }) {
-  return <svg height={h} width={330} className="block" aria-hidden />
+  return <svg height={h} width={360} className="block" aria-hidden />
 }
 
 function GanttPadSvg({ h, width }: { h: number; width: number }) {

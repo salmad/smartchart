@@ -159,4 +159,17 @@ describe('roadmap view', () => {
     const done = rows.find((r) => r.kind === 'group' && r.key === 'done')
     expect(done).toMatchObject({ kind: 'group', count: 1, progress: 1 })
   })
+  it('groups by assignee under the person\'s name, in name order, with Unassigned last', () => {
+    const issues = [
+      issue({ id: 'a', assignee: 'u_zed', sortKey: 'a' }),
+      issue({ id: 'b', assignee: null, sortKey: 'b' }),
+      issue({ id: 'c', assignee: 'u_amy', sortKey: 'c' }),
+    ]
+    const s = state({}, issues)
+    const names = new Map([['u_zed', 'Amy Zhou'], ['u_amy', 'Zoe Adams']])
+    const labels = (m?: ReadonlyMap<string, string>) =>
+      tableRows(s, view({ groupBy: { on: 'assignee' } }), today, m).flatMap((r) => (r.kind === 'group' ? [r.label] : []))
+    expect(labels(names)).toEqual(['Amy Zhou', 'Zoe Adams', 'Unassigned'])
+    expect(labels()).toEqual(['u_amy', 'u_zed', 'Unassigned'])
+  })
 })

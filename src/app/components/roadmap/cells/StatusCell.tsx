@@ -4,6 +4,8 @@ import { STATUS_LABEL, STATUSES } from '@/engine/roadmaps/types'
 import { StatusGlyph } from '../StatusGlyph'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { Command, CommandItem, CommandList } from '../../ui/command'
+import { cn } from '@/app/lib/utils'
+import { menuCommand, menuSurface } from '../roadmapChrome'
 
 interface Props {
   status: Status
@@ -20,8 +22,8 @@ export function StatusCell({ status, disabled, onPick }: Props) {
           <StatusGlyph status={status} />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-44 p-0" aria-label="Choose status">
-        <Command>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-44 overflow-hidden p-1', menuSurface)} aria-label="Choose status">
+        <Command className={menuCommand}>
           <CommandList label="Statuses">
             {STATUSES.map((s) => (
               <CommandItem

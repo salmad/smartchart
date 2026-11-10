@@ -25,7 +25,7 @@ interface Props {
 
 export function IssuePage(props: Props) {
   const { issue, roadmapId, repo } = props
-  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq)
+  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq, issue.bodyRev)
   const { said, ...rest } = props
 
   return (

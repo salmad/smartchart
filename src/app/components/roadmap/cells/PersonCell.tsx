@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { MemberLite } from '@/engine/roadmaps/types'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { Command, CommandItem, CommandList } from '../../ui/command'
+import { cn } from '@/app/lib/utils'
+import { menuCommand, menuSurface } from '../roadmapChrome'
 import { Avatar } from '../Avatar'
 
 interface Props {
@@ -29,8 +31,8 @@ export function PersonCell({ assignee, members, disabled, onPick, withName }: Pr
           {name && withName && <span className="truncate">{name}</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-48 p-0" aria-label="Choose assignee">
-        <Command>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-48 overflow-hidden p-1', menuSurface)} aria-label="Choose assignee">
+        <Command className={menuCommand}>
           <CommandList label="Members">
             <CommandItem value="none" onSelect={() => { onPick(null); setOpen(false) }} className="text-[13px]">
               Unassigned

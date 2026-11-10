@@ -48,7 +48,7 @@ export function IssueActivity({ issue, events, comments, fields, members, canEdi
           {commentError && <p role="alert" className="text-[12.5px] text-bad">{commentError}</p>}
           <div className="flex gap-2">
             <textarea
-              className="min-h-[72px] flex-1 resize-y rounded-md border border-hair bg-transparent px-2.5 py-2 text-[13px] leading-[1.45] text-ink outline-none ring-0 placeholder:text-ink-3 focus:border-line focus:ring-0"
+              className="min-h-[72px] flex-1 resize-none rounded-lg border border-line bg-panel px-3 py-2 text-[13px] leading-[1.45] text-ink outline-none ring-0 placeholder:text-ink-3 focus:border-line focus:ring-0"
               aria-label="Comment"
               placeholder="Add a comment…"
               value={text}

@@ -7,7 +7,7 @@ import type { Axis } from './ganttAxis'
 import { barDraggable, barHitMode, barLaneCursor } from './ganttBarDrag'
 import type { useBarDrag } from './useBarDrag'
 
-const H = 32
+const H = 34
 
 type BarDragApi = ReturnType<typeof useBarDrag>
 
@@ -64,7 +64,7 @@ function bracketPath(start: string, due: string, axis: Axis, own: boolean, alert
   )
 }
 
-function markGraphic(mark: Mark, axis: Axis) {
+function markGraphic(mark: Mark, axis: Axis, inProgress: boolean) {
   const px = axis.px
   if (mark.kind === 'bracket') {
     return bracketPath(mark.start, mark.due, axis, mark.own, mark.alert)
@@ -84,8 +84,10 @@ function markGraphic(mark: Mark, axis: Axis) {
           mark.done
             ? 'fill-ok/60 stroke-ink/15'
             : mark.alert
-              ? 'fill-ink/10 stroke-bad'
-              : 'fill-ink/10 stroke-ink/15'
+              ? 'fill-bad/15 stroke-bad'
+              : inProgress
+                ? 'fill-gold/25 stroke-gold/55'
+                : 'fill-ink/10 stroke-ink/20'
         }
       />
     )
@@ -131,6 +133,19 @@ function labelFor(mark: Mark): string | null {
 
 function alertMark(mark: Mark): boolean {
   return mark.kind !== 'none' && 'alert' in mark && !!mark.alert
+}
+
+/** Bar drag needs both ends; milestones may only have start or due on the issue. */
+function laneDateSpan(
+  start: string | null,
+  due: string | null,
+  mark: Mark,
+): { start: string; due: string } | null {
+  if (start != null && due != null) return { start, due }
+  if (mark.kind === 'milestone') return { start: mark.day, due: mark.day }
+  if (start != null) return { start, due: start }
+  if (due != null) return { start: due, due }
+  return null
 }
 
 function labelAnchorX(endX: number, text: string, today: string, axis: Axis): number {
@@ -220,12 +235,17 @@ export function GanttLane({
   const endX = labelEndX(draw, axis)
   const attrs = row.kind === 'issue' ? laneDataAttrs(mark) : draw.kind === 'bracket' ? { 'data-mark': 'bracket' } : {}
 
-  const noDatesHint = mark.kind === 'none' ? 'Drag the issue here to give it dates' : undefined
+  const noDatesHint =
+    mark.kind === 'none' ? 'Click or drag here from the list to give it dates' : undefined
   const bracketHint = mark.kind === 'bracket' && !mark.own ? 'Dates come from its sub-issues.' : undefined
   const title = noDatesHint ?? bracketHint
+  const dateSpan = row.kind === 'issue' ? laneDateSpan(issueStart, issueDue, mark) : null
   const showDatesGhost = !!(issueId && datesGhost && datesGhost.laneId === issueId)
-  const cursor = barLaneCursor(canEdit, mark, hoverX, issueStart, issueDue, axis, dragging && preview?.id === issueId)
-  const draggable = !!(issueId && issueStart && issueDue && barDraggable(mark))
+  const spanStart = dateSpan?.start ?? null
+  const spanDue = dateSpan?.due ?? null
+  const cursor = barLaneCursor(canEdit, mark, hoverX, spanStart, spanDue, axis, dragging && preview?.id === issueId)
+  const draggable = !!(issueId && dateSpan && barDraggable(mark))
+  const scheduleOnClick = !!(issueId && canEdit && mark.kind === 'none')
 
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -233,16 +253,20 @@ export function GanttLane({
       const el = e.currentTarget
       const rect = el.getBoundingClientRect()
       const x = e.clientX - rect.left
-      if (draggable) {
-        const mode = barHitMode(x, issueStart!, issueDue!, axis, mark)
+      if (draggable && dateSpan) {
+        const mode = barHitMode(x, dateSpan.start, dateSpan.due, axis, mark)
         if (mode) {
-          barDrag.handlers(issueId, issueStart!, issueDue!, mode).onPointerDown(e.nativeEvent, el)
+          barDrag.handlers(issueId, dateSpan.start, dateSpan.due, mode).onPointerDown(e.nativeEvent, el)
           return
         }
       }
+      if (scheduleOnClick) {
+        barDrag.clickToSchedule(issueId).onPointerDown(e.nativeEvent, el)
+        return
+      }
       barDrag.clickToOpen(issueId).onPointerDown(e.nativeEvent, el)
     },
-    [axis, barDrag, draggable, issueDue, issueId, issueStart, mark],
+    [axis, barDrag, dateSpan, draggable, issueId, mark, scheduleOnClick],
   )
 
   return (
@@ -254,10 +278,11 @@ export function GanttLane({
       onDragLeave={canEdit ? onDatesLeave : undefined}
       onDrop={canEdit ? onDatesDrop : undefined}
       className={cn(
-        'relative z-[1] h-8 border-b border-hair',
+        'relative z-[1] h-[34px] border-b border-hair',
         cursor === 'grab' && 'cursor-grab',
         cursor === 'grabbing' && 'cursor-grabbing',
         cursor === 'ew-resize' && 'cursor-ew-resize',
+        scheduleOnClick && 'cursor-pointer',
       )}
       onPointerDown={issueId ? onPointerDown : undefined}
       onPointerMove={
@@ -271,8 +296,9 @@ export function GanttLane({
       onPointerLeave={draggable ? () => setHoverX(null) : undefined}
     >
       <svg width={width} height={H} className="pointer-events-none block overflow-visible">
+        <g transform="translate(0 1)">
         {showDatesGhost && dropGhostGraphic(datesGhost.start, datesGhost.due, axis)}
-        {draw.kind !== 'none' && markGraphic(draw, axis)}
+        {draw.kind !== 'none' && markGraphic(draw, axis, row.kind === 'issue' && row.issue.status === 'in_progress')}
         {text && (
           <text
             x={labelAnchorX(endX, text, today, axis)}
@@ -282,6 +308,7 @@ export function GanttLane({
             {text}
           </text>
         )}
+        </g>
       </svg>
     </div>
   )

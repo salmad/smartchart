@@ -22,7 +22,7 @@ type DatesDropApi = ReturnType<typeof useIssueDatesDrop>
 
 export type { Axis } from './ganttAxis'
 
-const SCALE_H = 30
+const SCALE_H = 36
 
 function groupSpan(live: Issue[], rows: TableRow[], at: number): { start: string; due: string } | null {
   let start: string | null = null
@@ -68,7 +68,7 @@ export function GanttScaleRow({
   const weekends = scale === 'week' ? weekendRects(range, axis) : []
 
   return (
-    <div className="sticky top-0 z-20 h-[30px] border-b border-line bg-app-bg">
+    <div className="sticky top-0 z-20 h-9 border-b border-line bg-app-bg">
       <svg width={width} height={SCALE_H} className="block">
         {weekends.map((w, i) => (
           <rect key={i} x={w.x} y={0} width={w.w} height={SCALE_H} className="fill-panel" />
@@ -77,7 +77,7 @@ export function GanttScaleRow({
           <g key={t.iso}>
             <line x1={t.x} x2={t.x} y1={0} y2={SCALE_H} className="stroke-line" strokeWidth={1} />
             {scale === 'week' && t.iso === today ? null : (
-              <text x={t.x + 6} y={19} className="fill-ink-3 text-[11px]">
+              <text x={t.x + 6} y={22} className="fill-ink-3 text-[11px]">
                 {t.label}
               </text>
             )}

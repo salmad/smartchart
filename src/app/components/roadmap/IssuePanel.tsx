@@ -26,7 +26,7 @@ interface Props {
 
 export function IssuePanel(props: Props) {
   const { issue, roadmapId, repo, onClose } = props
-  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq)
+  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq, issue.bodyRev)
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -41,7 +41,7 @@ export function IssuePanel(props: Props) {
 
   return (
     <aside
-      className="flex w-[560px] shrink-0 flex-col border-l border-line bg-app-bg"
+      className="flex w-[440px] shrink-0 animate-in fade-in-0 slide-in-from-right-4 flex-col border-l border-line bg-app-bg duration-200 ease-out-strong motion-reduce:animate-none"
       aria-label="Issue panel"
     >
       <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-line px-2">

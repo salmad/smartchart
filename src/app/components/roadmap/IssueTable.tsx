@@ -28,7 +28,8 @@ interface Props {
 }
 
 export function IssueTable({ state, view, members, today, onView, canEdit, act, said, onOpenIssue, newIssue = 0 }: Props) {
-  const all = useMemo(() => tableRows(state, view, today), [state, view, today])
+  const names = useMemo(() => new Map(members.map((m) => [m.id, m.name])), [members])
+  const all = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
   const filtersActive = view.chips.length > 0
   const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
   const columns = useMemo(() => liveColumns(view, state.roadmap.fields), [view.columns, state.roadmap.fields])
@@ -205,7 +206,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
             )}
             {body.map((row) =>
               row.kind === 'group' ? (
-                <IssueGroupRow key={`g-${row.key}`} row={row} {...shared} />
+                <IssueGroupRow key={`g-${row.key}`} row={row} person={view.groupBy?.on === 'assignee'} {...shared} />
               ) : (
                 <IssueDataRow
                   key={row.issue.id}

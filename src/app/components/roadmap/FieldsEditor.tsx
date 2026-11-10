@@ -6,7 +6,6 @@ import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
-import { Input } from '../ui/input'
 import { countFieldUse, countOptionUse, newFieldId, newOptionId } from './fieldCounts'
 import { FieldOptions } from './FieldOptions'
 
@@ -85,11 +84,11 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
           </div>
           <div className="max-h-[420px] overflow-y-auto px-6 py-4">
             {fields.length === 0 && <p className="text-[13px] text-ink-3">No fields yet.</p>}
-            <ul className="space-y-3">
+            <ul className="divide-y divide-hair">
               {fields.map((f, i) => (
                 <li
                   key={f.id}
-                  className="rounded-lg border border-line bg-panel p-3"
+                  className="py-3 first:pt-0"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.target !== e.currentTarget) return
@@ -101,7 +100,7 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                     <button
                       type="button"
                       aria-label={`Move field ${f.name}`}
-                      className="mt-0.5 grid size-7 shrink-0 cursor-grab place-items-center rounded text-ink-3 hover:text-ink active:cursor-grabbing"
+                      className="mt-0.5 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink active:cursor-grabbing"
                       onPointerDown={(e) => {
                         e.preventDefault()
                         const grip = e.currentTarget
@@ -127,8 +126,8 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                     <div className="min-w-0 flex-1" data-field-row={f.id}>
                       <div className="flex items-center gap-2">
                         <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-ink-3">{TYPES.find((t) => t.type === f.type)?.label ?? f.type}</span>
-                        <Input
-                          className="h-8 min-w-0 flex-1 text-[13px]"
+                        <input
+                          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13.5px] font-medium text-ink outline-none ring-0 placeholder:text-ink-3 focus:ring-0"
                           defaultValue={f.name}
                           key={`${f.id}-${f.name}`}
                           aria-label="Field name"
@@ -139,9 +138,9 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                           }}
                         />
                         <div className="flex shrink-0 items-center gap-0.5">
-                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0" disabled={i === 0} aria-label="Move field up" onClick={() => moveField(i, i - 1)}><ArrowUp className="size-3.5" /></Button>
-                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0" disabled={i === fields.length - 1} aria-label="Move field down" onClick={() => moveField(i, i + 1)}><ArrowDown className="size-3.5" /></Button>
-                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 text-ink-3 hover:text-bad" aria-label={`Delete ${f.name}`} onClick={() => setPending({ kind: 'field', fieldId: f.id, name: f.name, count: countFieldUse(issues, f.id) })}><Trash2 className="size-3.5" strokeWidth={1.75} /></Button>
+                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 hover:bg-panel" disabled={i === 0} aria-label="Move field up" onClick={() => moveField(i, i - 1)}><ArrowUp className="size-3.5" /></Button>
+                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 hover:bg-panel" disabled={i === fields.length - 1} aria-label="Move field down" onClick={() => moveField(i, i + 1)}><ArrowDown className="size-3.5" /></Button>
+                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 text-ink-3 hover:bg-panel hover:text-bad" aria-label={`Delete ${f.name}`} onClick={() => setPending({ kind: 'field', fieldId: f.id, name: f.name, count: countFieldUse(issues, f.id) })}><Trash2 className="size-3.5" strokeWidth={1.75} /></Button>
                         </div>
                       </div>
                       {f.type === 'choice' && f.options && (
@@ -169,7 +168,7 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
             {refused ? <p role="alert" className="text-[12.5px] text-bad">{refused}</p> : <span />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" className="gap-1.5"><Plus className="size-3.5" strokeWidth={1.75} />Add field</Button>
+                <Button type="button" variant="ghost" className="gap-1.5 text-ink-2 hover:text-ink"><Plus className="size-3.5" strokeWidth={1.75} />Add field</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
                 {TYPES.map((t) => (

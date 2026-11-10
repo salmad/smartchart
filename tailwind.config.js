@@ -32,6 +32,8 @@ export default {
       // Named, never arbitrary: tailwindcss-animate also owns duration-* and ease-*, so duration-[1400ms] or
       // ease-[cubic-bezier(…)] is ambiguous and silently dropped, and the transition snaps at the 150ms default.
       transitionDuration: { 120: '120ms' },
+      // A strong ease-out: quick to respond, long to settle. Use ease-out-strong for anything that arrives or is pressed.
+      transitionTimingFunction: { 'out-strong': 'cubic-bezier(.23,1,.32,1)' },
       fontFamily: {
         sans: ['Geist', '"Geist Fallback"', 'system-ui', 'sans-serif'],
         mono: ['"Geist Mono"', '"Geist Mono Fallback"', 'monospace'],

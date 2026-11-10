@@ -7,23 +7,35 @@ import { MATRIX_ROW_H, rowSlice, visibleRows, VIRT } from './issueTableView'
 import { MatrixTitleCell, matrixRowKey } from './MatrixTitle'
 import { MatrixGroupCellView, MatrixIssueCell } from './MatrixCell'
 import { firstMatrixFocus, useMatrixKeys, type MatrixFocus } from './useMatrixKeys'
+import { MatrixDisplay } from './MatrixDisplay'
+import { Button } from '../ui/button'
 
 interface Props {
   state: RoadmapState
   view: ViewSettings
   members: MemberLite[]
   today: string
+  canEdit?: boolean
   onView: (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
   onOpenIssue?: (id: string) => void
+  onOpenFields?: () => void
 }
 
-const NO_CHOICE = 'Add a choice field to line the work up in columns.'
-const NO_COLUMN = 'Choose a column field in Display.'
+const NO_CHOICE = 'Matrix needs at least one choice field (for example Country or Workstream).'
+const NO_COLUMN = 'Pick which choice field becomes the columns — rows stay as your issue tree, or group by another choice field.'
 
-export function Matrix({ state, view, members, today, onView, onOpenIssue }: Props) {
+export function Matrix({ state, view, members, today, canEdit, onView, onOpenIssue, onOpenFields }: Props) {
   const fields = state.roadmap.fields
   const choiceCount = fields.filter((f) => f.type === 'choice').length
   const matrix = liveMatrix(fields, view.matrix)
+  // Open already working: until someone picks, the first choice field is the rows and the second the columns (one field: the columns).
+  const untouched = view.matrix.rowField === null && view.matrix.cols.length === 0 && view.matrix.pins.length === 0
+  useEffect(() => {
+    if (!untouched) return
+    const [first, second] = fields.filter((f) => f.type === 'choice')
+    if (!first) return
+    onView((v) => ({ ...v, matrix: { ...v.matrix, rowField: second ? first.id : null, cols: [second ? second.id : first.id] } }))
+  }, [untouched, fields, onView])
   const hint = choiceCount === 0 ? NO_CHOICE : matrix.cols.length === 0 ? NO_COLUMN : null
 
   const { cols, rows: allRows } = useMemo(
@@ -114,14 +126,16 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
   }, [focus, rows])
 
   useEffect(() => {
-    if (!focus || !rootRef.current) return
+    if (hint || !focus || !rootRef.current) return
     const root = rootRef.current
     const ae = document.activeElement
     const inPortal = ae instanceof Element && ae.closest('[data-radix-popper-content-wrapper]')
-    if (ae && ae !== document.body && !root.contains(ae) && !inPortal) return
+    if (inPortal) return
+    if (document.querySelector('[data-radix-popper-content-wrapper] [data-state="open"]')) return
+    if (ae && ae !== document.body && !root.contains(ae)) return
     const btn = root.querySelector(`button[data-matrix-cell="${focus.issueId}:${focus.col}"]`)
     if (btn instanceof HTMLButtonElement) btn.focus({ preventScroll: true })
-  }, [focus?.issueId, focus?.col])
+  }, [focus?.issueId, focus?.col, hint])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
@@ -138,8 +152,28 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
 
   if (hint) {
     return (
-      <section role="region" aria-label="Matrix" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <p className="px-8 py-10 text-[13.5px] text-ink-2">{hint}</p>
+      <section
+        role="region"
+        aria-label="Matrix"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto"
+      >
+        <div className="mx-auto w-full max-w-md px-6 py-10">
+          <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">Configure the matrix</h2>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{hint}</p>
+          {choiceCount > 0 ? (
+            <div className="mt-6">
+              <MatrixDisplay fields={fields} view={view} onChange={onView} />
+            </div>
+          ) : canEdit && onOpenFields ? (
+            <Button type="button" size="sm" className="mt-5" onClick={onOpenFields}>
+              Open Fields
+            </Button>
+          ) : null}
+          <p className="mt-4 text-[11.5px] text-ink-3">
+            Or use <span className="text-ink-2">Layout</span> in the toolbar. Matrix rows and columns must be{' '}
+            <span className="text-ink-2">choice</span> fields (add them under Fields).
+          </p>
+        </div>
       </section>
     )
   }
@@ -167,7 +201,7 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
                   key={col.key}
                   scope="col"
                   aria-label={colAria(col.parts)}
-                  className="min-w-[148px] px-2 text-center font-medium"
+                  className="min-w-[160px] border-l border-hair px-3 text-left font-medium"
                 >
                   <MatrixColHead col={col} />
                 </th>
@@ -180,7 +214,7 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
                 <tr
                   key={matrixRowKey(row)}
                   data-matrix-row={row.kind === 'group' ? `group:${row.key}` : row.issue.id}
-                  className="h-[48px]"
+                  className="h-14"
                 >
                   <MatrixTitleCell
                     row={row}
@@ -193,11 +227,9 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
                         <MatrixGroupCellView
                           key={cols[ci]?.key ?? ci}
                           issues={liveIssues}
-                          members={members}
                           col={cols[ci]}
                           cell={cell}
                           show={view.matrix.show}
-                          today={today}
                         />
                       ))
                     : row.cells.map((cell, ci) => (

@@ -1,6 +1,10 @@
+import { useRef } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { TableRow } from '@/engine/roadmaps/view'
 import type { Mark } from '@/engine/roadmaps/gantt'
+import type { Roadmap } from '@/engine/roadmaps/types'
+import { keyOf } from '@/engine/roadmaps/fields'
+import { GroupLabel } from './GroupLabel'
 import { StatusGlyph } from './StatusGlyph'
 import { cn } from '@/app/lib/utils'
 import { listRowDatesDraggable, type useIssueDatesDrop } from './useIssueDatesDrop'
@@ -9,6 +13,8 @@ type DatesDropApi = ReturnType<typeof useIssueDatesDrop>
 
 interface Props {
   row: TableRow
+  roadmap: Roadmap
+  person?: boolean
   mark: Mark | null
   canEdit: boolean
   datesDrop: DatesDropApi
@@ -16,14 +22,12 @@ interface Props {
   onOpenIssue?: (id: string) => void
 }
 
-export function GanttListRow({ row, mark, canEdit, datesDrop, onToggleCollapse, onOpenIssue }: Props) {
+export function GanttListRow({ row, roadmap, person, mark, canEdit, datesDrop, onToggleCollapse, onOpenIssue }: Props) {
+  const dragMoved = useRef(false)
   if (row.kind === 'group') {
     return (
-      <div className="flex h-8 items-center gap-3 border-b border-hair bg-panel px-4 text-[12px] text-ink-2">
-        <span className="font-medium text-ink">{row.label}</span>
-        <span className="text-ink-3">
-          {row.count} {row.count === 1 ? 'issue' : 'issues'}
-        </span>
+      <div className="flex h-[34px] items-center gap-3 border-b border-hair bg-panel px-4 text-[12px] text-ink-2">
+        <GroupLabel label={row.label} count={row.count} person={person} empty={row.key === ''} />
       </div>
     )
   }
@@ -38,15 +42,36 @@ export function GanttListRow({ row, mark, canEdit, datesDrop, onToggleCollapse, 
       data-list-issue={issue.id}
       data-dim={dim ? 'true' : undefined}
       draggable={draggable}
-      onDragStart={draggable ? datesDrop.listDragStart(issue.id) : undefined}
-      onDragEnd={draggable ? datesDrop.listDragEnd : undefined}
+      onDragStart={
+        draggable
+          ? (e) => {
+              dragMoved.current = false
+              datesDrop.listDragStart(issue.id)(e)
+            }
+          : undefined
+      }
+      onDrag={draggable ? () => { dragMoved.current = true } : undefined}
+      onDragEnd={
+        draggable
+          ? (e) => {
+              datesDrop.listDragEnd()
+              if (dragMoved.current) e.preventDefault()
+            }
+          : undefined
+      }
       className={cn(
-        'flex h-8 items-center gap-1.5 border-b border-hair px-2 text-[12.5px] text-ink',
+        'flex h-[34px] items-center gap-1.5 border-b border-hair px-2 text-[12.5px] text-ink',
         dim && 'opacity-50',
         draggable && 'cursor-grab active:cursor-grabbing',
         !draggable && 'cursor-default',
       )}
-      onClick={() => onOpenIssue?.(issue.id)}
+      onClick={() => {
+        if (dragMoved.current) {
+          dragMoved.current = false
+          return
+        }
+        onOpenIssue?.(issue.id)
+      }}
     >
       {Array.from({ length: depth }).map((_, i) => (
         <span key={i} className="inline-block w-5 shrink-0" aria-hidden />
@@ -64,6 +89,7 @@ export function GanttListRow({ row, mark, canEdit, datesDrop, onToggleCollapse, 
         <span className="inline-block w-3 shrink-0" aria-hidden />
       )}
       <StatusGlyph status={issue.status} className="size-3.5 shrink-0" />
+      <span className="w-[52px] shrink-0 whitespace-nowrap pl-1 font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, issue)}</span>
       <span className="min-w-0 truncate">{issue.title}</span>
       {noDates && <span className="ml-auto shrink-0 text-[11px] text-ink-3">No dates</span>}
     </div>

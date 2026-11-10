@@ -3,9 +3,10 @@ import type { MatrixRow } from '@/engine/roadmaps/matrix'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 
 export const ROW_H = 34
-export const GANTT_ROW_H = 32
-/** Default matrix show stacks status, quarter, and progress (~48px with cell padding). */
-export const MATRIX_ROW_H = 48
+/** The Gantt shares the table's row height, so switching views keeps every row where it was. */
+export const GANTT_ROW_H = ROW_H
+/** A matrix card is two lines (status and quarter, then progress): 54px with its padding. */
+export const MATRIX_ROW_H = 56
 export const VIRT = 200
 export const OVERSCAN = 8
 

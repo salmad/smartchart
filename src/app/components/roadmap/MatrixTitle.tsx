@@ -15,7 +15,7 @@ export function MatrixTitleCell({ row, roadmap, onToggleCollapse, onOpenIssue }:
     return (
       <th
         scope="row"
-        className="sticky left-0 z-[1] h-[48px] min-w-[280px] max-w-[360px] border-b border-hair bg-panel px-3 text-left text-[12px] font-medium text-ink"
+        className="sticky left-0 z-[1] h-14 min-w-[280px] max-w-[360px] border-b border-hair bg-panel px-3 text-left text-[12px] font-medium text-ink"
       >
         <div className="flex items-center gap-2">
           <span>{row.label}</span>
@@ -32,7 +32,7 @@ export function MatrixTitleCell({ row, roadmap, onToggleCollapse, onOpenIssue }:
     <th
       scope="row"
       className={cn(
-        'sticky left-0 z-[1] h-[48px] min-w-[280px] max-w-[360px] border-b border-hair bg-app-bg px-2 text-left text-[12.5px] font-normal text-ink',
+        'sticky left-0 z-[1] h-14 min-w-[280px] max-w-[360px] border-b border-hair bg-app-bg px-2 text-left text-[12.5px] font-normal text-ink',
         dim && 'opacity-45',
       )}
     >
@@ -54,11 +54,11 @@ export function MatrixTitleCell({ row, roadmap, onToggleCollapse, onOpenIssue }:
         )}
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-baseline gap-2 text-left hover:text-ink-2"
+          className="flex min-w-0 flex-1 flex-col items-start text-left leading-tight hover:text-ink-2"
           onClick={() => onOpenIssue?.(issue.id)}
         >
-          <span className="truncate">{issue.title}</span>
-          <span className="shrink-0 font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, issue)}</span>
+          <span className="w-full truncate font-medium">{issue.title}</span>
+          <span className="font-mono text-[11px] text-ink-3">{keyOf(roadmap, issue)}</span>
         </button>
       </div>
     </th>

@@ -1,16 +1,16 @@
 import type { Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
 import type { MatrixCol, MatrixCell as Cell, MatrixGroupCell } from '@/engine/roadmaps/matrix'
-import { cellWorst } from '@/engine/roadmaps/matrix'
+import { cellWorst, dueQuarter } from '@/engine/roadmaps/matrix'
 import { keyOf } from '@/engine/roadmaps/fields'
 import { dateSpan } from '@/engine/roadmaps/rollup'
-import { dueQuarter } from '@/engine/roadmaps/matrix'
 import type { MatrixSettings } from '@/engine/roadmaps/view'
-import { StatusGlyph } from './StatusGlyph'
-import { ProgressBar } from './ProgressBar'
 import { MatrixPicker } from './MatrixPicker'
+import { CardBar, CardFace, cardLateRing, cardRing, cardSurface, statusFace, toneOf } from './MatrixCard'
 import { Avatar } from '../Avatar'
 import { cellProgress, colAria, displayDueQuarter, issueOverdue, sharedAssignee } from './matrixCellMeta'
 import { cn } from '@/app/lib/utils'
+
+const TD = 'min-w-[160px] border-b border-l border-hair p-1'
 
 interface IssueCellProps {
   roadmap: Roadmap
@@ -28,86 +28,64 @@ interface IssueCellProps {
 
 interface GroupCellProps {
   issues: Issue[]
-  members: MemberLite[]
   col: MatrixCol
   cell: MatrixGroupCell
   show: MatrixSettings['show']
-  today: string
 }
 
 function AssigneeDisc({ assignee, members }: { assignee: string; members: MemberLite[] }) {
   const name = members.find((m) => m.id === assignee)?.name ?? ''
   if (!name) return null
   return (
-    <span className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-line text-[10px] text-ink-2">
+    <span className="relative flex size-[18px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-line text-[9px] text-ink-2">
       <Avatar name={name} image={null} />
     </span>
   )
 }
 
-function CellExtras({
-  issues,
-  members,
-  ids,
-  singleId,
-  show,
-}: {
-  issues: Issue[]
-  members: MemberLite[]
-  ids: string[]
-  singleId: string | null
-  show: MatrixSettings['show']
-  today: string
-}) {
-  const prog = show.progress ? cellProgress(issues, ids, singleId) : null
-  const quarter = show.dates
-    ? singleId
-      ? (() => {
-          const due = dateSpan(issues, singleId).due
-          return due ? dueQuarter(due) : null
-        })()
-      : displayDueQuarter(issues, ids)
-    : null
-  const assignee = show.assignee ? sharedAssignee(issues, ids) : undefined
-  return (
-    <>
-      {quarter && <span className="text-[10.5px] tabular-nums text-ink-2">{quarter}</span>}
-      {prog !== null && <ProgressBar value={prog} />}
-      {show.assignee && assignee !== undefined && assignee !== null && (
-        <AssigneeDisc assignee={assignee} members={members} />
-      )}
-    </>
-  )
+interface Shown {
+  quarter: string | null
+  progress: number | null
+  assignee: React.ReactNode
+}
+
+/** What the Display switches ask a cell to show beyond its status. */
+function shown(
+  issues: Issue[],
+  members: MemberLite[],
+  ids: string[],
+  singleId: string | null,
+  show: MatrixSettings['show'],
+): Shown {
+  const due = singleId ? dateSpan(issues, singleId).due : null
+  const quarter = show.dates ? (singleId ? (due ? dueQuarter(due) : null) : displayDueQuarter(issues, ids)) : null
+  const who = show.assignee ? sharedAssignee(issues, ids) : undefined
+  return {
+    quarter,
+    progress: show.progress ? cellProgress(issues, ids, singleId) : null,
+    assignee: who ? <AssigneeDisc assignee={who} members={members} /> : null,
+  }
 }
 
 export function MatrixEmptyCell() {
   return (
-    <td className="min-w-[148px] border-b border-hair px-2 py-1 text-center text-[13px] text-ink-3" aria-label="Not planned here">
+    <td className={cn(TD, 'text-center text-[13px] text-white/20')} aria-label="Not planned here">
       —
     </td>
   )
 }
 
-export function MatrixGroupCellView({ issues, members, col, cell, show, today }: GroupCellProps) {
+/** A group row's cell rolls its issues up: one bar and a share, on the panel. */
+export function MatrixGroupCellView({ issues, col, cell, show }: GroupCellProps) {
+  const progress = show.progress ? cellProgress(issues, cell.issueIds, null) : null
   return (
-    <td
-      className={cn(
-        'min-w-[148px] border-b border-hair bg-panel px-2 py-1',
-        cell.worst && 'shadow-[inset_0_0_0_1px_theme(colors.bad)]',
+    <td className={cn(TD, 'bg-panel')} aria-label={`${colAria(col.parts)} group`}>
+      {progress !== null && (
+        <span className="flex h-3 items-center gap-2 px-2">
+          <CardBar value={progress} />
+          <span className="w-8 text-right text-[11.5px] tabular-nums text-ink-2">{Math.round(progress * 100)}%</span>
+        </span>
       )}
-      aria-label={`${colAria(col.parts)} group`}
-    >
-      <div className="flex flex-col items-center gap-0.5 py-0.5">
-        {show.status && cell.issueIds.length > 0 && <span className="h-3.5 w-3.5" aria-hidden />}
-        <CellExtras
-          issues={issues}
-          members={members}
-          ids={cell.issueIds}
-          singleId={null}
-          show={show}
-          today={today}
-        />
-      </div>
     </td>
   )
 }
@@ -128,16 +106,11 @@ export function MatrixIssueCell({
   if (cell.kind === 'empty') return <MatrixEmptyCell />
 
   if (cell.kind === 'many') {
-    const worst = cellWorst(issues, cell.issueIds, today)
+    const late = cellWorst(issues, cell.issueIds, today)
     const label = `${colAria(col.parts)}: ${cell.issueIds.length} issues`
-    const statusOn = show.status
+    const s = shown(issues, members, cell.issueIds, null, show)
     return (
-      <td
-        className={cn(
-          'min-w-[148px] border-b border-hair px-2 py-1',
-          worst && 'shadow-[inset_0_0_0_1px_theme(colors.bad)]',
-        )}
-      >
+      <td className={TD}>
         <MatrixPicker
           roadmap={roadmap}
           issues={issues}
@@ -147,9 +120,15 @@ export function MatrixIssueCell({
           focused={focused}
           onFocus={onFocus}
           onOpen={onOpen}
+          className={cn(cardSurface, late ? cardLateRing : cardRing)}
         >
-          {statusOn && <span className="h-3.5 w-3.5" aria-hidden />}
-          <CellExtras issues={issues} members={members} ids={cell.issueIds} singleId={null} show={show} today={today} />
+          <CardFace
+            label={`${cell.issueIds.length} issues`}
+            quarter={s.quarter}
+            assignee={s.assignee}
+            progress={s.progress}
+            tone={toneOf(null, late)}
+          />
         </MatrixPicker>
       </td>
     )
@@ -158,27 +137,29 @@ export function MatrixIssueCell({
   const issue = issues.find((i) => i.id === cell.issueId)
   if (!issue) return <MatrixEmptyCell />
 
-  const overdue = issueOverdue(issue, today)
-  const aria = `Open ${keyOf(roadmap, issue)} ${issue.title} in ${colAria(col.parts)}`
-
+  const late = issueOverdue(issue, today)
+  const s = shown(issues, members, [issue.id], issue.id, show)
+  const face = show.status ? statusFace(issue.status) : null
   return (
-    <td
-      className={cn('min-w-[148px] border-b border-hair px-2 py-1', overdue && 'shadow-[inset_0_0_0_1px_theme(colors.bad)]')}
-    >
+    <td className={TD}>
       <button
         type="button"
         tabIndex={focused ? 0 : -1}
         data-matrix-cell={cellTag}
-        aria-label={aria}
-        className={cn(
-          'flex w-full flex-col items-center gap-0.5 rounded px-1 py-0.5 outline-none hover:bg-white/[.03] focus-visible:ring-1 focus-visible:ring-line',
-          focused && 'ring-1 ring-line',
-        )}
+        aria-label={`Open ${keyOf(roadmap, issue)} ${issue.title} in ${colAria(col.parts)}`}
+        className={cn(cardSurface, late ? cardLateRing : cardRing, 'cursor-pointer')}
         onFocus={onFocus}
         onClick={() => onOpen(issue.id)}
       >
-        {show.status && <StatusGlyph status={issue.status} className="size-3.5" />}
-        <CellExtras issues={issues} members={members} ids={[issue.id]} singleId={issue.id} show={show} today={today} />
+        <CardFace
+          glyph={face?.glyph}
+          label={face?.label}
+          quarter={late && s.quarter ? 'Overdue' : s.quarter}
+          late={late}
+          assignee={s.assignee}
+          progress={s.progress}
+          tone={toneOf(issue.status, late)}
+        />
       </button>
     </td>
   )

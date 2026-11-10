@@ -5,6 +5,7 @@ import { keyOf } from '@/engine/roadmaps/fields'
 import { StatusGlyph } from './StatusGlyph'
 import { Command, CommandItem, CommandList } from '../ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import { menuCommand, menuSurface } from './roadmapChrome'
 
 interface Props {
   roadmap: Roadmap
@@ -15,11 +16,12 @@ interface Props {
   focused: boolean
   onFocus: () => void
   onOpen: (id: string) => void
+  className?: string
   children?: ReactNode
 }
 
 /** Lists top-most issues in a matrix cell; one pick opens the panel. */
-export function MatrixPicker({ roadmap, issues, ids, label, cellTag, focused, onFocus, onOpen, children }: Props) {
+export function MatrixPicker({ roadmap, issues, ids, label, cellTag, focused, onFocus, onOpen, className, children }: Props) {
   const [open, setOpen] = useState(false)
   const picks = ids.map((id) => issues.find((i) => i.id === id)).filter((i): i is Issue => !!i)
 
@@ -31,18 +33,14 @@ export function MatrixPicker({ roadmap, issues, ids, label, cellTag, focused, on
           tabIndex={focused ? 0 : -1}
           data-matrix-cell={cellTag}
           aria-label={label}
-          className={cn(
-            'flex min-h-[28px] w-full flex-col items-center justify-center gap-0.5 rounded px-1 py-0.5 outline-none hover:bg-white/[.03] focus-visible:ring-1 focus-visible:ring-line',
-            focused && 'ring-1 ring-line',
-          )}
+          className={cn(className, 'cursor-pointer')}
           onFocus={onFocus}
         >
-          <span className="text-[12px] font-medium tabular-nums text-ink">{ids.length}</span>
           {children}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" className="w-72 p-0" aria-label="Issues in cell">
-        <Command>
+      <PopoverContent align="center" sideOffset={6} className={cn('w-72 overflow-hidden p-1', menuSurface)} aria-label="Issues in cell">
+        <Command className={menuCommand}>
           <CommandList label="Issues">
             {picks.map((i) => (
               <CommandItem

@@ -2,6 +2,19 @@ import { expect } from '@playwright/test'
 import { signInAsDev } from './dev-account'
 
 export const EMPTY = 'No issues yet. Press C or New issue to add the first.'
+
+/** Progressive filter: property → operator → value. */
+export async function addStatusFilter(
+  page: import('@playwright/test').Page,
+  statusName: string,
+  is = true,
+) {
+  await page.getByRole('button', { name: 'Filter' }).click()
+  const panel = page.getByLabel('Add a filter')
+  await panel.getByRole('option', { name: 'Status' }).click()
+  await panel.getByRole('option', { name: is ? 'Is' : 'Is not', exact: true }).click()
+  await panel.getByRole('option', { name: statusName, exact: true }).click()
+}
 export const ROADMAPS_KEY = 'smartchart.roadmaps.v1'
 
 export function signInRoadmapTests() {

@@ -3,6 +3,7 @@ import { cn } from '@/app/lib/utils'
 import { Calendar } from '../../ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { dateOf, isoOf, shortDate, todayIso } from '../dates'
+import { menuSurface } from '../roadmapChrome'
 
 interface Props {
   value: string | null
@@ -30,8 +31,9 @@ export function DateCell({ value, label, disabled, late, placeholder, onPick }: 
           {value ? shortDate(value, today) : <span className="text-ink-3">{placeholder ?? '—'}</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-0" aria-label={label}>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-auto overflow-hidden p-0', menuSurface)} aria-label={label}>
         <Calendar
+          className="bg-transparent"
           mode="single"
           selected={value ? dateOf(value) : undefined}
           defaultMonth={value ? dateOf(value) : undefined}
@@ -40,7 +42,7 @@ export function DateCell({ value, label, disabled, late, placeholder, onPick }: 
         {value && (
           <button
             type="button"
-            className="w-full border-t border-line px-3 py-2 text-left text-[12px] text-ink-2 hover:bg-raise hover:text-ink"
+            className="w-full border-t border-line px-3 py-2 text-left text-[12px] text-ink-2 transition-colors hover:bg-panel hover:text-ink"
             onClick={() => { onPick(null); setOpen(false) }}
           >
             Clear date

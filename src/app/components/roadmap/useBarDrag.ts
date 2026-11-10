@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { dragDates, type DragMode } from '@/engine/roadmaps/gantt'
+import { dragDates, dropDates, type DragMode } from '@/engine/roadmaps/gantt'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { toast } from 'sonner'
 import type { Axis } from './ganttAxis'
@@ -143,6 +143,42 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
     [act, axis.px, canEdit, onOpen],
   )
 
+  const clickToSchedule = useCallback(
+    (id: string) => ({
+      onPointerDown: (e: PointerEvent, target: HTMLElement) => {
+        if (!canEdit || e.button !== 0) return
+        e.preventDefault()
+        e.stopPropagation()
+        const rect = target.getBoundingClientRect()
+        const startX = e.clientX
+        const startY = e.clientY
+        const end = (ev: PointerEvent | MouseEvent) => {
+          cleanup()
+          const dist = Math.hypot(clientX(ev) - startX, clientY(ev) - startY)
+          if (dist >= DRAG_CLICK_PX) return
+          const x = clientX(ev) - rect.left
+          const { start, due } = dropDates(axis.dayAt(x))
+          const out = act({ op: 'set', ids: [id], props: { start, due } })
+          if (out !== 'ok') toast(out)
+        }
+        const cleanup = () => {
+          window.removeEventListener('pointerup', end)
+          window.removeEventListener('pointercancel', end)
+          window.removeEventListener('mouseup', end)
+        }
+        window.addEventListener('pointerup', end)
+        window.addEventListener('pointercancel', end)
+        window.addEventListener('mouseup', end)
+        try {
+          target.setPointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
+      },
+    }),
+    [act, axis, canEdit],
+  )
+
   const clickToOpen = useCallback(
     (id: string) => ({
       onPointerDown: (e: PointerEvent, target: HTMLElement) => {
@@ -176,5 +212,5 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
     [canEdit, finishClick, onOpen],
   )
 
-  return { preview, dragging, handlers, clickToOpen, cancel }
+  return { preview, dragging, handlers, clickToSchedule, clickToOpen, cancel }
 }

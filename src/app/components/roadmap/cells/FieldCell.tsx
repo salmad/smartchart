@@ -2,7 +2,8 @@ import { useState } from 'react'
 import type { FieldDef, FieldValue, MemberLite } from '@/engine/roadmaps/types'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { Command, CommandItem, CommandList } from '../../ui/command'
-import { Input } from '../../ui/input'
+import { cn } from '@/app/lib/utils'
+import { menuCommand, menuSurface } from '../roadmapChrome'
 import { PersonCell } from './PersonCell'
 
 interface Props {
@@ -44,28 +45,19 @@ export function FieldCell({ field, value, members, disabled, onPick }: Props) {
       />
     )
   }
-  if (field.type === 'number') {
+  if (field.type === 'number' || field.type === 'text') {
     return (
-      <Input
-        type="number"
+      <input
+        type={field.type === 'number' ? 'number' : 'text'}
         disabled={disabled}
         value={value === undefined ? '' : String(value)}
         onChange={(e) => {
           const t = e.target.value
-          onPick(t === '' ? null : Number(t))
+          if (field.type === 'number') onPick(t === '' ? null : Number(t))
+          else onPick(t.trim() === '' ? null : t)
         }}
-        className="h-7 border-0 bg-transparent px-1 text-[12px] shadow-none hover:bg-raise focus-visible:ring-0"
-        aria-label={field.name}
-      />
-    )
-  }
-  if (field.type === 'text') {
-    return (
-      <Input
-        disabled={disabled}
-        value={value === undefined ? '' : String(value)}
-        onChange={(e) => onPick(e.target.value.trim() === '' ? null : e.target.value)}
-        className="h-7 border-0 bg-transparent px-1 text-[12px] shadow-none hover:bg-raise focus-visible:ring-0"
+        placeholder="—"
+        className="w-full min-w-0 border-0 bg-transparent px-1 py-0.5 text-[12px] text-ink-2 tabular-nums placeholder:text-ink-3 hover:bg-raise focus:bg-raise focus:outline-none focus:ring-0"
         aria-label={field.name}
       />
     )
@@ -78,8 +70,8 @@ export function FieldCell({ field, value, members, disabled, onPick }: Props) {
           {shown || <span className="text-ink-3">—</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-48 p-0" aria-label={`Choose ${field.name}`}>
-        <Command>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-48 overflow-hidden p-1', menuSurface)} aria-label={`Choose ${field.name}`}>
+        <Command className={menuCommand}>
           <CommandList label={field.name}>
             <CommandItem value="none" onSelect={() => { onPick(null); setOpen(false) }} className="text-[13px]">
               Clear

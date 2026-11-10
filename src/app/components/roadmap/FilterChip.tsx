@@ -16,7 +16,7 @@ export function FilterChip({ chip, fields, onRemove }: Props) {
       <span>{label}</span>
       <button
         type="button"
-        className="-mr-0.5 rounded p-0.5 text-ink-3 hover:bg-white/[.06] hover:text-ink"
+        className="-mr-0.5 rounded p-0.5 text-ink-3 transition-colors hover:bg-panel hover:text-ink"
         aria-label={`Remove ${label}`}
         onClick={onRemove}
       >

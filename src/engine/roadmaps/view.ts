@@ -168,6 +168,7 @@ function groupKey(
   issue: Issue,
   groupBy: ViewSettings['groupBy'],
   defs: FieldDef[],
+  names?: ReadonlyMap<string, string>,
 ): { key: string; label: string } {
   if (!groupBy) return { key: '', label: '' }
   if (groupBy.on === 'status') {
@@ -175,7 +176,7 @@ function groupKey(
   }
   if (groupBy.on === 'assignee') {
     const a = issue.assignee
-    return { key: a ?? '', label: a ?? 'Unassigned' }
+    return { key: a ?? '', label: a ? (names?.get(a) ?? a) : 'Unassigned' }
   }
   if (groupBy.on !== 'field') return { key: '', label: '' }
   const def = defs.find((d) => d.id === groupBy.field)
@@ -262,7 +263,8 @@ export function liveChips(defs: FieldDef[], chips: Chip[]): Chip[] {
   return out
 }
 
-export function tableRows(s: RoadmapState, v: ViewSettings, today: string): TableRow[] {
+/** `names` maps a person's id to their name, so an Assignee group reads and sorts by name, not by id. */
+export function tableRows(s: RoadmapState, v: ViewSettings, today: string, names?: ReadonlyMap<string, string>): TableRow[] {
   const live = s.issues.filter((i) => i.deletedAt === null)
   const idx = buildIndex(live)
   const collapsed = new Set(v.collapsed)
@@ -280,13 +282,15 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string): Tabl
   )
   const buckets = new Map<string, { label: string; tops: Issue[] }>()
   for (const t of tops) {
-    const { key, label } = groupKey(t, v.groupBy, s.roadmap.fields)
+    const { key, label } = groupKey(t, v.groupBy, s.roadmap.fields, names)
     const b = buckets.get(key) ?? { label, tops: [] }
     b.tops.push(t)
     buckets.set(key, b)
   }
 
   const keys = [...buckets.keys()].sort((a, b) => {
+    // The group with no value (Unassigned, Empty) goes last.
+    if (a === '' || b === '') return a === b ? 0 : a === '' ? 1 : -1
     const la = buckets.get(a)?.label ?? ''
     const lb = buckets.get(b)?.label ?? ''
     return la.localeCompare(lb)

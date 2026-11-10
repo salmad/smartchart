@@ -3,6 +3,8 @@ import type { Issue, Roadmap } from '@/engine/roadmaps/types'
 import { keyOf } from '@/engine/roadmaps/fields'
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '../ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import { cn } from '@/app/lib/utils'
+import { menuCommand, menuSurface } from './roadmapChrome'
 
 interface Props {
   roadmap: Roadmap
@@ -27,8 +29,8 @@ export function ParentPicker({ roadmap, parent, choices, onPick }: Props) {
           ) : <span className="text-ink-3">None</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-0" aria-label="Choose parent">
-        <Command>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-72 overflow-hidden p-0', menuSurface)} aria-label="Choose parent">
+        <Command className={cn(menuCommand, '[&_[cmdk-list]]:p-1')}>
           <CommandInput placeholder="Find an issue…" className="text-[13px]" />
           <CommandList label="Parents">
             <CommandEmpty>No issue fits.</CommandEmpty>

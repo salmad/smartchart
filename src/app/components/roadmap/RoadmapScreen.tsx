@@ -13,7 +13,7 @@ import { Crumbs } from '../Crumbs'
 import type { Crumb } from '../sidebar/usePageCrumbs'
 import { useRoadmap } from './useRoadmap'
 import { FieldsEditor } from './FieldsEditor'
-import { TopBar } from './TopBar'
+import { TopBar, ViewTabs } from './TopBar'
 import { FilterBar } from './FilterBar'
 import { IssueTable } from './IssueTable'
 import { Gantt } from './Gantt'
@@ -59,8 +59,11 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const [newIssue, setNewIssue] = useState(0)
   const live = view.state?.issues.filter((i) => i.deletedAt === null) ?? []
   const isChecks = viewSettings.layout === 'checks'
+  const isMatrix = viewSettings.layout === 'matrix'
+  const isGantt = viewSettings.layout === 'gantt'
   const showTable = hasIssues || customFields.length > 0 || newIssue > 0
-  const showMain = showTable || isChecks
+  // Matrix/Gantt need setup UI even before issues or extra fields exist.
+  const showMain = showTable || isChecks || isMatrix || isGantt
 
   const checkReport = useMemo(() => {
     const chips = liveChips(customFields, viewSettings.chips)
@@ -115,21 +118,27 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
         <div className="flex flex-none items-center gap-0.5">
           <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
         </div>
-        <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-[13px]">
           <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-ink-3">/</span>
           <Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} />
           <span className="truncate text-ink-2">{title}</span>
         </nav>
+        {view.state && <ViewTabs view={viewSettings} checksBadge={checkReport.issues} onView={setViewSettings} />}
+        <div className="min-w-0 flex-1" />
         {view.state && (
           <TopBar
             canEdit={canEdit}
             fields={customFields}
             view={viewSettings}
-            checksBadge={checkReport.issues}
             onView={setViewSettings}
             onFields={() => setFieldsOpen(true)}
-            onNewIssue={() => { setPanelId(null); setNewIssue((n) => n + 1) }}
+            onNewIssue={() => {
+              setPanelId(null)
+              // Only the table and the Gantt have a place to type a title; Matrix and Checks hand over to the table.
+              if (isMatrix || isChecks) setViewSettings((v) => ({ ...v, layout: 'table' }))
+              setNewIssue((n) => n + 1)
+            }}
             onToday={() => setTodayRequest((n) => n + 1)}
           />
         )}
@@ -159,7 +168,16 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
           )}
           {view.state && !routeIssue && showMain && (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              {hasIssues && <FilterBar fields={customFields} view={viewSettings} issueCount={liveCount} onChange={setViewSettings} />}
+              {hasIssues && (
+                <FilterBar
+                  fields={customFields}
+                  members={view.members}
+                  today={today}
+                  view={viewSettings}
+                  issueCount={liveCount}
+                  onChange={setViewSettings}
+                />
+              )}
               {viewSettings.layout === 'table' ? (
                 <IssueTable
                   state={view.state}
@@ -176,6 +194,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               ) : viewSettings.layout === 'gantt' ? (
                 <Gantt
                   state={view.state}
+                  members={view.members}
                   view={viewSettings}
                   today={today}
                   onView={setViewSettings}
@@ -184,6 +203,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   onOpenIssue={openIssue}
                   todayRequest={todayRequest}
                   said={view.said}
+                  newIssue={newIssue}
                 />
               ) : viewSettings.layout === 'checks' ? (
                 <Checks report={checkReport} hasIssues={hasIssues} onOpen={openCheck} />
@@ -193,8 +213,10 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   view={viewSettings}
                   members={view.members}
                   today={today}
+                  canEdit={canEdit}
                   onView={setViewSettings}
                   onOpenIssue={openIssue}
+                  onOpenFields={() => setFieldsOpen(true)}
                 />
               )}
             </div>

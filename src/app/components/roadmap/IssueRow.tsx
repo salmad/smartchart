@@ -8,6 +8,7 @@ import { StatusCell } from './cells/StatusCell'
 import { PersonCell } from './cells/PersonCell'
 import { DateCell } from './cells/DateCell'
 import { FieldCell } from './cells/FieldCell'
+import { GroupLabel } from './GroupLabel'
 import { ProgressBar } from './ProgressBar'
 import { Checkbox } from '../ui/checkbox'
 import { todayIso } from './dates'
@@ -45,6 +46,7 @@ interface IssueProps extends ColProps {
 
 interface GroupProps extends ColProps {
   row: Extract<TableRow, { kind: 'group' }>
+  person?: boolean
 }
 
 interface ComposeProps extends ColProps {
@@ -54,15 +56,12 @@ interface ComposeProps extends ColProps {
   onCommit: () => void
 }
 
-export function IssueGroupRow({ row, colCount }: GroupProps) {
+export function IssueGroupRow({ row, colCount, person }: GroupProps) {
   return (
     <tr className="h-[34px] border-b border-hair bg-panel text-[12px] text-ink-2">
       <td colSpan={colCount} className="px-4">
         <div className="flex items-center gap-3">
-          <span className="font-medium text-ink">{row.label}</span>
-          <span className="text-ink-3">
-            {row.count} {row.count === 1 ? 'issue' : 'issues'}
-          </span>
+          <GroupLabel label={row.label} count={row.count} person={person} empty={row.key === ''} />
           {row.progress !== null && (
             <span className="ml-auto">
               <ProgressBar value={row.progress} />
@@ -76,7 +75,7 @@ export function IssueGroupRow({ row, colCount }: GroupProps) {
 
 export function ComposeIssueRow({ draft, depth, columns, onTitle, onCommit }: ComposeProps) {
   return (
-    <tr className="h-[34px] border-b border-hair bg-white/[.045] text-[12.5px] shadow-[inset_2px_0_0_theme(colors.ink)]">
+    <tr className="h-[34px] animate-in fade-in-0 border-b border-hair bg-white/[.045] text-[12.5px] shadow-[inset_2px_0_0_theme(colors.ink)] duration-150 motion-reduce:animate-none">
       <td className="w-6 px-1" />
       <td className="w-8 px-2" />
       <td className="w-24 px-2 font-mono text-ink-3">…</td>
@@ -144,10 +143,10 @@ export function IssueDataRow({
         if ((e.target as HTMLElement).closest('[data-skip-select]')) return
         onFocus()
         if (canEdit && e.shiftKey) onSelect(true)
+        else if (!e.metaKey && !e.ctrlKey && (e.target as HTMLElement).closest('[data-open]')) onOpen?.()
       }}
-      onDoubleClick={() => onOpen?.()}
       className={cn(
-        'group h-[34px] border-b border-hair text-[12.5px] text-ink outline-none hover:bg-white/[.025]',
+        'group h-[34px] border-b border-hair text-[12.5px] text-ink outline-none transition-colors duration-120 hover:bg-white/[.025]',
         dim && 'opacity-45',
         (focused || selected) && 'bg-white/[.045] shadow-[inset_2px_0_0_theme(colors.ink)] hover:bg-white/[.045]',
         drag.dragging === issue.id && 'opacity-40',
@@ -168,8 +167,8 @@ export function IssueDataRow({
           onPick={(status) => { act({ op: 'set', ids: [issue.id], props: { status } }) }}
         />
       </td>
-      <td className="w-20 whitespace-nowrap px-2 font-mono text-[12px] text-ink-3">{keyOf(roadmap, issue)}</td>
-      <td className="min-w-[200px] max-w-[420px] px-2">
+      <td data-open className="w-20 cursor-pointer whitespace-nowrap px-2 font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, issue)}</td>
+      <td data-open className="min-w-[200px] max-w-[420px] cursor-pointer px-2">
         <div className="flex min-w-0 items-center gap-1">
           {Array.from({ length: depth }).map((_, i) => (
             <span key={i} className="inline-block w-4 shrink-0" aria-hidden />

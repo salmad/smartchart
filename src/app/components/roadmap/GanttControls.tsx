@@ -1,7 +1,8 @@
+import { CalendarDays } from 'lucide-react'
 import { SCALES, SCALE_LABEL, type Scale } from '@/engine/roadmaps/gantt'
 import { Button } from '../ui/button'
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group'
-import { cn } from '@/app/lib/utils'
+import { Seg } from '../LookPanel'
+import { chromeGhost, segTrack } from './roadmapChrome'
 
 interface Props {
   scale: Scale
@@ -13,28 +14,9 @@ interface Props {
 export function GanttControls({ scale, onScale, onToday }: Props) {
   return (
     <div className="flex items-center gap-1.5">
-      <ToggleGroup
-        type="single"
-        value={scale}
-        onValueChange={(v) => { if (v) onScale(v as Scale) }}
-        aria-label="Scale"
-        className="rounded-md p-0.5"
-      >
-        {SCALES.map((s) => (
-          <ToggleGroupItem
-            key={s}
-            value={s}
-            aria-label={SCALE_LABEL[s]}
-            className={cn(
-              'h-7 rounded-md border-0 px-2.5 text-[12.5px] font-medium text-ink-3 shadow-none',
-              'hover:bg-white/[.03] hover:text-ink data-[state=on]:bg-raise data-[state=on]:text-ink data-[state=on]:shadow-none data-[state=on]:hover:bg-raise',
-            )}
-          >
-            {SCALE_LABEL[s]}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
-      <Button variant="ghost" size="sm" className="h-8 text-ink-3 hover:text-ink" onClick={onToday}>
+      <Seg label="Scale" value={scale} onChange={onScale} options={SCALES.map((s) => [s, SCALE_LABEL[s]])} className={segTrack} />
+      <Button variant="ghost" size="sm" className={`h-8 gap-1.5 ${chromeGhost}`} onClick={onToday}>
+        <CalendarDays className="size-[15px]" strokeWidth={1.75} aria-hidden />
         Today
       </Button>
     </div>

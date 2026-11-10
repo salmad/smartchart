@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import type { FieldDef } from '@/engine/roadmaps/types'
 import type { ViewSettings } from '@/engine/roadmaps/view'
@@ -5,6 +6,7 @@ import { Button } from '../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { cn } from '@/app/lib/utils'
 import { MatrixDisplay } from './MatrixDisplay'
+import { chromeGhost, menuRow, menuSurface } from './roadmapChrome'
 
 const SORTS: { id: ViewSettings['sort']; label: string }[] = [
   { id: 'order', label: 'Order' },
@@ -38,37 +40,49 @@ export function DisplayMenu({ fields, view, onChange }: Props) {
 
   const setGroup = (groupBy: ViewSettings['groupBy']) => onChange({ ...view, groupBy })
 
+  const [open, setOpen] = useState(false)
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-ink-3 hover:text-ink">
+        <Button variant="ghost" size="sm" className={cn('h-8 gap-1.5', chromeGhost)}>
           <SlidersHorizontal className="size-[15px]" strokeWidth={1.75} aria-hidden />
-          Display
+          {view.layout === 'matrix' ? 'Layout' : 'Display'}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} className="w-72 text-[13px]" aria-label="Display settings">
-        <section className="mb-4">
-          <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Sort</h3>
-          <div className="flex flex-wrap gap-1">
-            {SORTS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className={cn(
-                  'rounded-md px-2 py-1 text-[12px]',
-                  view.sort === s.id ? 'bg-raise font-medium text-ink' : 'text-ink-2 hover:text-ink',
-                )}
-                onClick={() => onChange({ ...view, sort: s.id })}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </section>
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className={cn(
+          'p-4 text-[13px]',
+          menuSurface,
+          view.layout === 'matrix'
+            ? 'max-h-[min(70vh,28rem)] w-[min(22rem,calc(100vw-1.5rem))] overflow-y-auto'
+            : 'w-72',
+        )}
+        aria-label={view.layout === 'matrix' ? 'Matrix layout' : 'Display settings'}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         {view.layout === 'matrix' ? (
           <MatrixDisplay fields={fields} view={view} onChange={onChange} />
         ) : (
           <>
+            <section className="mb-4">
+              <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Sort</h3>
+              <div className="flex flex-wrap gap-1">
+                {SORTS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    aria-pressed={view.sort === s.id}
+                    className={menuRow}
+                    onClick={() => onChange((v) => ({ ...v, sort: s.id }))}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </section>
             <section className="mb-4">
               <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Group by</h3>
               <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
@@ -121,14 +135,7 @@ export function DisplayMenu({ fields, view, onChange }: Props) {
 
 function GroupPick({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      className={cn(
-        'rounded-md px-2 py-1 text-left text-[12px]',
-        on ? 'bg-raise font-medium text-ink' : 'text-ink-2 hover:text-ink',
-      )}
-      onClick={onClick}
-    >
+    <button type="button" aria-pressed={on} className={menuRow} onClick={onClick}>
       {label}
     </button>
   )

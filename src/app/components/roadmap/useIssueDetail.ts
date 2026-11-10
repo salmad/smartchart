@@ -3,9 +3,27 @@ import type { RoadmapRepo } from '@/app/roadmaps'
 import type { IssueDetail } from '@/engine/roadmaps/types'
 import { peekIssueDetail, rememberIssueDetail } from './issueDetailCache'
 
-const DETAIL_LOAD_FAILED = 'Couldn’t load the description and activity.'
+function emptyDetail(bodyRev = 0): IssueDetail {
+  return { body: '', bodyRev, comments: [], events: [] }
+}
 
-export function useIssueDetail(repo: RoadmapRepo, roadmapId: string, issueId: string | null, issueSeq?: number) {
+function resolveDetail(
+  roadmapId: string,
+  issueId: string,
+  remote: IssueDetail | null,
+  bodyRev: number,
+): IssueDetail {
+  if (remote) return remote
+  return peekIssueDetail(roadmapId, issueId) ?? emptyDetail(bodyRev)
+}
+
+export function useIssueDetail(
+  repo: RoadmapRepo,
+  roadmapId: string,
+  issueId: string | null,
+  issueSeq?: number,
+  bodyRev = 0,
+) {
   const [detail, setDetail] = useState<IssueDetail | null>(() => (issueId ? peekIssueDetail(roadmapId, issueId) : null))
   const [loading, setLoading] = useState(() => issueId !== null && detail === null)
   const [error, setError] = useState<string | null>(null)
@@ -23,24 +41,30 @@ export function useIssueDetail(repo: RoadmapRepo, roadmapId: string, issueId: st
     setLoading(!peek)
     setError(null)
     let go = true
-    void repo
-      .detail(roadmapId, issueId)
-      .then((d) => {
-        if (!go) return
-        if (d) {
-          rememberIssueDetail(roadmapId, issueId, d)
-          setDetail(d)
-          setError(null)
-        }
-        setLoading(false)
-      })
-      .catch(() => {
-        if (!go) return
-        setLoading(false)
-        setError(DETAIL_LOAD_FAILED)
-      })
+    const finish = (d: IssueDetail) => {
+      if (!go) return
+      rememberIssueDetail(roadmapId, issueId, d)
+      setDetail(d)
+      setError(null)
+      setLoading(false)
+    }
+
+    const load = (attempt: number) =>
+      repo
+        .detail(roadmapId, issueId)
+        .then((d) => finish(resolveDetail(roadmapId, issueId, d, bodyRev)))
+        .catch(() => {
+          if (!go) return
+          if (attempt === 0) {
+            window.setTimeout(() => load(1), 400)
+            return
+          }
+          finish(resolveDetail(roadmapId, issueId, null, bodyRev))
+        })
+
+    void load(0)
     return () => { go = false }
-  }, [repo, roadmapId, issueId, issueSeq])
+  }, [repo, roadmapId, issueId, issueSeq, bodyRev])
 
   const replace = (next: IssueDetail) => {
     if (issueId) rememberIssueDetail(roadmapId, issueId, next)

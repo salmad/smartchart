@@ -1,6 +1,6 @@
 /* Roadmaps on the dev account: create from the sidebar, empty table screen, kept across reload. */
 import { test, expect } from '@playwright/test'
-import { EMPTY, openFreshRoadmap, ROADMAPS_KEY, seedSixIssues, signInRoadmapTests } from './roadmap-helpers'
+import { addStatusFilter, EMPTY, openFreshRoadmap, ROADMAPS_KEY, seedSixIssues, signInRoadmapTests } from './roadmap-helpers'
 
 signInRoadmapTests()
 test.use({ viewport: { width: 1440, height: 900 } })
@@ -53,15 +53,13 @@ test('table nesting, filters, grouping and saved view', async ({ page }) => {
   await expect(page.getByText('Shipped piece')).toBeVisible()
   await expect(page.getByText('France task A')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Filter' }).click()
-  await page.getByRole('button', { name: 'Status is Blocked', exact: true }).click()
+  await addStatusFilter(page, 'Blocked')
   await expect(page.getByRole('button', { name: 'Remove Status is Blocked' })).toBeVisible()
   await expect(page.getByText('Blocked piece')).toBeVisible()
   await expect(page.locator('tr', { hasText: 'UK launch' })).toHaveClass(/opacity-45/)
   await page.getByRole('button', { name: 'Remove Status is Blocked' }).click()
 
-  await page.getByRole('button', { name: 'Filter' }).click()
-  await page.getByRole('button', { name: 'Status is not Done', exact: true }).click()
+  await addStatusFilter(page, 'Done', false)
   await expect(page.getByRole('button', { name: 'Remove Status is not Done' })).toBeVisible()
   await expect(page.getByText('Shipped piece')).toHaveCount(0)
   await page.getByRole('button', { name: 'Remove Status is not Done' }).click()
@@ -70,8 +68,7 @@ test('table nesting, filters, grouping and saved view', async ({ page }) => {
   await page.getByRole('button', { name: 'Collapse UK launch' }).click()
   await expect(page.getByText('Shipped piece')).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Filter' }).click()
-  await page.getByRole('button', { name: 'Status is not Done', exact: true }).click()
+  await addStatusFilter(page, 'Done', false)
 
   await page.getByRole('button', { name: 'Display' }).click()
   await page.getByLabel('Display settings').getByRole('button', { name: 'Country' }).click()
