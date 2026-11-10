@@ -10,14 +10,29 @@ export type Chip =
   | { on: 'field'; field: string; is: boolean; values: (string | null)[] }
   | { on: 'dates'; when: 'overdue' | 'before' | 'after'; date?: string }
 
+export interface MatrixSettings {
+  rowField: string | null
+  cols: string[]
+  pins: { fieldId: string; optionId: string }[]
+  show: { status: boolean; progress: boolean; dates: boolean; assignee: boolean }
+}
+
 export interface ViewSettings {
   chips: Chip[]
   groupBy: { on: 'status' | 'assignee' } | { on: 'field'; field: string } | null
   sort: 'order' | 'due' | 'start' | 'status' | 'updated'
   columns: string[]
   collapsed: string[]
-  layout: 'table' | 'gantt'
+  layout: 'table' | 'gantt' | 'matrix'
   scale: Scale
+  matrix: MatrixSettings
+}
+
+export const DEFAULT_MATRIX: MatrixSettings = {
+  rowField: null,
+  cols: [],
+  pins: [],
+  show: { status: true, progress: true, dates: true, assignee: false },
 }
 
 export type TableRow =
@@ -32,6 +47,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   collapsed: [],
   layout: 'table',
   scale: 'month',
+  matrix: DEFAULT_MATRIX,
 }
 
 const DONE: Status[] = ['done', 'cancelled']
