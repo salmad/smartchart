@@ -4,6 +4,7 @@ import type { ViewSettings } from '@/engine/roadmaps/view'
 import { Button } from '../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { cn } from '@/app/lib/utils'
+import { MatrixDisplay } from './MatrixDisplay'
 
 const SORTS: { id: ViewSettings['sort']; label: string }[] = [
   { id: 'order', label: 'Order' },
@@ -64,49 +65,55 @@ export function DisplayMenu({ fields, view, onChange }: Props) {
             ))}
           </div>
         </section>
-        <section className="mb-4">
-          <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Group by</h3>
-          <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
-            <GroupPick label="None" on={view.groupBy === null} onClick={() => setGroup(null)} />
-            <GroupPick label="Status" on={view.groupBy?.on === 'status'} onClick={() => setGroup({ on: 'status' })} />
-            <GroupPick label="Assignee" on={view.groupBy?.on === 'assignee'} onClick={() => setGroup({ on: 'assignee' })} />
-            {fields.filter((f) => f.type === 'choice' || f.type === 'person').map((f) => (
-              <GroupPick
-                key={f.id}
-                label={f.name}
-                on={view.groupBy?.on === 'field' && view.groupBy.field === f.id}
-                onClick={() => setGroup({ on: 'field', field: f.id })}
-              />
-            ))}
-          </div>
-        </section>
-        <section>
-          <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Columns</h3>
-          <div className="flex flex-col gap-1">
-            {COLS.map((c) => (
-              <label key={c.id} className="flex cursor-pointer items-center gap-2 text-[12px] text-ink-2">
-                <input
-                  type="checkbox"
-                  className="size-3.5 accent-ink"
-                  checked={view.columns.includes(c.id)}
-                  onChange={() => toggleCol(c.id)}
-                />
-                {c.label}
-              </label>
-            ))}
-            {fields.map((f) => (
-              <label key={f.id} className="flex cursor-pointer items-center gap-2 text-[12px] text-ink-2">
-                <input
-                  type="checkbox"
-                  className="size-3.5 accent-ink"
-                  checked={view.columns.includes(f.id)}
-                  onChange={() => toggleCol(f.id)}
-                />
-                {f.name}
-              </label>
-            ))}
-          </div>
-        </section>
+        {view.layout === 'matrix' ? (
+          <MatrixDisplay fields={fields} view={view} onChange={onChange} />
+        ) : (
+          <>
+            <section className="mb-4">
+              <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Group by</h3>
+              <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
+                <GroupPick label="None" on={view.groupBy === null} onClick={() => setGroup(null)} />
+                <GroupPick label="Status" on={view.groupBy?.on === 'status'} onClick={() => setGroup({ on: 'status' })} />
+                <GroupPick label="Assignee" on={view.groupBy?.on === 'assignee'} onClick={() => setGroup({ on: 'assignee' })} />
+                {fields.filter((f) => f.type === 'choice' || f.type === 'person').map((f) => (
+                  <GroupPick
+                    key={f.id}
+                    label={f.name}
+                    on={view.groupBy?.on === 'field' && view.groupBy.field === f.id}
+                    onClick={() => setGroup({ on: 'field', field: f.id })}
+                  />
+                ))}
+              </div>
+            </section>
+            <section>
+              <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Columns</h3>
+              <div className="flex flex-col gap-1">
+                {COLS.map((c) => (
+                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-[12px] text-ink-2">
+                    <input
+                      type="checkbox"
+                      className="size-3.5 accent-ink"
+                      checked={view.columns.includes(c.id)}
+                      onChange={() => toggleCol(c.id)}
+                    />
+                    {c.label}
+                  </label>
+                ))}
+                {fields.map((f) => (
+                  <label key={f.id} className="flex cursor-pointer items-center gap-2 text-[12px] text-ink-2">
+                    <input
+                      type="checkbox"
+                      className="size-3.5 accent-ink"
+                      checked={view.columns.includes(f.id)}
+                      onChange={() => toggleCol(f.id)}
+                    />
+                    {f.name}
+                  </label>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   )

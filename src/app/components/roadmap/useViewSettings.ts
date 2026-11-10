@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { DEFAULT_VIEW, type ViewSettings } from '@/engine/roadmaps/view'
+import { DEFAULT_MATRIX, DEFAULT_VIEW, type ViewSettings } from '@/engine/roadmaps/view'
 
 const storeKey = (id: string) => `roadmap-view:${id}`
 
 function mergeView(raw: Partial<ViewSettings>): ViewSettings {
+  const layout =
+    raw.layout === 'gantt' || raw.layout === 'matrix' ? raw.layout : DEFAULT_VIEW.layout
+  const matrixRaw = raw.matrix
   return {
     ...DEFAULT_VIEW,
     ...raw,
@@ -12,8 +15,16 @@ function mergeView(raw: Partial<ViewSettings>): ViewSettings {
     collapsed: raw.collapsed ?? DEFAULT_VIEW.collapsed,
     groupBy: raw.groupBy ?? null,
     sort: raw.sort ?? DEFAULT_VIEW.sort,
-    layout: raw.layout ?? DEFAULT_VIEW.layout,
+    layout,
     scale: raw.scale ?? DEFAULT_VIEW.scale,
+    matrix: {
+      ...DEFAULT_MATRIX,
+      ...matrixRaw,
+      rowField: matrixRaw?.rowField ?? DEFAULT_MATRIX.rowField,
+      cols: matrixRaw?.cols ?? DEFAULT_MATRIX.cols,
+      pins: matrixRaw?.pins ?? DEFAULT_MATRIX.pins,
+      show: { ...DEFAULT_MATRIX.show, ...matrixRaw?.show },
+    },
   }
 }
 

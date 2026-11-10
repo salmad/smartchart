@@ -17,6 +17,7 @@ import { TopBar } from './TopBar'
 import { FilterBar } from './FilterBar'
 import { IssueTable } from './IssueTable'
 import { Gantt } from './Gantt'
+import { Matrix } from './Matrix'
 import { useViewSettings } from './useViewSettings'
 import { IssuePanel } from './IssuePanel'
 import { IssuePage } from './IssuePage'
@@ -151,7 +152,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   onOpenIssue={openIssue}
                   newIssue={newIssue}
                 />
-              ) : (
+              ) : viewSettings.layout === 'gantt' ? (
                 <Gantt
                   state={view.state}
                   view={viewSettings}
@@ -163,6 +164,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   todayRequest={todayRequest}
                   said={view.said}
                 />
+              ) : (
+                <Matrix state={view.state} view={viewSettings} />
               )}
             </div>
           )}

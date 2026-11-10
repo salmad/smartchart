@@ -46,6 +46,14 @@ export function TopBar({ canEdit, fields, view, onView, onFields, onNewIssue, on
         >
           Gantt
         </button>
+        <button
+          type="button"
+          className={tabClass(view.layout === 'matrix')}
+          aria-pressed={view.layout === 'matrix'}
+          onClick={() => setLayout('matrix')}
+        >
+          Matrix
+        </button>
       </nav>
       {view.layout === 'gantt' && onToday && (
         <GanttControls scale={view.scale} onScale={setScale} onToday={onToday} />
