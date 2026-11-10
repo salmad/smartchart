@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { tableRows } from '@/engine/roadmaps/view'
-import type { RoadmapOp } from '@/engine/roadmaps/ops'
+import { buildDuplicateCopies, type RoadmapOp } from '@/engine/roadmaps/ops'
 import { IssueDataRow, IssueGroupRow, ComposeIssueRow } from './IssueRow'
 import { BulkBar } from './BulkBar'
 import { IssueDeleteDialog } from './IssueDeleteDialog'
@@ -140,6 +140,14 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     selection.clear()
   }
 
+  const onDuplicate = () => {
+    const ids = [...selection.selected]
+    if (!ids.length) return
+    const copies = buildDuplicateCopies(ids, liveIssues, newIssueId)
+    if (!copies.length) return
+    if (act({ op: 'duplicate', copies }) === 'ok') selection.replace(copies.map((c) => c.id))
+  }
+
   const composeDepth = useMemo(() => {
     if (!compose) return 0
     if (compose.after) {
@@ -173,6 +181,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
           onStatus={(status) => bulkSet({ status })}
           onAssignee={(assignee) => bulkSet({ assignee })}
           onField={(fieldId, value) => bulkSet({ fields: { [fieldId]: value } })}
+          onDuplicate={onDuplicate}
           onDelete={() => setDeleteIds([...selection.selected])}
           onClear={selection.clear}
         />

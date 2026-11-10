@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Copy, Trash2 } from 'lucide-react'
 import type { FieldDef, MemberLite, Status } from '@/engine/roadmaps/types'
 import { STATUS_LABEL, STATUSES } from '@/engine/roadmaps/types'
 import { Button } from '../ui/button'
@@ -12,11 +12,12 @@ interface Props {
   onStatus: (status: Status) => void
   onAssignee: (id: string | null) => void
   onField: (fieldId: string, value: string | null) => void
+  onDuplicate: () => void
   onDelete: () => void
   onClear: () => void
 }
 
-export function BulkBar({ count, fields, members, onStatus, onAssignee, onField, onDelete, onClear }: Props) {
+export function BulkBar({ count, fields, members, onStatus, onAssignee, onField, onDuplicate, onDelete, onClear }: Props) {
   const choices = fields.filter((f) => f.type === 'choice')
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-4 py-2 text-[12px]">
@@ -74,6 +75,10 @@ export function BulkBar({ count, fields, members, onStatus, onAssignee, onField,
         </Popover>
       ))}
       <span className="flex-1" />
+      <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={onDuplicate}>
+        <Copy className="size-3.5" strokeWidth={2} aria-hidden />
+        Duplicate
+      </Button>
       <Button variant="ghost" size="sm" className="h-7 gap-1 text-bad hover:text-bad" onClick={onDelete}>
         <Trash2 className="size-3.5" strokeWidth={2} aria-hidden />
         Delete

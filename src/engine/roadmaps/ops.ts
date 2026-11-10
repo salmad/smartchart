@@ -159,6 +159,25 @@ function selectionRoots(copies: { sourceId: string }[], issues: Issue[]): string
   return roots
 }
 
+/** Mint ids for every live node under the selection roots before a duplicate op. */
+export function buildDuplicateCopies(
+  selected: Iterable<string>,
+  issues: Issue[],
+  mint: () => string,
+): { id: string; sourceId: string }[] {
+  const sourceIds = [...selected]
+  if (!sourceIds.length) return []
+  const stubs = sourceIds.map((sourceId) => ({ sourceId, id: '' }))
+  const roots = selectionRoots(stubs, issues)
+  const copies: { id: string; sourceId: string }[] = []
+  for (const rootId of roots) {
+    for (const node of liveSubtree(issues, rootId)) {
+      copies.push({ id: mint(), sourceId: node.id })
+    }
+  }
+  return copies
+}
+
 function issuesToRestore(all: Issue[], startId: string): Issue[] {
   const byId = new Map(all.map((i) => [i.id, i]))
   let cur = byId.get(startId)

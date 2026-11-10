@@ -80,3 +80,30 @@ test('blocked filter pivots the UK cell to Chase', async ({ page }) => {
   const parentRow = matrix.locator('tr[data-matrix-row="U"]')
   await expect(parentRow.getByRole('button', { name: /Open SCL-4 Chase.*UK/ })).toBeVisible()
 })
+
+test('duplicate country row then set field shows it in the matrix', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedWorkedMatrix(page)
+  await page.reload()
+
+  const nav = page.getByRole('navigation', { name: 'Roadmap views' })
+  await nav.getByRole('button', { name: 'Matrix' }).click()
+  await configureMatrixDisplay(page)
+  const matrix = page.getByRole('region', { name: 'Matrix' })
+  await expect(matrix.getByRole('columnheader', { name: 'UK' })).toBeVisible()
+  await expect(matrix.getByRole('button', { name: 'Duplicate' })).toHaveCount(0)
+
+  await nav.getByRole('button', { name: 'Table' }).click()
+  const ukRow = page.locator('tr[data-issue-id="U-uk"]')
+  await ukRow.getByLabel('Select Underwriting').check()
+  await page.getByRole('button', { name: 'Duplicate' }).click()
+  await expect(page.getByText('3 selected')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Set Country' }).click()
+  await page.getByLabel('Country', { exact: true }).getByRole('option', { name: 'Singapore' }).click()
+  await expect(page.getByText(/\d+ selected/)).toHaveCount(0)
+
+  await nav.getByRole('button', { name: 'Matrix' }).click()
+  await expect(matrix.getByRole('columnheader', { name: 'Singapore' })).toBeVisible()
+  await expect(matrix.getByRole('button', { name: /Open SCL-7 Underwriting in Singapore/ })).toBeVisible()
+})

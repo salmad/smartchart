@@ -41,5 +41,10 @@ export function useSelection(order: string[]) {
     anchor.current = null
   }, [])
 
-  return { selected, toggle, pick, selectAll, clear }
+  const replace = useCallback((ids: string[]) => {
+    setSelected(new Set(ids))
+    anchor.current = ids[0] ?? null
+  }, [])
+
+  return { selected, toggle, pick, selectAll, clear, replace }
 }
