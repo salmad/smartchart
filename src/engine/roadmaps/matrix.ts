@@ -77,10 +77,10 @@ function branchVisible(
 ): boolean {
   const node = idx.byId.get(id)
   if (!node) return false
-  if (matchesChips(node, chips, today)) return true
+  if (matchesChips(node, chips, today, idx)) return true
   if (collapsed.has(id)) {
     for (const k of idx.children(id)) {
-      if (matchesChips(k, chips, today) || branchVisible(k.id, idx, chips, today, collapsed)) return true
+      if (matchesChips(k, chips, today, idx) || branchVisible(k.id, idx, chips, today, collapsed)) return true
     }
     return false
   }
@@ -135,7 +135,7 @@ function hitsInRowColumn(
   today: string,
 ): Issue[] {
   const candidates = subtree(rootId, idx)
-    .filter((i) => matchesChips(i, chips, today) && columnMatches(i, col))
+    .filter((i) => matchesChips(i, chips, today, idx) && columnMatches(i, col))
   return topMostInSubtree(candidates, idx, rootId)
 }
 
@@ -169,7 +169,8 @@ function buildColumns(
 ): MatrixCol[] {
   if (!matrix.cols.length) return []
   const byId = new Map(defs.map((d) => [d.id, d]))
-  const hits = live.filter((i) => matchesChips(i, chips, today))
+  const idx = buildIndex(live)
+  const hits = live.filter((i) => matchesChips(i, chips, today, idx))
   const pinSet = (fieldId: string) =>
     new Set(matrix.pins.filter((p) => p.fieldId === fieldId).map((p) => p.optionId))
 
@@ -356,7 +357,7 @@ function walkMatrixIssues(
     const kids = idx.children(node.id)
     const hasChildren = kids.length > 0
     const open = !collapsed.has(node.id)
-    const selfMatch = matchesChips(node, chips, today)
+    const selfMatch = matchesChips(node, chips, today, idx)
     const dim = chips.length > 0 && !selfMatch
     out.push({
       kind: 'issue',

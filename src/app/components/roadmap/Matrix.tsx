@@ -121,7 +121,7 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
     if (ae && ae !== document.body && !root.contains(ae) && !inPortal) return
     const btn = root.querySelector(`button[data-matrix-cell="${focus.issueId}:${focus.col}"]`)
     if (btn instanceof HTMLButtonElement) btn.focus({ preventScroll: true })
-  }, [focus.issueId, focus.col])
+  }, [focus?.issueId, focus?.col])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
@@ -211,7 +211,7 @@ export function Matrix({ state, view, members, today, onView, onOpenIssue }: Pro
                           show={view.matrix.show}
                           today={today}
                           cellTag={`${row.issue.id}:${ci}`}
-                          focused={focus?.issueId === row.issue.id && focus.col === ci}
+                          focused={focus?.issueId === row.issue.id && focus?.col === ci}
                           onFocus={() => setFocus({ issueId: row.issue.id, col: ci })}
                           onOpen={open}
                         />

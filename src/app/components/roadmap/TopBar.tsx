@@ -10,6 +10,7 @@ interface Props {
   canEdit: boolean
   fields: FieldDef[]
   view: ViewSettings
+  checksBadge?: number
   onView: (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
   onFields?: () => void
   onNewIssue?: () => void
@@ -23,7 +24,7 @@ const tabClass = (active: boolean) =>
   )
 
 /** Roadmap chrome below the crumbs: Table / Gantt tabs, Display, Fields, and New issue. */
-export function TopBar({ canEdit, fields, view, onView, onFields, onNewIssue, onToday }: Props) {
+export function TopBar({ canEdit, fields, view, checksBadge = 0, onView, onFields, onNewIssue, onToday }: Props) {
   const setLayout = (layout: ViewSettings['layout']) => onView({ ...view, layout })
   const setScale = (scale: Scale) => onView({ ...view, scale })
 
@@ -54,11 +55,25 @@ export function TopBar({ canEdit, fields, view, onView, onFields, onNewIssue, on
         >
           Matrix
         </button>
+        <button
+          type="button"
+          className={cn(tabClass(view.layout === 'checks'), 'inline-flex items-center gap-1.5')}
+          aria-pressed={view.layout === 'checks'}
+          aria-label={checksBadge > 0 ? `Checks, ${checksBadge} issues` : 'Checks'}
+          onClick={() => setLayout('checks')}
+        >
+          Checks
+          {checksBadge > 0 && (
+            <span className="rounded-full bg-bad/15 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-bad">
+              {checksBadge}
+            </span>
+          )}
+        </button>
       </nav>
       {view.layout === 'gantt' && onToday && (
         <GanttControls scale={view.scale} onScale={setScale} onToday={onToday} />
       )}
-      <DisplayMenu fields={fields} view={view} onChange={onView} />
+      {view.layout !== 'checks' && <DisplayMenu fields={fields} view={view} onChange={onView} />}
       {canEdit && (
         <>
           <Button variant="ghost" size="sm" className="h-8 text-ink-3 hover:text-ink" onClick={onFields}>Fields</Button>

@@ -126,6 +126,25 @@ describe('roadmap view', () => {
     ])
   })
 
+  it('filters with a check chip and dims ancestors', () => {
+    const issues = [
+      issue({ id: 'g', parentId: null, sortKey: 'a' }),
+      issue({ id: 'c', parentId: 'g', sortKey: 'a', due: '2026-01-01', status: 'todo' }),
+    ]
+    const s = state({}, issues)
+    const rows = tableRows(s, view({ chips: [{ on: 'check', id: 'overdue' }] }), today)
+    const issueRows = rows.filter((r) => r.kind === 'issue')
+    expect(issueRows.map((r) => [r.issue.id, r.dim])).toEqual([
+      ['g', true],
+      ['c', false],
+    ])
+  })
+
+  it('keeps a check chip when a field is removed from liveChips', () => {
+    const chips: Chip[] = [{ on: 'check', id: 'blocked' }, { on: 'field', field: 'gone', is: true, values: ['x'] }]
+    expect(liveChips([country], chips)).toEqual([{ on: 'check', id: 'blocked' }])
+  })
+
   it('puts count and progress on group rows', () => {
     const issues = [
       issue({ id: 'a', status: 'todo', sortKey: 'a' }),

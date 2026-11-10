@@ -1,5 +1,6 @@
 import type { Scale } from './gantt.js'
-import { buildIndex } from './index.js'
+import { issueFailsCheck, type CheckId } from './checks.js'
+import { buildIndex, type IssueIndex } from './index.js'
 import { progress } from './rollup.js'
 import type { FieldDef, FieldValue, Issue, RoadmapState, Status } from './types.js'
 import { STATUS_LABEL, STATUSES } from './types.js'
@@ -9,6 +10,7 @@ export type Chip =
   | { on: 'assignee'; is: boolean; values: (string | null)[] }
   | { on: 'field'; field: string; is: boolean; values: (string | null)[] }
   | { on: 'dates'; when: 'overdue' | 'before' | 'after'; date?: string }
+  | { on: 'check'; id: CheckId }
 
 export interface MatrixSettings {
   rowField: string | null
@@ -23,7 +25,7 @@ export interface ViewSettings {
   sort: 'order' | 'due' | 'start' | 'status' | 'updated'
   columns: string[]
   collapsed: string[]
-  layout: 'table' | 'gantt' | 'matrix'
+  layout: 'table' | 'gantt' | 'matrix' | 'checks'
   scale: Scale
   matrix: MatrixSettings
 }
@@ -60,8 +62,10 @@ function fieldEmpty(issue: Issue, fieldId: string): boolean {
   return !(fieldId in issue.fields)
 }
 
-function chipMatches(issue: Issue, chip: Chip, today: string): boolean {
+function chipMatches(issue: Issue, chip: Chip, today: string, idx: IssueIndex): boolean {
   switch (chip.on) {
+    case 'check':
+      return issueFailsCheck(chip.id, issue, idx, today)
     case 'status': {
       const hit = chip.values.includes(issue.status)
       return chip.is ? hit : !hit
@@ -88,13 +92,13 @@ function chipMatches(issue: Issue, chip: Chip, today: string): boolean {
       return due > chip.date
     }
     default:
-      return true
+      return false
   }
 }
 
-export function matchesChips(issue: Issue, chips: Chip[], today: string): boolean {
+export function matchesChips(issue: Issue, chips: Chip[], today: string, idx: IssueIndex): boolean {
   if (!chips.length) return true
-  return chips.every((c) => chipMatches(issue, c, today))
+  return chips.every((c) => chipMatches(issue, c, today, idx))
 }
 
 export function sortIssues(list: Issue[], sort: ViewSettings['sort']): Issue[] {
@@ -147,10 +151,10 @@ function branchVisible(
 ): boolean {
   const node = idx.byId.get(id)
   if (!node) return false
-  if (matchesChips(node, chips, today)) return true
+  if (matchesChips(node, chips, today, idx)) return true
   if (collapsed.has(id)) {
     for (const k of idx.children(id)) {
-      if (matchesChips(k, chips, today) || branchVisible(k.id, idx, chips, today, collapsed)) return true
+      if (matchesChips(k, chips, today, idx) || branchVisible(k.id, idx, chips, today, collapsed)) return true
     }
     return false
   }
@@ -201,7 +205,7 @@ function walkVisibleIssues(
     const kids = idx.children(node.id)
     const hasChildren = kids.length > 0
     const open = !collapsed.has(node.id)
-    const selfMatch = matchesChips(node, chips, today)
+    const selfMatch = matchesChips(node, chips, today, idx)
     const dim = chips.length > 0 && !selfMatch
     out.push({ kind: 'issue', issue: node, depth: d, dim, hasChildren, open })
     count++

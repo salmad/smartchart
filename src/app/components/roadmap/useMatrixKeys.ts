@@ -18,6 +18,12 @@ function editingField(target: EventTarget | null): boolean {
   return !!target.closest('[contenteditable=""], [contenteditable="true"]')
 }
 
+function rowTitleControl(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const btn = target.closest('th button')
+  return !!btn && !btn.hasAttribute('data-matrix-cell')
+}
+
 interface RowSlice {
   kind: 'group' | 'issue'
   issueId?: string
@@ -93,6 +99,7 @@ export function useMatrixKeys({ root, rows, colCount, focus, setFocus, onActivat
         return
       }
       if (e.key === 'Enter') {
+        if (rowTitleControl(e.target)) return
         e.preventDefault()
         onActivate(focus.issueId, focus.col)
       }

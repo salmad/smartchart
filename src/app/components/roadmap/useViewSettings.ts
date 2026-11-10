@@ -5,7 +5,7 @@ const storeKey = (id: string) => `roadmap-view:${id}`
 
 function mergeView(raw: Partial<ViewSettings>): ViewSettings {
   const layout =
-    raw.layout === 'gantt' || raw.layout === 'matrix' ? raw.layout : DEFAULT_VIEW.layout
+    raw.layout === 'gantt' || raw.layout === 'matrix' || raw.layout === 'checks' ? raw.layout : DEFAULT_VIEW.layout
   const matrixRaw = raw.matrix
   return {
     ...DEFAULT_VIEW,

@@ -18,7 +18,10 @@ import { FilterBar } from './FilterBar'
 import { IssueTable } from './IssueTable'
 import { Gantt } from './Gantt'
 import { Matrix } from './Matrix'
+import { Checks } from './Checks'
 import { useViewSettings } from './useViewSettings'
+import { runChecks, type CheckId } from '@/engine/roadmaps/checks'
+import { liveChips } from '@/engine/roadmaps/view'
 import { IssuePanel } from './IssuePanel'
 import { IssuePage } from './IssuePage'
 const EMPTY = 'No issues yet. Press C or New issue to add the first.'
@@ -54,7 +57,25 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const hasIssues = liveCount > 0
   // New issue bumps this; the table opens a compose row at the end for each bump (and shows itself to do it).
   const [newIssue, setNewIssue] = useState(0)
+  const live = view.state?.issues.filter((i) => i.deletedAt === null) ?? []
+  const isChecks = viewSettings.layout === 'checks'
   const showTable = hasIssues || customFields.length > 0 || newIssue > 0
+  const showMain = showTable || isChecks
+
+  const checkReport = useMemo(() => {
+    const chips = liveChips(customFields, viewSettings.chips)
+    return runChecks(live, { today, chips })
+  }, [customFields, live, today, viewSettings.chips])
+
+  const openCheck = useCallback(
+    (id: CheckId) => {
+      setViewSettings((v) => {
+        const chips = v.chips.filter((c) => c.on !== 'check')
+        return { ...v, layout: 'table', chips: [...chips, { on: 'check', id }] }
+      })
+    },
+    [setViewSettings],
+  )
   const knownFields = useRef<Set<string>>(new Set())
   const fieldsPrimed = useRef(false)
 
@@ -67,7 +88,6 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
     else setPanelId(issueId)
   }, [id, routeIssue])
 
-  const live = view.state?.issues.filter((i) => i.deletedAt === null) ?? []
   const openId = routeIssue ?? panelId
   const openIssueRow = openId ? live.find((i) => i.id === openId) ?? null : null
   // The roadmap's chrome is dark whatever the user's Look, so an issue's body draws on Ink (Paper's dark type would vanish on it).
@@ -106,6 +126,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
             canEdit={canEdit}
             fields={customFields}
             view={viewSettings}
+            checksBadge={checkReport.issues}
             onView={setViewSettings}
             onFields={() => setFieldsOpen(true)}
             onNewIssue={() => { setPanelId(null); setNewIssue((n) => n + 1) }}
@@ -136,7 +157,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               onOpenIssue={openIssue}
             />
           )}
-          {view.state && !routeIssue && showTable && (
+          {view.state && !routeIssue && showMain && (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               {hasIssues && <FilterBar fields={customFields} view={viewSettings} issueCount={liveCount} onChange={setViewSettings} />}
               {viewSettings.layout === 'table' ? (
@@ -164,6 +185,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   todayRequest={todayRequest}
                   said={view.said}
                 />
+              ) : viewSettings.layout === 'checks' ? (
+                <Checks report={checkReport} hasIssues={hasIssues} onOpen={openCheck} />
               ) : (
                 <Matrix
                   state={view.state}
@@ -193,7 +216,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               onOpenIssue={openIssue}
             />
           )}
-          {view.state && !routeIssue && !showTable && (
+          {view.state && !routeIssue && !showMain && (
             <p className="px-8 py-10 text-[13.5px] text-ink-2">{EMPTY}</p>
           )}
         </main>

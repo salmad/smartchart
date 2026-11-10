@@ -1,3 +1,4 @@
+import { CHECK_COPY } from '@/engine/roadmaps/checks'
 import type { Chip } from '@/engine/roadmaps/view'
 import type { FieldDef } from '@/engine/roadmaps/types'
 import { STATUS_LABEL, type Status } from '@/engine/roadmaps/types'
@@ -31,6 +32,8 @@ export function chipLabel(chip: Chip, fields: FieldDef[]): string {
       if (chip.when === 'after' && chip.date) return `Due after ${chip.date}`
       return 'Due'
     }
+    case 'check':
+      return CHECK_COPY[chip.id].label
     default:
       return 'Filter'
   }
