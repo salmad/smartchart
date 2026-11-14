@@ -72,8 +72,8 @@ async function run(e: RoadmapEnv): Promise<ToolReply> {
     }
     if (said === 'foreign') {
       if (out.parent) throw new ToolError('refused', NO_EDIT, 'Create it in a workspace you can edit.')
-      const role = (await e.workspaces()).find((w) => w.id === out.workspaceId)?.role
-      throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(out.workspaceId ?? '')
+      const role = (await e.workspaces()).find((w) => w.id === workspaceId)?.role
+      throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(workspaceId ?? '')
     }
     throw new ToolError('refused', said, 'Fix it and call again; nothing was changed.')
   }
