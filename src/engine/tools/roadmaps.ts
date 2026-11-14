@@ -1,12 +1,37 @@
 /* Roadmap tools: list, create, and read a roadmap. Issue writes come in later tasks. */
-import { PREFIX } from '../roadmaps/types.js'
+import { CHECK_IDS } from '../roadmaps/checks.js'
+import { buildIndex } from '../roadmaps/index.js'
+import { PREFIX, STATUSES, type IssueEvent } from '../roadmaps/types.js'
+import type { Chip } from '../roadmaps/view.js'
 import { pageArg, pageSchema, type PageArg } from './pages.js'
-import { issueView, liveTree, todayUtc } from './roadmap-view.js'
-import { READ, ToolError, WRITE, tool, type LoadedRoadmap, type ToolContext } from './types.js'
+import { issueView, matchingIssues, todayUtc } from './roadmap-view.js'
+import { READ, ToolError, WRITE, tool, type JsonSchema, type LoadedRoadmap, type ToolContext } from './types.js'
 
 const ROADMAP_ID = { type: 'string', description: 'The roadmap id from list_roadmaps or create_roadmap.' } as const
 const WORKSPACE_ID = { type: 'string', description: 'A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.' } as const
 const PREFIX_BAD = 'Prefix must be 2–6 uppercase letters or digits, starting with a letter.'
+const ISSUE_ID = { type: 'string', description: 'An issue id from get_roadmap or list_issues.' } as const
+const NULLABLE_STRING: JsonSchema = { oneOf: [{ type: 'string' }, { type: 'null' }] }
+const CHIP_SCHEMA: JsonSchema = {
+  oneOf: [
+    { type: 'object', additionalProperties: false, required: ['on', 'is', 'values'], properties: { on: { type: 'string', enum: ['status'] }, is: { type: 'boolean' }, values: { type: 'array', items: { type: 'string', enum: STATUSES } } } },
+    { type: 'object', additionalProperties: false, required: ['on', 'is', 'values'], properties: { on: { type: 'string', enum: ['assignee'] }, is: { type: 'boolean' }, values: { type: 'array', items: NULLABLE_STRING } } },
+    { type: 'object', additionalProperties: false, required: ['on', 'field', 'is', 'values'], properties: { on: { type: 'string', enum: ['field'] }, field: { type: 'string' }, is: { type: 'boolean' }, values: { type: 'array', items: NULLABLE_STRING } } },
+    { type: 'object', additionalProperties: false, required: ['on', 'when'], properties: { on: { type: 'string', enum: ['dates'] }, when: { type: 'string', enum: ['overdue', 'before', 'after'] }, date: { type: 'string' } } },
+    { type: 'object', additionalProperties: false, required: ['on', 'id'], properties: { on: { type: 'string', enum: ['check'] }, id: { type: 'string', enum: CHECK_IDS } } },
+  ],
+}
+
+function parseSince(s: string): number {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return Date.parse(`${s}T00:00:00.000Z`)
+  const ms = Date.parse(s)
+  if (Number.isFinite(ms)) return ms
+  throw new ToolError('bad_input', 'since: an ISO date (YYYY-MM-DD).')
+}
+
+function eventOut(e: IssueEvent) {
+  return { issueId: e.issueId, what: e.what, changes: e.changes, by: e.by, byClient: e.byClient, at: new Date(e.at).toISOString() }
+}
 
 export function requireRequest(request: string): string {
   const trimmed = request.trim()
@@ -66,7 +91,8 @@ export const roadmapTools = [
     run: async (ctx) => {
       const { roadmap, issues } = loaded(ctx)
       const today = todayUtc(ctx.now())
-      const rows = liveTree(issues).map((i) => issueView(roadmap, issues, i, today))
+      const idx = buildIndex([...issues])
+      const rows = matchingIssues(issues, [], today, idx).map((i) => issueView(roadmap, issues, i, today, idx))
       return {
         result: {
           roadmapId: roadmap.id,
@@ -77,6 +103,83 @@ export const roadmapTools = [
           issues: rows,
         },
       }
+    },
+  }),
+
+  tool<{ roadmapId: string; chips: Chip[]; limit?: number; cursor?: number }>({
+    name: 'list_issues',
+    title: 'List issues',
+    group: 'roadmaps',
+    scope: 'roadmap',
+    annotations: READ,
+    description: 'Live issues that match every chip, in tree order (not dimmed ancestors). Chips AND. Pass an empty chips array for all live issues. Optional limit (default 100, max 200) and cursor (default 0) page the matches.',
+    input: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['roadmapId', 'chips'],
+      properties: {
+        roadmapId: ROADMAP_ID,
+        chips: { type: 'array', items: CHIP_SCHEMA },
+        limit: { type: 'integer', minimum: 1, maximum: 200 },
+        cursor: { type: 'integer', minimum: 0 },
+      },
+    },
+    run: async (ctx, { limit = 100, cursor = 0, chips }) => {
+      const { roadmap, issues } = loaded(ctx)
+      const today = todayUtc(ctx.now())
+      const idx = buildIndex([...issues])
+      const matched = matchingIssues(issues, chips, today, idx)
+      const page = matched.slice(cursor, cursor + limit)
+      return {
+        result: {
+          issues: page.map((i) => issueView(roadmap, issues, i, today, idx)),
+          ...(cursor + limit < matched.length ? { next: cursor + limit } : {}),
+        },
+      }
+    },
+  }),
+
+  tool<{ roadmapId: string; issueId: string }>({
+    name: 'get_issue',
+    title: 'Open an issue',
+    group: 'roadmaps',
+    scope: 'roadmap',
+    annotations: READ,
+    description: 'One issue: the same fields as get_roadmap, plus body, comments, and its activity (events oldest first). Soft-deleted issues still open when they exist; checks is empty and deletedAt is set.',
+    input: { type: 'object', additionalProperties: false, required: ['roadmapId', 'issueId'], properties: { roadmapId: ROADMAP_ID, issueId: ISSUE_ID } },
+    run: async (ctx, { roadmapId, issueId }) => {
+      const { roadmap, issues } = loaded(ctx)
+      const row = issues.find((i) => i.id === issueId)
+      const detail = await ctx.port.issueDetail(roadmapId, issueId)
+      if (!detail || !row) throw new ToolError('not_found', 'No such issue.')
+      const today = todayUtc(ctx.now())
+      const idx = buildIndex([...issues])
+      const view = issueView(roadmap, issues, row, today, idx)
+      return {
+        result: {
+          ...view,
+          body: detail.body,
+          comments: detail.comments,
+          events: detail.events.map(eventOut),
+        },
+      }
+    },
+  }),
+
+  tool<{ roadmapId: string; since: string }>({
+    name: 'list_changes',
+    title: 'List changes',
+    group: 'roadmaps',
+    scope: 'roadmap',
+    annotations: READ,
+    description: 'Roadmap activity since a date: every issue event at or after since, oldest first. since is YYYY-MM-DD (UTC midnight) or a full ISO-8601 timestamp.',
+    input: { type: 'object', additionalProperties: false, required: ['roadmapId', 'since'], properties: { roadmapId: ROADMAP_ID, since: { type: 'string' } } },
+    run: async (ctx, { roadmapId, since }) => {
+      loaded(ctx)
+      const sinceMs = parseSince(since)
+      const evs = await ctx.port.roadmapEventsSince(roadmapId, sinceMs)
+      if (evs === null) throw new ToolError('not_found', `No roadmap ${roadmapId}.`, 'list_roadmaps shows your roadmaps.')
+      return { result: { events: evs.map(eventOut) } }
     },
   }),
 ]

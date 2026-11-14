@@ -1466,6 +1466,266 @@ exports[`registry > the three views agree (published contract: only additions al
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List issues",
+    },
+    "description": "Live issues that match every chip, in tree order (not dimmed ancestors). Chips AND. Pass an empty chips array for all live issues. Optional limit (default 100, max 200) and cursor (default 0) page the matches.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "chips": {
+          "items": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "is": {
+                    "type": "boolean",
+                  },
+                  "on": {
+                    "enum": [
+                      "status",
+                    ],
+                    "type": "string",
+                  },
+                  "values": {
+                    "items": {
+                      "enum": [
+                        "backlog",
+                        "todo",
+                        "in_progress",
+                        "blocked",
+                        "done",
+                        "cancelled",
+                      ],
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                },
+                "required": [
+                  "on",
+                  "is",
+                  "values",
+                ],
+                "type": "object",
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "is": {
+                    "type": "boolean",
+                  },
+                  "on": {
+                    "enum": [
+                      "assignee",
+                    ],
+                    "type": "string",
+                  },
+                  "values": {
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "type": "array",
+                  },
+                },
+                "required": [
+                  "on",
+                  "is",
+                  "values",
+                ],
+                "type": "object",
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string",
+                  },
+                  "is": {
+                    "type": "boolean",
+                  },
+                  "on": {
+                    "enum": [
+                      "field",
+                    ],
+                    "type": "string",
+                  },
+                  "values": {
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "type": "array",
+                  },
+                },
+                "required": [
+                  "on",
+                  "field",
+                  "is",
+                  "values",
+                ],
+                "type": "object",
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "date": {
+                    "type": "string",
+                  },
+                  "on": {
+                    "enum": [
+                      "dates",
+                    ],
+                    "type": "string",
+                  },
+                  "when": {
+                    "enum": [
+                      "overdue",
+                      "before",
+                      "after",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "on",
+                  "when",
+                ],
+                "type": "object",
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "no_dates",
+                      "overdue",
+                      "blocked",
+                      "no_assignee",
+                      "long",
+                      "outside_parent",
+                      "done_open",
+                    ],
+                    "type": "string",
+                  },
+                  "on": {
+                    "enum": [
+                      "check",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "on",
+                  "id",
+                ],
+                "type": "object",
+              },
+            ],
+          },
+          "type": "array",
+        },
+        "cursor": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "limit": {
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "roadmapId": {
+          "description": "The roadmap id from list_roadmaps or create_roadmap.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "chips",
+      ],
+      "type": "object",
+    },
+    "name": "list_issues",
+    "title": "List issues",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Open an issue",
+    },
+    "description": "One issue: the same fields as get_roadmap, plus body, comments, and its activity (events oldest first). Soft-deleted issues still open when they exist; checks is empty and deletedAt is set.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "issueId": {
+          "description": "An issue id from get_roadmap or list_issues.",
+          "type": "string",
+        },
+        "roadmapId": {
+          "description": "The roadmap id from list_roadmaps or create_roadmap.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "issueId",
+      ],
+      "type": "object",
+    },
+    "name": "get_issue",
+    "title": "Open an issue",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List changes",
+    },
+    "description": "Roadmap activity since a date: every issue event at or after since, oldest first. since is YYYY-MM-DD (UTC midnight) or a full ISO-8601 timestamp.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "roadmapId": {
+          "description": "The roadmap id from list_roadmaps or create_roadmap.",
+          "type": "string",
+        },
+        "since": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "since",
+      ],
+      "type": "object",
+    },
+    "name": "list_changes",
+    "title": "List changes",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": false,
       "title": "Move a page",
     },

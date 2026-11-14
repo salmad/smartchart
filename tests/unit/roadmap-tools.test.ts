@@ -58,4 +58,45 @@ describe('roadmap tools', () => {
     expect(await call('get_roadmap', { roadmapId }, cy)).toMatchObject({ ok: false, error: { code: 'not_found', message: `No roadmap ${roadmapId}.` } })
     expect(await ok('get_roadmap', { roadmapId }, bob)).toMatchObject({ roadmapId, prefix: 'PLN' })
   })
+
+  it('lists the same matches the table would, and get_issue returns body, comments, and events', async () => {
+    const { ok, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [
+      { id: 'd', parentId: null, title: 'D' },
+      { id: 'p', parentId: null, title: 'P' },
+      { id: 'a', parentId: 'p', title: 'A' },
+      { id: 'c', parentId: 'a', title: 'C' },
+      { id: 'b', parentId: 'p', title: 'B' },
+    ] }, 'app')
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'set', ids: ['p'], props: { start: '2026-01-01', due: '2026-01-03' } }, 'app')
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'set', ids: ['b'], props: { status: 'done' } }, 'app')
+    await db.putIssueBody(ann.id, roadmapId, 'c', '# Brief', 0)
+    const chips = [{ on: 'status', is: true, values: ['todo'] }, { on: 'check', id: 'no_dates' }]
+    const page = await ok('list_issues', { roadmapId, chips, limit: 1 })
+    expect((page.issues as { id: string }[]).map((i) => i.id)).toEqual(['d'])
+    expect(page.next).toBe(1)
+    const rest = await ok('list_issues', { roadmapId, chips, cursor: 1 })
+    expect((rest.issues as { id: string }[]).map((i) => i.id)).toEqual(['c'])
+    expect(rest.next).toBeUndefined()
+    const one = await ok('get_issue', { roadmapId, issueId: 'c' })
+    expect(one).toMatchObject({ id: 'c', key: 'PLN-4', body: '# Brief', checks: expect.arrayContaining(['no_dates']) })
+    expect(one).not.toHaveProperty('deletedAt')
+    const events = one.events as { at: string }[]
+    expect(events.length).toBeGreaterThan(0)
+    expect(events[0].at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(await ok('list_issues', { roadmapId, chips, limit: 1 }, bob)).toMatchObject({ next: 1 })
+    expect(await ok('get_issue', { roadmapId, issueId: 'c' }, bob)).toMatchObject({ id: 'c', body: '# Brief' })
+  })
+
+  it('list_changes returns rows since the date and rejects a bad since', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [{ id: 'i1', parentId: null, title: 'One' }] }, 'app')
+    const rows = await ok('list_changes', { roadmapId, since: '2020-01-01' })
+    expect(rows.events).toEqual([expect.objectContaining({ what: 'created', byClient: 'app' })])
+    expect(await ok('list_changes', { roadmapId, since: '2099-01-01' })).toEqual({ events: [] })
+    expect(await call('list_issues', { roadmapId, chips: [{ on: 'nope' }] })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
+    expect(await call('list_changes', { roadmapId, since: 'tomorrow' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: 'since: an ISO date (YYYY-MM-DD).' } })
+  })
 })

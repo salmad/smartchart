@@ -1,7 +1,8 @@
 import { CHECK_IDS, issueFailsCheck, type CheckId } from '../roadmaps/checks.js'
 import { keyOf } from '../roadmaps/fields.js'
-import { buildIndex } from '../roadmaps/index.js'
+import { buildIndex, type IssueIndex } from '../roadmaps/index.js'
 import type { FieldValue, Issue, Roadmap, Status } from '../roadmaps/types.js'
+import { matchesChips, type Chip } from '../roadmaps/view.js'
 
 export function todayUtc(now: number): string {
   return new Date(now).toISOString().slice(0, 10)
@@ -23,11 +24,27 @@ export interface IssueView {
   deletedAt?: number
 }
 
-export function checksFor(issues: readonly Issue[], issueId: string, today: string): CheckId[] {
-  const idx = buildIndex([...issues])
+function checksForIndex(idx: IssueIndex, issueId: string, today: string): CheckId[] {
   const issue = idx.byId.get(issueId)
   if (!issue) return []
   return CHECK_IDS.filter((id) => issueFailsCheck(id, issue, idx, today))
+}
+
+export function checksFor(issues: readonly Issue[], issueId: string, today: string): CheckId[] {
+  return checksForIndex(buildIndex([...issues]), issueId, today)
+}
+
+export function matchingIssues(issues: readonly Issue[], chips: readonly Chip[], today: string, idx?: IssueIndex): Issue[] {
+  const index = idx ?? buildIndex([...issues])
+  const out: Issue[] = []
+  const walk = (parentId: string | null) => {
+    for (const child of index.children(parentId)) {
+      if (matchesChips(child, [...chips], today, index)) out.push(child)
+      walk(child.id)
+    }
+  }
+  walk(null)
+  return out
 }
 
 export function liveTree(issues: readonly Issue[]): Issue[] {
@@ -43,7 +60,9 @@ export function liveTree(issues: readonly Issue[]): Issue[] {
   return out
 }
 
-export function issueView(roadmap: Roadmap, issues: readonly Issue[], issue: Issue, today: string): IssueView {
+export function issueView(roadmap: Roadmap, issues: readonly Issue[], issue: Issue, today: string, idx?: IssueIndex): IssueView {
+  const index = idx ?? buildIndex([...issues])
+  const checks = typeof issue.deletedAt === 'number' ? [] : checksForIndex(index, issue.id, today)
   const view: IssueView = {
     id: issue.id,
     number: issue.number,
@@ -56,7 +75,7 @@ export function issueView(roadmap: Roadmap, issues: readonly Issue[], issue: Iss
     parentId: issue.parentId,
     sortKey: issue.sortKey,
     fields: issue.fields,
-    checks: checksFor(issues, issue.id, today),
+    checks,
   }
   if (typeof issue.deletedAt === 'number') view.deletedAt = issue.deletedAt
   return view

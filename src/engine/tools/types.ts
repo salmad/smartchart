@@ -10,7 +10,7 @@ import type { Block } from "../docs/types.js";
 import type { DocComment, CommentOp } from "../comments.js";
 import type { DocTree } from "../docs/versions.js";
 import type { UserLook } from "../look.js";
-import type { Issue, MemberLite, Roadmap, Role } from "../roadmaps/types.js";
+import type { Issue, IssueDetail, IssueEvent, MemberLite, Roadmap, Role } from "../roadmaps/types.js";
 import type { RoadmapOp } from "../roadmaps/ops.js";
 
 export type LoadedRoadmap = { roadmap: Roadmap; issues: readonly Issue[]; role: Role; members: MemberLite[] };
@@ -57,6 +57,8 @@ export interface AccountPort {
   loadRoadmap(id: string): Promise<LoadedRoadmap | null>;
   saveRoadmap(id: string, op: RoadmapOp, byClient: string): Promise<{ seq: number; changed: Issue[] } | string>;
   createRoadmap(r: { id: string; name: string; prefix: string; workspaceId?: string; parent?: PageRefOut }): Promise<"ok" | string>;
+  issueDetail(roadmapId: string, issueId: string): Promise<IssueDetail | null>;
+  roadmapEventsSince(roadmapId: string, sinceMs: number): Promise<IssueEvent[] | null>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"

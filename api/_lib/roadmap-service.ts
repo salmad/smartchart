@@ -18,7 +18,7 @@ export interface RoadmapEnv {
 }
 
 export function roadmapAccount(db: Db, uid: string, workspaces: () => Promise<WorkspaceRow[]>): Pick<AccountPort,
-  'listRoadmaps' | 'newRoadmapId' | 'loadRoadmap' | 'saveRoadmap' | 'createRoadmap'> {
+  'listRoadmaps' | 'newRoadmapId' | 'loadRoadmap' | 'saveRoadmap' | 'createRoadmap' | 'issueDetail' | 'roadmapEventsSince'> {
   return {
     listRoadmaps: async (limit, cursor, workspaceId) => {
       const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
@@ -34,6 +34,8 @@ export function roadmapAccount(db: Db, uid: string, workspaces: () => Promise<Wo
     loadRoadmap: (id) => db.getRoadmap(uid, id),
     saveRoadmap: (id, op, byClient) => db.writeRoadmap(uid, id, op, byClient),
     createRoadmap: (r) => db.createRoadmap(uid, { id: r.id, name: r.name, prefix: r.prefix, workspaceId: r.workspaceId ?? '', parent: r.parent }),
+    issueDetail: (id, issueId) => db.getIssueDetail(uid, id, issueId),
+    roadmapEventsSince: (id, sinceMs) => db.roadmapEventsSince(uid, id, sinceMs),
   }
 }
 
