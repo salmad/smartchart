@@ -159,14 +159,16 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
       const seq = loaded.roadmap.seq
       const issues = loaded.issues.filter((i) => i.seq > since)
       const evs = await q<{ issue_id: string | null; user_id: string; by_client: string; at: string | Date; what: string; changes: IssueEvent['changes']; seq: string | number }>(
-        `select issue_id, user_id, by_client, at, what, changes, seq from issue_events where roadmap_id = $2 and seq > $3 and ${may('roadmaps', '$1', '$4')}`,
+        `select issue_id, user_id, by_client, at, what, changes, seq from issue_events where roadmap_id = $2 and seq > $3
+           and exists (select 1 from roadmaps where roadmaps.id = $2 and ${may('roadmaps', '$1', '$4')})`,
         [u, id, since, R('read')])
       return { seq, roadmap: seq > since ? loaded.roadmap : null, issues, events: evs.map(toEvent) }
     },
     roadmapEventsSince: async (u, id, sinceMs) => {
       if (!(await readRoadmap(u, id, R('read')))) return null
       const evs = await q<{ issue_id: string | null; user_id: string; by_client: string; at: string | Date; what: string; changes: IssueEvent['changes'] }>(
-        `select issue_id, user_id, by_client, at, what, changes from issue_events where roadmap_id = $2 and at >= to_timestamp($3::float8 / 1000.0) and ${may('roadmaps', '$1', '$4')} order by at`,
+        `select issue_id, user_id, by_client, at, what, changes from issue_events where roadmap_id = $2 and at >= to_timestamp($3::float8 / 1000.0)
+           and exists (select 1 from roadmaps where roadmaps.id = $2 and ${may('roadmaps', '$1', '$4')}) order by at`,
         [u, id, sinceMs, R('read')])
       return evs.map(toEvent)
     },
