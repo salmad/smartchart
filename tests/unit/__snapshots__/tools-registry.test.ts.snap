@@ -1351,6 +1351,121 @@ exports[`registry > the three views agree (published contract: only additions al
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List roadmaps",
+    },
+    "description": "A workspace's roadmaps, newest first: id, name, prefix, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_roadmap. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "limit": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "workspaceId": {
+          "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_roadmaps",
+    "title": "List roadmaps",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create a roadmap",
+    },
+    "description": "Start a new roadmap: a name, an issue key prefix (2–6 uppercase letters or digits, starting with a letter), and the user's own words for why. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc, a deck or a roadmap) it goes last under that page, in that page's workspace. Returns the roadmap id and editor link: give it to the user so they can watch.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+        },
+        "parent": {
+          "additionalProperties": false,
+          "description": "Put the roadmap under this page.",
+          "properties": {
+            "id": {
+              "description": "The docId, deckId or roadmap id.",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "doc",
+                "deck",
+                "roadmap",
+              ],
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+            "id",
+          ],
+          "type": "object",
+        },
+        "prefix": {
+          "type": "string",
+        },
+        "request": {
+          "type": "string",
+        },
+        "workspaceId": {
+          "description": "A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "prefix",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "create_roadmap",
+    "title": "Create a roadmap",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Open a roadmap",
+    },
+    "description": "A roadmap's name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "roadmapId": {
+          "description": "The roadmap id from list_roadmaps or create_roadmap.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+      ],
+      "type": "object",
+    },
+    "name": "get_roadmap",
+    "title": "Open a roadmap",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": false,
       "title": "Move a page",
     },

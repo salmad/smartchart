@@ -13,6 +13,7 @@ import { DAILY_CALLS } from './quota.js'
 import { overRate } from './rate.js'
 import { recordVersion } from './versions.js'
 import { runDocTool } from './doc-service.js'
+import { roadmapAccount, runRoadmapTool } from './roadmap-service.js'
 import { addImage, blobStore, DAILY_IMAGES, ImageError, type StoreFn } from './images.js'
 
 /** `name`: the user's Neon Auth name, for their personal workspace when this is their first request ('' over a key). */
@@ -80,6 +81,7 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
       return p
     },
     docProposal: (docId, op, _by, now) => db.docProposal(uid, docId, op, { id: `p_${now.toString(36)}${Math.random().toString(36).slice(2, 5)}` }),
+    ...roadmapAccount(db, uid, workspaces),
     addImage: async (img) => {
       const store = deps.store === undefined ? blobStore() : deps.store
       if (!store) throw new ToolError('refused', 'Pictures are not set up on this server.', 'Tell the user; slides without pictures still work.')
@@ -94,8 +96,9 @@ export async function runTool(name: string, input: unknown, caller: Caller, deps
 
   try {
     if (t.scope === 'doc' || t.scope === 'createDoc') return await runDocTool({ tool: t, input, uid, client: caller.client, db, origin, now, port, jev, workspaces, userLook })
+    if (t.scope === 'roadmap' || t.scope === 'createRoadmap') return await runRoadmapTool({ tool: t, input, uid, client: caller.client, db, origin, now, port, jev, workspaces, userLook })
     for (let attempt = 0; ; attempt++) {
-      let ctx: ToolContext = { deck: null, rev: 0, userLook, links: null, presence: {}, file: null, docPresence: {}, port, jev, now, client: caller.client }
+      let ctx: ToolContext = { deck: null, rev: 0, roadmap: null, userLook, links: null, presence: {}, file: null, docPresence: {}, port, jev, now, client: caller.client }
       let row: Awaited<ReturnType<Db['getDeck']>> = null
       if (t.scope === 'deck') {
         row = deckId ? await db.getDeck(uid, deckId) : null

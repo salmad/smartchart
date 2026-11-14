@@ -10,6 +10,10 @@ import type { Block } from "../docs/types.js";
 import type { DocComment, CommentOp } from "../comments.js";
 import type { DocTree } from "../docs/versions.js";
 import type { UserLook } from "../look.js";
+import type { Issue, MemberLite, Roadmap, Role } from "../roadmaps/types.js";
+import type { RoadmapOp } from "../roadmaps/ops.js";
+
+export type LoadedRoadmap = { roadmap: Roadmap; issues: readonly Issue[]; role: Role; members: MemberLite[] };
 
 export type JsonSchema = { type?: string; description?: string; enum?: readonly unknown[]; properties?: Record<string, JsonSchema>;
   required?: string[]; additionalProperties?: boolean | JsonSchema; items?: JsonSchema; oneOf?: JsonSchema[]; minimum?: number; maximum?: number };
@@ -48,10 +52,16 @@ export interface AccountPort {
   docProposal(docId: string, op: import("../docs/proposals.js").ProposalOp, by: string, now: number): Promise<import("../docs/proposals.js").DocProposal[] | string>;
   /** add_image: fetch or decode, prepare for its kind, store; refusals are ToolErrors that say what to pass instead. */
   addImage(input: { url?: string; data?: string; domain?: string; kind: ImageKind }): Promise<{ src: string; width: number; height: number; kind: ImageKind; from?: string }>;
+  listRoadmaps(limit: number, cursor: number, workspaceId?: string): Promise<{ workspaceId: string; roadmaps: { roadmapId: string; name: string; prefix: string; updated: number; parent: PageRefOut | null }[]; next?: number }>;
+  newRoadmapId(): string;
+  loadRoadmap(id: string): Promise<LoadedRoadmap | null>;
+  saveRoadmap(id: string, op: RoadmapOp, byClient: string): Promise<{ seq: number; changed: Issue[] } | string>;
+  createRoadmap(r: { id: string; name: string; prefix: string; workspaceId?: string; parent?: PageRefOut }): Promise<"ok" | string>;
 }
 export interface ToolContext {
   deck: DeckDoc | null;              // set for scope "deck"
   rev: number;                       // the deck's revision when loaded (0 for scope "create")
+  roadmap: LoadedRoadmap | null;
   /** The signed-in user's palette (not stored on decks or docs). */
   userLook: UserLook;
   links: { edit: string; share: string | null } | null;
@@ -65,12 +75,12 @@ export interface ToolContext {
   /** Who is calling, as the user knows them ("Claude Code"): signs what the agent resolves. */
   client?: string;
 }
-export type Scope = "account" | "deck" | "create" | "doc" | "createDoc";
+export type Scope = "account" | "deck" | "create" | "doc" | "createDoc" | "roadmap" | "createRoadmap";
 export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: false }
 /** `label`: the version's label when the write is not a user request (a restore). `workspaceId`: where a new deck goes
     (scope "create" or "createDoc"; else the workspace most recently used). `parent`: the page a new one goes under, in that page's workspace. `file`: the doc to save (scopes "doc" and "createDoc"); `what`: a version's label when
     the write is not a user request, so it stands alone in Versions. */
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string; parent?: PageRefOut }
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string; parent?: PageRefOut; roadmapOp?: RoadmapOp; roadmapCreate?: { name: string; prefix: string } }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";

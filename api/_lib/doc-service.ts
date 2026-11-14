@@ -37,7 +37,7 @@ export async function runDocTool(e: DocEnv): Promise<ToolReply> {
 async function run(e: DocEnv): Promise<ToolReply> {
   const { tool: t, uid, db, origin } = e, docId = (e.input as { docId?: unknown }).docId
   for (let attempt = 0; ; attempt++) {
-    let ctx: ToolContext = { deck: null, rev: 0, userLook: e.userLook, links: null, presence: {}, file: null, docPresence: {}, port: e.port, jev: e.jev, now: e.now, client: e.client }
+    let ctx: ToolContext = { deck: null, rev: 0, roadmap: null, userLook: e.userLook, links: null, presence: {}, file: null, docPresence: {}, port: e.port, jev: e.jev, now: e.now, client: e.client }
     let baseRev = 0
     if (t.scope === 'doc') {
       const row = typeof docId === 'string' && ID.test(docId) ? await db.getDoc(uid, docId) : null

@@ -1,0 +1,83 @@
+import { NO_EDIT } from '../../src/engine/pages/tree.js'
+import type { RoadmapOp } from '../../src/engine/roadmaps/ops.js'
+import { ToolError, type AccountPort, type AnyTool, type ToolContext } from '../../src/engine/tools/types.js'
+import type { UserLook } from '../../src/engine/look.js'
+import type { JevFn } from '../../src/engine/agent/llm.js'
+import type { Db, WorkspaceRow } from './db.js'
+import type { ToolReply } from './deck-service.js'
+
+const ID = /^[\w-]{1,64}$/
+const VIEW_WORKSPACE = new ToolError('refused', 'You can view this workspace, not add to it.', 'Pick a workspace where you are an editor (list_workspaces).')
+const noRoadmap = (id: unknown) => new ToolError('not_found', `No roadmap ${String(id)}.`, 'list_roadmaps shows your roadmaps.')
+const noWorkspace = (id: string) => new ToolError('not_found', `No workspace ${id}.`, 'list_workspaces shows your workspaces.')
+
+export interface RoadmapEnv {
+  tool: AnyTool; input: unknown; uid: string; client: string; db: Db; origin: string
+  now: () => number; port: AccountPort; jev: JevFn; userLook: UserLook
+  workspaces: () => Promise<WorkspaceRow[]>
+}
+
+export function roadmapAccount(db: Db, uid: string, workspaces: () => Promise<WorkspaceRow[]>): Pick<AccountPort,
+  'listRoadmaps' | 'newRoadmapId' | 'loadRoadmap' | 'saveRoadmap' | 'createRoadmap'> {
+  return {
+    listRoadmaps: async (limit, cursor, workspaceId) => {
+      const mine = await workspaces(), ws = workspaceId ?? mine[0]?.id ?? ''
+      if (!mine.some((w) => w.id === ws)) throw noWorkspace(ws)
+      const all = await db.listRoadmaps(uid, ws), page = all.slice(cursor, cursor + limit)
+      return {
+        workspaceId: ws,
+        roadmaps: page.map((r) => ({ roadmapId: r.id, name: r.name, prefix: r.prefix, updated: r.updated, parent: r.parent })),
+        ...(cursor + limit < all.length ? { next: cursor + limit } : {}),
+      }
+    },
+    newRoadmapId: () => `rm_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    loadRoadmap: (id) => db.getRoadmap(uid, id),
+    saveRoadmap: (id, op, byClient) => db.writeRoadmap(uid, id, op, byClient),
+    createRoadmap: (r) => db.createRoadmap(uid, { id: r.id, name: r.name, prefix: r.prefix, workspaceId: r.workspaceId ?? '', parent: r.parent }),
+  }
+}
+
+export async function runRoadmapTool(e: RoadmapEnv): Promise<ToolReply> {
+  try { return await run(e) } catch (err) {
+    if (err instanceof ToolError) return { ok: false, error: { code: err.code, message: err.message, ...(err.fix ? { fix: err.fix } : {}) } }
+    throw err
+  }
+}
+
+async function run(e: RoadmapEnv): Promise<ToolReply> {
+  const { tool: t, uid, db, origin } = e
+  const roadmapId = (e.input as { roadmapId?: unknown }).roadmapId
+  let ctx: ToolContext = { deck: null, rev: 0, roadmap: null, userLook: e.userLook, links: null, presence: {}, file: null, docPresence: {}, port: e.port, jev: e.jev, now: e.now, client: e.client }
+  if (t.scope === 'roadmap') {
+    const loaded = typeof roadmapId === 'string' && ID.test(roadmapId) ? await e.port.loadRoadmap(roadmapId) : null
+    if (!loaded) throw noRoadmap(roadmapId)
+    ctx = { ...ctx, roadmap: loaded, links: { edit: `${origin}/r/${roadmapId}`, share: null } }
+  } else if (t.scope === 'createRoadmap') ctx = { ...ctx, links: { edit: '', share: null } }
+
+  const out = await t.run(ctx, e.input)
+  if (out.roadmapCreate) {
+    const id = String((out.result as { roadmapId?: string }).roadmapId ?? '')
+    const workspaceId = out.workspaceId ?? (out.parent ? undefined : (await e.workspaces())[0]?.id)
+    const said = await e.port.createRoadmap({
+      id,
+      name: out.roadmapCreate.name,
+      prefix: out.roadmapCreate.prefix,
+      workspaceId,
+      parent: out.parent,
+    })
+    if (said === 'ok') {
+      const result = { ...out.result, links: { edit: `${origin}/r/${id}` } }
+      await db.markAgentConnectDone(uid)
+      return { ok: true, result }
+    }
+    if (said === 'foreign') {
+      if (out.parent) throw new ToolError('refused', NO_EDIT, 'Create it in a workspace you can edit.')
+      const role = (await e.workspaces()).find((w) => w.id === out.workspaceId)?.role
+      throw role === 'viewer' ? VIEW_WORKSPACE : noWorkspace(out.workspaceId ?? '')
+    }
+    throw new ToolError('refused', said, 'Fix it and call again; nothing was changed.')
+  }
+  // roadmapOp saved in a later task; ignore if set
+  void (out.roadmapOp as RoadmapOp | undefined)
+  return { ok: true, result: out.result }
+}

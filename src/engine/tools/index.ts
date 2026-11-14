@@ -12,10 +12,11 @@ import { docProposalTools } from "./doc-proposals.js";
 import { guideTools } from "./guide.js";
 import { imageTools } from "./images.js";
 import { pageTools } from "./pages.js";
+import { roadmapTools } from "./roadmaps.js";
 import { slideTools } from "./slides.js";
 import type { AnyTool } from "./types.js";
 
-export const TOOLS: readonly AnyTool[] = [...accountTools, ...guideTools, ...deckTools, ...choiceTools, ...imageTools, ...slideTools, ...checkTools, ...commentTools, ...versionTools, ...docTools, ...docVersionTools, ...docCommentTools, ...docProposalTools, ...pageTools];
+export const TOOLS: readonly AnyTool[] = [...accountTools, ...guideTools, ...deckTools, ...choiceTools, ...imageTools, ...slideTools, ...checkTools, ...commentTools, ...versionTools, ...docTools, ...docVersionTools, ...docCommentTools, ...docProposalTools, ...roadmapTools, ...pageTools];
 const BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 export const toolByName = (name: string): AnyTool | undefined => BY_NAME.get(name);
 
