@@ -31,7 +31,7 @@ export const deckTools = [
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDecks(limit, cursor, workspaceId) }) }),
 
   tool<{ style: Style; name?: string; workspaceId?: string; parent?: PageArg }>({ name: "create_deck", title: "Create a deck", group: "decks", scope: "create", annotations: WRITE,
-    description: "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the deck with its editor link: give it to the user so they can watch.",
+    description: "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc, a deck or a roadmap) it goes last under that page, in that page's workspace; without it, at the top level. Returns the deck with its editor link: give it to the user so they can watch.",
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE, name: { type: "string" }, workspaceId: WORKSPACE_ID, parent: pageSchema("Put the deck under this page.") } },
     run: async (ctx, { style, name, workspaceId, parent }) => {
       const under = parent === undefined ? undefined : pageArg(parent, "parent");

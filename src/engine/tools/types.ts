@@ -36,7 +36,7 @@ export interface AccountPort {
   /** One workspace's docs: the one named, else the one most recently used. */
   listDocs(limit: number, cursor: number, workspaceId?: string): Promise<{ workspaceId: string; docs: { docId: string; name: string; updated: number; parent: PageRefOut | null }[]; next?: number }>;
   /** Moves a page in its workspace's tree: 'ok', 'foreign' (not found or not readable), or the sentence saying why not. */
-  movePage(page: { kind: "doc" | "deck"; id: string }, to: { parent: { kind: "doc" | "deck"; id: string } | null; before?: { kind: "doc" | "deck"; id: string }; after?: { kind: "doc" | "deck"; id: string } }): Promise<"ok" | string>;
+  movePage(page: PageRefOut, to: { parent: PageRefOut | null; before?: PageRefOut; after?: PageRefOut }): Promise<"ok" | string>;
   /** The deck's versions, newest first, and the slides their trees name. */
   versions(deckId: string): Promise<Version[]>;
   blobs(deckId: string, hashes: string[]): Promise<{ hash: string; slide: Slide }[]>;
@@ -70,7 +70,7 @@ export interface Annotations { readOnlyHint: boolean; destructiveHint: boolean; 
 /** `label`: the version's label when the write is not a user request (a restore). `workspaceId`: where a new deck goes
     (scope "create" or "createDoc"; else the workspace most recently used). `parent`: the page a new one goes under, in that page's workspace. `file`: the doc to save (scopes "doc" and "createDoc"); `what`: a version's label when
     the write is not a user request, so it stands alone in Versions. */
-export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string; parent?: { kind: "doc" | "deck"; id: string } }
+export interface HandlerOut { result: Record<string, unknown>; deck?: DeckDoc; file?: DocFile; what?: string; events?: DeckEvent[]; named?: boolean; label?: string; workspaceId?: string; parent?: PageRefOut }
 export interface AnyTool { name: string; title: string; group: string; scope: Scope; description: string; input: JsonSchema; annotations: Annotations;
   run(ctx: ToolContext, input: unknown): Promise<HandlerOut> }
 export type ErrorCode = "unauthorized" | "not_found" | "bad_input" | "refused" | "conflict" | "busy" | "quota" | "rate" | "upstream";

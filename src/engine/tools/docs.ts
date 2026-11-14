@@ -60,7 +60,7 @@ export const docTools = [
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDocs(limit, cursor, workspaceId) }) }),
 
   tool<{ title: string; subtitle?: string; workspaceId?: string; parent?: PageArg }>({ name: "create_doc", title: "Create a doc", group: "docs", scope: "createDoc", annotations: WRITE,
-    description: "Start a new, empty doc: a title (it is the doc's name) and an optional subtitle. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    description: "Start a new, empty doc: a title (it is the doc's name) and an optional subtitle. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc, a deck or a roadmap) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
     input: { type: "object", additionalProperties: false, required: ["title"], properties: { title: { type: "string" }, subtitle: { type: "string" }, workspaceId: WORKSPACE_ID, parent: pageSchema("Put the doc under this page.") } },
     run: async (ctx, { title, subtitle, workspaceId, parent }) => {
       const under = parent === undefined ? undefined : pageArg(parent, "parent");

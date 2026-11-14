@@ -79,4 +79,15 @@ describe('move_page', () => {
     await ok('move_page', { page: doc(b), parent: doc(a) })
     expect(JSON.stringify(await db.listPages(ann.id, acme))).toEqual(once)
   })
+
+  it('moves a roadmap under a deck, and a deck under that roadmap', async () => {
+    const { db, ok, acme, parents } = await setup()
+    expect(await db.createRoadmap(ann.id, { id: 'rm_1', name: 'Plan', prefix: 'PLN', workspaceId: acme })).toBe('ok')
+    const d = String((await ok('create_deck', { style: 'consulting', name: 'Pack', workspaceId: acme })).deckId)
+    expect(await ok('move_page', { page: { kind: 'roadmap', id: 'rm_1' }, parent: { kind: 'deck', id: d } })).toEqual({
+      moved: true, page: { kind: 'roadmap', id: 'rm_1' }, parent: { kind: 'deck', id: d },
+    })
+    const nested = String((await ok('create_deck', { style: 'consulting', name: 'Under', workspaceId: acme, parent: { kind: 'roadmap', id: 'rm_1' } })).deckId)
+    expect(await parents()).toMatchObject({ rm_1: d, [nested]: 'rm_1' })
+  })
 })
