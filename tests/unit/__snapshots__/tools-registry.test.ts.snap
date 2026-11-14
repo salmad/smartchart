@@ -187,7 +187,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create a deck",
     },
-    "description": "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the deck with its editor link: give it to the user so they can watch.",
+    "description": "Start a new, empty deck. Style is consulting (action titles, dense evidence) or pitch (topic titles, big numbers) and is fixed once the deck has slides. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc, a deck or a roadmap) it goes last under that page, in that page's workspace; without it, at the top level. Returns the deck with its editor link: give it to the user so they can watch.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -199,13 +199,14 @@ exports[`registry > the three views agree (published contract: only additions al
           "description": "Put the deck under this page.",
           "properties": {
             "id": {
-              "description": "The docId or deckId.",
+              "description": "The docId, deckId or roadmap id.",
               "type": "string",
             },
             "kind": {
               "enum": [
                 "doc",
                 "deck",
+                "roadmap",
               ],
               "type": "string",
             },
@@ -807,7 +808,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create a doc",
     },
-    "description": "Start a new, empty doc: a title (it is the doc's name) and an optional subtitle. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc or a deck) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
+    "description": "Start a new, empty doc: a title (it is the doc's name) and an optional subtitle. It goes into workspaceId, else the workspace the user opened most recently. With parent (a doc, a deck or a roadmap) it goes last under that page, in that page's workspace; without it, at the top level. Returns the doc with its editor link: give it to the user so they can watch. Then add sections and figures with create_block.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -816,13 +817,14 @@ exports[`registry > the three views agree (published contract: only additions al
           "description": "Put the doc under this page.",
           "properties": {
             "id": {
-              "description": "The docId or deckId.",
+              "description": "The docId, deckId or roadmap id.",
               "type": "string",
             },
             "kind": {
               "enum": [
                 "doc",
                 "deck",
+                "roadmap",
               ],
               "type": "string",
             },
@@ -1352,7 +1354,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Move a page",
     },
-    "description": "Move a doc or a deck to another place in the workspace tree: under a parent (a doc or a deck), or to the top level with parent null. It goes last among that parent's subpages unless before or after names one of them (a sibling under the same parent). Its own subpages move with it. Both pages must be in the same workspace. A move is not a version: it changes where the page sits, not what it says. list_docs and list_decks show each page's parent.",
+    "description": "Move a doc, a deck or a roadmap to another place in the workspace tree: under a parent (a doc, a deck or a roadmap), or to the top level with parent null. It goes last among that parent's subpages unless before or after names one of them (a sibling under the same parent). Its own subpages move with it. Both pages must be in the same workspace. A move is not a version: it changes where the page sits, not what it says. list_docs, list_decks and list_roadmaps show each page's parent.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1361,13 +1363,14 @@ exports[`registry > the three views agree (published contract: only additions al
           "description": "Put it just after this sibling.",
           "properties": {
             "id": {
-              "description": "The docId or deckId.",
+              "description": "The docId, deckId or roadmap id.",
               "type": "string",
             },
             "kind": {
               "enum": [
                 "doc",
                 "deck",
+                "roadmap",
               ],
               "type": "string",
             },
@@ -1383,13 +1386,14 @@ exports[`registry > the three views agree (published contract: only additions al
           "description": "Put it just before this sibling.",
           "properties": {
             "id": {
-              "description": "The docId or deckId.",
+              "description": "The docId, deckId or roadmap id.",
               "type": "string",
             },
             "kind": {
               "enum": [
                 "doc",
                 "deck",
+                "roadmap",
               ],
               "type": "string",
             },
@@ -1405,13 +1409,14 @@ exports[`registry > the three views agree (published contract: only additions al
           "description": "The page to move.",
           "properties": {
             "id": {
-              "description": "The docId or deckId.",
+              "description": "The docId, deckId or roadmap id.",
               "type": "string",
             },
             "kind": {
               "enum": [
                 "doc",
                 "deck",
+                "roadmap",
               ],
               "type": "string",
             },
@@ -1430,13 +1435,14 @@ exports[`registry > the three views agree (published contract: only additions al
               "description": "The page it goes under.",
               "properties": {
                 "id": {
-                  "description": "The docId or deckId.",
+                  "description": "The docId, deckId or roadmap id.",
                   "type": "string",
                 },
                 "kind": {
                   "enum": [
                     "doc",
                     "deck",
+                    "roadmap",
                   ],
                   "type": "string",
                 },
