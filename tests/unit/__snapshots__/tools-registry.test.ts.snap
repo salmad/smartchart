@@ -49,11 +49,12 @@ exports[`registry > the three views agree (published contract: only additions al
       "additionalProperties": false,
       "properties": {
         "style": {
-          "description": "The deck's style (get_deck shows it), or "doc" for writing docs.",
+          "description": "The deck's style (get_deck shows it), "doc" for writing docs, or "roadmap" for a roadmap.",
           "enum": [
             "consulting",
             "pitch",
             "doc",
+            "roadmap",
           ],
           "type": "string",
         },

@@ -1,6 +1,12 @@
 /* list_roadmaps, create_roadmap, get_roadmap: create, list under a deck, read issues with checks (no body). */
 import { describe, expect, it } from 'vitest'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
+import { mcpHandler } from '../../api/_lib/mcp'
+import { restHandler } from '../../api/_lib/rest'
 import { runTool } from '../../api/_lib/deck-service'
+import { TOOLS } from '../../src/engine/tools'
+import { INSTRUCTIONS } from '../../src/engine/tools/instructions'
 import { fakeJev, seedUser } from './fakes'
 import { fakeDb } from './fake-db'
 
@@ -223,5 +229,38 @@ describe('roadmap tools', () => {
     expect(i1.fields).toEqual({})
     expect(await call('set_fields', { roadmapId, request: 'empty name', fields: [{ id: 'f2', name: '  ', type: 'text' }] })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Every field needs a name.' } })
     expect((await ok('get_roadmap', { roadmapId })).fields).toEqual([])
+  })
+
+  it('get_guide roadmap names the rules, and list_templates rejects that style', async () => {
+    const { ok, call } = await world()
+    const g = String((await ok('get_guide', { style: 'roadmap' })).guide)
+    expect(g).toContain('Checks warn. They never authorise a silent edit.')
+    expect(g).toContain('Pass request: the user\'s own words, on every write.')
+    expect(g).toContain('Do not invent Workstream, Country, Function, or Epic.')
+    expect(g).toContain('Periods: 3–16')
+    expect(g).not.toContain('check_roadmap')
+    expect(await call('list_templates', { style: 'roadmap' })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
+    expect(await call('get_template', { template: 'chart', style: 'roadmap' })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
+    expect(TOOLS.map((t) => t.name)).not.toContain('check_roadmap')
+    expect(TOOLS.map((t) => t.name)).not.toContain('roadmap_timeline')
+    expect(INSTRUCTIONS).toContain('get_guide with style "roadmap"')
+  })
+
+  it('serves the roadmap guide as an MCP resource and over REST', async () => {
+    const db = fakeDb()
+    const handle = mcpHandler({ userFrom: async () => ({ id: 'u1', email: 'a@b.c', name: '', via: 'key' }), db: () => db, jev: fakeJev() })
+    const fetcher: typeof fetch = async (input, init) => handle(new Request(input instanceof Request ? input : String(input), init))
+    const c = new Client({ name: 'test', version: '1' })
+    await c.connect(new StreamableHTTPClientTransport(new URL('https://app.test/mcp/v1'), { fetch: fetcher }))
+    expect((await c.listResources()).resources.map((r) => r.uri)).toContain('smartchart://guide/roadmap')
+    const res = await c.readResource({ uri: 'smartchart://guide/roadmap' })
+    expect(String((res.contents[0] as { text: string }).text)).toContain('Checks warn.')
+    const rest = restHandler({ userFrom: async () => ({ id: 'u1', email: 'a@b.c', name: '', via: 'key' }), db: () => db, jev: fakeJev() })
+    const created = await rest(new Request('https://app.test/api/v1/create_roadmap', { method: 'POST', body: JSON.stringify({ name: 'P', prefix: 'PLN', request: 'add' }) }))
+    expect(created.status).toBe(200)
+    expect((await created.json()).links.edit).toMatch(/\/r\/rm_/)
+    const missing = await rest(new Request('https://app.test/api/v1/check_roadmap', { method: 'POST', body: '{}' }))
+    expect(missing.status).toBe(400)
+    expect(await missing.json()).toMatchObject({ error: { code: 'bad_input', message: 'Unknown tool check_roadmap.' } })
   })
 })

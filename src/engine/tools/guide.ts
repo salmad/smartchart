@@ -4,10 +4,11 @@ import { FIGURE_KINDS, type FigureKind } from "../docs/types.js";
 import { CALLOUT_FIELDS } from "../docs/validate.js";
 import { exampleFor } from "../agent/prompts.js";
 import type { Style, TemplateId } from "../types.js";
-import { docGuideText, guideText } from "./guide-text.js";
+import { docGuideText, guideText, roadmapGuideText } from "./guide-text.js";
 import { READ, ToolError, tool } from "./types.js";
 
 const STYLE = { type: "string", enum: ["consulting", "pitch", "doc"], description: "The deck's style (get_deck shows it), or \"doc\" for writing docs." } as const;
+const GET_GUIDE_STYLE = { type: "string", enum: ["consulting", "pitch", "doc", "roadmap"], description: "The deck's style (get_deck shows it), \"doc\" for writing docs, or \"roadmap\" for a roadmap." } as const;
 const TEMPLATE = { type: "string", enum: [...OFFERED, "callout"], description: "A template id from list_templates (a figure kind, with style \"doc\")." } as const;
 const DOC_HEAD = ["title", "subtitle", "kicker", "talk"];
 
@@ -20,10 +21,15 @@ function docCard(kind: FigureKind): { card: unknown; example: unknown } {
 }
 
 export const guideTools = [
-  tool<{ style: Style | "doc" }>({ name: "get_guide", title: "Writing guide", group: "guide", scope: "account", annotations: READ,
+  tool<{ style: Style | "doc" | "roadmap" }>({ name: "get_guide", title: "Writing guide", group: "guide", scope: "account", annotations: READ,
     description: "The rules for writing Occam slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
-    input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },
-    run: async (_ctx, { style }) => ({ result: { style, guide: style === "doc" ? docGuideText() : guideText(style as Style) } }) }),
+    input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: GET_GUIDE_STYLE } },
+    run: async (_ctx, { style }) => ({
+      result: {
+        style,
+        guide: style === "roadmap" ? roadmapGuideText() : style === "doc" ? docGuideText() : guideText(style as Style),
+      },
+    }) }),
   tool<{ style: Style | "doc" }>({ name: "list_templates", title: "List templates", group: "guide", scope: "account", annotations: READ,
     description: "Every slide template you can use, with what it is for. Use it to choose a template yourself, or call suggest_template to have Occam choose from the content.",
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: STYLE } },

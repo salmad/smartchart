@@ -52,6 +52,7 @@ describe('MCP host', () => {
     const c = await connect()
     const { resources } = await c.listResources()
     expect(resources.map((r) => r.uri)).toContain('smartchart://guide/consulting')
+    expect(resources.map((r) => r.uri)).toContain('smartchart://guide/roadmap')
     expect(resources.map((r) => r.uri)).toContain('smartchart://template/pitch/chart')
     const g = await c.readResource({ uri: 'smartchart://guide/pitch' })
     expect(String((g.contents[0] as { text?: string }).text)).toContain('# Hard rules')

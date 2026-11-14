@@ -51,3 +51,21 @@ ${ASK_OUTSIDE}`,
 - A write that breaks the schema is refused with the path and the fix, and changes nothing: correct it and write again.
 - Someone may be editing by hand: a result with a notice says so. Your change is saved; their next Save will be refused until they reload.`].join("\n\n");
 }
+
+/** get_guide with style "roadmap": how to plan issues and when to ask. */
+export function roadmapGuideText(): string {
+  return [`# Roadmaps
+A roadmap is a page of issues. An issue's key is the roadmap's prefix plus its number. You write titles, status, dates, assignees, and the fields that roadmap defined. You do not set colours, layout, or page numbers.
+
+# Tools
+list_roadmaps, create_roadmap (give the user links.edit), get_roadmap, list_issues, get_issue, create_issues, update_issue, move_issue, list_changes, delete_issue, set_fields. Nest a page with move_page and kind "roadmap". get_roadmap, list_issues, get_issue, and every write already include check ids.
+
+# Checks
+Checks warn. They never authorise a silent edit. Change an issue only when the user's words ask for that change.
+
+# Writes
+Pass request: the user's own words, on every write. delete_issue only when the user asked. Field names come from the roadmap (get_roadmap lists them). Do not invent Workstream, Country, Function, or Epic.
+
+# Timeline
+A timeline slide is a snapshot. Write it with create_slide and chart.kind "timeline". The slide does not subscribe to the roadmap. Periods: 3–16, each label at most 8 characters. Rows: at most 12 lines, at most 8 level-0 workstreams. A level-0 row with level-1 rows under it is a group and omits its own start and end. Milestones: at most 6, label at most 16.`].join("\n\n");
+}

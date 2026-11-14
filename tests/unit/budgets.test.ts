@@ -8,8 +8,8 @@ const tokens = (s: string) => Math.ceil(s.length / 4)
 const list = JSON.stringify({ templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: 'get_template for the one you pick; suggest_template to have Occam choose from the content.' })
 
 describe('context budgets (tokens ≈ chars / 4)', () => {
-  // 400 for decks; the docs paragraph (spec 2026-10-19 §6) is about 60 more.
-  it('instructions ≤ 495', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(495))
+  // 400 for decks; the docs paragraph (spec 2026-10-19 §6) is about 60 more; roadmaps (m4b task 8) about 90 more.
+  it('instructions ≤ 590', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(590))
   it('get_guide doc ≤ 1250', () => expect(tokens(docGuideText())).toBeLessThanOrEqual(1250))
   it.each(['consulting', 'pitch'] as const)('get_guide %s ≤ 2000', (s) => expect(tokens(guideText(s))).toBeLessThanOrEqual(2000))
   // 660 for fifteen templates (450 for ten, 400 for seven): about 44 tokens each.
