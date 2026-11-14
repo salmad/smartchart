@@ -1,3 +1,4 @@
+import { keyOf } from '../../src/engine/roadmaps/fields.js'
 import { NO_EDIT } from '../../src/engine/pages/tree.js'
 import { buildIndex } from '../../src/engine/roadmaps/index.js'
 import type { RoadmapOp } from '../../src/engine/roadmaps/ops.js'
@@ -103,6 +104,14 @@ async function run(e: RoadmapEnv): Promise<ToolReply> {
       return row ? [issueView(fresh.roadmap, fresh.issues, row, today, idx)] : []
     })
     const result: Record<string, unknown> = { ...out.result, seq: fresh.roadmap.seq, checks, issues: issueRows }
+    if (t.name === 'create_issues' && Array.isArray((out.result as { created?: unknown }).created)) {
+      const pre = (out.result as { created: { ref: string; issueId: string; key: string }[] }).created
+      const byId = new Map(fresh.issues.map((row) => [row.id, row]))
+      result.created = pre.map((c) => {
+        const row = byId.get(c.issueId)
+        return row ? { ...c, key: keyOf(fresh.roadmap, row) } : c
+      })
+    }
     if (t.name === 'delete_issue') result.deleted = said.changed.length
     if (t.name === 'set_fields') result.fields = fresh.roadmap.fields
     await db.markAgentConnectDone(uid)

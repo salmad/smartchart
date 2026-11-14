@@ -30,7 +30,7 @@ export const moveIssueTool = tool<{
   group: 'roadmaps',
   scope: 'roadmap',
   annotations: IDEMPOTENT,
-  description: 'Change an issue\'s parent and position among siblings. parentId is the new parent (null for a root). At most one of before or after names a sibling to order beside. Pass the user\'s own words as request.',
+  description: 'Change an issue\'s parent and position among siblings. parentId is the new parent (null for a root). At most one of before or after names a sibling to order beside; with neither, the issue goes last under that parent. Pass the user\'s own words as request.',
   input: {
     type: 'object',
     additionalProperties: false,

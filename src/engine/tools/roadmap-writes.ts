@@ -195,7 +195,7 @@ export const roadmapWriteTools = [
     group: 'roadmaps',
     scope: 'roadmap',
     annotations: DESTRUCTIVE,
-    description: 'Change paths on one live issue: title, status, assignee, start, due, or fields.<fieldId>. Not parent, order, or body — use move_issue for those. Pass the user\'s own words as request. Refused paths return the same sentences as the editor.',
+    description: 'Change paths on one live issue: title, status, assignee, start, due, or fields.<fieldId>. Body is not a path on this tool. Parent and order go through move_issue. Pass the user\'s own words as request. Refused paths return the same sentences as the editor.',
     input: {
       type: 'object',
       additionalProperties: false,

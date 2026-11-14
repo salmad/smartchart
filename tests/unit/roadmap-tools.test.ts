@@ -136,6 +136,24 @@ describe('roadmap tools', () => {
     expect(made.checks).toEqual(expect.arrayContaining([expect.objectContaining({ issueId: child.id, ids: expect.arrayContaining(['no_dates']) })]))
   })
 
+  it('create_issues reports saved keys after a concurrent numbering bump', async () => {
+    const { ok, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    const baseWrite = db.writeRoadmap.bind(db)
+    db.writeRoadmap = async (u, id, op, byClient) => {
+      if (op.op === 'create' && op.issues.length === 1 && op.issues[0].title === 'Agent issue') {
+        await baseWrite(u, id, { op: 'create', issues: [{ id: 'race', parentId: null, title: 'Racer' }] }, 'app')
+      }
+      return baseWrite(u, id, op, byClient)
+    }
+    const made = await ok('create_issues', { roadmapId, request: 'add one', issues: [{ ref: 'a', title: 'Agent issue' }] })
+    const created = made.created as { issueId: string; key: string }[]
+    const got = await ok('get_roadmap', { roadmapId })
+    const saved = (got.issues as { id: string; key: string }[]).find((i) => i.id === created[0].issueId)
+    expect(created[0].key).toBe(saved?.key)
+    expect(created[0].key).toBe('PLN-2')
+  })
+
   it('update_issue refuses a parent path and a start after due, and writes nothing', async () => {
     const { ok, call, db, acme } = await world()
     const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
@@ -229,6 +247,19 @@ describe('roadmap tools', () => {
     expect(i1.fields).toEqual({})
     expect(await call('set_fields', { roadmapId, request: 'empty name', fields: [{ id: 'f2', name: '  ', type: 'text' }] })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Every field needs a name.' } })
     expect((await ok('get_roadmap', { roadmapId })).fields).toEqual([])
+  })
+
+  it('set_fields refuses malformed field definitions without writing', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    const country = { id: 'f1', name: 'Country', type: 'choice' as const, options: [{ id: 'uk', name: 'UK' }] }
+    await ok('set_fields', { roadmapId, request: 'Add country', fields: [country] })
+    const seqBefore = (await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq
+    expect(await call('set_fields', { roadmapId, request: 'bad', fields: [{ id: 'f2', type: 'text' }] })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Every field needs a name.' } })
+    expect(await call('set_fields', { roadmapId, request: 'bad', fields: [{ name: 'X', type: 'text' }] })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Every field needs an id.' } })
+    expect(await call('set_fields', { roadmapId, request: 'bad', fields: [{ id: 'f3', name: 'X', type: 42 }] })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Field “X” has an unknown type.' } })
+    expect((await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq).toBe(seqBefore)
+    expect((await ok('get_roadmap', { roadmapId })).fields).toEqual([country])
   })
 
   it('get_guide roadmap names the rules, and list_templates rejects that style', async () => {
