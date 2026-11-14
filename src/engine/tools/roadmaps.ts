@@ -1,12 +1,14 @@
-/* Roadmap tools: list, create, and read a roadmap. Issue writes come in later tasks. */
+/* Roadmap tools: list, create, read, and write issues on a roadmap. */
 import { CHECK_IDS } from '../roadmaps/checks.js'
 import { buildIndex } from '../roadmaps/index.js'
 import { PREFIX, STATUSES, type IssueEvent } from '../roadmaps/types.js'
 import type { Chip } from '../roadmaps/view.js'
 import { pageArg, pageSchema, type PageArg } from './pages.js'
 import { issueView, matchingIssues, todayUtc } from './roadmap-view.js'
+import { loaded, requireRequest } from './roadmap-input.js'
+import { moveIssueTool, roadmapTailWriteTools } from './roadmap-tree-writes.js'
 import { roadmapWriteTools } from './roadmap-writes.js'
-import { READ, ToolError, WRITE, tool, type JsonSchema, type LoadedRoadmap, type ToolContext } from './types.js'
+import { READ, ToolError, WRITE, tool, type JsonSchema } from './types.js'
 
 const ROADMAP_ID = { type: 'string', description: 'The roadmap id from list_roadmaps or create_roadmap.' } as const
 const WORKSPACE_ID = { type: 'string', description: 'A workspaceId from list_workspaces. Leave it out for the workspace the user opened most recently.' } as const
@@ -32,17 +34,6 @@ function parseSince(s: string): number {
 
 function eventOut(e: IssueEvent) {
   return { issueId: e.issueId, what: e.what, changes: e.changes, by: e.by, byClient: e.byClient, at: new Date(e.at).toISOString() }
-}
-
-export function requireRequest(request: string): string {
-  const trimmed = request.trim()
-  if (!trimmed) throw new ToolError('bad_input', "request: the user's own words.")
-  return trimmed.slice(0, 300)
-}
-
-const loaded = (ctx: ToolContext): LoadedRoadmap => {
-  if (!ctx.roadmap) throw new ToolError('bad_input', 'No roadmap.', 'Pass roadmapId.')
-  return ctx.roadmap
 }
 
 export const roadmapTools = [
@@ -169,6 +160,8 @@ export const roadmapTools = [
 
   ...roadmapWriteTools,
 
+  moveIssueTool,
+
   tool<{ roadmapId: string; since: string }>({
     name: 'list_changes',
     title: 'List changes',
@@ -185,4 +178,6 @@ export const roadmapTools = [
       return { result: { events: evs.map(eventOut) } }
     },
   }),
+
+  ...roadmapTailWriteTools,
 ]

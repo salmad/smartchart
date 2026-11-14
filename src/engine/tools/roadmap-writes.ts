@@ -3,18 +3,8 @@ import type { IssueProps } from '../roadmaps/ops.js'
 import { keyOf } from '../roadmaps/fields.js'
 import { ISSUE_CYCLE, NO_ISSUE } from '../roadmaps/tree.js'
 import { STATUSES, type FieldValue, type Issue, type Status } from '../roadmaps/types.js'
-import { DESTRUCTIVE, ToolError, WRITE, tool, type JsonSchema, type LoadedRoadmap, type ToolContext } from './types.js'
-
-function requireRequest(request: string): string {
-  const trimmed = request.trim()
-  if (!trimmed) throw new ToolError('bad_input', "request: the user's own words.")
-  return trimmed.slice(0, 300)
-}
-
-const loaded = (ctx: ToolContext): LoadedRoadmap => {
-  if (!ctx.roadmap) throw new ToolError('bad_input', 'No roadmap.', 'Pass roadmapId.')
-  return ctx.roadmap
-}
+import { loaded, requireRequest } from './roadmap-input.js'
+import { DESTRUCTIVE, ToolError, WRITE, tool, type JsonSchema, type ToolContext } from './types.js'
 
 const REF = /^[\w-]{1,64}$/
 const FIELD_ID = /^[\w-]+$/

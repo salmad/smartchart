@@ -102,7 +102,9 @@ async function run(e: RoadmapEnv): Promise<ToolReply> {
       const row = fresh.issues.find((i) => i.id === cid)
       return row ? [issueView(fresh.roadmap, fresh.issues, row, today, idx)] : []
     })
-    const result = { ...out.result, seq: fresh.roadmap.seq, checks, issues: issueRows }
+    const result: Record<string, unknown> = { ...out.result, seq: fresh.roadmap.seq, checks, issues: issueRows }
+    if (t.name === 'delete_issue') result.deleted = said.changed.length
+    if (t.name === 'set_fields') result.fields = fresh.roadmap.fields
     await db.markAgentConnectDone(uid)
     return { ok: true, result }
   }

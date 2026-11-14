@@ -1837,6 +1837,55 @@ exports[`registry > the three views agree (published contract: only additions al
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Move an issue",
+    },
+    "description": "Change an issue's parent and position among siblings. parentId is the new parent (null for a root). At most one of before or after names a sibling to order beside. Pass the user's own words as request.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "type": "string",
+        },
+        "before": {
+          "type": "string",
+        },
+        "issueId": {
+          "type": "string",
+        },
+        "parentId": {
+          "oneOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "request": {
+          "type": "string",
+        },
+        "roadmapId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "parentId",
+        "issueId",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "move_issue",
+    "title": "Move an issue",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
       "title": "List changes",
     },
@@ -1860,6 +1909,74 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "list_changes",
     "title": "List changes",
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete an issue",
+    },
+    "description": "Soft-delete an issue and its sub-issues in one step. Returns how many rows were removed. Pass the user's own words as request.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "issueId": {
+          "type": "string",
+        },
+        "request": {
+          "type": "string",
+        },
+        "roadmapId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "issueId",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "delete_issue",
+    "title": "Delete an issue",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Define roadmap fields",
+    },
+    "description": "Replace the ordered list of custom field definitions on a roadmap. Removing a field strips its values from every issue in the same write. Pass the user's own words as request.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "request": {
+          "type": "string",
+        },
+        "roadmapId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "fields",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "set_fields",
+    "title": "Define roadmap fields",
   },
   {
     "annotations": {

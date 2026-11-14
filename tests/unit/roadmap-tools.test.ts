@@ -164,4 +164,64 @@ describe('roadmap tools', () => {
     })
     expect((await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq).toBe(seq)
   })
+
+  it('delete_issue removes the subtree, counts it, and tells a viewer no', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [
+      { id: 'p', parentId: null, title: 'Parent' },
+      { id: 'c', parentId: 'p', title: 'Child' },
+    ] }, 'app')
+    expect(await call('delete_issue', { roadmapId, issueId: 'p', request: 'Remove this branch' }, bob)).toMatchObject({ ok: false, error: { code: 'refused', message: 'You can view this workspace, not change it.' } })
+    expect((await ok('get_roadmap', { roadmapId }, bob)).issues).toHaveLength(2)
+    const gone = await ok('delete_issue', { roadmapId, issueId: 'p', request: 'Remove this branch' })
+    expect(gone.deleted).toBe(2)
+    const left = await db.getRoadmap(ann.id, roadmapId)
+    if (!left) throw new Error('roadmap missing')
+    const rows = left.issues.filter((i) => i.id === 'p' || i.id === 'c')
+    expect(rows.every((i) => i.deletedAt !== null && i.deletedAt === rows[0].deletedAt)).toBe(true)
+    expect((await ok('get_roadmap', { roadmapId })).issues).toEqual([])
+    expect(await call('delete_issue', { roadmapId, issueId: 'p', request: 'again' })).toMatchObject({ ok: false, error: { code: 'refused', message: 'No such issue.' } })
+  })
+
+  it('move_issue refuses a cycle and a slot that is not a sibling', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [
+      { id: 'p', parentId: null, title: 'Parent' },
+      { id: 'c', parentId: 'p', title: 'Child' },
+      { id: 's', parentId: null, title: 'Sib' },
+    ] }, 'app')
+    expect(await call('move_issue', { roadmapId, issueId: 'p', parentId: 'c', request: 'nest it' })).toMatchObject({ ok: false, error: { code: 'refused', message: 'An issue can’t go inside itself or its sub-issues.' } })
+    expect(await call('move_issue', { roadmapId, issueId: 'c', parentId: null, before: 'p', after: 's', request: 'both' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: 'before and after: give one, not both.' } })
+    const moved = await ok('move_issue', { roadmapId, issueId: 'c', parentId: null, before: 's', request: 'put the child just before S' })
+    expect((moved.issues as { id: string; parentId: string | null }[])[0]).toMatchObject({ id: 'c', parentId: null })
+    const roots = (await ok('get_roadmap', { roadmapId })).issues as { id: string }[]
+    expect(roots.map((i) => i.id)).toEqual(['p', 'c', 's'])
+    const chain: { id: string; parentId: string | null; title: string }[] = []
+    for (let n = 1; n <= 12; n++) {
+      chain.push({ id: `i${n}`, parentId: n === 1 ? null : `i${n - 1}`, title: `L${n}` })
+    }
+    chain.push({ id: 'extra', parentId: null, title: 'Extra' })
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: chain }, 'app')
+    expect(await call('move_issue', { roadmapId, issueId: 'extra', parentId: 'i12', request: 'nest it deeper' })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Issues nest 12 levels deep at most.' } })
+    const extra = (await db.getRoadmap(ann.id, roadmapId))?.issues.find((i) => i.id === 'extra')
+    if (!extra) throw new Error('extra missing')
+    expect(extra.parentId).toBeNull()
+  })
+
+  it('set_fields replaces the list and strips a removed field’s values', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    const country = { id: 'f1', name: 'Country', type: 'choice', options: [{ id: 'uk', name: 'UK' }] }
+    await ok('set_fields', { roadmapId, request: 'Add country', fields: [country] })
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [{ id: 'i1', parentId: null, title: 'One', props: { fields: { f1: 'uk' } } }] }, 'app')
+    const cleared = await ok('set_fields', { roadmapId, request: 'Drop country', fields: [] })
+    expect(cleared.fields).toEqual([])
+    const i1 = (await db.getRoadmap(ann.id, roadmapId))?.issues.find((i) => i.id === 'i1')
+    if (!i1) throw new Error('i1 missing')
+    expect(i1.fields).toEqual({})
+    expect(await call('set_fields', { roadmapId, request: 'empty name', fields: [{ id: 'f2', name: '  ', type: 'text' }] })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Every field needs a name.' } })
+    expect((await ok('get_roadmap', { roadmapId })).fields).toEqual([])
+  })
 })
