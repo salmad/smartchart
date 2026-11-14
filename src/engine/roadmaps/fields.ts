@@ -21,17 +21,19 @@ export function checkFieldDefs(defs: FieldDef[]): 'ok' | string {
   const ids = new Set<string>()
   const names = new Set<string>()
   for (const def of defs) {
+    if (typeof def.name !== 'string') return 'Every field needs a name.'
     const name = def.name.trim()
     if (!name) return 'Every field needs a name.'
+    if (typeof def.id !== 'string') return 'Every field needs an id.'
     if (!def.id.trim()) return 'Every field needs an id.'
     if (ids.has(def.id)) return `Field id “${def.id}” is already used.`
     ids.add(def.id)
     const key = normName(name)
     if (names.has(key)) return `Field name “${name}” is already used.`
     names.add(key)
-    if (!FIELD_TYPES.has(def.type)) return `Field “${name}” has an unknown type.`
+    if (typeof def.type !== 'string' || !FIELD_TYPES.has(def.type)) return `Field “${name}” has an unknown type.`
     if (def.type === 'choice') {
-      const options = def.options ?? []
+      const options = Array.isArray(def.options) ? def.options : []
       if (!options.length) return `Field “${name}” needs at least one option.`
       if (options.length > MAX_OPTIONS) return `Field “${name}” has at most ${MAX_OPTIONS} options.`
       const optIds = new Set<string>()

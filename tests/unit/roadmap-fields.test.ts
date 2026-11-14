@@ -4,6 +4,12 @@ import type { FieldDef } from '../../src/engine/roadmaps/types'
 import { issue, roadmap } from './roadmap-builders'
 
 describe('roadmap fields', () => {
+  it('refuses missing name, id, and bad types without throwing', () => {
+    expect(checkFieldDefs([{ id: 'f2', type: 'text' } as FieldDef])).toBe('Every field needs a name.')
+    expect(checkFieldDefs([{ name: 'X', type: 'text' } as FieldDef])).toBe('Every field needs an id.')
+    expect(checkFieldDefs([{ id: 'f3', name: 'X', type: 42 as unknown as FieldDef['type'] }])).toBe('Field “X” has an unknown type.')
+  })
+
   it('refuses duplicate field names, a choice without options and unknown types', () => {
     expect(checkFieldDefs([{ id: 'f1', name: 'Country', type: 'choice', options: [{ id: 'o1', name: 'UK' }] }])).toBe('ok')
     expect(checkFieldDefs([{ id: 'f1', name: 'A', type: 'text' }, { id: 'f2', name: 'a', type: 'text' }])).toMatch(/already/)
