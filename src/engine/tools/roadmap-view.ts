@@ -34,6 +34,11 @@ export function checksFor(issues: readonly Issue[], issueId: string, today: stri
   return checksForIndex(buildIndex([...issues]), issueId, today)
 }
 
+export function checksTouched(issues: readonly Issue[], ids: readonly string[], today: string): { issueId: string; ids: CheckId[] }[] {
+  const idx = buildIndex([...issues])
+  return ids.map((issueId) => ({ issueId, ids: checksForIndex(idx, issueId, today) }))
+}
+
 export function matchingIssues(issues: readonly Issue[], chips: readonly Chip[], today: string, idx?: IssueIndex): Issue[] {
   const index = idx ?? buildIndex([...issues])
   const out: Issue[] = []

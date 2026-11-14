@@ -1695,6 +1695,146 @@ exports[`registry > the three views agree (published contract: only additions al
   {
     "annotations": {
       "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create issues",
+    },
+    "description": "Add one or more issues in a single transaction. Each item needs a unique ref (your key for this call), a title, and optionally status, assignee, start, due, field values, and parent (an existing issue id or another item's ref). Sub-issues do not inherit field values unless you set them. Returns created refs with issue ids and keys.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "issues": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "assignee": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+              "due": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+              "fields": {
+                "additionalProperties": true,
+                "type": "object",
+              },
+              "parent": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+              "ref": {
+                "type": "string",
+              },
+              "start": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+              "status": {
+                "enum": [
+                  "backlog",
+                  "todo",
+                  "in_progress",
+                  "blocked",
+                  "done",
+                  "cancelled",
+                ],
+                "type": "string",
+              },
+              "title": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "ref",
+              "title",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "request": {
+          "type": "string",
+        },
+        "roadmapId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "issues",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "create_issues",
+    "title": "Create issues",
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Update an issue",
+    },
+    "description": "Change paths on one live issue: title, status, assignee, start, due, or fields.<fieldId>. Not parent, order, or body — use move_issue for those. Pass the user's own words as request. Refused paths return the same sentences as the editor.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "issueId": {
+          "type": "string",
+        },
+        "request": {
+          "type": "string",
+        },
+        "roadmapId": {
+          "type": "string",
+        },
+        "set": {
+          "additionalProperties": true,
+          "type": "object",
+        },
+      },
+      "required": [
+        "roadmapId",
+        "issueId",
+        "set",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "update_issue",
+    "title": "Update an issue",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false,
       "readOnlyHint": true,

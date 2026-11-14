@@ -99,4 +99,69 @@ describe('roadmap tools', () => {
     expect(await call('list_issues', { roadmapId, chips: [{ on: 'nope' }] })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
     expect(await call('list_changes', { roadmapId, since: 'tomorrow' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: 'since: an ISO date (YYYY-MM-DD).' } })
   })
+
+  it('create_issues parents a child listed first and does not copy fields', async () => {
+    const { ok, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    const country = { id: 'f1', name: 'Country', type: 'choice' as const, options: [{ id: 'uk', name: 'UK' }] }
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'roadmap', fields: [country] }, 'app')
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [{ id: 'p', parentId: null, title: 'Parent', props: { fields: { f1: 'uk' } } }] }, 'app')
+    const before = (await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq ?? -1
+    const made = await ok('create_issues', {
+      roadmapId, request: 'Add the UK task under a new group',
+      issues: [
+        { ref: 'child', title: 'UK task', parent: 'group' },
+        { ref: 'group', title: 'Underwriting', parent: 'p', fields: { f1: 'uk' } },
+      ],
+    })
+    const created = made.created as { ref: string; issueId: string; key: string }[]
+    expect(created.map((c) => c.ref)).toEqual(['child', 'group'])
+    const fresh = await db.getRoadmap(ann.id, roadmapId)
+    expect(fresh?.roadmap.seq).toBe(before + 1)
+    const group = fresh?.issues.find((i) => i.id === created[1].issueId)
+    const child = fresh?.issues.find((i) => i.id === created[0].issueId)
+    if (!group || !child) throw new Error('issues missing')
+    expect(group.parentId).toBe('p')
+    expect(group.fields).toEqual({ f1: 'uk' })
+    expect(child.parentId).toBe(group.id)
+    expect(child.fields).toEqual({})
+    const detail = await db.getIssueDetail(ann.id, roadmapId, child.id)
+    expect(detail?.events.filter((e) => e.what === 'created')).toEqual([expect.objectContaining({ byClient: 'Claude Code' })])
+    expect(made.checks).toEqual(expect.arrayContaining([expect.objectContaining({ issueId: child.id, ids: expect.arrayContaining(['no_dates']) })]))
+  })
+
+  it('update_issue refuses a parent path and a start after due, and writes nothing', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [{ id: 'i1', parentId: null, title: 'One' }] }, 'app')
+    const seq = (await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq ?? -1
+    expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { parentId: null }, request: 'move it' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: 'set: only title, status, assignee, start, due, and fields.<fieldId>.' } })
+    expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { body: 'x' }, request: 'edit the body' })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
+    expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { start: '2026-05-02', due: '2026-05-01' }, request: 'fix the dates' })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Start must be before due.' } })
+    expect((await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq).toBe(seq)
+    expect((await db.getRoadmap(ann.id, roadmapId))?.issues.find((i) => i.id === 'i1')?.title).toBe('One')
+  })
+
+  it('update_issue sets two paths as one event and refuses an unknown option', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'roadmap', fields: [{ id: 'f1', name: 'Country', type: 'choice', options: [{ id: 'uk', name: 'UK' }] }] }, 'app')
+    await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [{ id: 'i1', parentId: null, title: 'One' }] }, 'app')
+    const upd = await ok('update_issue', { roadmapId, issueId: 'i1', request: 'Call it Send RFP and set the country', set: { title: 'Send RFP', 'fields.f1': 'uk' } })
+    expect(upd.issues).toEqual([expect.objectContaining({ id: 'i1', title: 'Send RFP', fields: { f1: 'uk' } })])
+    const ev = await db.getIssueDetail(ann.id, roadmapId, 'i1')
+    expect(ev?.events.filter((e) => e.what === 'set').at(-1)?.changes.map((c) => c.path).sort()).toEqual(['fields', 'title'])
+    expect(await call('update_issue', { roadmapId, issueId: 'i1', request: 'bad country', set: { 'fields.f1': 'zz' } })).toMatchObject({ ok: false, error: { code: 'refused', message: '“Country” has no option “zz”.' } })
+  })
+
+  it('create_issues refuses a viewer and writes nothing', async () => {
+    const { ok, call, db, acme } = await world()
+    const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+    const seq = (await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq ?? -1
+    expect(await call('create_issues', { roadmapId, request: 'add one', issues: [{ ref: 'a', title: 'A' }] }, bob)).toMatchObject({
+      ok: false,
+      error: { code: 'refused', message: 'You can view this workspace, not change it.' },
+    })
+    expect((await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq).toBe(seq)
+  })
 })

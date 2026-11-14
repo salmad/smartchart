@@ -1,5 +1,7 @@
 import { NO_EDIT } from '../../src/engine/pages/tree.js'
+import { buildIndex } from '../../src/engine/roadmaps/index.js'
 import type { RoadmapOp } from '../../src/engine/roadmaps/ops.js'
+import { checksTouched, issueView, todayUtc } from '../../src/engine/tools/roadmap-view.js'
 import { ToolError, type AccountPort, type AnyTool, type ToolContext } from '../../src/engine/tools/types.js'
 import type { UserLook } from '../../src/engine/look.js'
 import type { JevFn } from '../../src/engine/agent/llm.js'
@@ -10,6 +12,13 @@ const ID = /^[\w-]{1,64}$/
 const VIEW_WORKSPACE = new ToolError('refused', 'You can view this workspace, not add to it.', 'Pick a workspace where you are an editor (list_workspaces).')
 const noRoadmap = (id: unknown) => new ToolError('not_found', `No roadmap ${String(id)}.`, 'list_roadmaps shows your roadmaps.')
 const noWorkspace = (id: string) => new ToolError('not_found', `No workspace ${id}.`, 'list_workspaces shows your workspaces.')
+const BUSY = 'Busy, try again.'
+const saveRefusal = (id: string, said: string) => {
+  if (said === 'foreign') return noRoadmap(id)
+  if (said === BUSY) return new ToolError('conflict', BUSY, 'Call it again.')
+  if (said === NO_EDIT) return new ToolError('refused', NO_EDIT, 'Ask an owner of the workspace to make you an editor.')
+  return new ToolError('refused', said, 'Fix it and call again; nothing was changed.')
+}
 
 export interface RoadmapEnv {
   tool: AnyTool; input: unknown; uid: string; client: string; db: Db; origin: string
@@ -79,7 +88,23 @@ async function run(e: RoadmapEnv): Promise<ToolReply> {
     }
     throw new ToolError('refused', said, 'Fix it and call again; nothing was changed.')
   }
-  // roadmapOp saved in a later task; ignore if set
-  void (out.roadmapOp as RoadmapOp | undefined)
+  if (out.roadmapOp) {
+    const id = typeof roadmapId === 'string' ? roadmapId : ''
+    const said = await e.port.saveRoadmap(id, out.roadmapOp as RoadmapOp, e.client)
+    if (typeof said === 'string') throw saveRefusal(id, said)
+    const fresh = await e.port.loadRoadmap(id)
+    if (!fresh) throw noRoadmap(id)
+    const today = todayUtc(e.now())
+    const changedIds = said.changed.map((i) => i.id)
+    const checks = checksTouched(fresh.issues, changedIds, today)
+    const idx = buildIndex([...fresh.issues])
+    const issueRows = changedIds.flatMap((cid) => {
+      const row = fresh.issues.find((i) => i.id === cid)
+      return row ? [issueView(fresh.roadmap, fresh.issues, row, today, idx)] : []
+    })
+    const result = { ...out.result, seq: fresh.roadmap.seq, checks, issues: issueRows }
+    await db.markAgentConnectDone(uid)
+    return { ok: true, result }
+  }
   return { ok: true, result: out.result }
 }

@@ -5,6 +5,7 @@ import { PREFIX, STATUSES, type IssueEvent } from '../roadmaps/types.js'
 import type { Chip } from '../roadmaps/view.js'
 import { pageArg, pageSchema, type PageArg } from './pages.js'
 import { issueView, matchingIssues, todayUtc } from './roadmap-view.js'
+import { roadmapWriteTools } from './roadmap-writes.js'
 import { READ, ToolError, WRITE, tool, type JsonSchema, type LoadedRoadmap, type ToolContext } from './types.js'
 
 const ROADMAP_ID = { type: 'string', description: 'The roadmap id from list_roadmaps or create_roadmap.' } as const
@@ -165,6 +166,8 @@ export const roadmapTools = [
       }
     },
   }),
+
+  ...roadmapWriteTools,
 
   tool<{ roadmapId: string; since: string }>({
     name: 'list_changes',
