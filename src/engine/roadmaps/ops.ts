@@ -8,7 +8,10 @@ export type IssueProps = Partial<Pick<Issue, 'title' | 'status' | 'assignee' | '
 }
 
 export type RoadmapOp =
-  | { op: 'create'; issues: { id: string; parentId: string | null; title: string; after?: string; props?: IssueProps }[] }
+  | {
+      op: 'create'
+      issues: { id: string; parentId: string | null; title: string; after?: string; inheritFields?: boolean; props?: IssueProps }[]
+    }
   | { op: 'set'; ids: string[]; props: IssueProps }
   | { op: 'move'; id: string; parentId: string | null; before?: string; after?: string }
   | { op: 'delete'; ids: string[] }
@@ -235,7 +238,7 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         assignee: null,
         start: null,
         due: null,
-        fields: parent ? { ...parent.fields } : {},
+        fields: row.inheritFields === false ? {} : parent ? { ...parent.fields } : {},
         bodyRev: 0,
         seq,
         createdBy: ctx.by,

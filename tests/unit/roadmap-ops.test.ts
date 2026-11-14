@@ -39,6 +39,14 @@ describe('roadmap ops', () => {
     expect(r.events[0]).toMatchObject({ issueId: 'n', what: 'created' })
   })
 
+  it('inheritFields false does not copy the parent’s field values', () => {
+    const base = state({ fields: [country] }, [issue({ id: 'p', fields: { f1: 'uk' } })])
+    const bare = ok(applyOp(base, { op: 'create', issues: [{ id: 'n', parentId: 'p', title: 'Child', inheritFields: false }] }, ctx))
+    expect(bare.state.issues.find((i) => i.id === 'n')?.fields).toEqual({})
+    const named = ok(applyOp(base, { op: 'create', issues: [{ id: 'n2', parentId: 'p', title: 'Named', inheritFields: false, props: { fields: { f1: 'uk' } } }] }, ctx))
+    expect(named.state.issues.find((i) => i.id === 'n2')?.fields).toEqual({ f1: 'uk' })
+  })
+
   it('creates a parent and child in the same op', () => {
     const r = ok(
       applyOp(state({ nextNumber: 1 }, []), { op: 'create', issues: [{ id: 'p', parentId: null, title: 'Parent' }, { id: 'c', parentId: 'p', title: 'Child' }] }, ctx),
