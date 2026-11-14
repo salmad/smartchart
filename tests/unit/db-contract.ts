@@ -282,6 +282,23 @@ export function dbContract(name: string, make: () => Promise<Db>) {
       expect(await db.roadmapChanges(ann.id, rm, 0)).toBeNull()
     })
 
+    it('lists a workspace’s roadmaps and events since a time', async () => {
+      const db = await make(), { ann, cy, id } = people()
+      const ws = await seedUser(db, ann)
+      const rm = id('rm'), before = Date.now()
+      expect(await db.createRoadmap(ann.id, { id: rm, name: 'Plan', prefix: 'PLN', workspaceId: ws })).toBe('ok')
+      expect(await db.listRoadmaps(ann.id, ws)).toMatchObject([{ id: rm, name: 'Plan', prefix: 'PLN', parent: null }])
+      await join(db, ann, ws, cy, 'viewer')
+      expect(await db.listRoadmaps(cy.id, ws)).toMatchObject([{ id: rm }])
+      expect(await db.listRoadmaps(ann.id, id('ws'))).toEqual([])
+      const i1 = id('i')
+      await db.writeRoadmap(ann.id, rm, { op: 'create', issues: [{ id: i1, parentId: null, title: 'One' }] }, 'Claude Code')
+      const ev = await db.roadmapEventsSince(ann.id, rm, before)
+      expect(ev?.find((e) => e.what === 'created')).toMatchObject({ issueId: i1, byClient: 'Claude Code' })
+      expect(await db.roadmapEventsSince(ann.id, rm, Date.now() + 60_000)).toEqual([])
+      expect(await db.roadmapEventsSince(id('u'), rm, 0)).toBeNull()
+    })
+
     it('duplicate copies issue body and leaves comments empty', async () => {
       const db = await make(), { ann, id } = people()
       const ws = await seedUser(db, ann)

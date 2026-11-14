@@ -9,7 +9,7 @@ import type { CommentOp, DocComment } from '../../src/engine/comments.js'
 import type { DocProposal, ProposalOp } from '../../src/engine/docs/proposals.js'
 import type { QuietOp } from '../../src/engine/docs/checks.js'
 import type { PageRef, PageSummary, Slot } from '../../src/engine/pages/tree.js'
-import type { Issue, IssueComment, LoadedRoadmap, Changes, IssueDetail } from '../../src/engine/roadmaps/types.js'
+import type { Issue, IssueComment, IssueEvent, LoadedRoadmap, Changes, IssueDetail } from '../../src/engine/roadmaps/types.js'
 import type { RoadmapOp } from '../../src/engine/roadmaps/ops.js'
 import type { Role } from './access.js'
 import { deckCalls } from './db-decks.js'
@@ -45,6 +45,8 @@ export interface InviteRow { token: string; email: string; role: Role; expires: 
     the email it was made for, when someone else holds the link. */
 export type InviteResult = { workspaceId: string; role: Role } | 'gone' | { wrongEmail: string }
 export interface DocSummary { id: string; name: string; updated: number; workspaceId: string; parent: PageRef | null; sortKey: string | null }
+/** What a roadmap list shows: name, prefix and tree position, never issues or fields. */
+export interface RoadmapSummary { id: string; name: string; prefix: string; updated: number; parent: PageRef | null }
 export type { PageSummary }
 /** The most pages a workspace's tree call returns. */
 export const MAX_PAGES = 5000
@@ -145,7 +147,9 @@ export interface Db {
   /** Deletes the doc and every page below it, with their versions and blobs. */
   deleteDoc(userId: string, id: string): Promise<boolean>
   createRoadmap(userId: string, r: { id: string; name: string; prefix: string; workspaceId: string; parent?: PageRef }): Promise<'ok' | 'foreign' | string>
+  listRoadmaps(userId: string, workspaceId: string): Promise<RoadmapSummary[]>
   getRoadmap(userId: string, id: string): Promise<LoadedRoadmap | null>
+  roadmapEventsSince(userId: string, id: string, sinceMs: number): Promise<IssueEvent[] | null>
   roadmapChanges(userId: string, id: string, since: number): Promise<Changes | null>
   writeRoadmap(userId: string, id: string, op: RoadmapOp, byClient: string): Promise<{ seq: number; changed: Issue[] } | 'foreign' | string>
   getIssueDetail(userId: string, id: string, issueId: string): Promise<IssueDetail | null>

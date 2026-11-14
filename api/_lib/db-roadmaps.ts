@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto'
 import { applyOp } from '../../src/engine/roadmaps/ops.js'
 import type { FieldDef, Issue, IssueComment, IssueEvent } from '../../src/engine/roadmaps/types.js'
-import { NO_EDIT } from '../../src/engine/pages/tree.js'
+import { NO_EDIT, type PageRef } from '../../src/engine/pages/tree.js'
 import { rolesFor, type Role } from './access.js'
 import { may, roleOf } from './db-decks.js'
-import type { Db, Q, Tx } from './db.js'
+import type { Db, Q, RoadmapSummary, Tx } from './db.js'
 
 const R = (a: 'read' | 'write') => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
@@ -51,7 +51,10 @@ const toEvent = (r: { issue_id: string | null; user_id: string; by_client: strin
   changes: r.changes,
 })
 
-type Calls = 'getRoadmap' | 'roadmapChanges' | 'writeRoadmap' | 'getIssueDetail' | 'putIssueBody' | 'addIssueComment'
+const parentOf = (parent_kind: PageRef['kind'] | null, parent_id: string | null): PageRef | null =>
+  parent_kind && parent_id ? { kind: parent_kind, id: parent_id } : null
+
+type Calls = 'getRoadmap' | 'listRoadmaps' | 'roadmapChanges' | 'roadmapEventsSince' | 'writeRoadmap' | 'getIssueDetail' | 'putIssueBody' | 'addIssueComment'
 
 const BUSY = 'Busy, try again.'
 
@@ -147,6 +150,9 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
       if (!loaded) return null
       return { roadmap: loaded.roadmap, issues: loaded.issues, role: loaded.m.role, members: await membersOf(loaded.m.workspace_id) }
     },
+    listRoadmaps: async (u, ws) => (await q<Omit<RoadmapSummary, 'updated' | 'parent'> & { updated_at: string | Date; parent_kind: PageRef['kind'] | null; parent_id: string | null }>(
+      `select id, name, prefix, updated_at, parent_kind, parent_id from roadmaps where workspace_id = $2 and ${may('roadmaps', '$1', '$3')} order by updated_at desc limit 200`,
+      [u, ws, R('read')])).map((r) => ({ id: r.id, name: r.name, prefix: r.prefix, updated: ms(r.updated_at), parent: parentOf(r.parent_kind, r.parent_id) })),
     roadmapChanges: async (u, id, since) => {
       const loaded = await loadState(u, id)
       if (!loaded) return null
@@ -156,6 +162,13 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
         `select issue_id, user_id, by_client, at, what, changes, seq from issue_events where roadmap_id = $2 and seq > $3 and ${may('roadmaps', '$1', '$4')}`,
         [u, id, since, R('read')])
       return { seq, roadmap: seq > since ? loaded.roadmap : null, issues, events: evs.map(toEvent) }
+    },
+    roadmapEventsSince: async (u, id, sinceMs) => {
+      if (!(await readRoadmap(u, id, R('read')))) return null
+      const evs = await q<{ issue_id: string | null; user_id: string; by_client: string; at: string | Date; what: string; changes: IssueEvent['changes'] }>(
+        `select issue_id, user_id, by_client, at, what, changes from issue_events where roadmap_id = $2 and at >= to_timestamp($3::float8 / 1000.0) and ${may('roadmaps', '$1', '$4')} order by at`,
+        [u, id, sinceMs, R('read')])
+      return evs.map(toEvent)
     },
     writeRoadmap: async (u, id, op, byClient) => retrying(async () => {
       const read = await loadForOp(u, id)

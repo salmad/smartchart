@@ -14,7 +14,7 @@ export type FakeIssueRow = Issue & { roadmapId: string; body: string; comments: 
 
 type StoredEvent = IssueEvent & { roadmapId: string; seq: number }
 
-type Calls = 'createRoadmap' | 'getRoadmap' | 'roadmapChanges' | 'writeRoadmap' | 'getIssueDetail' | 'putIssueBody' | 'addIssueComment' | 'deleteRoadmap'
+type Calls = 'createRoadmap' | 'listRoadmaps' | 'getRoadmap' | 'roadmapChanges' | 'roadmapEventsSince' | 'writeRoadmap' | 'getIssueDetail' | 'putIssueBody' | 'addIssueComment' | 'deleteRoadmap'
 
 export function fakeRoadmapCalls(deps: {
   roadmaps: Map<string, FakeRoadmapRow>
@@ -85,12 +85,23 @@ export function fakeRoadmapCalls(deps: {
       if (!m) return null
       return { ...loadState(m), role: role(u, m) as Role, members: membersLite(m.ws) }
     },
+    listRoadmaps: async (u, ws) => [...roadmaps.values()]
+      .filter((m) => m.ws === ws && can(role(u, m), 'read'))
+      .sort((a, b) => b.updated - a.updated)
+      .map((m) => ({ id: m.id, name: m.name, prefix: m.prefix, updated: m.updated, parent: m.parent ?? null })),
     roadmapChanges: async (u, id, since) => {
       const m = roadmapIf(u, id, 'read')
       if (!m) return null
       const changedIssues = [...issues.values()].filter((i) => i.roadmapId === id && i.seq > since).map(({ roadmapId: _r, body: _b, comments: _c, ...issue }) => structuredClone(issue))
       const events = issueEvents.filter((e) => e.roadmapId === id && e.seq > since).map(({ roadmapId: _r, seq: _s, ...e }) => structuredClone(e))
       return { seq: m.seq, roadmap: m.seq > since ? loadState(m).roadmap : null, issues: changedIssues, events }
+    },
+    roadmapEventsSince: async (u, id, sinceMs) => {
+      if (!roadmapIf(u, id, 'read')) return null
+      return issueEvents
+        .filter((e) => e.roadmapId === id && e.at >= sinceMs)
+        .sort((a, b) => a.at - b.at)
+        .map(({ roadmapId: _r, seq: _s, ...e }) => structuredClone(e))
     },
     writeRoadmap: async (u, id, op, byClient) => {
       const m = roadmaps.get(id)
