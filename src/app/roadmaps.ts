@@ -4,7 +4,7 @@ import { parseDoc } from '@/engine/docs/parse'
 import { serializeDoc } from '@/engine/docs/serialize'
 import { newCommentId } from '@/engine/comments'
 import type { PageRef } from '@/engine/pages/tree'
-import { applyOp, type RoadmapOp } from '@/engine/roadmaps/ops'
+import { applyOp, rolloverDue, SYSTEM_USER, type OpResult, type RoadmapOp } from '@/engine/roadmaps/ops'
 import type { Changes, Issue, IssueComment, IssueDetail, IssueEvent, LoadedRoadmap, RoadmapState } from '@/engine/roadmaps/types'
 import { cacheDelete, cacheGet, cacheSet } from './cache'
 import { DOC_STALE } from './docs'
@@ -144,7 +144,7 @@ type StoredEvent = IssueEvent & { seq: number }
 interface StoredRoadmap {
   id: string; name: string; prefix: string; workspaceId: string; updated: number
   parent?: PageRef | null; sortKey?: string | null
-  fields: RoadmapState['roadmap']['fields']; nextNumber: number; seq: number
+  fields: RoadmapState['roadmap']['fields']; sprints?: RoadmapState['roadmap']['sprints']; nextNumber: number; seq: number
   issues: StoredIssue[]; events: StoredEvent[]
 }
 
@@ -169,16 +169,51 @@ export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>)
   const read = (): Record<string, StoredRoadmap> => { try { return (JSON.parse(store().getItem(ROADMAPS_KEY) ?? 'null') as Record<string, StoredRoadmap> | null) ?? {} } catch { return {} } }
   const write = (all: Record<string, StoredRoadmap>) => { try { store().setItem(ROADMAPS_KEY, JSON.stringify(all)); return true } catch { return false } }
   const loadState = (m: StoredRoadmap): RoadmapState => ({
-    roadmap: { id: m.id, workspaceId: m.workspaceId, name: m.name, prefix: m.prefix, fields: structuredClone(m.fields), nextNumber: m.nextNumber, seq: m.seq },
-    issues: m.issues.map(({ body: _b, comments: _c, ...issue }) => structuredClone(issue)),
+    roadmap: { id: m.id, workspaceId: m.workspaceId, name: m.name, prefix: m.prefix, fields: structuredClone(m.fields), sprints: structuredClone(m.sprints ?? null), nextNumber: m.nextNumber, seq: m.seq },
+    issues: m.issues.map(({ body: _b, comments: _c, ...issue }) => structuredClone({ ...issue, sprint: issue.sprint ?? null, carried: issue.carried ?? 0 })),
   })
   const loaded = (m: StoredRoadmap): LoadedRoadmap => ({ ...loadState(m), role: 'owner', members: LOCAL_MEMBERS })
   const tick = () => Date.now()
+  const keep = (m: StoredRoadmap, op: RoadmapOp, r: Exclude<OpResult, { refused: string }>, now: number) => {
+    m.name = r.state.roadmap.name
+    m.fields = structuredClone(r.state.roadmap.fields)
+    m.sprints = structuredClone(r.state.roadmap.sprints)
+    m.nextNumber = r.state.roadmap.nextNumber
+    m.seq = r.state.roadmap.seq
+    m.updated = now
+    for (const row of r.changed) {
+      const prev = m.issues.find((i) => i.id === row.id)
+      let body = prev?.body ?? ''
+      if (op.op === 'duplicate') {
+        const sourceId = op.copies.find((c) => c.id === row.id)?.sourceId
+        if (sourceId) body = m.issues.find((i) => i.id === sourceId)?.body ?? ''
+      }
+      const next = { ...structuredClone(row), body, comments: prev?.comments ?? [] }
+      const i = m.issues.findIndex((x) => x.id === row.id)
+      if (i >= 0) m.issues[i] = next
+      else m.issues.push(next)
+    }
+    for (const e of r.events) m.events.push({ ...e, seq: m.seq })
+  }
+  /** Open work in an ended sprint moves to the current one, as the server does on the first read after it ends. */
+  const rolled = (id: string): StoredRoadmap | undefined => {
+    const all = read(), m = all[id]
+    if (!m) return undefined
+    const today = new Date().toISOString().slice(0, 10)
+    const state = loadState(m)
+    if (!rolloverDue(state.roadmap, today)) return m
+    const op: RoadmapOp = { op: 'rollover', today }
+    const r = applyOp(state, op, { by: SYSTEM_USER, byClient: 'occam', now: tick(), members: [] })
+    if ('refused' in r) return m
+    keep(m, op, r, m.updated)
+    write(all)
+    return m
+  }
 
   return {
-    get: async (id) => { const m = read()[id]; return m ? loaded(m) : null },
+    get: async (id) => { const m = rolled(id); return m ? loaded(m) : null },
     changes: async (id, since) => {
-      const m = read()[id]
+      const m = rolled(id)
       if (!m) return null
       const issues = m.issues.filter((i) => i.seq > since).map(({ body: _b, comments: _c, ...issue }) => structuredClone(issue))
       const events = m.events.filter((e) => e.seq > since).map(({ seq: _s, ...e }) => structuredClone(e))
@@ -187,29 +222,13 @@ export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>)
     write: async (id, op) => {
       const gated = await localWriteGate(store())
       if (gated !== 'ok') return gated
+      rolled(id)
       const all = read(), m = all[id]
       if (!m) return GONE
       const now = tick()
       const r = applyOp(loadState(m), op, { by: LOCAL_USER, byClient: 'app', now, members: [LOCAL_USER] })
       if ('refused' in r) return r.refused
-      m.name = r.state.roadmap.name
-      m.fields = structuredClone(r.state.roadmap.fields)
-      m.nextNumber = r.state.roadmap.nextNumber
-      m.seq = r.state.roadmap.seq
-      m.updated = now
-      for (const row of r.changed) {
-        const prev = m.issues.find((i) => i.id === row.id)
-        let body = prev?.body ?? ''
-        if (op.op === 'duplicate') {
-          const sourceId = op.copies.find((c) => c.id === row.id)?.sourceId
-          if (sourceId) body = m.issues.find((i) => i.id === sourceId)?.body ?? ''
-        }
-        const next = { ...structuredClone(row), body, comments: prev?.comments ?? [] }
-        const i = m.issues.findIndex((x) => x.id === row.id)
-        if (i >= 0) m.issues[i] = next
-        else m.issues.push(next)
-      }
-      for (const e of r.events) m.events.push({ ...e, seq: m.seq })
+      keep(m, op, r, now)
       return write(all) ? { seq: m.seq, changed: structuredClone(r.changed) } : 'This browser’s storage is full.'
     },
     detail: async (id, issueId) => {
@@ -256,7 +275,7 @@ export function localRoadmapRepo(storage?: Pick<Storage, 'getItem' | 'setItem'>)
       const now = tick()
       all[r.id] = {
         id: r.id, name: r.name.trim(), prefix: r.prefix.trim(), workspaceId: r.workspaceId, updated: now,
-        parent: at.parent, sortKey: at.sortKey, fields: [], nextNumber: 1, seq: 0, issues: [], events: [],
+        parent: at.parent, sortKey: at.sortKey, fields: [], sprints: null, nextNumber: 1, seq: 0, issues: [], events: [],
       }
       return write(all) ? null : 'This browser’s storage is full.'
     },

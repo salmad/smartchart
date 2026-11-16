@@ -1,3 +1,5 @@
+import type { Sprint } from '@/engine/roadmaps/sprints'
+
 /** "2 Nov", or "2 Nov 2027" outside today's year. Dates are ISO days (YYYY-MM-DD), read as UTC so no zone shifts them. */
 export function shortDate(iso: string, today: string): string {
   const d = new Date(`${iso}T00:00:00Z`)
@@ -14,3 +16,15 @@ export const dateOf = (iso: string): Date => {
 }
 
 export const todayIso = (): string => isoOf(new Date())
+
+const dayNumber = (iso: string): number => Math.round(Date.parse(`${iso}T00:00:00Z`) / 86_400_000)
+
+/** "Sprint 14 · 23 Nov – 6 Dec · 9 days left"; a sprint to come says when it starts, one that is over only its dates. */
+export function sprintHeading(s: Sprint, today: string): string {
+  const title = `Sprint ${s.n}`
+  if (s.start > today) return `${title} · starts ${shortDate(s.start, today)}`
+  const range = `${title} · ${shortDate(s.start, today)} – ${shortDate(s.end, today)}`
+  if (s.end < today) return range
+  const left = dayNumber(s.end) - dayNumber(today)
+  return `${range} · ${left === 0 ? 'Last day' : `${left} ${left === 1 ? 'day' : 'days'} left`}`
+}

@@ -11,7 +11,7 @@ afterEach(() => { vi.unstubAllGlobals(); vi.resetModules() })
 const mem = () => { const m: Record<string, string> = {}; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v }, m } }
 
 const sample = (id: string): LoadedRoadmap => ({
-  roadmap: { id, workspaceId: 'w1', name: 'Plan', prefix: 'PLN', fields: [], nextNumber: 1, seq: 0 },
+  roadmap: { id, workspaceId: 'w1', name: 'Plan', prefix: 'PLN', fields: [], sprints: null, nextNumber: 1, seq: 0 },
   issues: [],
   role: 'owner',
   members: [{ id: 'u1', name: 'Ann', email: 'ann@example.com' }],

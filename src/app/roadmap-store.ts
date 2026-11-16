@@ -1,6 +1,6 @@
 /* One roadmap in memory: paints from the kept copy, merges polls, and applies each write at once with pending ops on top. */
 import { applyOp, type RoadmapOp } from '@/engine/roadmaps/ops'
-import type { Issue, LoadedRoadmap, MemberLite, RoadmapState, Role } from '@/engine/roadmaps/types'
+import type { Issue, LoadedRoadmap, MemberLite, Roadmap, RoadmapState, Role } from '@/engine/roadmaps/types'
 import type { OpCtx } from '@/engine/roadmaps/ops'
 import { ordered } from './optimistic'
 import type { RoadmapRepo } from './roadmaps'
@@ -16,6 +16,10 @@ export interface RoadmapView {
   error: string | null
   said: string | null
 }
+
+/** Rows saved or served before sprints existed lack the keys; every issue and roadmap enters the store through these. */
+const issueIn = (i: Issue): Issue => ({ ...i, sprint: i.sprint ?? null, carried: i.carried ?? 0 })
+const roadmapIn = (r: Roadmap): Roadmap => ({ ...r, sprints: r.sprints ?? null })
 
 export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; now: () => number }) {
   const subs = new Set<() => void>()
@@ -58,7 +62,8 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
   const mergeIssues = (rows: Issue[]) => {
     if (!base) return
     const map = new Map(base.issues.map((i) => [i.id, i]))
-    for (const row of rows) {
+    for (const raw of rows) {
+      const row = issueIn(raw)
       const prev = map.get(row.id)
       if (!prev || row.seq >= prev.seq) map.set(row.id, row)
     }
@@ -66,8 +71,8 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
   }
 
   const paint = (r: LoadedRoadmap) => {
-    base = r
-    repo.keep(id, r)
+    base = { ...r, roadmap: roadmapIn(r.roadmap), issues: r.issues.map(issueIn) }
+    repo.keep(id, base)
     error = null
     refresh()
   }
@@ -77,7 +82,7 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
       if (kept) {
         const ch = await repo.changes(id, kept.roadmap.seq)
         if (!ch) return
-        if (ch.roadmap && base) base = { ...base, roadmap: ch.roadmap }
+        if (ch.roadmap && base) base = { ...base, roadmap: roadmapIn(ch.roadmap) }
         if (ch.issues.length) mergeIssues(ch.issues)
         if (ch.seq > (base?.roadmap.seq ?? 0) && base) base = { ...base, roadmap: { ...base.roadmap, seq: ch.seq } }
         if (base) repo.keep(id, base)
@@ -97,7 +102,7 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
     try {
       const ch = await repo.changes(id, base.roadmap.seq)
       if (!ch || !base) return
-      if (ch.roadmap) base = { ...base, roadmap: ch.roadmap }
+      if (ch.roadmap) base = { ...base, roadmap: roadmapIn(ch.roadmap) }
       if (ch.issues.length) mergeIssues(ch.issues)
       if (ch.seq > base.roadmap.seq) base = { ...base, roadmap: { ...base.roadmap, seq: ch.seq } }
       repo.keep(id, base)
@@ -115,8 +120,10 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
       closed = false
       const kept = await repo.kept(id)
       if (kept) {
+        // Paint the kept copy at once, then replace it with a full read. A changes-only catch-up would leave dates
+        // that an older parse wrote into the keep (a day early) forever, since those rows never bump seq again.
         paint(kept)
-        void syncFromServer(kept)
+        void syncFromServer(null)
         return
       }
       await syncFromServer(null)
@@ -143,8 +150,8 @@ export function roadmapStore(repo: RoadmapRepo, id: string, ctx: { by: string; n
         if (base) {
           const settled = applyOp({ roadmap: base.roadmap, issues: base.issues }, op, opCtx())
           if (!('refused' in settled)) {
-            const { name, fields } = settled.state.roadmap
-            base = { ...base, roadmap: { ...base.roadmap, name, fields } }
+            const { name, fields, sprints } = settled.state.roadmap
+            base = { ...base, roadmap: { ...base.roadmap, name, fields, sprints } }
           }
           mergeIssues(out.changed)
           repo.keep(id, base)

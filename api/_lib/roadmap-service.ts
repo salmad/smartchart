@@ -114,6 +114,7 @@ async function run(e: RoadmapEnv): Promise<ToolReply> {
     }
     if (t.name === 'delete_issue') result.deleted = said.changed.length
     if (t.name === 'set_fields') result.fields = fresh.roadmap.fields
+    if (t.name === 'set_sprints') result.sprints = fresh.roadmap.sprints
     await db.markAgentConnectDone(uid)
     return { ok: true, result }
   }

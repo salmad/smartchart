@@ -40,6 +40,10 @@ export interface Issue {
   assignee: string | null
   start: string | null
   due: string | null
+  /** The first day of the sprint it is in. */
+  sprint: string | null
+  /** How many times rollover has moved it to a later sprint. */
+  carried: number
   fields: Record<string, FieldValue>
   bodyRev: number
   seq: number
@@ -49,6 +53,13 @@ export interface Issue {
   deletedAt: number | null
 }
 
+/** A repeating sprint rhythm; `rolled` is the start of the last sprint unfinished work was moved into. */
+export interface SprintRhythm {
+  start: string
+  weeks: number
+  rolled: string | null
+}
+
 export interface Roadmap {
   id: string
   workspaceId: string
@@ -56,6 +67,7 @@ export interface Roadmap {
   prefix: string
   fields: FieldDef[]
   nextNumber: number
+  sprints: SprintRhythm | null
   seq: number
 }
 

@@ -1,5 +1,7 @@
-import type { FieldDef, Issue, IssueComment, IssueEvent, MemberLite } from '@/engine/roadmaps/types'
+import type { FieldDef, Issue, IssueComment, IssueEvent, MemberLite, SprintRhythm } from '@/engine/roadmaps/types'
 import { STATUS_LABEL } from '@/engine/roadmaps/types'
+import { SYSTEM_USER } from '@/engine/roadmaps/ops'
+import { sprintName } from '@/engine/roadmaps/sprints'
 import { isoOf, shortDate, todayIso } from './dates'
 
 /** One line of an issue's history: who did what, or what they wrote. */
@@ -19,7 +21,16 @@ const WHOLE: Partial<Record<IssueEvent['what'], string>> = {
   moved: 'moved the issue',
 }
 
-function changeLine(path: string, to: unknown, fields: FieldDef[]): string | null {
+/** Rollover and people move work between sprints: "moved it from Sprint 13 to Sprint 14". Without a rhythm to number them, the sprints go unnamed. */
+function sprintLine(from: unknown, to: unknown, rhythm: SprintRhythm | null): string {
+  const name = (d: unknown) => (typeof d === 'string' && rhythm ? sprintName(rhythm, d) : '')
+  const was = name(from), now = name(to)
+  if (from && to) return was && now ? `moved it from ${was} to ${now}` : 'moved it to another sprint'
+  return to ? (now ? `added it to ${now}` : 'added it to a sprint') : 'removed it from the sprint'
+}
+
+function changeLine(path: string, from: unknown, to: unknown, fields: FieldDef[], rhythm: SprintRhythm | null): string | null {
+  if (path === 'sprint') return sprintLine(from, to, rhythm)
   if (path === 'title') return 'renamed the issue'
   if (path === 'status' && typeof to === 'string') return `set status to ${STATUS_LABEL[to as keyof typeof STATUS_LABEL] ?? to}`
   if (path === 'assignee') return to ? 'changed the assignee' : 'removed the assignee'
@@ -34,8 +45,9 @@ function changeLine(path: string, to: unknown, fields: FieldDef[]): string | nul
 const SAME_MS = 5 * 60_000
 
 /** The issue's events and comments in time order, oldest first. */
-export function activityItems(issue: Issue, events: IssueEvent[], comments: IssueComment[], members: MemberLite[], fields: FieldDef[]): ActivityItem[] {
-  const name = (id: string) => members.find((m) => m.id === id)?.name ?? 'Someone'
+export function activityItems(issue: Issue, events: IssueEvent[], comments: IssueComment[], members: MemberLite[], fields: FieldDef[], rhythm: SprintRhythm | null = null): ActivityItem[] {
+  // Rollover writes as the system user, who is no member.
+  const name = (id: string) => (id === SYSTEM_USER ? 'Occam' : members.find((m) => m.id === id)?.name ?? 'Someone')
   const items: ActivityItem[] = []
   if (!events.some((e) => e.what === 'created')) items.push({ at: issue.createdAt, who: name(issue.createdBy), did: 'created the issue' })
 
@@ -44,7 +56,7 @@ export function activityItems(issue: Issue, events: IssueEvent[], comments: Issu
     const whole = WHOLE[e.what]
     if (whole) items.push({ at: e.at, who, did: whole })
     else if (e.what !== 'commented') {
-      const lines = new Set(e.changes.map((c) => changeLine(c.path, c.to, fields)).filter((l): l is string => l !== null))
+      const lines = new Set(e.changes.map((c) => changeLine(c.path, c.from, c.to, fields, rhythm)).filter((l): l is string => l !== null))
       for (const did of lines) items.push({ at: e.at, who, did })
     }
   }

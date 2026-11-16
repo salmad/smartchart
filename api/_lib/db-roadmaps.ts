@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
-import { applyOp } from '../../src/engine/roadmaps/ops.js'
-import type { FieldDef, Issue, IssueComment, IssueEvent } from '../../src/engine/roadmaps/types.js'
+import { applyOp, rolloverDue, SYSTEM_USER } from '../../src/engine/roadmaps/ops.js'
+import type { FieldDef, Issue, IssueComment, IssueEvent, Roadmap, SprintRhythm } from '../../src/engine/roadmaps/types.js'
 import { NO_EDIT, type PageRef } from '../../src/engine/pages/tree.js'
 import { rolesFor, type Role } from './access.js'
 import { may, roleOf } from './db-decks.js'
@@ -8,18 +8,22 @@ import type { Db, Q, RoadmapSummary, Tx } from './db.js'
 
 const R = (a: 'read' | 'write') => rolesFor(a)
 const ms = (t: string | Date) => new Date(t).getTime()
-const isoDate = (d: string | Date | null | undefined): string | null => {
+/** A `date` column as YYYY-MM-DD. The driver hands a date back as midnight in the server's own time zone, so it is read
+    in local time: in UTC it would be the day before wherever the clock is ahead of UTC. */
+export const isoDate = (d: string | Date | null | undefined): string | null => {
   if (d == null) return null
-  return typeof d === 'string' ? d.slice(0, 10) : d.toISOString().slice(0, 10)
+  if (typeof d === 'string') return d.slice(0, 10)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 type RoadmapRow = {
-  id: string; workspace_id: string; name: string; prefix: string; fields: FieldDef[]; next_number: number; seq: string | number; role: Role
+  id: string; workspace_id: string; name: string; prefix: string; fields: FieldDef[]; sprints: SprintRhythm | null; next_number: number; seq: string | number; role: Role
 }
 
 type IssueRow = {
   id: string; number: number; parent_id: string | null; sort_key: string; title: string; status: string; assignee: string | null
-  start_date: string | Date | null; due_date: string | Date | null; fields: Record<string, unknown>; body_rev: number; seq: string | number
+  start_date: string | Date | null; due_date: string | Date | null; sprint: string | Date | null; carried: number; fields: Record<string, unknown>; body_rev: number; seq: string | number
   created_by: string; created_at: string | Date; updated_at: string | Date; deleted_at: string | Date | null
 }
 
@@ -33,6 +37,8 @@ const toIssue = (r: IssueRow): Issue => ({
   assignee: r.assignee,
   start: isoDate(r.start_date),
   due: isoDate(r.due_date),
+  sprint: isoDate(r.sprint),
+  carried: r.carried,
   fields: r.fields as Issue['fields'],
   bodyRev: r.body_rev,
   seq: Number(r.seq),
@@ -41,6 +47,13 @@ const toIssue = (r: IssueRow): Issue => ({
   updatedAt: ms(r.updated_at),
   deletedAt: r.deleted_at ? ms(r.deleted_at) : null,
 })
+
+const toRoadmap = (m: Omit<RoadmapRow, 'role'>): Roadmap =>
+  ({ id: m.id, workspaceId: m.workspace_id, name: m.name, prefix: m.prefix, fields: m.fields, sprints: m.sprints ?? null, nextNumber: m.next_number, seq: Number(m.seq) })
+
+const ISSUE_COLUMNS = `id, number, parent_id, sort_key, title, status, assignee, start_date, due_date, sprint, carried, fields, body_rev, seq, created_by, created_at, updated_at, deleted_at`
+
+const today = () => new Date().toISOString().slice(0, 10)
 
 const toEvent = (r: { issue_id: string | null; user_id: string; by_client: string; at: string | Date; what: string; changes: IssueEvent['changes'] }): IssueEvent => ({
   issueId: r.issue_id,
@@ -67,32 +80,65 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
 
   const readRoadmap = async (u: string, id: string, roles: ReturnType<typeof R>) => {
     const head = await q<RoadmapRow>(
-      `select id, workspace_id, name, prefix, fields, next_number, seq, ${roleOf('roadmaps', '$1')} as role
+      `select id, workspace_id, name, prefix, fields, sprints, next_number, seq, ${roleOf('roadmaps', '$1')} as role
        from roadmaps where id = $2 and ${may('roadmaps', '$1', '$3')}`,
       [u, id, roles])
   return head[0] ?? null
   }
 
+  /** Open work left in a sprint that has ended moves to the current one, written as the system user so a reader can trigger it. */
+  const rollIfDue = async (id: string) => {
+    await retrying(async () => {
+      const head = (await q<Omit<RoadmapRow, 'role'>>(
+        `select id, workspace_id, name, prefix, fields, sprints, next_number, seq from roadmaps where id = $1`, [id]))[0]
+      if (!head) return 'gone'
+      const roadmap = toRoadmap(head)
+      const day = today()
+      if (!rolloverDue(roadmap, day)) return 'ok'
+      const rows = await q<IssueRow>(`select ${ISSUE_COLUMNS} from issues where roadmap_id = $1`, [id])
+      const applied = applyOp({ roadmap, issues: rows.map(toIssue) }, { op: 'rollover', today: day }, { by: SYSTEM_USER, byClient: 'occam', now: Date.now(), members: [] })
+      if ('refused' in applied) return 'ok'
+      const tok = token()
+      const next = applied.state.roadmap
+      const stmts: [string, unknown[]][] = [[
+        `update roadmaps set sprints = $3::jsonb, seq = $4, write_id = $5 where id = $1 and seq = $2 returning seq`,
+        [id, roadmap.seq, JSON.stringify(next.sprints), next.seq, tok],
+      ]]
+      for (const row of applied.changed) stmts.push(upsertIssue(row, id, tok))
+      for (const e of applied.events) stmts.push(insertEvent(id, next.seq, e, SYSTEM_USER, tok))
+      const out = await tx(stmts)
+      return (out[0] as unknown[])[0] ? 'ok' : null
+    })
+  }
+
+  /** The row the person may read, after any due rollover. */
+  const readRolled = async (u: string, id: string, roles: ReturnType<typeof R>) => {
+    const m = await readRoadmap(u, id, roles)
+    if (!m || !rolloverDue(toRoadmap(m), today())) return m
+    await rollIfDue(id)
+    return readRoadmap(u, id, roles)
+  }
+
   const loadState = async (u: string, id: string) => {
-    const m = await readRoadmap(u, id, R('read'))
+    const m = await readRolled(u, id, R('read'))
     if (!m) return null
     const rows = await q<IssueRow>(
-      `select id, number, parent_id, sort_key, title, status, assignee, start_date, due_date, fields, body_rev, seq, created_by, created_at, updated_at, deleted_at
+      `select ${ISSUE_COLUMNS}
        from issues where roadmap_id = $1 order by seq`,
       [id])
-    const roadmap = { id: m.id, workspaceId: m.workspace_id, name: m.name, prefix: m.prefix, fields: m.fields, nextNumber: m.next_number, seq: Number(m.seq) }
+    const roadmap = toRoadmap(m)
     return { m, roadmap, issues: rows.map(toIssue) }
   }
 
   const loadForOp = async (u: string, id: string) => {
-    const m = await readRoadmap(u, id, R('write'))
+    const m = await readRolled(u, id, R('write'))
     if (!m) return { kind: 'foreign' as const }
     if (m.role === 'viewer') return { kind: 'view' as const }
     const rows = await q<IssueRow>(
-      `select id, number, parent_id, sort_key, title, status, assignee, start_date, due_date, fields, body_rev, seq, created_by, created_at, updated_at, deleted_at
+      `select ${ISSUE_COLUMNS}
        from issues where roadmap_id = $1`,
       [id])
-    const roadmap = { id: m.id, workspaceId: m.workspace_id, name: m.name, prefix: m.prefix, fields: m.fields, nextNumber: m.next_number, seq: Number(m.seq) }
+    const roadmap = toRoadmap(m)
     return { kind: 'ok' as const, m, state: { roadmap, issues: rows.map(toIssue) }, readSeq: Number(m.seq) }
   }
 
@@ -121,13 +167,13 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
     const params: unknown[] = [
       row.id, roadmapId, row.number, row.parentId, row.sortKey, row.title, row.status, row.assignee,
       row.start, row.due, row.bodyRev, JSON.stringify(row.fields), Number(row.seq), row.createdBy,
-      new Date(row.createdAt), new Date(row.updatedAt), row.deletedAt ? new Date(row.deletedAt) : null, tok,
+      new Date(row.createdAt), new Date(row.updatedAt), row.deletedAt ? new Date(row.deletedAt) : null, tok, row.sprint, row.carried,
     ]
-    return [`insert into issues (id, roadmap_id, number, parent_id, sort_key, title, status, assignee, start_date, due_date, body_rev, fields, seq, created_by, created_at, updated_at, deleted_at)
-      select $1, $2, $3::integer, $4, $5, $6, $7, $8, $9::date, $10::date, $11::integer, $12::jsonb, $13::bigint, $14, $15::timestamptz, $16::timestamptz, $17::timestamptz
+    return [`insert into issues (id, roadmap_id, number, parent_id, sort_key, title, status, assignee, start_date, due_date, sprint, carried, body_rev, fields, seq, created_by, created_at, updated_at, deleted_at)
+      select $1, $2, $3::integer, $4, $5, $6, $7, $8, $9::date, $10::date, $19::date, $20::integer, $11::integer, $12::jsonb, $13::bigint, $14, $15::timestamptz, $16::timestamptz, $17::timestamptz
       where ${gate('$2', '$18')}
       on conflict (id) do update set parent_id = excluded.parent_id, sort_key = excluded.sort_key, title = excluded.title, status = excluded.status,
-        assignee = excluded.assignee, start_date = excluded.start_date, due_date = excluded.due_date, fields = excluded.fields,
+        assignee = excluded.assignee, start_date = excluded.start_date, due_date = excluded.due_date, sprint = excluded.sprint, carried = excluded.carried, fields = excluded.fields,
         seq = excluded.seq, updated_at = excluded.updated_at, deleted_at = excluded.deleted_at
       where issues.roadmap_id = excluded.roadmap_id`, params]
   }
@@ -183,9 +229,9 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
       const { roadmap } = state
       const tok = token()
       const stmts: [string, unknown[]][] = [[
-        `update roadmaps set name = $3, fields = $4::jsonb, next_number = $5, seq = $6, write_id = $10, updated_at = now()
+        `update roadmaps set name = $3, fields = $4::jsonb, next_number = $5, seq = $6, write_id = $10, sprints = $11::jsonb, updated_at = now()
          where id = $1 and seq = $2 and workspace_id = $7 and ${may('roadmaps', '$8', '$9')} returning seq`,
-        [id, read.readSeq, roadmap.name, JSON.stringify(roadmap.fields), roadmap.nextNumber, roadmap.seq, read.m.workspace_id, u, R('write'), tok],
+        [id, read.readSeq, roadmap.name, JSON.stringify(roadmap.fields), roadmap.nextNumber, roadmap.seq, read.m.workspace_id, u, R('write'), tok, JSON.stringify(roadmap.sprints)],
       ]]
       for (const row of changed) {
         stmts.push(upsertIssue(row, id, tok))

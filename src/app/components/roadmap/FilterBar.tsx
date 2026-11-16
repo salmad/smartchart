@@ -17,6 +17,8 @@ type ViewChange = ViewSettings | ((prev: ViewSettings) => ViewSettings)
 
 interface Props {
   fields: FieldDef[]
+  /** Whether the roadmap has sprints. */
+  sprints: boolean
   members: MemberLite[]
   today: string
   view: ViewSettings
@@ -31,8 +33,8 @@ interface Props {
 
 /** The one row under the bar, the same height on every view. Left: search, Filter and its chips. Right: the count, the Gantt's
     scale and Today, Display, and the roadmap's settings. */
-export function FilterBar({ fields, members, today, view, issueCount, matchCount, onChange, onToday, settings }: Props) {
-  const group = view.layout === 'checks' ? null : groupByLabel(view, fields)
+export function FilterBar({ fields, sprints, members, today, view, issueCount, matchCount, onChange, onToday, settings }: Props) {
+  const group = view.layout === 'checks' || view.layout === 'sprint' ? null : groupByLabel(view, fields)
   const [open, setOpen] = useState(false)
   // A menu reopened mid-close keeps its component; a fresh key starts it at the first step.
   const [menuKey, setMenuKey] = useState(0)
@@ -96,7 +98,7 @@ export function FilterBar({ fields, members, today, view, issueCount, matchCount
           </p>
         )}
         {view.layout === 'gantt' && <GanttControls scale={view.scale} onScale={(scale) => onChange((v) => ({ ...v, scale }))} onToday={onToday} />}
-        {view.layout !== 'checks' && <DisplayMenu fields={fields} view={view} onChange={onChange} />}
+        {view.layout !== 'checks' && view.layout !== 'sprint' && <DisplayMenu fields={fields} sprints={sprints} view={view} onChange={onChange} />}
         {settings && (
           <Toggle open={settings.open} onClick={settings.onOpen} label="Roadmap settings"><Settings className="size-[17px]" strokeWidth={1.75} /></Toggle>
         )}

@@ -1,6 +1,7 @@
 /* Roadmap tools: list, create, read, and write issues on a roadmap. */
 import { CHECK_IDS } from '../roadmaps/checks.js'
 import { buildIndex } from '../roadmaps/index.js'
+import { currentSprint } from '../roadmaps/sprints.js'
 import { PREFIX, STATUSES, type IssueEvent } from '../roadmaps/types.js'
 import type { Chip } from '../roadmaps/view.js'
 import { pageArg, pageSchema, type PageArg } from './pages.js'
@@ -78,7 +79,7 @@ export const roadmapTools = [
     group: 'roadmaps',
     scope: 'roadmap',
     annotations: READ,
-    description: 'A roadmap\'s name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members. Before your first roadmap write, read get_guide with style "roadmap".',
+    description: 'A roadmap\'s name, prefix, custom field definitions, sprint rhythm (sprints: first day and weeks, or null) and the current sprint (number, first and last day), editor link, and every live issue (id, key, title, status, assignee, dates, sprint, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members. Before your first roadmap write, read get_guide with style "roadmap".',
     input: { type: 'object', additionalProperties: false, required: ['roadmapId'], properties: { roadmapId: ROADMAP_ID } },
     run: async (ctx) => {
       const { roadmap, issues } = loaded(ctx)
@@ -91,6 +92,8 @@ export const roadmapTools = [
           name: roadmap.name,
           prefix: roadmap.prefix,
           fields: roadmap.fields,
+          sprints: roadmap.sprints ? { start: roadmap.sprints.start, weeks: roadmap.sprints.weeks } : null,
+          currentSprint: roadmap.sprints ? currentSprint(roadmap.sprints, today) : null,
           links: { edit: ctx.links?.edit ?? '' },
           issues: rows,
         },

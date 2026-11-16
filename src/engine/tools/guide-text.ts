@@ -67,6 +67,10 @@ A roadmap is a page of issues. An issue's key is the roadmap's prefix plus its n
 # Steps
 Start: list_roadmaps, or create_roadmap (give the user links.edit). Read with get_roadmap (fields and every issue), then list_issues and get_issue. create_issues, update_issue, move_issue and set_fields change the plan; list_changes shows activity; delete_issue only when the user asked. Nest a page with move_page and kind "roadmap". get_roadmap, list_issues, get_issue, and every write already include check ids.
 
+# Sprints
+A sprint is a repeating stretch of weeks (the roadmap's rhythm: a first day and 1 to 8 weeks), numbered from Sprint 1; the current one comes from today's date, and open work left in a sprint that ends moves to the next one on its own. get_roadmap shows the rhythm and the current sprint.
+Put an issue in a sprint (sprint on create_issues and update_issue) or set the rhythm (set_sprints) only when the user asks.
+
 # Checks
 Checks warn. They never authorise a silent edit. Change an issue only when the user's words ask for that change.
 

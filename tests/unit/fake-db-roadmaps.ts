@@ -1,5 +1,5 @@
-import { applyOp, type RoadmapOp } from '../../src/engine/roadmaps/ops'
-import type { Issue, IssueComment, IssueEvent, FieldDef } from '../../src/engine/roadmaps/types'
+import { applyOp, rolloverDue, SYSTEM_USER, type RoadmapOp } from '../../src/engine/roadmaps/ops'
+import type { Issue, IssueComment, IssueEvent, FieldDef, SprintRhythm } from '../../src/engine/roadmaps/types'
 import { NO_EDIT, type PageRef } from '../../src/engine/pages/tree'
 import { can, type Action, type Role } from '../../api/_lib/access'
 import type { Db } from '../../api/_lib/db'
@@ -7,7 +7,7 @@ import type { Db } from '../../api/_lib/db'
 export type FakeRoadmapRow = {
   id: string; ws: string; user: string; name: string; prefix: string; updated: number
   parent?: PageRef | null; sortKey?: string | null
-  fields: FieldDef[]; nextNumber: number; seq: number
+  fields: FieldDef[]; sprints?: SprintRhythm | null; nextNumber: number; seq: number
 }
 
 export type FakeIssueRow = Issue & { roadmapId: string; body: string; comments: IssueComment[] }
@@ -37,13 +37,14 @@ export function fakeRoadmapCalls(deps: {
   }
 
   const loadState = (m: FakeRoadmapRow) => ({
-    roadmap: { id: m.id, workspaceId: m.ws, name: m.name, prefix: m.prefix, fields: structuredClone(m.fields), nextNumber: m.nextNumber, seq: m.seq },
+    roadmap: { id: m.id, workspaceId: m.ws, name: m.name, prefix: m.prefix, fields: structuredClone(m.fields), sprints: structuredClone(m.sprints ?? null), nextNumber: m.nextNumber, seq: m.seq },
     issues: [...issues.values()].filter((i) => i.roadmapId === m.id).map(({ roadmapId: _r, body: _b, comments: _c, ...issue }) => structuredClone(issue)),
   })
 
-  const saveOp = (m: FakeRoadmapRow, op: RoadmapOp, result: { state: { roadmap: { name: string; fields: FieldDef[]; nextNumber: number; seq: number }; issues: Issue[] }; changed: Issue[]; events: IssueEvent[] }) => {
+  const saveOp = (m: FakeRoadmapRow, op: RoadmapOp, result: { state: { roadmap: { name: string; fields: FieldDef[]; sprints: SprintRhythm | null; nextNumber: number; seq: number }; issues: Issue[] }; changed: Issue[]; events: IssueEvent[] }) => {
     m.name = result.state.roadmap.name
     m.fields = structuredClone(result.state.roadmap.fields)
+    m.sprints = structuredClone(result.state.roadmap.sprints)
     m.nextNumber = result.state.roadmap.nextNumber
     m.seq = result.state.roadmap.seq
     m.updated = tick()
@@ -60,6 +61,16 @@ export function fakeRoadmapCalls(deps: {
     return { seq: m.seq, changed: structuredClone(result.changed) }
   }
 
+  /** Open work in an ended sprint moves to the current one, written as the system user whoever is reading. */
+  const rollIfDue = (m: FakeRoadmapRow) => {
+    const today = new Date().toISOString().slice(0, 10)
+    const state = loadState(m)
+    if (!rolloverDue(state.roadmap, today)) return
+    const op: RoadmapOp = { op: 'rollover', today }
+    const r = applyOp(state, op, { by: SYSTEM_USER, byClient: 'occam', now: Date.now(), members: [] })
+    if (!('refused' in r)) saveOp(m, op, r)
+  }
+
   return {
     createRoadmap: async (u, r) => {
       if (roadmaps.has(r.id)) return 'foreign'
@@ -71,7 +82,7 @@ export function fakeRoadmapCalls(deps: {
       if (at.ws === false || at.ws === null) return 'foreign'
       roadmaps.set(r.id, {
         id: r.id, ws: at.ws, user: u, name, prefix, updated: tick(), parent: at.parent, sortKey: at.key,
-        fields: [], nextNumber: 1, seq: 0,
+        fields: [], sprints: null, nextNumber: 1, seq: 0,
       })
       return 'ok'
     },
@@ -83,6 +94,7 @@ export function fakeRoadmapCalls(deps: {
     getRoadmap: async (u, id) => {
       const m = roadmapIf(u, id, 'read')
       if (!m) return null
+      rollIfDue(m)
       return { ...loadState(m), role: role(u, m) as Role, members: membersLite(m.ws) }
     },
     listRoadmaps: async (u, ws) => [...roadmaps.values()]
@@ -92,6 +104,7 @@ export function fakeRoadmapCalls(deps: {
     roadmapChanges: async (u, id, since) => {
       const m = roadmapIf(u, id, 'read')
       if (!m) return null
+      rollIfDue(m)
       const changedIssues = [...issues.values()].filter((i) => i.roadmapId === id && i.seq > since).map(({ roadmapId: _r, body: _b, comments: _c, ...issue }) => structuredClone(issue))
       const events = issueEvents.filter((e) => e.roadmapId === id && e.seq > since).map(({ roadmapId: _r, seq: _s, ...e }) => structuredClone(e))
       return { seq: m.seq, roadmap: m.seq > since ? loadState(m).roadmap : null, issues: changedIssues, events }
@@ -107,6 +120,7 @@ export function fakeRoadmapCalls(deps: {
       const m = roadmaps.get(id)
       if (!m || !can(role(u, m), 'read')) return 'foreign'
       if (!can(role(u, m), 'write')) return NO_EDIT
+      rollIfDue(m)
       const now = Date.now()
       const r = applyOp(loadState(m), op, { by: u, byClient, now, members: memberIds(m.ws) })
       if ('refused' in r) return r.refused

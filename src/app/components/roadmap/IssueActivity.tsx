@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowUp } from 'lucide-react'
-import type { FieldDef, Issue, IssueComment, IssueEvent, MemberLite } from '@/engine/roadmaps/types'
+import type { FieldDef, Issue, IssueComment, IssueEvent, MemberLite, SprintRhythm } from '@/engine/roadmaps/types'
 import { Button } from '../ui/button'
 import { Avatar } from './Avatar'
 import { activityItems, fullTime, timeAgo } from './issueActivityLine'
@@ -12,6 +12,7 @@ interface Props {
   comments: IssueComment[]
   fields: FieldDef[]
   members: MemberLite[]
+  rhythm: SprintRhythm | null
   canEdit: boolean
   onComment: (text: string) => Promise<void>
 }
@@ -25,11 +26,11 @@ function When({ at, now }: { at: number; now: number }) {
 }
 
 /** The issue's history as a quiet timeline: changes as one-line sentences, comments as entries, and a field to add one. */
-export function IssueActivity({ issue, events, comments, fields, members, canEdit, onComment }: Props) {
+export function IssueActivity({ issue, events, comments, fields, members, rhythm, canEdit, onComment }: Props) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
-  const items = activityItems(issue, events, comments, members, fields)
+  const items = activityItems(issue, events, comments, members, fields, rhythm)
   const now = Date.now()
   const ready = !!text.trim() && !busy
 

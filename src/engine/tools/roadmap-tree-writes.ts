@@ -1,4 +1,4 @@
-/* move_issue, delete_issue, and set_fields. */
+/* move_issue, delete_issue, set_fields, and set_sprints. */
 import type { FieldDef } from '../roadmaps/types.js'
 import { NO_ISSUE } from '../roadmaps/tree.js'
 import type { Issue } from '../roadmaps/types.js'
@@ -114,6 +114,35 @@ export const roadmapTailWriteTools = [
       requireRequest(request)
       loaded(ctx)
       return { result: {}, roadmapOp: { op: 'roadmap', fields } }
+    },
+  }),
+
+  tool<{ roadmapId: string; sprints: { start: string; weeks: number } | null; request: string }>({
+    name: 'set_sprints',
+    title: 'Set the sprint rhythm',
+    group: 'roadmaps',
+    scope: 'roadmap',
+    annotations: WRITE,
+    description: 'Set how a roadmap\'s sprints repeat: the first day (YYYY-MM-DD) and the length in weeks (1 to 8). Sprints are numbered from the first day and the current one follows today\'s date. Null turns sprints off (issues keep their sprint dates). Changing the rhythm renumbers sprints. Do it only when the user asks, and pass their own words as request.',
+    input: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['roadmapId', 'sprints', 'request'],
+      properties: {
+        roadmapId: { type: 'string' },
+        request: { type: 'string' },
+        sprints: {
+          oneOf: [
+            { type: 'null' },
+            { type: 'object', additionalProperties: false, required: ['start', 'weeks'], properties: { start: { type: 'string' }, weeks: { type: 'integer', minimum: 1, maximum: 8 } } },
+          ],
+        },
+      },
+    },
+    run: async (ctx, { sprints, request }) => {
+      requireRequest(request)
+      loaded(ctx)
+      return { result: {}, roadmapOp: { op: 'roadmap', sprints } }
     },
   }),
 ]

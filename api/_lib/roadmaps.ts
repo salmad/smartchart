@@ -1,4 +1,4 @@
-// The roadmaps API: open a roadmap, stream changes, write ops, issue bodies and comments, and page-tree moves.
+// The roadmaps API: open a roadmap, stream changes, write ops, issue bodies and comments, and page-tree moves (PUT ?move, as for decks and docs).
 import type { UserFrom } from './auth.js'
 import { markOf } from '../../src/engine/roadmaps/emoji.js'
 import { MAX_COMMENT, newCommentId } from '../../src/engine/comments.js'
@@ -9,7 +9,7 @@ import type { RoadmapOp, IssueProps } from '../../src/engine/roadmaps/ops.js'
 import { STATUSES, PREFIX, type FieldDef, type FieldOption, type FieldType, type Status } from '../../src/engine/roadmaps/types.js'
 import type { Db } from './db.js'
 import { viewerIn } from './decks.js'
-import { movePage, moveBody, parentOf, subpages } from './pages.js'
+import { movePage, parentOf, subpages } from './pages.js'
 
 const ID = /^[\w-]{1,64}$/
 const MAX_BYTES = 1_000_000
@@ -64,6 +64,10 @@ function issueProps(v: unknown): IssueProps | null {
   if ('due' in o) {
     if (o.due !== null && typeof o.due !== 'string') return null
     props.due = o.due as string | null
+  }
+  if ('sprint' in o) {
+    if (o.sprint !== null && typeof o.sprint !== 'string') return null
+    props.sprint = o.sprint as string | null
   }
   if ('fields' in o) {
     if (!o.fields || typeof o.fields !== 'object' || Array.isArray(o.fields)) return null
@@ -137,7 +141,7 @@ export function roadmapOp(v: unknown): RoadmapOp | null {
       return { op: o.op, ids }
     }
     case 'roadmap': {
-      const row: { op: 'roadmap'; name?: string; fields?: FieldDef[] } = { op: 'roadmap' }
+      const row: { op: 'roadmap'; name?: string; fields?: FieldDef[]; sprints?: { start: string; weeks: number } | null } = { op: 'roadmap' }
       if ('name' in o) {
         if (typeof (o as { name?: unknown }).name !== 'string') return null
         row.name = (o as { name: string }).name
@@ -149,7 +153,16 @@ export function roadmapOp(v: unknown): RoadmapOp | null {
         if (defs.some((f) => f === null)) return null
         row.fields = defs as FieldDef[]
       }
-      if (row.name === undefined && row.fields === undefined) return null
+      if ('sprints' in o) {
+        const sprints = (o as { sprints?: unknown }).sprints
+        if (sprints === null) row.sprints = null
+        else {
+          const r = sprints && typeof sprints === 'object' ? sprints as { start?: unknown; weeks?: unknown } : null
+          if (!r || typeof r.start !== 'string' || typeof r.weeks !== 'number') return null
+          row.sprints = { start: r.start, weeks: r.weeks }
+        }
+      }
+      if (row.name === undefined && row.fields === undefined && row.sprints === undefined) return null
       return row
     }
     default:
@@ -197,6 +210,9 @@ export function roadmapsHandler(deps: { userFrom: UserFrom; db: () => Db | null 
       const d = await db.getIssueDetail(user.id, id, issueId)
       return d ? Response.json(d, { headers: NO_STORE }) : NO_RM()
     }
+    // A page-tree move, the same call as a deck's or a doc's.
+    if (request.method === 'PUT' && id && q.get('move') !== null)
+      return ID.test(id) ? movePage(db, user.id, { kind: 'roadmap', id }, request, NO_RM) : NO_RM()
     if (request.method === 'GET' && id && q.get('subpages') !== null)
       return ID.test(id) ? subpages(db, user.id, { kind: 'roadmap', id }, NO_RM) : NO_RM()
 
@@ -234,12 +250,6 @@ export function roadmapsHandler(deps: { userFrom: UserFrom; db: () => Db | null 
       if (text.length > MAX_BYTES) return err(413, 'This doc is too large to save.')
       let b: Record<string, unknown>
       try { b = JSON.parse(text) as Record<string, unknown> } catch { return err(400, 'Bad request.') }
-
-      if ('move' in b) {
-        const to = moveBody(b.move)
-        if (!to) return err(400, 'Bad move.')
-        return movePage(db, user.id, { kind: 'roadmap', id }, new Request(request.url, { method: request.method, body: JSON.stringify(to) }), NO_RM)
-      }
 
       if ('comment' in b) {
         const c = commentBody(b.comment)

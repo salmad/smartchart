@@ -16,7 +16,9 @@ import { IssueTable } from './IssueTable'
 import { Gantt } from './Gantt'
 import { Matrix } from './Matrix'
 import { Checks } from './Checks'
+import { SprintView } from './SprintView'
 import { useViewSettings } from './useViewSettings'
+import { useFilterFolds } from './useFilterFolds'
 import { runChecks, type CheckId } from '@/engine/roadmaps/checks'
 import { liveChips, matchesChips, viewFilters } from '@/engine/roadmaps/view'
 import { buildIndex } from '@/engine/roadmaps/index'
@@ -45,6 +47,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const { view, act } = useRoadmap(repo, id, account.id)
   const { look } = useUserLook(account.id, account.id !== DEV_ACCOUNT.id)
   const [viewSettings, setViewSettings] = useViewSettings(id)
+  // What the issue views draw: under a filter, their folds are the filter's own.
+  const [issueView, onIssueView] = useFilterFolds(viewSettings, setViewSettings)
   const [fieldsOpen, setFieldsOpen] = useState(false)
   const [panelId, setPanelId] = useState<string | null>(null)
   const [todayRequest, setTodayRequest] = useState(0)
@@ -57,10 +61,11 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const hasIssues = live.length > 0
   const isChecks = viewSettings.layout === 'checks'
   const isMatrix = viewSettings.layout === 'matrix'
+  const isSprint = viewSettings.layout === 'sprint'
   const showTable = hasIssues || customFields.length > 0 || newIssue > 0
   // The matrix needs its setup (which fields are the axes) before any issue exists; an empty Gantt is a blank grid, so
   // it shows the empty state, and New issue there opens its own row to type in.
-  const showMain = showTable || isChecks || isMatrix
+  const showMain = showTable || isChecks || isMatrix || isSprint
 
   const matchCount = useMemo(() => {
     const filters = viewFilters(customFields, viewSettings)
@@ -119,8 +124,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
 
   const startIssue = useCallback(() => {
     setPanelId(null)
-    // Only the table and the Gantt have a place to type a title; Matrix and Checks hand over to the table.
-    setViewSettings((v) => (v.layout === 'matrix' || v.layout === 'checks' ? { ...v, layout: 'table' } : v))
+    // Only the table and the Gantt have a place to type a title; Matrix, Sprint and Checks hand over to the table.
+    setViewSettings((v) => (v.layout === 'matrix' || v.layout === 'checks' || v.layout === 'sprint' ? { ...v, layout: 'table' } : v))
     setNewIssue((n) => n + 1)
   }, [setViewSettings])
   const onNewIssue = canEdit ? startIssue : undefined
@@ -180,6 +185,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <FilterBar
                 fields={customFields}
+                sprints={view.state.roadmap.sprints !== null}
                 members={view.members}
                 today={today}
                 view={viewSettings}
@@ -195,10 +201,10 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               ) : viewSettings.layout === 'table' ? (
                 <IssueTable
                   state={view.state}
-                  view={viewSettings}
+                  view={issueView}
                   members={view.members}
                   today={today}
-                  onView={setViewSettings}
+                  onView={onIssueView}
                   canEdit={canEdit}
                   act={act}
                   said={view.said}
@@ -209,9 +215,9 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                 <Gantt
                   state={view.state}
                   members={view.members}
-                  view={viewSettings}
+                  view={issueView}
                   today={today}
-                  onView={setViewSettings}
+                  onView={onIssueView}
                   canEdit={canEdit}
                   act={act}
                   onOpenIssue={openIssue}
@@ -219,16 +225,28 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   said={view.said}
                   newIssue={newIssue}
                 />
+              ) : viewSettings.layout === 'sprint' ? (
+                <SprintView
+                  state={view.state}
+                  view={issueView}
+                  members={view.members}
+                  me={account.id}
+                  today={today}
+                  canEdit={canEdit}
+                  act={act}
+                  onView={onIssueView}
+                  onOpenIssue={openIssue}
+                />
               ) : viewSettings.layout === 'checks' ? (
                 <Checks report={checkReport} hasIssues={hasIssues} onOpen={openCheck} />
               ) : (
                 <Matrix
                   state={view.state}
-                  view={viewSettings}
+                  view={issueView}
                   members={view.members}
                   today={today}
                   canEdit={canEdit}
-                  onView={setViewSettings}
+                  onView={onIssueView}
                   onOpenIssue={openIssue}
                   onOpenFields={() => setFieldsOpen(true)}
                 />

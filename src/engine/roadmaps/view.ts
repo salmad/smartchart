@@ -43,7 +43,7 @@ export interface ViewSettings {
   sort: 'order' | 'due' | 'start' | 'status' | 'updated'
   columns: string[]
   collapsed: string[]
-  layout: 'table' | 'gantt' | 'matrix' | 'checks'
+  layout: 'table' | 'gantt' | 'matrix' | 'checks' | 'sprint'
   scale: Scale
   matrix: MatrixSettings
 }
@@ -283,7 +283,8 @@ function walkVisibleIssues(
       kids.filter((c) => branchVisible(c.id, idx, chips, today, collapsed) && (keep?.(c) ?? true)),
       sort,
     )
-    const hasChildren = keep ? nextKids.length > 0 : kids.length > 0
+    // A chevron only where something would open: under a filter, a parent whose sub-issues all drop out is a plain row.
+    const hasChildren = nextKids.length > 0
     const open = !collapsed.has(node.id)
     const selfMatch = matchesChips(node, chips, today, idx)
     const dim = chips.length > 0 && !selfMatch
@@ -317,9 +318,14 @@ function appendIssues(
   return walkVisibleIssues(out, issues, idx, chips, today, collapsed, sort, roots, depth)
 }
 
+/** Whether a search with something in it is on. */
+export function searching(v: ViewSettings): boolean {
+  return nameQuery(v.search ?? '') !== null
+}
+
 /** Whether the view filters at all: a chip, or a search with something in it. */
 export function filtering(v: ViewSettings): boolean {
-  return v.chips.length > 0 || nameQuery(v.search ?? '') !== null
+  return v.chips.length > 0 || searching(v)
 }
 
 /** The live chips, then the search as one more filter when it has something in it. */

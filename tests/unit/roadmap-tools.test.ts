@@ -1,5 +1,5 @@
 /* list_roadmaps, create_roadmap, get_roadmap: create, list under a deck, read issues with checks (no body). */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { mcpHandler } from '../../api/_lib/mcp'
@@ -159,7 +159,7 @@ describe('roadmap tools', () => {
     const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
     await db.writeRoadmap(ann.id, roadmapId, { op: 'create', issues: [{ id: 'i1', parentId: null, title: 'One' }] }, 'app')
     const seq = (await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq ?? -1
-    expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { parentId: null }, request: 'move it' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: 'set: only title, status, assignee, start, due, and fields.<fieldId>.' } })
+    expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { parentId: null }, request: 'move it' })).toMatchObject({ ok: false, error: { code: 'bad_input', message: 'set: only title, status, assignee, start, due, sprint, and fields.<fieldId>.' } })
     expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { body: 'x' }, request: 'edit the body' })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
     expect(await call('update_issue', { roadmapId, issueId: 'i1', set: { start: '2026-05-02', due: '2026-05-01' }, request: 'fix the dates' })).toMatchObject({ ok: false, error: { code: 'refused', message: 'Start must be before due.' } })
     expect((await db.getRoadmap(ann.id, roadmapId))?.roadmap.seq).toBe(seq)
@@ -294,5 +294,30 @@ describe('roadmap tools', () => {
     const missing = await rest(new Request('https://app.test/api/v1/check_roadmap', { method: 'POST', body: '{}' }))
     expect(missing.status).toBe(400)
     expect(await missing.json()).toMatchObject({ error: { code: 'bad_input', message: 'Unknown tool check_roadmap.' } })
+  })
+
+  describe('sprints', () => {
+    afterEach(() => { vi.useRealTimers() })
+
+    it('set_sprints sets the rhythm, update_issue and create_issues put work in a sprint, and get_roadmap shows both', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-01-02T00:30:00.000Z'))
+      const { ok, call, acme } = await world()
+      const roadmapId = String((await ok('create_roadmap', { name: 'P', prefix: 'PLN', request: 'add', workspaceId: acme })).roadmapId)
+      expect((await ok('get_roadmap', { roadmapId })).currentSprint).toBeNull()
+      expect(await call('update_issue', { roadmapId, issueId: 'x', set: { sprint: '2026-01-02' }, request: 'plan it' })).toMatchObject({ ok: false })
+      const made = await ok('create_issues', { roadmapId, request: 'add', issues: [{ ref: 'a', title: 'A' }] })
+      const issueId = (made.created as { issueId: string }[])[0].issueId
+      expect(await call('update_issue', { roadmapId, issueId, set: { sprint: '2026-01-02' }, request: 'put it in the sprint' })).toMatchObject({ ok: false, error: { message: "Sprints aren't set up for this roadmap." } })
+      expect(await ok('set_sprints', { roadmapId, request: 'Two-week sprints from 29 Dec', sprints: { start: '2025-12-29', weeks: 2 } })).toMatchObject({ sprints: { start: '2025-12-29', weeks: 2 } })
+      await ok('update_issue', { roadmapId, issueId, set: { sprint: '2026-01-05' }, request: 'put it in the sprint' })
+      const made2 = await ok('create_issues', { roadmapId, request: 'add', issues: [{ ref: 'b', title: 'B', sprint: '2026-01-02' }] })
+      const got = await ok('get_roadmap', { roadmapId })
+      expect(got.sprints).toEqual({ start: '2025-12-29', weeks: 2 })
+      expect(got.currentSprint).toEqual({ n: 1, start: '2025-12-29', end: '2026-01-11' })
+      expect((got.issues as { id: string; sprint: string; carried: number }[]).map((i) => [i.sprint, i.carried])).toEqual([['2025-12-29', 0], ['2025-12-29', 0]])
+      expect((made2.created as unknown[]).length).toBe(1)
+      expect(await call('set_sprints', { roadmapId, request: 'too long', sprints: { start: '2025-12-29', weeks: 9 } })).toMatchObject({ ok: false })
+    })
   })
 })

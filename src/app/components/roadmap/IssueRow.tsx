@@ -9,6 +9,7 @@ import { StatusCell } from './cells/StatusCell'
 import { PersonCell } from './cells/PersonCell'
 import { DateCell } from './cells/DateCell'
 import { FieldCell } from './cells/FieldCell'
+import { SprintCell } from './cells/SprintCell'
 import { GroupHeader } from './GroupLabel'
 import { ProgressBar } from './ProgressBar'
 import { StatusGlyph } from './StatusGlyph'
@@ -238,6 +239,8 @@ export function IssueDataRow({
               <PersonCell assignee={issue.assignee} members={members} disabled={!canEdit} onPick={(id) => patch({ assignee: id })} />
             ) : col === 'start' || col === 'due' ? (
               dateCell(col)
+            ) : col === 'sprint' ? (
+              roadmap.sprints && <SprintCell rhythm={roadmap.sprints} today={today} sprint={issue.sprint} disabled={!canEdit} onPick={(sprint) => patch({ sprint })} />
             ) : custom ? (
               <FieldCell field={custom} value={issue.fields[col]} members={members} disabled={!canEdit} onPick={(v) => patch({ fields: { [col]: v } })} />
             ) : null}

@@ -9,7 +9,13 @@ import { StatusGlyph } from './StatusGlyph'
 import { cn } from '@/app/lib/utils'
 import { FILTER_COMMAND_CLASS, FILTER_ITEM_CLASS, type FilterProperty } from './filterAddTypes'
 
-export interface PickOption { value: string | null; label: string; lead?: ReactNode }
+export interface PickOption {
+  value: string | null
+  label: string
+  lead?: ReactNode
+  /** More words the search box matches, such as an issue's key. */
+  keywords?: string
+}
 
 /** A short list reads at a glance; past this, a search box leads. */
 const SEARCH_FROM = 10
@@ -78,7 +84,7 @@ export function FilterValuePicker({ options, selected, onChange, noun }: Props) 
             return (
               <CommandItem
                 key={o.value ?? '∅'}
-                value={`${o.label} ${o.value ?? ''}`}
+                value={`${o.label} ${o.keywords ?? ''} ${o.value ?? ''}`}
                 aria-checked={ticked}
                 className={cn(FILTER_ITEM_CLASS, 'h-8 gap-2.5', ticked && 'text-ink')}
                 onSelect={() => toggle(o.value)}

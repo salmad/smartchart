@@ -19,7 +19,7 @@ function mergeGroupBy(raw: SavedView): GroupKey[] {
 
 function mergeView(raw: SavedView): ViewSettings {
   const layout =
-    raw.layout === 'gantt' || raw.layout === 'matrix' || raw.layout === 'checks' ? raw.layout : DEFAULT_VIEW.layout
+    raw.layout === 'gantt' || raw.layout === 'matrix' || raw.layout === 'checks' || raw.layout === 'sprint' ? raw.layout : DEFAULT_VIEW.layout
   const { rows: _rows, folded: oldFolded, ...matrixRaw } = raw.matrix ?? {}
   return {
     ...DEFAULT_VIEW,

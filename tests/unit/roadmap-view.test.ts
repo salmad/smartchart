@@ -303,12 +303,17 @@ describe('roadmap search', () => {
       expect(shown(view({ search: 'intervew' }))).toEqual([['b', true], ['b1', false]])
     })
 
-    it('finds the sub-issue under a collapsed parent', () => {
-      expect(shown(view({ search: 'designers', collapsed: ['b'] }))).toEqual([['b', true], ['b1', false]])
+    const chevrons = (v: ViewSettings) =>
+      tableRows(s, v, today).flatMap((r) => (r.kind === 'issue' ? [[r.issue.id, r.hasChildren, r.open]] : []))
+
+    it('a parent folded under the search keeps its found sub-issue behind a closed chevron', () => {
+      expect(chevrons(view({ search: 'designers', collapsed: ['b'] }))).toEqual([['b', true, false], ['b1', false, true]])
     })
 
-    it('a matching parent shows without its unmatched sub-issues', () => {
+    it('a matching parent shows without its unmatched sub-issues, and without a chevron', () => {
       expect(shown(view({ search: 'pricing' }))).toEqual([['a', false]])
+      expect(chevrons(view({ search: 'pricing' }))).toEqual([['a', false, true]])
+      expect(chevrons(view())[0]).toEqual(['a', true, true])
     })
 
     it('works with chips and inside groups', () => {
@@ -322,6 +327,12 @@ describe('roadmap search', () => {
       const { cols, rows } = matrixGrid(s, m, today)
       expect(rows.flatMap((r) => (r.kind === 'issue' ? [[r.issue.id, r.dim]] : []))).toEqual([['b', true], ['b2', false]])
       expect(cols.map((c) => c.key)).toEqual(matrixGrid(s, view({ matrix: m.matrix }), today).cols.map((c) => c.key))
+    })
+
+    it('a matrix row folded while searching closes', () => {
+      const m = view({ search: 'offer', collapsed: ['b'], matrix: { ...DEFAULT_MATRIX, cols: ['f1'] } })
+      const rows = matrixGrid(s, m, today).rows.flatMap((r) => (r.kind === 'issue' ? [[r.issue.id, r.hasChildren, r.open]] : []))
+      expect(rows).toEqual([['b', true, false]])
     })
   })
 })

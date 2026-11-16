@@ -4,6 +4,7 @@ import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { filtering, tableRows } from '@/engine/roadmaps/view'
 import { buildDuplicateCopies, type RoadmapOp } from '@/engine/roadmaps/ops'
+import { sprintChoices, sprintName } from '@/engine/roadmaps/sprints'
 import { IssueDataRow, IssueGroupRow, ComposeIssueRow } from './IssueRow'
 import { BulkBar } from './BulkBar'
 import { IssueDeleteDialog } from './IssueDeleteDialog'
@@ -31,8 +32,8 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
   const names = useMemo(() => new Map(members.map((m) => [m.id, m.name])), [members])
   const all = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
   const filtersActive = filtering(view)
-  const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
-  const columns = useMemo(() => liveColumns(view, state.roadmap.fields), [view, state.roadmap.fields])
+  const rows = useMemo(() => visibleRows(all), [all])
+  const columns = useMemo(() => liveColumns(view, state.roadmap.fields, state.roadmap.sprints !== null), [view, state.roadmap.fields, state.roadmap.sprints])
   const colCount = columns.length + 2
   const liveIssues = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
   const issueOrder = useMemo(
@@ -142,8 +143,23 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
   const bulkSet = (props: import('@/engine/roadmaps/ops').IssueProps) => {
     const ids = [...selection.selected]
     if (!ids.length) return
-    act({ op: 'set', ids, props })
+    const out = act({ op: 'set', ids, props })
+    if (out !== 'ok') { onRefused(out); return }
     selection.clear()
+  }
+
+  /** Sprint is quiet on the list (often no column), so a short toast confirms the move. */
+  const bulkSprint = (sprint: string | null) => {
+    const ids = [...selection.selected]
+    if (!ids.length) return
+    const out = act({ op: 'set', ids, props: { sprint } })
+    if (out !== 'ok') { onRefused(out); return }
+    selection.clear()
+    const n = ids.length
+    const word = n === 1 ? 'issue' : 'issues'
+    const rhythm = state.roadmap.sprints
+    const name = sprint && rhythm ? sprintName(rhythm, sprint) : ''
+    toast(sprint ? (name ? `Moved ${n} ${word} to ${name}` : `Moved ${n} ${word} to a sprint`) : `Removed ${n} ${word} from the sprint`)
   }
 
   const onDuplicate = () => {
@@ -190,7 +206,9 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
           fields={state.roadmap.fields}
           members={members}
           onStatus={(status) => bulkSet({ status })}
+          sprints={state.roadmap.sprints ? sprintChoices(state.roadmap.sprints, today) : undefined}
           onAssignee={(assignee) => bulkSet({ assignee })}
+          onSprint={bulkSprint}
           onField={(fieldId, value) => bulkSet({ fields: { [fieldId]: value } })}
           onDuplicate={onDuplicate}
           onDelete={() => setDeleteIds([...selection.selected])}

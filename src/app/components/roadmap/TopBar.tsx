@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ChartGantt, Grid2x2, List, ListChecks, Plus, type LucideIcon } from 'lucide-react'
+import { ChartGantt, Grid2x2, List, ListChecks, Plus, Timer, type LucideIcon } from 'lucide-react'
 import type { Account } from '@/app/auth'
 import type { PageRef } from '@/engine/pages/tree'
 import type { ViewSettings } from '@/engine/roadmaps/view'
@@ -11,7 +11,7 @@ import { Button } from '../ui/button'
 
 type Layout = ViewSettings['layout']
 
-const VIEWS: [Layout, string, LucideIcon][] = [['table', 'List', List], ['gantt', 'Gantt', ChartGantt], ['matrix', 'Matrix', Grid2x2], ['checks', 'Checks', ListChecks]]
+const VIEWS: [Layout, string, LucideIcon][] = [['table', 'List', List], ['gantt', 'Gantt', ChartGantt], ['matrix', 'Matrix', Grid2x2], ['sprint', 'Sprint', Timer], ['checks', 'Checks', ListChecks]]
 
 interface Props {
   title: string

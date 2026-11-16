@@ -2,6 +2,7 @@ import { forwardRef, type ReactNode } from 'react'
 import { OptionMark } from './OptionMark'
 import { Copy, Trash2, X } from 'lucide-react'
 import type { FieldDef, MemberLite, Status } from '@/engine/roadmaps/types'
+import type { SprintChoice } from '@/engine/roadmaps/sprints'
 import { STATUS_LABEL, STATUSES } from '@/engine/roadmaps/types'
 import { Button, type ButtonProps } from '../ui/button'
 import {
@@ -36,8 +37,11 @@ interface Props {
   count: number
   fields: FieldDef[]
   members: MemberLite[]
+  /** The sprints work can be put in; absent while the roadmap has none. */
+  sprints?: SprintChoice[]
   onStatus: (status: Status) => void
   onAssignee: (id: string | null) => void
+  onSprint: (sprint: string | null) => void
   onField: (fieldId: string, value: string | null) => void
   onDuplicate: () => void
   onDelete: () => void
@@ -45,7 +49,7 @@ interface Props {
 }
 
 /** What to do with the selected rows: a bar that rises over the foot of the table, so nothing in it moves. */
-export function BulkBar({ count, fields, members, onStatus, onAssignee, onField, onDuplicate, onDelete, onClear }: Props) {
+export function BulkBar({ count, fields, members, sprints, onStatus, onAssignee, onSprint, onField, onDuplicate, onDelete, onClear }: Props) {
   const choices = fields.filter((f) => f.type === 'choice')
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-5 z-40 flex justify-center px-4">
@@ -74,6 +78,14 @@ export function BulkBar({ count, fields, members, onStatus, onAssignee, onField,
             </DropdownMenuItem>
           ))}
         </BarMenu>
+        {sprints && (
+          <BarMenu label="Sprint">
+            <DropdownMenuItem className={cn(item, 'text-ink-2')} onSelect={() => onSprint(null)}>No sprint</DropdownMenuItem>
+            {sprints.map((s) => (
+              <DropdownMenuItem key={s.id} className={item} onSelect={() => onSprint(s.id)}>{s.name}</DropdownMenuItem>
+            ))}
+          </BarMenu>
+        )}
         {choices.length > 0 && (
           <BarMenu label="Set field">
             {choices.map((f) => (

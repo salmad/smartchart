@@ -11,8 +11,8 @@ const OVERSCAN = 8
 
 type WalkRow = TableRow | MatrixRow
 
-export function visibleRows<T extends WalkRow>(rows: T[], filtersActive: boolean): T[] {
-  if (filtersActive) return rows
+/** The rows whose parents are all open. Under a filter, the view hands in its own folds (see `useFilterFolds`). */
+export function visibleRows<T extends WalkRow>(rows: T[]): T[] {
   const out: T[] = []
   const openAt: boolean[] = []
   for (const row of rows) {
@@ -37,16 +37,17 @@ export function visibleRows<T extends WalkRow>(rows: T[], filtersActive: boolean
   return out
 }
 
-/** The columns shown: known ones, less any the rows are grouped by (every row in a group would repeat it). */
-export function liveColumns(view: ViewSettings, fields: FieldDef[]): string[] {
+/** The columns shown: known ones, less any the rows are grouped by (every row in a group would repeat it), and Sprint while the roadmap has none. */
+export function liveColumns(view: ViewSettings, fields: FieldDef[], sprints: boolean): string[] {
   const grouped = new Set(liveGroupBy(fields, view.groupBy).map((g) => (g.on === 'field' ? g.field : g.on)))
-  return view.columns.filter((id) => (id in BUILT_IN || fields.some((f) => f.id === id)) && !grouped.has(id))
+  return view.columns.filter((id) => (id in BUILT_IN || fields.some((f) => f.id === id)) && !grouped.has(id) && (id !== 'sprint' || sprints))
 }
 
 const BUILT_IN: Record<string, { name: string; type: FieldDef['type'] }> = {
   assignee: { name: 'Assignee', type: 'person' },
   start: { name: 'Start', type: 'date' },
   due: { name: 'Due', type: 'date' },
+  sprint: { name: 'Sprint', type: 'date' },
 }
 
 /** One width per kind of value, so a column never reflows as its cells change. */

@@ -1,9 +1,10 @@
 import { checkFieldDefs, checkFieldPatch, isIsoDate, pruneInvalidFieldValues, stripField } from './fields.js'
-import type { FieldDef, FieldValue, Issue, IssueEvent, RoadmapState, Status } from './types.js'
+import type { FieldDef, FieldValue, Issue, IssueEvent, RoadmapState, SprintRhythm, Status } from './types.js'
 import { MAX_TITLE, STATUSES } from './types.js'
 import { canParent, issueTree, siblingKey, subtree } from './tree.js'
+import { checkRhythm, currentSprint, sprintOf } from './sprints.js'
 
-export type IssueProps = Partial<Pick<Issue, 'title' | 'status' | 'assignee' | 'start' | 'due'>> & {
+export type IssueProps = Partial<Pick<Issue, 'title' | 'status' | 'assignee' | 'start' | 'due' | 'sprint'>> & {
   fields?: Record<string, FieldValue | null>
 }
 
@@ -16,8 +17,21 @@ export type RoadmapOp =
   | { op: 'move'; id: string; parentId: string | null; before?: string; after?: string }
   | { op: 'delete'; ids: string[] }
   | { op: 'restore'; ids: string[] }
-  | { op: 'roadmap'; name?: string; fields?: FieldDef[] }
+  | { op: 'roadmap'; name?: string; fields?: FieldDef[]; sprints?: { start: string; weeks: number } | null }
+  | { op: 'rollover'; today: string }
   | { op: 'duplicate'; copies: { id: string; sourceId: string }[] }
+
+/** Who rollover writes as; not a workspace member. */
+export const SYSTEM_USER = 'occam'
+
+const OPEN: readonly Status[] = ['todo', 'in_progress', 'blocked']
+
+/** True when the rhythm is running and unfinished work has not yet been moved into the current sprint. */
+export function rolloverDue(r: { sprints: SprintRhythm | null }, today: string): boolean {
+  if (!r.sprints) return false
+  const current = currentSprint(r.sprints, today)
+  return current !== null && r.sprints.rolled !== current.start
+}
 
 export interface OpCtx {
   by: string
@@ -29,7 +43,7 @@ export interface OpCtx {
 export type OpResult = { state: RoadmapState; changed: Issue[]; events: IssueEvent[] } | { refused: string }
 
 const clone = (s: RoadmapState): RoadmapState => ({
-  roadmap: { ...s.roadmap, fields: s.roadmap.fields.map((f) => ({ ...f, options: f.options?.map((o) => ({ ...o })) })) },
+  roadmap: { ...s.roadmap, sprints: s.roadmap.sprints ? { ...s.roadmap.sprints } : null, fields: s.roadmap.fields.map((f) => ({ ...f, options: f.options?.map((o) => ({ ...o })) })) },
   issues: s.issues.map((i) => ({ ...i, fields: { ...i.fields } })),
 })
 
@@ -64,6 +78,8 @@ function applyProps(
   props: IssueProps,
   defs: FieldDef[],
   members: string[],
+  sprints: SprintRhythm | null,
+  today: string,
 ): { issue: Issue; changes: IssueEvent['changes'] } | { refused: string } {
   const next = { ...target, fields: { ...target.fields } }
   const changes: IssueEvent['changes'] = []
@@ -105,6 +121,24 @@ function applyProps(
     if (props.due !== undefined && props.due !== target.due) {
       changes.push({ path: 'due', from: target.due, to: props.due })
       next.due = props.due
+    }
+  }
+  if (props.sprint !== undefined) {
+    if (props.sprint !== null) {
+      if (!sprints) return { refused: "Sprints aren't set up for this roadmap." }
+      if (typeof props.sprint !== 'string' || !isIsoDate(props.sprint)) return { refused: 'Dates must be YYYY-MM-DD.' }
+      const found = sprintOf(sprints, props.sprint)
+      if (!found) return { refused: `Sprints start on ${sprints.start}.` }
+      if (found.end < today) return { refused: 'That sprint has ended.' }
+      if (found.start !== target.sprint) {
+        changes.push({ path: 'sprint', from: target.sprint, to: found.start })
+        next.sprint = found.start
+        next.carried = 0
+      }
+    } else if (target.sprint !== null) {
+      changes.push({ path: 'sprint', from: target.sprint, to: null })
+      next.sprint = null
+      next.carried = 0
     }
   }
   if (props.fields) {
@@ -216,6 +250,7 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
   }
 
   const get = (id: string) => draft.issues.find((i) => i.id === id)
+  const todayOfOp = new Date(ctx.now).toISOString().slice(0, 10)
 
   if (op.op === 'create') {
     for (const row of op.issues) {
@@ -238,6 +273,8 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         assignee: null,
         start: null,
         due: null,
+        sprint: null,
+        carried: 0,
         fields: row.inheritFields === false ? {} : parent ? { ...parent.fields } : {},
         bodyRev: 0,
         seq,
@@ -247,7 +284,7 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         deletedAt: null,
       }
       if (row.props) {
-        const applied = applyProps(next, row.props, draft.roadmap.fields, ctx.members)
+        const applied = applyProps(next, row.props, draft.roadmap.fields, ctx.members, draft.roadmap.sprints, todayOfOp)
         if ('refused' in applied) return applied
         next = applied.issue
       }
@@ -259,7 +296,7 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
     for (const id of op.ids) {
       const target = get(id)
       if (!target || target.deletedAt !== null) return { refused: 'No such issue.' }
-      const applied = applyProps(target, op.props, draft.roadmap.fields, ctx.members)
+      const applied = applyProps(target, op.props, draft.roadmap.fields, ctx.members, draft.roadmap.sprints, todayOfOp)
       if ('refused' in applied) return applied
       if (!applied.changes.length) continue
       write(applied.issue)
@@ -387,6 +424,8 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         assignee: source.assignee,
         start: source.start,
         due: source.due,
+        sprint: source.sprint,
+        carried: 0,
         fields: { ...source.fields },
         bodyRev: 0,
         seq,
@@ -424,6 +463,21 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
       }
       events.push(ev(ctx, 'fields', null, [{ path: 'fields', from: s.roadmap.fields, to: op.fields }]))
     }
+    if (op.sprints !== undefined) {
+      if (op.sprints === null) {
+        if (draft.roadmap.sprints) events.push(ev(ctx, 'set', null, [{ path: 'sprints', from: draft.roadmap.sprints, to: null }]))
+        draft.roadmap.sprints = null
+      } else {
+        const check = checkRhythm(op.sprints)
+        if (check !== 'ok') return { refused: check }
+        const cur = draft.roadmap.sprints
+        if (!cur || cur.start !== op.sprints.start || cur.weeks !== op.sprints.weeks) {
+          const next = { start: op.sprints.start, weeks: op.sprints.weeks, rolled: null }
+          events.push(ev(ctx, 'set', null, [{ path: 'sprints', from: cur, to: next }]))
+          draft.roadmap.sprints = next
+        }
+      }
+    }
     if (op.name !== undefined) {
       if (typeof op.name !== 'string') return { refused: 'Every roadmap needs a name.' }
       const name = op.name.trim()
@@ -433,6 +487,18 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
         draft.roadmap.name = name
       }
     }
+  } else if (op.op === 'rollover') {
+    // Not due means nothing to write: no seq bump, no events.
+    if (!rolloverDue(draft.roadmap, op.today)) return { state: draft, changed: [], events: [] }
+    const rhythm = draft.roadmap.sprints as SprintRhythm
+    const current = currentSprint(rhythm, op.today) as NonNullable<ReturnType<typeof currentSprint>>
+    for (const row of [...draft.issues]) {
+      if (row.deletedAt !== null || row.sprint === null || row.sprint >= current.start) continue
+      if (!OPEN.includes(row.status)) continue
+      write({ ...row, sprint: current.start, carried: row.carried + 1 })
+      events.push({ issueId: row.id, by: SYSTEM_USER, byClient: ctx.byClient, at: ctx.now, what: 'set', changes: [{ path: 'sprint', from: row.sprint, to: current.start }] })
+    }
+    draft.roadmap.sprints = { ...rhythm, rolled: current.start }
   }
 
   draft.roadmap.seq = seq

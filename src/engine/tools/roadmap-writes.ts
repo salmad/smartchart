@@ -9,6 +9,7 @@ import { DESTRUCTIVE, ToolError, WRITE, tool, type JsonSchema, type ToolContext 
 const REF = /^[\w-]{1,64}$/
 const FIELD_ID = /^[\w-]+$/
 const NULLABLE_STRING: JsonSchema = { oneOf: [{ type: 'string' }, { type: 'null' }] }
+const SPRINT_NOTE = "Any date inside the sprint; it is stored as the sprint's first day. Null takes the issue out of its sprint. Set it only when the user asks."
 const newIssueId = () => `iss_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
 
 type CreateItem = {
@@ -18,6 +19,7 @@ type CreateItem = {
   assignee?: string | null
   start?: string | null
   due?: string | null
+  sprint?: string | null
   fields?: Record<string, unknown>
   parent?: string | null
 }
@@ -33,6 +35,7 @@ const CREATE_ITEM: JsonSchema = {
     assignee: NULLABLE_STRING,
     start: NULLABLE_STRING,
     due: NULLABLE_STRING,
+    sprint: { oneOf: [{ type: 'string' }, { type: 'null' }], description: SPRINT_NOTE },
     fields: { type: 'object', additionalProperties: true },
     parent: NULLABLE_STRING,
   },
@@ -70,6 +73,7 @@ function propsFromCreate(item: CreateItem): IssueProps | undefined {
   if (item.assignee !== undefined) { props.assignee = item.assignee; any = true }
   if (item.start !== undefined) { props.start = item.start; any = true }
   if (item.due !== undefined) { props.due = item.due; any = true }
+  if (item.sprint !== undefined) { props.sprint = item.sprint; any = true }
   if (item.fields !== undefined) {
     const patch: Record<string, FieldValue | null> = {}
     for (const [k, v] of Object.entries(item.fields)) {
@@ -110,7 +114,7 @@ function parseSet(set: Record<string, unknown>): IssueProps {
       props.status = v as Status
       continue
     }
-    if (k === 'assignee' || k === 'start' || k === 'due') {
+    if (k === 'assignee' || k === 'start' || k === 'due' || k === 'sprint') {
       const v = set[k]
       if (v !== null && typeof v !== 'string') throw new ToolError('bad_input', `${k}: must be a string or null.`)
       props[k] = v
@@ -118,13 +122,13 @@ function parseSet(set: Record<string, unknown>): IssueProps {
     }
     if (k.startsWith('fields.')) {
       const fieldId = k.slice('fields.'.length)
-      if (!FIELD_ID.test(fieldId)) throw new ToolError('bad_input', 'set: only title, status, assignee, start, due, and fields.<fieldId>.')
+      if (!FIELD_ID.test(fieldId)) throw new ToolError('bad_input', 'set: only title, status, assignee, start, due, sprint, and fields.<fieldId>.')
       const v = set[k]
       if (v !== null && typeof v !== 'string' && typeof v !== 'number') throw new ToolError('bad_input', `${k}: must be a string, a number, or null.`)
       fields[fieldId] = v as FieldValue | null
       continue
     }
-    throw new ToolError('bad_input', 'set: only title, status, assignee, start, due, and fields.<fieldId>.')
+    throw new ToolError('bad_input', 'set: only title, status, assignee, start, due, sprint, and fields.<fieldId>.')
   }
   if (Object.keys(fields).length) props.fields = fields
   return props
@@ -137,7 +141,7 @@ export const roadmapWriteTools = [
     group: 'roadmaps',
     scope: 'roadmap',
     annotations: WRITE,
-    description: 'Add one or more issues in a single transaction. Each item needs a unique ref (your key for this call), a title, and optionally status, assignee, start, due, field values, and parent (an existing issue id or another item\'s ref). Sub-issues do not inherit field values unless you set them. Returns created refs with issue ids and keys.',
+    description: 'Add one or more issues in a single transaction. Each item needs a unique ref (your key for this call), a title, and optionally status, assignee, start, due, sprint (any date inside the sprint), field values, and parent (an existing issue id or another item\'s ref). Sub-issues do not inherit field values unless you set them. Returns created refs with issue ids and keys.',
     input: {
       type: 'object',
       additionalProperties: false,
@@ -195,7 +199,7 @@ export const roadmapWriteTools = [
     group: 'roadmaps',
     scope: 'roadmap',
     annotations: DESTRUCTIVE,
-    description: 'Change paths on one live issue: title, status, assignee, start, due, or fields.<fieldId>. Body is not a path on this tool. Parent and order go through move_issue. Pass the user\'s own words as request. Refused paths return the same sentences as the editor.',
+    description: 'Change paths on one live issue: title, status, assignee, start, due, sprint (any date inside the sprint, or null), or fields.<fieldId>. Body is not a path on this tool. Parent and order go through move_issue. Pass the user\'s own words as request. Refused paths return the same sentences as the editor.',
     input: {
       type: 'object',
       additionalProperties: false,

@@ -61,6 +61,7 @@ export function IssueDetailView({ issue, roadmap, fields, issues, members, detai
         comments={detail?.comments ?? []}
         fields={fields}
         members={members}
+        rhythm={roadmap.sprints}
         canEdit={canEdit}
         onComment={async (text) => {
           const r = await repo.comment(roadmap.id, issue.id, text)

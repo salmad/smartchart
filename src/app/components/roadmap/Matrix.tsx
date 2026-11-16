@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { OptionMark } from './OptionMark'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
-import { filtering, toggleFolded, type ViewSettings } from '@/engine/roadmaps/view'
+import { filtering, searching, toggleFolded, type ViewSettings } from '@/engine/roadmaps/view'
 import { liveMatrix, matrixGrid, type MatrixCol } from '@/engine/roadmaps/matrix'
 import { shortDate } from './dates'
 import { cn } from '@/app/lib/utils'
@@ -53,6 +53,8 @@ export function Matrix({ state, view, members, today, canEdit, onView, onOpenIss
   const toggle = useCallback(
     (id: string) =>
       onView((v) => {
+        // While searching, rows open to what was found, and a row folded there is folded as the list folds one.
+        if (searching(v)) return { ...v, collapsed: v.collapsed.includes(id) ? v.collapsed.filter((x) => x !== id) : [...v.collapsed, id] }
         const open = v.matrix.expanded
         return { ...v, matrix: { ...v.matrix, expanded: open.includes(id) ? open.filter((x) => x !== id) : [...open, id] } }
       }),

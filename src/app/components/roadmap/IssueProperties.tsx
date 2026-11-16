@@ -3,6 +3,7 @@ import { OptionMark } from './OptionMark'
 import type { FieldDef, FieldValue, Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
 import type { IssueProps, RoadmapOp } from '@/engine/roadmaps/ops'
 import { canParent, dateSpan, issueTree, progress } from '@/engine/roadmaps/tree'
+import { sprintChoices, sprintName, sprintOf } from '@/engine/roadmaps/sprints'
 import { toast } from 'sonner'
 import { cn } from '@/app/lib/utils'
 import { Input } from '../ui/input'
@@ -130,6 +131,22 @@ export function IssueProperties({ issue, roadmap, fields, issues, members, canEd
         </div>
         {(derivedStart || derivedDue) && <Derived>from sub-issues</Derived>}
       </Row>
+      {roadmap.sprints && (
+        <Row label="Sprint">
+          <PropertyPick
+            label={sprintName(roadmap.sprints, issue.sprint ?? '') ? `Sprint: ${sprintName(roadmap.sprints, issue.sprint ?? '')}` : 'Sprint'}
+            options={sprintChoices(roadmap.sprints, today).map((c) => ({ id: c.id, label: c.name }))}
+            value={issue.sprint ? sprintOf(roadmap.sprints, issue.sprint)?.start ?? null : null}
+            clear="None"
+            disabled={!canEdit}
+            onPick={(sprint) => patch({ sprint })}
+          >
+            {issue.sprint && sprintName(roadmap.sprints, issue.sprint)
+              ? <span className="truncate">{sprintName(roadmap.sprints, issue.sprint)}</span>
+              : canEdit && <Placeholder>Add to sprint</Placeholder>}
+          </PropertyPick>
+        </Row>
+      )}
       <Row label="Parent">
         {canEdit ? (
           <ParentPicker

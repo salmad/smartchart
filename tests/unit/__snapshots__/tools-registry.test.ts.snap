@@ -1445,7 +1445,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a roadmap",
     },
-    "description": "A roadmap's name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members. Before your first roadmap write, read get_guide with style "roadmap".",
+    "description": "A roadmap's name, prefix, custom field definitions, sprint rhythm (sprints: first day and weeks, or null) and the current sprint (number, first and last day), editor link, and every live issue (id, key, title, status, assignee, dates, sprint, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members. Before your first roadmap write, read get_guide with style "roadmap".",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1701,7 +1701,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Create issues",
     },
-    "description": "Add one or more issues in a single transaction. Each item needs a unique ref (your key for this call), a title, and optionally status, assignee, start, due, field values, and parent (an existing issue id or another item's ref). Sub-issues do not inherit field values unless you set them. Returns created refs with issue ids and keys.",
+    "description": "Add one or more issues in a single transaction. Each item needs a unique ref (your key for this call), a title, and optionally status, assignee, start, due, sprint (any date inside the sprint), field values, and parent (an existing issue id or another item's ref). Sub-issues do not inherit field values unless you set them. Returns created refs with issue ids and keys.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1745,6 +1745,17 @@ exports[`registry > the three views agree (published contract: only additions al
               },
               "ref": {
                 "type": "string",
+              },
+              "sprint": {
+                "description": "Any date inside the sprint; it is stored as the sprint's first day. Null takes the issue out of its sprint. Set it only when the user asks.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
               },
               "start": {
                 "oneOf": [
@@ -1804,7 +1815,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": false,
       "title": "Update an issue",
     },
-    "description": "Change paths on one live issue: title, status, assignee, start, due, or fields.<fieldId>. Body is not a path on this tool. Parent and order go through move_issue. Pass the user's own words as request. Refused paths return the same sentences as the editor.",
+    "description": "Change paths on one live issue: title, status, assignee, start, due, sprint (any date inside the sprint, or null), or fields.<fieldId>. Body is not a path on this tool. Parent and order go through move_issue. Pass the user's own words as request. Refused paths return the same sentences as the editor.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1978,6 +1989,60 @@ exports[`registry > the three views agree (published contract: only additions al
     },
     "name": "set_fields",
     "title": "Define roadmap fields",
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Set the sprint rhythm",
+    },
+    "description": "Set how a roadmap's sprints repeat: the first day (YYYY-MM-DD) and the length in weeks (1 to 8). Sprints are numbered from the first day and the current one follows today's date. Null turns sprints off (issues keep their sprint dates). Changing the rhythm renumbers sprints. Do it only when the user asks, and pass their own words as request.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "type": "string",
+        },
+        "roadmapId": {
+          "type": "string",
+        },
+        "sprints": {
+          "oneOf": [
+            {
+              "type": "null",
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "start": {
+                  "type": "string",
+                },
+                "weeks": {
+                  "maximum": 8,
+                  "minimum": 1,
+                  "type": "integer",
+                },
+              },
+              "required": [
+                "start",
+                "weeks",
+              ],
+              "type": "object",
+            },
+          ],
+        },
+      },
+      "required": [
+        "roadmapId",
+        "sprints",
+        "request",
+      ],
+      "type": "object",
+    },
+    "name": "set_sprints",
+    "title": "Set the sprint rhythm",
   },
   {
     "annotations": {

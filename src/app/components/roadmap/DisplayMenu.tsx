@@ -21,12 +21,15 @@ const COLS: { id: string; label: string }[] = [
   { id: 'assignee', label: 'Assignee' },
   { id: 'start', label: 'Start' },
   { id: 'due', label: 'Due' },
+  { id: 'sprint', label: 'Sprint' },
 ]
 
 export type ViewChange = ViewSettings | ((prev: ViewSettings) => ViewSettings)
 
 interface Props {
   fields: FieldDef[]
+  /** Whether the roadmap has sprints: the Sprint column is offered only then. */
+  sprints: boolean
   view: ViewSettings
   onChange: (v: ViewChange) => void
 }
@@ -38,7 +41,7 @@ const levelOf = (v: string): GroupKey | null =>
 
 /** How every view is drawn, in one menu with the same rows in the same order: the grouping (shared by the views),
     the sort, then what only this view has. Each row is one dropdown, so the menu stays short. */
-export function DisplayMenu({ fields, view, onChange }: Props) {
+export function DisplayMenu({ fields, sprints, view, onChange }: Props) {
   const matrix = view.layout === 'matrix'
   const levels = liveGroupBy(fields, view.groupBy)
   // The matrix groups by field values only; the list and the Gantt also by status and person.
@@ -90,7 +93,7 @@ export function DisplayMenu({ fields, view, onChange }: Props) {
             <MenuSection title="List">
               <MenuMulti
                 label="Columns"
-                options={[...COLS.map((c) => ({ value: c.id, label: c.label })), ...fields.map((f) => ({ value: f.id, label: f.name, icon: <FieldIcon type={f.type} />, section: 'Fields' }))].map((o) => ({ ...o, on: view.columns.includes(o.value) }))}
+                options={[...COLS.filter((c) => c.id !== 'sprint' || sprints).map((c) => ({ value: c.id, label: c.label })), ...fields.map((f) => ({ value: f.id, label: f.name, icon: <FieldIcon type={f.type} />, section: 'Fields' }))].map((o) => ({ ...o, on: view.columns.includes(o.value) }))}
                 onToggle={toggleCol}
               />
             </MenuSection>

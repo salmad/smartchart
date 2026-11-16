@@ -18,6 +18,8 @@ export function issue(over: Partial<Issue> = {}): Issue {
     assignee: null,
     start: null,
     due: null,
+    sprint: null,
+    carried: 0,
     fields: {},
     bodyRev: 0,
     seq: 1,
@@ -45,6 +47,7 @@ export function roadmap(over: Partial<Roadmap> = {}): Roadmap {
     prefix: 'TST',
     fields: [],
     nextNumber: 1,
+    sprints: null,
     seq: 0,
     ...over,
   }

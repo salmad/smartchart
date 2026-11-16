@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react'
 import type { Chip } from '@/engine/roadmaps/view'
 import type { FieldDef, MemberLite, Status } from '@/engine/roadmaps/types'
 import { cn } from '@/app/lib/utils'
-import { FieldIcon } from './FieldIcon'
+import { FilterPropertyIcon } from './FieldIcon'
 import { FilterValuePicker, pickNoun, pickOptions } from './FilterValuePicker'
 import { Command, CommandGroup, CommandItem, CommandList, CommandSeparator } from '../ui/command'
 import { filterPropertyLabel, FILTER_COMMAND_CLASS, FILTER_ITEM_CLASS, type FilterProperty, type FilterStep } from './filterAddTypes'
@@ -43,16 +43,25 @@ export function FilterAddMenu({ fields, members, today, onAdd, onPut }: Props) {
           <CommandList className="max-h-72 p-1">
             <CommandGroup className="p-0">
               {BUILT_IN.map((p) => (
-                <CommandItem key={p.kind} className={FILTER_ITEM_CLASS} onSelect={() => pick(p)}>{filterPropertyLabel(p)}</CommandItem>
+                <CommandItem key={p.kind} className={cn(FILTER_ITEM_CLASS, 'gap-2')} onSelect={() => pick(p)}>
+                  <FilterPropertyIcon property={p} />
+                  {filterPropertyLabel(p)}
+                </CommandItem>
               ))}
             </CommandGroup>
             {fields.length > 0 && (
               <>
                 <CommandSeparator className="bg-hair" />
                 <CommandGroup className="p-0" heading="Fields">
-                  {fields.map((f) => (
-                    <CommandItem key={f.id} className={cn(FILTER_ITEM_CLASS, 'gap-2')} onSelect={() => pick({ kind: 'field', def: f })}><FieldIcon type={f.type} />{f.name}</CommandItem>
-                  ))}
+                  {fields.map((f) => {
+                    const property: FilterProperty = { kind: 'field', def: f }
+                    return (
+                      <CommandItem key={f.id} className={cn(FILTER_ITEM_CLASS, 'gap-2')} onSelect={() => pick(property)}>
+                        <FilterPropertyIcon property={property} />
+                        {f.name}
+                      </CommandItem>
+                    )
+                  })}
                 </CommandGroup>
               </>
             )}

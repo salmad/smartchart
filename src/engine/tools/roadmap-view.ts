@@ -17,6 +17,9 @@ export interface IssueView {
   assignee: string | null
   start: string | null
   due: string | null
+  /** The first day of the sprint it is in. */
+  sprint: string | null
+  carried: number
   parentId: string | null
   sortKey: string
   fields: Record<string, FieldValue>
@@ -64,6 +67,8 @@ export function issueView(roadmap: Roadmap, issues: readonly Issue[], issue: Iss
     assignee: issue.assignee,
     start: issue.start,
     due: issue.due,
+    sprint: issue.sprint,
+    carried: issue.carried,
     parentId: issue.parentId,
     sortKey: issue.sortKey,
     fields: issue.fields,

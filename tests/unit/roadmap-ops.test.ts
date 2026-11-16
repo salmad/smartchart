@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyOp, type OpResult } from '../../src/engine/roadmaps/ops'
+import { applyOp, rolloverDue, SYSTEM_USER, type OpResult } from '../../src/engine/roadmaps/ops'
 import { issueTree, ISSUE_CYCLE } from '../../src/engine/roadmaps/tree'
 import { country, ctx, issue, state } from './roadmap-builders'
 import type { FieldDef } from '../../src/engine/roadmaps/types'
@@ -234,5 +234,86 @@ describe('roadmap ops', () => {
     expect(dup([{ id: 'a2', sourceId: 'a' }, { id: 'a2', sourceId: 'c' }])).toEqual({ refused: 'Each copy needs its own id.' })
     expect(dup([{ id: 'p2', sourceId: 'a' }, { id: 'c2', sourceId: 'c' }])).not.toHaveProperty('refused')
     expect(base.issues).toHaveLength(2)
+  })
+})
+
+describe('sprints in ops', () => {
+  const rhythm = { start: '2026-11-02', weeks: 2, rolled: null }
+  const sctx = { ...ctx, now: Date.UTC(2026, 10, 17, 9) }
+  const withRhythm = (issues = [issue({ id: 'a' })]) => state({ sprints: rhythm }, issues)
+
+  it('stores the start of the sprint a date falls in, resets carried and logs it', () => {
+    const r = ok(applyOp(withRhythm([issue({ id: 'a', carried: 2 })]), { op: 'set', ids: ['a'], props: { sprint: '2026-11-20' } }, sctx))
+    expect(r.state.issues[0]).toMatchObject({ sprint: '2026-11-16', carried: 0 })
+    expect(r.events[0].changes).toEqual([{ path: 'sprint', from: null, to: '2026-11-16' }])
+  })
+
+  it('refuses a sprint without a rhythm or one that has ended, and lets it be cleared', () => {
+    expect(applyOp(state({}, [issue({ id: 'a' })]), { op: 'set', ids: ['a'], props: { sprint: '2026-11-20' } }, sctx)).toEqual({ refused: "Sprints aren't set up for this roadmap." })
+    expect(applyOp(withRhythm(), { op: 'set', ids: ['a'], props: { sprint: '2026-11-03' } }, sctx)).toEqual({ refused: 'That sprint has ended.' })
+    const cleared = ok(applyOp(state({}, [issue({ id: 'a', sprint: '2026-11-02' })]), { op: 'set', ids: ['a'], props: { sprint: null } }, sctx))
+    expect(cleared.state.issues[0].sprint).toBeNull()
+  })
+
+  it('keeps carried when the sprint does not change', () => {
+    const r = ok(applyOp(withRhythm([issue({ id: 'a', sprint: '2026-11-16', carried: 1 })]), { op: 'set', ids: ['a'], props: { sprint: '2026-11-17' } }, sctx))
+    expect(r.changed).toEqual([])
+    expect(r.state.issues[0].carried).toBe(1)
+  })
+
+  it('sets, validates and clears the rhythm', () => {
+    const r = ok(applyOp(state(), { op: 'roadmap', sprints: { start: '2026-11-02', weeks: 2 } }, sctx))
+    expect(r.state.roadmap.sprints).toEqual({ start: '2026-11-02', weeks: 2, rolled: null })
+    expect(applyOp(state(), { op: 'roadmap', sprints: { start: '2026-11-02', weeks: 9 } }, sctx)).toHaveProperty('refused')
+    const gone = ok(applyOp(r.state, { op: 'roadmap', sprints: null }, sctx))
+    expect(gone.state.roadmap.sprints).toBeNull()
+  })
+
+  it('rolls open work in ended sprints to the current one, once', () => {
+    const base = withRhythm([
+      issue({ id: 'todo', status: 'todo', sprint: '2026-11-02' }),
+      issue({ id: 'prog', status: 'in_progress', sprint: '2026-11-02', carried: 1 }),
+      issue({ id: 'blk', status: 'blocked', sprint: '2026-11-02' }),
+      issue({ id: 'bl', status: 'backlog', sprint: '2026-11-02' }),
+      issue({ id: 'done', status: 'done', sprint: '2026-11-02' }),
+      issue({ id: 'x', status: 'cancelled', sprint: '2026-11-02' }),
+      issue({ id: 'gone', status: 'todo', sprint: '2026-11-02', deletedAt: 5 }),
+      issue({ id: 'now', status: 'todo', sprint: '2026-11-16' }),
+      issue({ id: 'none', status: 'todo' }),
+    ])
+    expect(rolloverDue(base.roadmap, '2026-11-17')).toBe(true)
+    const r = ok(applyOp(base, { op: 'rollover', today: '2026-11-17' }, sctx))
+    const by = (id: string) => r.state.issues.find((i) => i.id === id)
+    expect(by('todo')).toMatchObject({ sprint: '2026-11-16', carried: 1 })
+    expect(by('prog')).toMatchObject({ sprint: '2026-11-16', carried: 2 })
+    expect(by('blk')?.sprint).toBe('2026-11-16')
+    for (const id of ['bl', 'done', 'x', 'gone']) expect(by(id)?.sprint).toBe('2026-11-02')
+    expect(by('now')?.carried).toBe(0)
+    expect(r.changed.map((i) => i.id).sort()).toEqual(['blk', 'prog', 'todo'])
+    expect(r.events).toHaveLength(3)
+    expect(r.events.every((e) => e.by === SYSTEM_USER && e.what === 'set')).toBe(true)
+    expect(r.events[0].changes).toEqual([{ path: 'sprint', from: '2026-11-02', to: '2026-11-16' }])
+    expect(r.state.roadmap.sprints?.rolled).toBe('2026-11-16')
+    expect(rolloverDue(r.state.roadmap, '2026-11-17')).toBe(false)
+    const again = ok(applyOp(r.state, { op: 'rollover', today: '2026-11-17' }, sctx))
+    expect(again.changed).toEqual([])
+    expect(again.events).toEqual([])
+  })
+
+  it('moves work from several missed sprints straight to the current one', () => {
+    const base = withRhythm([issue({ id: 'a', sprint: '2026-11-02' })])
+    const r = ok(applyOp(base, { op: 'rollover', today: '2026-12-10' }, sctx))
+    expect(r.state.issues[0].sprint).toBe('2026-11-30')
+  })
+
+  it('does nothing before the rhythm starts or without one', () => {
+    expect(rolloverDue(withRhythm().roadmap, '2026-10-01')).toBe(false)
+    expect(rolloverDue(state().roadmap, '2026-11-17')).toBe(false)
+  })
+
+  it('duplicates a sprint but not its carried count', () => {
+    const base = withRhythm([issue({ id: 'a', sprint: '2026-11-16', carried: 3 })])
+    const r = ok(applyOp(base, { op: 'duplicate', copies: [{ id: 'b', sourceId: 'a' }] }, sctx))
+    expect(r.state.issues.find((i) => i.id === 'b')).toMatchObject({ sprint: '2026-11-16', carried: 0 })
   })
 })

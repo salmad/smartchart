@@ -113,6 +113,22 @@ describe('roadmapStore', () => {
     await expect(opening).resolves.toBeUndefined()
   })
 
+  it('open replaces a kept copy with a full read so a bad date parse in the keep cannot stick', async () => {
+    const cached = loaded([issue({ id: 'a', title: 'Cached', sprint: '2026-11-15', seq: 1 })])
+    const fresh = loaded([issue({ id: 'a', title: 'Cached', sprint: '2026-11-16', seq: 1 })])
+    let release: (() => void) | undefined
+    const r = repo({
+      kept: async () => cached,
+      get: () => new Promise<LoadedRoadmap>((ok) => { release = () => ok(fresh) }),
+      changes: async () => ({ seq: 1, roadmap: null, issues: [], events: [] }),
+    })
+    const store = roadmapStore(r, 'rm_1', { by: 'ann', now: () => 1 })
+    await store.open()
+    expect(store.get().state?.issues[0].sprint).toBe('2026-11-15')
+    release?.()
+    await vi.waitFor(() => expect(store.get().state?.issues[0].sprint).toBe('2026-11-16'))
+  })
+
   it('two acts on one issue send in order', async () => {
     const order: string[] = []
     const r = repo({ writeDelay: 1 })
