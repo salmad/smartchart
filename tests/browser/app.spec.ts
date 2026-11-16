@@ -2,6 +2,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import type { Slide, Style } from '@/engine/types'
 import { signInAsDev } from './dev-account'
+import { appearance, pageMenu, writingStyle } from './bar'
 
 signInAsDev()
 
@@ -22,8 +23,7 @@ async function boot(page: Page, path = '/new') {
 test('the app loads', async ({ page }) => {
   await boot(page)
   await expect(page.getByText('Occam', { exact: true }).first()).toBeVisible()
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await expect(page.getByRole('group', { name: 'Deck style' })).toBeVisible()
+  await expect(await writingStyle(page, 'Consulting')).toBeVisible()
 })
 
 test('a loaded cover shows one strip thumb', async ({ page }) => {
@@ -70,10 +70,10 @@ test('a deck saved by the prototype opens with its slide and look', async ({ pag
   await page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify(proto)] as const)
   await boot(page, '/d/d_1')
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Acme')
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
-  // The palette is the user's Look, not the deck's: the prototype's Paper gives way to the default, Ink.
-  await expect(page.getByRole('button', { name: 'Ink' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(await writingStyle(page, 'Pitch')).toHaveAttribute('aria-checked', 'true')
+  await page.keyboard.press('Escape'); await page.keyboard.press('Escape')
+  // The palette is the user's (Appearance), not the deck's: the prototype's Paper gives way to the default, Ink.
+  await expect((await appearance(page)).getByRole('button', { name: 'Ink' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('the deck is renamed in place and keeps its name; Esc keeps the old one', async ({ page }) => {
@@ -96,7 +96,7 @@ test('the deck is renamed in place and keeps its name; Esc keeps the old one', a
   await expect(bar).toContainText('Board pack')
 })
 
-test('the views: Grid shows every slide and a double click opens one; the look opens beside the slide', async ({ page }) => {
+test('the views: Grid shows every slide and a double click opens one; versions open beside the slide', async ({ page }) => {
   await boot(page)
   await load(page, [COVER, { ...COVER, title: 'Second' }])
   await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Grid' }).click()
@@ -105,11 +105,11 @@ test('the views: Grid shows every slide and a double click opens one; the look o
   await page.locator('[data-strip-thumb]').nth(1).dblclick()
   await expect(page.locator('[title="Present (F)"] .slide .title')).toHaveText('Second')
   await expect(page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Slide' })).toHaveAttribute('aria-pressed', 'true')
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await expect(page.getByRole('complementary', { name: 'Deck look' })).toBeVisible()
+  await pageMenu(page, 'deck', 'Version history')
+  await expect(page.getByRole('complementary', { name: 'Versions' })).toBeVisible()
   await expect(page.locator('[title="Present (F)"]')).toBeVisible()
-  await page.getByRole('button', { name: 'Close look' }).click()
-  await expect(page.getByRole('complementary', { name: 'Deck look' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Close versions' }).click()
+  await expect(page.getByRole('complementary', { name: 'Versions' })).toHaveCount(0)
 })
 
 const CARDS = { template: 'cards', title: 'Three reasons to act now', cards: [{ icon: 'zap', title: 'Faster', text: 'Cut the cycle time.' }, { icon: 'wallet', title: 'Cheaper', text: 'Lower unit costs.' }] }

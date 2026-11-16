@@ -24,13 +24,14 @@ import { sendDocTurn } from '@/app/doc-turn'
 import type { Pill } from '@/engine/agent/suggest'
 import type { ChatMessage } from '@/engine/agent/llm'
 import type { Message } from '@/app/store'
-import { LookPanel } from './LookPanel'
+import { PageMenu } from './PageMenu'
+import { SourceDialog } from './SourceEditor'
 import { VersionsPanel } from './VersionsPanel'
 import { anchorsOf } from './docs/anchors'
 import { CommentTriggers } from './docs/CommentTriggers'
 import { DocComments, type CommentTarget } from './docs/DocComments'
 import { DocChecks } from './docs/DocChecks'
-import { ReadBar } from './docs/DocBar'
+import { Presence, ReadBar } from './docs/DocBar'
 import { useDocChecks } from './docs/useDocChecks'
 import { countText } from './docs/useDocProposals'
 import { ShareMenu } from './ShareMenu'
@@ -70,7 +71,8 @@ interface Props {
   offline: boolean
   modelsLive: boolean
   /** Workspace palette and accent (not stored on the doc). */
-  look: { theme: Theme; accent: string | null; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void }
+  /** Your palette and accent (changed from the avatar menu). */
+  look: { theme: Theme; accent: string | null }
   /** A share link on the server; null for the dev account. */
   shareId: string | null
 }
@@ -90,7 +92,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const docKey = useMemo(() => (parsed ? JSON.stringify(parsed.blocks) : ''), [parsed])
   const [docChips, setDocChips] = useState<{ key: string; pills: Pill[] } | null>(null)
   const me = authorOf(account), live = useDocLive(docs, id, editing, me)
-  const [side, setSide] = useState<'comments' | 'checks' | 'versions' | 'look' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
+  const [side, setSide] = useState<'comments' | 'checks' | 'versions' | null>(null), [saves, setSaves] = useState(0), [refused, setRefused] = useState(false)
   const [preview, setPreview] = useState<{ v: DocVersionRow; before: DocVersionRow | null; current: boolean; doc: Doc | 'missing' | null } | null>(null), [restoring, setRestoring] = useState(false)
   const [comments, setComments] = useState<DocComment[]>(() => docs.peek?.(id)?.comments ?? []), [target, setTarget] = useState<CommentTarget | null>(null), [ring, setRing] = useState<string | null>(null), [commentError, setCommentError] = useState<string | null>(null)
   const [activeProposal, setActiveProposal] = useState<DocProposal | null>(null)
@@ -130,7 +132,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   // Someone saved while this tab was only reading: show what they wrote.
   useEffect(() => { if (live.newer && !editing && record) setReload((n) => n + 1) }, [live.newer]) // eslint-disable-line react-hooks/exhaustive-deps
   // Editing starts from the current doc: a version preview, Versions and Look are for reading.
-  useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' || s === 'look' ? null : s)); setRefused(false) } }, [editing])
+  useEffect(() => { if (editing) { setPreview(null); setSide((s) => (s === 'versions' ? null : s)); setRefused(false) } }, [editing])
   useEffect(() => {
     if (!parsed || !modelsLive || !canEdit || chatBusy || editing) return
     const starters = chipsForDoc(parsed, { live: modelsLive, busy: chatBusy, editing, fresh: !messages.length, history: historyRef.current })
@@ -223,7 +225,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
 
   // The right slot: a panel open takes the agent's place, closing it brings the agent back; the agent's toggle (and ⌘L)
   // while a panel is up goes back to the agent.
-  const panelShown = (!editing && side === 'look' && canEdit) || (!editing && side === 'versions') || ((side === 'comments' || side === 'checks') && !!parsed)
+  const panelShown = (!editing && side === 'versions') || ((side === 'comments' || side === 'checks') && !!parsed)
   const sendChat = (text: string) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }
   // A doc with nothing in it opens on its start screen; until something is asked, the prompt box is there, not in the
   // agent's panel (one prompt box on the page).
@@ -252,11 +254,21 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     window.addEventListener('keydown', key, true)
     return () => window.removeEventListener('keydown', key, true)
   }, [panelShown, chatOpen]) // eslint-disable-line react-hooks/exhaustive-deps -- toAgent reads the latest state
-  const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
+  const toggleVersions = () => { setSide((s) => (s === 'versions' ? null : 'versions')); setPreview(null) }
+  const [source, setSource] = useState(false)
 
   const header = (bar: ReactNode) => (
     <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatShown, onToggle: quiet ? draft : panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
-      title={<span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>}>
+      title={<>
+        <span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>
+        {record && !editing && <PageMenu noun="doc" name={record.name} busy={false} onVersions={toggleVersions} onSource={() => setSource(true)}
+          downloads={[
+            { label: 'Markdown', run: () => exportDocMarkdown(record.name, record.text) },
+            { label: 'HTML', run: () => { if (page.current) exportDocHtml(record.name, page.current) } },
+            { label: 'PDF', run: () => setPrinting(true) },
+          ]} />}
+      </>}
+      badge={!editing && <Presence names={live.others} />}>
       {bar}
       <AccountMenu account={account} />
     </AppBar>
@@ -276,8 +288,6 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
         onSend={sendChat}
         onClear={() => { setMessages([]); historyRef.current = [] }} />}
-      {!editing && side === 'look' && canEdit && <LookPanel noun="doc" theme={look.theme} accent={look.accent}
-        onTheme={look.onTheme} onAccent={look.onAccent} onClose={() => setSide(null)} />}
       {!editing && side === 'versions' && <VersionsPanel list={() => docs.versions(id)} describe={(v, before) => describeDocDiff(before?.tree ?? null, v.tree)} noun="doc"
         saves={saves} selected={preview?.v.n ?? null} onPreview={(v, before, current) => void showVersion(v, before, current)} onClose={() => { setSide(null); setPreview(null) }} />}
       {side === 'comments' && parsed && <DocComments comments={comments} anchors={anchorsOf(parsed)} target={target} onTarget={setTarget} error={commentError}
@@ -309,14 +319,9 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   return (
     <>
       {/* The bar stays while the next doc is read, so its buttons do not blink; Edit waits for the doc. */}
-      {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} others={live.others} checks={checking} comments={commenting}
-        look={canEdit ? { open: side === 'look', onToggle: toggle('look') } : null} versions={{ open: side === 'versions', onToggle: toggle('versions') }}
-        share={shareId ? <ShareMenu target="doc" id={shareId}
-          docExport={record ? {
-            markdown: () => exportDocMarkdown(record.name, record.text),
-            html: () => { if (page.current) exportDocHtml(record.name, page.current) },
-            pdf: () => setPrinting(true),
-          } : undefined} /> : null} />)}
+      {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} checks={checking} comments={commenting}
+        share={shareId ? <ShareMenu target="doc" id={shareId} primary /> : null} />)}
+      {record && <SourceDialog title="Doc source" text={record.text} open={source} onOpenChange={setSource} />}
       {body(<>
         {invite && bodyEl && createPortal(<EmptyDoc onWrite={canEdit ? () => { if (record) startEditing() } : undefined} onDraft={canEdit && modelsLive && !offline ? draft : undefined}
           working={chatBusy ? phaseLinesOf(messages.at(-1)?.trace) : null} />, bodyEl)}

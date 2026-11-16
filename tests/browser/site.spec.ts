@@ -3,6 +3,7 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
 import { devAccount } from './dev-account'
 import { editDeck } from './deck-edit'
+import { writingStyle } from './bar'
 
 async function site(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 })
@@ -70,8 +71,7 @@ test('after sign-in, the prompt kept from the site opens the editor in the style
   await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, live: false } }))
   await page.addInitScript(() => sessionStorage.setItem('smartchart.pendingPrompt', JSON.stringify({ text: 'Revenue grew from £2.1m to £5.4m', style: 'pitch' })))
   await page.goto('/new')
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await expect(page.getByRole('group', { name: 'Deck style' }).getByRole('button', { name: 'Pitch' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(await writingStyle(page, 'Pitch')).toHaveAttribute('aria-checked', 'true')
 })
 
 test('signed out, a deck link asks to sign in; closing the dialog goes to the site', async ({ page }) => {

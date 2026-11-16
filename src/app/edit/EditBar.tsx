@@ -7,16 +7,20 @@ import { MENU, MIXED_HALVES, OFFERED } from '@/engine/slides/schema'
 import { switchTemplate } from '@/engine/slides/edit'
 import type { Style, TemplateId } from '@/engine/types'
 import type { SlideEdit } from './useSlideEdit'
+import { SourceToggle } from '@/app/components/SourceEditor'
 
 const NAME: Record<TemplateId, string> = { chart: 'Chart', pair: MIXED_HALVES ? 'Two halves' : 'Two charts', table: 'Table', number: 'Number', quote: 'Quote', steps: 'Steps', cards: 'Cards', summary: 'Summary', image: 'Picture', team: 'Team', logos: 'Logos', agenda: 'Agenda', cover: 'Cover', section: 'Chapter divider' }
 
-export function EditBar({ edit, deckStyle: style, onDiscard }: { edit: SlideEdit; deckStyle: Style; onDiscard: () => void }) {
+interface Props { edit: SlideEdit; deckStyle: Style; onDiscard: () => void; onSave: () => void; source: { open: boolean; onToggle: () => void } }
+
+export function EditBar({ edit, deckStyle: style, onDiscard, onSave, source }: Props) {
   const [pick, setPick] = useState<TemplateId | null>(null)
   const preview = pick ? switchTemplate(edit.draft, pick, style) : null
   const n = edit.issues.length
   return (
     <div className="flex min-h-11 items-center gap-3 rounded-[10px] bg-panel px-3 py-2 shadow-[0_0_0_1px_theme(colors.line)]">
-      <Select value={pick ?? edit.draft.template} onValueChange={(v) => setPick(v === edit.draft.template ? null : v as TemplateId)}>
+      <SourceToggle open={source.open} onClick={source.onToggle} />
+      <Select disabled={source.open} value={pick ?? edit.draft.template} onValueChange={(v) => setPick(v === edit.draft.template ? null : v as TemplateId)}>
         <SelectTrigger aria-label="Template" className="w-44"><SelectValue /></SelectTrigger>
         <SelectContent>{OFFERED.map((id) => <SelectItem key={id} value={id} title={MENU[id].summary}>{NAME[id]}</SelectItem>)}</SelectContent>
       </Select>
@@ -35,7 +39,7 @@ export function EditBar({ edit, deckStyle: style, onDiscard }: { edit: SlideEdit
       )}
       {edit.error && <span role="alert" className="text-[13px] text-warn">{edit.error}</span>}
       <Button variant="ghost" onClick={onDiscard} disabled={edit.saving}>Discard</Button>
-      <Button onClick={() => void edit.save()} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>
+      <Button onClick={onSave} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>
     </div>
   )
 }

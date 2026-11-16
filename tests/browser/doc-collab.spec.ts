@@ -1,6 +1,7 @@
 /* Around the doc editor (M4): versions to preview and restore, comments on selected words, a stale save refused, and
    no Versions while editing. The dev account's docs live in this browser, so the same repo code runs as on the server. */
 import { test, expect, type Page } from '@playwright/test'
+import { appearance, pageMenu } from './bar'
 
 const DOC = ['---', 'title: Test doc', '---', '', '## Plan {#plan}', '', 'First paragraph here.', ''].join('\n')
 
@@ -34,7 +35,7 @@ test('restore a version: the read view shows the first text, and Versions lists 
   await append(page, ' One.')
   await page.clock.runFor(120_000) // a pause past GROUP_MS: the next save is its own version
   await append(page, ' Two.')
-  await page.getByRole('button', { name: 'Versions' }).click()
+  await pageMenu(page, 'doc', 'Version history')
   const rows = page.getByRole('complementary', { name: 'Versions' }).locator('button[aria-pressed]')
   await expect(rows).toHaveCount(2)
   await rows.nth(1).click()
@@ -86,23 +87,19 @@ test('a stale save: the newer-version bar appears, and Save is refused with the 
   await expect(page.getByRole('button', { name: 'Copy my text' })).toBeVisible()
 })
 
-test('Versions is not offered while editing', async ({ page }) => {
+test('the doc menu (versions, downloads, source) is not offered while editing', async ({ page }) => {
   await seed(page)
-  await expect(page.getByRole('button', { name: 'Versions' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Doc menu' })).toBeVisible()
   await edit(page)
-  await expect(page.getByRole('button', { name: 'Versions' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Doc menu' })).toHaveCount(0)
 })
 
-test('Look: the palette and accent change the page, persist, and are not offered while editing', async ({ page }) => {
+test('Appearance: the palette and accent change the page and persist', async ({ page }) => {
   await seed(page)
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  const look = page.getByRole('complementary', { name: 'Doc look' })
-  await expect(look.getByRole('group', { name: 'Deck style' })).toHaveCount(0)
+  const look = await appearance(page)
   await look.getByRole('button', { name: 'Ink' }).click()
   await expect(page.locator('.doc.theme-ink')).toBeVisible()
   await look.getByRole('button', { name: 'Cobalt' }).click()
   await page.reload()
   await expect(page.locator('.doc.theme-ink')).toBeVisible()
-  await edit(page)
-  await expect(page.getByRole('button', { name: 'Look', exact: true })).toHaveCount(0)
 })

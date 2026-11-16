@@ -13,6 +13,8 @@ import { useDocEdit } from './useDocEdit'
 import { DISCARD_CHANGES, useConfirm } from '../ConfirmDialog'
 import type { ProposalView } from './editor/proposal'
 import { serializeDoc } from '@/engine/docs/serialize'
+import { parseDoc } from '@/engine/docs/parse'
+import { SourceEditor } from '../SourceEditor'
 import { docBlockSuggestionsEnabled } from '@/app/features'
 
 interface Props {
@@ -58,21 +60,45 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
     void ask(DISCARD_CHANGES('this doc')).then((yes) => { if (yes) edit.discard() })
   }, [edit, ask])
 
+  // The doc's file while it is shown in place of the page (null on the page). Lines that don't parse are kept as they
+  // are and listed; nothing is refused.
+  const [source, setSource] = useState<{ text: string; from: string } | null>(null)
+  const sourceNotes = useMemo(() => (source ? parseDoc(source.text).errors : []), [source])
+  /** The file's words into the editor (one undo step), when they changed. */
+  const applySource = useCallback(() => {
+    if (!source || source.text === source.from || !edit.editor) return
+    const d = parseDoc(source.text).doc
+    edit.editor.commands.setContent(toProse({ title: d.title, subtitle: d.subtitle ?? '', blocks: d.blocks }))
+  }, [source, edit.editor])
+  const toggleSource = useCallback(() => {
+    if (source) { applySource(); setSource(null); return }
+    const d = edit.current()
+    if (!d) return
+    edit.openFigure(null)
+    const text = serializeDoc(d)
+    setSource({ text, from: text })
+  }, [source, applySource, edit])
+  const saveNow = useCallback(() => { applySource(); void edit.save() }, [applySource, edit])
+
   // The words as they would be saved, for the clipboard.
   const copyText = useCallback(async () => {
-    try { const d = edit.current(); if (!d) return false; await navigator.clipboard.writeText(serializeDoc(d)); return true } catch { return false }
-  }, [edit])
+    try {
+      const text = source?.text ?? (() => { const d = edit.current(); return d && serializeDoc(d) })()
+      if (!text) return false
+      await navigator.clipboard.writeText(text); return true
+    } catch { return false }
+  }, [edit, source])
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229 || edit.saving) return
       const mod = e.metaKey || e.ctrlKey
-      if (mod && e.key === 's') { e.preventDefault(); void edit.save(); return }
+      if (mod && e.key === 's') { e.preventDefault(); saveNow(); return }
     }
     const leave = (e: BeforeUnloadEvent) => { if (edit.dirty) e.preventDefault() }
     document.addEventListener('keydown', key); window.addEventListener('beforeunload', leave)
     return () => { document.removeEventListener('keydown', key); window.removeEventListener('beforeunload', leave) }
-  }, [edit])
+  }, [edit, saveNow])
 
   const approve = async () => {
     if (!active) return
@@ -98,9 +124,16 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
     <>
       {confirm}
       {children(
-        <EditBar edit={edit} onDiscard={discard} checks={checks} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />,
+        <EditBar edit={edit} onDiscard={discard} onSave={saveNow} checks={checks} comments={comments} stale={stale && { ...stale, onCopy: copyText }}
+          source={{ open: !!source, onToggle: toggleSource }} />,
         <>
-          <DocEditor edit={edit} theme={look.theme} accent={look.accent} docId={docId} />
+          {source && (
+            <div className="mx-auto flex h-full w-full max-w-[860px] px-8 py-6 max-[900px]:px-4">
+              <SourceEditor label="Doc source" value={source.text} onChange={(text) => setSource({ ...source, text })} error={null} notes={sourceNotes} />
+            </div>
+          )}
+          {/* Kept while the file is open: the editor holds the draft and its undo. */}
+          <div hidden={!!source}><DocEditor edit={edit} theme={look.theme} accent={look.accent} docId={docId} /></div>
           {active && <ProposalBar proposals={grouped.length ? grouped : [active]} active={active} index={proposalIndex} showing={showing} canEdit
             busy={proposalBusy} keepsDoc={edit.current() ?? doc} onShowing={setShowing} onIndex={setProposalIndex} onApprove={() => void approve()} onCancel={() => void cancel()} />}
         </>,

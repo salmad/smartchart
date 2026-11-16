@@ -2,7 +2,7 @@
    human writes through the same path as the agent. Limits come from the schema; nothing here is per template. */
 import { parsePath } from "../agent/patch.js";
 import { STARTERS, starterSlide } from "../starters/index.js";
-import { MENU, describe, fieldsFor, plain, type FieldView } from "./schema.js";
+import { CELL_BULLETS, MENU, describe, fieldsFor, plain, type FieldView } from "./schema.js";
 import type { Slide, Style, TemplateId } from "../types.js";
 import type { ImageKind } from "./images.js";
 
@@ -38,6 +38,12 @@ export function listOps(slide: Slide, style: Style): ListOp[] {
     }
   };
   walk(describe(slide.template, style).fields, slide as unknown as Obj, "");
+  // A cell's bullets are a list of their own (cells themselves follow the columns). A cell with no value of its own
+  // keeps at least one.
+  const tables = [["table", slide.table], ...(slide.halves ?? []).map((h, i) => [`halves[${i}].table`, h.table] as const)] as const;
+  for (const [path, t] of tables) (t?.rows ?? []).forEach((r, i) => (r.cells ?? []).forEach((c, j) => {
+    if (isObj(c) && Array.isArray(c.bullets)) out.push({ path: `${path}.rows[${i}].cells[${j}].bullets`, min: CELL_BULLETS.min, max: CELL_BULLETS.max, length: c.bullets.length, required: c.value === undefined || c.value === "" });
+  }));
   return out;
 }
 

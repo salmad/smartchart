@@ -3,6 +3,7 @@
 import { test, expect } from '@playwright/test'
 import starters from '../../src/engine/starters/starters.json' with { type: 'json' }
 import { signInAsDev } from './dev-account'
+import { appearance } from './bar'
 
 signInAsDev()
 const slide = (starters.slides as { id: string; consulting: Record<string, unknown> }[]).find((s) => s.id === 'chart-notes')?.consulting
@@ -14,7 +15,7 @@ test('the site’s colours are offered with where they come from; the one picked
   await page.route('**/api/brand', (r) => { asked = r.request().postData() ?? ''; return r.fulfill({ json: { colours: [{ hex: '#FF4F40', from: "monzo.com's logo" }, { hex: '#7C5CFF', from: 'used across monzo.com' }] } }) })
   await page.goto('/d/d_b')
   await page.waitForFunction(() => window.__journey?.items.length)
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
+  await appearance(page)
   await page.getByLabel('Your website').fill('monzo.com')
   await page.getByLabel('Your website').press('Enter')
   const list = page.getByRole('list', { name: 'Colours from the website' })

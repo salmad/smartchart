@@ -12,7 +12,7 @@ export const TOUR: readonly TourStep[] = [
   { id: 'checks', title: 'Checked like a partner would', body: 'Every slide is checked: does the title make a point, does the chart prove it, do the figures add up. Click to see what to look at.' },
   { id: 'comments', show: 'comments', target: 'comments-panel', via: 'comments', title: 'Leave notes for any agent', body: 'Write “this number is from Q2, update it” on a slide. Ask Occam, or any connected agent, to address the notes: it fixes each one and replies.' },
   { id: 'views', show: 'grid', target: 'grid', via: 'views', title: 'The whole deck', body: 'Drag slides to reorder them. Grid shows every slide at once; Storyline reads the titles as the room will, and checks the argument.' },
-  { id: 'share', title: 'Share it', body: 'A read-only link that stays up to date as the deck changes, or a PDF.' },
+  { id: 'share', title: 'Share it', body: 'A read-only link that stays up to date as the deck changes. The ⋯ beside the deck’s name downloads a PDF.' },
   { id: 'account', title: 'Connect an agent', body: 'An agent is an AI assistant, like Claude Code or Cursor, that can do work for you. Connect one, and it builds and edits your decks here by the same rules, while you watch.' },
 ]
 

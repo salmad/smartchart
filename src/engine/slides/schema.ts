@@ -298,6 +298,8 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
 } });
 /** A cell's characters. A two-column table of words is drawn full width, so its second column takes the wide limit. */
 export const CELL_MAX = 40, WIDE_CELL_MAX = 80;
+/** How many bullets a table cell holds. */
+export const CELL_BULLETS = { min: 1, max: 3 } as const;
 const CELLS_DESC = "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none); { value, icon } in the first column puts an icon from the curated set beside the row's name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.";
 const TABLE_CELLS = f("list", `${CELLS_DESC} At most ${CELL_MAX} characters a cell; in a two-column consulting table the second column takes ${WIDE_CELL_MAX} (a sentence of what each row means).`, { required: true, of: f("cell", "Cell.", { max: WIDE_CELL_MAX }) });
 const HALF_CELLS = f("list", CELLS_DESC, { required: true, of: f("cell", "Cell.", { max: CELL_MAX }) });
@@ -691,7 +693,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
       else if (v.value !== undefined && max && plain(String(v.value)).length > max) out.errors.push(`${path}: ${plain(String(v.value)).length} characters, limit ${max}.`);
       if (v.note !== undefined && String(v.note).length > 32) out.errors.push(`${path}.note: limit is 32 characters.`);
       if (v.bullets !== undefined) {
-        if (!Array.isArray(v.bullets) || v.bullets.length < 1 || v.bullets.length > 3) out.errors.push(`${path}.bullets: 1–3 bullets.`);
+        if (!Array.isArray(v.bullets) || v.bullets.length < CELL_BULLETS.min || v.bullets.length > CELL_BULLETS.max) out.errors.push(`${path}.bullets: ${CELL_BULLETS.min}–${CELL_BULLETS.max} bullets.`);
         else v.bullets.forEach((b: unknown, k: number) => {
           if (typeof b !== "string") out.errors.push(`${path}.bullets[${k}]: must be text.`);
           else if (plain(b).length > 50) out.errors.push(`${path}.bullets[${k}]: ${plain(b).length} characters, limit 50.`);

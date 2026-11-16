@@ -122,3 +122,13 @@ test('addColumn adds a blank header and blank cells; removeColumn drops one; bot
   const five: Slide = { ...T, table: { columns: ['A', 'B', 'C', 'D', 'E'].map((label) => ({ label })), rows: [{ cells: ['1', '2', '3', '4', '5'] }] } }
   expect(addColumn(five, 0)).toEqual({})
 })
+
+test("a table cell's bullets are a list: Enter adds the next one, up to three", () => {
+  const slide = { template: "table", title: "Options", table: { columns: [{ label: "Option" }, { label: "Why" }], rows: [
+    { cells: ["Build", { value: "Own it", bullets: ["Full control"] }] },
+  ] } } as unknown as Slide;
+  const op = listOps(slide, "consulting").find((o) => o.path === "table.rows[0].cells[1].bullets");
+  expect(op).toMatchObject({ min: 1, max: 3, length: 1, required: false });
+  const next = newItem(slide, "consulting", must(op), 1);
+  expect(next).toEqual({ "table.rows[0].cells[1].bullets": ["Full control", ""] });
+});

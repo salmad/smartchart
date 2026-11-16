@@ -1,16 +1,17 @@
 import { useState, type ReactNode } from 'react'
-import { History, LayoutGrid, ListOrdered, Palette, Play, RectangleHorizontal, type LucideIcon } from 'lucide-react'
+import { LayoutGrid, ListOrdered, Play, RectangleHorizontal, type LucideIcon } from 'lucide-react'
+import type { Style } from '@/engine/types'
 import type { Account } from '@/app/auth'
 import { Button } from '@/app/components/ui/button'
 import { AccountMenu } from './AccountMenu'
-import { AppBar } from './AppBar'
+import { AppBar, BarDivider } from './AppBar'
 import type { PageRef } from '@/engine/pages/tree'
-import { DeckMenu } from './DeckMenu'
+import { PageMenu } from './PageMenu'
 import type { Crumb } from './sidebar/usePageCrumbs'
 import { DeckTitle } from './DeckTitle'
 import { Seg, SEG_TRACK } from './Seg'
 import { ShareMenu } from './ShareMenu'
-import { Toggle } from './Toggle'
+import { CommentsToggle } from './Toggle'
 
 /** How the stage shows the deck: one slide to work on, every slide to order, or the titles to read the story. */
 export type DeckView = 'slide' | 'grid' | 'story'
@@ -24,9 +25,16 @@ export interface BarProps {
   crumbs?: Crumb[]; onOpenPage?: (ref: PageRef) => void
   /** How many pages sit below the deck, or null when that can't be known. */
   subpages?: () => Promise<number | null>
-  /** The deck's inspectors on the right: its look, and its versions (null when the decks' store keeps none). */
-  lookOpen: boolean; onLook: () => void
-  versionsOpen: boolean; onVersions: (() => void) | null
+  /** Opens the versions panel (from the deck's menu); null when the decks' store keeps none. */
+  onVersions: (() => void) | null
+  /** The deck's writing style, in its menu: fixed once it has slides. */
+  deckStyle: Style; onStyle: (s: Style) => void
+  /** The deck's file, from its menu. */
+  onSource: () => void
+  /** The open slide's comments; null with no slide. */
+  comments: { open: boolean; count: number; onToggle: () => void } | null
+  /** Edit the open slide; null with no slide or while it is being edited. */
+  onEdit: (() => void) | null
   /** The view switch; null when the stage shows something else (the starter picker, edit mode). */
   view: DeckView | null; onView: (v: DeckView) => void
   onPresent: () => void
@@ -55,8 +63,9 @@ const views = VIEWS.map(([v, label, Icon]): [DeckView, ReactNode] => [v, (
   </span>
 )])
 
-/** Top bar: the sidebar's toggle, the deck's name and menu; the view switch in the middle; the right slot's toggles
-    (the agent, Look, Versions) at the right, then Share, Present and you. */
+/** Top bar: the sidebar's toggle, the deck's name, its menu and whether the models are there; the view switch in the
+    middle; at the right the panels (the agent, comments), then the actions (Edit, Share, Present) and you. A doc's bar
+    has the same groups in the same order. */
 export function Bar(p: BarProps) {
   const [renaming, setRenaming] = useState(false)
   return (
@@ -64,15 +73,16 @@ export function Bar(p: BarProps) {
       onSite={p.onSite} crumbs={p.crumbs} onOpenPage={p.onOpenPage}
       title={<>
         <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
-        <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages} />
+        <PageMenu noun="deck" name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages}
+          onVersions={p.hasSlides && p.onVersions ? p.onVersions : undefined} writing={{ value: p.deckStyle, locked: p.hasSlides, onChange: p.onStyle }}
+          downloads={p.hasSlides ? [{ label: 'PDF', run: p.onPdf }] : []} onSource={p.hasSlides ? p.onSource : undefined} />
       </>}
+      badge={!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
       center={<div data-tour="views" className="max-[900px]:hidden">{p.view && <Seg label="View" value={p.view} onChange={p.onView} options={views} className={SEG_TRACK} />}</div>}>
-      <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
-        <Toggle open={p.lookOpen} onClick={p.onLook} label="Look"><Palette className="size-[17px]" strokeWidth={1.75} /></Toggle>
-        {p.hasSlides && p.onVersions && <Toggle open={p.versionsOpen} onClick={p.onVersions} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>}
-      </div>
-      {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
-      {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} onPdf={p.onPdf} /></div>}
+      {p.comments && <CommentsToggle tour="comments" keys="C" open={p.comments.open} count={p.comments.count} onClick={p.comments.onToggle} />}
+      <BarDivider />
+      {p.onEdit && <Button variant="outline" onClick={p.onEdit} disabled={p.busy} title="Edit this slide (E)">Edit</Button>}
+      {p.hasSlides && p.shareId && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} /></div>}
       {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
       <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
     </AppBar>

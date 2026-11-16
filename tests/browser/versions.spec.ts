@@ -2,6 +2,7 @@
    account keeps versions in this browser, so a deck and its versions are seeded through localStorage. */
 import { test, expect, type Page } from '@playwright/test'
 import { signInAsDev } from './dev-account'
+import { pageMenu } from './bar'
 
 signInAsDev()
 const section = (title: string) => ({ template: 'section', title })
@@ -31,7 +32,7 @@ const title = (page: Page) => page.evaluate(() => window.__journey?.items[0]?.sl
 
 test('preview an earlier version, then restore it as a new version on top', async ({ page }) => {
   await open(page)
-  await page.getByRole('button', { name: 'Versions', exact: true }).click()
+  await pageMenu(page, 'deck', 'Version history')
   const panel = page.getByRole('complementary', { name: 'Versions' })
   await expect(panel.getByRole('button')).toHaveCount(3) // close + two versions
   await expect(panel).toContainText('“Retitle it”')

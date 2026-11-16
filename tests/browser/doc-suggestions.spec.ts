@@ -7,6 +7,7 @@ import { identify } from '@/engine/docs/ops'
 import { parseDoc } from '@/engine/docs/parse'
 import { checkProposal, type DocProposal } from '@/engine/docs/proposals'
 import { signInAsDev } from './dev-account'
+import { pageMenu } from './bar'
 
 signInAsDev()
 test.use({ viewport: { width: 1440, height: 900 } })
@@ -153,7 +154,7 @@ test('wall of text: cancel after flipping leaves the doc and versions alone; app
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
   await expect(page.locator('.doc .doc-fig[data-kind="table"]')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Versions' }).click()
+  await pageMenu(page, 'doc', 'Version history')
   const panel = page.getByRole('complementary', { name: 'Versions' })
   await expect(panel).toContainText('Suggestion: Format split')
 })

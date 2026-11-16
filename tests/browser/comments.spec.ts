@@ -10,17 +10,17 @@ type Saved = { text: string; path?: string; quote?: string; done?: { by: string 
 const saved = (page: Page) => page.evaluate((k) => (JSON.parse(localStorage.getItem(k) ?? '{}').decks?.cm?.comments ?? []) as Saved[], KEY)
 const seed = (page: Page) => page.addInitScript(([k, v]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1') } }, [KEY, JSON.stringify({ active: 'cm', decks: { cm: deck } })] as const)
 
-test('Comment sits beside Edit: leave a note on the slide, see it counted, resolve it, delete it', async ({ page }) => {
+test('Comments sit beside Edit in the bar: leave a note on the slide, see it counted, resolve it, delete it', async ({ page }) => {
   await seed(page)
   await page.goto('/d/cm')
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Comment', exact: true }).click()
+  await page.getByRole('button', { name: /^Comments/ }).click()
   const panel = page.getByRole('complementary', { name: 'Comments on slide 1' })
   await expect(panel).toContainText('Click a part of the slide, or comment on the whole slide.')
   await panel.getByRole('textbox', { name: 'New comment' }).fill('This number is from Q2, update it')
   await panel.getByRole('textbox', { name: 'New comment' }).press('Enter')
   await expect(panel).toContainText('This number is from Q2, update it')
-  await expect(page.getByRole('button', { name: 'Comment, 1 open' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Comments, 1 open' })).toBeVisible()
   await expect(page.getByRole('group', { name: 'Slides' }).getByLabel('1 open comment')).toBeVisible()
   await expect.poll(async () => (await saved(page)).map((c) => [c.text, c.path])).toEqual([['This number is from Q2, update it', undefined]])
 
@@ -60,7 +60,7 @@ test('a linked source opens its page, but while picking a part a click on it pic
   await page.goto('/d/cm')
   const link = page.locator('[data-tour="stage"] .slide a')
   await expect(link).toHaveCSS('pointer-events', 'auto')
-  await page.getByRole('button', { name: 'Comment', exact: true }).click()
+  await page.getByRole('button', { name: /^Comments/ }).click()
   const panel = page.getByRole('complementary', { name: 'Comments on slide 1' })
   await expect(link).toHaveCSS('pointer-events', 'none')
   let opened = false

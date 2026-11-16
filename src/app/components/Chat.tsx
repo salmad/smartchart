@@ -12,8 +12,8 @@ import { Glint, Thinking } from './Working'
 /** What the chat is about: a deck's slides, or a doc. The words follow it; nothing else does. */
 export type ChatAbout = 'deck' | 'doc'
 const WORDS = {
-  deck: { ask: 'What should this slide say?', offline: 'The models are not reachable right now. You can still browse and pick slides.' },
-  doc: { ask: 'What should change in this doc?', offline: 'The models are not reachable right now. You can still read and edit the doc.' },
+  deck: { ask: 'What should change in this deck?', first: 'What should this slide say?', offline: 'The models are not reachable right now. You can still browse and pick slides.' },
+  doc: { ask: 'What should change in this doc?', first: 'What should change in this doc?', offline: 'The models are not reachable right now. You can still read and edit the doc.' },
 } as const
 
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
   onUndo: ((turn: string) => void) | null
   /** A turn runs or a slide is being edited: Undo waits. */
   busy: boolean
-  /** The deck has no slides yet: the empty chat asks the question the first message answers. */
+  /** Nothing made yet (a deck with no slides): the empty chat asks for the first one. */
   fresh: boolean
   about?: ChatAbout
 }
@@ -34,8 +34,8 @@ export function Chat({ messages, offline, onUndo, busy, fresh, about = 'deck' }:
 
   return (
     <div ref={thread} className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:px-4">
-      {/* A new deck: the question the first message answers. The composer's placeholder says how. */}
-      {!messages.length && fresh && <h2 className="app-title text-[24px]">{WORDS[about].ask}</h2>}
+      {/* No messages yet: the question the first one answers. The composer's placeholder says how. */}
+      {!messages.length && <h2 className="app-title text-[24px]">{fresh ? WORDS[about].first : WORDS[about].ask}</h2>}
       {messages.map((m, k) => <Bubble key={k} m={m} onUndo={onUndo} busy={busy} />)}
       {offline && <p className="text-[13px] text-ink-2">{WORDS[about].offline}</p>}
     </div>

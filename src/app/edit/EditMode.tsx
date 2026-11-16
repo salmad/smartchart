@@ -19,6 +19,8 @@ import { deckCheck } from './check'
 import { useEditKeys } from './useEditKeys'
 import { DISCARD_CHANGES, useConfirm } from '@/app/components/ConfirmDialog'
 import type { Surface } from './surface'
+import { SourceEditor } from '@/app/components/SourceEditor'
+import { readSlideSource, slideSource } from './source'
 
 const SAVE_KEYS = ['s', 'Enter']
 
@@ -29,6 +31,20 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
   const check = useMemo(() => deckCheck(deck, index, style, measurer), [deck, index, style, measurer])
   const edit = useSlideEdit({ slide: item.slide, check, save: saveDraft, onDone })
   const [surface, setSurface] = useState<Surface | null>(null), [grid, setGrid] = useState<number | null>(null)
+  // The slide's file while it is shown in place of the slide; null on the slide.
+  const [source, setSource] = useState<{ text: string; from: Slide } | null>(null)
+  const read = useMemo(() => (source === null ? null : readSlideSource(source.text, style, source.from)), [source, style])
+  /** The file's slide into the draft (one undo step), when it reads; false when it doesn't and the file stays open. */
+  const applySource = useCallback(() => {
+    if (source === null || !read) return true
+    if (!read.slide) return false
+    if (source.text !== slideSource(source.from)) edit.replace(read.slide, [...edit.samples])
+    return true
+  }, [source, read, edit])
+  const toggleSource = useCallback(() => {
+    if (source === null) { edit.commit(); setSource({ text: slideSource(edit.draft), from: edit.draft }); return }
+    if (applySource()) setSource(null)
+  }, [source, applySource, edit])
   const [confirm, ask] = useConfirm()
   const discard = useCallback(() => {
     if (!edit.dirty) { edit.discard(); return }
@@ -36,7 +52,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
   }, [edit, ask])
 
   // ⌘S / ⌘↵ save; the rest are the edit keys a figure in a doc uses too.
-  const saveNow = useCallback(() => { void edit.save() }, [edit])
+  const saveNow = useCallback(() => { if (applySource()) void edit.save() }, [edit, applySource])
   useEditKeys(edit, style, { grid: grid !== null, discard, save: saveNow, saveKeys: SAVE_KEYS })
 
   const pictures = usePictures(edit, style)
@@ -51,7 +67,11 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
   return (
     <>
       <div className="grid min-h-0 place-items-center px-8 pb-4 pt-7 max-[900px]:order-1 max-[900px]:px-4">
-        <SlideFrame>
+        {source !== null && read ? (
+          <div className={`aspect-video ${SLIDE_W} max-[900px]:w-full`}>
+            <SourceEditor label="Slide source" value={source.text} onChange={(text) => setSource({ ...source, text })} error={read.error} notes={read.notes} />
+          </div>
+        ) : <SlideFrame>
           <EditMenu edit={edit} surface={surface} deckStyle={style} onChart={(which) => setGrid(which)}>
             <EditSurface edit={edit} deckStyle={style} render={render} onSurface={setSurface}>
               <EditOverlay edit={edit} surface={surface} deckStyle={style} onChart={(which) => setGrid(which)} onAddPicture={pictures.add} />
@@ -61,12 +81,12 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
               {grid !== null && (edit.draft.chart || edit.draft.table || edit.draft.halves) && <ChartGrid edit={edit} deckStyle={style} which={grid} onClose={() => setGrid(null)} />}
             </EditSurface>
           </EditMenu>
-        </SlideFrame>
+        </SlideFrame>}
       </div>
       <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 max-[900px]:order-2 max-[900px]:max-w-full max-[900px]:px-4 ${SLIDE_W} ${UNDER_SLIDE}`}>
         <EditTalk edit={edit} />
         {confirm}
-        <EditBar edit={edit} deckStyle={style} onDiscard={discard} />
+        <EditBar edit={edit} deckStyle={style} onDiscard={discard} onSave={saveNow} source={{ open: source !== null, onToggle: toggleSource }} />
       </section>
     </>
   )

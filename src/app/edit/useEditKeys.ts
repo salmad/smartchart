@@ -16,6 +16,8 @@ export function useEditKeys(edit: SlideEdit, style: Style, { grid, discard, save
       if (e.isComposing || e.keyCode === 229 || edit.saving) return
       const mod = e.metaKey || e.ctrlKey
       if (mod && keys.includes(e.key)) { e.preventDefault(); save(); return }
+      // The source file is plain text: its own undo, Escape and Backspace.
+      if (e.target instanceof HTMLTextAreaElement) return
       if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) edit.redo(); else edit.undo(); return }
       if (e.key === 'Escape') {
         if (e.defaultPrevented || grid) return

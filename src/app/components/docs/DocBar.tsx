@@ -1,12 +1,14 @@
 /* The doc's controls in the bar: who else is editing, Look and Versions while reading, the comments toggle, Edit while reading (editors and owners
    only), and while editing the stale-save notice, Discard and Save. */
 import { useState, type ReactNode } from 'react'
-import { CircleCheck, ClipboardCheck, History, MessageSquare, Palette } from 'lucide-react'
+import { CircleCheck, ClipboardCheck } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { cn } from '@/app/lib/utils'
-import { Toggle } from '@/app/components/Toggle'
+import { CommentsToggle, Toggle } from '@/app/components/Toggle'
+import { BarDivider } from '@/app/components/AppBar'
 import type { DocEdit } from './useDocEdit'
+import { SourceToggle } from '../SourceEditor'
 
 /** "Ann is editing", "Ann and Ben are editing", "Ann and 2 others are editing". Below 900px only the dot shows. */
 export function Presence({ names }: { names: string[] }) {
@@ -32,30 +34,20 @@ export function ChecksToggle({ open, count, pass, label, onClick }: { open: bool
   )
 }
 
-/** The comments toggle, with the open count beside the icon once there is one. */
-export function CommentsToggle({ open, count, onClick }: { open: boolean; count: number; onClick: () => void }) {
-  return (
-    <Toggle open={open} onClick={onClick} label={count ? `Comments, ${count} open` : 'Comments'} title="Comments" count={count}>
-      <MessageSquare aria-hidden className="size-[17px]" strokeWidth={1.75} />
-    </Toggle>
-  )
-}
-
 interface Panel { open: boolean; onToggle: () => void }
 
-/** Look (editors only) and Versions sit beside the comments toggle, as on a deck. Both are for reading: a draft can't be overwritten under you. */
-export function ReadBar({ canEdit, onEdit, others, checks, comments, look, versions, share }: { canEdit: boolean; onEdit: () => void; others: string[]; checks: Panel & { count: number; pass: boolean; label?: string }; comments: Panel & { count: number }; look: Panel | null; versions: Panel; share?: ReactNode }) {
+/** A doc's bar while reading, in a deck's order: the panels (checks, comments), then the actions (Edit, Share). Its
+    versions, downloads and source are in the ⋯ beside its name. */
+export function ReadBar({ canEdit, onEdit, checks, comments, share }: { canEdit: boolean; onEdit: () => void; checks: Panel & { count: number; pass: boolean; label?: string }; comments: Panel & { count: number }; share?: ReactNode }) {
   return (
-    <div className="flex items-center gap-2">
-      <Presence names={others} />
-      <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
-        {look && <Toggle open={look.open} onClick={look.onToggle} label="Look"><Palette className="size-[17px]" strokeWidth={1.75} /></Toggle>}
-        <Toggle open={versions.open} onClick={versions.onToggle} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>
+    <div className="flex items-center gap-2.5 max-[900px]:gap-2">
+      <div className="flex flex-none items-center gap-0.5">
+        <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} label={checks.label} onClick={checks.onToggle} />
+        <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       </div>
+      <BarDivider />
+      {canEdit && <Button variant="outline" onClick={onEdit}>Edit</Button>}
       {share}
-      <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} label={checks.label} onClick={checks.onToggle} />
-      <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
-      {canEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
     </div>
   )
 }
@@ -82,7 +74,14 @@ function IssueList({ label, items, soft }: { label: string; items: string[]; sof
 /** A newer version exists (or a save was refused for it): the sentence, then Reload and Copy my text. */
 interface Stale { by: string | null; onReload: () => void; onCopy: () => Promise<boolean>; refused: boolean }
 
-export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: DocEdit; onDiscard: () => void; stale: Stale | null; checks?: { open: boolean; count: number; pass: boolean; label?: string; onToggle: () => void }; comments: { open: boolean; count: number; onToggle: () => void } }) {
+interface EditBarProps {
+  edit: DocEdit; onDiscard: () => void; onSave: () => void; stale: Stale | null
+  checks?: { open: boolean; count: number; pass: boolean; label?: string; onToggle: () => void }
+  comments: { open: boolean; count: number; onToggle: () => void }
+  source: { open: boolean; onToggle: () => void }
+}
+
+export function EditBar({ edit, onDiscard, onSave, stale, checks, comments, source }: EditBarProps) {
   const [copied, setCopied] = useState(false)
   const copy = async () => { if (await stale?.onCopy()) { setCopied(true); window.setTimeout(() => setCopied(false), 2000) } }
   return (
@@ -108,10 +107,11 @@ export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: Do
             </>
           )}
       </div>
+      <SourceToggle open={source.open} onClick={source.onToggle} />
       {checks && <ChecksToggle open={checks.open} count={checks.count} pass={checks.pass} label={checks.label} onClick={checks.onToggle} />}
       <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       <Button size="sm" variant="ghost" onClick={onDiscard} disabled={edit.saving}>Discard</Button>
-      <Button size="sm" onClick={() => void edit.save()} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>
+      <Button size="sm" onClick={onSave} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>
     </div>
   )
 }

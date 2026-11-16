@@ -61,3 +61,8 @@ export function AppBar({ sidebarOpen, onToggleSidebar, chat, onSite, crumbs, onO
 export function ScreenBody({ children }: { children: ReactNode }) {
   return <div className="flex h-[calc(100%-theme(spacing.bar))] min-h-0 max-[900px]:h-auto max-[900px]:flex-col">{children}</div>
 }
+
+/** Between a bar's groups: the panel toggles on one side, the page's actions on the other. */
+export function BarDivider() {
+  return <span aria-hidden className="mx-0.5 h-4 w-px flex-none bg-line-2 max-[900px]:hidden" />
+}

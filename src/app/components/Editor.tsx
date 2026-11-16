@@ -7,7 +7,7 @@ import { openComments, quoteOf } from '@/engine/comments'
 import { getAt } from '@/engine/slides/edit'
 import type { Item } from '@/app/store'
 import type { Pill } from '@/engine/agent/suggest'
-import type { Deck, Slide, Style, Theme } from '@/engine/types'
+import type { Deck, Slide, Style } from '@/engine/types'
 import { locked, type AppState } from '@/app/state'
 import type { Measurer } from '@/app/measure'
 import { EditMode } from '@/app/edit/EditMode'
@@ -18,9 +18,9 @@ import { Bar, type BarProps, type DeckView } from './Bar'
 import { ChatPanel } from './ChatPanel'
 import { Checks } from './Checks'
 import { CommentsPanel } from './Comments'
-import { SlideActions } from './SlideActions'
 import { ScreenBody } from './AppBar'
-import { LookPanel } from './LookPanel'
+import { SourceDialog } from './SourceEditor'
+import { deckSource } from '@/app/edit/source'
 import { SLIDE_W, Stage, UNDER_SLIDE } from './Stage'
 import { Storyline } from './Storyline'
 import { Strip } from './Strip'
@@ -31,9 +31,7 @@ import type { Attached as File } from '@/app/files'
 
 export interface EditorProps {
   state: AppState; healthKnown: boolean; deck: Deck; chips: Pill[] | null
-  bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onLook' | 'onVersions' | 'lookOpen' | 'versionsOpen'> & {
-    onStyle: (s: Style) => void; onTheme: (t: Theme) => void; onAccent: (hex: string | null) => void; onAdd: () => void
-  }
+  bar: Omit<BarProps, 'title' | 'hasSlides' | 'busy' | 'live' | 'view' | 'onView' | 'onVersions' | 'deckStyle' | 'onSource' | 'comments' | 'onEdit'> & { onAdd: () => void }
   onSend: (text: string, files?: Attached[]) => void; onClear: () => void; onSelect: (index: number) => void
   onMove: (id: string, to: number) => void; onTalk: (id: string, talk: string) => void; onRemove: (id: string) => void; onRestore: () => void
   /** Replaces the slide, checks and strip: the starter picker (a new deck, or Add slide). */
@@ -55,19 +53,19 @@ export interface EditorProps {
 type Preview = { v: Version; diff: TreeDiff; current: boolean; items: Item[] | null | 'missing' }
 
 /** The editor screen: the bar, the chat, and the deck in one of three views (one slide, every slide, the storyline),
-    with the deck's look as an inspector on the right while it is open. */
+    with its versions or the open slide's comments as a panel on the right while one is open. */
 export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClear, onSelect, onMove, onTalk, onRemove, onRestore, stage, decks, edit, onEdit, versions, onUndo, comments, tourShow, onRebuild }: EditorProps) {
   const { items, current } = s
   const lock = locked(s), editing = s.editing !== null && items[current]?.id === s.editing
   const [view, setView] = useState<DeckView>('slide')
-  // The right inspector: the deck's look, or its versions (one at a time).
-  const [side, setSide] = useState<'look' | 'versions' | 'comments' | null>(null)
+  // The right panel: the deck's versions, or the open slide's comments (one at a time).
+  const [side, setSide] = useState<'versions' | 'comments' | null>(null), [source, setSource] = useState(false)
   // Comments: the part of the slide the next note is about, and the part a row points at while the pointer is on it.
   const [target, setTarget] = useState<string | null>(null), [ring, setRing] = useState<string | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null), [reviewing, setReviewing] = useState(false)
   // The right slot: an inspector open takes the agent's place, and closing it brings the agent back. The agent's toggle
   // (and ⌘L) while an inspector is up goes back to the agent, rather than hiding an agent already out of sight.
-  const panelShown = side === 'look' || (side === 'versions' && !!versions) || (side === 'comments' && !!items[current] && !editing && !preview)
+  const panelShown = (side === 'versions' && !!versions) || (side === 'comments' && !!items[current] && !editing && !preview)
   // A new deck asks at the centre of the page (EmptyDeck); the agent's panel comes in with the first message.
   const asking = s.view === 'landing' && !items.length && !s.messages.length
   const chatShown = bar.chatOpen && !panelShown && !asking
@@ -124,8 +122,11 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
   return (
     <>
       <Bar {...bar} chatOpen={chatShown} onToggleChat={asking ? undefined : panelShown ? toAgent : bar.onToggleChat} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live || !healthKnown}
-        view={shown || null} onView={setView} lookOpen={side === 'look'} onLook={() => { setPreview(null); setSide(side === 'look' ? null : 'look') }}
-        versionsOpen={side === 'versions'} onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
+        view={shown || null} onView={setView} deckStyle={s.style} onSource={() => setSource(true)}
+        comments={items[current] && !editing ? { open: side === 'comments', count: openComments(s.comments, items[current].id).length, onToggle: toggleComments } : null}
+        onEdit={items[current] && !editing && !stage ? () => onEdit(items[current].id) : null}
+        onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
+      <SourceDialog title="Deck source" text={source ? deckSource(s.style, items) : ''} open={source} onOpenChange={setSource} />
       <ScreenBody>
         {decks}
         {preview
@@ -152,8 +153,6 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
               <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W} ${UNDER_SLIDE}`}>
                 <div className="flex h-7 items-center justify-between gap-4 max-[900px]:order-1 max-[900px]:px-4">
                   <div data-tour="checks"><Checks item={items[current]} /></div>
-                  {items[current] && <SlideActions disabled={lock} commenting={side === 'comments'} open={openComments(s.comments, items[current].id).length}
-                    onEdit={() => onEdit(items[current].id)} onComment={toggleComments} />}
                 </div>
                 {strip('row')}
               </section>
@@ -171,8 +170,6 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
             onResolve={comments.resolve} onDelete={comments.remove} onAsk={() => comments.ask(items[current].id)} />
         )}
         <ReviewDeck open={reviewing} onOpenChange={setReviewing} live={s.live} onRebuild={onRebuild} />
-        {side === 'look' && <LookPanel deckStyle={s.style} theme={s.theme} accent={s.accent} styleLocked={items.length > 0}
-          onStyle={bar.onStyle} onTheme={bar.onTheme} onAccent={bar.onAccent} onClose={() => setSide(null)} />}
       </ScreenBody>
     </>
   )

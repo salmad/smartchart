@@ -1,7 +1,7 @@
-/* Share, in the editor's bar: a link anyone can open to read the deck and present it (made on request, stopped in
-   one click), and the deck as a PDF. */
+/* Share, in a deck's or doc's bar: a link anyone can open to read it (a deck: and present it), made on request and
+   stopped in one click. Downloads are in the page's ⋯ menu. */
 import { useState } from 'react'
-import { Check, Copy, FileDown } from 'lucide-react'
+import { Check, Copy } from 'lucide-react'
 import { shareDeck, shareDoc, shareUrl } from '@/app/share'
 import { Button } from './ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
@@ -9,14 +9,14 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 type Link = { state: 'loading' } | { state: 'off' } | { state: 'on'; token: string } | { state: 'error'; why: string }
 
 interface Props {
-  /** What the link opens; null when it lives only in this browser (the link part is left out). */
+  /** What the link opens. */
   target: 'deck' | 'doc'
-  id: string | null
-  onPdf?: () => void
-  docExport?: { markdown: () => void; html: () => void; pdf: () => void }
+  id: string
+  /** The bar's main button (a doc's, which has no Present). */
+  primary?: boolean
 }
 
-export function ShareMenu({ target, id, onPdf, docExport }: Props) {
+export function ShareMenu({ target, id, primary = false }: Props) {
   const [open, setOpen] = useState(false), [link, setLink] = useState<Link>({ state: 'loading' }), [copied, setCopied] = useState(false)
   const [working, setWorking] = useState(false)
 
@@ -37,11 +37,11 @@ export function ShareMenu({ target, id, onPdf, docExport }: Props) {
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild><Button variant="outline">Share</Button></PopoverTrigger>
+      <PopoverTrigger asChild><Button variant={primary ? 'default' : 'outline'}>Share</Button></PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} aria-label="Share this deck"
         className="grid w-80 gap-4 p-4">
         <h2 className="text-[14px] font-medium text-ink">{target === 'doc' ? 'Share this doc' : 'Share this deck'}</h2>
-        {id && <section className="grid gap-3">
+        <section className="grid gap-3">
         <p className="-mt-2 text-[12.5px] text-ink-3">{target === 'doc' ? 'Anyone with the link can read it — no sign-in. It always shows the latest version.' : 'Anyone with the link can read it and present it. It always shows the latest version.'}</p>
         {link.state === 'on' ? (
           <>
@@ -63,34 +63,7 @@ export function ShareMenu({ target, id, onPdf, docExport }: Props) {
         ) : (
           <Button disabled={link.state === 'loading' || working} onClick={() => void run(true)} className="justify-self-start">Create link</Button>
         )}
-        </section>}
-        {id && onPdf && <hr className="-mx-4 border-line" />}
-        {onPdf && <button type="button" onClick={() => { setOpen(false); onPdf() }}
-          className="-m-2 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
-          <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
-          <span className="grid">
-            <span className="text-[13px] text-ink">Download PDF</span>
-            <span className="text-[12px] text-ink-3">One slide per page, for email and board packs.</span>
-          </span>
-        </button>}
-        {docExport && <hr className="-mx-4 border-line" />}
-        {docExport && (
-          <section className="grid gap-0.5">
-            <p className="px-2 text-[12px] font-medium text-ink-3">Download</p>
-            <button type="button" onClick={() => { setOpen(false); docExport.markdown() }} className="-m-0 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
-              <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
-              <span className="grid"><span className="text-[13px] text-ink">Markdown</span><span className="text-[12px] text-ink-3">Source with live figure blocks.</span></span>
-            </button>
-            <button type="button" onClick={() => { setOpen(false); docExport.html() }} className="-m-0 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
-              <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
-              <span className="grid"><span className="text-[13px] text-ink">HTML</span><span className="text-[12px] text-ink-3">Rendered page to open or send.</span></span>
-            </button>
-            <button type="button" onClick={() => { setOpen(false); docExport.pdf() }} className="-m-0 flex items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-panel">
-              <FileDown className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
-              <span className="grid"><span className="text-[13px] text-ink">PDF</span><span className="text-[12px] text-ink-3">Print or save as PDF.</span></span>
-            </button>
-          </section>
-        )}
+        </section>
       </PopoverContent>
     </Popover>
   )

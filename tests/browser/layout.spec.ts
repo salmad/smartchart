@@ -17,7 +17,7 @@ async function open(page: Page, width: number, height = 900) {
 }
 const decks = (page: Page) => page.getByRole('navigation', { name: 'Workspace' })
 
-test('the agent is docked right; Look takes its place without moving the slide, and the agent button brings it back', async ({ page }) => {
+test('the agent is docked right; comments take its place without moving the slide, and the agent button brings it back', async ({ page }) => {
   await open(page, 1440)
   await expect(decks(page)).toHaveCount(0)
   await page.getByRole('button', { name: 'Show the sidebar' }).click()
@@ -29,20 +29,20 @@ test('the agent is docked right; Look takes its place without moving the slide, 
   // It slides in from the right: measured once it has landed.
   await expect.poll(() => chat.evaluate((e) => e.getBoundingClientRect().right)).toBe(1440)
   const before = await slide.evaluate((e) => e.getBoundingClientRect().left)
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
-  await expect(page.getByRole('complementary', { name: 'Deck look' })).toBeVisible()
+  await page.getByRole('button', { name: /^Comments/ }).click()
+  await expect(page.getByRole('complementary', { name: /^Comments on slide/ })).toBeVisible()
   await expect(chat).toBeHidden()
   await expect(decks(page)).toBeVisible()
   expect(await slide.evaluate((e) => e.getBoundingClientRect().left)).toBe(before)
   await page.getByRole('button', { name: 'Show the agent' }).click()
-  await expect(page.getByRole('complementary', { name: 'Deck look' })).toHaveCount(0)
+  await expect(page.getByRole('complementary', { name: /^Comments on slide/ })).toHaveCount(0)
   await expect(chat).toBeVisible()
 })
 
-test('a wide window opens with the decks, and keeps them beside Look', async ({ page }) => {
+test('a wide window opens with the decks, and keeps them beside a panel', async ({ page }) => {
   await open(page, 1600)
   await expect(decks(page)).toBeVisible()
-  await page.getByRole('button', { name: 'Look', exact: true }).click()
+  await page.getByRole('button', { name: /^Comments/ }).click()
   await expect(decks(page)).toBeVisible()
 })
 

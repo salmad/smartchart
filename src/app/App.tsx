@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { seen as tourSeen, type TourShow } from './tour'
 import { upgrade } from '@/engine/slides/schema'
-import type { Slide, Style, Theme } from '@/engine/types'
+import type { Slide, Style } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
@@ -49,6 +49,7 @@ import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
 import type { UserLook } from '@/engine/look'
 import { useUserLook } from './useUserLook'
+import { UserLookContext, type UserLookControls } from './user-look-context'
 import { ROOMY, usePanel } from './panel'
 import { lazyScreen, whenIdle } from './lazy-screen'
 
@@ -59,7 +60,6 @@ const roadmapScreen = lazyScreen(() => import('./components/roadmap/RoadmapScree
 const ViewDeck = lazy(() => import('./components/ViewDeck').then((m) => ({ default: m.ViewDeck })))
 const PrintDeck = lazy(() => import('./components/PrintDeck').then((m) => ({ default: m.PrintDeck })))
 
-const WELCOME = 'Describe the slide you need and I’ll make it. Then ask for changes in your own words, or press Present.'
 const CLEARED = 'Chat cleared. The deck is kept; the agent starts a new conversation.'
 const MISSING = 'That deck isn’t in your account.'
 const DECKS_OPEN = 'smartchart.decksOpen'
@@ -109,9 +109,11 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
   const { look: userLook, setLook: setUserLook } = useUserLook(account.id, !!backup)
   useEffect(() => { app.dispatch({ type: 'set', patch: { theme: userLook.theme, accent: userLook.accent } }) }, [userLook.theme, userLook.accent, app])
   const applyLook = useCallback((patch: Partial<UserLook>) => {
-    if (locked(app.getState()) || app.getState().role === 'viewer') return
+    // Your look, not the page's: a viewer of a shared workspace has their own. It waits while the agent writes.
+    if (locked(app.getState())) return
     void setUserLook(patch)
   }, [setUserLook])
+  const lookControls = useMemo<UserLookControls>(() => ({ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }), [userLook, applyLook])
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
   useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])
@@ -158,12 +160,11 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
     app.dispatch({ type: 'items', items: recheckRules({ ...opened, items }, measurer(), new Set([first])) })
     if (at >= 0) app.dispatch({ type: 'select', index: at })
     recheckInIdle({ app, measurer, deckId: app.getState().deckId, skip: items[first]?.id ?? null })
-    if (!d.messages?.length) say(WELCOME)
     const now = toSaved(app.getState())
     savedKey.current = now && editKey(now)
     const wsId = app.getState().workspaceId
     if (cacheId && wsId) touchLastDeckInWorkspace(cacheId, wsId, d.id)
-  }, [app, measurer, say, repo, cacheId])
+  }, [app, measurer, repo, cacheId])
 
   const readKept = useCallback((id: string | undefined) => keptDeck(repo, cacheId, id, backup), [cacheId, backup, repo])
 
@@ -350,8 +351,6 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
     leaveTo(ref.kind === 'deck' ? `/d/${ref.id}` : ref.kind === 'doc' ? `/doc/${ref.id}` : `/r/${ref.id}`)
   const bar = {
     onStyle: (style: Style) => { if (!locked(app.getState())) setStyle(style) },
-    onTheme: (theme: Theme) => applyLook({ theme }),
-    onAccent: (accent: string | null) => applyLook({ accent }),
     onPresent: present,
     onAdd: () => { if (!locked(app.getState()) && app.getState().items.length) app.dispatch({ type: 'set', patch: { view: 'add' } }) },
     decksOpen, onToggleDecks: toggleDecks, chatOpen, onToggleChat: toggleChat,
@@ -432,6 +431,7 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
   const RoadmapScreen = roadmapScreen.get()
   return (
     <TooltipProvider delayDuration={400}>
+     <UserLookContext.Provider value={lookControls}>
       {roadmapOnScreen
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><RoadmapScreen id={roadmapOnScreen} issue={route.name === 'roadmap' ? route.issue : undefined} repo={roadmaps} account={account} workspace={ws.current?.id ?? null}
           canEdit={s.role !== 'viewer'} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} crumbs={crumbs} onOpenPage={openPage} name={roadmapName} /></Suspense>
@@ -440,7 +440,7 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
           onPresent={(from) => openPresentation(liveKey, from)} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} /></Suspense>
         : docOnScreen
         ? <Suspense fallback={<div className="h-full bg-app-bg" />}><DocScreen id={docOnScreen} docs={docs} canEdit={s.role !== 'viewer'} tick={docTick} onSaved={() => setDocTick((t) => t + 1)} sidebar={sidebar} sidebarOpen={decksOpen} onToggleSidebar={toggleDecks} onSite={() => leaveTo('/home')} account={account} crumbs={crumbs} onOpenPage={openPage} name={docName} chatOpen={chatOpen} subpages={pages.subpages} onToggleChat={toggleChat} offline={healthKnown && !s.live} modelsLive={s.live}
-          look={{ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }}
+          look={{ theme: userLook.theme, accent: userLook.accent }}
           shareId={backup ? docOnScreen : null} /></Suspense>
         : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
       {/* The tour ends at Connect an agent, so taking it answers the agent nudge too. */}
@@ -452,6 +452,7 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
       {printing && <Suspense fallback={null}><PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} /></Suspense>}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}
       <div ref={frame} aria-hidden className="fixed left-[-10000px] top-0 h-[1080px] w-[1920px] overflow-hidden" />
+     </UserLookContext.Provider>
     </TooltipProvider>
   )
 }
