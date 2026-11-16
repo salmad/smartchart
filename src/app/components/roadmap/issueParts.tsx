@@ -38,7 +38,7 @@ export function Hint({ label, children }: { label: string; children: ReactNode }
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent className="bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]">{label}</TooltipContent>
+      <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   )
 }
@@ -47,7 +47,7 @@ export function Hint({ label, children }: { label: string; children: ReactNode }
 export function IconAction({ label, hint, className, children, ...props }: ButtonProps & { label: string; hint?: string }) {
   return (
     <Hint label={hint ?? label}>
-      <Button type="button" variant="ghost" size="sm" aria-label={label} className={cn('w-7 px-0 text-ink-3 hover:bg-panel hover:text-ink', className)} {...props}>
+      <Button type="button" variant="quiet" size="icon-sm" aria-label={label} className={className} {...props}>
         {children}
       </Button>
     </Hint>

@@ -36,11 +36,11 @@ export function useLook(): [Look, (l: Look) => void] {
 /** Ink / Paper: the same page in the brand board's look or the light one. */
 export function LookSwitch({ look, onChange, night }: { look: Look; onChange: (l: Look) => void; night: boolean }) {
   return (
-    <div role="group" aria-label="Page look" className={cn('flex rounded-full p-0.5 max-[520px]:hidden', night ? 'bg-[#F3EEE4]/10' : 'bg-paper-2')}>
+    <div role="group" aria-label="Page look" className={cn('flex rounded-full p-0.5 max-[520px]:hidden', night ? 'bg-ink/10' : 'bg-paper-2')}>
       {(['ink', 'paper'] as Look[]).map((l) => (
         <button key={l} type="button" aria-pressed={look === l} onClick={() => onChange(l)}
           className={cn('h-8 rounded-full px-3 text-[12px] font-medium capitalize transition-colors',
-            night ? 'text-[#A39B8E] aria-pressed:bg-[#F3EEE4] aria-pressed:text-stage' : 'text-type-3 hover:text-type aria-pressed:bg-card aria-pressed:text-type aria-pressed:shadow-sm')}>
+            night ? 'text-ink-2 aria-pressed:bg-ink aria-pressed:text-stage' : 'text-type-3 hover:text-type aria-pressed:bg-card aria-pressed:text-type aria-pressed:shadow-sm')}>
           {l}
         </button>
       ))}

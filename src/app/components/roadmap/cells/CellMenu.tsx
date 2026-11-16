@@ -3,7 +3,7 @@ import { Check } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { Command, CommandItem, CommandList } from '../../ui/command'
 import { cn } from '@/app/lib/utils'
-import { menuCommand, menuSurface } from '../roadmapChrome'
+import { menuCommand } from '../roadmapChrome'
 
 export interface CellOption {
   id: string
@@ -33,7 +33,7 @@ export function CellMenu({ label, listLabel, options, value, none, disabled, onP
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled}>{children}</PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className={cn('w-52 overflow-hidden p-1', menuSurface)} aria-label={label}>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-52 overflow-hidden p-1')} aria-label={label}>
         <Command className={menuCommand}>
           <CommandList label={listLabel}>
             {none && (

@@ -489,7 +489,8 @@ test('the sidebar is as wide as it was dragged or keyed to, kept across reloads,
   await grip.focus()
   await page.keyboard.press('ArrowRight')
   expect(await width()).toBe(264)
-  const box = (await grip.boundingBox())!
+  const box = await grip.boundingBox()
+  if (!box) throw new Error('The sidebar grip has no box.')
   await page.mouse.move(box.x + box.width / 2, box.y + 200)
   await page.mouse.down(); await page.mouse.move(box.x + 500, box.y + 200, { steps: 5 }); await page.mouse.up()
   expect(await width()).toBe(480) // clamped

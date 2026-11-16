@@ -28,7 +28,7 @@ export function Checks({ item }: { item: Item | undefined }) {
           : <><CircleCheck aria-hidden className="size-4 text-ok" strokeWidth={1.75} />All {list.length} checks pass</>}
       </PopoverTrigger>
       <PopoverContent side="top" align="start" sideOffset={8} aria-label="Slide checks"
-        className="max-h-[min(420px,60vh)] w-[420px] overflow-y-auto rounded-[14px] border-line-2 bg-raise p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
+        className="max-h-[min(420px,60vh)] w-[420px] overflow-y-auto p-4">
         <CheckList item={item} />
       </PopoverContent>
     </Popover>

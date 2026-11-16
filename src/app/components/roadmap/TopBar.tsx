@@ -1,15 +1,13 @@
 import type { ReactNode } from 'react'
-import { ChartGantt, Grid2x2, ListChecks, PanelLeft, Plus, Table2, type LucideIcon } from 'lucide-react'
+import { ChartGantt, Grid2x2, ListChecks, Plus, Table2, type LucideIcon } from 'lucide-react'
 import type { Account } from '@/app/auth'
 import type { PageRef } from '@/engine/pages/tree'
 import type { ViewSettings } from '@/engine/roadmaps/view'
 import { AccountMenu } from '../AccountMenu'
-import { Toggle } from '../Bar'
-import { Crumbs } from '../Crumbs'
-import { Seg } from '../LookPanel'
+import { AppBar } from '../AppBar'
+import { Seg, SEG_TRACK } from '../Seg'
 import type { Crumb } from '../sidebar/usePageCrumbs'
 import { Button } from '../ui/button'
-import { segTrack } from './roadmapChrome'
 
 type Layout = ViewSettings['layout']
 
@@ -45,25 +43,13 @@ export function TopBar(p: Props) {
     </span>
   )])
   return (
-    <header className="grid h-14 flex-none grid-cols-[1fr_auto_1fr] items-center gap-6 border-b border-line pl-3 pr-4 max-[900px]:gap-3 max-[900px]:px-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <Toggle open={p.sidebarOpen} onClick={p.onToggleSidebar} label={`${p.sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-        <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
-          <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
-          <span aria-hidden className="text-ink-3">/</span>
-          <Crumbs crumbs={p.crumbs} onOpen={(r) => p.onOpenPage?.(r)} />
-          <span className="truncate text-ink-2" title={p.title}>{p.title}</span>
-        </nav>
-      </div>
-      <nav aria-label="Roadmap views">
-        {p.layout && <Seg label="View" value={p.layout} onChange={p.onLayout} options={views} className={segTrack} />}
-      </nav>
-      <div className="flex items-center justify-end gap-2.5 max-[900px]:gap-2">
-        {p.layout && p.onNewIssue && (
-          <Button onClick={p.onNewIssue}><Plus aria-hidden className="!size-3.5" strokeWidth={2} />New issue <kbd className="max-[900px]:hidden">C</kbd></Button>
-        )}
-        <AccountMenu account={p.account} />
-      </div>
-    </header>
+    <AppBar sidebarOpen={p.sidebarOpen} onToggleSidebar={p.onToggleSidebar} onSite={p.onSite} crumbs={p.crumbs} onOpenPage={p.onOpenPage}
+      title={<span className="truncate text-ink-2" title={p.title}>{p.title}</span>}
+      center={<nav aria-label="Roadmap views">{p.layout && <Seg label="View" value={p.layout} onChange={p.onLayout} options={views} className={SEG_TRACK} />}</nav>}>
+      {p.layout && p.onNewIssue && (
+        <Button onClick={p.onNewIssue}><Plus aria-hidden className="!size-3.5" strokeWidth={2} />New issue <kbd className="max-[900px]:hidden">C</kbd></Button>
+      )}
+      <AccountMenu account={p.account} />
+    </AppBar>
   )
 }

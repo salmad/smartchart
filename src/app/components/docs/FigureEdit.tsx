@@ -1,6 +1,6 @@
 /* A doc figure open in place: the deck's own edit surface, menu, overlay, bar, icon picker and data grid over the figure
-   as the slide it would be (asSlide), with Done and Discard under it. Done refuses while the figure has an error, as a
-   slide's Save does; otherwise it writes the body into the doc's draft. A callout has no template, so it edits its
+   as the slide it would be (asSlide), with Done and Discard under it. Done writes the body into the doc's draft; what
+   is wrong stays underlined and listed, it never stops the write. A callout has no template, so it edits its
    words only: no menu or list tools. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { asSlide } from '@/engine/docs/figure'
@@ -16,7 +16,7 @@ import { IconPicker } from '@/app/edit/IconPicker'
 import { useEditKeys } from '@/app/edit/useEditKeys'
 import { useSlideEdit } from '@/app/edit/useSlideEdit'
 import type { Surface } from '@/app/edit/surface'
-import { bodyOf, figureCheck, figureDoneRefusal, figureRender } from './figureCheck'
+import { bodyOf, figureCheck, figureRender } from './figureCheck'
 import type { DocEdit } from './useDocEdit'
 import { surface as card, tintOnFocus, tintOnHover } from './chrome'
 
@@ -28,22 +28,14 @@ interface Props { doc: DocEdit; at: string; block: FigureBlock; theme: Theme; ac
 export function FigureEdit({ doc, at, block, theme, accent }: Props) {
   const slide = useMemo(() => asSlide(block) ?? ({ ...block.body, template: 'callout', title: '' } as unknown as Slide), [block])
   const check = useMemo(() => figureCheck(block.kind), [block.kind])
-  const [refused, setRefused] = useState<string | null>(null)
-  // Done: the figure's errors refuse it; a changed figure is written into the doc. Read through refs: the doc calls it
-  // from its own Save.
-  const finish = useRef<(d: Slide, dirty: boolean, force?: boolean) => string | null>(() => null)
-  finish.current = (d, dirty, force?: boolean) => {
-    if (!force) {
-      const hard = figureDoneRefusal(block.kind, d)
-      if (hard) { setRefused(hard); return hard }
-    } else setRefused(null)
-    if (dirty) doc.setFigure(at, bodyOf(d))
-    return null
-  }
-  const save = useCallback(async (d: Slide) => finish.current(d, true), [])
+  // Done: a changed figure is written into the doc, whatever its checks say (they stay underlined, and the doc's bar
+  // lists them). Read through refs: the doc calls it from its own Save.
+  const finish = useRef<(d: Slide, dirty: boolean) => void>(() => {})
+  finish.current = (d, dirty) => { if (dirty) doc.setFigure(at, bodyOf(d)) }
+  const save = useCallback(async (d: Slide) => { finish.current(d, true); return null }, [])
   const edit = useSlideEdit({ slide, check, save, onDone: NONE }), pictures = usePictures(edit, STYLE), editRef = useRef(edit)
   editRef.current = edit
-  useEffect(() => { doc.holdFigure((force) => finish.current(editRef.current.draft, editRef.current.dirty, force)); return () => doc.holdFigure(null) }, [doc])
+  useEffect(() => { doc.holdFigure(() => finish.current(editRef.current.draft, editRef.current.dirty)); return () => doc.holdFigure(null) }, [doc])
 
   const box = useRef<HTMLDivElement>(null)
   const render = useMemo(() => figureRender(block, theme, accent, () => box.current), [block, theme, accent])
@@ -72,7 +64,6 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
         {callout ? surfaceEl : <EditMenu edit={edit} surface={surface} deckStyle={STYLE} onChart={setGrid} look={look}>{surfaceEl}</EditMenu>}
       </div>
       <div className="fig-edit-row" data-edit-chrome>
-        {refused && <span role="alert" className="fig-edit-why">{refused}</span>}
         <button type="button" onClick={discard} className={`h-8 rounded-md px-3 text-[13px] font-medium text-[var(--fg-2)] ${tintOnHover}`}>Discard</button>
         <button type="button" onClick={done} className="h-8 rounded-md bg-[var(--fg)] px-3 text-[13px] font-medium text-[var(--bg)] hover:opacity-90">Done</button>
       </div>

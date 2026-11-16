@@ -7,6 +7,7 @@ import { Check, Sparkles, Trash2, X } from 'lucide-react'
 import { openComments, pathLabel, type DeckComment } from '@/engine/comments'
 import { cn } from '@/app/lib/utils'
 import { timeOf } from '@/app/versions'
+import { PanelNote, SidePanel } from './SidePanel'
 import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 
@@ -37,18 +38,8 @@ export function CommentsPanel({ n, comments, exists, busy, canAsk, target, onTar
   }
 
   return (
-    <aside aria-label={`Comments on slide ${n}`} data-tour="comments-panel"
-      className="flex w-[320px] min-h-0 flex-none flex-col border-l border-line bg-app-bg max-[900px]:order-2 max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t">
-      <header className="flex items-start justify-between gap-3 p-4 pb-3">
-        <div className="grid gap-0.5">
-          <h2 className="text-[14px] font-medium text-ink">Comments on slide {n}</h2>
-          <p className="text-[12.5px] text-ink-3">{open.length ? `${open.length} open · ` : ''}Click a part of the slide, or comment on the whole slide.</p>
-        </div>
-        <button type="button" onClick={onClose} aria-label="Close comments"
-          className="-mr-1 -mt-1 grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink">
-          <X className="size-4" strokeWidth={1.75} />
-        </button>
-      </header>
+    <SidePanel label={`Comments on slide ${n}`} tour="comments-panel" title={`Comments on slide ${n}`} closeLabel="Close comments" onClose={onClose}
+      note={<PanelNote>{open.length ? `${open.length} open · ` : ''}Click a part of the slide, or comment on the whole slide.</PanelNote>}>
       <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto px-4 pb-4">
         {open.length > 0 && <ul className="grid gap-2">{open.map((c) => <Row key={c.id} c={c} gone={!!c.path && !exists(c.path)} busy={busy} onHover={onHover} onResolve={onResolve} onDelete={onDelete} />)}</ul>}
         <div className="grid gap-2">
@@ -77,7 +68,7 @@ export function CommentsPanel({ n, comments, exists, busy, canAsk, target, onTar
           </div>
         )}
       </div>
-    </aside>
+    </SidePanel>
   )
 }
 

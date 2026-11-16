@@ -7,7 +7,7 @@ import type { Style } from '@/engine/types'
 import type { Attached } from '@/app/files'
 import { DECK_ACCEPT, readDeck } from '@/app/deck-file'
 import { cn } from '@/app/lib/utils'
-import { Seg } from './LookPanel'
+import { Seg, SEG_TRACK } from './Seg'
 import { Button } from './ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog'
 
@@ -43,17 +43,17 @@ export function ReviewDeck({ open, onOpenChange, live, onRebuild }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setState({ at: 'idle' }) }}>
-      <DialogContent className="flex max-h-[min(760px,90vh)] max-w-[640px] flex-col gap-0 overflow-hidden rounded-[14px] border-line-2 bg-raise p-0 text-ink">
+      <DialogContent className="flex max-h-[min(760px,90vh)] max-w-[640px] flex-col overflow-hidden p-0">
         <div className="grid gap-2 p-6 pb-4">
-          <DialogTitle className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.01em]"><PenLine className="size-4 text-ink-2" strokeWidth={1.75} />Red-pen review</DialogTitle>
-          <DialogDescription className="text-[13.5px] leading-[1.5] text-ink-2">Drop in a deck made anywhere and get the review a partner would give: does the story hold, does each title make a point. Then rebuild it in Occam with every flaw fixed.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><PenLine className="size-4 text-ink-2" strokeWidth={1.75} />Red-pen review</DialogTitle>
+          <DialogDescription className="mt-0">Drop in a deck made anywhere and get the review a partner would give: does the story hold, does each title make a point. Then rebuild it in Occam with every flaw fixed.</DialogDescription>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
           {(state.at === 'idle' || state.at === 'failed') && (
             <div className="grid gap-4">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[13px] text-ink-2">Review it as</span>
-                <Seg label="Deck style" value={style} onChange={setStyle} options={[['consulting', 'Consulting'], ['pitch', 'Pitch']]} className="flex rounded-[9px] border border-line bg-panel p-[3px]" />
+                <Seg label="Deck style" value={style} onChange={setStyle} options={[['consulting', 'Consulting'], ['pitch', 'Pitch']]} className={SEG_TRACK} />
               </div>
               <button type="button" onClick={() => input.current?.click()} onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)} onDrop={drop} disabled={!live}
                 className={cn('grid cursor-pointer place-items-center gap-2 rounded-xl border border-dashed border-line-2 px-6 py-10 text-center transition-colors hover:border-ink-3 disabled:cursor-not-allowed disabled:opacity-45', over && 'border-ink bg-panel')}>

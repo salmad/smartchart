@@ -4,7 +4,6 @@ import { Button } from '../../ui/button'
 import { Calendar } from '../../ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { dateOf, isoOf, shortDate, todayIso } from '../dates'
-import { menuSurface } from '../roadmapChrome'
 import { CellButton } from './CellButton'
 
 interface Props {
@@ -34,7 +33,7 @@ export function DateCell({ value, label, disabled, late, placeholder, onPick }: 
           {value && shortDate(value, todayIso())}
         </CellButton>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className={cn('w-auto overflow-hidden p-0', menuSurface)} aria-label={label}>
+      <PopoverContent align="start" sideOffset={6} className={cn('w-auto overflow-hidden p-0')} aria-label={label}>
         <Calendar
           className="bg-transparent"
           mode="single"

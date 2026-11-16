@@ -20,8 +20,8 @@ export function Answer() {
             const on = g.id === group
             return (
               <button key={g.id} type="button" role="tab" id={`gallery-tab-${g.id}`} aria-selected={on} aria-controls="gallery-panel" onClick={() => setGroup(g.id)}
-                className={cn('rounded-full px-4 py-2 text-[15px] transition-colors', on ? 'bg-[#F3EEE4] text-[#15130F]' : 'bg-[#F3EEE4]/10 text-[#F3EEE4] hover:bg-[#F3EEE4]/20')}>
-                {g.label}<span className={cn('ml-2 tabular-nums', on ? 'text-[#15130F]/60' : 'text-[#A39B8E]')}>{MENU.filter((m) => m.groupId === g.id).length}</span>
+                className={cn('rounded-full px-4 py-2 text-[15px] transition-colors', on ? 'bg-ink text-stage' : 'bg-ink/10 text-ink hover:bg-ink/20')}>
+                {g.label}<span className={cn('ml-2 tabular-nums', on ? 'text-stage/60' : 'text-ink-2')}>{MENU.filter((m) => m.groupId === g.id).length}</span>
               </button>
             )
           })}
@@ -30,7 +30,7 @@ export function Answer() {
           {slides.map(({ id, name }) => (
             <li key={id} className="grid content-start gap-3">
               <LiveSlide id={id} className="rounded-[12px] shadow-[0_0_0_1px_rgba(243,238,228,.1)]" />
-              <span className="text-[14px] font-medium text-[#F3EEE4]">{name}</span>
+              <span className="text-[14px] font-medium text-ink">{name}</span>
             </li>
           ))}
         </ul>

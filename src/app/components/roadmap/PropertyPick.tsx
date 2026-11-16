@@ -3,12 +3,10 @@ import { Check } from 'lucide-react'
 import type { MemberLite, Status } from '@/engine/roadmaps/types'
 import { STATUS_LABEL, STATUSES } from '@/engine/roadmaps/types'
 import { cn } from '@/app/lib/utils'
-import { MENU_ITEM } from '../menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Avatar } from './Avatar'
 import { StatusGlyph } from './StatusGlyph'
 import { Placeholder, ValueButton } from './issueParts'
-import { menuSurface } from './roadmapChrome'
 
 export interface PickOption {
   id: string
@@ -41,9 +39,9 @@ export function PropertyPick({ label, options, value, clear, disabled, className
       <DropdownMenuTrigger asChild>
         <ValueButton aria-label={label} className={className}>{children}</ValueButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={6} className={cn('min-w-44 p-1 text-ink', menuSurface)}>
+      <DropdownMenuContent align="start" sideOffset={6} className={cn('min-w-44 p-1 text-ink')}>
         {rows.map((o) => (
-          <DropdownMenuItem key={o.id} className={MENU_ITEM} onSelect={() => onPick(o.pick)}>
+          <DropdownMenuItem key={o.id} onSelect={() => onPick(o.pick)}>
             {o.icon && <span className="flex flex-none items-center">{o.icon}</span>}
             <span className="min-w-0 flex-1 truncate">{o.label}</span>
             {o.pick === value && <Check className="size-3.5" strokeWidth={2} aria-hidden />}

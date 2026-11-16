@@ -24,8 +24,6 @@ export interface FigureHost {
 }
 
 const OPEN = new PluginKey<string | null>('openFigure')
-/** The key of the figure open in place, or null. */
-export const openKeyOf = (editor: Editor): string | null => OPEN.getState(editor.state) ?? null
 /** Open a figure (or none): a transaction that only moves the decoration. */
 export const setOpenKey = (editor: Editor, key: string | null) => editor.view.dispatch(editor.state.tr.setMeta(OPEN, { key }).setMeta('addToHistory', false))
 

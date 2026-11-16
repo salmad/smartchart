@@ -5,6 +5,7 @@ import type { Deck, Style, TemplateId } from '@/engine/types'
 import { Button } from '@/app/components/ui/button'
 import { cn } from '@/app/lib/utils'
 import { useEdgeFade } from '@/app/fade'
+import { PILL, usePill } from './Seg'
 import { SlideView } from './SlideView'
 import { Tile } from './Tile'
 
@@ -27,6 +28,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   const film = useRef<HTMLDivElement | null>(null)
   const [picked, setPicked] = useState<Starter | null>(null), [group, setGroup] = useState<Group>(start)
   const fadeTabs = useEdgeFade(), fadeFilm = useEdgeFade(), GROUPED = grouped(deck.style)
+  const tabs = usePill<HTMLDivElement>('[aria-selected="true"]', group)
 
   const pickGroup = (g: Group) => { setGroup(g); scrollTo(film.current, g, true) }
   const pick = (s: Starter) => { setPicked(s); setGroup(s.group) }
@@ -50,15 +52,15 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   return (
     <div className="grid min-h-0 grid-rows-[1fr_auto] max-[900px]:order-1 max-[900px]:flex max-[900px]:flex-col">
       <div className="grid min-h-0 content-center justify-items-center gap-4 px-8 pb-3 pt-7 max-[900px]:px-4 max-[900px]:pt-4">
-        <div data-add-preview className="w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] max-[900px]:w-full">
+        <div data-add-preview className="w-[min(100%,calc((100vh_-_theme(spacing.bar)_-_44px_-_300px)*16/9))] max-[900px]:w-full">
           {slide && preview
             ? <div data-featured><SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]} className={cn(frame, 'shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)]')} /></div>
             : <div className={cn(frame, 'grid place-content-center gap-1.5 border border-dashed border-line-2 text-center')}>
-                <p className="text-[17px] font-medium">{first ? 'Your slide appears here.' : 'Add a slide'}</p>
+                <p className="app-title text-[24px]">{first ? 'Your slide appears here.' : 'Add a slide'}</p>
                 {!first && <span className="text-ink-3">Pick one below to preview it here, in your deck’s look.</span>}
               </div>}
         </div>
-        <div className="flex w-[min(100%,calc((100vh_-_56px_-_44px_-_300px)*16/9))] items-center gap-3 max-[900px]:w-full max-[900px]:flex-wrap">
+        <div className="flex w-[min(100%,calc((100vh_-_theme(spacing.bar)_-_44px_-_300px)*16/9))] items-center gap-3 max-[900px]:w-full max-[900px]:flex-wrap">
           <p className="mr-auto text-ink-2">
             {picked ? <><b className="font-medium text-ink">{picked.label}.</b> {picked.blurb}. <span className="text-ink-3">Change it in your own words once it’s in.</span></> : !first && <span className="text-ink-3">Goes in after slide {current + 1}.</span>}
           </p>
@@ -67,10 +69,11 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
         </div>
       </div>
       <div className="grid gap-3 border-t border-line px-8 pb-5 pt-4 max-[900px]:px-4">
-        <div ref={fadeTabs} role="tablist" aria-label="Slide groups" className="edge-fade flex gap-1 overflow-x-auto [scrollbar-width:none]">
+        <div ref={(el) => { tabs.current = el; fadeTabs(el) }} role="tablist" aria-label="Slide groups" className="edge-fade relative flex gap-1 overflow-x-auto [scrollbar-width:none]">
+          <i aria-hidden className={cn(PILL, 'inset-y-0 rounded-md bg-line')} />
           {GROUPED.map((g) => (
             <button key={g.id} type="button" role="tab" aria-selected={g.id === group} onClick={() => pickGroup(g.id)}
-              className={cn('shrink-0 rounded-md px-2.5 py-1 text-[12.5px] transition-colors', g.id === group ? 'bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]' : 'text-ink-3 hover:text-ink-2')}>
+              className={cn('relative shrink-0 rounded-md px-2.5 py-1 text-[12.5px] outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring', g.id === group ? 'text-ink' : 'text-ink-3 hover:text-ink-2')}>
               {g.label}
             </button>
           ))}

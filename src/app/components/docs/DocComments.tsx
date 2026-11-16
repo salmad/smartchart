@@ -6,6 +6,7 @@ import { Check, Trash2, X } from 'lucide-react'
 import { MAX_COMMENT, type DocComment } from '@/engine/comments'
 import { cn } from '@/app/lib/utils'
 import { timeOf } from '@/app/versions'
+import { PanelNote, SidePanel } from '@/app/components/SidePanel'
 import { Button } from '@/app/components/ui/button'
 import { Textarea } from '@/app/components/ui/textarea'
 import { WHOLE_DOC, type Anchor } from './anchors'
@@ -54,18 +55,8 @@ export function DocComments({ comments, anchors, target, onTarget, canResolve, c
   const row = (c: DocComment) => <Row key={c.id} c={c} anchor={byId.get(c.anchor)} resolve={canResolve(c)} remove={canDelete(c)} onShow={onShow} onHover={onHover} onResolve={onResolve} onDelete={onDelete} />
 
   return (
-    <aside aria-label="Comments" data-tour="comments-panel"
-      className="flex w-[320px] min-h-0 flex-none flex-col border-l border-line bg-app-bg max-[900px]:fixed max-[900px]:inset-x-0 max-[900px]:bottom-0 max-[900px]:z-20 max-[900px]:max-h-[70dvh] max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t">
-      <header className="flex items-start justify-between gap-3 p-4 pb-3">
-        <div className="grid gap-0.5">
-          <h2 className="text-[14px] font-medium text-ink">Comments</h2>
-          <p className="text-[12.5px] text-ink-3">{open.length ? `${open.length} open · ` : ''}Select words, or hover a heading or figure, to comment.</p>
-        </div>
-        <button type="button" onClick={onClose} aria-label="Close comments"
-          className="-mr-1 -mt-1 grid size-7 flex-none cursor-pointer place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink">
-          <X className="size-4" strokeWidth={1.75} />
-        </button>
-      </header>
+    <SidePanel label="Comments" tour="comments-panel" title="Comments" closeLabel="Close comments" onClose={onClose} narrow="sheet"
+      note={<PanelNote>{open.length ? `${open.length} open · ` : ''}Select words, or hover a heading or figure, to comment.</PanelNote>}>
       <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto px-4 pb-4">
         {order.map((k) => (
           <section key={k} className="grid gap-2">
@@ -94,7 +85,7 @@ export function DocComments({ comments, anchors, target, onTarget, canResolve, c
           </div>
         )}
       </div>
-    </aside>
+    </SidePanel>
   )
 }
 

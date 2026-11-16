@@ -3,7 +3,7 @@
 import { NO_EDIT, NO_PAGE } from "../pages/tree.js";
 import { IDEMPOTENT, ToolError, tool, type JsonSchema, type PageRefOut } from "./types.js";
 
-export interface PageArg extends PageRefOut {}
+export type PageArg = PageRefOut
 
 /** The input schema of a page; `what` says which page it is. */
 export const pageSchema = (what: string): JsonSchema => ({ type: "object", additionalProperties: false, required: ["kind", "id"], description: what,

@@ -20,7 +20,7 @@ function chartContexts(s: Slide): ChartCtx[] {
     return [{ chart: s.chart, headline: deckHead, hasNotes: !!(s.notes?.length) }];
   if (s.template === "pair" && s.halves?.length)
     return s.halves.flatMap((h, i) => (h.chart
-      ? [{ chart: h.chart, headline: plain(`${deckHead} ${h.caption ?? ""}`), hasNotes: !!(h.bullets?.length), label: h.caption?.trim() || (s.halves!.length > 1 ? `chart ${i + 1}` : undefined) }]
+      ? [{ chart: h.chart, headline: plain(`${deckHead} ${h.caption ?? ""}`), hasNotes: !!(h.bullets?.length), label: h.caption?.trim() || ((s.halves?.length ?? 0) > 1 ? `chart ${i + 1}` : undefined) }]
       : []));
   return [];
 }

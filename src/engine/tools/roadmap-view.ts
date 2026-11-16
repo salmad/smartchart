@@ -52,19 +52,6 @@ export function matchingIssues(issues: readonly Issue[], chips: readonly Chip[],
   return out
 }
 
-export function liveTree(issues: readonly Issue[]): Issue[] {
-  const idx = buildIndex([...issues])
-  const out: Issue[] = []
-  const walk = (parentId: string | null) => {
-    for (const child of idx.children(parentId)) {
-      out.push(child)
-      walk(child.id)
-    }
-  }
-  walk(null)
-  return out
-}
-
 export function issueView(roadmap: Roadmap, issues: readonly Issue[], issue: Issue, today: string, idx?: IssueIndex): IssueView {
   const index = idx ?? buildIndex([...issues])
   const checks = typeof issue.deletedAt === 'number' ? [] : checksForIndex(index, issue.id, today)

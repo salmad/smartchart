@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { X, Maximize2 } from 'lucide-react'
+import { Maximize2 } from 'lucide-react'
+import { SidePanel } from '../SidePanel'
 import { IssueDetailView, type IssueViewProps } from './IssueDetailView'
 import { mergeIssueDetail } from './issueDetailCache'
 import { IconAction, IssueCrumb } from './issueParts'
@@ -44,19 +45,9 @@ export function IssuePanel({ onClose, onFullPage, ...view }: Props) {
   }, [onClose])
 
   return (
-    <aside
-      ref={panel}
-      tabIndex={-1}
-      aria-label="Issue panel"
-      className="flex w-[440px] max-w-full flex-none animate-in fade-in-0 slide-in-from-right-3 flex-col border-l border-line bg-app-bg outline-none duration-150 ease-out motion-reduce:animate-none max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 max-[1180px]:top-14 max-[1180px]:z-30 max-[1180px]:border-line-2 max-[1180px]:shadow-[-24px_0_48px_-16px_rgba(0,0,0,.7)]"
-    >
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-line pl-5 pr-2">
-        <IssueCrumb roadmap={roadmap} issue={issue} parent={issues.find((i) => i.id === issue.parentId) ?? null} onOpenIssue={view.onOpenIssue} />
-        <div className="ml-auto flex flex-none items-center gap-0.5">
-          <IconAction label="Open full page" onClick={onFullPage}><Maximize2 strokeWidth={1.75} /></IconAction>
-          <IconAction label="Close issue panel" hint="Close (Esc)" onClick={onClose}><X strokeWidth={1.75} /></IconAction>
-        </div>
-      </header>
+    <SidePanel ref={panel} label="Issue panel" wide narrow="over" closeLabel="Close issue panel" onClose={onClose}
+      title={<IssueCrumb roadmap={roadmap} issue={issue} parent={issues.find((i) => i.id === issue.parentId) ?? null} onOpenIssue={view.onOpenIssue} />}
+      actions={<IconAction label="Open full page" onClick={onFullPage}><Maximize2 strokeWidth={1.75} /></IconAction>}>
       <IssueDetailView
         key={issue.id}
         {...view}
@@ -65,6 +56,6 @@ export function IssuePanel({ onClose, onFullPage, ...view }: Props) {
         layout="panel"
         onDetail={(patch) => setDetail(mergeIssueDetail(detail, patch))}
       />
-    </aside>
+    </SidePanel>
   )
 }

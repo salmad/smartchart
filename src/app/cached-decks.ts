@@ -3,7 +3,6 @@
    is gone, or an account that signed out, takes its copy with it. */
 import { cacheDelete, cacheGet, cacheSet } from './cache'
 import type { DeckRepo, KeptDeck, SavedDeck } from './store'
-export type CachedDeck = KeptDeck
 
 const LAST = 'last'
 const deckKey = (id: string) => `deck:${id}`

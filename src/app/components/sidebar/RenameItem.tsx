@@ -26,8 +26,8 @@ export function RenameItem({ open, onSubmit, onClose }: Props) {
   }
   return (
     <Dialog open={open !== null} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-[400px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">{open?.title}</DialogTitle>
+      <DialogContent className="max-w-[400px]">
+        <DialogTitle>{open?.title}</DialogTitle>
         <DialogDescription className={open?.about ? 'mt-2 text-[13.5px] leading-[1.5] text-ink-2' : 'sr-only'}>{open?.about ?? 'Type a name.'}</DialogDescription>
         <form onSubmit={(e) => void submit(e)} className="mt-5 grid gap-3">
           <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} autoFocus aria-label="Name" className="h-9 border-line-2 bg-app-bg text-[13.5px] md:text-[13.5px]" />

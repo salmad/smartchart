@@ -36,9 +36,9 @@ export function AgentKey({ open, onOpenChange }: { open: boolean; onOpenChange: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[520px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Connect an agent</DialogTitle>
-        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Let Claude Code or another agent work on your decks. Each key acts as you; keep them private. You can have up to {max}.</DialogDescription>
+      <DialogContent className="max-w-[520px]">
+        <DialogTitle>Connect an agent</DialogTitle>
+        <DialogDescription>Let Claude Code or another agent work on your decks. Each key acts as you; keep them private. You can have up to {max}.</DialogDescription>
         {key && (
           <div className="mt-5 grid gap-3">
             <div role="tablist" aria-label="Agent" className="flex flex-wrap gap-1">

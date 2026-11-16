@@ -1,7 +1,6 @@
 import '@/engine/docs/doc.css'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DocComment } from '@/engine/comments'
-import { PanelLeft, Sparkles } from 'lucide-react'
 import { parseDoc } from '@/engine/docs/parse'
 import { loadFaces, mountDoc } from '@/engine/docs/mount'
 import { serializeDoc } from '@/engine/docs/serialize'
@@ -15,7 +14,7 @@ import { DOC_STALE, type Doc as DocRecord, type DocRepo, type DocVersionRow } fr
 import { authorOf } from '@/app/useComments'
 import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
-import { Toggle } from './Bar'
+import { AppBar, ScreenBody } from './AppBar'
 import { ChatPanel } from './ChatPanel'
 import { chipsForDoc, refreshDocPills } from '@/app/docPills'
 import { sendDocTurn } from '@/app/doc-turn'
@@ -36,7 +35,6 @@ import { PrintDoc } from './PrintDoc'
 import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
 import { fileName } from '@/app/download'
 import type { PageRef } from '@/engine/pages/tree'
-import { Crumbs } from './Crumbs'
 import type { Crumb } from './sidebar/usePageCrumbs'
 import { DocPreview } from './docs/DocPreview'
 import { useDocLive } from './docs/useDocLive'
@@ -221,23 +219,14 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
 
   const header = (bar: ReactNode) => (
-    <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
-      <div className="flex flex-none items-center gap-0.5">
-        <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-        <Toggle open={chatOpen} onClick={onToggleChat} label={`${chatOpen ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
-      </div>
-      <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
-        <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
-        <span aria-hidden className="text-ink-3">/</span>
-        <Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} />
-        <span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>
-      </nav>
+    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatOpen, onToggle: onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
+      title={<span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>}>
       {bar}
       <AccountMenu account={account} />
-    </header>
+    </AppBar>
   )
   const body = (content: ReactNode) => (
-    <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
+    <ScreenBody>
       {sidebar}
       <ChatPanel open={chatOpen} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
         chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
@@ -265,7 +254,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
           onDismiss={canEdit ? (pid) => void checksState.dismiss(pid) : undefined}
           onClose={() => { setSide(null); checks.reset() }} />
       )}
-    </div>
+    </ScreenBody>
   )
 
   if (editing && parsed) {

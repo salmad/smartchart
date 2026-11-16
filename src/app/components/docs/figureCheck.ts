@@ -17,17 +17,12 @@ export function bodyOf(s: Slide): FigureBody {
 
 const ID = 'f', PREFIX = `#${ID}.`
 
-/** Underlines in the figure editor: relaxed rules (limits and layout are warnings, not blockers). */
+/** Underlines in the figure editor. A person's edit is never refused: every rule, schema mistakes included, is a warning
+    here and in the doc's bar, and Done always writes the figure back. */
 export function figureCheck(kind: FigureKind): (draft: Slide) => Issue[] {
   return (draft) => validateDoc({ title: 'x', blocks: [{ type: 'figure', kind, id: ID, body: bodyOf(draft) }] }, { strict: false }).warnings
     .map((e) => (e.startsWith(PREFIX) ? e.slice(PREFIX.length) : e))
     .map((msg) => ({ msg, path: issuePath(msg) }))
-}
-
-/** Only strict schema mistakes block Done; row counts and character limits are warnings. */
-export function figureDoneRefusal(kind: FigureKind, draft: Slide): string | null {
-  const msg = validateDoc({ title: 'x', blocks: [{ type: 'figure', kind, id: ID, body: bodyOf(draft) }] }).errors[0]
-  return msg?.startsWith(PREFIX) ? msg.slice(PREFIX.length) : msg ?? null
 }
 
 /** The figure as the edit tools see it: the read view's figure (canvas, takeaway and source), laid out and scaled as when

@@ -18,10 +18,10 @@ export function Cta({ night = false, className }: { night?: boolean; className?:
   return (
     <div className={cn('grid justify-items-center gap-2.5 text-center', className)}>
       <button type="button" onClick={startPrompt}
-        className={cn('h-11 rounded-full px-5 text-[14px] font-medium transition-opacity hover:opacity-90', night ? 'bg-[#F3EEE4] text-stage' : 'bg-type text-paper')}>
+        className={cn('h-11 rounded-full px-5 text-[14px] font-medium transition-opacity hover:opacity-90', night ? 'bg-ink text-stage' : 'bg-type text-paper')}>
         Make slides
       </button>
-      {!signedIn && <span className={cn('text-[13px]', night ? 'text-[#A39B8E]' : 'text-type-3')}>First slide free.</span>}
+      {!signedIn && <span className={cn('text-[13px]', night ? 'text-ink-2' : 'text-type-3')}>First slide free.</span>}
     </div>
   )
 }

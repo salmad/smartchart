@@ -36,7 +36,7 @@ export function SignIn({ open, onOpenChange, title = 'Sign in to Occam', lede = 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[420px] gap-0 rounded-[22px] border-0 bg-paper p-8 text-type shadow-[0_40px_120px_-20px_rgba(0,0,0,.45)] max-[480px]:p-6">
         <DialogTitle className="font-display text-[34px] font-extrabold leading-[1] tracking-[-.015em] [font-stretch:78%]">{title}</DialogTitle>
-        <DialogDescription className="mt-3 text-[15px] leading-[1.5] text-type-2">{lede}</DialogDescription>
+        <DialogDescription className="mt-3 text-[15px] text-type-2">{lede}</DialogDescription>
 
         {step === 'email' ? (
           <div className="mt-7 grid gap-3">

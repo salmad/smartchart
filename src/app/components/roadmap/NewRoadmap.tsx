@@ -38,9 +38,9 @@ export function NewRoadmap({ open, onCreate, onClose }: Props) {
   }
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-[440px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">New roadmap</DialogTitle>
-        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Name it and choose a short prefix for its issue keys. The prefix can’t change later.</DialogDescription>
+      <DialogContent className="max-w-[440px]">
+        <DialogTitle>New roadmap</DialogTitle>
+        <DialogDescription>Name it and choose a short prefix for its issue keys. The prefix can’t change later.</DialogDescription>
         <div className="mt-5 grid gap-4">
           <div className="grid gap-1.5">
             <label htmlFor="roadmap-name" className="text-[13px] text-ink-2">Name</label>

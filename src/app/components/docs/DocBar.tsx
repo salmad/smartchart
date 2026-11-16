@@ -5,7 +5,7 @@ import { CircleCheck, ClipboardCheck, History, MessageSquare, Palette } from 'lu
 import { Button } from '@/app/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { cn } from '@/app/lib/utils'
-import { Toggle } from '@/app/components/Bar'
+import { Toggle } from '@/app/components/Toggle'
 import type { DocEdit } from './useDocEdit'
 
 /** "Ann is editing", "Ann and Ben are editing", "Ann and 2 others are editing". Below 900px only the dot shows. */
@@ -24,28 +24,20 @@ export function Presence({ names }: { names: string[] }) {
 export function ChecksToggle({ open, count, pass, label, onClick }: { open: boolean; count: number; pass: boolean; label?: string; onClick: () => void }) {
   const what = label || `${count} to look at`
   return (
-    <button type="button" onClick={onClick} aria-pressed={open} aria-label={pass ? 'Checks pass' : count ? `Checks, ${what}` : 'Checks'} title={count ? `Checks: ${what}` : 'Checks'}
-      className={cn('relative flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-ink-3 transition-colors hover:bg-panel hover:text-ink aria-pressed:bg-panel aria-pressed:text-ink', count ? 'px-2' : 'w-8')}>
+    <Toggle open={open} onClick={onClick} label={pass ? 'Checks pass' : count ? `Checks, ${what}` : 'Checks'} title={count ? `Checks: ${what}` : 'Checks'}
+      count={pass ? 0 : count} dot={!pass && count > 0}>
       {pass ? <CircleCheck aria-hidden className="size-[17px] text-ok" strokeWidth={1.75} />
         : <ClipboardCheck aria-hidden className="size-[17px]" strokeWidth={1.75} />}
-      {!pass && count > 0 && (
-        <>
-          <i aria-hidden className="absolute right-1 top-1 size-1.5 rounded-full bg-gold" />
-          <span className="font-mono text-[11px] tabular-nums text-ink-2">{count}</span>
-        </>
-      )}
-    </button>
+    </Toggle>
   )
 }
 
 /** The comments toggle, with the open count beside the icon once there is one. */
 export function CommentsToggle({ open, count, onClick }: { open: boolean; count: number; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={open} aria-label={count ? `Comments, ${count} open` : 'Comments'} title="Comments"
-      className={cn('flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-ink-3 transition-colors hover:bg-panel hover:text-ink aria-pressed:bg-panel aria-pressed:text-ink', count ? 'px-2' : 'w-8')}>
+    <Toggle open={open} onClick={onClick} label={count ? `Comments, ${count} open` : 'Comments'} title="Comments" count={count}>
       <MessageSquare aria-hidden className="size-[17px]" strokeWidth={1.75} />
-      {count > 0 && <span className="font-mono text-[11px] tabular-nums text-ink-2">{count}</span>}
-    </button>
+    </Toggle>
   )
 }
 
@@ -109,14 +101,8 @@ export function EditBar({ edit, onDiscard, stale, checks, comments }: { edit: Do
           )
           : (
             <>
-              {edit.blockers[0] && (
-                <span role="alert" className="min-w-0 line-clamp-2 text-[13px] text-warn" title={edit.blockers[0]}>
-                  Can’t save: {edit.blockers[0]}
-                </span>
-              )}
-              {edit.blockers.length > 1 && <IssueList label="issue" items={edit.blockers} />}
               <IssueList label="warning" items={edit.warnings} soft />
-              {edit.error && !edit.blockers.includes(edit.error) && (
+              {edit.error && (
                 <span role="alert" className="min-w-0 truncate text-[13px] text-warn">{edit.error}</span>
               )}
             </>

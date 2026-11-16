@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { cn } from '@/app/lib/utils'
+import { Mark } from '../Wordmark'
 import { BeforeAfter } from './BeforeAfter'
 import { Compare, Faq } from './Close'
 import { SignedIn, startPrompt } from './Cta'
@@ -20,15 +21,15 @@ export function Site({ onSignIn, signedIn = false }: Props) {
   return (
     <div ref={page} data-look={look} className="site h-full overflow-y-auto overflow-x-clip bg-paper text-type transition-colors duration-300">
       {/* Solid, and the colour of the section under it: a translucent bar smears over the dark section. */}
-      <nav className={cn('sticky top-0 z-20 transition-colors duration-300', night ? 'bg-night text-[#F3EEE4]' : 'bg-paper')}>
+      <nav className={cn('sticky top-0 z-20 transition-colors duration-300', night ? 'bg-night text-ink' : 'bg-paper')}>
         <div className="site-wrap flex h-16 items-center justify-between gap-4">
           <a href={signedIn ? '/home' : '/'} className="flex items-center gap-2.5 font-display text-[22px] font-extrabold tracking-[-.01em] [font-stretch:78%]">
             <Mark />Occam
           </a>
           <div className="flex items-center gap-2">
             <LookSwitch look={look} onChange={setLook} night={night} />
-            {!signedIn && <button type="button" onClick={onSignIn} className={cn('h-10 rounded-full px-4 text-[14px] transition-colors', night ? 'text-[#A39B8E] hover:text-[#F3EEE4]' : 'text-type-2 hover:text-type')}>Sign in</button>}
-            <button type="button" onClick={signedIn ? onSignIn : startPrompt} className={cn('h-10 rounded-full px-4 text-[14px] font-medium transition-colors duration-300', night ? 'bg-[#F3EEE4] text-stage' : 'bg-type text-paper')}>
+            {!signedIn && <button type="button" onClick={onSignIn} className={cn('h-10 rounded-full px-4 text-[14px] transition-colors', night ? 'text-ink-2 hover:text-ink' : 'text-type-2 hover:text-type')}>Sign in</button>}
+            <button type="button" onClick={signedIn ? onSignIn : startPrompt} className={cn('h-10 rounded-full px-4 text-[14px] font-medium transition-colors duration-300', night ? 'bg-ink text-stage' : 'bg-type text-paper')}>
               {signedIn ? 'Open app' : 'Start free'}
             </button>
           </div>
@@ -72,17 +73,6 @@ export function Site({ onSignIn, signedIn = false }: Props) {
         <span className="max-[700px]:hidden">© 2026</span>
       </footer>
     </div>
-  )
-}
-
-/** The cut O from the brand board: a circle with one straight cut, the razor passed once. */
-function Mark() {
-  return (
-    <svg viewBox="0 0 64 64" className="size-6" aria-hidden>
-      <defs><clipPath id="occam-cut"><path d="M0 64V0h18L64 46v18z" /></clipPath></defs>
-      <rect x="1" y="1" width="62" height="62" rx="14" className="fill-stage stroke-rule" strokeWidth="2" />
-      <circle cx="32" cy="32" r="19" className="fill-[#E8B94A]" clipPath="url(#occam-cut)" />
-    </svg>
   )
 }
 

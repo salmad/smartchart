@@ -89,7 +89,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint
                 <button type="button" onClick={() => send(p.prompt, false)}
                   className="cursor-pointer rounded-full border border-line-2 px-2.5 py-1 text-left text-[12.5px] text-ink-2 hover:border-ink-3 hover:text-ink">{p.label}</button>
               </TooltipTrigger>
-              <TooltipContent className="max-w-80 bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]">{p.prompt}</TooltipContent>
+              <TooltipContent className="max-w-80">{p.prompt}</TooltipContent>
             </Tooltip>
           ))}
         </div>
@@ -131,7 +131,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint
               <Paperclip className="size-4" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent className="bg-raise text-ink shadow-[0_0_0_1px_theme(colors.line-2)]">Attach a PDF, Word, Excel, CSV or text file</TooltipContent>
+          <TooltipContent>Attach a PDF, Word, Excel, CSV or text file</TooltipContent>
         </Tooltip>
         <Button type="submit" disabled={!canSubmit}>{start ? (ready.length > 1 ? 'Make slides' : 'Make a slide') : 'Send'}</Button>
       </div>

@@ -5,7 +5,7 @@ import { keyOf } from '@/engine/roadmaps/fields'
 import { StatusGlyph } from './StatusGlyph'
 import { Command, CommandItem, CommandList } from '../ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
-import { menuCommand, menuSurface } from './roadmapChrome'
+import { menuCommand } from './roadmapChrome'
 
 interface Props {
   roadmap: Roadmap
@@ -29,7 +29,7 @@ export function MatrixPicker({ roadmap, picks, label, cellTag, focused, onFocus,
           {children}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className={cn('w-80 p-1', menuSurface)} aria-label="Issues in cell">
+      <PopoverContent align="start" sideOffset={6} className={cn('w-80 p-1')} aria-label="Issues in cell">
         <Command className={menuCommand}>
           <CommandList label="Issues">
             {picks.map((i) => (

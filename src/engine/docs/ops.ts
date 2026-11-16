@@ -66,7 +66,7 @@ const blockEqual = (a: Block, b: Block): boolean => {
 }
 
 const docEqual = (a: Doc, b: Doc): boolean =>
-  a.title === b.title && a.subtitle === b.subtitle && a.blocks.length === b.blocks.length && a.blocks.every((x, i) => blockEqual(x, b.blocks[i]!))
+  a.title === b.title && a.subtitle === b.subtitle && a.blocks.length === b.blocks.length && a.blocks.every((x, i) => { const y = b.blocks[i]; return !!y && blockEqual(x, y) })
 
 const blockHint = (b: Block): string => {
   if (b.type === 'heading') return `the section “${plain(b.text).slice(0, 60)}”`
@@ -87,9 +87,10 @@ export function roundTripHint(want: Doc, got: Doc): string {
       ? 'Save would drop one or more blocks. A line that starts with #, -, a number., >, ---, or ``` is treated as structure—put a blank line before it, or start the line with \\, to keep it as text.'
       : 'Save would split what you wrote into extra blocks. Try merging lines into one paragraph or simplifying nested lists where you edited.'
   }
-  for (let i = 0; i < want.blocks.length; i++) {
-    if (!blockEqual(want.blocks[i]!, got.blocks[i]!)) {
-      return `${blockHint(want.blocks[i]!)} would not round-trip. Lines that look like Markdown (headings, lists, quotes) need a blank line above them or a \\ at the start when you meant plain text.`
+  for (const [i, w] of want.blocks.entries()) {
+    const g = got.blocks[i]
+    if (!g || !blockEqual(w, g)) {
+      return `${blockHint(w)} would not round-trip. Lines that look like Markdown (headings, lists, quotes) need a blank line above them or a \\ at the start when you meant plain text.`
     }
   }
   return ROUND_TRIP

@@ -1,6 +1,6 @@
 /* The doc being edited: a Tiptap editor holds the draft (the truth), Save turns it into the file. Agents go through
-   refusal in ops; a person’s Save is relaxed (warnings never block). One figure at a time is open in place and closes
-   first on Save (figure validation still applies to Done). */
+   refusal in ops; a person is never refused: every check is a warning in the bar. One figure at a time is open in
+   place and is written back (its Done) before Save. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useEditor, type Editor } from '@tiptap/react'
 import { Node as PMNode } from '@tiptap/pm/model'
@@ -22,8 +22,6 @@ export interface DocEdit {
   /** The blocks the editor opened with (an unchanged block is written back as it was). */
   originals: readonly Block[]
   dirty: boolean; saving: boolean; error: string | null
-  /** Reserved for a hard client stop; human Save is not blocked by schema or layout. */
-  blockers: string[]
   /** Schema, links and title notes: shown, never block a person’s Save. */
   warnings: string[]
   canUndo: boolean; canRedo: boolean
@@ -32,15 +30,14 @@ export interface DocEdit {
   current(): Doc | null
   save(): Promise<void>
   discard(): void
-  /** The figure open in place, by key. Opening another, or saving, first runs the open one's Done: if that refuses
-      (the figure has an error), nothing else happens. */
+  /** The figure open in place, by key. Opening another, or saving, first runs the open one's Done. */
   figure: string | null
   /** Where the open figure's edit surface goes (its element), when it is open. */
   slot: HTMLElement | null
   openFigure(key: string | null): void
-  /** The open figure's Done, held while it is open: it writes the figure back (or not) and says why not, or null.
-      Discard lets go of it (null), then closes the figure. */
-  holdFigure(done: ((force?: boolean) => string | null) | null): void
+  /** The open figure's Done, held while it is open: it writes the figure back. Discard lets go of it (null), then
+      closes the figure. */
+  holdFigure(done: (() => void) | null): void
   /** Done on a changed figure: its new body, one undo step. */
   setFigure(key: string, body: FigureBody): void
   /** For the slash menu: the editor hands it every key first. */
@@ -87,8 +84,8 @@ export function docOf(base: Doc, json: ProseNode): Doc {
 
 export function useDocEdit({ doc, theme, accent, save, onDone, proposalView, proposalTick = 0 }: Options): DocEdit {
   const [figure, setFigureKey] = useState<string | null>(null), [slot, setSlot] = useState<HTMLElement | null>(null)
-  const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null), [blockers, setBlockers] = useState<string[]>([]), [warnings, setWarnings] = useState<string[]>([]), [tick, setTick] = useState(0)
-  const done = useRef<((force?: boolean) => string | null) | null>(null), initial = useRef<PMNode | null>(null), look = useRef({ theme, accent }), onKey = useRef<(e: KeyboardEvent) => boolean>(() => false)
+  const [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null), [warnings, setWarnings] = useState<string[]>([]), [tick, setTick] = useState(0)
+  const done = useRef<(() => void) | null>(null), initial = useRef<PMNode | null>(null), look = useRef({ theme, accent }), onKey = useRef<(e: KeyboardEvent) => boolean>(() => false)
   look.current = { theme, accent }
   const editorRef = useRef<Editor | null>(null)
 
@@ -129,31 +126,29 @@ export function useDocEdit({ doc, theme, accent, save, onDone, proposalView, pro
 
   useEffect(() => {
     const t = setTimeout(() => {
-      if (!editor) { setBlockers([]); setWarnings([]); return }
+      if (!editor) { setWarnings([]); return }
       const json = editor.getJSON() as ProseNode, next = docOf(doc, json)
-      setBlockers([])
       setWarnings(docEditWarnings(doc, next, json))
     }, MEASURE_MS)
     return () => clearTimeout(t)
   }, [editor, doc, tick])
 
-  const closeFigure = useCallback((force = false) => {
-    const d = done.current
-    if (d) {
-      const why = d(force)
-      if (why !== null) { if (!force) setError(why); return false }
-    }
+  const closeFigure = useCallback(() => {
+    done.current?.()
     done.current = null; setFigureKey(null); setSlot(null)
     if (editorRef.current) setOpenKey(editorRef.current, null)
-    return true
   }, [])
-  open.current = (key) => { if (key !== figure && closeFigure() && key && editorRef.current) { setFigureKey(key); setOpenKey(editorRef.current, key) } }
+  open.current = (key) => {
+    if (key === figure) return
+    closeFigure()
+    if (key && editorRef.current) { setFigureKey(key); setOpenKey(editorRef.current, key) }
+  }
 
   const current = useCallback((): Doc | null => (editor ? docOf(doc, editor.getJSON() as ProseNode) : null), [editor, doc])
 
   return useMemo<DocEdit>(() => ({
     editor, originals: doc.blocks,
-    dirty: !!editor && !!initial.current && !editor.state.doc.eq(initial.current), saving, error, blockers, warnings,
+    dirty: !!editor && !!initial.current && !editor.state.doc.eq(initial.current), saving, error, warnings,
     canUndo: !!editor?.can().undo(), canRedo: !!editor?.can().redo(),
     undo: () => { editor?.commands.undo() }, redo: () => { editor?.commands.redo() },
     current, figure, slot, onKey,
@@ -166,7 +161,8 @@ export function useDocEdit({ doc, theme, accent, save, onDone, proposalView, pro
       if (n) editor.view.dispatch(editor.state.tr.setNodeMarkup(f.pos, undefined, { ...n.attrs, block: { ...f.block, body } }))
     },
     save: async () => {
-      if (!editor || !closeFigure(true)) return
+      if (!editor) return
+      closeFigure()
       const json = editor.getJSON() as ProseNode, next = titleForSave(doc, docOf(doc, json))
       // Nothing changed: nothing is written, and no version is made.
       if (initial.current && editor.state.doc.eq(initial.current)) { onDone(); return }

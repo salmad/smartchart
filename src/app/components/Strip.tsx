@@ -8,7 +8,7 @@ import { useEdgeFade } from '@/app/fade'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { SlideView } from './SlideView'
 import { useRamp } from './useRamp'
-import { MENU_ICON, MENU_ITEM } from './menu'
+import { MENU_ICON } from './menu'
 
 interface Props {
   items: Item[]; current: number; deck: Deck; busy: boolean
@@ -106,11 +106,11 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
                 className="absolute right-1 top-1 grid size-6 cursor-pointer place-items-center rounded-md bg-raise/90 text-ink-2 opacity-0 shadow-[0_0_0_1px_theme(colors.line-2)] outline-none backdrop-blur transition-opacity hover:text-ink focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100 disabled:hidden">
                 <MoreHorizontal className="size-3.5" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[168px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
-                <DropdownMenuItem disabled={i === 0} onSelect={() => onMove(it.id, i - 1)} className={MENU_ITEM}><ArrowLeft {...MENU_ICON} />Move left<kbd className="ml-auto text-ink-3">⌥←</kbd></DropdownMenuItem>
-                <DropdownMenuItem disabled={i === items.length - 1} onSelect={() => onMove(it.id, i + 1)} className={MENU_ITEM}><ArrowRight {...MENU_ICON} />Move right<kbd className="ml-auto text-ink-3">⌥→</kbd></DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-line" />
-                <DropdownMenuItem onSelect={() => onRemove(it.id)} className={MENU_ITEM}><Trash2 {...MENU_ICON} />Delete slide<kbd className="ml-auto text-ink-3">⌫</kbd></DropdownMenuItem>
+              <DropdownMenuContent align="end" className="min-w-[168px]">
+                <DropdownMenuItem disabled={i === 0} onSelect={() => onMove(it.id, i - 1)}><ArrowLeft {...MENU_ICON} />Move left<kbd className="ml-auto text-ink-3">⌥←</kbd></DropdownMenuItem>
+                <DropdownMenuItem disabled={i === items.length - 1} onSelect={() => onMove(it.id, i + 1)}><ArrowRight {...MENU_ICON} />Move right<kbd className="ml-auto text-ink-3">⌥→</kbd></DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => onRemove(it.id)}><Trash2 {...MENU_ICON} />Delete slide<kbd className="ml-auto text-ink-3">⌫</kbd></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

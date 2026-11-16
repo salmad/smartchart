@@ -16,7 +16,7 @@ export function DocExportMenu({ onMarkdown, onHtml, onPdf }: Props) {
     <Popover>
       <PopoverTrigger asChild><Button variant="outline">Download</Button></PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} aria-label="Download this doc"
-        className="grid w-72 gap-1 rounded-[14px] border-line-2 bg-raise p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
+        className="grid w-72 gap-1 p-2">
         <button type="button" className={row} onClick={onMarkdown}>
           <FileText className="size-4 flex-none text-ink-2" strokeWidth={1.75} />
           <span className="grid text-left">

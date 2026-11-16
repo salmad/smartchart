@@ -6,7 +6,6 @@ import { cn } from '@/app/lib/utils'
 import { MatrixDisplay } from './MatrixDisplay'
 import { MenuSection, MenuSelect, MenuSwitch } from './MenuParts'
 import { ToolButton } from './ToolButton'
-import { menuSurface } from './roadmapChrome'
 
 type Sort = ViewSettings['sort']
 
@@ -58,7 +57,6 @@ export function DisplayMenu({ fields, view, onChange }: Props) {
         className={cn(
           'max-h-[min(32rem,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain p-2 text-[13px]',
           matrix ? 'w-[min(20rem,calc(100vw-1.5rem))]' : 'w-[17rem]',
-          menuSurface,
         )}
         aria-label={matrix ? 'Matrix layout' : 'Display settings'}
         onOpenAutoFocus={(e) => e.preventDefault()}

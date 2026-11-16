@@ -4,10 +4,6 @@ import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
 import { cn } from '@/app/lib/utils'
 
 export const ROW_H = 36
-/** The Gantt list's own row height. */
-export const GANTT_ROW_H = 34
-/** A matrix card is two lines (status and quarter, then progress): 54px with its padding. */
-export const MATRIX_ROW_H = 56
 export const VIRT = 200
 const OVERSCAN = 8
 

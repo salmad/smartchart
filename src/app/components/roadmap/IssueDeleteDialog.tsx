@@ -33,9 +33,9 @@ export function IssueDeleteDialog({ deleteIds, liveIssues, onClose, act, onDelet
 
   return (
     <Dialog open={ids.length > 0} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-[400px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold leading-[1.35] tracking-[-.01em]">Delete {what}?</DialogTitle>
-        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">
+      <DialogContent className="max-w-[400px]">
+        <DialogTitle className="leading-[1.35]">Delete {what}?</DialogTitle>
+        <DialogDescription>
           {sub > 0
             ? `${ids.length === 1 ? 'The issue' : 'They'}${withSubs} will be deleted.`
             : `${ids.length === 1 ? 'The issue' : 'They'} will be deleted.`} You can undo it straight after.

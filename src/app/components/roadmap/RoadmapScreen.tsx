@@ -7,6 +7,7 @@ import type { Theme } from '@/engine/types'
 import { go } from '@/app/route'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { useUserLook } from '@/app/useUserLook'
+import { ScreenBody } from '../AppBar'
 import { Button } from '../ui/button'
 import type { Crumb } from '../sidebar/usePageCrumbs'
 import { useRoadmap } from './useRoadmap'
@@ -145,7 +146,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
         alarms={checkReport.alarms}
         onNewIssue={onNewIssue}
       />
-      <div className="flex h-[calc(100%-56px)] min-h-0 max-[900px]:h-auto max-[900px]:flex-col">
+      <ScreenBody>
         {sidebar}
         <main className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-app-bg">
           {view.error && <p role="alert" className="m-auto max-w-sm px-8 text-center text-[13px] leading-[1.5] text-ink-2">{view.error}</p>}
@@ -179,6 +180,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                 onToday={() => setTodayRequest((n) => n + 1)}
                 settings={canEdit ? { open: fieldsOpen, onOpen: () => setFieldsOpen(true) } : undefined}
               />
+              <div key={showMain ? viewSettings.layout : 'empty'} className="flex min-h-0 min-w-0 flex-1 flex-col animate-in fade-in-0 duration-200">
               {!showMain ? (
                 <EmptyRoadmap onNewIssue={onNewIssue} />
               ) : viewSettings.layout === 'table' ? (
@@ -222,6 +224,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                   onOpenFields={() => setFieldsOpen(true)}
                 />
               )}
+              </div>
             </div>
           )}
           {view.state && !routeIssue && panelId && openIssueRow && (
@@ -242,7 +245,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
             />
           )}
         </main>
-      </div>
+      </ScreenBody>
       {view.state && canEdit && (
         <FieldsEditor
           open={fieldsOpen}
@@ -261,8 +264,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
 function EmptyRoadmap({ onNewIssue }: { onNewIssue?: () => void }) {
   return (
     <div className="grid min-h-0 flex-1 place-items-center px-8 pb-11">
-      <div className="grid max-w-xs justify-items-center gap-1.5 text-center">
-        <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">No issues yet</h2>
+      <div className="grid max-w-xs justify-items-center gap-1.5 text-center animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out-strong">
+        <h2 className="app-title text-[24px]">No issues yet</h2>
         <p className="text-[13px] leading-[1.5] text-ink-3">
           {onNewIssue ? 'An issue is one piece of work. Add the first, then nest, date and assign it.' : 'Nothing has been added to this roadmap.'}
         </p>

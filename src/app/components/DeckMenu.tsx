@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { DeleteDeck } from './DeleteDeck'
-import { MENU_ICON, MENU_ITEM as ITEM } from './menu'
+import { MENU_ICON } from './menu'
 
 interface Props {
   name: string; busy: boolean
@@ -32,11 +32,11 @@ export function DeckMenu({ name, busy, onRename, onDelete, subpages }: Props) {
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" sideOffset={6} onCloseAutoFocus={(e) => { if (renaming.current) { e.preventDefault(); renaming.current = false; onRename() } }}
-          className="min-w-[180px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
-          <DropdownMenuItem disabled={busy} onSelect={() => { renaming.current = true }} className={ITEM}><Pencil {...MENU_ICON} />Rename</DropdownMenuItem>
+          className="min-w-[180px]">
+          <DropdownMenuItem disabled={busy} onSelect={() => { renaming.current = true }}><Pencil {...MENU_ICON} />Rename</DropdownMenuItem>
           {onDelete && <>
-            <DropdownMenuSeparator className="bg-line" />
-            <DropdownMenuItem disabled={busy} onSelect={() => void ask()} className={ITEM}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={busy} onSelect={() => void ask()}><Trash2 {...MENU_ICON} />Delete deck…</DropdownMenuItem>
           </>}
         </DropdownMenuContent>
       </DropdownMenu>

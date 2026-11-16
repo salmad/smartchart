@@ -40,4 +40,5 @@ function OgCapture() {
   )
 }
 
-createRoot(document.getElementById('og')!).render(<OgCapture />)
+const root = document.getElementById('og')
+if (root) createRoot(root).render(<OgCapture />)

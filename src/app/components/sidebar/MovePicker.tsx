@@ -44,9 +44,9 @@ export function MovePicker({ page, pages, onMove, onClose, workspaces = [], curr
   const option = 'flex w-full cursor-pointer items-center gap-2 rounded-lg py-1.5 pr-2.5 text-left text-[13px] outline-none transition-colors focus-visible:ring-1 focus-visible:ring-line-2 aria-disabled:cursor-not-allowed'
   return (
     <Dialog open={page !== null} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-[440px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Move “{page?.name}”</DialogTitle>
-        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Pick the page it goes inside. It goes last there.</DialogDescription>
+      <DialogContent className="max-w-[440px]">
+        <DialogTitle>Move “{page?.name}”</DialogTitle>
+        <DialogDescription>Pick the page it goes inside. It goes last there.</DialogDescription>
         <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search pages" aria-label="Search pages" className="mt-4"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void go() } }} />
         <div role="listbox" aria-label="Move to" className="mt-3 grid max-h-[280px] content-start gap-px overflow-y-auto">

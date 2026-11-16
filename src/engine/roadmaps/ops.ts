@@ -329,12 +329,7 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
       if (isRoot && (!src || src.deletedAt !== null)) return { refused: 'No such issue.' }
     }
 
-    const roots = selectionRoots(op.copies, draft.issues).sort((a, b) => {
-      const ia = get(a)!
-      const ib = get(b)!
-      if (ia.parentId !== ib.parentId) return ia.sortKey.localeCompare(ib.sortKey)
-      return ia.sortKey.localeCompare(ib.sortKey)
-    })
+    const roots = selectionRoots(op.copies, draft.issues).sort((a, b) => (get(a)?.sortKey ?? '').localeCompare(get(b)?.sortKey ?? ''))
 
     for (const rootId of roots) {
       for (const node of liveSubtree(draft.issues, rootId)) {
@@ -352,7 +347,8 @@ export function applyOp(s: RoadmapState, op: RoadmapOp, ctx: OpCtx): OpResult {
     const dupRoots = new Set(roots)
 
     for (const source of toCreate) {
-      const newId = bySource.get(source.id)!
+      const newId = bySource.get(source.id)
+      if (!newId) return { refused: 'Duplicate needs a new id for each issue.' }
       let parentId: string | null
       let sortKey: string
 

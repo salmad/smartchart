@@ -5,7 +5,7 @@ import { dropLinkParam, linkParam } from '@/app/email-links'
 import { go } from '@/app/route'
 import { Avatar } from './Avatar'
 import { AgentKey } from './AgentKey'
-import { MENU_ICON, MENU_ITEM } from './menu'
+import { MENU_ICON } from './menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 
 /** Your avatar at the right of the bar: who is signed in, Connect an agent and Sign out. */
@@ -22,16 +22,16 @@ export function AccountMenu({ account, onTour = null, onReview = null }: { accou
             <Avatar name={who} image={account.image} />
           </span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={8} className="min-w-[220px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
+        <DropdownMenuContent align="end" sideOffset={8} className="min-w-[220px]">
           <DropdownMenuLabel className="grid gap-0.5 px-2 py-1.5 font-normal">
             {account.name && <span className="text-[13px] font-medium">{account.name}</span>}
             <span className="truncate text-[12.5px] text-ink-3">{account.email}</span>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-line" />
-          <DropdownMenuItem onSelect={() => setConnecting(true)} className={MENU_ITEM}><Plug {...MENU_ICON} />Connect an agent</DropdownMenuItem>
-          {onReview && <DropdownMenuItem onSelect={onReview} className={MENU_ITEM}><PenLine {...MENU_ICON} />Review a deck</DropdownMenuItem>}
-          {onTour && <DropdownMenuItem onSelect={onTour} className={MENU_ITEM}><Compass {...MENU_ICON} />Take the tour</DropdownMenuItem>}
-          <DropdownMenuItem onSelect={() => void signOut().then(() => go('/'))} className={MENU_ITEM}><LogOut {...MENU_ICON} />Sign out</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setConnecting(true)}><Plug {...MENU_ICON} />Connect an agent</DropdownMenuItem>
+          {onReview && <DropdownMenuItem onSelect={onReview}><PenLine {...MENU_ICON} />Review a deck</DropdownMenuItem>}
+          {onTour && <DropdownMenuItem onSelect={onTour}><Compass {...MENU_ICON} />Take the tour</DropdownMenuItem>}
+          <DropdownMenuItem onSelect={() => void signOut().then(() => go('/'))}><LogOut {...MENU_ICON} />Sign out</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AgentKey open={connecting} onOpenChange={setConnecting} />

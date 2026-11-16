@@ -1,6 +1,6 @@
 import { Check, ChevronsUpDown, Plus, Users } from 'lucide-react'
 import type { Role, Workspace } from '@/app/workspaces'
-import { MENU_ICON, MENU_ITEM } from '../menu'
+import { MENU_ICON } from '../menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
 interface Props {
@@ -26,18 +26,18 @@ export function WorkspaceSwitcher({ list, current, busy, onSwitch, onNew, onMemb
         {current && current.role !== 'owner' && <span className="flex-none text-[11.5px] text-ink-3">{ROLE[current.role]}</span>}
         <ChevronsUpDown aria-hidden className="size-3.5 flex-none text-ink-3" strokeWidth={1.75} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[232px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
+      <DropdownMenuContent align="start" className="w-[232px]">
         <DropdownMenuLabel className="px-2 pb-1 pt-1.5 font-mono text-[10.5px] font-medium uppercase tracking-[.1em] text-ink-3">Workspaces</DropdownMenuLabel>
         {(list ?? []).map((w) => (
-          <DropdownMenuItem key={w.id} onSelect={() => { if (w.id !== current?.id) onSwitch(w.id) }} className={MENU_ITEM}>
+          <DropdownMenuItem key={w.id} onSelect={() => { if (w.id !== current?.id) onSwitch(w.id) }}>
             <span className="min-w-0 flex-1 truncate">{w.name}</span>
             {w.role !== 'owner' && <span className="flex-none text-[11.5px] text-ink-3">{ROLE[w.role]}</span>}
             <Check {...MENU_ICON} aria-label={w.id === current?.id ? 'Open' : undefined} className={w.id === current?.id ? 'size-3.5' : 'invisible size-3.5'} />
           </DropdownMenuItem>
         ))}
-        <DropdownMenuSeparator className="my-1 bg-line" />
-        {onMembers && <DropdownMenuItem onSelect={onMembers} className={MENU_ITEM}><Users {...MENU_ICON} />Members…</DropdownMenuItem>}
-        <DropdownMenuItem onSelect={onNew} className={MENU_ITEM}><Plus {...MENU_ICON} />New workspace…</DropdownMenuItem>
+        <DropdownMenuSeparator className="my-1" />
+        {onMembers && <DropdownMenuItem onSelect={onMembers}><Users {...MENU_ICON} />Members…</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={onNew}><Plus {...MENU_ICON} />New workspace…</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

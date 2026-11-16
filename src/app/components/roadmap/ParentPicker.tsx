@@ -5,7 +5,7 @@ import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { cn } from '@/app/lib/utils'
 import { IssueKey, Placeholder, ValueButton } from './issueParts'
-import { menuCommand, menuSurface } from './roadmapChrome'
+import { menuCommand } from './roadmapChrome'
 
 interface Props {
   roadmap: Roadmap
@@ -30,7 +30,7 @@ export function ParentPicker({ roadmap, parent, choices, onPick }: Props) {
           ) : <Placeholder>Add parent</Placeholder>}
         </ValueButton>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className={cn('w-72 overflow-hidden p-0', menuSurface)} aria-label="Choose parent">
+      <PopoverContent align="start" sideOffset={6} className={cn('w-72 overflow-hidden p-0')} aria-label="Choose parent">
         <Command className={cn(menuCommand, '[&_[cmdk-list]]:p-1')}>
           <CommandInput placeholder="Find an issue…" className="text-[13px]" />
           <CommandList label="Parents">

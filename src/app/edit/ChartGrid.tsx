@@ -17,7 +17,7 @@ export function ChartGrid({ edit, deckStyle, which = 0, onClose }: { edit: Slide
       <DialogContent data-chart-grid
         // Esc inside the grid is the grid's own (cancel the cell, collapse the range); only a bare Esc closes the dialog.
         onEscapeKeyDown={(e) => { if (e.target instanceof Element && e.target.closest('input[aria-label^="Row "], [data-range]')) e.preventDefault() }}
-        className="flex max-h-[85vh] w-[min(56rem,calc(100vw-2rem))] max-w-none flex-col gap-4 p-6">
+        className="flex max-h-[85vh] w-[min(56rem,calc(100vw-2rem))] max-w-none flex-col gap-4">
         <DialogHeader>
           <DialogTitle>{model?.kind === 'table' ? 'Table data' : 'Chart data'}</DialogTitle>
           <DialogDescription>Type to replace, Enter to edit, paste from a spreadsheet. The slide redraws when you close this.</DialogDescription>

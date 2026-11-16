@@ -25,7 +25,7 @@ function RolePick({ value, onChange, aria }: { value: Role; onChange: (r: Role) 
   return (
     <Select value={value} onValueChange={(v) => onChange(v as Role)}>
       <SelectTrigger aria-label={aria} className="h-8 w-[104px] flex-none border-line-2 bg-app-bg text-[12.5px]"><SelectValue /></SelectTrigger>
-      <SelectContent className="border-line-2 bg-raise text-ink">{ROLES.map((r) => <SelectItem key={r.value} value={r.value} className="text-[13px]">{r.label}</SelectItem>)}</SelectContent>
+      <SelectContent>{ROLES.map((r) => <SelectItem key={r.value} value={r.value} className="text-[13px]">{r.label}</SelectItem>)}</SelectContent>
     </Select>
   )
 }
@@ -53,9 +53,9 @@ export function Members({ workspace, repo, me, onClose, onLeft }: Props) {
 
   return (
     <Dialog open={workspace !== null} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-[480px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Members of {workspace?.name}</DialogTitle>
-        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Owners manage members. Editors make and change docs and decks. Viewers read them.</DialogDescription>
+      <DialogContent className="max-w-[480px]">
+        <DialogTitle>Members of {workspace?.name}</DialogTitle>
+        <DialogDescription>Owners manage members. Editors make and change docs and decks. Viewers read them.</DialogDescription>
 
         <ul aria-label="Members" className="mt-5 grid max-h-[40vh] gap-px overflow-y-auto">
           {list === null && !error && <li className="h-10 animate-pulse rounded-lg bg-line" />}

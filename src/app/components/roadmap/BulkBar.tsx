@@ -9,9 +9,8 @@ import {
 import { cn } from '@/app/lib/utils'
 import { Avatar } from './Avatar'
 import { StatusGlyph } from './StatusGlyph'
-import { menuSurface } from './roadmapChrome'
 
-const surface = cn('min-w-44 p-1 text-ink', menuSurface)
+const surface = cn('min-w-44 p-1 text-ink')
 const item = 'rounded-md text-[13px] focus:bg-panel data-[state=open]:bg-panel'
 
 const BarButton = forwardRef<HTMLButtonElement, ButtonProps>(({ className, ...props }, ref) => (
@@ -54,7 +53,6 @@ export function BulkBar({ count, fields, members, onStatus, onAssignee, onField,
         aria-label="Selection"
         className={cn(
           'pointer-events-auto flex items-center gap-0.5 border py-1 pl-3.5 pr-1 animate-in fade-in-0 slide-in-from-bottom-2 ease-out [animation-duration:140ms] motion-reduce:animate-none',
-          menuSurface,
         )}
       >
         <span className="mr-2 whitespace-nowrap text-[13px] tabular-nums text-ink">{count} selected</span>

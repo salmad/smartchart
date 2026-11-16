@@ -47,11 +47,6 @@ export function pagesUnion(
 /** Parent links for every page kind (cycle checks and tree walks). */
 const PAGE_LINKS = pagesUnion((t, kind) => `select '${kind}' as kind, id, parent_kind, parent_id from ${t}`)
 
-/** One row per page in the tree (no access filter). */
-export const PAGES_SQL = pagesUnion((t, kind) => (t === 'decks'
-  ? `select '${kind}' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at as updated from ${t}`
-  : `select '${kind}' as kind, id, workspace_id, parent_kind, parent_id, sort_key, name, updated_at from ${t}`))
-
 export function deckCalls(q: Q): Pick<Db, Calls> {
   /** Every page of a workspace as the tree sees it (no access check: callers pass a workspace they may edit in, or get an empty list). */
   const wsMay = (t: PageTable) => `workspace_id = $2 and ${may(t, '$1', '$3')}`

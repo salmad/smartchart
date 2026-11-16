@@ -13,10 +13,15 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground disabled:opacity-35",
         outline: "border border-line-2 bg-transparent text-ink-2 hover:text-ink disabled:opacity-45 disabled:hover:text-ink-2",
         ghost: "text-ink-2 hover:text-ink disabled:opacity-45",
+        // A tool in a bar or a panel head: grey until hovered, stepping to panel on hover and while its menu is open.
+        quiet: "font-normal text-ink-3 hover:bg-panel hover:text-ink data-[state=open]:bg-panel data-[state=open]:text-ink disabled:opacity-45",
       },
       size: {
         default: "h-8 px-3.5",
         sm: "h-7 px-2.5 text-xs",
+        // Icon only: a square at the bar's height, or the smaller one inside a panel.
+        icon: "size-8 px-0",
+        "icon-sm": "size-7 rounded-md px-0",
       },
     },
     defaultVariants: {

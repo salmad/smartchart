@@ -6,12 +6,17 @@ import animate from 'tailwindcss-animate'
 const v = (n) => `rgb(var(--site-${n}) / <alpha-value>)`
 const site = {
   paper: v('paper'), 'paper-2': v('paper-2'), card: v('card'), type: v('type'), 'type-2': v('type-2'), 'type-3': v('type-3'),
-  rule: v('rule'), focus: v('focus'), night: v('night'), stage: '#0B0A09',
+  rule: v('rule'), focus: v('focus'), night: v('night'), stage: 'rgb(var(--brand-black) / <alpha-value>)',
 }
 
+// The app wears the brand: warm black, cream type and gold. The numbers live once, as --brand-* in index.css; the
+// site's Ink look reads the same variables, and tests/unit/brand-palette.test.ts holds the slides' Ink theme and the
+// boot frame in index.html to them. Three steps of surface and three of type; lines are cream at a low alpha, so
+// they sit on any surface.
+const b = (n) => `rgb(var(--brand-${n}) / <alpha-value>)`, cream = (a) => `rgb(var(--brand-cream) / ${a})`
 const app = {
-  'app-bg': '#0A0A0B', panel: '#111113', raise: '#18181B', line: 'rgba(255,255,255,.08)', hair: 'rgba(255,255,255,.04)', 'line-2': 'rgba(255,255,255,.14)',
-  ink: '#EDEDEF', 'ink-2': '#A1A1AA', 'ink-3': '#71717A', ok: '#7BD88F', gold: '#E8B94A', warn: '#F2B35B', bad: '#FF6B57',
+  'app-bg': b('black'), panel: b('black-2'), raise: b('black-3'), line: cream('.08'), hair: cream('.04'), 'line-2': cream('.14'),
+  ink: b('cream'), 'ink-2': b('cream-2'), 'ink-3': b('cream-3'), gold: b('gold'), ok: '#7BD88F', warn: '#F2B35B', bad: '#FF6B57',
 }
 
 /** @type {import('tailwindcss').Config} */
@@ -24,11 +29,16 @@ export default {
         background: app['app-bg'], foreground: app.ink,
         popover: { DEFAULT: app.raise, foreground: app.ink },
         primary: { DEFAULT: app.ink, foreground: app['app-bg'] },
-        accent: { DEFAULT: app.raise, foreground: app.ink },
+        // A highlighted row steps to panel: popups sit on raise, so raise on raise would not show.
+        accent: { DEFAULT: app.panel, foreground: app.ink },
         muted: { DEFAULT: app.raise, foreground: app['ink-3'] },
         destructive: { DEFAULT: app.bad, foreground: app.ink },
         border: app.line, input: app['line-2'], ring: app['ink-3'],
       },
+      // The app bar's height: the bar is h-bar, and every screen sizes its body and its slides from this one number.
+      spacing: { bar: '56px' },
+      // What floats over the page (menus, popovers, dialogs): a lit top edge and one deep, soft shadow.
+      boxShadow: { menu: 'inset 0 1px 0 rgb(var(--brand-cream) / .04), 0 24px 48px -16px rgb(0 0 0 / .7)' },
       // Named, never arbitrary: tailwindcss-animate also owns duration-* and ease-*, so duration-[1400ms] or
       // ease-[cubic-bezier(…)] is ambiguous and silently dropped, and the transition snaps at the 150ms default.
       transitionDuration: { 120: '120ms' },

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type DragEventHandler, type PointerEvent, 
 import { ChevronRight, FilePlus2, FileText, FolderInput, GanttChart, MoreHorizontal, Pencil, Plus, Presentation, Trash2 } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import { keyOf, MAX_DEPTH, type PageKind, type PageRef } from '@/engine/pages/tree'
-import { MENU_ICON, MENU_ITEM } from '../menu'
+import { MENU_ICON } from '../menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { ago } from './ago'
 import { shownDepth, type Row } from './flatten'
@@ -42,9 +42,9 @@ const HOVER_BUTTON = 'absolute top-1/2 grid size-7 -translate-y-1/2 cursor-point
 function AddItems({ row, onAdd }: { row: Row; onAdd: (row: Row, kind: PageKind) => void }) {
   return (
     <>
-      <DropdownMenuItem onSelect={() => onAdd(row, 'doc')} className={MENU_ITEM}><FileText {...MENU_ICON} />Doc</DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => onAdd(row, 'roadmap')} className={MENU_ITEM}><GanttChart {...MENU_ICON} />Roadmap</DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => onAdd(row, 'deck')} className={MENU_ITEM}><Presentation {...MENU_ICON} />Deck</DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onAdd(row, 'doc')}><FileText {...MENU_ICON} />Doc</DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onAdd(row, 'roadmap')}><GanttChart {...MENU_ICON} />Roadmap</DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onAdd(row, 'deck')}><Presentation {...MENU_ICON} />Deck</DropdownMenuItem>
     </>
   )
 }
@@ -86,7 +86,7 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
             className={cn(HOVER_BUTTON, 'right-[34px] disabled:hidden')}>
             <Plus className="size-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[150px] rounded-[10px] border-line-2 bg-raise p-1 text-ink" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuContent align="start" className="min-w-[150px]" onClick={(e) => e.stopPropagation()}>
             <AddItems row={row} onAdd={onAdd} />
           </DropdownMenuContent>
         </DropdownMenu>
@@ -97,16 +97,16 @@ export function PageRow({ row, place, focused, canWrite, busy, menuOpen, onMenuO
             className={cn(HOVER_BUTTON, 'right-1.5 disabled:hidden')}>
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[150px] rounded-[10px] border-line-2 bg-raise p-1 text-ink" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onSelect={() => onRename(row)} className={MENU_ITEM}><Pencil {...MENU_ICON} />Rename…</DropdownMenuItem>
+          <DropdownMenuContent align="start" className="min-w-[150px]" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onSelect={() => onRename(row)}><Pencil {...MENU_ICON} />Rename…</DropdownMenuItem>
             {row.depth < MAX_DEPTH && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className={MENU_ITEM}><FilePlus2 {...MENU_ICON} />Add subpage</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="min-w-[130px] rounded-[10px] border-line-2 bg-raise p-1 text-ink"><AddItems row={row} onAdd={onAdd} /></DropdownMenuSubContent>
+                <DropdownMenuSubTrigger><FilePlus2 {...MENU_ICON} />Add subpage</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="min-w-[130px]"><AddItems row={row} onAdd={onAdd} /></DropdownMenuSubContent>
               </DropdownMenuSub>
             )}
-            <DropdownMenuItem onSelect={() => onMove(row)} className={MENU_ITEM}><FolderInput {...MENU_ICON} />Move to…</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onDelete(row)} className={MENU_ITEM}><Trash2 {...MENU_ICON} />Delete {noun(row)}…</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onMove(row)}><FolderInput {...MENU_ICON} />Move to…</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onDelete(row)}><Trash2 {...MENU_ICON} />Delete {noun(row)}…</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}

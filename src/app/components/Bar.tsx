@@ -1,15 +1,16 @@
 import { useState, type ReactNode } from 'react'
-import { History, LayoutGrid, ListOrdered, PanelLeft, Palette, Play, RectangleHorizontal, Sparkles, type LucideIcon } from 'lucide-react'
+import { History, LayoutGrid, ListOrdered, Palette, Play, RectangleHorizontal, type LucideIcon } from 'lucide-react'
 import type { Account } from '@/app/auth'
 import { Button } from '@/app/components/ui/button'
 import { AccountMenu } from './AccountMenu'
+import { AppBar } from './AppBar'
 import type { PageRef } from '@/engine/pages/tree'
-import { Crumbs } from './Crumbs'
 import { DeckMenu } from './DeckMenu'
 import type { Crumb } from './sidebar/usePageCrumbs'
 import { DeckTitle } from './DeckTitle'
-import { Seg } from './LookPanel'
+import { Seg, SEG_TRACK } from './Seg'
 import { ShareMenu } from './ShareMenu'
+import { Toggle } from './Toggle'
 
 /** How the stage shows the deck: one slide to work on, every slide to order, or the titles to read the story. */
 export type DeckView = 'slide' | 'grid' | 'story'
@@ -57,45 +58,21 @@ const views = VIEWS.map(([v, label, Icon]): [DeckView, ReactNode] => [v, (
 export function Bar(p: BarProps) {
   const [renaming, setRenaming] = useState(false)
   return (
-    <header className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-6 border-b border-line pl-3 pr-4 max-[900px]:flex max-[900px]:gap-3 max-[900px]:px-4">
-      <div className="flex min-w-0 items-center gap-3 max-[900px]:flex-1">
-        {/* The layout toggles, together as in Cursor's title bar: each shows whether its panel is open. */}
-        <div className="flex flex-none items-center gap-0.5">
-          <Toggle open={p.decksOpen} onClick={p.onToggleDecks} label={`${p.decksOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-          <Toggle open={p.chatOpen} onClick={p.onToggleChat} label={`${p.chatOpen ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>
-        </div>
-        <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
-          <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); p.onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
-          <span aria-hidden className="text-ink-3">/</span>
-          <Crumbs crumbs={p.crumbs} onOpen={(r) => p.onOpenPage?.(r)} />
-          <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
-          <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages} />
-        </nav>
+    <AppBar sidebarOpen={p.decksOpen} onToggleSidebar={p.onToggleDecks} chat={{ open: p.chatOpen, onToggle: p.onToggleChat }}
+      onSite={p.onSite} crumbs={p.crumbs} onOpenPage={p.onOpenPage}
+      title={<>
+        <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
+        <DeckMenu name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages} />
+      </>}
+      center={<div data-tour="views" className="max-[900px]:hidden">{p.view && <Seg label="View" value={p.view} onChange={p.onView} options={views} className={SEG_TRACK} />}</div>}>
+      <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
+        <Toggle open={p.lookOpen} onClick={p.onLook} label="Look"><Palette className="size-[17px]" strokeWidth={1.75} /></Toggle>
+        {p.hasSlides && p.onVersions && <Toggle open={p.versionsOpen} onClick={p.onVersions} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>}
       </div>
-      <div data-tour="views" className="max-[900px]:hidden">
-        {p.view && <Seg label="View" value={p.view} onChange={p.onView} options={views}
-          className="flex rounded-[9px] border border-line bg-panel p-[3px]" />}
-      </div>
-      <div className="flex items-center justify-end gap-2.5 max-[900px]:gap-2">
-        <div className="flex flex-none items-center gap-0.5 max-[900px]:hidden">
-          <Toggle open={p.lookOpen} onClick={p.onLook} label="Look"><Palette className="size-[17px]" strokeWidth={1.75} /></Toggle>
-          {p.hasSlides && p.onVersions && <Toggle open={p.versionsOpen} onClick={p.onVersions} label="Versions"><History className="size-[17px]" strokeWidth={1.75} /></Toggle>}
-        </div>
-        {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
-        {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} onPdf={p.onPdf} /></div>}
-        {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
-        <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
-      </div>
-    </header>
-  )
-}
-
-/** A panel's toggle: pressed while its panel is open. */
-export function Toggle({ open, onClick, label, keys, children }: { open: boolean; onClick: () => void; label: string; keys?: string; children: ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} aria-label={label} aria-pressed={open} title={keys ? `${label} (${keys})` : label}
-      className="grid size-8 cursor-pointer place-items-center rounded-lg text-ink-3 transition-colors hover:bg-panel hover:text-ink aria-pressed:bg-panel aria-pressed:text-ink">
-      {children}
-    </button>
+      {!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
+      {p.hasSlides && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} onPdf={p.onPdf} /></div>}
+      {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
+      <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
+    </AppBar>
   )
 }

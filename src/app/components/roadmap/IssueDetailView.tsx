@@ -71,7 +71,7 @@ export function IssueDetailView({ issue, roadmap, fields, issues, members, detai
     </>
   )
 
-  if (!page) return <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-10 pt-4">{main}</div>
+  if (!page) return <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-10 pt-1">{main}</div>
 
   return (
     <div className="flex min-h-0 flex-1">

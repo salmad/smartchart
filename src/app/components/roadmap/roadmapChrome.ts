@@ -1,12 +1,4 @@
-/* Roadmap chrome in the app's own dialect: the deck's view switch (Seg) and the Share / Download menu surface.
-   Popover, accent and muted all resolve to raise, so a menu marks its highlighted row panel. */
-
-/** The deck bar's view switch track, passed to Seg. */
-export const segTrack = 'flex rounded-[9px] border border-line bg-panel p-[3px]'
-
-/** Every roadmap popover. Callers add width and padding. */
-export const menuSurface =
-  'rounded-[14px] border-line-2 bg-raise shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]'
+/* Roadmap menus in the app's own dialect. The menu surface itself is the primitives' (components/ui). */
 
 /** On a Command inside a menu: the search rule is a hairline (a bare border here falls back to the text colour), the
     highlighted item steps to panel, group headings are quiet labels. */

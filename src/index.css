@@ -12,14 +12,21 @@
   html, body, #root { height: 100%; }
   /* Site tokens (tailwind.config: paper, type, rule…), as RGB channels. Paper is the default everywhere;
      .site[data-look="ink"] swaps them for the brand board's palette. */
+  /* The brand, once, as RGB channels: three warm blacks, three creams and the gold. The app's chrome (tailwind.config)
+     and the site's Ink look below both read these; nothing else in the app writes one of these colours out. */
+  :root {
+    --brand-black: 11 10 9; --brand-black-2: 19 17 15; --brand-black-3: 24 22 19;
+    --brand-cream: 243 238 228; --brand-cream-2: 163 155 142; --brand-cream-3: 122 115 104;
+    --brand-gold: 232 185 74;
+  }
   :root {
     --site-paper: 245 245 243; --site-paper-2: 236 236 232; --site-card: 255 255 255; --site-type: 18 18 17;
     --site-type-2: 92 91 87; --site-type-3: 138 137 132; --site-rule: 225 224 219; --site-focus: 18 18 17; --site-night: 11 10 9;
     --site-shadow: 18 18 17;
   }
   .site[data-look="ink"] {
-    --site-paper: 11 10 9; --site-paper-2: 24 22 19; --site-card: 19 17 15; --site-type: 243 238 228;
-    --site-type-2: 207 200 187; --site-type-3: 163 155 142; --site-rule: 42 38 33; --site-focus: 232 185 74; --site-night: 19 17 15;
+    --site-paper: var(--brand-black); --site-paper-2: var(--brand-black-3); --site-card: var(--brand-black-2); --site-type: var(--brand-cream);
+    --site-type-2: 207 200 187; --site-type-3: var(--brand-cream-2); --site-rule: 42 38 33; --site-focus: var(--brand-gold); --site-night: var(--brand-black-2);
     --site-shadow: 0 0 0; color-scheme: dark;
   }
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -66,6 +73,12 @@
   .edge-fade { --fs: 0px; --fe: 0px; mask-image: linear-gradient(to right, transparent, #000 var(--fs), #000 calc(100% - var(--fe)), transparent); }
   .edge-fade[data-more-start] { --fs: 40px; }
   .edge-fade[data-more-end] { --fe: 56px; }
+
+  /* The app's display line: the first words of an empty screen, set as the site sets its headings. Callers add a size. */
+  .app-title { @apply font-display font-medium leading-[1.1] tracking-[-.015em] text-ink [font-stretch:78%] [text-wrap:balance]; }
+
+  /* Arrivals and departures (tailwindcss-animate) are instant for anyone who asked for less motion. */
+  @media (prefers-reduced-motion: reduce) { .animate-in, .animate-out { animation-duration: 1ms !important; } }
 
   .spinner { @apply mr-2 inline-block size-3 animate-spin rounded-full border-[1.5px] border-line-2 border-t-ink align-[-1px]; animation-duration: .8s; }
 

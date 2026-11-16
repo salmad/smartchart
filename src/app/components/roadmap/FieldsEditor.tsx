@@ -8,8 +8,7 @@ import { Input } from '../ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { countFieldUse, countOptionUse, newFieldId, newOptionId } from './fieldCounts'
-import { cn } from '@/app/lib/utils'
-import { MENU_ICON, MENU_ITEM } from '../menu'
+import { MENU_ICON } from '../menu'
 import { FieldOptions } from './FieldOptions'
 
 /** What each type holds, said where the field is made. */
@@ -89,10 +88,10 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-        <DialogContent className="max-h-[min(640px,90vh)] max-w-[520px] gap-0 overflow-hidden rounded-[14px] border-line-2 bg-raise p-0 text-ink" aria-describedby="fields-editor-desc">
+        <DialogContent className="max-h-[min(640px,90vh)] max-w-[520px] overflow-hidden p-0" aria-describedby="fields-editor-desc">
           <div className="px-6 pb-4 pt-6">
-            <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Roadmap settings</DialogTitle>
-            <DialogDescription id="fields-editor-desc" className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Fields are extra columns on every issue. Filter, sort and group by any of them, in the table and the Matrix.</DialogDescription>
+            <DialogTitle>Roadmap settings</DialogTitle>
+            <DialogDescription id="fields-editor-desc">Fields are extra columns on every issue. Filter, sort and group by any of them, in the table and the Matrix.</DialogDescription>
           </div>
           <div className="flex items-center justify-between border-t border-line px-6 pt-4">
             <h3 className="text-[13px] font-medium text-ink">Fields</h3>
@@ -100,9 +99,9 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
               <DropdownMenuTrigger asChild>
                 <Button type="button" variant="outline" size="sm"><Plus className="!size-3.5" strokeWidth={2} aria-hidden />Add field</Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={6} className="w-[300px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
+              <DropdownMenuContent align="end" sideOffset={6} className="w-[300px]">
                 {TYPES.map((t) => (
-                  <DropdownMenuItem key={t.type} className={cn(MENU_ITEM, 'items-start')} aria-label={t.label} aria-description={t.hint} onSelect={() => addField(t.type)}>
+                  <DropdownMenuItem key={t.type} className="items-start" aria-label={t.label} aria-description={t.hint} onSelect={() => addField(t.type)}>
                     <t.icon {...MENU_ICON} className="mt-0.5" aria-hidden />
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="text-ink">{t.label}</span>
@@ -199,9 +198,9 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
         </DialogContent>
       </Dialog>
       <Dialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null) }}>
-        <DialogContent className="max-w-[400px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-          <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Delete “{pending?.name}”?</DialogTitle>
-          <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">
+        <DialogContent className="max-w-[400px]">
+          <DialogTitle>Delete “{pending?.name}”?</DialogTitle>
+          <DialogDescription>
             {pending?.count ?? 0} {pending?.count === 1 ? 'issue uses' : 'issues use'} this {pending?.kind === 'option' ? 'option' : 'field'}. {pending?.count ? 'Their values will be cleared.' : 'No issue values will change.'}
           </DialogDescription>
           <div className="mt-6 flex justify-end gap-2">

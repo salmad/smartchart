@@ -45,7 +45,7 @@ export function MenuSelect<T extends string>({ label, value, options, onChange }
         <SelectTrigger aria-label={label} className="h-7 w-36 gap-2 rounded-md border-line bg-panel px-2 text-[13px] text-ink shadow-none transition-colors hover:border-line-2 focus:ring-line-2">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent align="end" className="max-h-72 rounded-[10px] border-line-2 bg-raise text-ink">
+        <SelectContent align="end" className="max-h-72">
           {options.map((o) => (
             <SelectItem key={o.value} value={o.value} className="rounded-md text-[13px] text-ink-2 focus:bg-panel focus:text-ink">{o.label}</SelectItem>
           ))}

@@ -39,7 +39,7 @@ export function ShareMenu({ target, id, onPdf, docExport }: Props) {
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild><Button variant="outline">Share</Button></PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} aria-label="Share this deck"
-        className="grid w-80 gap-4 rounded-[14px] border-line-2 bg-raise p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_24px_48px_-16px_rgba(0,0,0,.7)]">
+        className="grid w-80 gap-4 p-4">
         <h2 className="text-[14px] font-medium text-ink">{target === 'doc' ? 'Share this doc' : 'Share this deck'}</h2>
         {id && <section className="grid gap-3">
         <p className="-mt-2 text-[12.5px] text-ink-3">{target === 'doc' ? 'Anyone with the link can read it — no sign-in. It always shows the latest version.' : 'Anyone with the link can read it and present it. It always shows the latest version.'}</p>

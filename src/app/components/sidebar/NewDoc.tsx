@@ -26,9 +26,9 @@ export function NewDoc({ open, onCreate, onClose }: Props) {
   const options = [{ id: BLANK, label: 'Blank doc', blurb: 'Just a title. Add sections as you go.' }, ...DOC_STARTERS]
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-[440px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
-        <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">New doc</DialogTitle>
-        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Start blank, or from an example, then make it yours.</DialogDescription>
+      <DialogContent className="max-w-[440px]">
+        <DialogTitle>New doc</DialogTitle>
+        <DialogDescription>Start blank, or from an example, then make it yours.</DialogDescription>
         <div role="radiogroup" aria-label="Start from" className="mt-5 grid gap-1.5">
           {options.map((s) => (
             <label key={s.id} className={cn('grid cursor-pointer gap-0.5 rounded-lg border px-3 py-2.5 transition-colors',

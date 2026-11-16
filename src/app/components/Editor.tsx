@@ -20,6 +20,7 @@ import { ChatPanel } from './ChatPanel'
 import { Checks } from './Checks'
 import { CommentsPanel } from './Comments'
 import { SlideActions } from './SlideActions'
+import { ScreenBody } from './AppBar'
 import { LookPanel } from './LookPanel'
 import { SLIDE_W, Stage, UNDER_SLIDE } from './Stage'
 import { Storyline } from './Storyline'
@@ -122,7 +123,7 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
       <Bar {...bar} decksOpen={bar.decksOpen && !decksAside} onToggleDecks={decksAside ? () => { setSide(null); setPreview(null); setTarget(null); setRing(null) } : bar.onToggleDecks} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live || !healthKnown}
         view={shown || null} onView={setView} lookOpen={side === 'look'} onLook={() => { setPreview(null); setSide(side === 'look' ? null : 'look') }}
         versionsOpen={side === 'versions'} onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
-      <div className="flex h-[calc(100%-56px)] max-[900px]:h-auto max-[900px]:flex-col">
+      <ScreenBody>
         {!decksAside && decks}
         <ChatPanel open={bar.chatOpen} messages={s.messages} offline={healthKnown && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} chips={chips}
           canSend={s.live && !lock} composerBusy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
@@ -139,13 +140,13 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
               <EditMode key={items[current].id} item={items[current]} index={current} deck={deck} deckStyle={s.style} measurer={edit.measurer} save={edit.save} onDone={() => onEdit(null)} />
             </main>
           : shown === 'grid'
-          ? <main data-tour="grid" className="min-h-0 min-w-0 flex-1 overflow-y-auto px-8 py-8 max-[900px]:contents">{strip('grid')}</main>
+          ? <main key="grid" data-tour="grid" className="min-h-0 min-w-0 flex-1 animate-in fade-in-0 overflow-y-auto px-8 py-8 duration-200 max-[900px]:contents">{strip('grid')}</main>
           : shown === 'story'
-          ? <main className="grid min-h-0 min-w-0 flex-1 max-[900px]:contents">
+          ? <main key="story" className="grid min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200 max-[900px]:contents">
               <Storyline items={items} deckStyle={s.style} live={s.live} busy={lock} onOpen={open}
                 onMove={(id, to) => { onMove(id, to); onSelect(to) }} onAsk={(prompt) => onSend(prompt)} onTalk={onTalk} />
             </main>
-          : <main className="flex min-h-0 min-w-0 flex-1 flex-col justify-center max-[900px]:contents">
+          : <main key="slide" className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 flex-col justify-center duration-200 max-[900px]:contents">
               <Stage deck={deck} current={current} onGo={(id) => { const i = items.findIndex((it) => it.id === id); if (i >= 0) onSelect(i) }} pick={side === 'comments' && !lock && items[current] ? { target, ring, onPick: setTarget } : undefined} slideId={items[current]?.id} phase={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null} onPresent={bar.onPresent} />
               {/* Under the slide and as wide as it: how its checks stand, then the deck as a filmstrip. */}
               <section className={`mx-auto flex min-w-0 max-w-[calc(100%-4rem)] flex-col gap-2 pb-5 max-[900px]:contents ${SLIDE_W} ${UNDER_SLIDE}`}>
@@ -168,7 +169,7 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
         <ReviewDeck open={reviewing} onOpenChange={setReviewing} live={s.live} onRebuild={onRebuild} />
         {side === 'look' && <LookPanel deckStyle={s.style} theme={s.theme} accent={s.accent} styleLocked={items.length > 0}
           onStyle={bar.onStyle} onTheme={bar.onTheme} onAccent={bar.onAccent} onClose={() => setSide(null)} />}
-      </div>
+      </ScreenBody>
     </>
   )
 }

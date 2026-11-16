@@ -29,7 +29,6 @@
    figure's right edge, and a frame would cut them; the canvas is opaque, so a wash would show only around it. */
 .fig-edit-box::before { content: ""; position: absolute; top: 0; bottom: 0; left: -8px; width: 2px; border-radius: 1px; background: var(--focus); pointer-events: none; }
 .fig-edit-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-.fig-edit-why { margin-right: auto; font-size: 13px; line-height: 1.4; color: var(--fg); }
 /* The slide's edit marks and controls over an open figure take the page's colours: the selection mark (light on Ink,
    dark on Paper, as on a slide) and the small buttons as page cards. */
 .theme-ink [data-figure-edit] { --mark: 237 237 239; }

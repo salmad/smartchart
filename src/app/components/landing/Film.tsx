@@ -46,7 +46,7 @@ export function Film() {
   }
 
   return (
-    <figure className="relative aspect-video w-full overflow-hidden rounded-[24px] bg-[#0B0A09] shadow-[0_0_0_1px_rgba(243,238,228,.08),0_40px_100px_-40px_rgba(0,0,0,.9)] max-[700px]:rounded-[14px]">
+    <figure className="relative aspect-video w-full overflow-hidden rounded-[24px] bg-stage shadow-[0_0_0_1px_rgba(243,238,228,.08),0_40px_100px_-40px_rgba(0,0,0,.9)] max-[700px]:rounded-[14px]">
       <video ref={ref} poster={`${SRC}-poster.jpg`} preload="none" playsInline crossOrigin="anonymous"
         loop={mode !== 'sound'} controls={mode === 'sound'}
         aria-label="The Occam film: a busy slide, one request, the slide Occam builds and the three reviews it passes"
@@ -60,8 +60,8 @@ export function Film() {
       <button type="button" onClick={withSound} aria-label={`Watch the film from the start, with sound (${LENGTH})`}
         className={cn('group absolute inset-0 flex items-end justify-start p-[3.5%] transition-opacity duration-300 max-[700px]:items-start',
           mode === 'sound' && 'pointer-events-none opacity-0')}>
-        <span className="flex items-center gap-3 rounded-full bg-[#F3EEE4] py-3 pl-4 pr-6 text-[15px] font-medium text-stage shadow-[0_12px_40px_-8px_rgba(0,0,0,.6)] transition-transform duration-300 group-hover:scale-[1.04] group-focus-visible:scale-[1.04] max-[700px]:bg-transparent max-[700px]:p-0 max-[700px]:shadow-none">
-          <span className="grid size-9 place-items-center rounded-full bg-[#E8B94A] text-stage shadow-[0_8px_24px_-6px_rgba(0,0,0,.6)]">
+        <span className="flex items-center gap-3 rounded-full bg-ink py-3 pl-4 pr-6 text-[15px] font-medium text-stage shadow-[0_12px_40px_-8px_rgba(0,0,0,.6)] transition-transform duration-300 group-hover:scale-[1.04] group-focus-visible:scale-[1.04] max-[700px]:bg-transparent max-[700px]:p-0 max-[700px]:shadow-none">
+          <span className="grid size-9 place-items-center rounded-full bg-gold text-stage shadow-[0_8px_24px_-6px_rgba(0,0,0,.6)]">
             {mode === 'poster'
               ? <Play className="size-4 translate-x-px fill-current" strokeWidth={0} aria-hidden />
               : <Volume2 className="size-4" strokeWidth={2.25} aria-hidden />}

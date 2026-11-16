@@ -29,7 +29,7 @@ export function Chat({ messages, offline, onUndo, busy, fresh }: Props) {
   return (
     <div ref={thread} className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:px-4">
       {/* A new deck: the question the first message answers. The composer's placeholder says how. */}
-      {!messages.length && fresh && <h2 className="text-[17px] font-medium tracking-[-.01em] text-ink">What should this slide say?</h2>}
+      {!messages.length && fresh && <h2 className="app-title text-[24px]">What should this slide say?</h2>}
       {messages.map((m, k) => <Bubble key={k} m={m} onUndo={onUndo} busy={busy} />)}
       {offline && <p className="text-[13px] text-ink-2">{OFFLINE}</p>}
     </div>
@@ -39,7 +39,7 @@ export function Chat({ messages, offline, onUndo, busy, fresh }: Props) {
 function Bubble({ m, onUndo, busy }: { m: Message; onUndo: Props['onUndo']; busy: boolean }) {
   if (m.kind === 'user') {
     return (
-      <div className="flex max-w-[88%] flex-col items-end gap-1.5 self-end">
+      <div className="flex max-w-[88%] flex-col items-end gap-1.5 self-end animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out-strong">
         {m.files?.map((f, k) => <FileChip key={k} name={f.name} about={f.about} />)}
         {m.text && <div className="whitespace-pre-wrap rounded-[12px_12px_4px_12px] border border-line bg-raise px-[13px] py-2.5">{m.text}</div>}
       </div>
@@ -48,7 +48,7 @@ function Bubble({ m, onUndo, busy }: { m: Message; onUndo: Props['onUndo']; busy
   // Traces (which model did what, and how long it took) are for debugging, not for the person writing a deck.
   const working = m.kind === 'bot' && !m.text && m.sub === WORKING, trace = config.debug ? m.trace ?? [] : []
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out-strong">
       {m.text.split(/\n{2,}/).filter((p) => p.trim()).map((p, k) => <p key={k} className={cn('whitespace-pre-line', m.kind === 'error' ? 'text-bad' : 'text-ink')}>{p.trim()}</p>)}
       {m.sub && !(working && trace.length) && (working || config.debug || m.trace === undefined) && <p className="flex items-center gap-2 text-[13px] text-ink-2">{working && <Glint />}{working ? <Thinking lines={phaseLinesOf(m.trace)} /> : m.sub}</p>}
       {trace.length > 0 && <Trace trace={trace} pending={working} />}

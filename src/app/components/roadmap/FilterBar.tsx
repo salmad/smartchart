@@ -4,14 +4,13 @@ import type { Chip, ViewSettings } from '@/engine/roadmaps/view'
 import type { FieldDef, MemberLite } from '@/engine/roadmaps/types'
 import { liveChips } from '@/engine/roadmaps/view'
 import { cn } from '@/app/lib/utils'
-import { Toggle } from '../Bar'
+import { Toggle } from '../Toggle'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { DisplayMenu, groupByLabel } from './DisplayMenu'
 import { FilterAddMenu } from './FilterAddMenu'
 import { FilterChip } from './FilterChip'
 import { GanttControls } from './GanttControls'
 import { ToolButton } from './ToolButton'
-import { menuSurface } from './roadmapChrome'
 
 type ViewChange = ViewSettings | ((prev: ViewSettings) => ViewSettings)
 
@@ -50,7 +49,7 @@ export function FilterBar({ fields, members, today, view, issueCount, onChange, 
             <PopoverContent
               align="start"
               sideOffset={8}
-              className={cn('w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden p-0', menuSurface)}
+              className={cn('w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden p-0')}
               aria-label="Add a filter"
             >
               <FilterAddMenu

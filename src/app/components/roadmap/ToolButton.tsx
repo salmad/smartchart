@@ -7,9 +7,8 @@ import { Button, type ButtonProps } from '../ui/button'
 export const ToolButton = forwardRef<HTMLButtonElement, ButtonProps>(({ className, ...props }, ref) => (
   <Button
     ref={ref}
-    variant="ghost"
-    size="sm"
-    className={cn('h-8 gap-1.5 rounded-lg px-2.5 text-[13px] font-normal text-ink-3 hover:bg-panel hover:text-ink data-[state=open]:bg-panel data-[state=open]:text-ink [&_svg]:size-[15px]', className)}
+    variant="quiet"
+    className={cn('gap-1.5 px-2.5 [&_svg]:size-[15px]', className)}
     {...props}
   />
 ))
