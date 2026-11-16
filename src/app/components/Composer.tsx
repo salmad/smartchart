@@ -22,6 +22,8 @@ interface Props {
   start?: { style: Style; onStyle: (s: Style) => void }
   /** At the centre of an empty deck: a card of its own, rather than the foot of the agent's panel. */
   hero?: boolean
+  /** The send button's word where "Send" undersells it ("Draft it" on an empty doc). */
+  action?: string
 }
 
 const STYLES: [Style, string, string][] = [
@@ -35,7 +37,7 @@ type Pending = { id: number; name: string } & ({ state: 'reading' } | { state: '
 /** Prompt box with suggestion pills; in a new deck, the style and example prompts instead. Files dropped on it, or
     picked with the paperclip, go with the message. It refuses an empty message and a send while a turn runs or a
     file is still being read: sendTurn does not check. */
-export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint, start, hero = false }: Props) {
+export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint, start, hero = false, action }: Props) {
   const [text, setText] = useState(''), [files, setFiles] = useState<Pending[]>([]), [over, setOver] = useState(false)
   const picker = useRef<HTMLInputElement>(null), nextId = useRef(0)
   const ready = files.flatMap((f) => (f.state === 'ready' ? [f.file] : []))
@@ -132,7 +134,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint
           </TooltipTrigger>
           <TooltipContent>Attach a PDF, Word, Excel, CSV or text file</TooltipContent>
         </Tooltip>
-        <Button type="submit" disabled={!canSubmit}>{start ? (ready.length > 1 ? 'Make slides' : 'Make a slide') : 'Send'}</Button>
+        <Button type="submit" disabled={!canSubmit}>{start ? (ready.length > 1 ? 'Make slides' : 'Make a slide') : action ?? 'Send'}</Button>
       </div>
     </form>
   )

@@ -16,6 +16,9 @@ import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
 import { AppBar, ScreenBody } from './AppBar'
 import { ChatPanel } from './ChatPanel'
+import { Composer } from './Composer'
+import { EmptyDoc } from './docs/EmptyDoc'
+import { phaseLinesOf } from '@/app/phase'
 import { chipsForDoc, refreshDocPills } from '@/app/docPills'
 import { sendDocTurn } from '@/app/doc-turn'
 import type { Pill } from '@/engine/agent/suggest'
@@ -219,7 +222,12 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   // The right slot: a panel open takes the agent's place, closing it brings the agent back; the agent's toggle (and ⌘L)
   // while a panel is up goes back to the agent.
   const panelShown = (!editing && side === 'look' && canEdit) || (!editing && side === 'versions') || ((side === 'comments' || side === 'checks') && !!parsed)
-  const chatShown = chatOpen && !panelShown
+  const sendChat = (text: string) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }
+  // A doc with nothing in it opens on its start screen; until something is asked, the prompt box is there, not in the
+  // agent's panel (one prompt box on the page).
+  const blank = !!parsed && !parsed.blocks.length && !preview && !editing
+  const asking = blank && !messages.length
+  const chatShown = chatOpen && !panelShown && !asking
   const toAgent = () => { setSide(null); setPreview(null); setTarget(null); setRing(null); checks.reset(); if (!chatOpen) onToggleChat() }
   useEffect(() => {
     if (!panelShown) return
@@ -230,7 +238,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
 
   const header = (bar: ReactNode) => (
-    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatShown, onToggle: panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
+    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={asking ? undefined : { open: chatShown, onToggle: panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
       title={<span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>}>
       {bar}
       <AccountMenu account={account} />
@@ -247,10 +255,10 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         {state === 'failed' && <p className="px-8 py-10 text-[13.5px] text-ink-2">Couldn’t open the doc. Reload to try again.</p>}
         {content}
       </main>
-      <ChatPanel about="doc" open={chatShown} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
+      {!asking && <ChatPanel about="doc" open={chatShown} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
         chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
-        onSend={(text) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }}
-        onClear={() => { setMessages([]); historyRef.current = [] }} />
+        onSend={sendChat}
+        onClear={() => { setMessages([]); historyRef.current = [] }} />}
       {!editing && side === 'look' && canEdit && <LookPanel noun="doc" theme={look.theme} accent={look.accent}
         onTheme={look.onTheme} onAccent={look.onAccent} onClose={() => setSide(null)} />}
       {!editing && side === 'versions' && <VersionsPanel list={() => docs.versions(id)} describe={(v, before) => describeDocDiff(before?.tree ?? null, v.tree)} noun="doc"
@@ -292,7 +300,12 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
             html: () => { if (page.current) exportDocHtml(record.name, page.current) },
             pdf: () => setPrinting(true),
           } : undefined} /> : null} />)}
-      {body(<><div ref={page} data-doc-print-root />{record && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}</>)}
+      {body(<>
+        {blank && <EmptyDoc onWrite={canEdit ? () => { if (record) startEditing() } : undefined} working={chatBusy ? phaseLinesOf(messages.at(-1)?.trace) : null}
+          composer={asking && canEdit ? <Composer hero chips={chips} canSend={modelsLive && !offline && !chatBusy} busy={chatBusy} onSend={sendChat} onClear={() => {}} canClear={false} action="Draft it"
+            hint={offline ? 'The models are not reachable right now. You can still write it yourself.' : 'What is this doc for? Paste what backs it up…'} /> : undefined} />}
+        <div ref={page} data-doc-print-root className={blank ? 'hidden' : undefined} />{record && !blank && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}
+      </>)}
       {printing && record && <PrintDoc name={fileName(record.name)} onDone={() => setPrinting(false)} />}
     </>
   )

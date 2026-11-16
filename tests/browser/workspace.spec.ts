@@ -29,6 +29,11 @@ test('a new doc can be blank: it is the default, lists as Untitled doc and opens
   await dialog.getByRole('button', { name: 'Create doc' }).click()
   await expect(page).toHaveURL(/\/doc\/doc_[\w-]+$/)
   await expect(rows(page)).toHaveText(['Alpha', 'Beta', 'Untitled doc'])
+  // It opens on its start screen: the prompt at the centre (the agent's panel waits for it), or write it yourself.
+  await expect(page.getByRole('heading', { name: 'Write the doc that gets the decision.' })).toBeVisible()
+  await expect(page.getByRole('complementary', { name: 'Chat' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Or write it yourself' }).click()
+  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
 })
 
 test('a new doc from a starter lists in the tree and opens in the read view', async ({ page }) => {
