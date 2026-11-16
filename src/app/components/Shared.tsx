@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadShared, type Shared, type SharedDeck } from '@/app/share'
 import { SharedDocView } from './SharedDoc'
+import { Play } from 'lucide-react'
 import { Button } from './ui/button'
 import { newLiveKey, openPresentation, usePublishDeck } from '@/app/presenter-channel'
 import { PrintDeck } from './PrintDeck'
 import { PrintDoc } from './PrintDoc'
-import { DocExportMenu } from './DocExportMenu'
-import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
+import { DownloadMenu, deckDownloads, docDownloads } from './Downloads'
 import { fileName } from '@/app/download'
 import { pdfName } from '../pdf-name'
 import { ReadSlides, type ReadSlidesHandle } from './ReadSlides'
@@ -66,11 +66,7 @@ export function Shared({ token }: { token: string }) {
           <a href="/home" className="whitespace-nowrap text-[13px] font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
           <span aria-hidden className="text-[13px] text-ink-3">/</span>
           <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{shared.name}</h1>
-          <DocExportMenu
-            onMarkdown={() => exportDocMarkdown(shared.name, shared.text)}
-            onHtml={() => { if (docRoot.current) exportDocHtml(shared.name, docRoot.current) }}
-            onPdf={() => setDocPrinting(true)}
-          />
+          <DownloadMenu what="doc" downloads={docDownloads(shared.name, shared.text, () => docRoot.current, () => setDocPrinting(true))} />
         </header>
         <SharedDocView shared={shared} onReady={(root) => { docRoot.current = root }} />
         <footer data-shared-chrome className="flex-none border-t border-line py-6 text-center text-[12.5px] text-ink-3">
@@ -89,8 +85,8 @@ export function Shared({ token }: { token: string }) {
         <a href="/home" className="whitespace-nowrap text-[13px] font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
         <span aria-hidden className="text-[13px] text-ink-3">/</span>
         <h1 className="min-w-0 flex-1 truncate text-[13px] text-ink-2">{load.shared.name}</h1>
-        {deck.slides.length > 0 && <Button variant="outline" onClick={() => setPrinting(true)} title="Download PDF (⌘P)">PDF</Button>}
-        {deck.slides.length > 0 && <Button onClick={() => present(0)} title="Present in its own tab. In it, P opens the presenter view.">Present</Button>}
+        {deck.slides.length > 0 && <DownloadMenu what="deck" downloads={deckDownloads(() => setPrinting(true))} />}
+        {deck.slides.length > 0 && <Button onClick={() => present(0)} title="Present in its own tab. In it, P opens the presenter view."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present</Button>}
       </header>
       <ReadSlides ref={slides} deck={deck} ids={load.shared.ids} onPresent={present} />
       {printing && <PrintDeck deck={deck} name={pdfName(load.shared.name)} onDone={() => setPrinting(false)} />}

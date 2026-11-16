@@ -1,7 +1,7 @@
 /* The doc's controls in the bar: who else is editing, Look and Versions while reading, the comments toggle, Edit while reading (editors and owners
    only), and while editing the stale-save notice, Discard and Save. */
 import { useState, type ReactNode } from 'react'
-import { CircleCheck, ClipboardCheck } from 'lucide-react'
+import { CircleCheck, ClipboardCheck, Pencil } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover'
 import { cn } from '@/app/lib/utils'
@@ -46,7 +46,7 @@ export function ReadBar({ canEdit, onEdit, checks, comments, share }: { canEdit:
         <CommentsToggle open={comments.open} count={comments.count} onClick={comments.onToggle} />
       </div>
       <BarDivider />
-      {canEdit && <Button variant="outline" onClick={onEdit}>Edit</Button>}
+      {canEdit && <Button variant="outline" onClick={onEdit}><Pencil aria-hidden className="!size-3.5" strokeWidth={1.75} />Edit</Button>}
       {share}
     </div>
   )

@@ -1,9 +1,10 @@
-/* Share, in a deck's or doc's bar: a link anyone can open to read it (a deck: and present it), made on request and
-   stopped in one click. Downloads are in the page's ⋯ menu. */
+/* Share, in a deck's or doc's bar: everything that sends the page out. A link anyone can open to read it (a deck: and
+   present it), made on request and stopped in one click; then a copy to download. The ⋯ menu offers the same copies. */
 import { useState } from 'react'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, Share } from 'lucide-react'
 import { shareDeck, shareDoc, shareUrl } from '@/app/share'
 import { Button } from './ui/button'
+import { DownloadList, type PageDownload } from './Downloads'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
 type Link = { state: 'loading' } | { state: 'off' } | { state: 'on'; token: string } | { state: 'error'; why: string }
@@ -12,11 +13,11 @@ interface Props {
   /** What the link opens. */
   target: 'deck' | 'doc'
   id: string
-  /** The bar's main button (a doc's, which has no Present). */
-  primary?: boolean
+  /** The copies it can be sent as. */
+  downloads: PageDownload[]
 }
 
-export function ShareMenu({ target, id, primary = false }: Props) {
+export function ShareMenu({ target, id, downloads }: Props) {
   const [open, setOpen] = useState(false), [link, setLink] = useState<Link>({ state: 'loading' }), [copied, setCopied] = useState(false)
   const [working, setWorking] = useState(false)
 
@@ -37,8 +38,8 @@ export function ShareMenu({ target, id, primary = false }: Props) {
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild><Button variant={primary ? 'default' : 'outline'}>Share</Button></PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} aria-label="Share this deck"
+      <PopoverTrigger asChild><Button variant="outline"><Share aria-hidden className="!size-3.5" strokeWidth={1.75} />Share</Button></PopoverTrigger>
+      <PopoverContent align="end" sideOffset={8} aria-label={target === 'doc' ? 'Share this doc' : 'Share this deck'}
         className="grid w-80 gap-4 p-4">
         <h2 className="text-[14px] font-medium text-ink">{target === 'doc' ? 'Share this doc' : 'Share this deck'}</h2>
         <section className="grid gap-3">
@@ -64,6 +65,12 @@ export function ShareMenu({ target, id, primary = false }: Props) {
           <Button disabled={link.state === 'loading' || working} onClick={() => void run(true)} className="justify-self-start">Create link</Button>
         )}
         </section>
+        {downloads.length > 0 && (
+          <section className="grid gap-2 border-t border-line pt-3">
+            <h3 className="text-[12.5px] text-ink-3">Send a copy</h3>
+            <div className="-mx-2"><DownloadList downloads={downloads} onPicked={() => setOpen(false)} /></div>
+          </section>
+        )}
       </PopoverContent>
     </Popover>
   )

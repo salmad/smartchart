@@ -9,8 +9,8 @@ import {
 } from './ui/dropdown-menu'
 import { DeleteDeck } from './DeleteDeck'
 import { MENU_ICON } from './menu'
+import type { PageDownload } from './Downloads'
 
-export interface PageDownload { label: string; run: () => void }
 
 interface Props {
   noun: 'deck' | 'doc'
@@ -67,7 +67,7 @@ export function PageMenu({ noun, name, busy, onRename, onVersions, writing, down
             <DropdownMenuSub>
               <DropdownMenuSubTrigger><Download {...MENU_ICON} />Download</DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="min-w-[160px]">
-                {downloads.map((d) => <DropdownMenuItem key={d.label} onSelect={d.run}>{d.label}</DropdownMenuItem>)}
+                {downloads.map((d) => <DropdownMenuItem key={d.label} onSelect={d.run}><d.icon {...MENU_ICON} />{d.label}</DropdownMenuItem>)}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           )}

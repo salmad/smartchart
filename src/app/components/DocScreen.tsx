@@ -35,8 +35,8 @@ import { Presence, ReadBar } from './docs/DocBar'
 import { useDocChecks } from './docs/useDocChecks'
 import { countText } from './docs/useDocProposals'
 import { ShareMenu } from './ShareMenu'
+import { docDownloads } from './Downloads'
 import { PrintDoc } from './PrintDoc'
-import { exportDocHtml, exportDocMarkdown } from '@/app/doc-export'
 import { fileName } from '@/app/download'
 import type { PageRef } from '@/engine/pages/tree'
 import type { Crumb } from './sidebar/usePageCrumbs'
@@ -257,16 +257,13 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const toggleVersions = () => { setSide((s) => (s === 'versions' ? null : 'versions')); setPreview(null) }
   const [source, setSource] = useState(false)
 
+  const downloads = (r: { name: string; text: string }) => docDownloads(r.name, r.text, () => page.current, () => setPrinting(true))
   const header = (bar: ReactNode) => (
     <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatShown, onToggle: quiet ? draft : panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
       title={<>
         <span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>
         {record && !editing && <PageMenu noun="doc" name={record.name} busy={false} onVersions={toggleVersions} onSource={() => setSource(true)}
-          downloads={[
-            { label: 'Markdown', run: () => exportDocMarkdown(record.name, record.text) },
-            { label: 'HTML', run: () => { if (page.current) exportDocHtml(record.name, page.current) } },
-            { label: 'PDF', run: () => setPrinting(true) },
-          ]} />}
+          downloads={downloads(record)} />}
       </>}
       badge={!editing && <Presence names={live.others} />}>
       {bar}
@@ -320,7 +317,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     <>
       {/* The bar stays while the next doc is read, so its buttons do not blink; Edit waits for the doc. */}
       {header(state !== 'missing' && state !== 'failed' && <ReadBar canEdit={canEdit && !preview} onEdit={() => { if (record) startEditing() }} checks={checking} comments={commenting}
-        share={shareId ? <ShareMenu target="doc" id={shareId} primary /> : null} />)}
+        share={shareId ? <ShareMenu target="doc" id={shareId} downloads={record ? downloads(record) : []} /> : null} />)}
       {record && <SourceDialog title="Doc source" text={record.text} open={source} onOpenChange={setSource} />}
       {body(<>
         {invite && bodyEl && createPortal(<EmptyDoc onWrite={canEdit ? () => { if (record) startEditing() } : undefined} onDraft={canEdit && modelsLive && !offline ? draft : undefined}

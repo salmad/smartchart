@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { LayoutGrid, ListOrdered, Play, RectangleHorizontal, type LucideIcon } from 'lucide-react'
+import { LayoutGrid, ListOrdered, Pencil, Play, RectangleHorizontal, type LucideIcon } from 'lucide-react'
 import type { Style } from '@/engine/types'
 import type { Account } from '@/app/auth'
 import { Button } from '@/app/components/ui/button'
@@ -9,6 +9,7 @@ import type { PageRef } from '@/engine/pages/tree'
 import { PageMenu } from './PageMenu'
 import type { Crumb } from './sidebar/usePageCrumbs'
 import { DeckTitle } from './DeckTitle'
+import { deckDownloads } from './Downloads'
 import { Seg, SEG_TRACK } from './Seg'
 import { ShareMenu } from './ShareMenu'
 import { CommentsToggle } from './Toggle'
@@ -75,14 +76,14 @@ export function Bar(p: BarProps) {
         <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />
         <PageMenu noun="deck" name={p.title} busy={p.busy} onRename={() => setRenaming(true)} onDelete={p.onDelete} subpages={p.subpages}
           onVersions={p.hasSlides && p.onVersions ? p.onVersions : undefined} writing={{ value: p.deckStyle, locked: p.hasSlides, onChange: p.onStyle }}
-          downloads={p.hasSlides ? [{ label: 'PDF', run: p.onPdf }] : []} onSource={p.hasSlides ? p.onSource : undefined} />
+          downloads={p.hasSlides ? deckDownloads(p.onPdf) : []} onSource={p.hasSlides ? p.onSource : undefined} />
       </>}
       badge={!p.live && <span className="whitespace-nowrap text-[12.5px] text-ink-3 max-[900px]:hidden">Offline</span>}
       center={<div data-tour="views" className="max-[900px]:hidden">{p.view && <Seg label="View" value={p.view} onChange={p.onView} options={views} className={SEG_TRACK} />}</div>}>
       {p.comments && <CommentsToggle tour="comments" keys="C" open={p.comments.open} count={p.comments.count} onClick={p.comments.onToggle} />}
       <BarDivider />
-      {p.onEdit && <Button variant="outline" onClick={p.onEdit} disabled={p.busy} title="Edit this slide (E)">Edit</Button>}
-      {p.hasSlides && p.shareId && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} /></div>}
+      {p.onEdit && <Button variant="outline" onClick={p.onEdit} disabled={p.busy} title="Edit this slide (E)"><Pencil aria-hidden className="!size-3.5" strokeWidth={1.75} />Edit</Button>}
+      {p.hasSlides && p.shareId && <div data-tour="share" className="max-[900px]:hidden"><ShareMenu key={p.shareId ?? 'here'} target={p.shareTarget ?? 'deck'} id={p.shareId} downloads={deckDownloads(p.onPdf)} /></div>}
       {p.hasSlides && <Button onClick={p.onPresent} title="Present in its own tab, so you can keep editing here. In it, P opens the presenter view: the next slide, your speaker notes and a timer."><Play aria-hidden className="!size-3.5" strokeWidth={2} />Present <kbd className="max-[900px]:hidden">F</kbd></Button>}
       <AccountMenu account={p.account} onTour={p.onTour} onReview={p.onReview} />
     </AppBar>
