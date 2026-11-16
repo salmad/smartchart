@@ -21,19 +21,24 @@ interface Frame {
   axis: Axis
 }
 
-/** A group row's span: the earliest start and latest due of the rows under it. */
-export function groupMark(live: Issue[], rows: TableRow[], at: number): Mark {
+/** A group row's span: the earliest start and latest due of the issues in it, shown or folded away. */
+export function groupMark(live: Issue[], row: Extract<TableRow, { kind: 'group' }>): Mark {
   let start: string | null = null
   let due: string | null = null
-  for (let i = at + 1; i < rows.length; i++) {
-    const r = rows[i]
-    if (r.kind === 'group') break
-    const span = dateSpan(live, r.issue.id)
+  for (const id of row.tops) {
+    const span = dateSpan(live, id)
     if (span.start !== null && (start === null || span.start < start)) start = span.start
     if (span.due !== null && (due === null || span.due > due)) due = span.due
   }
   if (start === null || due === null) return { kind: 'none' }
   return { kind: 'bracket', start, due, own: false, alert: false, overdue: false, label: null }
+}
+
+/** A parent under a group spans only that group's part of its work. */
+export function partMark(mark: Mark, row: Extract<TableRow, { kind: 'issue' }>): Mark {
+  if (!row.part || mark.kind !== 'bracket') return mark
+  const { start, due } = row.part
+  return start === null || due === null ? { kind: 'none' } : { ...mark, start, due }
 }
 
 function weekendXs(range: Range, px: number): number[] {

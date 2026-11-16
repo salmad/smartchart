@@ -105,12 +105,13 @@ function daySpan(row: ReturnType<typeof issue>): number {
 function baseView(): ViewSettings {
   return {
     chips: [],
-    groupBy: null,
+    groupBy: [],
+    folded: [],
     sort: 'order',
     columns: ['status'],
     collapsed: [],
     layout: 'table',
     scale: 'month',
-    matrix: { expanded: [], rowField: null, cols: [], pins: [], show: { progress: true, dates: true, assignee: false } },
+    matrix: { expanded: [], foldedCols: [], cols: [], pins: [], show: { progress: true, dates: true, assignee: false } },
   }
 }

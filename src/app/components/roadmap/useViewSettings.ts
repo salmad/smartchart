@@ -1,29 +1,45 @@
 import { useCallback, useEffect, useState } from 'react'
-import { DEFAULT_MATRIX, DEFAULT_VIEW, type ViewSettings } from '@/engine/roadmaps/view'
+import { DEFAULT_MATRIX, DEFAULT_VIEW, type GroupKey, type MatrixSettings, type ViewSettings } from '@/engine/roadmaps/view'
 
 const storeKey = (id: string) => `roadmap-view:${id}`
 
-function mergeView(raw: Partial<ViewSettings>): ViewSettings {
+/** A view saved before grouping was shared: one `groupBy` object for the list and Gantt, `matrix.rows` and
+    `matrix.folded` for the matrix. The matrix's rows win when it had them; they were the deeper grouping. */
+interface SavedView extends Omit<Partial<ViewSettings>, 'groupBy' | 'matrix'> {
+  groupBy?: GroupKey[] | GroupKey | null
+  matrix?: Partial<MatrixSettings> & { rows?: string[]; folded?: string[] }
+}
+
+function mergeGroupBy(raw: SavedView): GroupKey[] {
+  if (Array.isArray(raw.groupBy)) return raw.groupBy
+  const rows = raw.matrix?.rows
+  if (rows?.length) return rows.map((field) => ({ on: 'field', field }))
+  return raw.groupBy ? [raw.groupBy] : []
+}
+
+function mergeView(raw: SavedView): ViewSettings {
   const layout =
     raw.layout === 'gantt' || raw.layout === 'matrix' || raw.layout === 'checks' ? raw.layout : DEFAULT_VIEW.layout
-  const matrixRaw = raw.matrix
+  const { rows: _rows, folded: oldFolded, ...matrixRaw } = raw.matrix ?? {}
   return {
     ...DEFAULT_VIEW,
     ...raw,
     chips: raw.chips ?? DEFAULT_VIEW.chips,
     columns: raw.columns?.length ? raw.columns : DEFAULT_VIEW.columns,
     collapsed: raw.collapsed ?? DEFAULT_VIEW.collapsed,
-    groupBy: raw.groupBy ?? null,
+    groupBy: mergeGroupBy(raw),
+    folded: raw.folded ?? oldFolded ?? DEFAULT_VIEW.folded,
     sort: raw.sort ?? DEFAULT_VIEW.sort,
     layout,
     scale: raw.scale ?? DEFAULT_VIEW.scale,
     matrix: {
       ...DEFAULT_MATRIX,
       ...matrixRaw,
-      rowField: matrixRaw?.rowField ?? DEFAULT_MATRIX.rowField,
-      cols: matrixRaw?.cols ?? DEFAULT_MATRIX.cols,
-      pins: matrixRaw?.pins ?? DEFAULT_MATRIX.pins,
-      show: { ...DEFAULT_MATRIX.show, ...matrixRaw?.show },
+      cols: matrixRaw.cols ?? DEFAULT_MATRIX.cols,
+      pins: matrixRaw.pins ?? DEFAULT_MATRIX.pins,
+      expanded: matrixRaw.expanded ?? DEFAULT_MATRIX.expanded,
+      foldedCols: matrixRaw.foldedCols ?? DEFAULT_MATRIX.foldedCols,
+      show: { ...DEFAULT_MATRIX.show, ...matrixRaw.show },
     },
   }
 }
@@ -40,7 +56,7 @@ export function decodeView(raw: string | null): ViewSettings | null {
     let b64 = raw.replace(/-/g, '+').replace(/\//g, '_')
     while (b64.length % 4) b64 += '='
     const json = decodeURIComponent(escape(atob(b64)))
-    return mergeView(JSON.parse(json) as Partial<ViewSettings>)
+    return mergeView(JSON.parse(json) as SavedView)
   } catch {
     return null
   }

@@ -27,13 +27,20 @@ test('adds a choice field from Fields and shows it in the table header', async (
   await page.getByRole('menuitem', { name: 'Choice' }).click()
   await fields.getByLabel('Field name').fill('Country')
   await fields.getByLabel('Field name').blur()
-  await fields.getByLabel('Emoji for Option').fill('🇬🇧')
   await fields.getByLabel('Option name').fill('UK')
   await fields.getByLabel('Option name').blur()
+  // A mark is picked from the grid, or typed at its foot: two letters work too.
+  await fields.getByRole('button', { name: 'Add a mark for UK' }).click()
+  await page.getByRole('dialog', { name: 'Mark for UK' }).getByRole('button', { name: '🇬🇧' }).click()
+  await expect(fields.getByRole('button', { name: 'Mark for UK: 🇬🇧. Change' })).toBeVisible()
   await fields.getByRole('button', { name: 'Add option' }).click()
   await fields.getByLabel('Option name').nth(1).fill('France')
   await fields.getByLabel('Option name').nth(1).blur()
-  await fields.getByLabel('Emoji for France').fill('🇫🇷')
+  await fields.getByRole('button', { name: 'Add a mark for France' }).click()
+  await page.getByRole('dialog', { name: 'Mark for France' }).getByLabel('Type a mark').fill('fr')
+  await page.keyboard.press('Enter')
+  await expect(fields.getByRole('button', { name: 'Mark for France: FR. Change' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Mark for France' })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible({ timeout: 10_000 })
   await page.getByRole('button', { name: 'Roadmap settings' }).click()
@@ -59,16 +66,25 @@ test('table nesting, filters, grouping and saved view', async ({ page }) => {
   await expect(page.locator('tr', { hasText: 'UK launch' })).toHaveClass(/opacity-45/)
   await page.getByRole('button', { name: 'Remove Status is Blocked' }).click()
 
-  await addStatusFilter(page, 'Done', false)
-  await expect(page.getByRole('button', { name: 'Remove Status is not Done' })).toBeVisible()
+  // Several values in one filter, then the chip edited in place: tick another.
+  await addStatusFilter(page, 'Blocked')
+  await page.getByRole('button', { name: 'Change Status is Blocked' }).click()
+  await page.getByRole('option', { name: 'Done', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Remove Status is Blocked, Done' })).toBeVisible()
+  await expect(page.getByText('Shipped piece')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Remove Status is Blocked, Done' }).click()
+
+  await addStatusFilter(page, 'To do', 'In progress', 'Blocked')
+  await expect(page.getByRole('button', { name: 'Remove Status is To do, In progress, Blocked' })).toBeVisible()
   await expect(page.getByText('Shipped piece')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Remove Status is not Done' }).click()
+  await page.getByRole('button', { name: 'Remove Status is To do, In progress, Blocked' }).click()
   await expect(page.getByText('Shipped piece')).toBeVisible()
 
   await page.getByRole('button', { name: 'Collapse UK launch' }).click()
   await expect(page.getByText('Shipped piece')).toHaveCount(0)
 
-  await addStatusFilter(page, 'Done', false)
+  await addStatusFilter(page, 'To do', 'In progress', 'Blocked')
 
   await page.getByRole('button', { name: 'Display' }).click()
   await page.getByLabel('Display settings').getByRole('combobox', { name: 'Group by' }).click()
@@ -76,11 +92,11 @@ test('table nesting, filters, grouping and saved view', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(page.locator('span.font-medium', { hasText: /^UK$/ })).toBeVisible()
   await expect(page.locator('span.font-medium', { hasText: /^France$/ })).toBeVisible()
-  await expect(page.getByText('Group by', { exact: false }).filter({ hasText: 'Country' }).first()).toBeVisible()
+  await expect(page.getByText('Grouped by', { exact: false }).filter({ hasText: 'Country' }).first()).toBeVisible()
 
   await page.reload()
-  await expect(page.getByRole('button', { name: 'Remove Status is not Done' })).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByText(/Group by.*Country/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Remove Status is To do, In progress, Blocked' })).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText(/Grouped by.*Country/)).toBeVisible()
 })
 
 async function seedParentWithChildren(page: import('@playwright/test').Page) {

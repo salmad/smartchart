@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { CalendarDays, CircleDot, GripVertical, Hash, Plus, Trash2, Type, User, type LucideIcon } from 'lucide-react'
+import { CircleDot, GripVertical, Plus, Trash2, type LucideIcon } from 'lucide-react'
+import { FIELD_TYPE_ICON } from './FieldIcon'
 import { checkFieldDefs } from '@/engine/roadmaps/fields'
 import type { FieldDef, FieldType, Issue } from '@/engine/roadmaps/types'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
@@ -13,11 +14,11 @@ import { FieldOptions } from './FieldOptions'
 
 /** What each type holds, said where the field is made. */
 const TYPES: { type: FieldType; label: string; icon: LucideIcon; hint: string }[] = [
-  { type: 'choice', label: 'Choice', icon: CircleDot, hint: 'A fixed list, like Country. Best for grouping and for the Matrix: its options keep their order.' },
-  { type: 'text', label: 'Text', icon: Type, hint: 'Free text, like a note or a link.' },
-  { type: 'number', label: 'Number', icon: Hash, hint: 'A figure, like a budget.' },
-  { type: 'date', label: 'Date', icon: CalendarDays, hint: 'A day, like a review date.' },
-  { type: 'person', label: 'Person', icon: User, hint: 'Someone in the workspace, like a sponsor.' },
+  { type: 'choice', label: 'Choice', icon: FIELD_TYPE_ICON.choice, hint: 'A fixed list, like Country. Best for grouping and for the Matrix: its options keep their order.' },
+  { type: 'text', label: 'Text', icon: FIELD_TYPE_ICON.text, hint: 'Free text, like a note or a link.' },
+  { type: 'number', label: 'Number', icon: FIELD_TYPE_ICON.number, hint: 'A figure, like a budget.' },
+  { type: 'date', label: 'Date', icon: FIELD_TYPE_ICON.date, hint: 'A day, like a review date.' },
+  { type: 'person', label: 'Person', icon: FIELD_TYPE_ICON.person, hint: 'Someone in the workspace, like a sponsor.' },
 ]
 
 type Pending =
@@ -91,7 +92,7 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
         <DialogContent className="max-h-[min(640px,90vh)] max-w-[520px] overflow-hidden p-0" aria-describedby="fields-editor-desc">
           <div className="px-6 pb-4 pt-6">
             <DialogTitle>Roadmap settings</DialogTitle>
-            <DialogDescription id="fields-editor-desc">Fields are extra columns on every issue. Filter, sort and group by any of them, in the table and the Matrix.</DialogDescription>
+            <DialogDescription id="fields-editor-desc">Fields are extra columns on every issue. Filter, sort and group by any of them, in every view.</DialogDescription>
           </div>
           <div className="flex items-center justify-between border-t border-line px-6 pt-4">
             <h3 className="text-[13px] font-medium text-ink">Fields</h3>
@@ -172,6 +173,7 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                       {f.type === 'choice' && f.options && (
                         <FieldOptions
                           fieldId={f.id}
+                          fieldName={f.name}
                           options={f.options}
                           onPatch={(options) => patchField(f.id, { options })}
                           onDelete={(optionId, name) => setPending({ kind: 'option', fieldId: f.id, optionId, name, count: countOptionUse(issues, f.id, optionId) })}

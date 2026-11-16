@@ -1,4 +1,5 @@
 import type { FieldDef, FieldValue, MemberLite } from '@/engine/roadmaps/types'
+import { OptionMark } from '../OptionMark'
 import { cn } from '@/app/lib/utils'
 import { Input } from '../../ui/input'
 import { CellButton } from './CellButton'
@@ -53,14 +54,14 @@ export function FieldCell({ field, value, members, disabled, placeholder, onPick
     <CellMenu
       label={`Choose ${field.name}`}
       listLabel={field.name}
-      options={(field.options ?? []).map((o) => ({ id: o.id, name: o.name, icon: o.emoji ? <span aria-hidden>{o.emoji}</span> : undefined }))}
+      options={(field.options ?? []).map((o) => ({ id: o.id, name: o.name, icon: o.emoji ? <OptionMark mark={o.emoji} /> : undefined }))}
       value={text || null}
       none="Clear"
       disabled={disabled}
       onPick={onPick}
     >
       <CellButton empty={!shown} placeholder={placeholder} title={shown || undefined} aria-label={shown ? `${field.name}: ${chosen?.emoji ? `${chosen.emoji} ` : ''}${shown}` : field.name} className="text-ink-2">
-        {chosen?.emoji && <span aria-hidden>{chosen.emoji}</span>}
+        <OptionMark mark={chosen?.emoji} />
         <span className="truncate">{shown}</span>
       </CellButton>
     </CellMenu>

@@ -9,7 +9,7 @@ import { StatusCell } from './cells/StatusCell'
 import { PersonCell } from './cells/PersonCell'
 import { DateCell } from './cells/DateCell'
 import { FieldCell } from './cells/FieldCell'
-import { GroupLabel } from './GroupLabel'
+import { GroupHeader } from './GroupLabel'
 import { ProgressBar } from './ProgressBar'
 import { StatusGlyph } from './StatusGlyph'
 import { Checkbox } from '../ui/checkbox'
@@ -59,22 +59,26 @@ interface ColProps {
 
 interface GroupProps {
   row: Extract<TableRow, { kind: 'group' }>
-  label: string
   colCount: number
   person?: boolean
+  onToggle: (key: string, all: boolean) => void
 }
 
-const groupCell = 'sticky top-[35px] z-10 h-9 border-b border-hair bg-panel p-0 text-[12px]'
+/** Group headers stay under the column head while their rows scroll; an inner level stays under its outer one. */
+const groupCell = 'sticky z-10 h-9 border-b border-hair bg-panel p-0'
+const groupTop = ['top-[35px]', 'top-[71px]']
 
-export function IssueGroupRow({ row, label, colCount, person }: GroupProps) {
+/** A group's header: the fold, its name and count, its progress. The whole row folds it. */
+export function IssueGroupRow({ row, colCount, person, onToggle }: GroupProps) {
+  const cell = cn(groupCell, groupTop[row.depth] ?? groupTop[0])
   return (
-    <tr>
-      <td colSpan={colCount - 1} className={groupCell}>
-        <div className="sticky left-0 flex w-fit items-center gap-2 whitespace-nowrap pl-9 pr-3">
-          <GroupLabel label={label} count={row.count} person={person} empty={row.key === ''} />
+    <tr className="cursor-default" onClick={(e) => onToggle(row.key, e.altKey)}>
+      <td colSpan={colCount - 1} className={cell}>
+        <div className="sticky left-0 flex w-fit items-center whitespace-nowrap pl-3 pr-3">
+          <GroupHeader label={row.label} count={row.count} person={person} empty={row.empty} open={row.open} depth={row.depth} onToggle={(all) => onToggle(row.key, all)} />
         </div>
       </td>
-      <ProgressCell value={row.progress} className={groupCell} />
+      <ProgressCell value={row.progress} className={cell} />
     </tr>
   )
 }
@@ -144,15 +148,16 @@ export function IssueDataRow({
 }: RowProps) {
   const { issue, depth, dim, hasChildren, open } = row
   const late = !!issue.due && issue.due < today && issue.status !== 'done' && issue.status !== 'cancelled'
-  const span = hasChildren ? dateSpan(allIssues, issue.id) : null
+  // Under a group a parent shows only that group's part of its work.
+  const span = hasChildren ? row.part ?? dateSpan(allIssues, issue.id) : null
   const patch = (props: IssueProps) => { act({ op: 'set', ids: [issue.id], props }) }
 
   /** A parent with no date of its own shows the span of its sub-issues, as the Gantt draws it: derived, so not editable. */
   const dateCell = (side: 'start' | 'due'): ReactNode => {
-    const rolled = issue[side] === null ? span?.[side] : null
+    const rolled = issue[side] === null || row.part ? span?.[side] : null
     if (rolled) {
       return (
-        <span className="px-1.5 tabular-nums text-ink-3" title={`${side === 'start' ? 'Earliest start' : 'Latest due date'} of its sub-issues`}>
+        <span className="px-1.5 tabular-nums text-ink-3" title={`${side === 'start' ? 'Earliest start' : 'Latest due date'} of its sub-issues${row.part ? ' in this group' : ''}`}>
           {shortDate(rolled, today)}
         </span>
       )
@@ -203,7 +208,7 @@ export function IssueDataRow({
               />
             )}
           </span>
-          <Indent depth={depth} />
+          <Indent depth={depth + (row.inset ?? 0)} />
           {hasChildren ? (
             <button
               type="button"
@@ -239,7 +244,7 @@ export function IssueDataRow({
           </td>
         )
       })}
-      <ProgressCell value={hasChildren ? progress(allIssues, issue.id) : null} />
+      <ProgressCell value={hasChildren ? (row.part ? row.part.progress : progress(allIssues, issue.id)) : null} />
     </tr>
   )
 }

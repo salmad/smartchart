@@ -1,5 +1,6 @@
 // The roadmaps API: open a roadmap, stream changes, write ops, issue bodies and comments, and page-tree moves.
 import type { UserFrom } from './auth.js'
+import { markOf } from '../../src/engine/roadmaps/emoji.js'
 import { MAX_COMMENT, newCommentId } from '../../src/engine/comments.js'
 import { parseDoc } from '../../src/engine/docs/parse.js'
 import { serializeDoc } from '../../src/engine/docs/serialize.js'
@@ -27,8 +28,9 @@ const FIELD_TYPES = new Set<FieldType>(['choice', 'text', 'number', 'date', 'per
 function fieldOption(v: unknown): FieldOption | null {
   const o = v && typeof v === 'object' ? v as { id?: unknown; name?: unknown; emoji?: unknown } : null
   if (!o || typeof o.id !== 'string' || !ID.test(o.id) || typeof o.name !== 'string' || !o.name.trim()) return null
-  const emoji = typeof o.emoji === 'string' ? o.emoji : undefined
-  return { id: o.id, name: o.name.trim().slice(0, 200), ...(emoji ? { emoji: emoji.slice(0, 8) } : {}) }
+  // A mark is one emoji or up to two letters; the app only sends those, so anything else is left off.
+  const emoji = typeof o.emoji === 'string' ? markOf(o.emoji) : null
+  return { id: o.id, name: o.name.trim().slice(0, 200), ...(emoji ? { emoji } : {}) }
 }
 
 function fieldDef(v: unknown): FieldDef | null {

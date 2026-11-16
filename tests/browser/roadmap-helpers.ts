@@ -3,17 +3,17 @@ import { signInAsDev } from './dev-account'
 
 export const EMPTY = 'Plan the work. See when it lands.'
 
-/** Progressive filter: property → operator → value. */
-export async function addStatusFilter(
-  page: import('@playwright/test').Page,
-  statusName: string,
-  is = true,
-) {
+/** Filter on Status: the property, then tick each value; the menu stays open until it is closed. */
+export async function addStatusFilter(page: import('@playwright/test').Page, ...statusNames: string[]) {
   await page.getByRole('button', { name: 'Filter' }).click()
   const panel = page.getByLabel('Add a filter')
   await panel.getByRole('option', { name: 'Status' }).click()
-  await panel.getByRole('option', { name: is ? 'Is' : 'Is not', exact: true }).click()
-  await panel.getByRole('option', { name: statusName, exact: true }).click()
+  for (const name of statusNames) {
+    await panel.getByRole('option', { name, exact: true }).click()
+    await expect(panel.getByRole('option', { name, exact: true })).toHaveAttribute('aria-checked', 'true')
+  }
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
 }
 export const ROADMAPS_KEY = 'smartchart.roadmaps.v1'
 

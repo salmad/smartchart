@@ -4,7 +4,3 @@
     highlighted item steps to panel, group headings are quiet labels. */
 export const menuCommand =
   'bg-transparent [&_[cmdk-input-wrapper]]:border-line [&_[cmdk-item]]:rounded-md [&_[cmdk-item]]:transition-colors [&_[cmdk-item][data-selected=true]]:bg-panel [&_[cmdk-item][data-selected=true]]:text-ink [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-normal [&_[cmdk-group-heading]]:text-ink-3'
-
-/** A pickable row inside a menu (sort, group, matrix fields). */
-export const menuRow =
-  'rounded-md px-2 py-1.5 text-left text-[13px] text-ink-2 outline-none transition-colors hover:bg-panel hover:text-ink focus-visible:bg-panel focus-visible:text-ink aria-pressed:text-ink'

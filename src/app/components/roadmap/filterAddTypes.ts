@@ -15,7 +15,7 @@ export type FilterStep =
 
 export const FILTER_ITEM_CLASS = 'text-[13px] text-ink-2'
 
-export const FILTER_COMMAND_CLASS = `rounded-none ${menuCommand}`
+export const FILTER_COMMAND_CLASS = `rounded-none outline-none ${menuCommand}`
 
 export function filterPropertyLabel(p: FilterProperty): string {
   switch (p.kind) {

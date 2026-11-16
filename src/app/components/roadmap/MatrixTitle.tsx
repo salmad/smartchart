@@ -1,28 +1,26 @@
-import { ChevronRight } from 'lucide-react'
 import type { Roadmap } from '@/engine/roadmaps/types'
 import type { MatrixRow } from '@/engine/roadmaps/matrix'
 import { keyOf } from '@/engine/roadmaps/fields'
 import { cn } from '@/app/lib/utils'
 import { Button } from '../ui/button'
-import { GroupLabel } from './GroupLabel'
+import { Fold, GroupHeader } from './GroupLabel'
 
 interface Props {
   row: MatrixRow
   roadmap: Roadmap
   onToggle: (id: string) => void
+  onToggleGroup: (key: string, all: boolean) => void
   onOpenIssue: (id: string) => void
 }
 
 /** The first column, pinned left: its width is set here and on the corner header. */
-export const TITLE_COL = 'sticky left-0 w-[280px] min-w-[280px] max-w-[280px] border-b border-r border-hair border-r-line text-left'
+export const TITLE_COL = 'sticky left-0 w-[280px] min-w-[280px] max-w-[280px] border-b border-r border-hair text-left'
 
-export function MatrixTitleCell({ row, roadmap, onToggle, onOpenIssue }: Props) {
+export function MatrixTitleCell({ row, roadmap, onToggle, onToggleGroup, onOpenIssue }: Props) {
   if (row.kind === 'group') {
     return (
-      <th scope="row" className={cn(TITLE_COL, 'z-[1] h-10 bg-panel px-3 text-[12px] font-normal')}>
-        <span className="flex items-center gap-2">
-          <GroupLabel label={row.label} count={row.count} empty={row.key === ''} />
-        </span>
+      <th scope="row" className={cn(TITLE_COL, 'z-[1] h-10 cursor-default bg-panel pl-2 pr-3 font-normal')} onClick={(e) => onToggleGroup(row.key, e.altKey)}>
+        <GroupHeader label={row.label} count={row.count} empty={row.empty} open={row.open} depth={row.depth} onToggle={(all) => onToggleGroup(row.key, all)} />
       </th>
     )
   }
@@ -35,16 +33,7 @@ export function MatrixTitleCell({ row, roadmap, onToggle, onOpenIssue }: Props) 
           <span key={i} className="w-4 shrink-0" aria-hidden />
         ))}
         {hasChildren ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="size-5 shrink-0 rounded-md p-0 text-ink-3 hover:bg-panel"
-            aria-expanded={open}
-            aria-label={open ? `Collapse ${issue.title}` : `Expand ${issue.title}`}
-            onClick={() => onToggle(issue.id)}
-          >
-            <ChevronRight className={cn('!size-3.5 transition-transform duration-150 ease-out', open && 'rotate-90')} strokeWidth={2} />
-          </Button>
+          <Fold open={open} label={issue.title} onToggle={() => onToggle(issue.id)} />
         ) : (
           <span className="w-5 shrink-0" aria-hidden />
         )}
@@ -63,8 +52,4 @@ export function MatrixTitleCell({ row, roadmap, onToggle, onOpenIssue }: Props) 
       </span>
     </th>
   )
-}
-
-export function matrixRowKey(row: MatrixRow): string {
-  return row.kind === 'group' ? `group:${row.key}` : row.issue.id
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { OptionMark } from './OptionMark'
 import type { FieldDef, FieldValue, Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
 import type { IssueProps, RoadmapOp } from '@/engine/roadmaps/ops'
 import { canParent, dateSpan, issueTree, progress } from '@/engine/roadmaps/tree'
@@ -77,14 +78,14 @@ function FieldValueRow({ field, value, members, canEdit, onPick }: { field: Fiel
     return (
       <PropertyPick
         label={chosen ? `${field.name}: ${chosen.name}` : field.name}
-        options={(field.options ?? []).map((o) => ({ id: o.id, label: o.name, icon: o.emoji ? <span aria-hidden>{o.emoji}</span> : undefined }))}
+        options={(field.options ?? []).map((o) => ({ id: o.id, label: o.name, icon: o.emoji ? <OptionMark mark={o.emoji} /> : undefined }))}
         value={chosen?.id ?? null}
         clear="None"
         disabled={!canEdit}
         onPick={onPick}
       >
         {chosen
-          ? <>{chosen.emoji && <span aria-hidden>{chosen.emoji}</span>}<span className="truncate">{chosen.name}</span></>
+          ? <><OptionMark mark={chosen.emoji} /><span className="truncate">{chosen.name}</span></>
           : canEdit && <Placeholder>Empty</Placeholder>}
       </PropertyPick>
     )

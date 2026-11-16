@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_VIEW,
   liveChips,
+  liveGroupBy,
+  toggleFolded,
   tableRows,
   type Chip,
   type ViewSettings,
@@ -35,18 +37,14 @@ describe('roadmap view', () => {
     ])
   })
 
-  it('groups children under the parent top-most group value', () => {
+  it('places a parent under every group its work reaches, each time with only that part', () => {
     const issues = [
       issue({ id: 'root', parentId: null, fields: { f1: 'uk' }, sortKey: 'a' }),
       issue({ id: 'kid', parentId: 'root', fields: { f1: 'us' }, sortKey: 'a', title: 'Child' }),
     ]
     const s = state({ fields: [country, { id: 'f2', name: 'US', type: 'choice', options: [{ id: 'us', name: 'US' }] }] }, issues)
-    const rows = tableRows(s, view({ groupBy: { on: 'field', field: 'f1' } }), today)
-    const groups = rows.filter((r) => r.kind === 'group')
-    expect(groups).toHaveLength(1)
-    expect(groups[0].label).toBe('UK')
-    const under = rows.slice(rows.indexOf(groups[0]))
-    expect(under.filter((r) => r.kind === 'issue').map((r) => r.issue.id)).toEqual(['root', 'kid'])
+    const rows = tableRows(s, view({ groupBy: [{ on: 'field', field: 'f1' }] }), today)
+    expect(rows.map((r) => (r.kind === 'group' ? r.label : r.issue.id))).toEqual(['UK', 'root', 'us', 'root', 'kid'])
   })
 
   it('treats is-not empty as issues with a field value set', () => {
@@ -152,11 +150,11 @@ describe('roadmap view', () => {
       issue({ id: 'c', status: 'in_progress', sortKey: 'c' }),
     ]
     const s = state({}, issues)
-    const rows = tableRows(s, view({ groupBy: { on: 'status' } }), today)
-    const todo = rows.find((r) => r.kind === 'group' && r.key === 'todo')
+    const rows = tableRows(s, view({ groupBy: [{ on: 'status' }] }), today)
+    const todo = rows.find((r) => r.kind === 'group' && r.key === 'status=todo')
     expect(todo).toMatchObject({ kind: 'group', count: 1 })
     expect(todo && todo.kind === 'group' ? todo.progress : null).toBe(0)
-    const done = rows.find((r) => r.kind === 'group' && r.key === 'done')
+    const done = rows.find((r) => r.kind === 'group' && r.key === 'status=done')
     expect(done).toMatchObject({ kind: 'group', count: 1, progress: 1 })
   })
   it('groups by assignee under the person\'s name, in name order, with Unassigned last', () => {
@@ -168,7 +166,7 @@ describe('roadmap view', () => {
     const s = state({}, issues)
     const names = new Map([['u_zed', 'Amy Zhou'], ['u_amy', 'Zoe Adams']])
     const labels = (m?: ReadonlyMap<string, string>) =>
-      tableRows(s, view({ groupBy: { on: 'assignee' } }), today, m).flatMap((r) => (r.kind === 'group' ? [r.label] : []))
+      tableRows(s, view({ groupBy: [{ on: 'assignee' }] }), today, m).flatMap((r) => (r.kind === 'group' ? [r.label] : []))
     expect(labels(names)).toEqual(['Amy Zhou', 'Zoe Adams', 'Unassigned'])
     expect(labels()).toEqual(['u_amy', 'u_zed', 'Unassigned'])
   })
@@ -182,9 +180,64 @@ describe('roadmap view', () => {
       issue({ id: 'b', sortKey: 'b', fields: { n: 2, p: 'u2' } }),
     ]
     const s = state({ fields }, issues)
-    const labels = (groupBy: ViewSettings['groupBy']) =>
-      tableRows(s, view({ groupBy }), today, new Map([['u1', 'Zoe'], ['u2', 'Amy']])).flatMap((r) => (r.kind === 'group' ? [r.label] : []))
+    const labels = (level: ViewSettings['groupBy'][number]) =>
+      tableRows(s, view({ groupBy: [level] }), today, new Map([['u1', 'Zoe'], ['u2', 'Amy']])).flatMap((r) => (r.kind === 'group' ? [r.label] : []))
     expect(labels({ on: 'field', field: 'n' })).toEqual(['2', '10'])
     expect(labels({ on: 'field', field: 'p' })).toEqual(['Amy', 'Zoe'])
+  })
+
+  describe('shared grouping', () => {
+    const ws = { id: 'ws', name: 'Workstream', type: 'choice' as const, options: [{ id: 'risk', name: 'Risk' }, { id: 'ops', name: 'Operations' }] }
+    const issues = [
+      issue({ id: 'a', sortKey: 'a', fields: { ws: 'risk', f1: 'uk' }, start: '2027-01-01', due: '2027-02-01' }),
+      issue({ id: 'b', sortKey: 'b', fields: { ws: 'risk', f1: 'fr' }, start: '2027-03-01', due: '2027-05-01' }),
+      issue({ id: 'c', sortKey: 'c', fields: { ws: 'ops', f1: 'uk' } }),
+      issue({ id: 'a1', parentId: 'a', sortKey: 'a', fields: {} }),
+    ]
+    const s = state({ fields: [country, ws] }, issues)
+    const two: ViewSettings['groupBy'] = [{ on: 'field', field: 'ws' }, { on: 'field', field: 'f1' }]
+
+    it('groups on two levels, in the field’s own order, keyed by their path', () => {
+      const rows = tableRows(s, view({ groupBy: two }), today)
+      expect(rows.map((r) => (r.kind === 'group' ? `${r.depth}:${r.key}` : r.issue.id))).toEqual([
+        '0:ws=risk', '1:ws=risk/f1=uk', 'a', 'a1', '1:ws=risk/f1=fr', 'b', '0:ws=ops', '1:ws=ops/f1=uk', 'c',
+      ])
+    })
+
+    it('a folded group keeps its header, count and span and hides what is inside', () => {
+      const rows = tableRows(s, view({ groupBy: two, folded: ['ws=risk'] }), today)
+      const risk = rows.find((r) => r.kind === 'group' && r.key === 'ws=risk')
+      expect(risk?.kind === 'group' && [risk.open, risk.count, risk.tops]).toEqual([false, 3, ['a1', 'b']])
+      expect(rows.some((r) => r.kind === 'issue' && r.issue.id === 'a')).toBe(false)
+      expect(rows.some((r) => r.kind === 'group' && r.key === 'ws=risk/f1=uk')).toBe(false)
+      const inner = tableRows(s, view({ groupBy: two, folded: ['ws=risk/f1=uk'] }), today)
+      expect(inner.some((r) => r.kind === 'issue' && r.issue.id === 'a')).toBe(false)
+      expect(inner.some((r) => r.kind === 'issue' && r.issue.id === 'b')).toBe(true)
+    })
+
+    it('toggleFolded folds one group, or every group at its level with all', () => {
+      expect(toggleFolded([], 'ws=risk', ['ws=risk', 'ws=ops'], false)).toEqual(['ws=risk'])
+      expect(toggleFolded([], 'ws=risk', ['ws=risk', 'ws=ops'], true)).toEqual(['ws=risk', 'ws=ops'])
+      expect(toggleFolded(['ws=risk', 'ws=ops', 'x'], 'ws=ops', ['ws=risk', 'ws=ops'], true)).toEqual(['x'])
+    })
+
+    it('a parent under a group carries that group’s key, dates and progress', () => {
+      const c2 = { ...country, options: [{ id: 'uk', name: 'UK' }, { id: 'fr', name: 'France' }] }
+      const kids = [
+        issue({ id: 'p', sortKey: 'a' }),
+        issue({ id: 'p-uk', parentId: 'p', sortKey: 'a', status: 'done', fields: { f1: 'uk' }, start: '2027-01-01', due: '2027-03-01' }),
+        issue({ id: 'p-fr', parentId: 'p', sortKey: 'b', fields: { f1: 'fr' }, start: '2027-04-01', due: '2027-09-01' }),
+      ]
+      const rows = tableRows(state({ fields: [c2] }, kids), view({ groupBy: [{ on: 'field', field: 'f1' }] }), today)
+      const parents = rows.flatMap((r) => (r.kind === 'issue' && r.issue.id === 'p' ? [r] : []))
+      expect(parents.map((r) => [r.key, r.part])).toEqual([
+        ['f1=uk/p', { start: '2027-01-01', due: '2027-03-01', progress: 1 }],
+        ['f1=fr/p', { start: '2027-04-01', due: '2027-09-01', progress: 0 }],
+      ])
+    })
+
+    it('a deleted field drops out of the grouping', () => {
+      expect(liveGroupBy([country], two)).toEqual([{ on: 'field', field: 'f1' }])
+    })
   })
 })

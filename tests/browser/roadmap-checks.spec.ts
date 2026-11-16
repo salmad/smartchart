@@ -64,7 +64,7 @@ test('checks tab, count, row opens filtered table', async ({ page }) => {
 
   const overdue = page.getByRole('button', { name: 'Overdue, 1 issues' })
   await overdue.click()
-  await expect(nav.getByRole('button', { name: 'Table' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(nav.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('Late task')).toBeVisible()
   await expect(page.getByText('Clean task')).toBeHidden()
   await expect(page.getByRole('button', { name: 'Overdue' })).toBeVisible()

@@ -34,8 +34,8 @@ function isDescendantOf(idx: ReturnType<typeof buildIndex>, id: string, ancestor
   return false
 }
 
-/** Leaf pool under ids. An id inside another id in the set is skipped. */
-export function progressUnder(issues: Issue[], ids: string[]): number | null {
+/** The counted leaves under ids (Cancelled left out). An id inside another id in the set is skipped. */
+function leafPool(issues: Issue[], ids: string[]): Issue[] {
   const idx = buildIndex(issues)
   const pool: Issue[] = []
   for (const id of ids) {
@@ -43,10 +43,31 @@ export function progressUnder(issues: Issue[], ids: string[]): number | null {
     if (ids.some((other) => other !== id && isDescendantOf(idx, id, other))) continue
     pool.push(...leavesUnder(idx, id))
   }
-  const leaves = pool.filter((i) => i.status !== 'cancelled')
+  return pool.filter((i) => i.status !== 'cancelled')
+}
+
+export function progressUnder(issues: Issue[], ids: string[]): number | null {
+  const leaves = leafPool(issues, ids)
   if (!leaves.length) return null
   const sum = leaves.reduce((n, i) => n + score(i.status), 0)
   return sum / leaves.length
+}
+
+/** How the leaves under ids split by status: done, in progress, blocked, and the rest still open. */
+export interface StatusMix {
+  done: number
+  in_progress: number
+  blocked: number
+  open: number
+}
+
+export function statusMix(issues: Issue[], ids: string[]): StatusMix {
+  const mix: StatusMix = { done: 0, in_progress: 0, blocked: 0, open: 0 }
+  for (const leaf of leafPool(issues, ids)) {
+    if (leaf.status === 'done' || leaf.status === 'in_progress' || leaf.status === 'blocked') mix[leaf.status]++
+    else mix.open++
+  }
+  return mix
 }
 
 const dateMemo = new WeakMap<Issue[], Map<string, { start: string | null; due: string | null }>>()

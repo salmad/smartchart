@@ -1,4 +1,5 @@
 import { forwardRef, type ReactNode } from 'react'
+import { OptionMark } from './OptionMark'
 import { Copy, Trash2, X } from 'lucide-react'
 import type { FieldDef, MemberLite, Status } from '@/engine/roadmaps/types'
 import { STATUS_LABEL, STATUSES } from '@/engine/roadmaps/types'
@@ -82,7 +83,7 @@ export function BulkBar({ count, fields, members, onStatus, onAssignee, onField,
                   <DropdownMenuItem className={cn(item, 'text-ink-2')} onSelect={() => onField(f.id, null)}>Clear</DropdownMenuItem>
                   {(f.options ?? []).map((o) => (
                     <DropdownMenuItem key={o.id} className={item} onSelect={() => onField(f.id, o.id)}>
-                      {o.emoji && <span aria-hidden>{o.emoji}</span>}
+                      <OptionMark mark={o.emoji} />
                       {o.name}
                     </DropdownMenuItem>
                   ))}

@@ -18,7 +18,8 @@ import { Matrix } from './Matrix'
 import { Checks } from './Checks'
 import { useViewSettings } from './useViewSettings'
 import { runChecks, type CheckId } from '@/engine/roadmaps/checks'
-import { liveChips } from '@/engine/roadmaps/view'
+import { liveChips, matchesChips } from '@/engine/roadmaps/view'
+import { buildIndex } from '@/engine/roadmaps/index'
 import { IssuePanel } from './IssuePanel'
 import { EmptyRoadmap } from './EmptyRoadmap'
 import { IssuePage } from './IssuePage'
@@ -60,6 +61,13 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   // The matrix needs its setup (which fields are the axes) before any issue exists; an empty Gantt is a blank grid, so
   // it shows the empty state, and New issue there opens its own row to type in.
   const showMain = showTable || isChecks || isMatrix
+
+  const matchCount = useMemo(() => {
+    const chips = liveChips(customFields, viewSettings.chips)
+    if (!chips.length) return undefined
+    const idx = buildIndex(live)
+    return live.filter((i) => matchesChips(i, chips, today, idx)).length
+  }, [customFields, live, today, viewSettings.chips])
 
   const checkReport = useMemo(() => {
     const chips = liveChips(customFields, viewSettings.chips)
@@ -175,6 +183,7 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
                 today={today}
                 view={viewSettings}
                 issueCount={live.length}
+                matchCount={matchCount}
                 onChange={setViewSettings}
                 onToday={() => setTodayRequest((n) => n + 1)}
                 settings={canEdit ? { open: fieldsOpen, onOpen: () => setFieldsOpen(true) } : undefined}

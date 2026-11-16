@@ -21,7 +21,7 @@ test('switches to Gantt and keeps it after reload', async ({ page }) => {
   await expect(nav.getByRole('button', { name: 'Gantt' })).toHaveAttribute('aria-pressed', 'true')
   await expect(scale.getByRole('button', { name: 'Quarter' })).toHaveAttribute('aria-pressed', 'true')
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   await expect(page.getByRole('columnheader', { name: 'Title' })).toBeVisible()
 })
 
@@ -72,7 +72,7 @@ test('draws bars, a bracket, a milestone and alert labels', async ({ page }) => 
   await expect(lane('i_done')).toHaveCount(0)
   await expect(lane('i_blk')).toHaveCount(0)
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   await expect(page.getByText('Shipped piece')).toHaveCount(0)
 
   await nav.getByRole('button', { name: 'Gantt' }).click()
@@ -156,7 +156,7 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
 
   await dragOnLane(page, 'i_fr_b', 60)
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   const row = page.locator('tr', { hasText: 'France task B' })
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-11' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-20' })).toBeVisible()
@@ -164,7 +164,7 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
   await nav.getByRole('button', { name: 'Gantt' }).click()
   await dragOnLane(page, 'i_fr_b', -30, 'right')
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-11' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-15' })).toBeVisible()
 
@@ -195,7 +195,7 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
 
   await dragOnLane(page, 'i_fr_b', 12)
   await expect(lane('i_fr_b')).toContainText('17 Dec')
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-17' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-17' })).toBeVisible()
   await expect(page.getByText(/offline|couldn't be reached|server can't be reached|Couldn’t save/i)).toBeVisible({
@@ -236,7 +236,7 @@ test('drops a dateless issue onto the timeline', async ({ page }) => {
 
   await listRow.dragTo(lane, { targetPosition: dropInLane })
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   const row = page.locator('tr', { hasText: 'France task B' })
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-07' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-20' })).toBeVisible()
@@ -266,7 +266,7 @@ test('clicks a dateless lane to set dates', async ({ page }) => {
   await lane.click({ position: clickInLane })
   await expect(lane).toHaveAttribute('data-mark', 'bar')
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   const row = page.locator('tr', { hasText: 'France task B' })
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-07' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-20' })).toBeVisible()

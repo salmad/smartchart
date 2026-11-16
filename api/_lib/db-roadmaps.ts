@@ -207,7 +207,7 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
       if (!m) return null
       const row = await q<{ body: string; body_rev: number; comments: IssueComment[] }>(
         `select body, body_rev, comments from issues where id = $2 and roadmap_id = $3 and exists (
-          select 1 from roadmaps r where r.id = $3 and ${may('roadmaps', '$1', '$4')})`,
+          select 1 from roadmaps where roadmaps.id = $3 and ${may('roadmaps', '$1', '$4')})`,
         [u, issueId, id, R('read')])
       if (!row[0]) return null
       const evs = await q<{ issue_id: string | null; user_id: string; by_client: string; at: string | Date; what: string; changes: IssueEvent['changes'] }>(

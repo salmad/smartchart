@@ -6,7 +6,7 @@ import {
   type MatrixCell,
 } from '../../src/engine/roadmaps/matrix'
 import { progressUnder } from '../../src/engine/roadmaps/rollup'
-import { DEFAULT_MATRIX, DEFAULT_VIEW, type ViewSettings } from '../../src/engine/roadmaps/view'
+import { DEFAULT_MATRIX, DEFAULT_VIEW, type GroupKey, type ViewSettings } from '../../src/engine/roadmaps/view'
 import type { FieldDef } from '../../src/engine/roadmaps/types'
 import { issue, state } from './roadmap-builders'
 
@@ -108,11 +108,13 @@ function workedIssues() {
   ]
 }
 
+const by = (...ids: string[]): GroupKey[] => ids.map((field) => ({ on: 'field', field }))
+
 function workedView(over: Partial<ViewSettings> = {}): ViewSettings {
   return view({
+    groupBy: by('ws'),
     matrix: {
       ...DEFAULT_MATRIX,
-      rowField: 'ws',
       cols: ['country'],
     },
     ...over,
@@ -120,7 +122,7 @@ function workedView(over: Partial<ViewSettings> = {}): ViewSettings {
 }
 
 function expandedView(expanded: string[], over: Partial<ViewSettings> = {}): ViewSettings {
-  return workedView({ matrix: { ...DEFAULT_MATRIX, rowField: 'ws', cols: ['country'], expanded }, ...over })
+  return workedView({ matrix: { ...DEFAULT_MATRIX, cols: ['country'], expanded }, ...over })
 }
 
 describe('roadmap matrix', () => {
@@ -134,7 +136,6 @@ describe('roadmap matrix', () => {
     const defs = [countryField, workstream]
     const raw = {
       ...DEFAULT_MATRIX,
-      rowField: 'ws',
       cols: ['ws', 'country', 'gone'],
       pins: [
         { fieldId: 'country', optionId: 'sg' },
@@ -142,8 +143,9 @@ describe('roadmap matrix', () => {
         { fieldId: 'gone', optionId: 'x' },
       ],
     }
-    expect(liveMatrix(defs, raw)).toEqual({
+    expect(liveMatrix(defs, { groupBy: by('ws'), matrix: raw })).toEqual({
       ...raw,
+      rows: ['ws'],
       cols: ['country'],
       pins: [{ fieldId: 'country', optionId: 'sg' }],
     })
@@ -161,11 +163,13 @@ describe('roadmap matrix', () => {
     expect(uk).toEqual({ kind: 'one', issueId: 'U-uk' })
     expect(cellIds(uk)).not.toContain('T1')
 
-    const vendors = rows.find((r) => r.kind === 'group' && r.key === 'vendors')
+    const vendors = rows.find((r) => r.kind === 'group' && r.key === 'ws=vendors')
     expect(vendors?.kind).toBe('group')
     if (vendors?.kind === 'group') {
       expect(vendors.cells[0].issueIds).toEqual(['U-uk'])
       expect(vendors.cells[0].progress).toBeCloseTo(0.5)
+      // U-uk's leaves: Send RFP (done) and Chase (blocked).
+      expect(vendors.cells[0].mix).toEqual({ done: 1, in_progress: 0, blocked: 1, open: 0 })
     }
   })
 
@@ -192,15 +196,19 @@ describe('roadmap matrix', () => {
     const issues = [...workedIssues(), issue({ id: 'L', parentId: null, sortKey: 'z', title: 'Loose', fields: { country: 'uk' } })]
     const { rows } = matrixGrid(state({ fields: [workstream, countryField] }, issues), workedView(), today)
     const last = rows.filter((r) => r.kind === 'group').pop()
-    expect(last?.kind === 'group' && [last.key, last.label, last.count]).toEqual(['', 'No workstream', 1])
+    expect(last?.kind === 'group' && [last.key, last.label, last.count]).toEqual(['ws=', 'No workstream', 1])
   })
 
-  it('liveMatrix picks fields when none are set: first groups rows, second makes columns; one field makes columns', () => {
-    expect(liveMatrix([workstream, countryField], DEFAULT_MATRIX)).toMatchObject({ rowField: 'ws', cols: ['country'] })
-    expect(liveMatrix([countryField], DEFAULT_MATRIX)).toMatchObject({ rowField: null, cols: ['country'] })
-    expect(liveMatrix([countryField], { ...DEFAULT_MATRIX, rowField: 'country' })).toMatchObject({ rowField: null, cols: ['country'] })
-    expect(liveMatrix([workstream, countryField], { ...DEFAULT_MATRIX, cols: ['gone'] })).toMatchObject({ rowField: null, cols: ['ws'] })
-    expect(liveMatrix([], DEFAULT_MATRIX)).toMatchObject({ rowField: null, cols: [] })
+  it('liveMatrix takes its rows from the shared grouping and picks a column field when none is set', () => {
+    const at = (groupBy: GroupKey[], matrix = DEFAULT_MATRIX) => ({ groupBy, matrix })
+    // Nothing grouped: the second choice field makes the columns, so the first stays free to group by.
+    expect(liveMatrix([workstream, countryField], at([]))).toMatchObject({ rows: [], cols: ['country'] })
+    expect(liveMatrix([workstream, countryField], at(by('ws')))).toMatchObject({ rows: ['ws'], cols: ['country'] })
+    expect(liveMatrix([countryField], at([]))).toMatchObject({ rows: [], cols: ['country'] })
+    expect(liveMatrix([workstream, countryField], at([], { ...DEFAULT_MATRIX, cols: ['gone'] }))).toMatchObject({ rows: [], cols: ['country'] })
+    // Status and person levels group the list and the Gantt; the matrix leaves them out.
+    expect(liveMatrix([workstream, countryField], at([{ on: 'status' }, ...by('ws')]))).toMatchObject({ rows: ['ws'] })
+    expect(liveMatrix([], at([]))).toMatchObject({ rows: [], cols: [] })
   })
 
   it('puts T1 alone in its UK cell when U is expanded', () => {
@@ -238,7 +246,6 @@ describe('roadmap matrix', () => {
         chips: [{ on: 'status', is: true, values: ['blocked'] }],
         matrix: {
           ...DEFAULT_MATRIX,
-          rowField: 'ws',
           cols: ['country'],
           pins: [{ fieldId: 'country', optionId: 'fr' }],
         },
@@ -285,7 +292,7 @@ describe('roadmap matrix', () => {
       workedView({ chips: [{ on: 'status', is: true, values: ['in_progress'] }] }),
       today,
     )
-    const vendors = grid.rows.find((r) => r.kind === 'group' && r.key === 'vendors')
+    const vendors = grid.rows.find((r) => r.kind === 'group' && r.key === 'ws=vendors')
     expect(vendors?.kind).toBe('group')
     if (vendors?.kind === 'group') {
       expect(vendors.cells[0].issueIds).toEqual(['U-uk'])
@@ -359,7 +366,7 @@ describe('roadmap matrix', () => {
     const issues = workedIssues()
     const s = state({ fields: [workstream, countryField] }, issues)
     const grid = matrixGrid(s, workedView(), today)
-    const vendors = grid.rows.find((r) => r.kind === 'group' && r.key === 'vendors')
+    const vendors = grid.rows.find((r) => r.kind === 'group' && r.key === 'ws=vendors')
     expect(vendors?.kind).toBe('group')
     if (vendors?.kind === 'group') {
       expect(progressUnder(issues, vendors.cells[0].issueIds)).toBeCloseTo(0.5)
@@ -374,7 +381,7 @@ describe('roadmap matrix', () => {
       issue({ id: 'b', number: 2, sortKey: 'b', fields: { owner: 'u1', wave: 2 } }),
       issue({ id: 'c', number: 3, sortKey: 'c', fields: { wave: 2 } }),
     ]
-    const view: ViewSettings = { ...DEFAULT_VIEW, layout: 'matrix', matrix: { ...DEFAULT_MATRIX, rowField: 'owner', cols: ['wave'] } }
+    const view: ViewSettings = { ...DEFAULT_VIEW, layout: 'matrix', groupBy: by('owner'), matrix: { ...DEFAULT_MATRIX, cols: ['wave'] } }
     const grid = matrixGrid(state({ fields: [owner, wave] }, issues), view, today, { names: new Map([['u1', 'Ana'], ['u2', 'Bo']]) })
     expect(grid.cols.map((c) => c.parts[0].name)).toEqual(['2', '10'])
     expect(grid.rows.filter((r) => r.kind === 'group').map((r) => r.kind === 'group' && r.label)).toEqual(['Ana', 'Bo', 'No owner'])
@@ -383,6 +390,66 @@ describe('roadmap matrix', () => {
   })
 
   it('with no choice field, liveMatrix still picks a column field', () => {
-    expect(liveMatrix([{ id: 'note', name: 'Note', type: 'text' }], DEFAULT_MATRIX)).toMatchObject({ rowField: null, cols: ['note'] })
+    expect(liveMatrix([{ id: 'note', name: 'Note', type: 'text' }], DEFAULT_VIEW)).toMatchObject({ rows: [], cols: ['note'] })
+  })
+
+  describe('row levels', () => {
+    const byCountry = ({ rows = ['country'], folded = [], ...over }: Partial<ViewSettings['matrix']> & { rows?: string[]; folded?: string[] } = {}) =>
+      view({ layout: 'matrix', groupBy: by(...rows), folded, matrix: { ...DEFAULT_MATRIX, cols: ['ws'], ...over } })
+    const groups = (rows: ReturnType<typeof matrixGrid>['rows']) => rows.flatMap((r) => (r.kind === 'group' ? [r.label] : []))
+
+    it('puts a parent under every country its sub-issues reach, each time with only that part', () => {
+      const s = state({ fields: [workstream, countryField] }, workedIssues())
+      const { rows } = matrixGrid(s, byCountry(), today)
+      // U has no country of its own: it shows under each country, never under "No country".
+      expect(groups(rows)).toEqual(['UK', 'France', 'Singapore'])
+      const us = rows.filter((r) => r.kind === 'issue' && r.issue.id === 'U')
+      expect(us.map((r) => r.key)).toEqual(['country=uk/U', 'country=fr/U', 'country=sg/U'])
+      expect(us.map((r) => (r.kind === 'issue' ? cellIds(r.cells[0]) : []))).toEqual([['U-uk'], ['U-fr'], ['U-sg']])
+    })
+
+    it('expanding a parent shows only the sub-issues of that group', () => {
+      const s = state({ fields: [workstream, countryField] }, workedIssues())
+      const { rows } = matrixGrid(s, byCountry({ expanded: ['U'] }), today)
+      const underFrance = rows.slice(rows.findIndex((r) => r.key === 'country=fr'), rows.findIndex((r) => r.key === 'country=sg'))
+      expect(underFrance.flatMap((r) => (r.kind === 'issue' ? [r.issue.id] : []))).toEqual(['U', 'U-fr'])
+    })
+
+    it('a sub-issue with no value of its own takes its parent’s, and only leaves fill "No country"', () => {
+      const issues = [
+        ...workedIssues(),
+        issue({ id: 'P', parentId: null, sortKey: 'p', title: 'Pricing', fields: { ws: 'vendors' } }),
+        issue({ id: 'P1', parentId: 'P', sortKey: 'a', title: 'Pricing model', fields: {} }),
+      ]
+      const { rows } = matrixGrid(state({ fields: [workstream, countryField] }, issues), byCountry(), today)
+      expect(groups(rows)).toEqual(['UK', 'France', 'Singapore', 'No country'])
+      const p = rows.find((r) => r.kind === 'issue' && r.key === 'country=/P')
+      // P1 inherits Vendors from P, so it lands in the Vendors column.
+      expect(p?.kind === 'issue' && cellIds(p.cells[0])).toEqual(['P1'])
+    })
+
+    it('a folded group keeps its header and roll-up and hides what is inside, at any level', () => {
+      const s = state({ fields: [workstream, countryField, cardField] }, workedIssues())
+      const shut = matrixGrid(s, byCountry({ folded: ['country=uk'] }), today).rows
+      const uk = shut.find((r) => r.key === 'country=uk')
+      expect(uk?.kind === 'group' && [uk.open, uk.cells[0].progress]).toEqual([false, 0.5])
+      expect(shut.some((r) => r.key === 'country=uk/U')).toBe(false)
+      expect(shut.some((r) => r.key === 'country=fr/U')).toBe(true)
+      const inner = matrixGrid(s, byCountry({ rows: ['country', 'ws'], cols: ['card'], folded: ['country=uk/ws=vendors'] }), today).rows
+      expect(inner.some((r) => r.key === 'country=uk/ws=vendors')).toBe(true)
+      expect(inner.some((r) => r.key === 'country=uk/ws=vendors/U')).toBe(false)
+    })
+
+    it('nests two field levels, outermost first', () => {
+      const s = state({ fields: [workstream, countryField, cardField] }, workedIssues())
+      const { rows } = matrixGrid(s, byCountry({ rows: ['country', 'ws'], cols: ['card'] }), today)
+      const heads = rows.flatMap((r) => (r.kind === 'group' ? [`${r.depth}:${r.label}`] : []))
+      expect(heads.slice(0, 2)).toEqual(['0:UK', '1:Vendors'])
+    })
+
+    it('liveMatrix keeps at most two row levels and never a column field among them', () => {
+      expect(liveMatrix([workstream, countryField, cardField], { groupBy: by('ws', 'country', 'card'), matrix: { ...DEFAULT_MATRIX, cols: ['country'] } }))
+        .toMatchObject({ rows: ['ws', 'country'], cols: ['card'] })
+    })
   })
 })

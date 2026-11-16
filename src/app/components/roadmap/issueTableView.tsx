@@ -1,7 +1,9 @@
 import type { FieldDef } from '@/engine/roadmaps/types'
 import type { MatrixRow } from '@/engine/roadmaps/matrix'
-import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
+import { useCallback } from 'react'
+import { liveGroupBy, toggleFolded, type TableRow, type ViewSettings } from '@/engine/roadmaps/view'
 import { cn } from '@/app/lib/utils'
+import { FieldIcon } from './FieldIcon'
 
 export const ROW_H = 36
 export const VIRT = 200
@@ -35,12 +37,10 @@ export function visibleRows<T extends WalkRow>(rows: T[], filtersActive: boolean
   return out
 }
 
+/** The columns shown: known ones, less any the rows are grouped by (every row in a group would repeat it). */
 export function liveColumns(view: ViewSettings, fields: FieldDef[]): string[] {
-  const cols: string[] = []
-  for (const id of view.columns) {
-    if (id in BUILT_IN || fields.some((f) => f.id === id)) cols.push(id)
-  }
-  return cols
+  const grouped = new Set(liveGroupBy(fields, view.groupBy).map((g) => (g.on === 'field' ? g.field : g.on)))
+  return view.columns.filter((id) => (id in BUILT_IN || fields.some((f) => f.id === id)) && !grouped.has(id))
 }
 
 const BUILT_IN: Record<string, { name: string; type: FieldDef['type'] }> = {
@@ -67,14 +67,39 @@ export function columnWidth(id: string, fields: FieldDef[]): string {
 export const titleColumn = 'sticky left-0 bg-app-bg group-data-[scrolled]/table:shadow-[1px_0_0_theme(colors.line)]'
 export const progressColumn = 'w-[136px] min-w-[136px]'
 
-/** A group header's name: a group with no value says what is missing ("No country"), never a bare "Empty". */
-export function groupName(row: Extract<TableRow, { kind: 'group' }>, groupBy: ViewSettings['groupBy'], fields: FieldDef[]): string {
-  if (row.key !== '' || groupBy?.on !== 'field') return row.label
-  const name = fields.find((f) => f.id === groupBy.field)?.name
-  return name ? `No ${name.toLowerCase()}` : row.label
+/** Whether a group row groups by person, so its header shows their initials. */
+export function personGroup(key: string): boolean {
+  return (key.split('/').pop() ?? '').startsWith('assignee=')
+}
+
+type ViewChange = (v: ViewSettings | ((prev: ViewSettings) => ViewSettings)) => void
+
+/** Folds a group (by its path) or, with `all`, every group shown at its level. Shared by the list, the Gantt and
+    the matrix: the fold list is one, so a group folded in one view is folded in all. */
+export function useGroupToggle(rows: WalkRow[], onView: ViewChange): (key: string, all: boolean) => void {
+  return useCallback(
+    (key: string, all: boolean) => {
+      const depth = key.split('/').length
+      const level = rows.flatMap((r) => (r.kind === 'group' && r.key.split('/').length === depth ? [r.key] : []))
+      onView((v) => ({ ...v, folded: toggleFolded(v.folded, key, level, all) }))
+    },
+    [rows, onView],
+  )
 }
 
 const headCell = 'sticky top-0 h-9 whitespace-nowrap border-b border-line bg-app-bg text-[12px] font-normal text-ink-3'
+
+/** A column's name; a custom field's carries its type icon, so it reads apart from the built-in columns. */
+function HeadName({ id, fields }: { id: string; fields: FieldDef[] }) {
+  const def = BUILT_IN[id] ? undefined : fields.find((f) => f.id === id)
+  if (!def) return <>{BUILT_IN[id]?.name ?? id}</>
+  return (
+    <span className="flex min-w-0 items-center gap-1.5">
+      <FieldIcon type={def.type} />
+      <span className="truncate">{def.name}</span>
+    </span>
+  )
+}
 
 export function TableHead({ columns, fields }: { columns: string[]; fields: FieldDef[] }) {
   return (
@@ -83,7 +108,7 @@ export function TableHead({ columns, fields }: { columns: string[]; fields: Fiel
         <th scope="col" className={cn(headCell, titleColumn, 'z-30 w-full min-w-[320px] pl-9 pr-3')}>Title</th>
         {columns.map((c) => (
           <th key={c} scope="col" className={cn(headCell, columnWidth(c, fields), 'z-20 truncate px-3')}>
-            {BUILT_IN[c]?.name ?? fields.find((f) => f.id === c)?.name ?? c}
+            <HeadName id={c} fields={fields} />
           </th>
         ))}
         <th scope="col" className={cn(headCell, progressColumn, 'z-20 pl-3 pr-4')}>Progress</th>

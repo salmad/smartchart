@@ -10,7 +10,7 @@ import { IssueDeleteDialog } from './IssueDeleteDialog'
 import { useSelection } from './useSelection'
 import { useRowDrag } from './useRowDrag'
 import { useTableKeys, type ComposeDraft } from './useTableKeys'
-import { groupName, liveColumns, ROW_H, rowSlice, TableHead, visibleRows, VIRT } from './issueTableView'
+import { liveColumns, personGroup, useGroupToggle, ROW_H, rowSlice, TableHead, visibleRows, VIRT } from './issueTableView'
 import { newIssueId } from './issueIds'
 
 interface Props {
@@ -36,7 +36,8 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
   const colCount = columns.length + 2
   const liveIssues = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
   const issueOrder = useMemo(
-    () => rows.filter((r): r is Extract<TableRow, { kind: 'issue' }> => r.kind === 'issue').map((r) => r.issue.id),
+    // A parent shown under two groups is one issue: keys and selection step over it once.
+    () => [...new Set(rows.filter((r): r is Extract<TableRow, { kind: 'issue' }> => r.kind === 'issue').map((r) => r.issue.id))],
     [rows],
   )
 
@@ -55,6 +56,8 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     },
     [onView, view],
   )
+
+  const onToggleGroup = useGroupToggle(rows, onView)
 
   const focusedIssue = focusId ? liveIssues.find((i) => i.id === focusId) ?? null : null
 
@@ -208,10 +211,10 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
             )}
             {body.map((row) =>
               row.kind === 'group' ? (
-                <IssueGroupRow key={`g-${row.key}`} row={row} label={groupName(row, view.groupBy, state.roadmap.fields)} person={view.groupBy?.on === 'assignee'} {...shared} />
+                <IssueGroupRow key={`g-${row.key}`} row={row} person={personGroup(row.key)} onToggle={onToggleGroup} {...shared} />
               ) : (
                 <IssueDataRow
-                  key={row.issue.id}
+                  key={row.key}
                   row={row}
                   today={today}
                   onToggleCollapse={onToggleCollapse}

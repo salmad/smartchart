@@ -4,12 +4,18 @@ import { addStatusFilter, openFreshRoadmap, seedSixIssues, seedWorkedMatrix, sig
 signInRoadmapTests()
 test.use({ viewport: { width: 1440, height: 900 } })
 
-async function configureMatrixDisplay(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: 'Layout' }).click()
-  const display = page.getByLabel('Matrix layout')
-  await display.locator('section').filter({ hasText: 'Group rows by' }).getByRole('button', { name: 'Workstream' }).click()
-  const colPick = display.locator('section').filter({ hasText: 'Columns' }).getByRole('button', { name: 'Country', exact: true })
-  await colPick.click()
+type Page = import('@playwright/test').Page
+
+/** Picks an option from one of Display's dropdowns. */
+async function pick(page: Page, row: string, option: string) {
+  await page.getByLabel('Display settings').getByRole('combobox', { name: row }).click()
+  await page.getByRole('option', { name: option, exact: true }).click()
+}
+
+async function configureMatrixDisplay(page: Page) {
+  await page.getByRole('button', { name: 'Display' }).click()
+  await pick(page, 'Group by', 'Workstream')
+  await pick(page, 'Columns', 'Country')
   await page.keyboard.press('Escape')
 }
 
@@ -20,22 +26,16 @@ test('empty roadmap can open matrix layout', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'The matrix needs a field' })).toBeVisible()
 })
 
-test('Layout picks stay focused while Matrix is open', async ({ page }) => {
+test('Display picks apply while Matrix is open', async ({ page }) => {
   await openFreshRoadmap(page)
   await seedWorkedMatrix(page)
   await page.reload()
 
   const nav = page.getByRole('navigation', { name: 'Roadmap views' })
   await nav.getByRole('button', { name: 'Matrix' }).click()
-  await page.getByRole('button', { name: 'Layout' }).click()
-  const display = page.getByLabel('Matrix layout')
-  const country = display
-    .locator('section')
-    .filter({ hasText: 'Columns' })
-    .getByRole('button', { name: 'Country', exact: true })
-    .first()
-  await country.click()
-  await expect(country).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Display' }).click()
+  await pick(page, 'Columns', 'Country')
+  await expect(page.getByLabel('Display settings').getByRole('combobox', { name: 'Columns' })).toHaveText('Country')
   await expect(page.getByRole('region', { name: 'Matrix' }).getByRole('columnheader', { name: 'UK' })).toBeVisible()
 })
 
@@ -49,23 +49,23 @@ test('switches to Matrix and keeps settings after reload', async ({ page }) => {
   await expect(nav.getByRole('button', { name: 'Matrix' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('region', { name: 'Matrix' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Layout' }).click()
-  const display = page.getByLabel('Matrix layout')
-  const colPick = display.locator('section').filter({ hasText: 'Columns' }).getByRole('button', { name: 'Country', exact: true })
-  await colPick.click()
-  await expect(colPick).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Display' }).click()
+  await pick(page, 'Columns', 'Country')
+  const colPick = page.getByLabel('Display settings').getByRole('combobox', { name: 'Columns' })
+  await expect(colPick).toHaveText('Country')
 
   await page.keyboard.press('Escape')
   await page.reload()
   await expect(nav.getByRole('button', { name: 'Matrix' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('region', { name: 'Matrix' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Layout' }).click()
-  await expect(colPick).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Display' }).click()
+  await expect(colPick).toHaveText('Country')
+  await page.keyboard.press('Escape')
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   await expect(page.getByRole('region', { name: 'Matrix' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Table' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('worked tree shows country columns and opens from a cell', async ({ page }) => {
@@ -119,7 +119,7 @@ test('duplicate country row then set field shows it in the matrix', async ({ pag
   await expect(matrix.getByRole('columnheader', { name: 'UK' })).toBeVisible()
   await expect(matrix.getByRole('button', { name: 'Duplicate' })).toHaveCount(0)
 
-  await nav.getByRole('button', { name: 'Table' }).click()
+  await nav.getByRole('button', { name: 'List' }).click()
   const ukRow = page.locator('tr[data-issue-id="U-uk"]')
   await ukRow.getByLabel('Select Underwriting').check()
   await page.getByRole('button', { name: 'Duplicate' }).click()
@@ -137,7 +137,7 @@ test('duplicate country row then set field shows it in the matrix', async ({ pag
   await expect(matrix.getByRole('button', { name: /Open SCL-7 Underwriting.* in Singapore/ })).toBeVisible()
 })
 
-test('Matrix opens already configured: first choice field as rows, second as columns', async ({ page }) => {
+test('Matrix opens already configured: the second choice field makes the columns', async ({ page }) => {
   await openFreshRoadmap(page)
   await seedWorkedMatrix(page)
   await page.reload()

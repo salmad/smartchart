@@ -1,5 +1,5 @@
 import { ListFilter, Settings } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Chip, ViewSettings } from '@/engine/roadmaps/view'
 import type { FieldDef, MemberLite } from '@/engine/roadmaps/types'
 import { liveChips } from '@/engine/roadmaps/view'
@@ -20,6 +20,8 @@ interface Props {
   today: string
   view: ViewSettings
   issueCount: number
+  /** How many issues the filters keep, when any are on. */
+  matchCount?: number
   onChange: (v: ViewChange) => void
   onToday: () => void
   /** Roadmap settings: its state and how to open it. Absent for a viewer who cannot edit. */
@@ -28,18 +30,22 @@ interface Props {
 
 /** The one row under the bar, the same height on every view. Left: Filter and its chips. Right: the count, the Gantt's
     scale and Today, Display, and the roadmap's settings. */
-export function FilterBar({ fields, members, today, view, issueCount, onChange, onToday, settings }: Props) {
-  const group = view.layout === 'table' ? groupByLabel(view, fields) : null
+export function FilterBar({ fields, members, today, view, issueCount, matchCount, onChange, onToday, settings }: Props) {
+  const group = view.layout === 'checks' ? null : groupByLabel(view, fields)
   const [open, setOpen] = useState(false)
   // A menu reopened mid-close keeps its component; a fresh key starts it at the first step.
   const [menuKey, setMenuKey] = useState(0)
+  // Where the filter being ticked in the open menu sits among the chips, once its first value is ticked.
+  const slot = useRef<number | null>(null)
+  const putAt = (i: number, chip: Chip | null) =>
+    onChange((v) => ({ ...v, chips: chip ? v.chips.map((c, j) => (j === i ? chip : c)) : v.chips.filter((_, j) => j !== i) }))
   const chips = view.chips.map((chip, i) => ({ live: liveChips(fields, [chip])[0], i })).filter((c): c is { live: Chip; i: number } => Boolean(c.live))
 
   return (
     <div role="toolbar" aria-label="Roadmap toolbar" className="flex h-11 flex-none items-center gap-3 border-b border-hair pl-3 pr-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
         {issueCount > 0 && (
-          <Popover open={open} onOpenChange={(next) => { if (next) setMenuKey((k) => k + 1); setOpen(next) }}>
+          <Popover open={open} onOpenChange={(next) => { if (next) { setMenuKey((k) => k + 1); slot.current = null } setOpen(next) }}>
             <PopoverTrigger asChild>
               <ToolButton className="flex-none">
                 <ListFilter strokeWidth={1.75} aria-hidden />
@@ -58,12 +64,21 @@ export function FilterBar({ fields, members, today, view, issueCount, onChange, 
                 members={members}
                 today={today}
                 onAdd={(chip) => { onChange((v) => ({ ...v, chips: [...v.chips, chip] })); setOpen(false) }}
+                onPut={(chip) => {
+                  if (slot.current !== null) {
+                    putAt(slot.current, chip)
+                    if (!chip) slot.current = null
+                  } else if (chip) {
+                    slot.current = view.chips.length
+                    onChange((v) => ({ ...v, chips: [...v.chips, chip] }))
+                  }
+                }}
               />
             </PopoverContent>
           </Popover>
         )}
         {chips.map(({ live, i }) => (
-          <FilterChip key={`${live.on}-${i}`} chip={live} fields={fields} onRemove={() => onChange((v) => ({ ...v, chips: v.chips.filter((_, j) => j !== i) }))} />
+          <FilterChip key={`${live.on}-${i}`} chip={live} fields={fields} members={members} onPut={(chip) => putAt(i, chip)} />
         ))}
         {chips.length > 1 && (
           <ToolButton className="h-7 flex-none px-2 text-[12px]" onClick={() => onChange((v) => ({ ...v, chips: [] }))}>Clear all</ToolButton>
@@ -72,8 +87,8 @@ export function FilterBar({ fields, members, today, view, issueCount, onChange, 
       <div className="flex flex-none items-center gap-1">
         {issueCount > 0 && (
           <p className="whitespace-nowrap px-2 text-[12px] tabular-nums text-ink-3">
-            {group && <span className="max-[1100px]:hidden">Group by <span className="text-ink-2">{group}</span>{' · '}</span>}
-            {issueCount} {issueCount === 1 ? 'issue' : 'issues'}
+            {group && <span className="max-[1100px]:hidden">Grouped by <span className="text-ink-2">{group}</span>{' · '}</span>}
+            {matchCount !== undefined && matchCount < issueCount ? `${matchCount} of ${issueCount}` : issueCount} {issueCount === 1 ? 'issue' : 'issues'}
           </p>
         )}
         {view.layout === 'gantt' && <GanttControls scale={view.scale} onScale={(scale) => onChange((v) => ({ ...v, scale }))} onToday={onToday} />}

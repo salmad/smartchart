@@ -1,9 +1,10 @@
 import { useEffect, type RefObject } from 'react'
 import type { MatrixRow } from '@/engine/roadmaps/matrix'
 
-/** The focused cell, by the row's issue and the column's place, so it survives rows coming and going. */
+/** The focused cell, by the row's key and the column's place, so it survives rows coming and going. The key, not the
+    issue: one issue can show under several groups. */
 export interface MatrixFocus {
-  issueId: string
+  row: string
   col: number
 }
 
@@ -12,12 +13,12 @@ const STEP: Record<string, [number, number]> = { ArrowDown: [1, 0], ArrowUp: [-1
 function filled(row: MatrixRow | undefined, col: number): MatrixFocus | null {
   if (row?.kind !== 'issue') return null
   const cell = row.cells[col]
-  return cell && cell.kind !== 'empty' ? { issueId: row.issue.id, col } : null
+  return cell && cell.kind !== 'empty' ? { row: row.key, col } : null
 }
 
 /** The next filled cell in a direction: empty cells and group rows are stepped over. */
 function nextSpot(rows: MatrixRow[], from: MatrixFocus, dRow: number, dCol: number): MatrixFocus | null {
-  let r = rows.findIndex((row) => row.kind === 'issue' && row.issue.id === from.issueId)
+  let r = rows.findIndex((row) => row.key === from.row)
   if (r < 0) return null
   let c = from.col
   for (;;) {
@@ -42,7 +43,7 @@ export function firstMatrixFocus(rows: MatrixRow[]): MatrixFocus | null {
   return null
 }
 
-export const cellSelector = (f: MatrixFocus) => `[data-matrix-cell="${f.issueId}:${f.col}"]`
+export const cellSelector = (f: MatrixFocus) => `[data-matrix-cell="${CSS.escape(`${f.row}:${f.col}`)}"]`
 
 interface Options {
   root: RefObject<HTMLElement | null>

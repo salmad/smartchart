@@ -5,14 +5,14 @@ import { tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { PX_PER_DAY, daysBetween, ganttRange, markFor, type Mark } from '@/engine/roadmaps/gantt'
 import { cn } from '@/app/lib/utils'
-import { ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
+import { personGroup, ROW_H, VIRT, rowSlice, useGroupToggle, visibleRows } from './issueTableView'
 import { makeAxis } from './ganttAxis'
 import { ROW_CLASS } from './ganttBarDrag'
 import { GanttListRow } from './GanttList'
 import { GanttLane } from './GanttLane'
 import { GanttCompose } from './GanttCompose'
 import { newIssueId } from './issueIds'
-import { GanttGrid, GanttScaleRow, GanttTodayRule, groupMark } from './GanttTimeline'
+import { GanttGrid, GanttScaleRow, GanttTodayRule, groupMark, partMark } from './GanttTimeline'
 import { useBarDrag } from './useBarDrag'
 import { useIssueDatesDrop } from './useIssueDatesDrop'
 
@@ -79,6 +79,8 @@ export function Gantt({ state, members, view, today, onView, onOpenIssue, todayR
     [onView],
   )
 
+  const onToggleGroup = useGroupToggle(rows, onView)
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [box, setBox] = useState({ w: 1200, h: 900 })
@@ -124,19 +126,20 @@ export function Gantt({ state, members, view, today, onView, onOpenIssue, todayR
           {padTop > 0 && <svg height={padTop} width={1} className="block shrink-0" aria-hidden />}
           {body.map((row, i) => {
             const at = virtual ? slice.start + i : i
-            const mark = row.kind === 'issue' ? marks.get(row.issue.id) ?? NONE : groupMark(live, rows, at)
+            const mark = row.kind === 'issue' ? partMark(marks.get(row.issue.id) ?? NONE, row) : groupMark(live, row)
             return (
-              <div key={row.kind === 'group' ? `g-${row.key}` : row.issue.id} className={cn(ROW, 'shrink-0', row.kind === 'group' && 'bg-panel')}>
+              <div key={row.kind === 'group' ? `g-${row.key}` : row.key} className={cn(ROW, 'shrink-0', row.kind === 'group' && 'bg-panel')}>
                 <div className={cn(LIST_CELL, size.list, row.kind === 'group' && 'bg-panel')}>
                   <GanttListRow
                     row={row}
                     roadmap={state.roadmap}
-                    person={view.groupBy?.on === 'assignee'}
+                    person={row.kind === 'group' && personGroup(row.key)}
                     mark={mark}
                     canEdit={canEdit}
                     compact={size.w < 300}
                     datesDrop={datesDrop}
                     onToggleCollapse={onToggleCollapse}
+                    onToggleGroup={onToggleGroup}
                     onOpenIssue={onOpenIssue}
                   />
                 </div>

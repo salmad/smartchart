@@ -3,37 +3,38 @@ import type { Issue, MemberLite, Roadmap, Status } from '@/engine/roadmaps/types
 import { STATUS_LABEL } from '@/engine/roadmaps/types'
 import type { MatrixCol, MatrixCell as Cell, MatrixGroupCell } from '@/engine/roadmaps/matrix'
 import { keyOf } from '@/engine/roadmaps/fields'
-import { progress, progressUnder } from '@/engine/roadmaps/rollup'
+import { progressUnder, statusMix, type StatusMix } from '@/engine/roadmaps/rollup'
 import type { MatrixSettings } from '@/engine/roadmaps/view'
 import { cn } from '@/app/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip'
 import { Avatar } from './Avatar'
 import { MatrixPicker } from './MatrixPicker'
-import { ProgressBar } from './ProgressBar'
 import { StatusGlyph } from './StatusGlyph'
 import { blendStatus, colAria, issueOverdue, lastQuarter, sharedAssignee } from './matrixCellMeta'
 
-const TD = 'h-10 min-w-[256px] border-b border-l border-hair p-0'
+const TD = 'h-10 border-b border-hair p-0'
 
-/** A cell is a flat tile the size of its box. A light wash of its status makes the grid read as a heat map. */
+/** A cell with work is a quiet neutral card inset in its box, so it stands apart from an empty cell (which draws
+    nothing). The card is the same grey for every status: the status is said once, by its mark or its strip. */
 const TILE =
-  'flex h-10 w-full cursor-pointer items-center gap-2 px-3 text-left text-[13px] outline-none transition-colors duration-150 ease-out focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ink-3'
+  'group/cell flex h-8 w-full cursor-pointer items-center gap-2 rounded-md bg-ink/[.06] px-2.5 text-left text-[13px] outline-none transition-colors duration-150 ease-out hover:bg-ink/[.1] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ink-3'
 
-const WASH: Record<Status, string> = {
-  backlog: 'hover:bg-panel',
-  todo: 'hover:bg-panel',
-  cancelled: 'hover:bg-panel',
-  in_progress: 'bg-gold/[.06] hover:bg-gold/[.11]',
-  done: 'bg-ok/[.06] hover:bg-ok/[.11]',
-  blocked: 'bg-bad/[.07] hover:bg-bad/[.12]',
-}
+/** The box around a card: the row's height, with the card's inset. */
+const TD_FILLED = 'h-10 border-b border-hair px-1 py-1'
 
 type Show = MatrixSettings['show']
 
-function Rollup({ value }: { value: number }) {
+/** What sits under a cell: its status split as a strip, then the share done. */
+interface Rolled {
+  mix: StatusMix
+  share: number
+}
+
+function Rollup({ mix, share }: Rolled) {
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
-      <ProgressBar value={value} />
-      <span className="w-8 text-right text-[12px] tabular-nums text-ink-3">{Math.round(value * 100)}%</span>
+    <span className="flex min-w-0 flex-1 items-center gap-2">
+      <StatusStrip mix={mix} />
+      <span className="w-8 text-right text-[12px] tabular-nums text-ink-3">{Math.round(share * 100)}%</span>
     </span>
   )
 }
@@ -42,7 +43,7 @@ interface FaceProps {
   status: Status
   label: string
   /** Null for an issue with no children: its status already says it all. */
-  progress: number | null
+  rolled: Rolled | null
   quarter: string | null
   late: boolean
   assignee: string | null
@@ -50,18 +51,34 @@ interface FaceProps {
   show: Show
 }
 
-function Face({ status, label, progress: share, quarter, late, assignee, members, show }: FaceProps) {
+/** The due quarter, always shown once turned on in Display. Overdue (not done, past its date) turns it red: the
+    colour says it, so the quarter stays readable. */
+function Due({ quarter, late }: { quarter: string | null; late: boolean }) {
+  return (
+    <span title={late ? 'Overdue' : undefined} className={cn('w-[52px] shrink-0 whitespace-nowrap text-right text-[12px] tabular-nums', late ? 'text-bad' : 'text-ink-3')}>
+      {quarter}
+      {late && <span className="sr-only">, overdue</span>}
+    </span>
+  )
+}
+
+function Face({ status, label, rolled, quarter, late, assignee, members, show }: FaceProps) {
   const who = show.assignee && assignee ? members.find((m) => m.id === assignee)?.name : undefined
   return (
     <>
-      <StatusGlyph status={status} />
-      <span className="min-w-0 flex-1 truncate text-ink-2">{label}</span>
-      {show.progress && share !== null && <Rollup value={share} />}
-      {show.dates && (
-        <span className={cn('w-[52px] shrink-0 whitespace-nowrap text-right text-[12px] tabular-nums', late ? 'text-bad' : 'text-ink-3')}>
-          {late ? 'Overdue' : quarter}
-        </span>
+      {/* Rolled up, the strip is the status; one piece of work shows its mark. Never both. */}
+      {show.progress && rolled ? (
+        <>
+          {label && <span className="min-w-0 max-w-[45%] truncate text-ink-2">{label}</span>}
+          <Rollup {...rolled} />
+        </>
+      ) : (
+        <>
+          <StatusGlyph status={status} />
+          <span className="min-w-0 flex-1 truncate text-ink-2">{label}</span>
+        </>
       )}
+      {show.dates && <Due quarter={quarter} late={late} />}
       {who && <Avatar name={who} />}
     </>
   )
@@ -96,11 +113,14 @@ export function MatrixIssueCell({ roadmap, issues, parents, members, rowIssue, c
   if (!picks.length) return <td className={TD} />
 
   const where = colAria(col.parts)
-  const face = (status: Status, label: string, share: number | null): ReactNode => (
+  // A cell rolls up whenever there is more than one piece of work under it: several issues, or one with children.
+  const share = picks.length > 1 || parents.has(picks[0].id) ? progressUnder(issues, ids) : null
+  const rolled = share === null ? null : { mix: statusMix(issues, ids), share }
+  const face = (status: Status, label: string): ReactNode => (
     <Face
       status={status}
       label={label}
-      progress={share}
+      rolled={rolled}
       quarter={lastQuarter(issues, picks)}
       late={picks.some((p) => issueOverdue(p, today))}
       assignee={sharedAssignee(picks)}
@@ -112,7 +132,7 @@ export function MatrixIssueCell({ roadmap, issues, parents, members, rowIssue, c
   if (picks.length > 1) {
     const status = blendStatus(picks)
     return (
-      <td className={TD}>
+      <td className={TD_FILLED}>
         <MatrixPicker
           roadmap={roadmap}
           picks={picks}
@@ -121,44 +141,77 @@ export function MatrixIssueCell({ roadmap, issues, parents, members, rowIssue, c
           focused={focused}
           onFocus={onFocus}
           onOpen={onOpen}
-          className={cn(TILE, WASH[status])}
+          className={TILE}
         >
-          {face(status, `${picks.length} issues`, progressUnder(issues, ids))}
+          {face(status, `${picks.length} issues`)}
         </MatrixPicker>
       </td>
     )
   }
 
   const issue = picks[0]
-  const label = namedByRow(issue, rowIssue) ? STATUS_LABEL[issue.status] : issue.title
+  const label = namedByRow(issue, rowIssue) ? '' : issue.title
   return (
-    <td className={TD}>
+    <td className={TD_FILLED}>
       <button
         type="button"
         tabIndex={focused ? 0 : -1}
         data-matrix-cell={cellTag}
         aria-label={`Open ${keyOf(roadmap, issue)} ${issue.title} in ${where}`}
         title={`${issue.title} · ${STATUS_LABEL[issue.status]}`}
-        className={cn(TILE, WASH[issue.status])}
+        className={TILE}
         onFocus={onFocus}
         onClick={() => onOpen(issue.id)}
       >
-        {face(issue.status, label, parents.has(issue.id) ? progress(issues, issue.id) : null)}
+        {face(issue.status, label)}
       </button>
     </td>
   )
 }
 
-/** A group row's cell rolls up what sits under it, in the same slots as the cells below so the bars line up. */
-export function MatrixGroupCellView({ col, cell, show }: { col: MatrixCol; cell: MatrixGroupCell; show: Show }) {
+const MIX: { key: keyof StatusMix; label: string; fill: string }[] = [
+  { key: 'done', label: 'done', fill: 'fill-ok' },
+  { key: 'in_progress', label: 'in progress', fill: 'fill-gold' },
+  { key: 'blocked', label: 'blocked', fill: 'fill-bad' },
+  { key: 'open', label: 'open', fill: 'fill-line' },
+]
+
+/** The group's work under one column, split by status in the heat map's colours: done, moving, stuck, still open. */
+function StatusStrip({ mix, className }: { mix: StatusMix; className?: string }) {
+  const total = MIX.reduce((n, m) => n + mix[m.key], 0)
+  let x = 0
+  const parts = MIX.filter((m) => mix[m.key] > 0).map((m) => {
+    const w = (mix[m.key] / total) * 100
+    const rect = <rect key={m.key} x={x} width={w} height="4" className={m.fill} />
+    x += w
+    return rect
+  })
+  const says = MIX.filter((m) => mix[m.key] > 0).map((m) => `${mix[m.key]} ${m.label}`).join(' · ')
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn('flex h-1 min-w-0 flex-1 cursor-default overflow-hidden rounded-full', className)}>
+          <svg viewBox="0 0 100 4" preserveAspectRatio="none" className="h-1 w-full" aria-hidden>
+            {parts}
+          </svg>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-[11px] tabular-nums">{says}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** A group row's cell sums up what sits under it, in the same slots as the cells below so the numbers line up: the
+    status split and share done where a parent shows its own, then the last due quarter, red when any is overdue. */
+export function MatrixGroupCellView({ col, cell, show, issues, today }: { col: MatrixCol; cell: MatrixGroupCell; show: Show; issues: Issue[]; today: string }) {
+  const picks = cell.issueIds.map((id) => issues.find((i) => i.id === id)).filter((i): i is Issue => !!i)
+  if (!picks.length) return <td className={cn(TD, 'bg-panel')} />
   return (
     <td className={cn(TD, 'bg-panel')} aria-label={`${colAria(col.parts)} group`}>
-      {show.progress && cell.progress !== null && (
-        <span className="flex items-center justify-end gap-2 px-3">
-          <Rollup value={cell.progress} />
-          {show.dates && <span className="w-[52px] shrink-0" aria-hidden />}
-        </span>
-      )}
+      <span className="flex items-center gap-2 px-3.5">
+        {show.progress && cell.progress !== null ? <Rollup mix={cell.mix} share={cell.progress} /> : <span className="flex-1" />}
+        {show.dates && <Due quarter={lastQuarter(issues, picks)} late={picks.some((p) => issueOverdue(p, today))} />}
+      </span>
     </td>
   )
 }

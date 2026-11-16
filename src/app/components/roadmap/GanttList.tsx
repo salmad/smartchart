@@ -6,7 +6,7 @@ import type { Roadmap } from '@/engine/roadmaps/types'
 import { keyOf } from '@/engine/roadmaps/fields'
 import { cn } from '@/app/lib/utils'
 import { Button } from '../ui/button'
-import { GroupLabel } from './GroupLabel'
+import { GroupHeader } from './GroupLabel'
 import { StatusGlyph } from './StatusGlyph'
 import { listRowDatesDraggable, type useIssueDatesDrop } from './useIssueDatesDrop'
 
@@ -20,17 +20,18 @@ interface Props {
   compact: boolean
   datesDrop: ReturnType<typeof useIssueDatesDrop>
   onToggleCollapse: (id: string) => void
+  onToggleGroup: (key: string, all: boolean) => void
   onOpenIssue?: (id: string) => void
 }
 
 /** A row's cell in the list: chevron, status, title, quiet key. An issue with no dates of its own can be dragged
     from here onto the timeline. */
-export function GanttListRow({ row, roadmap, person, mark, canEdit, compact, datesDrop, onToggleCollapse, onOpenIssue }: Props) {
+export function GanttListRow({ row, roadmap, person, mark, canEdit, compact, datesDrop, onToggleCollapse, onToggleGroup, onOpenIssue }: Props) {
   const dragMoved = useRef(false)
   if (row.kind === 'group') {
     return (
-      <div className="flex h-full items-center gap-3 px-4 text-[12px] text-ink-2">
-        <GroupLabel label={row.label} count={row.count} person={person} empty={row.key === ''} />
+      <div className="flex h-full cursor-default items-center pl-2 pr-3" onClick={(e) => onToggleGroup(row.key, e.altKey)}>
+        <GroupHeader label={row.label} count={row.count} person={person} empty={row.empty} open={row.open} depth={row.depth} onToggle={(all) => onToggleGroup(row.key, all)} />
       </div>
     )
   }
@@ -55,6 +56,7 @@ export function GanttListRow({ row, roadmap, person, mark, canEdit, compact, dat
         dim && 'opacity-50',
       )}
     >
+      {(row.inset ?? 0) > 0 && <span className="w-4 shrink-0" aria-hidden />}
       {depth > 0 && Array.from({ length: depth }, (_, i) => <span key={i} className="w-2 shrink-0" aria-hidden />)}
       {hasChildren ? (
         <Button
