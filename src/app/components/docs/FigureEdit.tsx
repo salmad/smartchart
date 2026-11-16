@@ -19,7 +19,7 @@ import type { Surface } from '@/app/edit/surface'
 import { bodyOf, figureCheck, figureRender } from './figureCheck'
 import type { DocEdit } from './useDocEdit'
 import { DISCARD_CHANGES, useConfirm } from '../ConfirmDialog'
-import { surface as card, tintOnFocus, tintOnHover } from './chrome'
+import { pageButton, pageButtonQuiet, surface as card, tintOnFocus } from './chrome'
 
 const STYLE: Style = 'consulting', DONE_KEYS = ['Enter']
 const NONE = () => {}
@@ -68,8 +68,8 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
         {callout ? surfaceEl : <EditMenu edit={edit} surface={surface} deckStyle={STYLE} onChart={setGrid} look={look}>{surfaceEl}</EditMenu>}
       </div>
       <div className="fig-edit-row" data-edit-chrome>
-        <button type="button" onClick={discard} className={`h-8 rounded-md px-3 text-[13px] font-medium text-[var(--fg-2)] ${tintOnHover}`}>Discard</button>
-        <button type="button" onClick={done} className="h-8 rounded-md bg-[var(--fg)] px-3 text-[13px] font-medium text-[var(--bg)] hover:opacity-90">Done</button>
+        <button type="button" onClick={discard} className={pageButtonQuiet}>Discard</button>
+        <button type="button" onClick={done} className={pageButton}>Done</button>
       </div>
     </div>
   )

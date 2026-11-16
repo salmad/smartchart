@@ -125,6 +125,23 @@ test('Add subpage → Doc makes a doc under the page and opens it, with the bran
   expect(await rows(page).evaluateAll((els) => els.map((e) => e.getAttribute('aria-level')))).toEqual(['1', '1', '2'])
 })
 
+test('a blank doc says how to start, until it holds a page: then it may be empty on purpose', async ({ page }) => {
+  await seed(page)
+  await page.goto('/d/alpha')
+  await sidebar(page).getByRole('button', { name: 'New page' }).click()
+  await page.getByRole('menuitem', { name: 'New doc' }).click()
+  await page.getByRole('dialog', { name: 'New doc' }).getByRole('button', { name: 'Create doc' }).click()
+  await expect(page.getByRole('button', { name: 'Start writing' })).toBeVisible()
+  await (await hover(page, 'Untitled doc')).getByRole('button', { name: 'More for Untitled doc' }).click()
+  await page.getByRole('menuitem', { name: 'Add subpage' }).hover()
+  await page.getByRole('menuitem', { name: 'Doc', exact: true }).click()
+  await page.getByRole('dialog', { name: 'New doc' }).getByRole('button', { name: 'Create doc' }).click()
+  await expect(rows(page)).toHaveCount(4)
+  await row(page, 'Untitled doc').first().click()
+  await expect(page.locator('.doc-title')).toHaveText('Untitled doc')
+  await expect(page.getByRole('button', { name: 'Start writing' })).toHaveCount(0)
+})
+
 test('the + beside a row adds a subpage deck: it shows under its parent and stays there after a reload', async ({ page }) => {
   await seed(page)
   await page.goto('/d/alpha')

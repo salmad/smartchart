@@ -1,4 +1,5 @@
 import '@/engine/docs/doc.css'
+import { createPortal } from 'react-dom'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DocComment } from '@/engine/comments'
 import { parseDoc } from '@/engine/docs/parse'
@@ -16,7 +17,6 @@ import { timeOf } from '@/app/versions'
 import { AccountMenu } from './AccountMenu'
 import { AppBar, ScreenBody } from './AppBar'
 import { ChatPanel } from './ChatPanel'
-import { Composer } from './Composer'
 import { EmptyDoc } from './docs/EmptyDoc'
 import { phaseLinesOf } from '@/app/phase'
 import { chipsForDoc, refreshDocPills } from '@/app/docPills'
@@ -64,6 +64,8 @@ interface Props {
   /** The doc's name as the sidebar lists it: shown until the doc itself has been read. */
   name?: string
   chatOpen: boolean
+  /** How many pages sit under this one: a doc that holds pages may be empty on purpose. */
+  subpages: (page: PageRef) => Promise<number>
   onToggleChat: () => void
   offline: boolean
   modelsLive: boolean
@@ -77,11 +79,11 @@ interface Props {
 // The editor (Tiptap and ProseMirror) loads once a doc is open and the browser is idle (or at the first Edit), not with the app.
 const docEditing = lazyScreen(() => import('./docs/DocEditing').then((m) => m.DocEditing))
 
-export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name, chatOpen, onToggleChat, offline, modelsLive, look, shareId }: Props) {
+export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOpen, onToggleSidebar, onSite, account, crumbs, onOpenPage, name, chatOpen, subpages, onToggleChat, offline, modelsLive, look, shareId }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const historyRef = useRef<ChatMessage[]>([])
   const [chatBusy, setChatBusy] = useState(false)
-  const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null), [mainEl, setMainEl] = useState<HTMLElement | null>(null)
+  const page = useRef<HTMLDivElement>(null), [pageEl, setPageEl] = useState<HTMLDivElement | null>(null), [mainEl, setMainEl] = useState<HTMLElement | null>(null), [bodyEl, setBodyEl] = useState<HTMLElement | null>(null)
   const [state, setState] = useState<DocRecord | 'missing' | 'failed' | null>(() => docs.peek?.(id)?.doc ?? null), [editing, setEditing] = useState(false), [reload, setReload] = useState(0)
   const record = typeof state === 'object' ? state : null
   const parsed = useMemo(() => (record ? parseDoc(record.text).doc : null), [record])
@@ -144,7 +146,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
     if (!record || !drawn || editing) return
     let go = true, mounted: { destroy(): void } | null = null
     // Figures measure text, as slides do: the fonts first.
-    void loadFaces().then(() => { if (go && page.current) { mounted = mountDoc(page.current, drawn, record.id); setPageEl(page.current) } })
+    void loadFaces().then(() => { if (go && page.current) { mounted = mountDoc(page.current, drawn, record.id); setPageEl(page.current); setBodyEl(page.current.querySelector<HTMLElement>('.doc-body')) } })
     return () => { go = false; mounted?.destroy() }
   }, [record, drawn, editing])
   // The page redrawn gives a ring a new element to wear.
@@ -225,9 +227,24 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const sendChat = (text: string) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }
   // A doc with nothing in it opens on its start screen; until something is asked, the prompt box is there, not in the
   // agent's panel (one prompt box on the page).
+  // A doc with nothing under its title says how to start, under the title: writing it first, the agent second. The
+  // agent's panel stays out of the way until it is asked for (Draft it with Occam, or its toggle).
   const blank = !!parsed && !parsed.blocks.length && !preview && !editing
-  const asking = blank && !messages.length
-  const chatShown = chatOpen && !panelShown && !asking
+  const [agentAsked, setAgentAsked] = useState(false)
+  // A doc that holds pages may have nothing of its own on purpose: it gets no invitation. Unknown until asked: none either.
+  const [holds, setHolds] = useState<number | null>(null)
+  useEffect(() => {
+    setHolds(null)
+    if (!blank) return
+    let go = true
+    subpages({ kind: 'doc', id }).then((n) => { if (go) setHolds(n) }, () => { if (go) setHolds(null) })
+    return () => { go = false }
+  }, [blank, id, tick, subpages])
+  useEffect(() => setAgentAsked(false), [id])
+  const invite = blank && holds === 0
+  const quiet = invite && !messages.length && !agentAsked
+  const draft = () => { setAgentAsked(true); setSide(null); if (!chatOpen) onToggleChat() }
+  const chatShown = chatOpen && !panelShown && !quiet
   const toAgent = () => { setSide(null); setPreview(null); setTarget(null); setRing(null); checks.reset(); if (!chatOpen) onToggleChat() }
   useEffect(() => {
     if (!panelShown) return
@@ -238,7 +255,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
 
   const header = (bar: ReactNode) => (
-    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={asking ? undefined : { open: chatShown, onToggle: panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
+    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatShown, onToggle: quiet ? draft : panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
       title={<span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>}>
       {bar}
       <AccountMenu account={account} />
@@ -255,7 +272,7 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         {state === 'failed' && <p className="px-8 py-10 text-[13.5px] text-ink-2">Couldn’t open the doc. Reload to try again.</p>}
         {content}
       </main>
-      {!asking && <ChatPanel about="doc" open={chatShown} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
+      {!quiet && <ChatPanel about="doc" open={chatShown} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
         chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
         onSend={sendChat}
         onClear={() => { setMessages([]); historyRef.current = [] }} />}
@@ -301,10 +318,9 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
             pdf: () => setPrinting(true),
           } : undefined} /> : null} />)}
       {body(<>
-        {blank && <EmptyDoc onWrite={canEdit ? () => { if (record) startEditing() } : undefined} working={chatBusy ? phaseLinesOf(messages.at(-1)?.trace) : null}
-          composer={asking && canEdit ? <Composer hero chips={chips} canSend={modelsLive && !offline && !chatBusy} busy={chatBusy} onSend={sendChat} onClear={() => {}} canClear={false} action="Draft it"
-            hint={offline ? 'The models are not reachable right now. You can still write it yourself.' : 'What is this doc for? Paste what backs it up…'} /> : undefined} />}
-        <div ref={page} data-doc-print-root className={blank ? 'hidden' : undefined} />{record && !blank && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}
+        {invite && bodyEl && createPortal(<EmptyDoc onWrite={canEdit ? () => { if (record) startEditing() } : undefined} onDraft={canEdit && modelsLive && !offline ? draft : undefined}
+          working={chatBusy ? phaseLinesOf(messages.at(-1)?.trace) : null} />, bodyEl)}
+        <div ref={page} data-doc-print-root />{record && <CommentTriggers page={pageEl} theme={look.theme} onPick={pick} />}
       </>)}
       {printing && record && <PrintDoc name={fileName(record.name)} onDone={() => setPrinting(false)} />}
     </>
