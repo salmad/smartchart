@@ -15,15 +15,5 @@ export function usePanel(storageKey: string, key: string, byDefault: () => boole
   return [open, toggle]
 }
 
-/** Wide enough for the decks, the chat and an inspector beside a full-size slide. Narrower, the decks give way. */
+/** Wide enough for the sidebar, the agent and a full-size slide: a window this wide opens with the sidebar out. */
 export const ROOMY = '(min-width: 1500px)'
-
-export function useRoomy(): boolean {
-  const [roomy, setRoomy] = useState(() => matchMedia(ROOMY).matches)
-  useEffect(() => {
-    const m = matchMedia(ROOMY), change = () => setRoomy(m.matches)
-    m.addEventListener('change', change)
-    return () => m.removeEventListener('change', change)
-  }, [])
-  return roomy
-}

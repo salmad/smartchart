@@ -186,7 +186,7 @@ test('back from Google, the session check passes the one-time verifier on, then 
   })
   await page.route('**/api/decks**', (r) => r.fulfill({ json: [] }))
   await page.goto('/?neon_auth_session_verifier=abc')
-  await expect(page.getByRole('heading', { name: 'What should this slide say?' })).toBeVisible() // no decks yet: a new one
+  await expect(page.getByRole('heading', { name: 'Say what the room should take away.' })).toBeVisible() // no decks yet: a new one
   expect(seen[0]).toBe('abc')
   await expect(page).toHaveURL(/localhost:\d+\/$/)
 })

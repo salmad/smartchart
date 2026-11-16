@@ -22,7 +22,8 @@ const grouped = (style: Style) => GROUPS.map((g) => ({ ...g, starters: startersF
 
 /** Add slide, and a new deck's first screen: pick a starter from the filmstrip (nothing is picked at first), see it
     full size in the deck's own look where it would land, then add it. A double click adds straight away; a group's
-    tab scrolls the strip to it. In a new deck the empty frame also points at the chat, where the slide can be described. */
+    tab scrolls the strip to it. In a new deck it is the second way in, opened from the start screen (EmptyDeck); Cancel
+    goes back there. */
 export function AddSlide({ deck, current, onUse, onCancel }: Props) {
   const start = GROUP_OF[deck.slides[current]?.template ?? 'chart']
   const film = useRef<HTMLDivElement | null>(null)
@@ -56,8 +57,8 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
           {slide && preview
             ? <div data-featured><SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]} className={cn(frame, 'shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)]')} /></div>
             : <div className={cn(frame, 'grid place-content-center gap-1.5 border border-dashed border-line-2 text-center')}>
-                <p className="app-title text-[24px]">{first ? 'Your slide appears here.' : 'Add a slide'}</p>
-                {!first && <span className="text-ink-3">Pick one below to preview it here, in your deck’s look.</span>}
+                <p className="app-title text-[24px]">{first ? 'Start from a ready-made slide' : 'Add a slide'}</p>
+                <span className="text-ink-3">Pick one below to preview it here, in your deck’s look.</span>
               </div>}
         </div>
         <div className="flex w-[min(100%,calc((100vh_-_theme(spacing.bar)_-_44px_-_300px)*16/9))] items-center gap-3 max-[900px]:w-full max-[900px]:flex-wrap">

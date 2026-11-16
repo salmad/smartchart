@@ -36,7 +36,9 @@ export default {
         border: app.line, input: app['line-2'], ring: app['ink-3'],
       },
       // The app bar's height: the bar is h-bar, and every screen sizes its body and its slides from this one number.
-      spacing: { bar: '56px' },
+      // bar: the app bar's height. side: the right-hand slot (the agent, Look, Versions, Comments, Checks), one width so
+      // the page never moves when one panel takes over from another.
+      spacing: { bar: '56px', side: '360px' },
       // What floats over the page (menus, popovers, dialogs): a lit top edge and one deep, soft shadow.
       boxShadow: { menu: 'inset 0 1px 0 rgb(var(--brand-cream) / .04), 0 24px 48px -16px rgb(0 0 0 / .7)' },
       // Named, never arbitrary: tailwindcss-animate also owns duration-* and ease-*, so duration-[1400ms] or
@@ -58,6 +60,8 @@ export default {
         // A caption rising into place; a bar of a chart growing.
         rise: { from: { opacity: '0', transform: 'translateY(10px)', filter: 'blur(6px)' } },
         grow: { from: { transform: 'scaleY(0)' } },
+        // A bar of a timeline drawing itself from its start date.
+        stretch: { from: { transform: 'scaleX(0)', opacity: '0' } },
         dash: { to: { strokeDashoffset: '-36' } },
         // A turn at work: gold stars fading in and out around the slide, and a star turning in the status line.
         twinkle: { '0%, 100%': { opacity: '0', transform: 'scale(.2) rotate(0deg)' }, '50%': { opacity: '1', transform: 'scale(1) rotate(90deg)' } },
@@ -66,7 +70,7 @@ export default {
         beacon: { '0%, 100%': { opacity: '1', transform: 'scale(1)' }, '50%': { opacity: '.35', transform: 'scale(1.12)' } },
         sheen: { from: { transform: 'translateX(-120%) skewX(-20deg)' }, to: { transform: 'translateX(220%) skewX(-20deg)' } },
       },
-      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', beacon: 'beacon 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
+      animation: { pop: 'pop .14s ease-out', reveal: 'reveal .7s cubic-bezier(.2,.7,.2,1)', rise: 'rise .8s cubic-bezier(.2,.7,.2,1) both', grow: 'grow .9s cubic-bezier(.2,.7,.2,1) both', stretch: 'stretch .9s cubic-bezier(.2,.7,.2,1) both', twinkle: 'twinkle 2.4s ease-in-out infinite both', glint: 'glint 1.6s ease-in-out infinite', beacon: 'beacon 1.6s ease-in-out infinite', shimmer: 'sheen 3.2s cubic-bezier(.4,0,.2,1) infinite' },
     },
   },
   plugins: [animate],

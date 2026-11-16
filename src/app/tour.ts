@@ -38,8 +38,10 @@ export function place(target: Box | null, card: { width: number; height: number 
   if (below + card.height <= view.height - EDGE) return { top: below, left, side: 'below' }
   const above = target.top - GAP - card.height
   if (above >= EDGE) return { top: above, left, side: 'above' }
-  // A target as tall as the screen (the chat): beside it, else over its lower part.
+  // A target as tall as the screen (the agent, docked right): beside it on whichever side has room, else over its lower part.
   const right = target.left + target.width + GAP
   if (right + card.width <= view.width - EDGE) return { top: clampY(target.top + target.height / 2 - card.height / 2), left: right, side: 'below' }
+  const left0 = target.left - GAP - card.width
+  if (left0 >= EDGE) return { top: clampY(target.top + target.height / 2 - card.height / 2), left: left0, side: 'below' }
   return { top: clampY(view.height - card.height - EDGE), left, side: 'below' }
 }

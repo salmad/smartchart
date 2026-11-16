@@ -17,6 +17,7 @@ import { ChartGrid } from './ChartGrid'
 import { useSlideEdit } from './useSlideEdit'
 import { deckCheck } from './check'
 import { useEditKeys } from './useEditKeys'
+import { DISCARD_CHANGES, useConfirm } from '@/app/components/ConfirmDialog'
 import type { Surface } from './surface'
 
 const SAVE_KEYS = ['s', 'Enter']
@@ -28,7 +29,11 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
   const check = useMemo(() => deckCheck(deck, index, style, measurer), [deck, index, style, measurer])
   const edit = useSlideEdit({ slide: item.slide, check, save: saveDraft, onDone })
   const [surface, setSurface] = useState<Surface | null>(null), [grid, setGrid] = useState<number | null>(null)
-  const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this slide?')) edit.discard() }, [edit])
+  const [confirm, ask] = useConfirm()
+  const discard = useCallback(() => {
+    if (!edit.dirty) { edit.discard(); return }
+    void ask(DISCARD_CHANGES('this slide')).then((yes) => { if (yes) edit.discard() })
+  }, [edit, ask])
 
   // ⌘S / ⌘↵ save; the rest are the edit keys a figure in a doc uses too.
   const saveNow = useCallback(() => { void edit.save() }, [edit])
@@ -60,6 +65,7 @@ export function EditMode({ item, index, deck, deckStyle: style, measurer, save, 
       </div>
       <section className={`mx-auto min-w-0 max-w-[calc(100%-4rem)] pb-5 max-[900px]:order-2 max-[900px]:max-w-full max-[900px]:px-4 ${SLIDE_W} ${UNDER_SLIDE}`}>
         <EditTalk edit={edit} />
+        {confirm}
         <EditBar edit={edit} deckStyle={style} onDiscard={discard} />
       </section>
     </>

@@ -18,6 +18,7 @@ import { useSlideEdit } from '@/app/edit/useSlideEdit'
 import type { Surface } from '@/app/edit/surface'
 import { bodyOf, figureCheck, figureRender } from './figureCheck'
 import type { DocEdit } from './useDocEdit'
+import { DISCARD_CHANGES, useConfirm } from '../ConfirmDialog'
 import { surface as card, tintOnFocus, tintOnHover } from './chrome'
 
 const STYLE: Style = 'consulting', DONE_KEYS = ['Enter']
@@ -41,10 +42,12 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
   const render = useMemo(() => figureRender(block, theme, accent, () => box.current), [block, theme, accent])
   const [surface, setSurface] = useState<Surface | null>(null), [grid, setGrid] = useState<number | null>(null)
   const done = useCallback(() => doc.openFigure(null), [doc])
+  const [confirm, ask] = useConfirm()
   const discard = useCallback(() => {
-    if (editRef.current.dirty && !window.confirm('Discard your changes to this figure?')) return
-    doc.holdFigure(null); doc.openFigure(null)
-  }, [doc])
+    const leave = () => { doc.holdFigure(null); doc.openFigure(null) }
+    if (!editRef.current.dirty) { leave(); return }
+    void ask(DISCARD_CHANGES('this figure')).then((yes) => { if (yes) leave() })
+  }, [doc, ask])
   useEditKeys(edit, STYLE, { grid: grid !== null, discard, save: done, saveKeys: DONE_KEYS })
 
   const look = useMemo<MenuLook>(() => ({ content: `theme-${theme} rounded-[10px] border-0 ${card}`, item: tintOnFocus, separator: 'bg-[var(--line)]', label: 'text-[var(--muted)]' }), [theme])
@@ -60,6 +63,7 @@ export function FigureEdit({ doc, at, block, theme, accent }: Props) {
   )
   return (
     <div data-figure-edit>
+      {confirm}
       <div ref={box} className="fig-edit-box">
         {callout ? surfaceEl : <EditMenu edit={edit} surface={surface} deckStyle={STYLE} onChart={setGrid} look={look}>{surfaceEl}</EditMenu>}
       </div>

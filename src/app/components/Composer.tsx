@@ -7,6 +7,7 @@ import { ACCEPT, readFile, type Attached } from '@/app/files'
 import { LINK, linkName, readLink } from '@/app/links'
 import { cn } from '@/app/lib/utils'
 import { FileChip } from './FileChip'
+import { Seg, SEG_TRACK } from './Seg'
 import { Button } from '@/app/components/ui/button'
 import { Textarea } from '@/app/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip'
@@ -19,6 +20,8 @@ interface Props {
   hint?: string
   /** A new deck: the writing style to pick (it is set once the first slide is made) and example prompts to start from. */
   start?: { style: Style; onStyle: (s: Style) => void }
+  /** At the centre of an empty deck: a card of its own, rather than the foot of the agent's panel. */
+  hero?: boolean
 }
 
 const STYLES: [Style, string, string][] = [
@@ -32,7 +35,7 @@ type Pending = { id: number; name: string } & ({ state: 'reading' } | { state: '
 /** Prompt box with suggestion pills; in a new deck, the style and example prompts instead. Files dropped on it, or
     picked with the paperclip, go with the message. It refuses an empty message and a send while a turn runs or a
     file is still being read: sendTurn does not check. */
-export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint, start }: Props) {
+export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint, start, hero = false }: Props) {
   const [text, setText] = useState(''), [files, setFiles] = useState<Pending[]>([]), [over, setOver] = useState(false)
   const picker = useRef<HTMLInputElement>(null), nextId = useRef(0)
   const ready = files.flatMap((f) => (f.state === 'ready' ? [f.file] : []))
@@ -71,7 +74,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint
 
   return (
     <form onSubmit={submit}
-      className={cn('relative grid gap-2.5 border-t border-line px-3.5 pb-3.5 pt-3', over && 'after:pointer-events-none after:absolute after:inset-2 after:rounded-[12px] after:border after:border-dashed after:border-ink-3 after:bg-app-bg/90')}>
+      className={cn('relative grid gap-2.5', hero ? 'rounded-[16px] border border-line-2 bg-panel p-3 shadow-menu' : 'border-t border-line px-3.5 pb-3.5 pt-3', over && 'after:pointer-events-none after:absolute after:inset-2 after:rounded-[12px] after:border after:border-dashed after:border-ink-3 after:bg-app-bg/90')}>
       {over && <p aria-hidden className="pointer-events-none absolute inset-0 z-[1] grid place-content-center text-[13px] text-ink">Drop to add to your message</p>}
       {start && (
         <div className="flex flex-wrap gap-1.5">
@@ -104,7 +107,7 @@ export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint
           ))}
         </ul>
       )}
-      <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} disabled={!canSend}
+      <Textarea rows={hero ? 4 : 3} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={key} disabled={!canSend}
         onPaste={(e) => {
           const pics = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/'))
           if (pics.length) { e.preventDefault(); add(named(pics)); return }
@@ -112,16 +115,12 @@ export function Composer({ chips, canSend, busy, onSend, onClear, canClear, hint
           const link = e.clipboardData.getData('text/plain').trim()
           if (LINK.test(link)) { e.preventDefault(); attach(linkName(link), () => readLink(link)) }
         }}
-        placeholder={hint ?? (files.length ? 'Say what the room should take away…' : start ? 'Paste your numbers or a link, or drop a doc or sheet, and say what the slide should argue…' : 'Describe a slide, or ask for a change…')}
+        placeholder={hint ?? (files.length ? 'Say what the room should take away…' : start ? (hero ? 'What should the slide argue? Paste what backs it up…' : 'Paste your numbers or a link, or drop a doc or sheet, and say what the slide should argue…') : 'Describe a slide, or ask for a change…')}
         className="min-h-0 resize-none rounded-[10px] border-line-2 bg-app-bg px-3 py-2.5 text-sm leading-[1.45] shadow-none focus-visible:border-ink-3 focus-visible:ring-0 disabled:opacity-50" />
       <div className="flex items-center gap-2">
         {start
-          ? <div role="group" aria-label="Writing style" className="mr-auto flex gap-1">
-              {STYLES.map(([v, label, line]) => (
-                <button key={v} type="button" aria-pressed={start.style === v} title={line} onClick={() => start.onStyle(v)}
-                  className="h-7 cursor-pointer rounded-md px-2.5 text-[12.5px] text-ink-3 transition-colors hover:text-ink-2 aria-pressed:bg-raise aria-pressed:text-ink aria-pressed:shadow-[0_0_0_1px_theme(colors.line-2)]">{label}</button>
-              ))}
-            </div>
+          ? <Seg label="Writing style" value={start.style} onChange={start.onStyle} className={cn(SEG_TRACK, 'mr-auto')}
+              options={STYLES.map(([v, label, line]) => [v, <span key={v} title={line}>{label}</span>])} />
           : canClear ? <Button type="button" variant="ghost" onClick={onClear} disabled={busy} className="mr-auto px-1 text-[12.5px] text-ink-3">Clear chat</Button>
           : <span className="mr-auto" />}
         <input ref={picker} type="file" multiple accept={ACCEPT} hidden onChange={(e) => { add(e.target.files); e.target.value = '' }} />

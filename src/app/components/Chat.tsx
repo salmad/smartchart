@@ -9,7 +9,12 @@ import { phaseLinesOf } from '@/app/phase'
 import { FileChip } from './FileChip'
 import { Glint, Thinking } from './Working'
 
-const OFFLINE = 'The models are not reachable right now. You can still browse and pick slides.'
+/** What the chat is about: a deck's slides, or a doc. The words follow it; nothing else does. */
+export type ChatAbout = 'deck' | 'doc'
+const WORDS = {
+  deck: { ask: 'What should this slide say?', offline: 'The models are not reachable right now. You can still browse and pick slides.' },
+  doc: { ask: 'What should change in this doc?', offline: 'The models are not reachable right now. You can still read and edit the doc.' },
+} as const
 
 interface Props {
   messages: Message[]; offline: boolean
@@ -19,19 +24,20 @@ interface Props {
   busy: boolean
   /** The deck has no slides yet: the empty chat asks the question the first message answers. */
   fresh: boolean
+  about?: ChatAbout
 }
 
 /** The conversation, newest at the bottom. */
-export function Chat({ messages, offline, onUndo, busy, fresh }: Props) {
+export function Chat({ messages, offline, onUndo, busy, fresh, about = 'deck' }: Props) {
   const thread = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => { if (thread.current) thread.current.scrollTop = thread.current.scrollHeight }, [messages, offline])
 
   return (
     <div ref={thread} className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[18px] py-5 max-[900px]:px-4">
       {/* A new deck: the question the first message answers. The composer's placeholder says how. */}
-      {!messages.length && fresh && <h2 className="app-title text-[24px]">What should this slide say?</h2>}
+      {!messages.length && fresh && <h2 className="app-title text-[24px]">{WORDS[about].ask}</h2>}
       {messages.map((m, k) => <Bubble key={k} m={m} onUndo={onUndo} busy={busy} />)}
-      {offline && <p className="text-[13px] text-ink-2">{OFFLINE}</p>}
+      {offline && <p className="text-[13px] text-ink-2">{WORDS[about].offline}</p>}
     </div>
   )
 }

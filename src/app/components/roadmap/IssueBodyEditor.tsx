@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import type { Doc } from '@/engine/docs/types'
 import type { Theme } from '@/engine/types'
 import { Button } from '../ui/button'
+import { DISCARD_CHANGES, useConfirm } from '../ConfirmDialog'
 import { DocEditor } from '../docs/DocEditor'
 import { useDocEdit } from '../docs/useDocEdit'
 
@@ -24,7 +25,8 @@ export function IssueBodyEditor({ doc, docId, look, save, onDone, onReload }: Pr
 
   useEffect(() => { editor?.commands.focus('end') }, [editor])
 
-  const cancel = () => { if (!edit.dirty || window.confirm('Discard your changes to the description?')) edit.discard() }
+  const [confirm, ask] = useConfirm()
+  const cancel = async () => { if (!edit.dirty || await ask(DISCARD_CHANGES('the description'))) edit.discard() }
 
   return (
     <div
@@ -34,6 +36,7 @@ export function IssueBodyEditor({ doc, docId, look, save, onDone, onReload }: Pr
         if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) { e.preventDefault(); void edit.save() }
       }}
     >
+      {confirm}
       <DocEditor edit={edit} theme={look.theme} accent={look.accent} docId={docId} />
       <div className="mt-3 flex items-center justify-end gap-2">
         {edit.error && (
@@ -42,7 +45,7 @@ export function IssueBodyEditor({ doc, docId, look, save, onDone, onReload }: Pr
             {onReload && <button type="button" className="text-ink underline-offset-2 hover:underline" onClick={onReload}>Load the newer one</button>}
           </p>
         )}
-        <Button size="sm" variant="ghost" onClick={cancel} disabled={edit.saving}>Cancel</Button>
+        <Button size="sm" variant="ghost" onClick={() => void cancel()} disabled={edit.saving}>Cancel</Button>
         <Button size="sm" onClick={() => void edit.save()} disabled={edit.saving}>{edit.saving ? 'Saving…' : 'Save'}</Button>
       </div>
     </div>

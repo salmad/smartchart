@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { signInAsDev } from './dev-account'
 
-export const EMPTY = 'No issues yet'
+export const EMPTY = 'Plan the work. See when it lands.'
 
 /** Progressive filter: property → operator → value. */
 export async function addStatusFilter(

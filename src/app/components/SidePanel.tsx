@@ -24,7 +24,7 @@ interface Props {
   /** What the close button is called ("Close comments"). */
   closeLabel: string
   onClose: () => void
-  /** An inspector is 320px; a panel that holds a whole record (an issue) is wide. */
+  /** An inspector takes the right slot's width (`side`, the agent's too); a panel that holds a whole record (an issue) is wide. */
   wide?: boolean
   narrow?: keyof typeof NARROW
   /** The tour's name for this panel. */
@@ -39,7 +39,7 @@ interface Props {
 export const SidePanel = forwardRef<HTMLElement, Props>(({ label, title, note, actions, closeLabel, onClose, wide = false, narrow = 'stack', tour, children }, ref) => (
   <aside ref={ref} tabIndex={-1} aria-label={label} data-tour={tour}
     className={cn('flex min-h-0 flex-none animate-in fade-in-0 slide-in-from-right-3 flex-col border-l border-line bg-app-bg outline-none duration-200 ease-out-strong',
-      wide ? 'w-[440px] max-w-full' : 'w-[320px]', NARROW[narrow])}>
+      wide ? 'w-[440px] max-w-full' : 'w-side', NARROW[narrow])}>
     <header className="flex items-start justify-between gap-3 p-4 pb-3">
       <div className="grid min-w-0 gap-0.5">
         <h2 className="min-w-0 text-[14px] font-medium text-ink">{title}</h2>

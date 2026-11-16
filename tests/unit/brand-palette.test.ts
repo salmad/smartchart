@@ -24,7 +24,7 @@ describe('the brand palette', () => {
   it('is the boot frame painted before the stylesheet loads', () => {
     const html = read('index.html')
     expect(html).toContain(`html, body { background: ${brand('black')} }`)
-    expect(html).toContain(`#boot .chat { width: 368px; background: ${brand('black-2')} }`)
+    expect(html).toContain(`#boot .chat { width: 360px; background: ${brand('black')} }`)
   })
 
   it('is written out nowhere else in the app chrome', () => {

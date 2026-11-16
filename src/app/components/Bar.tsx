@@ -31,7 +31,9 @@ export interface BarProps {
   view: DeckView | null; onView: (v: DeckView) => void
   onPresent: () => void
   decksOpen: boolean; onToggleDecks: () => void
-  chatOpen: boolean; onToggleChat: () => void
+  chatOpen: boolean
+  /** Absent while the page has no agent panel to show (a new deck asks at its centre). */
+  onToggleChat?: () => void
   /** Occam: the site, at /home. */
   onSite: () => void
   /** The deck a share link can be made for; null when decks live only in this browser, or before the deck exists. */
@@ -53,12 +55,12 @@ const views = VIEWS.map(([v, label, Icon]): [DeckView, ReactNode] => [v, (
   </span>
 )])
 
-/** Top bar: the panels on the left (decks, chat) toggle at the left, the deck's name and menu; the view switch in the middle;
-    the panels on the right (look, versions) toggle at the right, then Share, Present and you. */
+/** Top bar: the sidebar's toggle, the deck's name and menu; the view switch in the middle; the right slot's toggles
+    (the agent, Look, Versions) at the right, then Share, Present and you. */
 export function Bar(p: BarProps) {
   const [renaming, setRenaming] = useState(false)
   return (
-    <AppBar sidebarOpen={p.decksOpen} onToggleSidebar={p.onToggleDecks} chat={{ open: p.chatOpen, onToggle: p.onToggleChat }}
+    <AppBar sidebarOpen={p.decksOpen} onToggleSidebar={p.onToggleDecks} chat={p.onToggleChat && { open: p.chatOpen, onToggle: p.onToggleChat }}
       onSite={p.onSite} crumbs={p.crumbs} onOpenPage={p.onOpenPage}
       title={<>
         <DeckTitle name={p.title} editing={renaming} onEditing={setRenaming} onRename={p.onRename} disabled={p.busy} />

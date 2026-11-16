@@ -1,10 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { TourShow } from './tour'
+import { seen as tourSeen, type TourShow } from './tour'
 import { upgrade } from '@/engine/slides/schema'
 import type { Slide, Style, Theme } from '@/engine/types'
 import { starterSlide, type Starter } from '@/engine/starters'
 import { Editor } from './components/Editor'
 import { AddSlide } from './components/AddSlide'
+import { Composer } from './components/Composer'
+import { EmptyDeck } from './components/EmptyDeck'
+import { phaseLinesOf } from './phase'
 import { newLiveKey, openPresentation, usePublishDeck } from './presenter-channel'
 import { pdfName } from './pdf-name'
 import { TooltipProvider } from './components/ui/tooltip'
@@ -125,6 +128,7 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
   const say = useCallback((text: string, sub?: string) => app.dispatch({ type: 'message', message: { kind: 'bot', text, sub } }), [app])
   const recheck = useCallback(() => app.dispatch({ type: 'items', items: recheckRules(app.getState(), measurer()) }), [app, measurer])
   const tour = useTour(app, recheck)
+  const [tourSeenAtBoot] = useState(() => tourSeen())
   const offerTour = tour.offer
   const agentConnect = useAgentConnect(account.id, backup !== null)
 
@@ -404,8 +408,16 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
   // The gallery is for an empty deck. On a route that opens a deck it waits for boot, so a deck about to open is not
   // preceded by thirty slide tiles measured and drawn for nothing.
   const opening = !booted && (route.name === 'deck' || route.name === 'home')
+  // A new deck opens on its start screen (the prompt at the centre); the gallery of starting slides is one click away.
+  const [gallery, setGallery] = useState(false)
+  useEffect(() => setGallery(false), [s.deckId])
   const stage = s.view === 'landing'
-    ? (opening ? undefined : <AddSlide deck={deck} current={0} onUse={onPick} />)
+    ? (opening ? undefined
+      : gallery ? <AddSlide deck={deck} current={0} onUse={onPick} onCancel={() => setGallery(false)} />
+      : <EmptyDeck onGallery={() => setGallery(true)} working={s.busy ? phaseLinesOf(s.messages.at(-1)?.trace) : null}
+          composer={s.messages.length ? undefined : <Composer hero chips={null} canSend={s.live && !locked(s)} busy={s.busy} onSend={onSend} onClear={onClear} canClear={false}
+            hint={healthKnown && !s.live ? 'The models are not reachable right now. Start from a ready-made slide instead.' : undefined}
+            start={{ style: s.style, onStyle: bar.onStyle }} />} />)
     : s.view === 'add'
       ? <AddSlide deck={deck} current={s.current} onUse={onUse} onCancel={onCancelAdd} />
       : undefined
@@ -431,9 +443,11 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
           look={{ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }}
           shareId={backup ? docOnScreen : null} /></Suspense>
         : <Editor state={s} healthKnown={healthKnown} deck={deck} chips={chipsFor(s)} bar={bar} onSend={onSend} onClear={onClear} onSelect={onSelect} onMove={onMove} onTalk={onTalk} onRemove={onRemove} onRestore={onRestore} stage={stage} edit={edit} onEdit={onEdit} versions={versions && { api: versions, saves }} onUndo={undoTurn} comments={commentActions} tourShow={tourShow} onRebuild={rebuild} decks={sidebar} />}
-      {tour.touring && <Tour onClose={tour.stop} onShow={setTourShow} />}
+      {/* The tour ends at Connect an agent, so taking it answers the agent nudge too. */}
+      {tour.touring && <Tour onClose={() => { tour.stop(); void agentConnect.dismiss() }} onShow={setTourShow} />}
       {tour.nudge && !tour.touring && <TourNudge onStart={tour.start} onDismiss={tour.dismiss} />}
-      {agentConnect.show && !tour.nudge && !tour.touring && booted && !readOnly
+      {/* One offer per visit, and only where it is about: on a deck with slides, in a later visit than the tour's offer. */}
+      {agentConnect.show && tourSeenAtBoot && !tour.nudge && !tour.touring && booted && !readOnly && !roadmapOnScreen && !docOnScreen && s.items.length > 0
         && <AgentConnectNudge onDismiss={agentConnect.dismiss} onConnected={agentConnect.refresh} />}
       {printing && <Suspense fallback={null}><PrintDeck deck={deck} name={pdfName(deckName({ name: s.name, items: s.items }))} onDone={() => setPrinting(false)} /></Suspense>}
       {/* Offscreen measuring frame: a real 1920×1080 slide, never shown. */}

@@ -93,12 +93,12 @@ export function Tour({ onClose, onShow }: { onClose: () => void; onShow: (s: Tou
 /** After the first slide: one quiet offer of the tour, never again once taken or dismissed. */
 export function TourNudge({ onStart, onDismiss }: { onStart: () => void; onDismiss: () => void }) {
   return (
-    <div role="status" className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-raise py-1.5 pl-4 pr-1.5 text-[13px] text-ink-2 shadow-[0_0_0_1px_theme(colors.line-2),0_12px_32px_rgba(0,0,0,.5)] motion-safe:animate-reveal">
+    <div role="status" className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-line-2 bg-raise py-1.5 pl-4 pr-1.5 text-[13px] text-ink-2 shadow-menu motion-safe:animate-reveal">
       Your slides are in. See what else Occam does?
       <Button size="sm" onClick={onStart}>Take the 1-minute tour</Button>
-      <button type="button" onClick={onDismiss} aria-label="Not now" className="grid size-7 cursor-pointer place-items-center rounded-full text-ink-3 transition-colors hover:bg-panel hover:text-ink">
-        <X className="size-3.5" strokeWidth={1.75} />
-      </button>
+      <Button type="button" variant="quiet" size="icon-sm" onClick={onDismiss} aria-label="Not now" title="Not now" className="rounded-full">
+        <X strokeWidth={1.75} />
+      </Button>
     </div>
   )
 }

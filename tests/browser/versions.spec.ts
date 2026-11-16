@@ -40,8 +40,10 @@ test('preview an earlier version, then restore it as a new version on top', asyn
   expect(await title(page)).toBe('Now') // a preview writes nothing
   await page.getByRole('button', { name: 'Restore this version' }).click()
   await expect.poll(() => title(page)).toBe('Before')
-  await expect(page.getByRole('complementary', { name: 'Chat' })).toContainText('Restored the version from')
   await expect(panel.getByRole('button', { name: /Current/ })).toContainText('Restored the version from')
+  // The agent shares the right slot with Versions: closing the panel brings it back, with the restore in its thread.
+  await panel.getByRole('button', { name: 'Close versions' }).click()
+  await expect(page.getByRole('complementary', { name: 'Chat' })).toContainText('Restored the version from')
 })
 
 test('Undo on an agent reply puts the slides back as they were before it', async ({ page }) => {

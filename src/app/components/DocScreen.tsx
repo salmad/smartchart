@@ -216,10 +216,21 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const commenting = { open: side === 'comments', count: comments.filter((c) => !c.done).length, onToggle: toggleComments }
   const checking = { open: side === 'checks', count: checksState.badge.count, pass: checksState.badge.pass, label: countText(checksState.badge), onToggle: toggleChecks }
 
+  // The right slot: a panel open takes the agent's place, closing it brings the agent back; the agent's toggle (and ⌘L)
+  // while a panel is up goes back to the agent.
+  const panelShown = (!editing && side === 'look' && canEdit) || (!editing && side === 'versions') || ((side === 'comments' || side === 'checks') && !!parsed)
+  const chatShown = chatOpen && !panelShown
+  const toAgent = () => { setSide(null); setPreview(null); setTarget(null); setRing(null); checks.reset(); if (!chatOpen) onToggleChat() }
+  useEffect(() => {
+    if (!panelShown) return
+    const key = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); e.stopPropagation(); toAgent() } }
+    window.addEventListener('keydown', key, true)
+    return () => window.removeEventListener('keydown', key, true)
+  }, [panelShown, chatOpen]) // eslint-disable-line react-hooks/exhaustive-deps -- toAgent reads the latest state
   const toggle = (which: 'versions' | 'look') => () => { setSide((s) => (s === which ? null : which)); setPreview(null) }
 
   const header = (bar: ReactNode) => (
-    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatOpen, onToggle: onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
+    <AppBar sidebarOpen={sidebarOpen} onToggleSidebar={onToggleSidebar} chat={{ open: chatShown, onToggle: panelShown ? toAgent : onToggleChat }} onSite={onSite} crumbs={crumbs} onOpenPage={onOpenPage}
       title={<span className="truncate text-ink-2">{record?.name ?? name ?? ''}</span>}>
       {bar}
       <AccountMenu account={account} />
@@ -228,10 +239,6 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
   const body = (content: ReactNode) => (
     <ScreenBody>
       {sidebar}
-      <ChatPanel open={chatOpen} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
-        chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
-        onSend={(text) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }}
-        onClear={() => { setMessages([]); historyRef.current = [] }} />
       {/* On a phone the checks are a sheet over the page's foot: room below, so the last block can scroll above it. */}
       <main ref={setMainEl} className={`min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-bg ${side === 'checks' ? 'max-[900px]:pb-[45dvh]' : ''}`}>
         {!editing && preview && record && shown && <DocPreview version={preview.v} current={preview.current} ready={preview.doc === 'missing' ? 'missing' : !!preview.doc} busy={restoring}
@@ -240,6 +247,10 @@ export function DocScreen({ id, docs, canEdit, tick, onSaved, sidebar, sidebarOp
         {state === 'failed' && <p className="px-8 py-10 text-[13.5px] text-ink-2">Couldn’t open the doc. Reload to try again.</p>}
         {content}
       </main>
+      <ChatPanel about="doc" open={chatShown} messages={messages} offline={offline} onUndo={null} busy={chatBusy || editing} fresh={!messages.length}
+        chips={chips} canSend={modelsLive && canEdit && !editing} composerBusy={chatBusy} hint={editing ? 'Save or discard to keep chatting' : undefined}
+        onSend={(text) => { setChatBusy(true); void sendDocTurn(text, { docId: id, getHistory: () => historyRef.current, setHistory: (h) => { historyRef.current = h }, setMessages, onDone: () => setReload((n) => n + 1) }).finally(() => setChatBusy(false)) }}
+        onClear={() => { setMessages([]); historyRef.current = [] }} />
       {!editing && side === 'look' && canEdit && <LookPanel noun="doc" theme={look.theme} accent={look.accent}
         onTheme={look.onTheme} onAccent={look.onAccent} onClose={() => setSide(null)} />}
       {!editing && side === 'versions' && <VersionsPanel list={() => docs.versions(id)} describe={(v, before) => describeDocDiff(before?.tree ?? null, v.tree)} noun="doc"

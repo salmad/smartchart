@@ -26,18 +26,15 @@ interface Props {
   children: ReactNode
 }
 
-/** The bar at the top of every screen in the app: the panel toggles and where you are on the left, the view switch in
-    the middle, the page's controls on the right. One height (h-bar, the `bar` spacing token); ScreenBody is what goes under it. */
+/** The bar at the top of every screen in the app: the sidebar's toggle and where you are on the left, the view switch in
+    the middle, the agent's toggle and the page's controls on the right (the side its panel opens on). One height (h-bar, the `bar` spacing token); ScreenBody is what goes under it. */
 export function AppBar({ sidebarOpen, onToggleSidebar, chat, onSite, crumbs, onOpenPage, title, badge, center, children }: Props) {
   return (
     <header className={cn('h-bar flex-none items-center border-b border-line pl-3 pr-4 max-[900px]:flex max-[900px]:gap-3 max-[900px]:px-4',
       center !== undefined ? 'grid grid-cols-[1fr_auto_1fr] gap-6' : 'flex gap-3')}>
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        {/* The layout toggles, together: each shows whether its panel is open. */}
-        <div className="flex flex-none items-center gap-0.5">
-          <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-          {chat && <Toggle open={chat.open} onClick={chat.onToggle} label={`${chat.open ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>}
-        </div>
+        {/* Each panel's toggle sits on its side: the sidebar's here, the agent's at the right. */}
+        <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
         <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[13px]">
           <HomeLink onSite={onSite} />
           {title !== undefined && (
@@ -51,7 +48,10 @@ export function AppBar({ sidebarOpen, onToggleSidebar, chat, onSite, crumbs, onO
         </nav>
       </div>
       {center}
-      <div className="flex min-w-0 items-center justify-end gap-2.5 max-[900px]:gap-2">{children}</div>
+      <div className="flex min-w-0 items-center justify-end gap-2.5 max-[900px]:gap-2">
+        {chat && <Toggle open={chat.open} onClick={chat.onToggle} label={`${chat.open ? 'Hide' : 'Show'} the agent`} keys="⌘L"><Sparkles className="size-[17px]" strokeWidth={1.75} /></Toggle>}
+        {children}
+      </div>
     </header>
   )
 }

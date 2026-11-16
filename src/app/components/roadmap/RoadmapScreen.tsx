@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Account } from '@/app/auth'
 import type { RoadmapRepo } from '@/app/roadmaps'
@@ -8,7 +7,6 @@ import { go } from '@/app/route'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { useUserLook } from '@/app/useUserLook'
 import { ScreenBody } from '../AppBar'
-import { Button } from '../ui/button'
 import type { Crumb } from '../sidebar/usePageCrumbs'
 import { useRoadmap } from './useRoadmap'
 import { FieldsEditor } from './FieldsEditor'
@@ -22,6 +20,7 @@ import { useViewSettings } from './useViewSettings'
 import { runChecks, type CheckId } from '@/engine/roadmaps/checks'
 import { liveChips } from '@/engine/roadmaps/view'
 import { IssuePanel } from './IssuePanel'
+import { EmptyRoadmap } from './EmptyRoadmap'
 import { IssuePage } from './IssuePage'
 
 interface Props {
@@ -57,10 +56,10 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const hasIssues = live.length > 0
   const isChecks = viewSettings.layout === 'checks'
   const isMatrix = viewSettings.layout === 'matrix'
-  const isGantt = viewSettings.layout === 'gantt'
   const showTable = hasIssues || customFields.length > 0 || newIssue > 0
-  // Matrix/Gantt need setup UI even before issues or extra fields exist.
-  const showMain = showTable || isChecks || isMatrix || isGantt
+  // The matrix needs its setup (which fields are the axes) before any issue exists; an empty Gantt is a blank grid, so
+  // it shows the empty state, and New issue there opens its own row to type in.
+  const showMain = showTable || isChecks || isMatrix
 
   const checkReport = useMemo(() => {
     const chips = liveChips(customFields, viewSettings.chips)
@@ -256,23 +255,6 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
           refused={view.said}
         />
       )}
-    </div>
-  )
-}
-
-/** A roadmap with nothing in it: say so in the middle of the page and offer the one next step. A viewer gets no action. */
-function EmptyRoadmap({ onNewIssue }: { onNewIssue?: () => void }) {
-  return (
-    <div className="grid min-h-0 flex-1 place-items-center px-8 pb-11">
-      <div className="grid max-w-xs justify-items-center gap-1.5 text-center animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out-strong">
-        <h2 className="app-title text-[24px]">No issues yet</h2>
-        <p className="text-[13px] leading-[1.5] text-ink-3">
-          {onNewIssue ? 'An issue is one piece of work. Add the first, then nest, date and assign it.' : 'Nothing has been added to this roadmap.'}
-        </p>
-        {onNewIssue && (
-          <Button className="mt-3" onClick={onNewIssue}><Plus aria-hidden className="!size-3.5" strokeWidth={2} />New issue <kbd>C</kbd></Button>
-        )}
-      </div>
     </div>
   )
 }

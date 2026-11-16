@@ -75,7 +75,7 @@
       .boot-app body { background: #0B0A09 }
       #boot i { display: block; flex: none; background: rgba(243, 238, 228, .045); border-radius: 6px }
       #boot .w8 { width: 8px } #boot .w32 { width: 32px } #boot .w40 { width: 40px } #boot .w64 { width: 64px } #boot .w90 { width: 90px } #boot .w96 { width: 96px } #boot .w118 { width: 118px } #boot .w120 { width: 120px }
-      #boot .w210 { width: 210px } #boot .w250 { width: 250px } #boot .w338 { width: 338px }
+      #boot .w210 { width: 210px } #boot .w250 { width: 250px } #boot .w330 { width: 330px }
       #boot .h8 { height: 8px } #boot .h12 { height: 12px } #boot .h14 { height: 14px } #boot .h32 { height: 32px } #boot .h36 { height: 36px } #boot .h44 { height: 44px } #boot .h80 { height: 80px }
       #boot .r10 { border-radius: 10px } #boot .rr { border-radius: 50% } #boot .gap { margin-top: 14px }
       #boot .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; height: 56px; padding: 0 16px 0 12px; border-bottom: 1px solid rgba(243, 238, 228, .08) }
@@ -84,17 +84,19 @@
       #boot .chat { padding: 14px 14px 57px; flex-direction: column } .boot-chat #boot .chat { display: flex } #boot .grow { flex: 1 }
       #boot .body { display: flex; height: calc(100% - 56px) }
       #boot .decks, #boot .chat { display: none; flex: none; border-right: 1px solid rgba(243, 238, 228, .08) }
+      #boot .chat { border-right: 0; border-left: 1px solid rgba(243, 238, 228, .08) }
       #boot .decks { width: 248px }
-      #boot .chat { width: 368px; background: #13110F }
+      #boot .chat { width: 360px; background: #0B0A09 }
       @media (max-width: 900px) { #boot .decks, #boot .chat { display: none !important } }
     </style>
   </head>
   <body>
     <div id="boot" aria-hidden="true">
-      <div class="bar"><div class="l"><i class="w32 h32"></i><i class="w32 h32"></i><i class="w96 h12"></i></div><i class="w250 h36 r10"></i><div class="r"><i class="w64 h32"></i><i class="w118 h32"></i><i class="w32 h32 rr"></i></div></div>
+      <div class="bar"><div class="l"><i class="w32 h32"></i><i class="w96 h12"></i></div><i class="w250 h36 r10"></i><div class="r"><i class="w32 h32"></i><i class="w64 h32"></i><i class="w118 h32"></i><i class="w32 h32 rr"></i></div></div>
       <div class="body">
         <div class="decks"><i class="w120 h14"></i><i class="w40 h8 gap"></i><i class="w90 h12"></i><i class="w40 h8 gap"></i><i class="w210 h44 r10"></i><i class="w210 h44 r10"></i></div>
-        <div class="chat"><div class="grow"></div><i class="w338 h80 r10"></i></div>
+        <div class="grow"></div>
+        <div class="chat"><div class="grow"></div><i class="w330 h80 r10"></i></div>
       </div>
     </div>
     <div id="root"></div>

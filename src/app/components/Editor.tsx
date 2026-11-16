@@ -14,7 +14,6 @@ import { EditMode } from '@/app/edit/EditMode'
 import type { Attached } from '@/app/files'
 import { deckName } from '@/app/store'
 import { phaseLinesOf } from '@/app/phase'
-import { useRoomy } from '@/app/panel'
 import { Bar, type BarProps, type DeckView } from './Bar'
 import { ChatPanel } from './ChatPanel'
 import { Checks } from './Checks'
@@ -66,16 +65,19 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
   // Comments: the part of the slide the next note is about, and the part a row points at while the pointer is on it.
   const [target, setTarget] = useState<string | null>(null), [ring, setRing] = useState<string | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null), [reviewing, setReviewing] = useState(false)
-  // Look, versions and comments are inspectors on the right. Where the window is too narrow for one, the decks and the
-  // chat beside the slide, the decks step aside while it is open; their button brings them back and closes it.
-  const roomy = useRoomy(), decksAside = side !== null && !roomy && bar.decksOpen
+  // The right slot: an inspector open takes the agent's place, and closing it brings the agent back. The agent's toggle
+  // (and ⌘L) while an inspector is up goes back to the agent, rather than hiding an agent already out of sight.
+  const panelShown = side === 'look' || (side === 'versions' && !!versions) || (side === 'comments' && !!items[current] && !editing && !preview)
+  // A new deck asks at the centre of the page (EmptyDeck); the agent's panel comes in with the first message.
+  const asking = s.view === 'landing' && !items.length && !s.messages.length
+  const chatShown = bar.chatOpen && !panelShown && !asking
+  const toAgent = () => { setSide(null); setPreview(null); setTarget(null); setRing(null); if (!bar.chatOpen) bar.onToggleChat?.() }
   useEffect(() => {
-    if (!decksAside) return
-    // ⌘\ does what the decks button does here: it closes the panel, rather than hiding decks that are already out of sight.
-    const key = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); e.stopPropagation(); setSide(null); setPreview(null); setTarget(null); setRing(null) } }
+    if (!panelShown) return
+    const key = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); e.stopPropagation(); toAgent() } }
     window.addEventListener('keydown', key, true)
     return () => window.removeEventListener('keydown', key, true)
-  }, [decksAside])
+  }, [panelShown, bar.chatOpen]) // eslint-disable-line react-hooks/exhaustive-deps -- toAgent reads the latest bar
   const closeVersions = () => { setSide(null); setPreview(null) }
   // A note's target belongs to one slide.
   useEffect(() => { setTarget(null); setRing(null) }, [items[current]?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -90,6 +92,7 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
   useEffect(() => {
     if (tourShow === 'grid') setView('grid')
     if (tourShow === 'comments') setSide('comments')
+    if (tourShow === 'chat') setSide(null)
     return () => { setView('slide'); if (tourShow === 'comments') closeComments() }
   }, [tourShow])
   // The view switch only applies when the stage shows the deck.
@@ -120,14 +123,11 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
 
   return (
     <>
-      <Bar {...bar} decksOpen={bar.decksOpen && !decksAside} onToggleDecks={decksAside ? () => { setSide(null); setPreview(null); setTarget(null); setRing(null) } : bar.onToggleDecks} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live || !healthKnown}
+      <Bar {...bar} chatOpen={chatShown} onToggleChat={asking ? undefined : panelShown ? toAgent : bar.onToggleChat} title={deckName({ name: s.name, items })} hasSlides={items.length > 0} busy={lock} live={s.live || !healthKnown}
         view={shown || null} onView={setView} lookOpen={side === 'look'} onLook={() => { setPreview(null); setSide(side === 'look' ? null : 'look') }}
         versionsOpen={side === 'versions'} onVersions={versions && (() => { if (side === 'versions') closeVersions(); else setSide('versions') })} onReview={() => setReviewing(true)} />
       <ScreenBody>
-        {!decksAside && decks}
-        <ChatPanel open={bar.chatOpen} messages={s.messages} offline={healthKnown && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} chips={chips}
-          canSend={s.live && !lock} composerBusy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
-          start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />
+        {decks}
         {preview
           ? <main className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)] max-[900px]:contents">
               <VersionPreview version={preview.v} items={preview.items} diff={preview.diff} current={preview.current} busy={lock} onBack={() => setPreview(null)}
@@ -158,6 +158,10 @@ export function Editor({ state: s, healthKnown, deck, chips, bar, onSend, onClea
                 {strip('row')}
               </section>
             </main>}
+        {/* Not there at all while a new deck asks at its centre: one prompt box on the page, one drop target. */}
+        {!asking && <ChatPanel open={chatShown} messages={s.messages} offline={healthKnown && !s.live} onUndo={onUndo} busy={lock} fresh={!items.length} chips={chips}
+          canSend={s.live && !lock} composerBusy={s.busy} hint={s.editing ? 'Save or discard to keep chatting' : undefined} onSend={onSend} onClear={onClear}
+          start={items.length ? undefined : { style: s.style, onStyle: bar.onStyle }} />}
         {side === 'versions' && versions && <VersionsPanel list={versions.api.list} describe={(v, before) => describeDiff(diffTrees(before?.tree ?? null, v.tree))} noun="deck" saves={versions.saves} selected={preview?.v.n ?? null}
           onPreview={showVersion} onClose={closeVersions} />}
         {side === 'comments' && items[current] && !editing && !preview && (

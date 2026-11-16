@@ -1,5 +1,5 @@
-/* The editor gives the slide the room: the decks start hidden on a laptop, step aside for Look there, and E does not
-   move the slide. On a phone, Present and the avatar sit at the right edge. */
+/* The editor gives the slide the room: the decks start hidden on a laptop, the agent and the inspectors share one slot
+   on the right, and E does not move the slide. On a phone, Present and the avatar sit at the right edge. */
 import { test, expect, type Page } from '@playwright/test'
 import { signInAsDev } from './dev-account'
 
@@ -17,17 +17,26 @@ async function open(page: Page, width: number, height = 900) {
 }
 const decks = (page: Page) => page.getByRole('navigation', { name: 'Workspace' })
 
-test('on a laptop the decks start hidden, and Look sends them aside until their button closes it', async ({ page }) => {
+test('the agent is docked right; Look takes its place without moving the slide, and the agent button brings it back', async ({ page }) => {
   await open(page, 1440)
   await expect(decks(page)).toHaveCount(0)
   await page.getByRole('button', { name: 'Show the sidebar' }).click()
   await expect(decks(page)).toBeVisible()
+  const chat = page.getByRole('complementary', { name: 'Chat' })
+  if (!(await chat.isVisible())) await page.getByRole('button', { name: 'Show the agent' }).click()
+  await expect(chat).toBeVisible()
+  const slide = page.locator('main .aspect-video').first()
+  // It slides in from the right: measured once it has landed.
+  await expect.poll(() => chat.evaluate((e) => e.getBoundingClientRect().right)).toBe(1440)
+  const before = await slide.evaluate((e) => e.getBoundingClientRect().left)
   await page.getByRole('button', { name: 'Look', exact: true }).click()
   await expect(page.getByRole('complementary', { name: 'Deck look' })).toBeVisible()
-  await expect(decks(page)).toHaveCount(0)
-  await page.getByRole('button', { name: 'Show the sidebar' }).click()
-  await expect(page.getByRole('complementary', { name: 'Deck look' })).toHaveCount(0)
+  await expect(chat).toBeHidden()
   await expect(decks(page)).toBeVisible()
+  expect(await slide.evaluate((e) => e.getBoundingClientRect().left)).toBe(before)
+  await page.getByRole('button', { name: 'Show the agent' }).click()
+  await expect(page.getByRole('complementary', { name: 'Deck look' })).toHaveCount(0)
+  await expect(chat).toBeVisible()
 })
 
 test('a wide window opens with the decks, and keeps them beside Look', async ({ page }) => {

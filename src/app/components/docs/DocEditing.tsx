@@ -10,6 +10,7 @@ import { EditBar } from './DocBar'
 import { ProposalBar } from './ProposalBar'
 import { proposalsForBlock, type ProposalShowing } from './proposal-preview'
 import { useDocEdit } from './useDocEdit'
+import { DISCARD_CHANGES, useConfirm } from '../ConfirmDialog'
 import type { ProposalView } from './editor/proposal'
 import { serializeDoc } from '@/engine/docs/serialize'
 import { docBlockSuggestionsEnabled } from '@/app/features'
@@ -51,7 +52,11 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
   }
   const proposalView = useCallback(() => viewNow.current, [])
   const edit = useDocEdit({ doc, theme: look.theme, accent: look.accent, save, onDone, proposalView, proposalTick: tick })
-  const discard = useCallback(() => { if (!edit.dirty || window.confirm('Discard your changes to this doc?')) edit.discard() }, [edit])
+  const [confirm, ask] = useConfirm()
+  const discard = useCallback(() => {
+    if (!edit.dirty) { edit.discard(); return }
+    void ask(DISCARD_CHANGES('this doc')).then((yes) => { if (yes) edit.discard() })
+  }, [edit, ask])
 
   // The words as they would be saved, for the clipboard.
   const copyText = useCallback(async () => {
@@ -91,6 +96,7 @@ export function DocEditing({ doc, docId, look, save, onDone, stale, comments, ch
 
   return (
     <>
+      {confirm}
       {children(
         <EditBar edit={edit} onDiscard={discard} checks={checks} comments={comments} stale={stale && { ...stale, onCopy: copyText }} />,
         <>

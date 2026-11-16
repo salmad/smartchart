@@ -3,6 +3,7 @@ import { FileText, GanttChart, Presentation } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 import type { PageRef, PageSummary } from '@/engine/pages/tree'
 import { Button } from '../ui/button'
+import { useConfirm } from '../ConfirmDialog'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
 import { Input } from '../ui/input'
 import { moveTargets } from './moveTargets'
@@ -26,6 +27,7 @@ const PAD = ['pl-2.5', 'pl-6', 'pl-[38px]', 'pl-[52px]', 'pl-[66px]', 'pl-[80px]
 /** Move to…: the workspace's pages as an indented list, "Top level" first. The page and what is inside it are greyed (a page
     can't go inside itself), and so is anything that would nest too deep, each with its reason. Enter moves; the page goes last. */
 export function MovePicker({ page, pages, onMove, onClose, workspaces = [], currentWorkspaceId }: Props) {
+  const [confirm, ask] = useConfirm()
   const [query, setQuery] = useState(''), [picked, setPicked] = useState<string>(TOP), [error, setError] = useState<string | null>(null), [busy, setBusy] = useState(false)
   useEffect(() => { if (page) { setQuery(''); setPicked(TOP); setError(null); setBusy(false) } }, [page])
   const targets = useMemo(() => (page ? moveTargets(pages, page.ref) : []), [page, pages])
@@ -36,7 +38,7 @@ export function MovePicker({ page, pages, onMove, onClose, workspaces = [], curr
   const choice = picked === TOP ? null : wsPick ? null : targets.find((t) => `${t.ref.kind}:${t.ref.id}` === picked)
   const go = async () => {
     if (busy || (choice && choice.reason)) return
-    if (wsTarget && !window.confirm(`Move “${page?.name}” into “${wsTarget.name}”? It and its subpages leave this workspace. People here who are not in that workspace will lose access.`)) return
+    if (wsTarget && !await ask({ title: `Move to ${wsTarget.name}?`, description: `“${page?.name}” and its subpages leave this workspace. People here who are not in ${wsTarget.name} will lose access.`, action: 'Move', cancel: 'Cancel' })) return
     setBusy(true)
     const why = await onMove(wsPick ? null : choice ? choice.ref : null, wsPick ?? undefined)
     if (why) { setError(why); setBusy(false) } else onClose()
@@ -87,6 +89,7 @@ export function MovePicker({ page, pages, onMove, onClose, workspaces = [], curr
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void go()} disabled={busy || !!choice?.reason}>Move</Button>
         </div>
+        {confirm}
       </DialogContent>
     </Dialog>
   )

@@ -85,8 +85,8 @@ test('add and remove a card; Discard leaves nothing changed', async ({ page }) =
   await page.getByRole('button', { name: 'Add after' }).click()
   await expect(page.locator('[data-editing] [data-item^="cards["]')).toHaveCount(4)
   await page.keyboard.type('Freight')
-  page.once('dialog', (d) => d.accept())
   await page.getByRole('button', { name: 'Discard' }).click()
+  await page.getByRole('dialog', { name: 'Discard changes?' }).getByRole('button', { name: 'Discard' }).click()
   expect((await saved(page)).cards).toHaveLength(3)
 })
 
