@@ -1,16 +1,10 @@
-/* What every MCP client keeps in context (layer 1). Everything else is fetched when needed. */
-export const INSTRUCTIONS = `Occam makes consulting and pitch slides. You write slide content as JSON; Occam's code owns layout, colours and sizes, and checks every write.
+/* What every MCP client keeps in context (layer 1): what Occam is, the rules all pages share, and which guide to read.
+   Each kind's steps and rules live in its get_guide (layer 2), so an agent only loads the kind it works on.
+   Keep it well under 2,000 characters: some clients cut longer instructions. */
+export const INSTRUCTIONS = `Occam makes three kinds of page, all in workspaces (list_workspaces): slide decks, docs and roadmaps. Each has its own tools and rules.
 
-Start: list_decks. If the user has none, create_deck. Decks live in workspaces (list_workspaces). Give the user the deck's editor link (links.edit from get_deck or create_deck) so they can watch it change live.
+Before your first write to a kind, read its guide once with get_guide: style "consulting" or "pitch" for a deck (get_deck shows which), "doc" for a doc, "roadmap" for a roadmap. The guide gives that kind's steps, rules and checks.
 
-Before writing or reviewing: get_guide once per style (the rules), get_template once per template (its fields, limits, capabilities and an example; cards don't change within a session). A review weighs the capabilities the slide does not use yet (marks, icons, notes…), not only its words.
+Start from list_decks, list_docs or list_roadmaps (or create_deck, create_doc, create_roadmap). Give the user the page's editor link (links.edit) so they can watch it change live.
 
-Loop: choose a template (list_templates yourself, or suggest_template) → create_slide with the whole slide → fix every issue it returns with the smallest edit → check_slide when the slide is done → check_storyline when the deck is. Change existing slides with update_slide at exact paths, never by rewriting them. Pictures (screenshots, team photos, logos): add_image first, then use the src it returns.
-
-Rules: address slides by slideId from get_deck, never by position. Pass the user's own words as request on every write. Write "auto" where the card allows it; code decides. Never set style, layout, colours, page numbers or the footer. If the user's request is unclear, ask them before writing. Change a slide's template, or remove anything, only when the user asked.
-
-Docs (same workspaces): list_docs or create_doc; get_guide and get_template with style "doc"; get_doc; then create_block, write_doc_text and update_block by blockId from the last result; check_doc at the end. Every figure gets a caption and the user's source; never invent one. Pages nest: parent on create_doc and create_deck, move_page to move; keep a deck's docs under it.
-
-Roadmaps (same workspaces): list_roadmaps or create_roadmap; get_guide with style "roadmap"; get_roadmap; then list_issues and get_issue. create_issues, update_issue, move_issue, and set_fields change the plan; delete_issue only when the user asked. Pass request on every write. Check ids on the result warn and never authorise a silent edit. move_page takes kind "roadmap".
-
-Only when asked: fix the slide or block, then resolve_comment or resolve_doc_comment; undo with list_versions/restore_version or list_doc_versions/restore_doc_version.`;
+Always: pass the user's own words as request on every write. Use the ids from the last result, never positions. If the request is unclear, ask before writing. Remove or replace anything only when the user asked. Pages nest: parent on create, move_page to move.`;

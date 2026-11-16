@@ -17,8 +17,14 @@ const TOOLS_OUTSIDE = `- New slide: create_slide with the whole slide JSON for i
 - Sources: name the source in words and link it, \`[FCA report](https://…)\` in \`source\` or \`footnote\`. It shows as the words with a small arrow and opens the page on a click. Never paste a bare address, and link only a page you know exists.
 - Pictures (a product screenshot, team photos, logos): add_image with a public link to the picture itself (or its bytes) and the right kind, or for a company's logo its domain ("stripe.com"), then put the { src } it returns where the card says. A logo found from a domain: tell the user where it was found so they can check it. Use pictures the user gave, or asked you to find (a company's logo from its own site or press kit); never a stock photo nobody asked for. If a picture cannot be added, tell the user why and ask for another; do not drop it silently.`;
 
+const SLIDE_STEPS = `- Start: list_decks, or create_deck if the user has none. get_deck gives the style, the links and every slide's slideId; address slides by slideId, never by position.
+- get_template once per template before writing or reviewing that kind of slide (its fields, limits, capabilities and an example; cards don't change within a session). A review weighs the capabilities the slide does not use yet (marks, icons, notes…), not only its words.
+- Loop: choose a template (list_templates yourself, or suggest_template) → create_slide with the whole slide → fix every issue it returns with the smallest edit → check_slide when the slide is done → check_storyline when the deck is.
+- Write "auto" where the card allows it; code decides. Never set style, layout, colours, page numbers or the footer. Change a slide's template only when the user asked.
+- Only when asked: fix the slide, then resolve_comment; undo with list_versions and restore_version.`;
+
 export function guideText(style: Style): string {
-  return [`# Hard rules\n${HARD_RULES}`, `# How to write\n${TOOLS_OUTSIDE}`, `# Start plain\n${START_PLAIN}\n${START_PLAIN_OUTSIDE}`,
+  return [`# Steps\n${SLIDE_STEPS}`, `# Hard rules\n${HARD_RULES}`, `# How to write\n${TOOLS_OUTSIDE}`, `# Start plain\n${START_PLAIN}\n${START_PLAIN_OUTSIDE}`,
     `# When to stop and ask\n${ASK_OUTSIDE}`, `# Comments\n- ${COMMENTS_RULE}`, `# Writing slide JSON\n${WRITING_JSON()}`, `# Style\n${styleBlock(style)}`].join("\n\n");
 }
 
@@ -27,12 +33,13 @@ export function docGuideText(): string {
   return [`# What a doc is
 A doc is a title, an optional subtitle, and blocks in order: headings (\`##\` sections and \`###\` subsections), paragraphs, lists, quotes, dividers, code, and figures. A figure is one of Occam's components (chart, table, number, cards, steps, summary, pair, image, team, logos) or a callout, with a caption, notes, a source and a takeaway. Occam draws the page: the contents on the side, sections that fold, figures on a canvas. You write content; palette and accent are the user's Look settings, not fields you set on the doc.`,
   `# How to write
-- Start with create_doc (or get_doc for an existing one) and give the user links.edit so they can watch. get_template with style "doc" gives a figure's card and an example; read it once per kind before writing one.
+- Start: list_docs, then get_doc (or create_doc for a new one), and give the user links.edit so they can watch. Finish with check_doc. get_template with style "doc" gives a figure's card and an example; read it once per kind before writing one.
 - Add text with create_block { after, markdown }; add a figure with create_block { after, figure: { kind, body } }. After a block's blockId, "start" or "end". Change a text block with write_doc_text and a figure with update_block at exact paths ({ "chart.series[0].values[3]": 42 }); null removes an item. Move and delete by blockId.
 - Every write returns blocks again. A text block's id is made from its words, so it changes when they do: use the ids from the last result, and read the doc again if a call says a block is not there.
 - Headings and figures keep their ids. A heading's id comes from its words when it is first written; link to it with [the plan](#plan).
 - Markdown here is small: \`## \` heading, \`### \` subheading, \`- \` bullets, \`1. \` numbers, \`> \` quote, \`---\` divider, **bold**, [[focus]], [links](https://…) and [section links](#id). Indent a list item two spaces to put it under the item above (three levels at most). A line that begins with one of those marks but is plain text starts with a backslash.
-- Pages nest: pass \`parent\` to create_doc to start a doc under another page (a doc or a deck), and move_page to move one; keep a deck's supporting docs under the deck.
+- Pages nest: pass \`parent\` to create_doc to start a doc under another page (a doc, a deck or a roadmap), and move_page to move one; keep a deck's supporting docs under the deck.
+- Only when asked: fix the block, then resolve_doc_comment (list_doc_comments shows them); undo with list_doc_versions and restore_doc_version.
 - Write sections as short, argued paragraphs; put evidence in figures. One idea per section. Open each section with its answer.
 - A doc should read through its exhibits; a wall of text fails check_doc (D7).
 - Prefer grouped tables (group rows) to flat ones whenever rows fall into categories.
@@ -57,8 +64,8 @@ export function roadmapGuideText(): string {
   return [`# Roadmaps
 A roadmap is a page of issues. An issue's key is the roadmap's prefix plus its number. You write titles, status, dates, assignees, and the fields that roadmap defined. You do not set colours, layout, or page numbers.
 
-# Tools
-list_roadmaps, create_roadmap (give the user links.edit), get_roadmap, list_issues, get_issue, create_issues, update_issue, move_issue, list_changes, delete_issue, set_fields. Nest a page with move_page and kind "roadmap". get_roadmap, list_issues, get_issue, and every write already include check ids.
+# Steps
+Start: list_roadmaps, or create_roadmap (give the user links.edit). Read with get_roadmap (fields and every issue), then list_issues and get_issue. create_issues, update_issue, move_issue and set_fields change the plan; list_changes shows activity; delete_issue only when the user asked. Nest a page with move_page and kind "roadmap". get_roadmap, list_issues, get_issue, and every write already include check ids.
 
 # Checks
 Checks warn. They never authorise a silent edit. Change an issue only when the user's words ask for that change.

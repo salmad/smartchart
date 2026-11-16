@@ -26,7 +26,7 @@ export function commentsView(doc: DeckDoc, slideId?: string): { comments?: { com
 
 export const deckTools = [
   tool<{ limit?: number; cursor?: number; workspaceId?: string }>({ name: "list_decks", title: "List decks", group: "decks", scope: "account", annotations: READ,
-    description: "A workspace's decks, newest first: id, name, style, number of slides, last change, whether a share link is on and parent (the page it sits under, a doc or a deck, or null at the top level). Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    description: "A workspace's decks, newest first: id, name, style, number of slides, last change, whether a share link is on and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Start here, then open one with get_deck. Before your first slide write, read get_guide with the deck's style. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDecks(limit, cursor, workspaceId) }) }),
 
@@ -40,7 +40,7 @@ export const deckTools = [
     } }),
 
   tool<{ deckId: string }>({ name: "get_deck", title: "Open a deck", group: "decks", scope: "deck", annotations: READ,
-    description: "A deck's style, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Palette and accent come from the user's Look settings, not the deck file. Use slide ids from here in every slide call.",
+    description: "A deck's style, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Palette and accent come from the user's Look settings, not the deck file. Use slide ids from here in every slide call. Before your first slide write, read get_guide with this style.",
     input: { type: "object", additionalProperties: false, required: ["deckId"], properties: { deckId: DECK_ID } },
     run: async (ctx) => ({ result: deckView(ctx, ctx.deck as DeckDoc, ctx.rev) }) }),
 

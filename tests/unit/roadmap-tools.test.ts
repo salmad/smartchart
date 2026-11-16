@@ -274,7 +274,8 @@ describe('roadmap tools', () => {
     expect(await call('get_template', { template: 'chart', style: 'roadmap' })).toMatchObject({ ok: false, error: { code: 'bad_input' } })
     expect(TOOLS.map((t) => t.name)).not.toContain('check_roadmap')
     expect(TOOLS.map((t) => t.name)).not.toContain('roadmap_timeline')
-    expect(INSTRUCTIONS).toContain('get_guide with style "roadmap"')
+    expect(INSTRUCTIONS).toContain('"roadmap" for a roadmap')
+    expect(INSTRUCTIONS).not.toContain('create_issues')
   })
 
   it('serves the roadmap guide as an MCP resource and over REST', async () => {

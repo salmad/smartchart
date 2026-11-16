@@ -8,10 +8,11 @@ const tokens = (s: string) => Math.ceil(s.length / 4)
 const list = JSON.stringify({ templates: OFFERED.map((id) => ({ template: id, summary: MENU[id].summary, use: MENU[id].use })), next: 'get_template for the one you pick; suggest_template to have Occam choose from the content.' })
 
 describe('context budgets (tokens ≈ chars / 4)', () => {
-  // 400 for decks; the docs paragraph (spec 2026-10-19 §6) is about 60 more; roadmaps (m4b task 8) about 90 more.
-  it('instructions ≤ 590', () => expect(tokens(INSTRUCTIONS)).toBeLessThanOrEqual(590))
+  // A router only: each kind's steps live in its get_guide. Some clients cut instructions past 2,000 characters.
+  it('instructions under 2,000 characters', () => expect(INSTRUCTIONS.length).toBeLessThan(2000))
   it('get_guide doc ≤ 1250', () => expect(tokens(docGuideText())).toBeLessThanOrEqual(1250))
-  it.each(['consulting', 'pitch'] as const)('get_guide %s ≤ 2000', (s) => expect(tokens(guideText(s))).toBeLessThanOrEqual(2000))
+  // 2000, plus about 260 for the slide steps that moved here from the instructions.
+  it.each(['consulting', 'pitch'] as const)('get_guide %s ≤ 2260', (s) => expect(tokens(guideText(s))).toBeLessThanOrEqual(2260))
   // 660 for fifteen templates (450 for ten, 400 for seven): about 44 tokens each.
   it('list_templates ≤ 660', () => expect(tokens(list)).toBeLessThanOrEqual(660))
   for (const s of ['consulting', 'pitch'] as const) for (const t of OFFERED) {

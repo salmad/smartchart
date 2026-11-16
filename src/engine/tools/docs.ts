@@ -55,7 +55,7 @@ function written(ctx: ToolContext, file: DocFile, e: Edit, extra: Record<string,
 
 export const docTools = [
   tool<{ limit?: number; cursor?: number; workspaceId?: string }>({ name: "list_docs", title: "List docs", group: "docs", scope: "account", annotations: READ,
-    description: "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc or a deck, or null at the top level). Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    description: "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_doc. Before your first doc write, read get_guide with style \"doc\". Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     input: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 100 }, cursor: { type: "integer", minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listDocs(limit, cursor, workspaceId) }) }),
 
@@ -72,7 +72,7 @@ export const docTools = [
     } }),
 
   tool<{ docId: string }>({ name: "get_doc", title: "Open a doc", group: "docs", scope: "doc", annotations: READ,
-    description: "A doc's title, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Palette and accent come from the user's Look settings. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
+    description: "A doc's title, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Palette and accent come from the user's Look settings. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do. Before your first doc write, read get_guide with style \"doc\".",
     input: { type: "object", additionalProperties: false, required: ["docId"], properties: { docId: DOC_ID } },
     run: async (ctx) => ({ result: docView(ctx, fileOf(ctx), ctx.rev) }) }),
 

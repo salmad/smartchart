@@ -43,7 +43,7 @@ export const roadmapTools = [
     group: 'roadmaps',
     scope: 'account',
     annotations: READ,
-    description: "A workspace's roadmaps, newest first: id, name, prefix, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_roadmap. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    description: "A workspace's roadmaps, newest first: id, name, prefix, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_roadmap. Before your first roadmap write, read get_guide with style \"roadmap\". Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     input: { type: 'object', additionalProperties: false, properties: { limit: { type: 'integer', minimum: 1, maximum: 100 }, cursor: { type: 'integer', minimum: 0 }, workspaceId: WORKSPACE_ID } },
     run: async (ctx, { limit = 25, cursor = 0, workspaceId }) => ({ result: await ctx.port.listRoadmaps(limit, cursor, workspaceId) }),
   }),
@@ -78,7 +78,7 @@ export const roadmapTools = [
     group: 'roadmaps',
     scope: 'roadmap',
     annotations: READ,
-    description: 'A roadmap\'s name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members.',
+    description: 'A roadmap\'s name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members. Before your first roadmap write, read get_guide with style "roadmap".',
     input: { type: 'object', additionalProperties: false, required: ['roadmapId'], properties: { roadmapId: ROADMAP_ID } },
     run: async (ctx) => {
       const { roadmap, issues } = loaded(ctx)

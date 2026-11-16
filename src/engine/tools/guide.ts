@@ -22,7 +22,7 @@ function docCard(kind: FigureKind): { card: unknown; example: unknown } {
 
 export const guideTools = [
   tool<{ style: Style | "doc" | "roadmap" }>({ name: "get_guide", title: "Writing guide", group: "guide", scope: "account", annotations: READ,
-    description: "The rules for writing Occam slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
+    description: "The steps and rules for one kind of Occam page: \"consulting\" or \"pitch\" for a deck in that style (figures, starting plain, when to ask, slide JSON and patches), \"doc\" for docs (blocks, figures, captions, checks), \"roadmap\" for roadmaps (issues, fields, checks). Read it once per kind before your first write to it.",
     input: { type: "object", additionalProperties: false, required: ["style"], properties: { style: GET_GUIDE_STYLE } },
     run: async (_ctx, { style }) => ({
       result: {

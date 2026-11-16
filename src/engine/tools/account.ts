@@ -8,7 +8,7 @@ export const accountTools = [
     input: { type: "object", additionalProperties: false, properties: {} },
     run: async (ctx) => ({ result: { email: ctx.port.email, callsLeftToday: await ctx.port.callsLeftToday(), contract: CONTRACT } }) }),
   tool<Record<string, never>>({ name: "list_workspaces", title: "List workspaces", group: "account", scope: "account", annotations: READ,
-    description: "The workspaces the user belongs to, most recently used first, with their role in each (owner, editor, viewer; a viewer can only read). Decks live in a workspace; list_decks and create_deck use the first one unless given a workspaceId.",
+    description: "The workspaces the user belongs to, most recently used first, with their role in each (owner, editor, viewer; a viewer can only read). Decks, docs and roadmaps live in a workspace; the list and create calls use the first one unless given a workspaceId.",
     input: { type: "object", additionalProperties: false, properties: {} },
     run: async (ctx) => ({ result: { workspaces: await ctx.port.workspaces() } }) }),
 ];

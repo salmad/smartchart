@@ -27,7 +27,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List workspaces",
     },
-    "description": "The workspaces the user belongs to, most recently used first, with their role in each (owner, editor, viewer; a viewer can only read). Decks live in a workspace; list_decks and create_deck use the first one unless given a workspaceId.",
+    "description": "The workspaces the user belongs to, most recently used first, with their role in each (owner, editor, viewer; a viewer can only read). Decks, docs and roadmaps live in a workspace; the list and create calls use the first one unless given a workspaceId.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {},
@@ -44,7 +44,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Writing guide",
     },
-    "description": "The rules for writing Occam slides in one style: hard rules on figures, starting plain, when to ask the user, how to write slide JSON and patches, and the style. Read it once per style before your first write.",
+    "description": "The steps and rules for one kind of Occam page: "consulting" or "pitch" for a deck in that style (figures, starting plain, when to ask, slide JSON and patches), "doc" for docs (blocks, figures, captions, checks), "roadmap" for roadmaps (issues, fields, checks). Read it once per kind before your first write to it.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -157,7 +157,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List decks",
     },
-    "description": "A workspace's decks, newest first: id, name, style, number of slides, last change, whether a share link is on and parent (the page it sits under, a doc or a deck, or null at the top level). Start here, then open one with get_deck. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "description": "A workspace's decks, newest first: id, name, style, number of slides, last change, whether a share link is on and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Start here, then open one with get_deck. Before your first slide write, read get_guide with the deck's style. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -246,7 +246,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a deck",
     },
-    "description": "A deck's style, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Palette and accent come from the user's Look settings, not the deck file. Use slide ids from here in every slide call.",
+    "description": "A deck's style, links and storyline: every slide's id, position, template, title and open issue count, in order, and the open comments people left on slides. Palette and accent come from the user's Look settings, not the deck file. Use slide ids from here in every slide call. Before your first slide write, read get_guide with this style.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -778,7 +778,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List docs",
     },
-    "description": "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc or a deck, or null at the top level). Open one with get_doc. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "description": "A workspace's docs, newest first: id, name, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_doc. Before your first doc write, read get_guide with style "doc". Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -863,7 +863,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a doc",
     },
-    "description": "A doc's title, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Palette and accent come from the user's Look settings. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do.",
+    "description": "A doc's title, editor link, outline and every block (its blockId, type and the first words), and the doc as Markdown. Palette and accent come from the user's Look settings. Use blockIds from here in every block call, and read the doc again after a write: a text block's id changes when its words do. Before your first doc write, read get_guide with style "doc".",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1355,7 +1355,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "List roadmaps",
     },
-    "description": "A workspace's roadmaps, newest first: id, name, prefix, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_roadmap. Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
+    "description": "A workspace's roadmaps, newest first: id, name, prefix, last change and parent (the page it sits under, a doc, a deck or a roadmap, or null at the top level). Open one with get_roadmap. Before your first roadmap write, read get_guide with style "roadmap". Without workspaceId: the workspace the user opened most recently (list_workspaces shows the others).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -1445,7 +1445,7 @@ exports[`registry > the three views agree (published contract: only additions al
       "readOnlyHint": true,
       "title": "Open a roadmap",
     },
-    "description": "A roadmap's name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members.",
+    "description": "A roadmap's name, prefix, custom field definitions, editor link, and every live issue (id, key, title, status, assignee, dates, parent, sort order, field values and check ids). Issues are in tree order. Does not include issue bodies, comments or members. Before your first roadmap write, read get_guide with style "roadmap".",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
