@@ -4,94 +4,73 @@ import type { TableRow } from '@/engine/roadmaps/view'
 import type { Mark } from '@/engine/roadmaps/gantt'
 import type { Roadmap } from '@/engine/roadmaps/types'
 import { keyOf } from '@/engine/roadmaps/fields'
+import { cn } from '@/app/lib/utils'
+import { Button } from '../ui/button'
 import { GroupLabel } from './GroupLabel'
 import { StatusGlyph } from './StatusGlyph'
-import { cn } from '@/app/lib/utils'
 import { listRowDatesDraggable, type useIssueDatesDrop } from './useIssueDatesDrop'
-
-type DatesDropApi = ReturnType<typeof useIssueDatesDrop>
 
 interface Props {
   row: TableRow
   roadmap: Roadmap
   person?: boolean
-  mark: Mark | null
+  mark: Mark
   canEdit: boolean
-  datesDrop: DatesDropApi
+  /** A narrow list drops the issue key and keeps the title. */
+  compact: boolean
+  datesDrop: ReturnType<typeof useIssueDatesDrop>
   onToggleCollapse: (id: string) => void
   onOpenIssue?: (id: string) => void
 }
 
-export function GanttListRow({ row, roadmap, person, mark, canEdit, datesDrop, onToggleCollapse, onOpenIssue }: Props) {
+/** A row's cell in the list: chevron, status, title, quiet key. An issue with no dates of its own can be dragged
+    from here onto the timeline. */
+export function GanttListRow({ row, roadmap, person, mark, canEdit, compact, datesDrop, onToggleCollapse, onOpenIssue }: Props) {
   const dragMoved = useRef(false)
   if (row.kind === 'group') {
     return (
-      <div className="flex h-[34px] items-center gap-3 border-b border-hair bg-panel px-4 text-[12px] text-ink-2">
+      <div className="flex h-full items-center gap-3 px-4 text-[12px] text-ink-2">
         <GroupLabel label={row.label} count={row.count} person={person} empty={row.key === ''} />
       </div>
     )
   }
 
   const { issue, depth, dim, hasChildren, open } = row
-  const issueMark = mark ?? { kind: 'none' as const }
-  const noDates = issueMark.kind === 'none'
-  const draggable = listRowDatesDraggable(canEdit, issueMark)
+  const draggable = listRowDatesDraggable(canEdit, mark)
 
   return (
     <div
       data-list-issue={issue.id}
       data-dim={dim ? 'true' : undefined}
       draggable={draggable}
-      onDragStart={
-        draggable
-          ? (e) => {
-              dragMoved.current = false
-              datesDrop.listDragStart(issue.id)(e)
-            }
-          : undefined
-      }
+      onDragStart={draggable ? (e) => { dragMoved.current = false; datesDrop.listDragStart(issue.id)(e) } : undefined}
       onDrag={draggable ? () => { dragMoved.current = true } : undefined}
-      onDragEnd={
-        draggable
-          ? (e) => {
-              datesDrop.listDragEnd()
-              if (dragMoved.current) e.preventDefault()
-            }
-          : undefined
-      }
-      className={cn(
-        'flex h-[34px] items-center gap-1.5 border-b border-hair px-2 text-[12.5px] text-ink',
-        dim && 'opacity-50',
-        draggable && 'cursor-grab active:cursor-grabbing',
-        !draggable && 'cursor-default',
-      )}
+      onDragEnd={draggable ? datesDrop.listDragEnd : undefined}
       onClick={() => {
-        if (dragMoved.current) {
-          dragMoved.current = false
-          return
-        }
+        if (dragMoved.current) { dragMoved.current = false; return }
         onOpenIssue?.(issue.id)
       }}
+      className={cn(
+        'flex h-full cursor-pointer items-center gap-2 pl-3 pr-3 text-[13px] text-ink transition-colors duration-150 ease-out group-hover/row:bg-white/[.025]',
+        dim && 'opacity-50',
+      )}
     >
-      {Array.from({ length: depth }).map((_, i) => (
-        <span key={i} className="inline-block w-5 shrink-0" aria-hidden />
-      ))}
+      {depth > 0 && Array.from({ length: depth }, (_, i) => <span key={i} className="w-2 shrink-0" aria-hidden />)}
       {hasChildren ? (
-        <button
-          type="button"
-          className="shrink-0 text-ink-3 hover:text-ink"
+        <Button
+          variant="ghost"
+          className="size-5 shrink-0 rounded-[5px] p-0 text-ink-3 hover:bg-white/[.06] [&_svg]:size-3.5"
           aria-label={open ? `Collapse ${issue.title}` : `Expand ${issue.title}`}
           onClick={(e) => { e.stopPropagation(); onToggleCollapse(issue.id) }}
         >
-          {open ? <ChevronDown className="size-3" strokeWidth={2} /> : <ChevronRight className="size-3" strokeWidth={2} />}
-        </button>
+          {open ? <ChevronDown strokeWidth={2} /> : <ChevronRight strokeWidth={2} />}
+        </Button>
       ) : (
-        <span className="inline-block w-3 shrink-0" aria-hidden />
+        <span className="size-5 shrink-0" aria-hidden />
       )}
       <StatusGlyph status={issue.status} className="size-3.5 shrink-0" />
-      <span className="w-[52px] shrink-0 whitespace-nowrap pl-1 font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, issue)}</span>
-      <span className="min-w-0 truncate">{issue.title}</span>
-      {noDates && <span className="ml-auto shrink-0 text-[11px] text-ink-3">No dates</span>}
+      <span title={issue.title} className={cn('min-w-0 flex-1 truncate', hasChildren && 'font-medium')}>{issue.title}</span>
+      {!compact && <span className="shrink-0 whitespace-nowrap text-[12px] tabular-nums text-ink-3">{keyOf(roadmap, issue)}</span>}
     </div>
   )
 }

@@ -15,16 +15,19 @@ export const CHECK_IDS = [
 
 export type CheckId = (typeof CHECK_IDS)[number]
 
+/** Checks that mean something is wrong. The rest are advisory: the plan is merely incomplete. */
+export const ALARM_CHECKS: readonly CheckId[] = ['overdue', 'blocked', 'outside_parent', 'done_open']
+
 export const CHECK_THRESHOLDS = { longDays: 92 } as const
 
 export const CHECK_COPY: Record<CheckId, { label: string; detail: string }> = {
-  no_dates: { label: 'No dates', detail: 'Open, with no sub-issues, and no start or no due.' },
-  overdue: { label: 'Overdue', detail: 'Due date has passed, and it isn’t Done or Cancelled.' },
-  blocked: { label: 'Blocked', detail: 'Status is Blocked.' },
-  no_assignee: { label: 'No assignee', detail: 'Open, with no sub-issues, and no one assigned.' },
-  long: { label: 'Long', detail: 'Open, with no sub-issues, and longer than 3 months.' },
-  outside_parent: { label: 'Outside its parent', detail: 'Starts before or ends after its parent’s own dates.' },
-  done_open: { label: 'Done with open children', detail: 'Marked Done while work under it is still open.' },
+  no_dates: { label: 'No dates', detail: 'Open work with no start or no due date.' },
+  overdue: { label: 'Overdue', detail: 'The due date has passed and the work isn’t done.' },
+  blocked: { label: 'Blocked', detail: 'Marked Blocked.' },
+  no_assignee: { label: 'No assignee', detail: 'Open work that no one owns.' },
+  long: { label: 'Longer than 3 months', detail: 'Open work that could be split into smaller pieces.' },
+  outside_parent: { label: 'Outside its parent', detail: 'Starts before or ends after its parent’s dates.' },
+  done_open: { label: 'Done with open sub-issues', detail: 'Marked Done while work under it is still open.' },
 }
 
 export interface CheckCard {
@@ -34,7 +37,8 @@ export interface CheckCard {
 }
 
 export interface CheckReport {
-  issues: number
+  /** Distinct issues failing an alarm check: the one number the Checks tab and its page both show. */
+  alarms: number
   cards: readonly CheckCard[]
 }
 
@@ -174,21 +178,14 @@ export function runChecks(
   const chips = opts.chips ?? []
   const filtered = live.filter((i) => passesFilters(i, chips, opts.today))
 
-  const byCheck = new Map<CheckId, string[]>()
-  for (const id of CHECK_IDS) byCheck.set(id, [])
-
-  for (const issue of filtered) {
-    for (const id of CHECK_IDS) {
-      if (issueFailsCheck(id, issue, idx, opts.today)) byCheck.get(id)!.push(issue.id)
-    }
-  }
+  const failing = (id: CheckId) => filtered.filter((i) => issueFailsCheck(id, i, idx, opts.today)).map((i) => i.id)
 
   const distinct = new Set<string>()
   const cards: CheckCard[] = CHECK_IDS.map((id) => {
-    const issueIds = treeOrder(byCheck.get(id) ?? [], idx)
-    for (const i of issueIds) distinct.add(i)
+    const issueIds = treeOrder(failing(id), idx)
+    if (ALARM_CHECKS.includes(id)) for (const i of issueIds) distinct.add(i)
     return { id, issueIds, count: issueIds.length }
   })
 
-  return { issues: distinct.size, cards }
+  return { alarms: distinct.size, cards }
 }

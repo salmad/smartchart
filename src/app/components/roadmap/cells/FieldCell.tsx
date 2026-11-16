@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import type { FieldDef, FieldValue, MemberLite } from '@/engine/roadmaps/types'
-import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
-import { Command, CommandItem, CommandList } from '../../ui/command'
 import { cn } from '@/app/lib/utils'
-import { menuCommand, menuSurface } from '../roadmapChrome'
+import { Input } from '../../ui/input'
+import { CellButton } from './CellButton'
+import { CellMenu } from './CellMenu'
+import { DateCell } from './DateCell'
 import { PersonCell } from './PersonCell'
 
 interface Props {
@@ -11,80 +11,58 @@ interface Props {
   value: FieldValue | undefined
   members: MemberLite[]
   disabled?: boolean
+  /** Always-visible words for no value (the panel); the table leaves it out. */
+  placeholder?: string
   onPick: (v: FieldValue | null) => void
 }
 
-function choiceLabel(field: FieldDef, raw: FieldValue | undefined): string {
-  if (raw === undefined) return ''
-  const sid = String(raw)
-  const opt = field.options?.find((o) => o.id === sid)
-  return opt ? `${opt.emoji ? `${opt.emoji} ` : ''}${opt.name}` : sid
-}
-
-export function FieldCell({ field, value, members, disabled, onPick }: Props) {
-  const [open, setOpen] = useState(false)
+/** A custom field's value, edited the way its type asks: a picker, a calendar, or typing in place. */
+export function FieldCell({ field, value, members, disabled, placeholder, onPick }: Props) {
+  const text = value === undefined ? '' : String(value)
   if (field.type === 'person') {
-    return (
-      <PersonCell
-        assignee={value === undefined ? null : String(value)}
-        members={members}
-        disabled={disabled}
-        onPick={(id) => onPick(id)}
-      />
-    )
+    return <PersonCell assignee={text || null} members={members} disabled={disabled} placeholder={placeholder} onPick={onPick} />
   }
   if (field.type === 'date') {
-    return (
-      <input
-        type="date"
-        disabled={disabled}
-        value={value === undefined ? '' : String(value)}
-        onChange={(e) => onPick(e.target.value || null)}
-        className="w-full min-w-0 rounded border-0 bg-transparent px-1 py-0.5 text-[12px] text-ink-2 hover:bg-raise focus:bg-raise focus:outline-none focus:ring-0"
-        aria-label={field.name}
-      />
-    )
+    return <DateCell value={text || null} label={field.name} disabled={disabled} placeholder={placeholder} onPick={onPick} />
   }
   if (field.type === 'number' || field.type === 'text') {
+    const number = field.type === 'number'
     return (
-      <input
-        type={field.type === 'number' ? 'number' : 'text'}
+      <Input
+        type={number ? 'number' : 'text'}
         disabled={disabled}
-        value={value === undefined ? '' : String(value)}
+        value={text}
         onChange={(e) => {
           const t = e.target.value
-          if (field.type === 'number') onPick(t === '' ? null : Number(t))
+          if (number) onPick(t === '' ? null : Number(t))
           else onPick(t.trim() === '' ? null : t)
         }}
-        placeholder="—"
-        className="w-full min-w-0 border-0 bg-transparent px-1 py-0.5 text-[12px] text-ink-2 tabular-nums placeholder:text-ink-3 hover:bg-raise focus:bg-raise focus:outline-none focus:ring-0"
+        placeholder={placeholder ?? (disabled ? undefined : '+')}
         aria-label={field.name}
+        className={cn(
+          'h-7 rounded-md border-0 px-1.5 text-[13px] text-ink-2 shadow-none transition-colors duration-120 hover:bg-raise focus-visible:bg-raise disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent md:text-[13px]',
+          number && 'tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          placeholder ? 'placeholder:text-ink-3' : 'placeholder:text-transparent focus-visible:placeholder:text-ink-3 group-hover:placeholder:text-ink-3',
+        )}
       />
     )
   }
-  const shown = choiceLabel(field, value)
+  const chosen = field.options?.find((o) => o.id === text)
+  const shown = chosen?.name ?? text
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
-        <button type="button" className="block w-full truncate rounded px-1 py-0.5 text-left hover:bg-raise" aria-label={shown ? `${field.name}: ${shown}` : field.name}>
-          {shown || <span className="text-ink-3">—</span>}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className={cn('w-48 overflow-hidden p-1', menuSurface)} aria-label={`Choose ${field.name}`}>
-        <Command className={menuCommand}>
-          <CommandList label={field.name}>
-            <CommandItem value="none" onSelect={() => { onPick(null); setOpen(false) }} className="text-[13px]">
-              Clear
-            </CommandItem>
-            {(field.options ?? []).map((o) => (
-              <CommandItem key={o.id} value={o.id} onSelect={() => { onPick(o.id); setOpen(false) }} className="gap-2 text-[13px]">
-                {o.emoji && <span aria-hidden>{o.emoji}</span>}
-                {o.name}
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <CellMenu
+      label={`Choose ${field.name}`}
+      listLabel={field.name}
+      options={(field.options ?? []).map((o) => ({ id: o.id, name: o.name, icon: o.emoji ? <span aria-hidden>{o.emoji}</span> : undefined }))}
+      value={text || null}
+      none="Clear"
+      disabled={disabled}
+      onPick={onPick}
+    >
+      <CellButton empty={!shown} placeholder={placeholder} title={shown || undefined} aria-label={shown ? `${field.name}: ${chosen?.emoji ? `${chosen.emoji} ` : ''}${shown}` : field.name} className="text-ink-2">
+        {chosen?.emoji && <span aria-hidden>{chosen.emoji}</span>}
+        <span className="truncate">{shown}</span>
+      </CellButton>
+    </CellMenu>
   )
 }

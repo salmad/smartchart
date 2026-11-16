@@ -1,5 +1,5 @@
-import { ArrowUpFromLine, Ban, CalendarOff, Check, ChevronRight, Clock, Hourglass, UserX, CheckCheck, type LucideIcon } from 'lucide-react'
-import { CHECK_COPY, CHECK_IDS, type CheckId, type CheckReport } from '@/engine/roadmaps/checks'
+import { ArrowUpFromLine, Ban, CalendarOff, Check, ChevronRight, Clock, Hourglass, ListTree, UserRound, type LucideIcon } from 'lucide-react'
+import { ALARM_CHECKS, CHECK_COPY, CHECK_IDS, type CheckCard, type CheckId, type CheckReport } from '@/engine/roadmaps/checks'
 import { cn } from '@/app/lib/utils'
 
 interface Props {
@@ -8,104 +8,83 @@ interface Props {
   onOpen: (id: CheckId) => void
 }
 
-/** Checks that mean something is wrong, not just unfinished: they turn red when they have issues. */
-const BAD: CheckId[] = ['overdue', 'blocked', 'outside_parent', 'done_open']
-
 const ICON: Record<CheckId, LucideIcon> = {
   no_dates: CalendarOff,
   overdue: Clock,
   blocked: Ban,
-  no_assignee: UserX,
+  no_assignee: UserRound,
   long: Hourglass,
   outside_parent: ArrowUpFromLine,
-  done_open: CheckCheck,
+  done_open: ListTree,
 }
 
-/** One card for each check. A card with issues opens the table filtered to them. */
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+/** The roadmap's health as a list: what is wrong first, what is merely incomplete next, and what passes on one quiet
+    line. A row opens the table filtered to its issues. */
 export function Checks({ report, hasIssues, onOpen }: Props) {
   const cards = CHECK_IDS.map((id) => report.cards.find((c) => c.id === id) ?? { id, count: 0, issueIds: [] })
-  const attention = cards.filter((c) => c.count > 0 && BAD.includes(c.id)).length
-  const flagged = cards.filter((c) => c.count > 0).length
+  const failing = cards.filter((c) => c.count > 0)
+  const alarms = failing.filter((c) => ALARM_CHECKS.includes(c.id))
+  const advisory = failing.filter((c) => !ALARM_CHECKS.includes(c.id))
+  const passing = cards.filter((c) => c.count === 0)
+
+  const summary = !hasIssues
+    ? 'No issues on this roadmap yet.'
+    : report.alarms > 0
+      ? `${plural(report.alarms, 'issue needs', 'issues need')} attention.`
+      : advisory.length > 0
+        ? 'Nothing is wrong. A few issues are incomplete.'
+        : 'Everything is in order.'
 
   return (
-    <section role="region" aria-label="Checks" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
-      <div className="mx-auto w-full max-w-5xl px-8 py-8">
-        <div className="mb-5 flex items-baseline gap-3">
-          <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">Roadmap checks</h2>
-          <p className="text-[12.5px] text-ink-3">
-            {!hasIssues
-              ? 'No issues on this roadmap yet.'
-              : flagged === 0
-                ? 'Everything is in order.'
-                : attention > 0
-                  ? `${attention} ${attention === 1 ? 'check needs' : 'checks need'} attention`
-                  : `${flagged} ${flagged === 1 ? 'check has' : 'checks have'} issues to look at`}
+    <section role="region" aria-label="Checks" className="min-h-0 min-w-0 flex-1 overflow-auto">
+      <div className="mx-auto w-full max-w-[720px] px-8 py-10 max-[900px]:px-4 max-[900px]:py-6">
+        <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">Checks</h2>
+        <p className="mt-1 text-[13px] text-ink-2">{summary}</p>
+        {alarms.length > 0 && <Group title="Needs attention" cards={alarms} alarm onOpen={onOpen} />}
+        {advisory.length > 0 && <Group title="Incomplete" cards={advisory} onOpen={onOpen} />}
+        {hasIssues && passing.length > 0 && (
+          <p className="mt-8 flex items-start gap-2.5 px-2 text-[12px] leading-[18px] text-ink-3">
+            <Check className="mt-px size-4 flex-none" strokeWidth={1.75} aria-hidden />
+            <span>
+              {failing.length === 0 ? 'All checks pass' : plural(passing.length, 'check passes', 'checks pass')}: {passing.map((c) => CHECK_COPY[c.id].label.toLowerCase()).join(', ')}.
+            </span>
           </p>
-        </div>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
-          {cards.map(({ id, count }) => {
-            const copy = CHECK_COPY[id]
-            const Icon = ICON[id]
-            const bad = count > 0 && BAD.includes(id)
-            const face = (
-              <>
-                <span
-                  className={cn(
-                    'flex size-8 shrink-0 items-center justify-center rounded-lg',
-                    bad ? 'bg-bad/15 text-bad' : 'bg-panel text-ink-3',
-                  )}
-                >
-                  <Icon className="size-4" strokeWidth={1.75} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-medium text-ink">{copy.label}</span>
-                  <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">{copy.detail}</span>
-                </span>
-                {count === 0 ? (
-                  <span className="flex items-center gap-1 text-[11.5px] text-ink-3">
-                    <Check className="size-3.5" strokeWidth={2} aria-hidden />
-                    <span className="tabular-nums">0</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <span className={cn('text-[22px] font-semibold leading-none tabular-nums tracking-[-.02em]', bad ? 'text-bad' : 'text-ink')}>
-                      {count}
-                    </span>
-                    <ChevronRight className="size-3.5 text-ink-3" strokeWidth={2} aria-hidden />
-                  </span>
-                )}
-              </>
-            )
-            const surface = cn(
-              'flex w-full items-center gap-3 rounded-xl bg-raise p-3.5 text-left ring-1 ring-inset',
-              bad ? 'ring-bad/35' : 'ring-line',
-            )
-            if (count === 0) {
-              return (
-                <li key={id} className={cn(surface, 'opacity-60')}>
-                  {face}
-                </li>
-              )
-            }
-            return (
-              <li key={id}>
-                <button
-                  type="button"
-                  className={cn(
-                    surface,
-                    'outline-none transition-[box-shadow,transform] duration-150 ease-out-strong active:scale-[.98] focus-visible:ring-ink-3 motion-reduce:transition-none motion-reduce:active:scale-100',
-                    bad ? 'hover:ring-bad/60' : 'hover:ring-line-2',
-                  )}
-                  aria-label={`${copy.label}, ${count} issues`}
-                  onClick={() => onOpen(id)}
-                >
-                  {face}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        )}
       </div>
     </section>
+  )
+}
+
+function Group({ title, cards, alarm = false, onOpen }: { title: string; cards: CheckCard[]; alarm?: boolean; onOpen: (id: CheckId) => void }) {
+  return (
+    <div className="mt-8">
+      <h3 className="px-2 pb-1.5 text-[11px] text-ink-3">{title}</h3>
+      <ul className="border-t border-hair">
+        {cards.map(({ id, count }) => {
+          const { label, detail } = CHECK_COPY[id]
+          const Icon = ICON[id]
+          return (
+            <li key={id} className="border-b border-hair">
+              <button
+                type="button"
+                aria-label={`${label}, ${count} issues`}
+                className="group flex h-[52px] w-full items-center gap-3 rounded-md px-2 text-left outline-none transition-colors duration-150 hover:bg-panel focus-visible:bg-panel focus-visible:ring-1 focus-visible:ring-line-2"
+                onClick={() => onOpen(id)}
+              >
+                <Icon className={cn('size-4 flex-none', alarm ? 'text-bad' : 'text-ink-3')} strokeWidth={1.75} aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-medium text-ink">{label}</span>
+                  <span className="block truncate text-[12px] text-ink-3">{detail}</span>
+                </span>
+                <span className="text-[13px] tabular-nums text-ink-2">{count}</span>
+                <ChevronRight className="size-4 flex-none text-ink-3 transition-colors group-hover:text-ink-2" strokeWidth={1.75} aria-hidden />
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }

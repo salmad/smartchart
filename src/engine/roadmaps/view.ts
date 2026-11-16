@@ -16,7 +16,9 @@ export interface MatrixSettings {
   rowField: string | null
   cols: string[]
   pins: { fieldId: string; optionId: string }[]
-  show: { status: boolean; progress: boolean; dates: boolean; assignee: boolean }
+  /** Rows whose children show. The matrix opens compact, and keeps this apart from the table's `collapsed`. */
+  expanded: string[]
+  show: { progress: boolean; dates: boolean; assignee: boolean }
 }
 
 export interface ViewSettings {
@@ -34,7 +36,8 @@ export const DEFAULT_MATRIX: MatrixSettings = {
   rowField: null,
   cols: [],
   pins: [],
-  show: { status: true, progress: true, dates: true, assignee: false },
+  expanded: [],
+  show: { progress: true, dates: true, assignee: false },
 }
 
 export type TableRow =
@@ -185,7 +188,8 @@ function groupKey(
   if (empty || raw === undefined) return { key: '', label: 'Empty' }
   const sid = String(raw)
   const opt = def?.type === 'choice' ? def.options?.find((o) => o.id === sid) : undefined
-  return { key: sid, label: opt?.name ?? sid }
+  const label = def?.type === 'person' ? (names?.get(sid) ?? sid) : (opt?.name ?? sid)
+  return { key: sid, label }
 }
 
 function walkVisibleIssues(
@@ -293,7 +297,7 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string, names
     if (a === '' || b === '') return a === b ? 0 : a === '' ? 1 : -1
     const la = buckets.get(a)?.label ?? ''
     const lb = buckets.get(b)?.label ?? ''
-    return la.localeCompare(lb)
+    return la.localeCompare(lb, undefined, { numeric: true })
   })
 
   for (const key of keys) {

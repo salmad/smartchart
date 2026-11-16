@@ -24,15 +24,16 @@ describe('runChecks', () => {
     expect(ids).toEqual(['a'])
   })
 
-  it('counts distinct issues across cards', () => {
+  it('counts each alarmed issue once, and no advisory ones', () => {
     const issues = [
       issue({ id: 'x', status: 'blocked', due: '2026-06-01', start: '2026-05-01', assignee: 'bob' }),
     ]
-    const report = runChecks(issues, { today })
-    expect(report.issues).toBe(1)
+    const report = runChecks([...issues, issue({ id: 'y', status: 'todo', start: null, due: null, assignee: null })], { today })
+    expect(report.alarms).toBe(1)
+    expect(report.cards.find((c) => c.id === 'no_assignee')?.issueIds).toEqual(['y'])
     expect(report.cards.find((c) => c.id === 'blocked')?.count).toBe(1)
     expect(report.cards.find((c) => c.id === 'overdue')?.count).toBe(1)
-    expect(report.cards.reduce((s, c) => s + c.count, 0)).toBe(2)
+    expect(report.cards.filter((c) => c.id === 'blocked' || c.id === 'overdue').reduce((s, c) => s + c.count, 0)).toBe(2)
   })
 
   it('ignores check chip in opts when counting', () => {
@@ -110,6 +111,6 @@ function baseView(): ViewSettings {
     collapsed: [],
     layout: 'table',
     scale: 'month',
-    matrix: { rowField: null, cols: [], pins: [], show: { status: true, progress: true, dates: true, assignee: false } },
+    matrix: { expanded: [], rowField: null, cols: [], pins: [], show: { progress: true, dates: true, assignee: false } },
   }
 }

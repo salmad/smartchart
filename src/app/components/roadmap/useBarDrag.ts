@@ -21,17 +21,16 @@ interface Options {
   onOpen: (id: string) => void
 }
 
-function clientX(ev: PointerEvent | MouseEvent) {
-  return ev.clientX
-}
-
-function clientY(ev: PointerEvent | MouseEvent) {
-  return ev.clientY
+/** A bar mid-drag: its dates so far, and where the pointer is along the lane (for the dates tip). */
+export interface DragPreview {
+  id: string
+  start: string
+  due: string
+  x: number
 }
 
 export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
-  const [preview, setPreview] = useState<{ id: string; start: string; due: string } | null>(null)
-  const [dragging, setDragging] = useState(false)
+  const [preview, setPreview] = useState<DragPreview | null>(null)
   const dragRef = useRef<DragState | null>(null)
   const dragCleanupRef = useRef<(() => void) | null>(null)
 
@@ -40,7 +39,6 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
     dragCleanupRef.current = null
     dragRef.current = null
     setPreview(null)
-    setDragging(false)
   }, [])
 
   useEffect(() => {
@@ -51,14 +49,6 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [canEdit, cancel])
-
-  const finishClick = useCallback(
-    (id: string, startX: number, startY: number, endX: number, endY: number) => {
-      const dist = Math.hypot(endX - startX, endY - startY)
-      if (dist < DRAG_CLICK_PX) onOpen(id)
-    },
-    [onOpen],
-  )
 
   const handlers = useCallback(
     (id: string, start: string, due: string, mode: DragMode) => ({
@@ -83,22 +73,21 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
           startX: e.clientX,
           startY: e.clientY,
         }
-        setDragging(true)
+        const laneX = e.clientX - target.getBoundingClientRect().left
 
         const onMove = (ev: PointerEvent | MouseEvent) => {
           const d = dragRef.current
           if (!d) return
-          const dx = clientX(ev) - d.startX
+          const dx = ev.clientX - d.startX
           const days = Math.round(dx / axis.px)
           const next = dragDates(d.originStart, d.originDue, d.mode, days)
-          setPreview({ id: d.id, start: next.start, due: next.due })
+          setPreview({ id: d.id, start: next.start, due: next.due, x: laneX + dx })
         }
 
         const end = (ev: PointerEvent | MouseEvent) => {
           const d = dragRef.current
           if (!d) return
           dragRef.current = null
-          setDragging(false)
           cleanup()
           try {
             if ('pointerId' in ev && target.hasPointerCapture(ev.pointerId)) target.releasePointerCapture(ev.pointerId)
@@ -106,8 +95,8 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
             /* ignore */
           }
 
-          const dx = clientX(ev) - d.startX
-          const dy = clientY(ev) - d.startY
+          const dx = ev.clientX - d.startX
+          const dy = ev.clientY - d.startY
           const dist = Math.hypot(dx, dy)
           if (dist < DRAG_CLICK_PX) {
             setPreview(null)
@@ -154,9 +143,9 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
         const startY = e.clientY
         const end = (ev: PointerEvent | MouseEvent) => {
           cleanup()
-          const dist = Math.hypot(clientX(ev) - startX, clientY(ev) - startY)
+          const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY)
           if (dist >= DRAG_CLICK_PX) return
-          const x = clientX(ev) - rect.left
+          const x = ev.clientX - rect.left
           const { start, due } = dropDates(axis.dayAt(x))
           const out = act({ op: 'set', ids: [id], props: { start, due } })
           if (out !== 'ok') toast(out)
@@ -192,7 +181,7 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
         const startY = e.clientY
         const end = (ev: PointerEvent | MouseEvent) => {
           cleanup()
-          finishClick(id, startX, startY, clientX(ev), clientY(ev))
+          if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < DRAG_CLICK_PX) onOpen(id)
         }
         const cleanup = () => {
           window.removeEventListener('pointerup', end)
@@ -209,8 +198,8 @@ export function useBarDrag({ axis, canEdit, act, onOpen }: Options) {
         }
       },
     }),
-    [canEdit, finishClick, onOpen],
+    [canEdit, onOpen],
   )
 
-  return { preview, dragging, handlers, clickToSchedule, clickToOpen, cancel }
+  return { preview, handlers, clickToSchedule, clickToOpen }
 }

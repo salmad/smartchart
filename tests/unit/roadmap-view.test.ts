@@ -172,4 +172,19 @@ describe('roadmap view', () => {
     expect(labels(names)).toEqual(['Amy Zhou', 'Zoe Adams', 'Unassigned'])
     expect(labels()).toEqual(['u_amy', 'u_zed', 'Unassigned'])
   })
+  it('groups by a text, number or person field: numbers in numeric order, people by name', () => {
+    const fields = [
+      { id: 'n', name: 'Size', type: 'number' as const },
+      { id: 'p', name: 'Owner', type: 'person' as const },
+    ]
+    const issues = [
+      issue({ id: 'a', sortKey: 'a', fields: { n: 10, p: 'u1' } }),
+      issue({ id: 'b', sortKey: 'b', fields: { n: 2, p: 'u2' } }),
+    ]
+    const s = state({ fields }, issues)
+    const labels = (groupBy: ViewSettings['groupBy']) =>
+      tableRows(s, view({ groupBy }), today, new Map([['u1', 'Zoe'], ['u2', 'Amy']])).flatMap((r) => (r.kind === 'group' ? [r.label] : []))
+    expect(labels({ on: 'field', field: 'n' })).toEqual(['2', '10'])
+    expect(labels({ on: 'field', field: 'p' })).toEqual(['Amy', 'Zoe'])
+  })
 })

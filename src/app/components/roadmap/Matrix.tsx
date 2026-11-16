@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { ViewSettings } from '@/engine/roadmaps/view'
-import { matrixGrid, liveMatrix, type MatrixCol, type MatrixRow } from '@/engine/roadmaps/matrix'
+import { liveMatrix, matrixGrid, type MatrixCol } from '@/engine/roadmaps/matrix'
+import { shortDate } from './dates'
+import { cn } from '@/app/lib/utils'
 import { colAria } from './matrixCellMeta'
-import { MATRIX_ROW_H, rowSlice, visibleRows, VIRT } from './issueTableView'
-import { MatrixTitleCell, matrixRowKey } from './MatrixTitle'
+import { rowSlice, VIRT } from './issueTableView'
+import { MatrixTitleCell, matrixRowKey, TITLE_COL } from './MatrixTitle'
 import { MatrixGroupCellView, MatrixIssueCell } from './MatrixCell'
-import { firstMatrixFocus, useMatrixKeys, type MatrixFocus } from './useMatrixKeys'
-import { MatrixDisplay } from './MatrixDisplay'
+import { cellSelector, firstMatrixFocus, useMatrixKeys, type MatrixFocus } from './useMatrixKeys'
 import { Button } from '../ui/button'
 
 interface Props {
@@ -21,31 +22,19 @@ interface Props {
   onOpenFields?: () => void
 }
 
-const NO_CHOICE = 'Matrix needs at least one choice field (for example Country or Workstream).'
-const NO_COLUMN = 'Pick which choice field becomes the columns — rows stay as your issue tree, or group by another choice field.'
+const ROW_H = 40
+const REGION = 'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none'
+const NOTE = 'px-8 py-10 text-[13.5px] text-ink-2'
 
 export function Matrix({ state, view, members, today, canEdit, onView, onOpenIssue, onOpenFields }: Props) {
   const fields = state.roadmap.fields
-  const choiceCount = fields.filter((f) => f.type === 'choice').length
   const matrix = liveMatrix(fields, view.matrix)
-  // Open already working: until someone picks, the first choice field is the rows and the second the columns (one field: the columns).
-  const untouched = view.matrix.rowField === null && view.matrix.cols.length === 0 && view.matrix.pins.length === 0
-  useEffect(() => {
-    if (!untouched) return
-    const [first, second] = fields.filter((f) => f.type === 'choice')
-    if (!first) return
-    onView((v) => ({ ...v, matrix: { ...v.matrix, rowField: second ? first.id : null, cols: [second ? second.id : first.id] } }))
-  }, [untouched, fields, onView])
-  const hint = choiceCount === 0 ? NO_CHOICE : matrix.cols.length === 0 ? NO_COLUMN : null
-
-  const { cols, rows: allRows } = useMemo(
-    () => (hint ? { cols: [] as MatrixCol[], rows: [] as MatrixRow[] } : matrixGrid(state, view, today)),
-    [hint, state, view, today],
+  const { cols, rows } = useMemo(
+    () => matrixGrid(state, view, today, { names: new Map(members.map((m) => [m.id, m.name])), date: (iso) => shortDate(iso, today) }),
+    [state, view, today, members],
   )
-
-  const filtersActive = view.chips.length > 0
-  const rows = useMemo(() => visibleRows(allRows, filtersActive), [allRows, filtersActive])
   const liveIssues = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
+  const parents = useMemo(() => new Set(liveIssues.flatMap((i) => i.parentId ?? [])), [liveIssues])
 
   const [focus, setFocus] = useState<MatrixFocus | null>(null)
   const rootRef = useRef<HTMLElement>(null)
@@ -53,204 +42,135 @@ export function Matrix({ state, view, members, today, canEdit, onView, onOpenIss
   const [scrollTop, setScrollTop] = useState(0)
   const [viewHeight, setViewHeight] = useState(900)
 
-  const slice = useMemo(
-    () => rowSlice(rows.length, scrollTop, viewHeight, MATRIX_ROW_H),
-    [rows.length, scrollTop, viewHeight],
+  const virtual = rows.length > VIRT
+  const slice = rowSlice(rows.length, scrollTop, viewHeight, ROW_H)
+  const body = virtual ? rows.slice(slice.start, slice.end) : rows
+
+  const toggle = useCallback(
+    (id: string) =>
+      onView((v) => {
+        const open = v.matrix.expanded
+        return { ...v, matrix: { ...v.matrix, expanded: open.includes(id) ? open.filter((x) => x !== id) : [...open, id] } }
+      }),
+    [onView],
   )
+  const open = useCallback((id: string) => onOpenIssue?.(id), [onOpenIssue])
 
-  const body = rows.length > VIRT ? rows.slice(slice.start, slice.end) : rows
-  const padTop = rows.length > VIRT ? slice.start * MATRIX_ROW_H : 0
-  const padBottom = rows.length > VIRT ? (rows.length - slice.end) * MATRIX_ROW_H : 0
+  useMatrixKeys({ root: rootRef, rows, focus, setFocus })
 
-  const onToggleCollapse = useCallback(
-    (id: string) => {
-      onView({
-        ...view,
-        collapsed: view.collapsed.includes(id) ? view.collapsed.filter((c) => c !== id) : [...view.collapsed, id],
-      })
-    },
-    [onView, view],
-  )
-
-  const open = useCallback((id: string) => { onOpenIssue?.(id) }, [onOpenIssue])
-
-  const keyRows = useMemo(
-    () =>
-      rows.map((r) =>
-        r.kind === 'group'
-          ? { kind: 'group' as const }
-          : { kind: 'issue' as const, issueId: r.issue.id, cells: r.cells },
-      ),
-    [rows],
-  )
-
-  const onActivate = useCallback(
-    (issueId: string, col: number) => {
-      const r = rows.find((row) => row.kind === 'issue' && row.issue.id === issueId)
-      if (!r || r.kind !== 'issue') return
-      const cell = r.cells[col]
-      if (cell.kind === 'one') {
-        open(cell.issueId)
-        return
-      }
-      if (cell.kind === 'many') {
-        const btn = rootRef.current?.querySelector(`button[data-matrix-cell="${issueId}:${col}"]`)
-        if (btn instanceof HTMLButtonElement) btn.click()
-      }
-    },
-    [open, rows],
-  )
-
-  useMatrixKeys({ root: rootRef, rows: keyRows, colCount: cols.length, focus, setFocus, onActivate })
-
+  // The focused cell always exists: when its row goes (collapse, filter), focus returns to the first filled cell.
   useEffect(() => {
-    if (!focus) {
-      const f = firstMatrixFocus(keyRows, cols.length)
-      if (f) setFocus(f)
-      return
-    }
-    const live = keyRows.some((r) => r.kind === 'issue' && r.issueId === focus.issueId)
-    if (!live) setFocus(firstMatrixFocus(keyRows, cols.length))
-  }, [cols.length, focus, keyRows])
-
-  useEffect(() => {
-    if (!focus) return
-    const row = rows.findIndex((r) => r.kind === 'issue' && r.issue.id === focus.issueId)
-    if (row >= 0 && rows.length > VIRT) {
-      const top = row * MATRIX_ROW_H
-      const el = scrollRef.current
-      if (el && (top < el.scrollTop || top + MATRIX_ROW_H > el.scrollTop + el.clientHeight)) {
-        el.scrollTop = Math.max(0, top - MATRIX_ROW_H)
-      }
-    }
+    const alive = focus && rows.some((r) => r.kind === 'issue' && r.issue.id === focus.issueId && (r.cells[focus.col]?.kind ?? 'empty') !== 'empty')
+    if (!alive) setFocus(firstMatrixFocus(rows))
   }, [focus, rows])
 
+  // Keyboard focus follows the focused cell, unless the person is working somewhere else (a menu, the issue panel).
   useEffect(() => {
-    if (hint || !focus || !rootRef.current) return
     const root = rootRef.current
-    const ae = document.activeElement
-    const inPortal = ae instanceof Element && ae.closest('[data-radix-popper-content-wrapper]')
-    if (inPortal) return
-    if (document.querySelector('[data-radix-popper-content-wrapper] [data-state="open"]')) return
-    if (ae && ae !== document.body && !root.contains(ae)) return
-    const btn = root.querySelector(`button[data-matrix-cell="${focus.issueId}:${focus.col}"]`)
-    if (btn instanceof HTMLButtonElement) btn.focus({ preventScroll: true })
-  }, [focus?.issueId, focus?.col, hint])
+    if (!root || !focus) return
+    const at = document.activeElement
+    if (at && at !== document.body && !root.contains(at)) return
+    if (virtual) {
+      const top = rows.findIndex((r) => r.kind === 'issue' && r.issue.id === focus.issueId) * ROW_H
+      const el = scrollRef.current
+      if (el && (top < el.scrollTop || top + 2 * ROW_H > el.scrollTop + el.clientHeight)) el.scrollTop = Math.max(0, top - ROW_H)
+    }
+    root.querySelector<HTMLElement>(cellSelector(focus))?.focus()
+    // Only a move of the focused cell pulls keyboard focus; new rows alone do not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.issueId, focus?.col])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
-    setScrollTop((t) => (t === el.scrollTop ? t : el.scrollTop))
-    setViewHeight((h) => (h === el.clientHeight ? h : el.clientHeight))
+    setScrollTop(el.scrollTop)
+    setViewHeight(el.clientHeight)
   }, [])
 
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    setViewHeight(el.clientHeight)
-  }, [rows.length])
-
-  if (hint) {
+  if (!matrix.cols.length) {
     return (
-      <section
-        role="region"
-        aria-label="Matrix"
-        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto"
-      >
-        <div className="mx-auto w-full max-w-md px-6 py-10">
-          <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">Configure the matrix</h2>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{hint}</p>
-          {choiceCount > 0 ? (
-            <div className="mt-6">
-              <MatrixDisplay fields={fields} view={view} onChange={onView} />
-            </div>
-          ) : canEdit && onOpenFields ? (
-            <Button type="button" size="sm" className="mt-5" onClick={onOpenFields}>
-              Open Fields
-            </Button>
-          ) : null}
-          <p className="mt-4 text-[11.5px] text-ink-3">
-            Or use <span className="text-ink-2">Layout</span> in the toolbar. Matrix rows and columns must be{' '}
-            <span className="text-ink-2">choice</span> fields (add them under Fields).
+      <section role="region" aria-label="Matrix" className={REGION}>
+        <div className="mx-auto w-full max-w-sm px-6 py-16 text-center">
+          <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">The matrix needs a field</h2>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+            Add a field such as Country or Workstream. Its values become the columns.
           </p>
+          {canEdit && onOpenFields && (
+            <Button type="button" className="mt-5" onClick={onOpenFields}>
+              Add a field
+            </Button>
+          )}
         </div>
       </section>
     )
   }
 
+  const colField = fields.find((f) => f.id === matrix.cols[0])?.name ?? ''
+  const note = !rows.length
+    ? view.chips.length
+      ? 'No issues match the filters.'
+      : 'No issues yet.'
+    : !cols.length
+      ? `No issue has a ${colField} yet. Set one on an issue, or keep a column in view from Layout.`
+      : null
+  if (note) {
+    return (
+      <section role="region" aria-label="Matrix" className={REGION}>
+        <p className={NOTE}>{note}</p>
+      </section>
+    )
+  }
+
+  const paired = matrix.cols.length === 2
+  const rowField = fields.find((f) => f.id === matrix.rowField)?.name
+
   return (
-    <section
-      ref={rootRef}
-      role="region"
-      aria-label="Matrix"
-      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none"
-      tabIndex={-1}
-    >
+    <section ref={rootRef} role="region" aria-label="Matrix" className={REGION}>
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onScroll={onScroll}>
-        <table className="w-max min-w-full border-collapse text-[12px]">
-          <thead className="sticky top-0 z-20 bg-app-bg">
-            <tr className="h-9 border-b border-line text-[11.5px] text-ink-3">
-              <th
-                scope="col"
-                className="sticky left-0 z-30 min-w-[280px] bg-app-bg px-3 text-left font-medium"
-              >
-                Title
+        <table className="w-max min-w-full border-separate border-spacing-0 text-[13px]">
+          <thead className="sticky top-0 z-20">
+            <tr>
+              <th scope="col" rowSpan={paired ? 2 : 1} className={cn(TITLE_COL, HEAD, 'z-30 border-b-line px-3 align-bottom')}>
+                <span className="flex h-9 items-center">{rowField ?? 'Issue'}</span>
               </th>
-              {cols.map((col) => (
-                <th
-                  key={col.key}
-                  scope="col"
-                  aria-label={colAria(col.parts)}
-                  className="min-w-[160px] border-l border-hair px-3 text-left font-medium"
-                >
-                  <MatrixColHead col={col} />
-                </th>
-              ))}
+              {paired
+                ? spans(cols).map((s) => (
+                    <th key={s.key} scope="colgroup" colSpan={s.span} className={cn(HEAD, 'h-8 border-l border-hair px-3 text-left text-ink-2')}>
+                      <Option emoji={s.emoji} name={s.name} />
+                    </th>
+                  ))
+                : cols.map((col) => <ColHead key={col.key} col={col} part={0} />)}
             </tr>
+            {paired && <tr>{cols.map((col) => <ColHead key={col.key} col={col} part={1} />)}</tr>}
           </thead>
           <tbody>
-            {padTop > 0 && <MatrixPad h={padTop} cols={cols.length} />}
+            {virtual && slice.start > 0 && <Pad h={slice.start * ROW_H} cols={cols.length} />}
             {body.map((row) => (
-                <tr
-                  key={matrixRowKey(row)}
-                  data-matrix-row={row.kind === 'group' ? `group:${row.key}` : row.issue.id}
-                  className="h-14"
-                >
-                  <MatrixTitleCell
-                    row={row}
-                    roadmap={state.roadmap}
-                    onToggleCollapse={onToggleCollapse}
-                    onOpenIssue={open}
-                  />
-                  {row.kind === 'group'
-                    ? row.cells.map((cell, ci) => (
-                        <MatrixGroupCellView
-                          key={cols[ci]?.key ?? ci}
-                          issues={liveIssues}
-                          col={cols[ci]}
-                          cell={cell}
-                          show={view.matrix.show}
-                        />
-                      ))
-                    : row.cells.map((cell, ci) => (
-                        <MatrixIssueCell
-                          key={cols[ci]?.key ?? ci}
-                          roadmap={state.roadmap}
-                          issues={liveIssues}
-                          members={members}
-                          col={cols[ci]}
-                          cell={cell}
-                          show={view.matrix.show}
-                          today={today}
-                          cellTag={`${row.issue.id}:${ci}`}
-                          focused={focus?.issueId === row.issue.id && focus?.col === ci}
-                          onFocus={() => setFocus({ issueId: row.issue.id, col: ci })}
-                          onOpen={open}
-                        />
-                      ))}
-                </tr>
+              <tr key={matrixRowKey(row)} data-matrix-row={matrixRowKey(row)} className="group/row">
+                <MatrixTitleCell row={row} roadmap={state.roadmap} onToggle={toggle} onOpenIssue={open} />
+                {row.kind === 'group'
+                  ? row.cells.map((cell, ci) => <MatrixGroupCellView key={cols[ci].key} col={cols[ci]} cell={cell} show={matrix.show} />)
+                  : row.cells.map((cell, ci) => (
+                      <MatrixIssueCell
+                        key={cols[ci].key}
+                        roadmap={state.roadmap}
+                        issues={liveIssues}
+                        parents={parents}
+                        members={members}
+                        rowIssue={row.issue}
+                        col={cols[ci]}
+                        cell={cell}
+                        show={matrix.show}
+                        today={today}
+                        cellTag={`${row.issue.id}:${ci}`}
+                        focused={focus?.issueId === row.issue.id && focus.col === ci}
+                        onFocus={() => setFocus({ issueId: row.issue.id, col: ci })}
+                        onOpen={open}
+                      />
+                    ))}
+              </tr>
             ))}
-            {padBottom > 0 && <MatrixPad h={padBottom} cols={cols.length} />}
+            {virtual && slice.end < rows.length && <Pad h={(rows.length - slice.end) * ROW_H} cols={cols.length} />}
           </tbody>
         </table>
       </div>
@@ -258,32 +178,44 @@ export function Matrix({ state, view, members, today, canEdit, onView, onOpenIss
   )
 }
 
-function MatrixColHead({ col }: { col: MatrixCol }) {
-  if (col.parts.length === 1) {
-    const p = col.parts[0]
-    return (
-      <span>
-        {p.emoji && <span aria-hidden>{p.emoji} </span>}
-        {p.name}
-      </span>
-    )
-  }
+const HEAD = 'bg-app-bg text-[12px] font-normal text-ink-3'
+
+function Option({ emoji, name }: { emoji?: string; name: string }) {
   return (
-    <div className="flex flex-col gap-0.5 leading-tight">
-      <span>
-        {col.parts[0].emoji && <span aria-hidden>{col.parts[0].emoji} </span>}
-        {col.parts[0].name}
-      </span>
-      <span className="text-[10.5px] text-ink-3">{col.parts[1].name}</span>
-    </div>
+    <span className="flex items-center gap-1.5">
+      {emoji && <span aria-hidden>{emoji}</span>}
+      <span className="truncate" title={name}>{name}</span>
+    </span>
   )
 }
 
-function MatrixPad({ h, cols }: { h: number; cols: number }) {
+/** A column's own header: its option of the last column field. With two fields the first field's option spans above. */
+function ColHead({ col, part }: { col: MatrixCol; part: 0 | 1 }) {
+  const p = col.parts[part]
   return (
-    <tr aria-hidden className="border-0">
+    <th scope="col" aria-label={colAria(col.parts)} className={cn(HEAD, 'h-9 max-w-[320px] border-b border-l border-hair border-b-line px-3 text-left', part === 0 && 'text-ink-2')}>
+      <Option emoji={p.emoji} name={p.name} />
+    </th>
+  )
+}
+
+/** Runs of neighbouring columns that share the first field's option. */
+function spans(cols: MatrixCol[]): { key: string; name: string; emoji?: string; span: number }[] {
+  const out: { key: string; name: string; emoji?: string; span: number }[] = []
+  for (const col of cols) {
+    const p = col.parts[0]
+    const last = out[out.length - 1]
+    if (last?.key === p.optionId) last.span++
+    else out.push({ key: p.optionId, name: p.name, emoji: p.emoji, span: 1 })
+  }
+  return out
+}
+
+function Pad({ h, cols }: { h: number; cols: number }) {
+  return (
+    <tr aria-hidden>
       <td colSpan={cols + 1} className="p-0 leading-[0]">
-        <svg height={h} width={1} className="block w-full" aria-hidden />
+        <svg height={h} width={1} className="block" />
       </td>
     </tr>
   )

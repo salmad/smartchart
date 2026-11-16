@@ -1,8 +1,6 @@
-import type { Issue } from '@/engine/roadmaps/types'
+import type { Issue, Status } from '@/engine/roadmaps/types'
 import { dueQuarter } from '@/engine/roadmaps/matrix'
-import { dateSpan, progress, progressUnder } from '@/engine/roadmaps/rollup'
-
-const DONE = new Set(['done', 'cancelled'])
+import { dateSpan } from '@/engine/roadmaps/rollup'
 
 export function colAria(parts: { name: string }[]): string {
   return parts.map((p) => p.name).join(', ')
@@ -10,32 +8,31 @@ export function colAria(parts: { name: string }[]): string {
 
 export function issueOverdue(issue: Issue, today: string): boolean {
   if (!issue.due || issue.due >= today) return false
-  return !DONE.has(issue.status)
+  return issue.status !== 'done' && issue.status !== 'cancelled'
 }
 
-export function displayDueQuarter(issues: Issue[], ids: string[]): string | null {
-  let bestIso = ''
-  for (const id of ids) {
-    const due = dateSpan(issues, id).due
-    if (!due || (bestIso && due <= bestIso)) continue
-    bestIso = due
+/** The quarter the last of these issues is due in, children counted. */
+export function lastQuarter(issues: Issue[], picks: Issue[]): string | null {
+  let last = ''
+  for (const p of picks) {
+    const due = dateSpan(issues, p.id).due
+    if (due && due > last) last = due
   }
-  return bestIso ? dueQuarter(bestIso) : null
+  return last ? dueQuarter(last) : null
 }
 
-export function sharedAssignee(issues: Issue[], ids: string[]): string | null | undefined {
-  let cur: string | null | undefined
-  for (const id of ids) {
-    const issue = issues.find((i) => i.id === id)
-    if (!issue) continue
-    const a = issue.assignee
-    if (cur === undefined) cur = a
-    else if (cur !== a) return undefined
-  }
-  return cur
+/** The one person every issue is assigned to, or null when they differ or no one is. */
+export function sharedAssignee(picks: Issue[]): string | null {
+  const first = picks[0]?.assignee ?? null
+  return picks.every((p) => p.assignee === first) ? first : null
 }
 
-export function cellProgress(issues: Issue[], ids: string[], singleId: string | null): number | null {
-  if (singleId) return progress(issues, singleId)
-  return progressUnder(issues, ids)
+/** One status for a cell of several issues: trouble first, then movement, then done only when all are. */
+export function blendStatus(picks: Issue[]): Status {
+  const has = (s: Status) => picks.some((p) => p.status === s)
+  if (has('blocked')) return 'blocked'
+  const counted = picks.filter((p) => p.status !== 'cancelled')
+  if (counted.length && counted.every((p) => p.status === 'done')) return 'done'
+  if (has('in_progress') || has('done')) return 'in_progress'
+  return 'todo'
 }

@@ -1,38 +1,42 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { X, Maximize2 } from 'lucide-react'
-import type { FieldDef, Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
-import type { RoadmapOp } from '@/engine/roadmaps/ops'
-import type { RoadmapRepo } from '@/app/roadmaps'
-import type { Theme } from '@/engine/types'
-import { IssueDetailView } from './IssueDetailView'
+import { IssueDetailView, type IssueViewProps } from './IssueDetailView'
 import { mergeIssueDetail } from './issueDetailCache'
+import { IconAction, IssueCrumb } from './issueParts'
 import { useIssueDetail } from './useIssueDetail'
 
-interface Props {
-  roadmapId: string
-  issue: Issue
-  roadmap: Roadmap
-  fields: FieldDef[]
-  issues: Issue[]
-  members: MemberLite[]
-  canEdit: boolean
-  act: (op: RoadmapOp) => 'ok' | string
-  repo: RoadmapRepo
-  look: { theme: Theme; accent?: string }
+interface Props extends IssueViewProps {
   onClose: () => void
   onFullPage: () => void
-  onOpenIssue: (id: string) => void
 }
 
-export function IssuePanel(props: Props) {
-  const { issue, roadmapId, repo, onClose } = props
-  const { detail, loading, error, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq, issue.bodyRev)
+/** One issue beside the roadmap. The header (where it sits, open as a page, close) stays put and the rest scrolls.
+    In a narrow window it lies over the roadmap instead of squeezing it. Escape closes; focus comes in on open and goes
+    back to where it was (or the issue's row) on close. */
+export function IssuePanel({ onClose, onFullPage, ...view }: Props) {
+  const { issue, issues, roadmap, roadmapId, repo } = view
+  const { detail, loading, setDetail } = useIssueDetail(repo, roadmapId, issue.id, issue.seq, issue.bodyRev)
+  const panel = useRef<HTMLElement>(null)
+  const shown = useRef(issue.id)
+  shown.current = issue.id
+
+  useEffect(() => {
+    const before = document.activeElement
+    panel.current?.focus({ preventScroll: true })
+    return () => {
+      const back = before instanceof HTMLElement && before.isConnected && before !== document.body
+        ? before
+        : document.querySelector<HTMLElement>(`[data-issue-id="${CSS.escape(shown.current)}"]`)
+      back?.focus({ preventScroll: true })
+    }
+  }, [])
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
+      // A menu, a picker or a field that took the Escape for itself has already handled it.
+      if (e.key !== 'Escape' || e.defaultPrevented) return
       const t = e.target
-      if (t instanceof HTMLElement && (t.closest('.ProseMirror') || t.closest('textarea, input'))) return
+      if (t instanceof HTMLElement && t.closest('.ProseMirror, textarea, input, [role="menu"], [role="dialog"]')) return
       onClose()
     }
     window.addEventListener('keydown', key)
@@ -41,23 +45,23 @@ export function IssuePanel(props: Props) {
 
   return (
     <aside
-      className="flex w-[440px] shrink-0 animate-in fade-in-0 slide-in-from-right-4 flex-col border-l border-line bg-app-bg duration-200 ease-out-strong motion-reduce:animate-none"
+      ref={panel}
+      tabIndex={-1}
       aria-label="Issue panel"
+      className="flex w-[440px] max-w-full flex-none animate-in fade-in-0 slide-in-from-right-3 flex-col border-l border-line bg-app-bg outline-none duration-150 ease-out motion-reduce:animate-none max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 max-[1180px]:top-14 max-[1180px]:z-30 max-[1180px]:border-line-2 max-[1180px]:shadow-[-24px_0_48px_-16px_rgba(0,0,0,.7)]"
     >
-      <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-line px-2">
-        <button type="button" className="rounded p-2 text-ink-2 hover:bg-raise hover:text-ink" aria-label="Open full page" onClick={props.onFullPage}>
-          <Maximize2 className="size-4" strokeWidth={1.75} />
-        </button>
-        <button type="button" className="rounded p-2 text-ink-2 hover:bg-raise hover:text-ink" aria-label="Close issue panel" onClick={onClose}>
-          <X className="size-4" strokeWidth={1.75} />
-        </button>
-      </div>
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-line pl-5 pr-2">
+        <IssueCrumb roadmap={roadmap} issue={issue} parent={issues.find((i) => i.id === issue.parentId) ?? null} onOpenIssue={view.onOpenIssue} />
+        <div className="ml-auto flex flex-none items-center gap-0.5">
+          <IconAction label="Open full page" onClick={onFullPage}><Maximize2 strokeWidth={1.75} /></IconAction>
+          <IconAction label="Close issue panel" hint="Close (Esc)" onClick={onClose}><X strokeWidth={1.75} /></IconAction>
+        </div>
+      </header>
       <IssueDetailView
         key={issue.id}
-        {...props}
+        {...view}
         detail={detail}
         detailLoading={loading}
-        detailError={error}
         layout="panel"
         onDetail={(patch) => setDetail(mergeIssueDetail(detail, patch))}
       />

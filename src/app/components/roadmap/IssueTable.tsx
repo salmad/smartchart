@@ -10,7 +10,7 @@ import { IssueDeleteDialog } from './IssueDeleteDialog'
 import { useSelection } from './useSelection'
 import { useRowDrag } from './useRowDrag'
 import { useTableKeys, type ComposeDraft } from './useTableKeys'
-import { liveColumns, ROW_H, rowSlice, TableHead, visibleRows, VIRT } from './issueTableView'
+import { groupName, liveColumns, ROW_H, rowSlice, TableHead, visibleRows, VIRT } from './issueTableView'
 import { newIssueId } from './issueIds'
 
 interface Props {
@@ -32,8 +32,8 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
   const all = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
   const filtersActive = view.chips.length > 0
   const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
-  const columns = useMemo(() => liveColumns(view, state.roadmap.fields), [view.columns, state.roadmap.fields])
-  const colCount = 4 + columns.length + 1
+  const columns = useMemo(() => liveColumns(view, state.roadmap.fields), [view, state.roadmap.fields])
+  const colCount = columns.length + 2
   const liveIssues = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
   const issueOrder = useMemo(
     () => rows.filter((r): r is Extract<TableRow, { kind: 'issue' }> => r.kind === 'issue').map((r) => r.issue.id),
@@ -98,6 +98,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewHeight, setViewHeight] = useState(900)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const el = scrollRef.current
@@ -115,6 +116,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
     if (!el) return
     const top = el.scrollTop
     const h = el.clientHeight
+    setScrolled(el.scrollLeft > 0)
     setScrollTop((t) => (t === top ? t : top))
     setViewHeight((vh) => (vh === h ? vh : h))
   }, [])
@@ -178,7 +180,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
   }
 
   return (
-    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col outline-none" tabIndex={-1}>
+    <div ref={rootRef} className="group/table relative flex min-h-0 flex-1 flex-col outline-none" tabIndex={-1} data-scrolled={scrolled || undefined}>
       {selection.selected.size > 0 && canEdit && (
         <BulkBar
           count={selection.selected.size}
@@ -193,7 +195,7 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
         />
       )}
       {said && <p role="status" className="border-b border-line bg-panel px-4 py-2 text-[12.5px] text-ink-2">{said}</p>}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto" onScroll={onScroll}>
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onScroll={onScroll}>
         <table className="w-full min-w-[640px] border-collapse text-left">
           <TableHead columns={columns} fields={state.roadmap.fields} />
           <tbody>
@@ -206,11 +208,12 @@ export function IssueTable({ state, view, members, today, onView, canEdit, act, 
             )}
             {body.map((row) =>
               row.kind === 'group' ? (
-                <IssueGroupRow key={`g-${row.key}`} row={row} person={view.groupBy?.on === 'assignee'} {...shared} />
+                <IssueGroupRow key={`g-${row.key}`} row={row} label={groupName(row, view.groupBy, state.roadmap.fields)} person={view.groupBy?.on === 'assignee'} {...shared} />
               ) : (
                 <IssueDataRow
                   key={row.issue.id}
                   row={row}
+                  today={today}
                   onToggleCollapse={onToggleCollapse}
                   focused={focusId === row.issue.id}
                   selected={selection.selected.has(row.issue.id)}

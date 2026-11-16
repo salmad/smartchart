@@ -14,10 +14,8 @@ export function GroupLabel({ label, count, person, empty }: Props) {
   return (
     <>
       {person && !empty && <Avatar name={label} />}
-      <span className={cn('font-medium', empty ? 'text-ink-3' : 'text-ink')}>{label}</span>
-      <span className="text-ink-3">
-        {count} {count === 1 ? 'issue' : 'issues'}
-      </span>
+      <span className={cn('font-medium', empty ? 'text-ink-2' : 'text-ink')}>{label}</span>
+      <span className="tabular-nums text-ink-3">{count}</span>
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { PanelLeft } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Account } from '@/app/auth'
 import type { RoadmapRepo } from '@/app/roadmaps'
@@ -7,13 +7,11 @@ import type { Theme } from '@/engine/types'
 import { go } from '@/app/route'
 import { DEV_ACCOUNT } from '@/app/dev-account'
 import { useUserLook } from '@/app/useUserLook'
-import { AccountMenu } from '../AccountMenu'
-import { Toggle } from '../Bar'
-import { Crumbs } from '../Crumbs'
+import { Button } from '../ui/button'
 import type { Crumb } from '../sidebar/usePageCrumbs'
 import { useRoadmap } from './useRoadmap'
 import { FieldsEditor } from './FieldsEditor'
-import { TopBar, ViewTabs } from './TopBar'
+import { TopBar } from './TopBar'
 import { FilterBar } from './FilterBar'
 import { IssueTable } from './IssueTable'
 import { Gantt } from './Gantt'
@@ -24,7 +22,6 @@ import { runChecks, type CheckId } from '@/engine/roadmaps/checks'
 import { liveChips } from '@/engine/roadmaps/view'
 import { IssuePanel } from './IssuePanel'
 import { IssuePage } from './IssuePage'
-const EMPTY = 'No issues yet. Press C or New issue to add the first.'
 
 interface Props {
   id: string
@@ -42,7 +39,7 @@ interface Props {
   name?: string
 }
 
-/** A roadmap in the workspace shell: sidebar, bar, filters and the issue table. */
+/** A roadmap in the workspace shell: the bar, the sidebar, one toolbar row, then the chosen view and the issue panel. */
 export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, sidebar, sidebarOpen, onToggleSidebar, onSite, crumbs, onOpenPage, name }: Props) {
   const { view, act } = useRoadmap(repo, id, account.id)
   const { look } = useUserLook(account.id, account.id !== DEV_ACCOUNT.id)
@@ -51,13 +48,12 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const [panelId, setPanelId] = useState<string | null>(null)
   const [todayRequest, setTodayRequest] = useState(0)
   const title = view.state?.roadmap.name ?? name ?? ''
-  const customFields = view.state?.roadmap.fields ?? []
+  const customFields = useMemo(() => view.state?.roadmap.fields ?? [], [view.state?.roadmap.fields])
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
-  const liveCount = view.state?.issues.filter((i) => i.deletedAt === null).length ?? 0
-  const hasIssues = liveCount > 0
   // New issue bumps this; the table opens a compose row at the end for each bump (and shows itself to do it).
   const [newIssue, setNewIssue] = useState(0)
-  const live = view.state?.issues.filter((i) => i.deletedAt === null) ?? []
+  const live = useMemo(() => view.state?.issues.filter((i) => i.deletedAt === null) ?? [], [view.state?.issues])
+  const hasIssues = live.length > 0
   const isChecks = viewSettings.layout === 'checks'
   const isMatrix = viewSettings.layout === 'matrix'
   const isGantt = viewSettings.layout === 'gantt'
@@ -112,43 +108,48 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
     })
   }, [customFields, setViewSettings])
 
+  const startIssue = useCallback(() => {
+    setPanelId(null)
+    // Only the table and the Gantt have a place to type a title; Matrix and Checks hand over to the table.
+    setViewSettings((v) => (v.layout === 'matrix' || v.layout === 'checks' ? { ...v, layout: 'table' } : v))
+    setNewIssue((n) => n + 1)
+  }, [setViewSettings])
+  const onNewIssue = canEdit ? startIssue : undefined
+
+  // C starts the first issue from the empty roadmap; once a view is up it owns its own keys.
+  const emptyKeys = canEdit && Boolean(view.state) && !routeIssue && !showMain && !fieldsOpen
+  useEffect(() => {
+    if (!emptyKeys) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'c' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"]')) return
+      e.preventDefault()
+      startIssue()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [emptyKeys, startIssue])
+
   return (
     <div className="flex h-full flex-col bg-app-bg">
-      <header className="flex h-14 items-center gap-3 border-b border-line pl-3 pr-4 max-[900px]:px-4">
-        <div className="flex flex-none items-center gap-0.5">
-          <Toggle open={sidebarOpen} onClick={onToggleSidebar} label={`${sidebarOpen ? 'Hide' : 'Show'} the sidebar`} keys="⌘\\"><PanelLeft className="size-[18px]" strokeWidth={1.75} /></Toggle>
-        </div>
-        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-[13px]">
-          <a href="/home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); onSite() }} className="whitespace-nowrap font-semibold tracking-[-.01em] text-ink hover:text-ink-2">Occam</a>
-          <span aria-hidden className="text-ink-3">/</span>
-          <Crumbs crumbs={crumbs} onOpen={(r) => onOpenPage?.(r)} />
-          <span className="truncate text-ink-2">{title}</span>
-        </nav>
-        {view.state && <ViewTabs view={viewSettings} checksBadge={checkReport.issues} onView={setViewSettings} />}
-        <div className="min-w-0 flex-1" />
-        {view.state && (
-          <TopBar
-            canEdit={canEdit}
-            fields={customFields}
-            view={viewSettings}
-            onView={setViewSettings}
-            onFields={() => setFieldsOpen(true)}
-            onNewIssue={() => {
-              setPanelId(null)
-              // Only the table and the Gantt have a place to type a title; Matrix and Checks hand over to the table.
-              if (isMatrix || isChecks) setViewSettings((v) => ({ ...v, layout: 'table' }))
-              setNewIssue((n) => n + 1)
-            }}
-            onToday={() => setTodayRequest((n) => n + 1)}
-          />
-        )}
-        <AccountMenu account={account} />
-      </header>
+      <TopBar
+        title={title}
+        account={account}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={onToggleSidebar}
+        onSite={onSite}
+        crumbs={crumbs}
+        onOpenPage={onOpenPage}
+        layout={view.state ? viewSettings.layout : null}
+        onLayout={(layout) => setViewSettings((v) => ({ ...v, layout }))}
+        alarms={checkReport.alarms}
+        onNewIssue={onNewIssue}
+      />
       <div className="flex h-[calc(100%-56px)] min-h-0 max-[900px]:h-auto max-[900px]:flex-col">
         {sidebar}
         <main className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-app-bg">
-          {view.error && <p className="px-8 py-10 text-[13.5px] text-ink-2">{view.error}</p>}
-          {!view.error && !view.state && <p className="px-8 py-10 text-[13.5px] text-ink-2">Opening the roadmap…</p>}
+          {view.error && <p role="alert" className="m-auto max-w-sm px-8 text-center text-[13px] leading-[1.5] text-ink-2">{view.error}</p>}
+          {!view.error && !view.state && <p className="m-auto text-[13px] text-ink-3">Opening the roadmap…</p>}
           {view.state && routeIssue && openIssueRow && (
             <IssuePage
               roadmapId={id}
@@ -166,19 +167,21 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               onOpenIssue={openIssue}
             />
           )}
-          {view.state && !routeIssue && showMain && (
+          {view.state && !routeIssue && (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              {hasIssues && (
-                <FilterBar
-                  fields={customFields}
-                  members={view.members}
-                  today={today}
-                  view={viewSettings}
-                  issueCount={liveCount}
-                  onChange={setViewSettings}
-                />
-              )}
-              {viewSettings.layout === 'table' ? (
+              <FilterBar
+                fields={customFields}
+                members={view.members}
+                today={today}
+                view={viewSettings}
+                issueCount={live.length}
+                onChange={setViewSettings}
+                onToday={() => setTodayRequest((n) => n + 1)}
+                settings={canEdit ? { open: fieldsOpen, onOpen: () => setFieldsOpen(true) } : undefined}
+              />
+              {!showMain ? (
+                <EmptyRoadmap onNewIssue={onNewIssue} />
+              ) : viewSettings.layout === 'table' ? (
                 <IssueTable
                   state={view.state}
                   view={viewSettings}
@@ -238,9 +241,6 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
               onOpenIssue={openIssue}
             />
           )}
-          {view.state && !routeIssue && !showMain && (
-            <p className="px-8 py-10 text-[13.5px] text-ink-2">{EMPTY}</p>
-          )}
         </main>
       </div>
       {view.state && canEdit && (
@@ -253,6 +253,23 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
           refused={view.said}
         />
       )}
+    </div>
+  )
+}
+
+/** A roadmap with nothing in it: say so in the middle of the page and offer the one next step. A viewer gets no action. */
+function EmptyRoadmap({ onNewIssue }: { onNewIssue?: () => void }) {
+  return (
+    <div className="grid min-h-0 flex-1 place-items-center px-8 pb-11">
+      <div className="grid max-w-xs justify-items-center gap-1.5 text-center">
+        <h2 className="text-[15px] font-medium tracking-[-.01em] text-ink">No issues yet</h2>
+        <p className="text-[13px] leading-[1.5] text-ink-3">
+          {onNewIssue ? 'An issue is one piece of work. Add the first, then nest, date and assign it.' : 'Nothing has been added to this roadmap.'}
+        </p>
+        {onNewIssue && (
+          <Button className="mt-3" onClick={onNewIssue}><Plus aria-hidden className="!size-3.5" strokeWidth={2} />New issue <kbd>C</kbd></Button>
+        )}
+      </div>
     </div>
   )
 }

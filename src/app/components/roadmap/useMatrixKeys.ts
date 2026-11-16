@@ -1,121 +1,76 @@
-import { useCallback, useEffect, type RefObject } from 'react'
-import type { MatrixCell as Cell } from '@/engine/roadmaps/matrix'
+import { useEffect, type RefObject } from 'react'
+import type { MatrixRow } from '@/engine/roadmaps/matrix'
 
+/** The focused cell, by the row's issue and the column's place, so it survives rows coming and going. */
 export interface MatrixFocus {
   issueId: string
   col: number
 }
 
-function cellFocusable(cell: Cell): boolean {
-  return cell.kind === 'one' || cell.kind === 'many'
+const STEP: Record<string, [number, number]> = { ArrowDown: [1, 0], ArrowUp: [-1, 0], ArrowRight: [0, 1], ArrowLeft: [0, -1] }
+
+function filled(row: MatrixRow | undefined, col: number): MatrixFocus | null {
+  if (row?.kind !== 'issue') return null
+  const cell = row.cells[col]
+  return cell && cell.kind !== 'empty' ? { issueId: row.issue.id, col } : null
 }
 
-function editingField(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true
-  if (target.isContentEditable) return true
-  return !!target.closest('[contenteditable=""], [contenteditable="true"]')
+/** The next filled cell in a direction: empty cells and group rows are stepped over. */
+function nextSpot(rows: MatrixRow[], from: MatrixFocus, dRow: number, dCol: number): MatrixFocus | null {
+  let r = rows.findIndex((row) => row.kind === 'issue' && row.issue.id === from.issueId)
+  if (r < 0) return null
+  let c = from.col
+  for (;;) {
+    r += dRow
+    c += dCol
+    if (r < 0 || r >= rows.length || c < 0) return null
+    const row = rows[r]
+    if (row.kind === 'issue' && c >= row.cells.length) return null
+    const hit = filled(row, c)
+    if (hit) return hit
+  }
 }
 
-function rowTitleControl(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const btn = target.closest('th button')
-  return !!btn && !btn.hasAttribute('data-matrix-cell')
-}
-
-interface RowSlice {
-  kind: 'group' | 'issue'
-  issueId?: string
-  cells?: Cell[]
-}
-
-function rowOf(rows: RowSlice[], issueId: string): number {
-  return rows.findIndex((r) => r.kind === 'issue' && r.issueId === issueId)
-}
-
-function popoverOpen(root: HTMLElement): boolean {
-  return !!root.querySelector('[data-radix-popper-content-wrapper]')
-}
-
-interface Options {
-  root: RefObject<HTMLElement | null>
-  rows: RowSlice[]
-  colCount: number
-  focus: MatrixFocus | null
-  setFocus: (f: MatrixFocus | null) => void
-  onActivate: (issueId: string, col: number) => void
-}
-
-export function useMatrixKeys({ root, rows, colCount, focus, setFocus, onActivate }: Options) {
-  const nextSpot = useCallback(
-    (issueId: string, col: number, dRow: number, dCol: number): MatrixFocus | null => {
-      let r = rowOf(rows, issueId)
-      let c = col
-      if (r < 0) return null
-      for (let n = 0; n < rows.length * colCount + 2; n++) {
-        r += dRow
-        c += dCol
-        if (r < 0 || r >= rows.length || c < 0 || c >= colCount) return null
-        const rowSlice = rows[r]
-        if (rowSlice.kind === 'group') continue
-        const cell = rowSlice.cells?.[c]
-        if (cell && cellFocusable(cell) && rowSlice.issueId) return { issueId: rowSlice.issueId, col: c }
-      }
-      return null
-    },
-    [colCount, rows],
-  )
-
-  useEffect(() => {
-    const el = root.current
-    if (!el) return
-    const onKey = (e: KeyboardEvent) => {
-      if (editingField(e.target)) return
-      if (!focus) return
-      if (popoverOpen(el) && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        const n = nextSpot(focus.issueId, focus.col, 1, 0)
-        if (n) setFocus(n)
-        return
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        const n = nextSpot(focus.issueId, focus.col, -1, 0)
-        if (n) setFocus(n)
-        return
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        const n = nextSpot(focus.issueId, focus.col, 0, 1)
-        if (n) setFocus(n)
-        return
-      }
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        const n = nextSpot(focus.issueId, focus.col, 0, -1)
-        if (n) setFocus(n)
-        return
-      }
-      if (e.key === 'Enter') {
-        if (rowTitleControl(e.target)) return
-        e.preventDefault()
-        onActivate(focus.issueId, focus.col)
-      }
-    }
-    el.addEventListener('keydown', onKey)
-    return () => el.removeEventListener('keydown', onKey)
-  }, [focus, nextSpot, onActivate, root, setFocus])
-}
-
-export function firstMatrixFocus(rows: RowSlice[], colCount: number): MatrixFocus | null {
-  for (let r = 0; r < rows.length; r++) {
-    if (rows[r].kind === 'group') continue
-    for (let c = 0; c < colCount; c++) {
-      const cell = rows[r].cells?.[c]
-      if (cell && cellFocusable(cell) && rows[r].issueId) return { issueId: rows[r].issueId!, col: c }
+export function firstMatrixFocus(rows: MatrixRow[]): MatrixFocus | null {
+  for (const row of rows) {
+    if (row.kind !== 'issue') continue
+    for (let c = 0; c < row.cells.length; c++) {
+      const hit = filled(row, c)
+      if (hit) return hit
     }
   }
   return null
+}
+
+export const cellSelector = (f: MatrixFocus) => `[data-matrix-cell="${f.issueId}:${f.col}"]`
+
+interface Options {
+  root: RefObject<HTMLElement | null>
+  rows: MatrixRow[]
+  focus: MatrixFocus | null
+  setFocus: (f: MatrixFocus) => void
+}
+
+/** Arrows move the focused cell; Enter presses that same cell. The listener is native, so keys typed inside a cell's
+    popover (a portal) never reach the grid. */
+export function useMatrixKeys({ root, rows, focus, setFocus }: Options) {
+  useEffect(() => {
+    const el = root.current
+    if (!el || !focus) return
+    const onKey = (e: KeyboardEvent) => {
+      const step = STEP[e.key]
+      if (step) {
+        e.preventDefault()
+        const next = nextSpot(rows, focus, step[0], step[1])
+        if (next) setFocus(next)
+        return
+      }
+      // Enter on a row's own buttons (expand, open) is theirs.
+      if (e.key !== 'Enter' || (e.target instanceof Element && e.target.closest('th'))) return
+      e.preventDefault()
+      el.querySelector<HTMLElement>(cellSelector(focus))?.click()
+    }
+    el.addEventListener('keydown', onKey)
+    return () => el.removeEventListener('keydown', onKey)
+  }, [focus, root, rows, setFocus])
 }

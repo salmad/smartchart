@@ -1,36 +1,46 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
+import { cn } from '@/app/lib/utils'
+import { GrowingText } from './issueParts'
 
 interface Props {
   title: string
   canEdit: boolean
   act: (op: RoadmapOp) => 'ok' | string
   issueId: string
-  as?: 'h1' | 'h2'
+  /** The full page's title is the page heading and a size up. */
+  page?: boolean
 }
 
-export function IssueTitle({ title, canEdit, act, issueId, as: Tag = 'h2' }: Props) {
+/** The issue's title, typed in place: a long one wraps instead of clipping. Enter or leaving saves, Escape drops the edit. */
+export function IssueTitle({ title, canEdit, act, issueId, page }: Props) {
   const [draft, setDraft] = useState(title)
   useEffect(() => setDraft(title), [title])
+  const dropped = useRef(false)
+  const type = cn('font-semibold leading-[1.3] tracking-[-.015em] text-ink', page ? 'text-[24px]' : 'text-[18px]')
 
   const commit = () => {
-    const t = draft.trim()
+    const t = dropped.current ? '' : draft.replace(/\s+/g, ' ').trim()
+    dropped.current = false
     if (!t || t === title) { setDraft(title); return }
     act({ op: 'set', ids: [issueId], props: { title: t } })
   }
 
-  if (!canEdit) return <Tag className="text-[20px] font-semibold tracking-[-.015em] text-ink">{title}</Tag>
+  if (!canEdit) {
+    const Tag = page ? 'h1' : 'h2'
+    return <Tag className={type}>{title}</Tag>
+  }
 
   return (
-    <input
-      className="w-full border-0 bg-transparent p-0 text-[20px] font-semibold tracking-[-.015em] text-ink outline-none focus:ring-0"
+    <GrowingText
+      className={cn('w-full p-0', type)}
       aria-label="Issue title"
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur() }
-        if (e.key === 'Escape') { setDraft(title); (e.target as HTMLInputElement).blur() }
+        if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
+        if (e.key === 'Escape') { dropped.current = true; e.currentTarget.blur() }
       }}
     />
   )

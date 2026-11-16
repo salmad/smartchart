@@ -36,7 +36,7 @@ async function seedOverdueClean(page: import('@playwright/test').Page) {
       if (!rm) return
       rm.issues = [
         row({ id: 'late', number: 1, sortKey: 'a', title: 'Late task', due: past, start: '2019-12-01' }),
-        row({ id: 'ok', number: 2, sortKey: 'b', title: 'Clean task', due: future, start: future }),
+        row({ id: 'ok', number: 2, sortKey: 'b', title: 'Clean task', due: future, start: future, assignee: null }),
       ]
       localStorage.setItem(key, JSON.stringify(all))
     },
@@ -44,7 +44,7 @@ async function seedOverdueClean(page: import('@playwright/test').Page) {
   )
 }
 
-test('checks tab, badge, card opens filtered table', async ({ page }) => {
+test('checks tab, count, row opens filtered table', async ({ page }) => {
   await openFreshRoadmap(page)
   await seedOverdueClean(page)
   await page.reload()
@@ -56,7 +56,11 @@ test('checks tab, badge, card opens filtered table', async ({ page }) => {
   await nav.getByRole('button', { name: /Checks/ }).click()
   await expect(nav.getByRole('button', { name: /Checks/ })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('region', { name: 'Checks' })).toBeVisible()
-  await expect(nav.getByRole('button', { name: /Checks/ })).toContainText('1')
+  // The tab and the page tell one story: one issue is overdue; the unassigned one is advisory and not counted.
+  await expect(nav.getByRole('button', { name: /Checks/ })).toContainText('1 need attention')
+  await expect(page.getByRole('region', { name: 'Checks' })).toContainText('1 issue needs attention.')
+  await expect(page.getByRole('button', { name: 'No assignee, 1 issues' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Checks' })).toContainText('checks pass')
 
   const overdue = page.getByRole('button', { name: 'Overdue, 1 issues' })
   await overdue.click()

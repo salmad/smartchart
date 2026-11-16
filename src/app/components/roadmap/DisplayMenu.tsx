@@ -1,19 +1,21 @@
-import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import type { FieldDef } from '@/engine/roadmaps/types'
 import type { ViewSettings } from '@/engine/roadmaps/view'
-import { Button } from '../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { cn } from '@/app/lib/utils'
 import { MatrixDisplay } from './MatrixDisplay'
-import { chromeGhost, menuRow, menuSurface } from './roadmapChrome'
+import { MenuSection, MenuSelect, MenuSwitch } from './MenuParts'
+import { ToolButton } from './ToolButton'
+import { menuSurface } from './roadmapChrome'
 
-const SORTS: { id: ViewSettings['sort']; label: string }[] = [
-  { id: 'order', label: 'Order' },
-  { id: 'due', label: 'Due' },
-  { id: 'start', label: 'Start' },
-  { id: 'status', label: 'Status' },
-  { id: 'updated', label: 'Updated' },
+type Sort = ViewSettings['sort']
+
+const SORTS: { value: Sort; label: string }[] = [
+  { value: 'order', label: 'Manual order' },
+  { value: 'due', label: 'Due date' },
+  { value: 'start', label: 'Start date' },
+  { value: 'status', label: 'Status' },
+  { value: 'updated', label: 'Last updated' },
 ]
 
 const COLS: { id: string; label: string }[] = [
@@ -30,122 +32,75 @@ interface Props {
   onChange: (v: ViewChange) => void
 }
 
-/** Sort, group-by and visible columns for the table. */
+/** The select's value for a grouping, and back. */
+const groupValue = (g: ViewSettings['groupBy']): string => (g === null ? 'none' : g.on === 'field' ? `field:${g.field}` : g.on)
+const groupOf = (v: string): ViewSettings['groupBy'] =>
+  v === 'none' ? null : v === 'status' || v === 'assignee' ? { on: v } : { on: 'field', field: v.slice('field:'.length) }
+
+/** How this view is drawn: sort, grouping and visible columns; on the Matrix, its rows, columns and cards. */
 export function DisplayMenu({ fields, view, onChange }: Props) {
-  const toggleCol = (id: string) => {
-    const on = view.columns.includes(id)
-    const columns = on ? view.columns.filter((c) => c !== id) : [...view.columns, id]
-    onChange({ ...view, columns })
-  }
-
-  const setGroup = (groupBy: ViewSettings['groupBy']) => onChange({ ...view, groupBy })
-
-  const [open, setOpen] = useState(false)
+  const matrix = view.layout === 'matrix'
+  const toggleCol = (id: string) =>
+    onChange((v) => ({ ...v, columns: v.columns.includes(id) ? v.columns.filter((c) => c !== id) : [...v.columns, id] }))
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
+    <Popover modal={false}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className={cn('h-8 gap-1.5', chromeGhost)}>
-          <SlidersHorizontal className="size-[15px]" strokeWidth={1.75} aria-hidden />
-          {view.layout === 'matrix' ? 'Layout' : 'Display'}
-        </Button>
+        <ToolButton>
+          <SlidersHorizontal strokeWidth={1.75} aria-hidden />
+          {matrix ? 'Layout' : 'Display'}
+        </ToolButton>
       </PopoverTrigger>
       <PopoverContent
         align="end"
         sideOffset={8}
+        collisionPadding={12}
         className={cn(
-          'p-4 text-[13px]',
+          'max-h-[min(32rem,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain p-2 text-[13px]',
+          matrix ? 'w-[min(20rem,calc(100vw-1.5rem))]' : 'w-[17rem]',
           menuSurface,
-          view.layout === 'matrix'
-            ? 'max-h-[min(70vh,28rem)] w-[min(22rem,calc(100vw-1.5rem))] overflow-y-auto'
-            : 'w-72',
         )}
-        aria-label={view.layout === 'matrix' ? 'Matrix layout' : 'Display settings'}
+        aria-label={matrix ? 'Matrix layout' : 'Display settings'}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        {view.layout === 'matrix' ? (
+        {matrix ? (
           <MatrixDisplay fields={fields} view={view} onChange={onChange} />
         ) : (
-          <>
-            <section className="mb-4">
-              <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Sort</h3>
-              <div className="flex flex-wrap gap-1">
-                {SORTS.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    aria-pressed={view.sort === s.id}
-                    className={menuRow}
-                    onClick={() => onChange((v) => ({ ...v, sort: s.id }))}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-            <section className="mb-4">
-              <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Group by</h3>
-              <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
-                <GroupPick label="None" on={view.groupBy === null} onClick={() => setGroup(null)} />
-                <GroupPick label="Status" on={view.groupBy?.on === 'status'} onClick={() => setGroup({ on: 'status' })} />
-                <GroupPick label="Assignee" on={view.groupBy?.on === 'assignee'} onClick={() => setGroup({ on: 'assignee' })} />
-                {fields.filter((f) => f.type === 'choice' || f.type === 'person').map((f) => (
-                  <GroupPick
-                    key={f.id}
-                    label={f.name}
-                    on={view.groupBy?.on === 'field' && view.groupBy.field === f.id}
-                    onClick={() => setGroup({ on: 'field', field: f.id })}
-                  />
-                ))}
-              </div>
-            </section>
-            <section>
-              <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Columns</h3>
-              <div className="flex flex-col gap-1">
-                {COLS.map((c) => (
-                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-[12px] text-ink-2">
-                    <input
-                      type="checkbox"
-                      className="size-3.5 accent-ink"
-                      checked={view.columns.includes(c.id)}
-                      onChange={() => toggleCol(c.id)}
-                    />
-                    {c.label}
-                  </label>
-                ))}
-                {fields.map((f) => (
-                  <label key={f.id} className="flex cursor-pointer items-center gap-2 text-[12px] text-ink-2">
-                    <input
-                      type="checkbox"
-                      className="size-3.5 accent-ink"
-                      checked={view.columns.includes(f.id)}
-                      onChange={() => toggleCol(f.id)}
-                    />
-                    {f.name}
-                  </label>
-                ))}
-              </div>
-            </section>
-          </>
+          <div className="grid gap-2">
+            <div>
+              <MenuSelect label="Sort by" value={view.sort} options={SORTS} onChange={(sort) => onChange((v) => ({ ...v, sort }))} />
+              <MenuSelect
+                label="Group by"
+                value={groupValue(view.groupBy)}
+                options={[
+                  { value: 'none', label: 'Nothing' },
+                  { value: 'status', label: 'Status' },
+                  { value: 'assignee', label: 'Assignee' },
+                  ...fields.filter((f) => f.type !== 'date').map((f) => ({ value: `field:${f.id}`, label: f.name })),
+                ]}
+                onChange={(v) => onChange((prev) => ({ ...prev, groupBy: groupOf(v) }))}
+              />
+            </div>
+            <MenuSection title="Columns">
+              {COLS.map((c) => (
+                <MenuSwitch key={c.id} label={c.label} on={view.columns.includes(c.id)} onChange={() => toggleCol(c.id)} />
+              ))}
+              {fields.map((f) => (
+                <MenuSwitch key={f.id} label={f.name} on={view.columns.includes(f.id)} onChange={() => toggleCol(f.id)} />
+              ))}
+            </MenuSection>
+          </div>
         )}
       </PopoverContent>
     </Popover>
   )
 }
 
-function GroupPick({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
-  return (
-    <button type="button" aria-pressed={on} className={menuRow} onClick={onClick}>
-      {label}
-    </button>
-  )
-}
-
 export function groupByLabel(view: ViewSettings, fields: FieldDef[]): string | null {
-  if (!view.groupBy) return null
-  if (view.groupBy.on === 'status') return 'Status'
-  if (view.groupBy.on === 'assignee') return 'Assignee'
   const g = view.groupBy
+  if (!g) return null
+  if (g.on === 'status') return 'Status'
+  if (g.on === 'assignee') return 'Assignee'
   if (g.on !== 'field') return null
   return fields.find((d) => d.id === g.field)?.name ?? null
 }

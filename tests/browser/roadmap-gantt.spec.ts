@@ -22,7 +22,7 @@ test('switches to Gantt and keeps it after reload', async ({ page }) => {
   await expect(scale.getByRole('button', { name: 'Quarter' })).toHaveAttribute('aria-pressed', 'true')
 
   await nav.getByRole('button', { name: 'Table' }).click()
-  await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Title' })).toBeVisible()
 })
 
 function shortDate(iso: string, today: string): string {
@@ -56,10 +56,13 @@ test('draws bars, a bracket, a milestone and alert labels', async ({ page }) => 
   await expect(lane('i_done')).toHaveAttribute('data-mark', 'bar')
   await expect(lane('i_done')).toHaveAttribute('data-done', 'true')
   await expect(lane('i_blk')).toHaveAttribute('data-alert', 'true')
-  await expect(lane('i_blk')).toContainText('Overdue 1 day · blocked')
+  // No room for the label beside this bar without crossing the today line: it moves to the tooltip.
+  await expect(lane('i_blk')).not.toContainText('Overdue')
+  await lane('i_blk').locator('rect[data-bar]').hover()
+  await expect(page.getByRole('tooltip')).toContainText('Overdue 1 day · blocked')
   await expect(lane('i_fr_a')).toHaveAttribute('data-mark', 'milestone')
-  await expect(lane('i_fr_a')).toContainText('France task A · 1 Apr')
-  await expect(timeline.locator('[data-list-issue="i_fr_b"]')).toContainText('No dates')
+  await expect(lane('i_fr_a')).toContainText('1 Apr 2027')
+  await expect(timeline.locator('[data-list-issue="i_fr_b"]')).not.toContainText('No dates')
 
   const todayLine = page.getByRole('separator', { name: shortDate(today, today) })
   await expect(todayLine).toBeVisible()
@@ -94,7 +97,7 @@ async function scrollBarClearOfList(
       const scroll = laneEl?.closest('.overflow-auto') as HTMLElement | null
       const sticky = scroll?.querySelector('.sticky.left-0.bg-app-bg') as HTMLElement | null
       if (!laneEl || !scroll || !sticky) return
-      const bar = laneEl.querySelector('rect')
+      const bar = laneEl.querySelector('rect[data-bar]')
       if (!bar) return
       const listRight = sticky.getBoundingClientRect().right
       const barRect = bar.getBoundingClientRect()
@@ -120,7 +123,7 @@ async function dragOnLane(
   const hit = await page.evaluate(
     ({ id, from }) => {
       const laneEl = document.querySelector(`[data-issue="${id}"]`) as HTMLElement | null
-      const bar = laneEl?.querySelector('rect')
+      const bar = laneEl?.querySelector('rect[data-bar]')
       if (!laneEl || !bar) throw new Error(`No bar for ${id}`)
       const r = bar.getBoundingClientRect()
       let x = r.left + r.width / 2
@@ -173,15 +176,16 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
   const panel = page.getByRole('complementary', { name: 'Issue panel' })
   await expect(panel).toBeVisible()
   const activity = panel.getByRole('region', { name: 'Activity' })
-  await expect(activity.getByText(/set dates/i)).toHaveCount(3)
+  await expect(activity.getByText(/changed the dates/i).first()).toBeVisible()
 
-  const linesBefore = await activity.getByText(/set dates/i).count()
+  const linesBefore = await activity.getByText(/changed the dates/i).count()
   await dragOnLane(page, 'i_fr_b', 2)
   await expect(panel).toBeVisible()
-  await expect(activity.getByText(/set dates/i)).toHaveCount(linesBefore)
+  await expect(activity.getByText(/changed the dates/i)).toHaveCount(linesBefore)
 
   await panel.getByRole('button', { name: 'Close issue panel' }).click()
   await expect(panel).toBeHidden()
+  await page.waitForTimeout(400) // the timeline widens as the panel leaves
 
   await page.evaluate(() => localStorage.setItem('smartchart.roadmapWriteGate', '1'))
   await page.route('**/api/roadmaps?writeGate=1**', async (route) => {
@@ -190,6 +194,7 @@ test('drags a bar, its end, and a click still opens', async ({ page }) => {
   })
 
   await dragOnLane(page, 'i_fr_b', 12)
+  await expect(lane('i_fr_b')).toContainText('17 Dec')
   await nav.getByRole('button', { name: 'Table' }).click()
   await expect(row.getByRole('button', { name: 'Start date: 2026-12-17' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Due date: 2026-12-17' })).toBeVisible()
@@ -218,7 +223,7 @@ test('drops a dateless issue onto the timeline', async ({ page }) => {
   await expect(timeline.locator('[data-list-issue="i_done"]')).toHaveAttribute('draggable', 'false')
 
   await lane.hover()
-  await expect(lane).toHaveAttribute('title', 'Click or drag here from the list to give it dates')
+  await expect(lane.locator('[data-ghost]')).toBeVisible()
 
   const dropInLane = await page.evaluate(() => {
     const region = document.querySelector('[aria-label="Timeline"]')
@@ -308,5 +313,5 @@ test('New issue works from the Gantt: a title row at the end of the list, then t
   await title.press('Enter')
   await expect(page.getByLabel('New issue title')).toHaveCount(0)
   await expect(page.getByText('Launch review')).toBeVisible()
-  await expect(page.locator('[data-list-issue]', { hasText: 'Launch review' }).getByText('No dates')).toBeVisible()
+  await expect(page.locator('[data-list-issue]', { hasText: 'Launch review' }).getByText('No dates')).toHaveCount(0)
 })

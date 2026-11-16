@@ -1,23 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
-import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
+import type { ViewSettings } from '@/engine/roadmaps/view'
 import { tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
-import {
-  PX_PER_DAY,
-  daysBetween,
-  ganttRange,
-  markFor,
-  type Mark,
-} from '@/engine/roadmaps/gantt'
-import { shortDate } from './dates'
-import { GANTT_ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
+import { PX_PER_DAY, daysBetween, ganttRange, markFor, type Mark } from '@/engine/roadmaps/gantt'
+import { cn } from '@/app/lib/utils'
+import { ROW_H, VIRT, rowSlice, visibleRows } from './issueTableView'
+import { makeAxis } from './ganttAxis'
+import { ROW_CLASS } from './ganttBarDrag'
 import { GanttListRow } from './GanttList'
+import { GanttLane } from './GanttLane'
 import { GanttCompose } from './GanttCompose'
 import { newIssueId } from './issueIds'
-import { GanttScaleRow, GanttTimelineBody, GanttTimelineGrid, useGanttLayout } from './GanttTimeline'
+import { GanttGrid, GanttScaleRow, GanttTodayRule, groupMark } from './GanttTimeline'
 import { useBarDrag } from './useBarDrag'
 import { useIssueDatesDrop } from './useIssueDatesDrop'
+
 interface Props {
   state: RoadmapState
   members: MemberLite[]
@@ -33,158 +31,138 @@ interface Props {
   newIssue?: number
 }
 
+/** The list column gives way as the view narrows (a side panel opening, a small window), so the timeline keeps
+    most of the room. `at` is the view width from which a size applies; `inset` starts the timeline's layers. */
+const LIST_SIZES = [
+  { at: 1040, w: 360, list: 'w-[360px]', inset: 'left-[360px]' },
+  { at: 760, w: 300, list: 'w-[300px]', inset: 'left-[300px]' },
+  { at: 560, w: 248, list: 'w-[248px]', inset: 'left-[248px]' },
+  { at: 0, w: 196, list: 'w-[196px]', inset: 'left-[196px]' },
+] as const
+
+const listSize = (viewWidth: number) => LIST_SIZES.find((s) => viewWidth >= s.at) ?? LIST_SIZES[LIST_SIZES.length - 1]
+
+const NONE: Mark = { kind: 'none' }
+const ROW = cn('group/row flex min-w-full border-b border-hair', ROW_CLASS)
+const LIST_CELL = 'sticky left-0 z-10 shrink-0 border-r border-line bg-app-bg'
+
 export function Gantt({ state, members, view, today, onView, onOpenIssue, todayRequest, canEdit, act, said, newIssue = 0 }: Props) {
   const [composing, setComposing] = useState(false)
-  useEffect(() => { if (newIssue > 0 && canEdit) setComposing(true) }, [newIssue, canEdit])
+  const seenNewIssue = useRef(newIssue)
+  useEffect(() => {
+    if (newIssue === seenNewIssue.current) return
+    seenNewIssue.current = newIssue
+    if (canEdit) setComposing(true)
+  }, [newIssue, canEdit])
+
   const live = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
   const names = useMemo(() => new Map(members.map((m) => [m.id, m.name])), [members])
   const allRows = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
-  const filtersActive = view.chips.length > 0
-  const rows = useMemo(() => visibleRows(allRows, filtersActive), [allRows, filtersActive])
+  const rows = useMemo(() => visibleRows(allRows, view.chips.length > 0), [allRows, view.chips.length])
 
   const range = useMemo(() => ganttRange(live, today, view.scale), [live, today, view.scale])
   const px = PX_PER_DAY[view.scale]
-  const { width, axis } = useGanttLayout(range, px)
+  const axis = useMemo(() => makeAxis(range, px), [range, px])
+  const width = (daysBetween(range.from, range.to) + 1) * px
+  const frame = { range, scale: view.scale, today, width, axis }
 
   const openIssue = useCallback((id: string) => { onOpenIssue?.(id) }, [onOpenIssue])
   const barDrag = useBarDrag({ axis, canEdit, act, onOpen: openIssue })
   const datesDrop = useIssueDatesDrop({ axis, canEdit, act })
 
-  const marks = useMemo(() => {
-    const fmt = (iso: string) => shortDate(iso, today)
-    const m = new Map<string, Mark>()
-    for (const issue of live) {
-      m.set(issue.id, markFor(live, issue.id, today, fmt))
-    }
-    return m
-  }, [live, today])
-
-  const markOf = useCallback((id: string) => marks.get(id) ?? { kind: 'none' as const }, [marks])
+  const marks = useMemo(() => new Map(live.map((issue) => [issue.id, markFor(live, issue.id, today)])), [live, today])
 
   const onToggleCollapse = useCallback(
     (id: string) => {
-      onView({
-        ...view,
-        collapsed: view.collapsed.includes(id) ? view.collapsed.filter((c) => c !== id) : [...view.collapsed, id],
-      })
+      onView((v) => ({ ...v, collapsed: v.collapsed.includes(id) ? v.collapsed.filter((c) => c !== id) : [...v.collapsed, id] }))
     },
-    [onView, view],
+    [onView],
   )
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
-  const [viewHeight, setViewHeight] = useState(900)
-
-  const slice = useMemo(
-    () => rowSlice(rows.length, scrollTop, viewHeight, GANTT_ROW_H),
-    [rows.length, scrollTop, viewHeight],
-  )
-
-  const body = rows.length > VIRT ? rows.slice(slice.start, slice.end) : rows
-  const padTop = rows.length > VIRT ? slice.start * GANTT_ROW_H : 0
-  const padBottom = rows.length > VIRT ? (rows.length - slice.end) * GANTT_ROW_H : 0
-  const timelineHeight = rows.length * GANTT_ROW_H
-
-  const onScroll = useCallback(() => {
+  const [box, setBox] = useState({ w: 1200, h: 900 })
+  useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    setScrollTop((t) => (t === el.scrollTop ? t : el.scrollTop))
-    setViewHeight((h) => (h === el.clientHeight ? h : el.clientHeight))
+    const measure = () => setBox((b) => (b.w === el.clientWidth && b.h === el.clientHeight ? b : { w: el.clientWidth, h: el.clientHeight }))
+    measure()
+    const watch = new ResizeObserver(measure)
+    watch.observe(el)
+    return () => watch.disconnect()
   }, [])
+  const size = listSize(box.w)
 
-  useEffect(() => {
+  const virtual = rows.length > VIRT
+  const slice = useMemo(() => rowSlice(rows.length, scrollTop, box.h, ROW_H), [rows.length, scrollTop, box.h])
+  const body = virtual ? rows.slice(slice.start, slice.end) : rows
+  const padTop = virtual ? slice.start * ROW_H : 0
+  const padBottom = virtual ? (rows.length - slice.end) * ROW_H : 0
+
+  // Today sits a third of the way into the visible timeline: on open, on Today, and when the scale changes; not
+  // when a drag or a live update moves the range.
+  useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    setViewHeight(el.clientHeight)
-  }, [rows.length])
-
-  // Recenter on Today or scale change only — not when issues/range change after a drag or live update.
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const todayX = daysBetween(range.from, today) * px + px / 2
-    el.scrollLeft = Math.max(0, todayX - el.clientWidth / 4)
-    // range/today/px read from render; deps are only Today and scale — not issue writes.
+    const visible = el.clientWidth - listSize(el.clientWidth).w
+    el.scrollLeft = Math.max(0, daysBetween(range.from, today) * px + px / 2 - visible / 3)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todayRequest, view.scale])
 
   return (
     <section role="region" aria-label="Timeline" className="flex min-h-0 flex-1 flex-col">
-      {said && <p role="status" className="border-b border-line bg-panel px-4 py-2 text-[12.5px] text-ink-2">{said}</p>}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onScroll={onScroll}>
-        <div className="grid w-max min-w-full grid-cols-[360px_1fr]">
-          <div className="sticky left-0 top-0 z-30 flex h-9 items-center border-b border-line bg-app-bg pl-[68px] text-[11.5px] font-medium text-ink-3">Title</div>
-          <GanttScaleRow range={range} scale={view.scale} today={today} width={width} axis={axis} />
-
-          <div className="sticky left-0 z-10 bg-app-bg">
-            {padTop > 0 && <GanttListPad h={padTop} />}
-            {body.map((row) => (
-              <GanttListRow
-                key={rowKey(row)}
-                row={row}
-                roadmap={state.roadmap}
-                person={view.groupBy?.on === 'assignee'}
-                mark={row.kind === 'issue' ? markOf(row.issue.id) : { kind: 'none' }}
-                canEdit={canEdit}
-                datesDrop={datesDrop}
-                onToggleCollapse={onToggleCollapse}
-                onOpenIssue={onOpenIssue}
-              />
-            ))}
-            {padBottom > 0 && <GanttListPad h={padBottom} />}
-            {composing && (
-              <GanttCompose
-                onCancel={() => setComposing(false)}
-                onCommit={(title) => {
-                  act({ op: 'create', issues: [{ id: newIssueId(), parentId: null, title }] })
-                  setComposing(false)
-                }}
-              />
-            )}
+      {said && <p role="status" className="border-b border-line bg-panel px-4 py-2 text-[12px] text-ink-2">{said}</p>}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}>
+        <div className="relative flex min-h-full w-max min-w-full flex-col">
+          <div className="sticky top-0 z-20 flex h-9 min-w-full shrink-0 border-b border-line bg-app-bg">
+            <div className={cn(LIST_CELL, size.list, 'flex items-center pl-[60px] text-[11px] text-ink-3')}>Issue</div>
+            <GanttScaleRow {...frame} />
           </div>
+          <GanttGrid {...frame} className={size.inset} />
+          <GanttTodayRule {...frame} className={size.inset} />
 
-          <div className="relative">
-            <GanttTimelineGrid
-              range={range}
-              scale={view.scale}
-              today={today}
-              width={width}
-              axis={axis}
-              height={timelineHeight}
-            />
-            {padTop > 0 && <GanttPadSvg h={padTop} width={width} />}
-            {body.map((row, i) => (
-              <GanttTimelineBody
-                key={rowKey(row)}
-                row={row}
-                allRows={rows}
-                absIndex={rows.length > VIRT ? slice.start + i : i}
-                live={live}
-                markOf={markOf}
-                axis={axis}
-                width={width}
-                canEdit={canEdit}
-                barDrag={barDrag}
-                datesDrop={datesDrop}
-                today={today}
-              />
-            ))}
-            {padBottom > 0 && <GanttPadSvg h={padBottom} width={width} />}
+          {padTop > 0 && <svg height={padTop} width={1} className="block shrink-0" aria-hidden />}
+          {body.map((row, i) => {
+            const at = virtual ? slice.start + i : i
+            const mark = row.kind === 'issue' ? marks.get(row.issue.id) ?? NONE : groupMark(live, rows, at)
+            return (
+              <div key={row.kind === 'group' ? `g-${row.key}` : row.issue.id} className={cn(ROW, 'shrink-0', row.kind === 'group' && 'bg-panel')}>
+                <div className={cn(LIST_CELL, size.list, row.kind === 'group' && 'bg-panel')}>
+                  <GanttListRow
+                    row={row}
+                    roadmap={state.roadmap}
+                    person={view.groupBy?.on === 'assignee'}
+                    mark={mark}
+                    canEdit={canEdit}
+                    compact={size.w < 300}
+                    datesDrop={datesDrop}
+                    onToggleCollapse={onToggleCollapse}
+                    onOpenIssue={onOpenIssue}
+                  />
+                </div>
+                <GanttLane row={row} mark={mark} axis={axis} width={width} today={today} canEdit={canEdit} first={at === 0} barDrag={barDrag} datesDrop={datesDrop} />
+              </div>
+            )
+          })}
+          {padBottom > 0 && <svg height={padBottom} width={1} className="block shrink-0" aria-hidden />}
+          {composing && (
+            <div className={cn(ROW, 'shrink-0')}>
+              <div className={cn(LIST_CELL, size.list)}>
+                <GanttCompose
+                  onCancel={() => setComposing(false)}
+                  onCommit={(title) => {
+                    act({ op: 'create', issues: [{ id: newIssueId(), parentId: null, title }] })
+                    setComposing(false)
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex min-w-full flex-1">
+            <div className={cn(LIST_CELL, size.list)} />
           </div>
         </div>
       </div>
     </section>
   )
-}
-
-function rowKey(row: TableRow): string {
-  return row.kind === 'group' ? `g-${row.key}` : row.issue.id
-}
-
-function GanttListPad({ h }: { h: number }) {
-  return <svg height={h} width={360} className="block" aria-hidden />
-}
-
-function GanttPadSvg({ h, width }: { h: number; width: number }) {
-  return <svg height={h} width={width} className="relative z-[1] block" aria-hidden />
 }

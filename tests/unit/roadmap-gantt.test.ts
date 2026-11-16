@@ -8,6 +8,7 @@ import {
   dropDates,
   ganttRange,
   markFor,
+  placeLabel,
   ticks,
 } from '../../src/engine/roadmaps/gantt'
 import { dateSpan } from '../../src/engine/roadmaps/rollup'
@@ -90,29 +91,28 @@ describe('roadmap gantt engine', () => {
   })
 
   describe('markFor', () => {
-    const fmt = () => '1 Apr'
-
     it('draws a bar for a leaf with start and due', () => {
       const issues = [issue({ id: 'leaf', start: '2026-11-01', due: '2026-11-20' })]
-      const m = markFor(issues, 'leaf', today, fmt)
+      const m = markFor(issues, 'leaf', today)
       expect(m).toMatchObject({ kind: 'bar', start: '2026-11-01', due: '2026-11-20' })
     })
 
     it('draws a milestone when start equals due', () => {
       const issues = [issue({ id: 'ms', title: 'UK launch', start: '2027-04-01', due: '2027-04-01' })]
-      const m = markFor(issues, 'ms', today, fmt)
+      const m = markFor(issues, 'ms', today)
       expect(m).toEqual({
         kind: 'milestone',
         day: '2027-04-01',
         done: false,
         alert: false,
-        label: 'UK launch · 1 Apr',
+        overdue: false,
+        label: null,
       })
     })
 
     it('draws a milestone on the single date when only one is set', () => {
       const issues = [issue({ id: 'due-only', title: 'Due only', due: '2026-12-01' })]
-      const m = markFor(issues, 'due-only', today, fmt)
+      const m = markFor(issues, 'due-only', today)
       expect(m).toMatchObject({ kind: 'milestone', day: '2026-12-01' })
     })
 
@@ -121,13 +121,14 @@ describe('roadmap gantt engine', () => {
         issue({ id: 'p' }),
         issue({ id: 'c', parentId: 'p', start: '2026-11-02', due: '2026-11-30' }),
       ]
-      const m = markFor(issues, 'p', today, fmt)
+      const m = markFor(issues, 'p', today)
       expect(m).toEqual({
         kind: 'bracket',
         start: '2026-11-02',
         due: '2026-11-30',
         own: false,
         alert: false,
+        overdue: false,
         label: null,
       })
     })
@@ -137,7 +138,7 @@ describe('roadmap gantt engine', () => {
         issue({ id: 'p', start: '2026-10-01', due: '2026-10-31' }),
         issue({ id: 'c', parentId: 'p', start: '2026-11-02', due: '2026-11-30' }),
       ]
-      const m = markFor(issues, 'p', today, fmt)
+      const m = markFor(issues, 'p', today)
       expect(m).toMatchObject({
         kind: 'bracket',
         start: '2026-10-01',
@@ -148,40 +149,61 @@ describe('roadmap gantt engine', () => {
 
     it('returns none when nothing below is dated', () => {
       const issues = [issue({ id: 'p' }), issue({ id: 'c', parentId: 'p' })]
-      expect(markFor(issues, 'p', today, fmt)).toEqual({ kind: 'none' })
-      expect(markFor(issues, 'c', today, fmt)).toEqual({ kind: 'none' })
+      expect(markFor(issues, 'p', today)).toEqual({ kind: 'none' })
+      expect(markFor(issues, 'c', today)).toEqual({ kind: 'none' })
     })
 
     describe('alerts', () => {
       it('flags overdue todo with day count', () => {
         const issues = [issue({ id: 'late', start: '2026-10-01', due: '2026-10-31', status: 'todo' })]
-        const m = markFor(issues, 'late', today, fmt)
-        expect(m).toMatchObject({ alert: true, label: 'Overdue 9 days' })
+        const m = markFor(issues, 'late', today)
+        expect(m).toMatchObject({ alert: true, overdue: true, label: 'Overdue 9 days' })
       })
 
       it('shows blocked on future due', () => {
         const issues = [issue({ id: 'blk', start: '2026-11-01', due: '2026-12-01', status: 'blocked' })]
-        const m = markFor(issues, 'blk', today, fmt)
-        expect(m).toMatchObject({ alert: true, label: 'Blocked' })
+        const m = markFor(issues, 'blk', today)
+        expect(m).toMatchObject({ alert: true, overdue: false, label: 'Blocked' })
       })
 
       it('combines overdue and blocked', () => {
         const issues = [issue({ id: 'both', start: '2026-10-01', due: '2026-10-31', status: 'blocked' })]
-        const m = markFor(issues, 'both', today, fmt)
+        const m = markFor(issues, 'both', today)
         expect(m).toMatchObject({ alert: true, label: 'Overdue 9 days · blocked' })
       })
 
       it('clears alert on done even when due passed', () => {
         const issues = [issue({ id: 'done', start: '2026-10-01', due: '2026-10-31', status: 'done' })]
-        const m = markFor(issues, 'done', today, fmt)
+        const m = markFor(issues, 'done', today)
         expect(m).toMatchObject({ kind: 'bar', done: true, alert: false, label: null })
       })
 
       it('ignores cancelled past due', () => {
         const issues = [issue({ id: 'cx', start: '2026-10-01', due: '2026-10-31', status: 'cancelled' })]
-        const m = markFor(issues, 'cx', today, fmt)
+        const m = markFor(issues, 'cx', today)
         expect(m).toMatchObject({ alert: false })
       })
+    })
+  })
+
+  describe('placeLabel', () => {
+    const bar = { x: 200, w: 60 }
+
+    it('sits right of the mark when there is room', () => {
+      expect(placeLabel(bar, 80, 500, 1000)).toEqual({ side: 'right', x: 268 })
+    })
+
+    it('moves left when the right side would cross today', () => {
+      expect(placeLabel(bar, 80, 300, 1000)).toEqual({ side: 'left', x: 192 })
+    })
+
+    it('moves left when the right side would leave the timeline', () => {
+      expect(placeLabel({ x: 900, w: 60 }, 80, 100, 1000)).toEqual({ side: 'left', x: 892 })
+    })
+
+    it('gives up when neither side is clear', () => {
+      expect(placeLabel({ x: 40, w: 60 }, 80, 130, 1000)).toBeNull()
+      expect(placeLabel(bar, 80, 150, 300)).toBeNull()
     })
   })
 
@@ -225,7 +247,7 @@ describe('roadmap gantt engine', () => {
 
     it('markFor treats undefined dates as undated', () => {
       const issues = [issue({ id: 'leaf', start: undefined, due: undefined })]
-      expect(markFor(issues, 'leaf', today, () => 'x')).toEqual({ kind: 'none' })
+      expect(markFor(issues, 'leaf', today)).toEqual({ kind: 'none' })
     })
   })
 })

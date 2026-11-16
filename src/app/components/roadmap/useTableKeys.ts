@@ -27,7 +27,7 @@ interface Options {
   act: (op: RoadmapOp) => 'ok' | string
   onStartCompose: (child: boolean) => void
   onOpenIssue?: (id: string) => void
-  selection: { toggle: (id: string, extend: boolean) => void; selectAll: () => void }
+  selection: { selected: ReadonlySet<string>; toggle: (id: string, extend: boolean) => void; selectAll: () => void; clear: () => void }
 }
 
 export function useTableKeys({
@@ -77,6 +77,11 @@ export function useTableKeys({
       if (e.key === 'Escape' && compose) {
         e.preventDefault()
         setCompose(null)
+        return
+      }
+      if (e.key === 'Escape' && selection.selected.size > 0) {
+        e.preventDefault()
+        selection.clear()
         return
       }
       if (mod && e.key.toLowerCase() === 'a') {

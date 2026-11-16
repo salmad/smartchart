@@ -106,11 +106,11 @@ export function FilterValueStep({
   if (property.kind === 'status') {
     return (
       <Command className={FILTER_COMMAND_CLASS}>
-        <CommandInput placeholder="Search status…" className="h-9 text-[12.5px]" />
+        <CommandInput placeholder="Search status…" className="h-9 text-[13px]" />
         <CommandList className="max-h-64">
           {STATUSES.map((s) => (
             <CommandItem key={s} className={cn(FILTER_ITEM_CLASS, 'gap-2')} onSelect={() => onPick([s])}>
-              <StatusGlyph status={s} className="size-3.5" />
+              <StatusGlyph status={s} />
               {STATUS_LABEL[s]}
             </CommandItem>
           ))}
@@ -122,7 +122,7 @@ export function FilterValueStep({
   if (property.kind === 'assignee') {
     return (
       <Command className={FILTER_COMMAND_CLASS}>
-        <CommandInput placeholder="Search people…" className="h-9 text-[12.5px]" />
+        <CommandInput placeholder="Search people…" className="h-9 text-[13px]" />
         <CommandList className="max-h-64">
           <CommandItem className={FILTER_ITEM_CLASS} onSelect={() => onPick([null])}>
             Unassigned
@@ -141,7 +141,7 @@ export function FilterValueStep({
     const options = property.def.options ?? []
     return (
       <Command className={FILTER_COMMAND_CLASS}>
-        <CommandInput placeholder="Search options…" className="h-9 text-[12.5px]" />
+        <CommandInput placeholder="Search options…" className="h-9 text-[13px]" />
         <CommandList className="max-h-64">
           {options.map((o) => (
             <CommandItem key={o.id} className={FILTER_ITEM_CLASS} onSelect={() => onPick([o.id])}>
@@ -157,7 +157,7 @@ export function FilterValueStep({
   if (property.kind === 'field' && property.def.type === 'person') {
     return (
       <Command className={FILTER_COMMAND_CLASS}>
-        <CommandInput placeholder="Search people…" className="h-9 text-[12.5px]" />
+        <CommandInput placeholder="Search people…" className="h-9 text-[13px]" />
         <CommandList className="max-h-64">
           {members.map((m) => (
             <CommandItem key={m.id} className={FILTER_ITEM_CLASS} onSelect={() => onPick([m.id])}>
@@ -192,7 +192,7 @@ export function FilterDatePickStep({
         }}
         className="bg-transparent p-1"
       />
-      <p className="mt-1 px-1 text-[11px] text-ink-3">
+      <p className="px-2 pb-1 text-[12px] text-ink-3">
         {when === 'before' ? 'Issues due before this date' : 'Issues due after this date'}
       </p>
     </div>

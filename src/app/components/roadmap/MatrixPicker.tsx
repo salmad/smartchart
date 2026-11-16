@@ -9,37 +9,27 @@ import { menuCommand, menuSurface } from './roadmapChrome'
 
 interface Props {
   roadmap: Roadmap
-  issues: Issue[]
-  ids: string[]
+  picks: Issue[]
   label: string
   cellTag: string
   focused: boolean
   onFocus: () => void
   onOpen: (id: string) => void
-  className?: string
-  children?: ReactNode
+  className: string
+  children: ReactNode
 }
 
-/** Lists top-most issues in a matrix cell; one pick opens the panel. */
-export function MatrixPicker({ roadmap, issues, ids, label, cellTag, focused, onFocus, onOpen, className, children }: Props) {
+/** A cell holding several issues: it lists them, and one pick opens the panel. */
+export function MatrixPicker({ roadmap, picks, label, cellTag, focused, onFocus, onOpen, className, children }: Props) {
   const [open, setOpen] = useState(false)
-  const picks = ids.map((id) => issues.find((i) => i.id === id)).filter((i): i is Issue => !!i)
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          tabIndex={focused ? 0 : -1}
-          data-matrix-cell={cellTag}
-          aria-label={label}
-          className={cn(className, 'cursor-pointer')}
-          onFocus={onFocus}
-        >
+        <button type="button" tabIndex={focused ? 0 : -1} data-matrix-cell={cellTag} aria-label={label} className={className} onFocus={onFocus}>
           {children}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" sideOffset={6} className={cn('w-72 overflow-hidden p-1', menuSurface)} aria-label="Issues in cell">
+      <PopoverContent align="start" sideOffset={6} className={cn('w-80 p-1', menuSurface)} aria-label="Issues in cell">
         <Command className={menuCommand}>
           <CommandList label="Issues">
             {picks.map((i) => (
@@ -49,9 +39,9 @@ export function MatrixPicker({ roadmap, issues, ids, label, cellTag, focused, on
                 onSelect={() => { onOpen(i.id); setOpen(false) }}
                 className="gap-2 text-[13px]"
               >
-                <StatusGlyph status={i.status} className="size-3.5 shrink-0" />
-                <span className="font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, i)}</span>
-                <span className="truncate">{i.title}</span>
+                <StatusGlyph status={i.status} />
+                <span className="min-w-0 flex-1 truncate" title={i.title}>{i.title}</span>
+                <span className="whitespace-nowrap text-[12px] tabular-nums text-ink-3">{keyOf(roadmap, i)}</span>
               </CommandItem>
             ))}
           </CommandList>

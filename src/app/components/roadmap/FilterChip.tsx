@@ -9,14 +9,15 @@ interface Props {
   onRemove: () => void
 }
 
+/** One active filter in the toolbar, with its own remove. */
 export function FilterChip({ chip, fields, onRemove }: Props) {
   const label = chipLabel(chip, fields)
   return (
-    <span className="inline-flex h-6 items-center gap-1 rounded-md bg-white/[.04] px-2 text-[12px] text-ink-2">
-      <span>{label}</span>
+    <span className="inline-flex h-7 flex-none items-center gap-0.5 rounded-md border border-line bg-panel pl-2 pr-1 text-[12px] text-ink-2">
+      <span className="whitespace-nowrap">{label}</span>
       <button
         type="button"
-        className="-mr-0.5 rounded p-0.5 text-ink-3 transition-colors hover:bg-panel hover:text-ink"
+        className="grid size-5 place-items-center rounded text-ink-3 outline-none transition-colors hover:bg-raise hover:text-ink focus-visible:ring-1 focus-visible:ring-line-2"
         aria-label={`Remove ${label}`}
         onClick={onRemove}
       >

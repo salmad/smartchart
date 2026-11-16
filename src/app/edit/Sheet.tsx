@@ -160,7 +160,8 @@ export function Sheet({ edit, model, deckStyle, which = 0, note, onNote }: { edi
             </table>
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent data-edit-chrome className="min-w-48" onCloseAutoFocus={(e) => { e.preventDefault(); grid.current?.focus() }}>
+        {/* No closing animation: the grid takes the keys back only once the menu is gone, and a number typed straight after "Delete column" must land in the cell. */}
+        <ContextMenuContent data-edit-chrome className="min-w-48 data-[state=closed]:!animate-none" onCloseAutoFocus={(e) => { e.preventDefault(); grid.current?.focus() }}>
           {menu(rowItems)}{colItems.length > 0 && <ContextMenuSeparator />}{menu(colItems)}
         </ContextMenuContent>
       </ContextMenu>

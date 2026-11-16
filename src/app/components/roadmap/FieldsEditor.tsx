@@ -1,20 +1,24 @@
 import { useState } from 'react'
-import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, CircleDot, GripVertical, Hash, Plus, Trash2, Type, User, type LucideIcon } from 'lucide-react'
 import { checkFieldDefs } from '@/engine/roadmaps/fields'
 import type { FieldDef, FieldType, Issue } from '@/engine/roadmaps/types'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { countFieldUse, countOptionUse, newFieldId, newOptionId } from './fieldCounts'
+import { cn } from '@/app/lib/utils'
+import { MENU_ICON, MENU_ITEM } from '../menu'
 import { FieldOptions } from './FieldOptions'
 
-const TYPES: { type: FieldType; label: string }[] = [
-  { type: 'choice', label: 'Choice' },
-  { type: 'text', label: 'Text' },
-  { type: 'number', label: 'Number' },
-  { type: 'date', label: 'Date' },
-  { type: 'person', label: 'Person' },
+/** What each type holds, said where the field is made. */
+const TYPES: { type: FieldType; label: string; icon: LucideIcon; hint: string }[] = [
+  { type: 'choice', label: 'Choice', icon: CircleDot, hint: 'A fixed list, like Country. Best for grouping and for the Matrix: its options keep their order.' },
+  { type: 'text', label: 'Text', icon: Type, hint: 'Free text, like a note or a link.' },
+  { type: 'number', label: 'Number', icon: Hash, hint: 'A figure, like a budget.' },
+  { type: 'date', label: 'Date', icon: CalendarDays, hint: 'A day, like a review date.' },
+  { type: 'person', label: 'Person', icon: User, hint: 'Someone in the workspace, like a sponsor.' },
 ]
 
 type Pending =
@@ -30,7 +34,17 @@ interface Props {
   refused: string | null
 }
 
-/** Configure the roadmap’s custom fields; each change is one write, no Save. */
+function FieldTypeIcon({ type }: { type: FieldType }) {
+  const t = TYPES.find((x) => x.type === type)
+  const Icon = t?.icon ?? CircleDot
+  return (
+    <span className="grid size-6 shrink-0 place-items-center text-ink-3" title={`${t?.label ?? type} field`}>
+      <Icon className="size-4" strokeWidth={1.75} aria-hidden />
+    </span>
+  )
+}
+
+/** Roadmap settings: its fields. Each change is one write, so there is no Save. */
 export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Props) {
   const [pending, setPending] = useState<Pending | null>(null)
 
@@ -76,19 +90,36 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
     <>
       <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
         <DialogContent className="max-h-[min(640px,90vh)] max-w-[520px] gap-0 overflow-hidden rounded-[14px] border-line-2 bg-raise p-0 text-ink" aria-describedby="fields-editor-desc">
-          <div className="border-b border-line px-6 py-5">
-            <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Fields</DialogTitle>
-            <DialogDescription id="fields-editor-desc" className="mt-1.5 text-[13px] leading-[1.5] text-ink-2">
-              Custom columns for this roadmap. Renaming a field or option does not change stored values.
-            </DialogDescription>
+          <div className="px-6 pb-4 pt-6">
+            <DialogTitle className="text-[16px] font-semibold tracking-[-.01em]">Roadmap settings</DialogTitle>
+            <DialogDescription id="fields-editor-desc" className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">Fields are extra columns on every issue. Filter, sort and group by any of them, in the table and the Matrix.</DialogDescription>
           </div>
-          <div className="max-h-[420px] overflow-y-auto px-6 py-4">
-            {fields.length === 0 && <p className="text-[13px] text-ink-3">No fields yet.</p>}
+          <div className="flex items-center justify-between border-t border-line px-6 pt-4">
+            <h3 className="text-[13px] font-medium text-ink">Fields</h3>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" size="sm"><Plus className="!size-3.5" strokeWidth={2} aria-hidden />Add field</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={6} className="w-[300px] rounded-[10px] border-line-2 bg-raise p-1 text-ink">
+                {TYPES.map((t) => (
+                  <DropdownMenuItem key={t.type} className={cn(MENU_ITEM, 'items-start')} aria-label={t.label} aria-description={t.hint} onSelect={() => addField(t.type)}>
+                    <t.icon {...MENU_ICON} className="mt-0.5" aria-hidden />
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-ink">{t.label}</span>
+                      <span className="text-[12px] leading-[1.4] text-ink-3">{t.hint}</span>
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="max-h-[420px] overflow-y-auto px-6 pb-5 pt-2">
+            {fields.length === 0 && <p className="py-6 text-center text-[13px] text-ink-3">No fields yet.</p>}
             <ul className="divide-y divide-hair">
               {fields.map((f, i) => (
                 <li
                   key={f.id}
-                  className="py-3 first:pt-0"
+                  className="group rounded-md py-2 outline-none focus-visible:ring-1 focus-visible:ring-line-2"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.target !== e.currentTarget) return
@@ -96,11 +127,11 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                     if (e.key === 'ArrowDown' && i < fields.length - 1) { e.preventDefault(); moveField(i, i + 1) }
                   }}
                 >
-                  <div className="flex items-start gap-1.5">
+                  <div className="-ml-5 flex items-start gap-0.5">
                     <button
                       type="button"
                       aria-label={`Move field ${f.name}`}
-                      className="mt-0.5 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-ink-3 transition-colors hover:bg-panel hover:text-ink active:cursor-grabbing"
+                      className="mt-1 grid h-6 w-[18px] shrink-0 cursor-grab place-items-center rounded text-ink-3 opacity-0 outline-none transition-[opacity,color] duration-150 hover:text-ink focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-line-2 group-hover:opacity-100 active:cursor-grabbing"
                       onPointerDown={(e) => {
                         e.preventDefault()
                         const grip = e.currentTarget
@@ -125,9 +156,9 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                     </button>
                     <div className="min-w-0 flex-1" data-field-row={f.id}>
                       <div className="flex items-center gap-2">
-                        <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-ink-3">{TYPES.find((t) => t.type === f.type)?.label ?? f.type}</span>
-                        <input
-                          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13.5px] font-medium text-ink outline-none ring-0 placeholder:text-ink-3 focus:ring-0"
+                        <FieldTypeIcon type={f.type} />
+                        <Input
+                          className="h-8 min-w-0 flex-1 border-transparent bg-transparent px-2 text-[13px] font-medium shadow-none transition-colors hover:bg-panel focus:bg-panel"
                           defaultValue={f.name}
                           key={`${f.id}-${f.name}`}
                           aria-label="Field name"
@@ -137,11 +168,7 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
                             patchField(f.id, { name })
                           }}
                         />
-                        <div className="flex shrink-0 items-center gap-0.5">
-                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 hover:bg-panel" disabled={i === 0} aria-label="Move field up" onClick={() => moveField(i, i - 1)}><ArrowUp className="size-3.5" /></Button>
-                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 hover:bg-panel" disabled={i === fields.length - 1} aria-label="Move field down" onClick={() => moveField(i, i + 1)}><ArrowDown className="size-3.5" /></Button>
-                          <Button type="button" variant="ghost" size="sm" className="size-8 px-0 text-ink-3 hover:bg-panel hover:text-bad" aria-label={`Delete ${f.name}`} onClick={() => setPending({ kind: 'field', fieldId: f.id, name: f.name, count: countFieldUse(issues, f.id) })}><Trash2 className="size-3.5" strokeWidth={1.75} /></Button>
-                        </div>
+                        <Button type="button" variant="ghost" size="sm" className="size-8 shrink-0 px-0 text-ink-3 opacity-0 hover:bg-panel hover:text-ink focus-visible:opacity-100 group-hover:opacity-100" aria-label={`Delete ${f.name}`} onClick={() => setPending({ kind: 'field', fieldId: f.id, name: f.name, count: countFieldUse(issues, f.id) })}><Trash2 className="!size-3.5" strokeWidth={1.75} /></Button>
                       </div>
                       {f.type === 'choice' && f.options && (
                         <FieldOptions
@@ -164,19 +191,11 @@ export function FieldsEditor({ open, onClose, fields, issues, act, refused }: Pr
               ))}
             </ul>
           </div>
-          <div className="flex items-center justify-between gap-3 border-t border-line px-6 py-4">
-            {refused ? <p role="alert" className="text-[12.5px] text-bad">{refused}</p> : <span />}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" className="gap-1.5 text-ink-2 hover:text-ink"><Plus className="size-3.5" strokeWidth={1.75} />Add field</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[160px]">
-                {TYPES.map((t) => (
-                  <DropdownMenuItem key={t.type} onSelect={() => addField(t.type)}>{t.label}</DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {refused && (
+            <div className="border-t border-line px-6 py-3">
+              <p role="alert" className="text-[12.5px] text-ink-2">{refused}</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
       <Dialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null) }}>

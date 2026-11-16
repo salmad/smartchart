@@ -1,6 +1,6 @@
 import { buildIndex } from './index.js'
 import { dateSpan } from './rollup.js'
-import type { Issue, Status } from './types.js'
+import type { Issue } from './types.js'
 
 export type Scale = 'week' | 'month' | 'quarter'
 
@@ -84,7 +84,7 @@ function endOfQuarter(y: number, q: number): string {
 }
 
 function shiftQuarter(y: number, q: number, delta: number): { y: number; q: number } {
-  let t = y * 4 + q + delta
+  const t = y * 4 + q + delta
   return { y: Math.floor(t / 4), q: ((t % 4) + 4) % 4 }
 }
 
@@ -242,89 +242,64 @@ export function ticks(range: Range, scale: Scale, today: string): Tick[] {
 }
 
 export type Mark =
-  | { kind: 'bar'; start: string; due: string; done: boolean; alert: boolean; label: string | null }
-  | { kind: 'bracket'; start: string; due: string; own: boolean; alert: boolean; label: string | null }
-  | { kind: 'milestone'; day: string; done: boolean; alert: boolean; label: string }
+  | { kind: 'bar'; start: string; due: string; done: boolean; alert: boolean; overdue: boolean; label: string | null }
+  | { kind: 'bracket'; start: string; due: string; own: boolean; alert: boolean; overdue: boolean; label: string | null }
+  | { kind: 'milestone'; day: string; done: boolean; alert: boolean; overdue: boolean; label: string | null }
   | { kind: 'none' }
 
-function open(status: Status): boolean {
-  return status !== 'done' && status !== 'cancelled'
-}
-
-function alertLabel(self: Issue, today: string, overdueDue: string | null): { alert: boolean; label: string | null } {
+/** What is wrong with an open issue, in words: late against `due`, blocked, or both. */
+function alertOf(self: Issue, today: string, due: string | null): { alert: boolean; overdue: boolean; label: string | null } {
+  const live = self.status !== 'done' && self.status !== 'cancelled'
   const blocked = self.status === 'blocked'
-  const overdue = overdueDue !== null && overdueDue < today && open(self.status)
-  if (!overdue && !blocked) return { alert: false, label: null }
-  if (self.status === 'done') return { alert: false, label: null }
-  if (self.status === 'cancelled') return { alert: false, label: null }
+  const overdue = live && due !== null && due < today
+  if (!overdue && !blocked) return { alert: false, overdue: false, label: null }
   const parts: string[] = []
-  if (overdue && overdueDue !== null) {
-    const n = daysBetween(overdueDue, today)
+  if (overdue && due !== null) {
+    const n = daysBetween(due, today)
     parts.push(`Overdue ${n} day${n === 1 ? '' : 's'}`)
   }
   if (blocked) parts.push(parts.length === 0 ? 'Blocked' : 'blocked')
-  return { alert: true, label: parts.join(' · ') }
+  return { alert: true, overdue, label: parts.join(' · ') }
 }
 
-function leafMark(self: Issue, today: string, fmt: (iso: string) => string): Mark {
-  const { start, due, title } = self
-  if (start != null && due != null) {
-    if (start === due) {
-      const { alert, label: alertLbl } = alertLabel(self, today, due)
-      const showAlert = alert && alertLbl !== null
-      return {
-        kind: 'milestone',
-        day: start,
-        done: self.status === 'done',
-        alert: showAlert,
-        label: showAlert ? alertLbl! : `${title} · ${fmt(start)}`,
-      }
-    }
-    const { alert, label } = alertLabel(self, today, due)
-    return {
-      kind: 'bar',
-      start,
-      due,
-      done: self.status === 'done',
-      alert,
-      label: alert && label ? label : null,
-    }
+function leafMark(self: Issue, today: string): Mark {
+  const { start, due } = self
+  const done = self.status === 'done'
+  if (start != null && due != null && start !== due) {
+    return { kind: 'bar', start, due, done, ...alertOf(self, today, due) }
   }
   const day = due ?? start
   if (day == null) return { kind: 'none' }
-  const { alert, label: alertLbl } = alertLabel(self, today, due)
-  const showAlert = alert && alertLbl !== null
-  return {
-    kind: 'milestone',
-    day,
-    done: self.status === 'done',
-    alert: showAlert,
-    label: showAlert ? alertLbl! : `${title} · ${fmt(day)}`,
-  }
+  return { kind: 'milestone', day, done, ...alertOf(self, today, due ?? null) }
 }
 
-export function markFor(issues: Issue[], id: string, today: string, fmt: (iso: string) => string): Mark {
+export function markFor(issues: Issue[], id: string, today: string): Mark {
   const idx = buildIndex(issues)
   const self = idx.byId.get(id)
   if (!self) return { kind: 'none' }
+  if (idx.children(id).length === 0) return leafMark(self, today)
 
-  const hasKids = idx.children(id).length > 0
-  if (!hasKids) return leafMark(self, today, fmt)
-
-  const ownBoth = self.start != null && self.due != null
   const span = dateSpan(issues, id)
   if (span.start === null || span.due === null) return { kind: 'none' }
+  const own = self.start != null && self.due != null
+  return { kind: 'bracket', start: span.start, due: span.due, own, ...alertOf(self, today, own ? self.due ?? null : null) }
+}
 
-  const ownDue = ownBoth ? self.due : null
-  const { alert, label } = alertLabel(self, today, ownDue)
-  return {
-    kind: 'bracket',
-    start: span.start,
-    due: span.due,
-    own: ownBoth,
-    alert,
-    label,
-  }
+/** Where a mark's label goes: right of the mark if it fits, else left, else nowhere (the caller falls back to a
+    tooltip). It never crosses the today line or leaves the timeline. `x` is the label's near edge. */
+export function placeLabel(
+  mark: { x: number; w: number },
+  labelW: number,
+  todayX: number,
+  width: number,
+  gap = 8,
+): { side: 'right' | 'left'; x: number } | null {
+  const clear = (from: number, to: number) => from >= 0 && to <= width && (to < todayX - gap || from > todayX + gap)
+  const right = mark.x + mark.w + gap
+  if (clear(right, right + labelW)) return { side: 'right', x: right }
+  const left = mark.x - gap
+  if (clear(left - labelW, left)) return { side: 'left', x: left }
+  return null
 }
 
 export type DragMode = 'move' | 'start' | 'end'

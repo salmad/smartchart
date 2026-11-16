@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  cellWorst,
   dueQuarter,
   liveMatrix,
   matrixGrid,
@@ -120,6 +119,10 @@ function workedView(over: Partial<ViewSettings> = {}): ViewSettings {
   })
 }
 
+function expandedView(expanded: string[], over: Partial<ViewSettings> = {}): ViewSettings {
+  return workedView({ matrix: { ...DEFAULT_MATRIX, rowField: 'ws', cols: ['country'], expanded }, ...over })
+}
+
 describe('roadmap matrix', () => {
   it('dueQuarter maps ISO dates to UTC calendar quarters', () => {
     expect(dueQuarter('2027-02-01')).toBe('Q1 2027')
@@ -166,9 +169,43 @@ describe('roadmap matrix', () => {
     }
   })
 
+  it('opens compact: only top-level rows until a row is expanded, whatever the table has collapsed', () => {
+    const s = state({ fields: [workstream, countryField] }, workedIssues())
+    const ids = (v: ViewSettings) => matrixGrid(s, v, today).rows.flatMap((r) => (r.kind === 'issue' ? [r.issue.id] : []))
+    expect(ids(workedView())).toEqual(['U'])
+    expect(ids(workedView({ collapsed: ['U'] }))).toEqual(['U'])
+    expect(ids(expandedView(['U']))).toEqual(['U', 'U-uk', 'U-fr', 'U-sg'])
+    const u = matrixGrid(s, workedView(), today).rows.find((r) => r.kind === 'issue')
+    if (u?.kind === 'issue') expect([u.hasChildren, u.open]).toEqual([true, false])
+  })
+
+  it('a group holding one issue of its own name draws no header above it', () => {
+    const issues = workedIssues().map((i) => (i.id === 'U' ? { ...i, title: 'vendors ' } : i))
+    const s = state({ fields: [workstream, countryField] }, issues)
+    expect(matrixGrid(s, workedView(), today).rows.map((r) => r.kind)).toEqual(['issue'])
+    const two = [...issues, issue({ id: 'V', parentId: null, sortKey: 'b', title: 'Other', fields: { ws: 'vendors' } })]
+    const kinds = matrixGrid(state({ fields: [workstream, countryField] }, two), workedView(), today).rows.map((r) => r.kind)
+    expect(kinds).toEqual(['group', 'issue', 'issue'])
+  })
+
+  it('issues with no row value gather under a plainly named last group', () => {
+    const issues = [...workedIssues(), issue({ id: 'L', parentId: null, sortKey: 'z', title: 'Loose', fields: { country: 'uk' } })]
+    const { rows } = matrixGrid(state({ fields: [workstream, countryField] }, issues), workedView(), today)
+    const last = rows.filter((r) => r.kind === 'group').pop()
+    expect(last?.kind === 'group' && [last.key, last.label, last.count]).toEqual(['', 'No workstream', 1])
+  })
+
+  it('liveMatrix picks fields when none are set: first groups rows, second makes columns; one field makes columns', () => {
+    expect(liveMatrix([workstream, countryField], DEFAULT_MATRIX)).toMatchObject({ rowField: 'ws', cols: ['country'] })
+    expect(liveMatrix([countryField], DEFAULT_MATRIX)).toMatchObject({ rowField: null, cols: ['country'] })
+    expect(liveMatrix([countryField], { ...DEFAULT_MATRIX, rowField: 'country' })).toMatchObject({ rowField: null, cols: ['country'] })
+    expect(liveMatrix([workstream, countryField], { ...DEFAULT_MATRIX, cols: ['gone'] })).toMatchObject({ rowField: null, cols: ['ws'] })
+    expect(liveMatrix([], DEFAULT_MATRIX)).toMatchObject({ rowField: null, cols: [] })
+  })
+
   it('puts T1 alone in its UK cell when U is expanded', () => {
     const s = state({ fields: [workstream, countryField] }, workedIssues())
-    const { rows } = matrixGrid(s, workedView({ collapsed: [] }), today)
+    const { rows } = matrixGrid(s, expandedView(['U', 'U-uk']), today)
     const t1 = rows.find((r) => r.kind === 'issue' && r.issue.id === 'T1')
     expect(t1?.kind).toBe('issue')
     if (t1?.kind !== 'issue') return
@@ -179,11 +216,10 @@ describe('roadmap matrix', () => {
 
   it('blocked filter shows T2 on dim U and drops empty country rows', () => {
     const s = state({ fields: [workstream, countryField] }, workedIssues())
-    const grid = matrixGrid(
-      s,
-      workedView({ chips: [{ on: 'status', is: true, values: ['blocked'] }] }),
-      today,
-    )
+    const chips: ViewSettings['chips'] = [{ on: 'status', is: true, values: ['blocked'] }]
+    const compact = matrixGrid(s, workedView({ chips }), today)
+    expect(compact.rows.flatMap((r) => (r.kind === 'issue' ? [r.issue.id] : []))).toEqual(['U'])
+    const grid = matrixGrid(s, expandedView(['U', 'U-uk'], { chips }), today)
     expect(grid.cols.map((c) => c.parts[0]?.optionId)).toEqual(['uk'])
     const ids = grid.rows.filter((r) => r.kind === 'issue').map((r) => (r.kind === 'issue' ? r.issue.id : ''))
     expect(ids).toEqual(['U', 'U-uk', 'T2'])
@@ -191,7 +227,6 @@ describe('roadmap matrix', () => {
     if (u?.kind === 'issue') {
       expect(u.dim).toBe(true)
       expect(cellIds(u.cells[0])).toEqual(['T2'])
-      expect(cellWorst(s.issues, ['T2'], today)).toBe(true)
     }
   })
 
@@ -217,8 +252,8 @@ describe('roadmap matrix', () => {
 
   it('collapse does not change cell ids on U', () => {
     const s = state({ fields: [workstream, countryField] }, workedIssues())
-    const open = matrixGrid(s, workedView({ collapsed: [] }), today)
-    const shut = matrixGrid(s, workedView({ collapsed: ['U'] }), today)
+    const open = matrixGrid(s, expandedView(['U']), today)
+    const shut = matrixGrid(s, workedView(), today)
     const uOpen = open.rows.find((r) => r.kind === 'issue' && r.issue.id === 'U')
     const uShut = shut.rows.find((r) => r.kind === 'issue' && r.issue.id === 'U')
     if (uOpen?.kind === 'issue' && uShut?.kind === 'issue') {
@@ -238,8 +273,9 @@ describe('roadmap matrix', () => {
     if (u?.kind !== 'issue') return
     expect(u.dim).toBe(true)
     expect(cellIds(u.cells[0])).toEqual(['U-uk'])
-    const uk = grid.rows.find((r) => r.kind === 'issue' && r.issue.id === 'U-uk')
-    if (uk?.kind === 'issue') expect(cellIds(uk.cells[0])).toEqual(['U-uk'])
+    const open = matrixGrid(s, expandedView(['U'], { chips: [{ on: 'status', is: true, values: ['in_progress'] }] }), today)
+    const uk = open.rows.find((r) => r.kind === 'issue' && r.issue.id === 'U-uk')
+    expect(uk?.kind === 'issue' && cellIds(uk.cells[0])).toEqual(['U-uk'])
   })
 
   it('in_progress chip keeps group progress on leaves the chip hides', () => {
@@ -322,11 +358,31 @@ describe('roadmap matrix', () => {
   it('group progress pools leaves via progressUnder', () => {
     const issues = workedIssues()
     const s = state({ fields: [workstream, countryField] }, issues)
-    const grid = matrixGrid(s, workedView({ collapsed: ['U'] }), today)
+    const grid = matrixGrid(s, workedView(), today)
     const vendors = grid.rows.find((r) => r.kind === 'group' && r.key === 'vendors')
     expect(vendors?.kind).toBe('group')
     if (vendors?.kind === 'group') {
       expect(progressUnder(issues, vendors.cells[0].issueIds)).toBeCloseTo(0.5)
     }
+  })
+
+  it('any field can make rows and columns: one line per value in use, numbers by size, people by name', () => {
+    const owner: FieldDef = { id: 'owner', name: 'Owner', type: 'person' }
+    const wave: FieldDef = { id: 'wave', name: 'Wave', type: 'number' }
+    const issues = [
+      issue({ id: 'a', number: 1, fields: { owner: 'u2', wave: 10 } }),
+      issue({ id: 'b', number: 2, sortKey: 'b', fields: { owner: 'u1', wave: 2 } }),
+      issue({ id: 'c', number: 3, sortKey: 'c', fields: { wave: 2 } }),
+    ]
+    const view: ViewSettings = { ...DEFAULT_VIEW, layout: 'matrix', matrix: { ...DEFAULT_MATRIX, rowField: 'owner', cols: ['wave'] } }
+    const grid = matrixGrid(state({ fields: [owner, wave] }, issues), view, today, { names: new Map([['u1', 'Ana'], ['u2', 'Bo']]) })
+    expect(grid.cols.map((c) => c.parts[0].name)).toEqual(['2', '10'])
+    expect(grid.rows.filter((r) => r.kind === 'group').map((r) => r.kind === 'group' && r.label)).toEqual(['Ana', 'Bo', 'No owner'])
+    const a = grid.rows.find((r) => r.kind === 'issue' && r.issue.id === 'a')
+    expect(a?.cells).toEqual([{ kind: 'empty' }, { kind: 'one', issueId: 'a' }])
+  })
+
+  it('with no choice field, liveMatrix still picks a column field', () => {
+    expect(liveMatrix([{ id: 'note', name: 'Note', type: 'text' }], DEFAULT_MATRIX)).toMatchObject({ rowField: null, cols: ['note'] })
   })
 })

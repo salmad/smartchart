@@ -21,8 +21,8 @@ test('creates a roadmap from the sidebar and shows the empty table screen', asyn
 
 test('adds a choice field from Fields and shows it in the table header', async ({ page }) => {
   await openFreshRoadmap(page)
-  await page.getByRole('button', { name: 'Fields' }).click()
-  const fields = page.getByRole('dialog', { name: 'Fields' })
+  await page.getByRole('button', { name: 'Roadmap settings' }).click()
+  const fields = page.getByRole('dialog', { name: 'Roadmap settings' })
   await fields.getByRole('button', { name: 'Add field' }).click()
   await page.getByRole('menuitem', { name: 'Choice' }).click()
   await fields.getByLabel('Field name').fill('Country')
@@ -36,8 +36,8 @@ test('adds a choice field from Fields and shows it in the table header', async (
   await fields.getByLabel('Emoji for France').fill('🇫🇷')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible({ timeout: 10_000 })
-  await page.getByRole('button', { name: 'Fields' }).click()
-  const fieldsAgain = page.getByRole('dialog', { name: 'Fields' })
+  await page.getByRole('button', { name: 'Roadmap settings' }).click()
+  const fieldsAgain = page.getByRole('dialog', { name: 'Roadmap settings' })
   await fieldsAgain.getByRole('button', { name: 'Delete France' }).click()
   const confirm = page.getByRole('dialog', { name: 'Delete “France”?' })
   await expect(confirm).toContainText('0 issues')
@@ -71,7 +71,8 @@ test('table nesting, filters, grouping and saved view', async ({ page }) => {
   await addStatusFilter(page, 'Done', false)
 
   await page.getByRole('button', { name: 'Display' }).click()
-  await page.getByLabel('Display settings').getByRole('button', { name: 'Country' }).click()
+  await page.getByLabel('Display settings').getByRole('combobox', { name: 'Group by' }).click()
+  await page.getByRole('option', { name: 'Country' }).click()
   await page.keyboard.press('Escape')
   await expect(page.locator('span.font-medium', { hasText: /^UK$/ })).toBeVisible()
   await expect(page.locator('span.font-medium', { hasText: /^France$/ })).toBeVisible()
@@ -154,8 +155,8 @@ test('edits in place, keyboard, bulk actions, delete undo and failed save', asyn
   const rowB = page.locator('tr', { hasText: 'Child two' })
   await rowA.getByLabel('Select Child one').check()
   await rowB.getByLabel('Select Child two').check()
-  await page.getByRole('button', { name: 'Set status' }).click()
-  await page.getByLabel('Status', { exact: true }).getByRole('option', { name: 'Done' }).click()
+  await page.getByRole('toolbar', { name: 'Selection' }).getByRole('button', { name: 'Status', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Done' }).click()
   await expect(rowA.getByRole('button', { name: 'Status: Done' })).toBeVisible({ timeout: 10_000 })
   await expect(rowB.getByRole('button', { name: 'Status: Done' })).toBeVisible()
 
@@ -193,7 +194,7 @@ test('issue panel, body edit, comment, full page and sub-issue', async ({ page }
   await expect(panel.getByLabel('Issue title')).toHaveValue('Parent work')
 
   await panel.getByRole('button', { name: /Assignee:/ }).click()
-  await page.getByLabel('Choose assignee').getByRole('option', { name: 'You' }).click()
+  await page.getByRole('menuitem', { name: 'You' }).click()
   await expect(row.getByRole('button', { name: 'Assignee: You' })).toBeVisible({ timeout: 5000 })
 
   await panel.getByRole('button', { name: 'Add a description…' }).click()
@@ -235,8 +236,8 @@ test('issue panel, body edit, comment, full page and sub-issue', async ({ page }
 
 test('removes a whole field: the confirm counts its use, the column goes, and it stays gone after reload', async ({ page }) => {
   await openFreshRoadmap(page)
-  await page.getByRole('button', { name: 'Fields' }).click()
-  const fields = page.getByRole('dialog', { name: 'Fields' })
+  await page.getByRole('button', { name: 'Roadmap settings' }).click()
+  const fields = page.getByRole('dialog', { name: 'Roadmap settings' })
   await fields.getByRole('button', { name: 'Add field' }).click()
   await page.getByRole('menuitem', { name: 'Choice' }).click()
   await fields.getByLabel('Field name').fill('Country')
@@ -244,7 +245,7 @@ test('removes a whole field: the confirm counts its use, the column goes, and it
   await page.keyboard.press('Escape')
   await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible({ timeout: 10_000 })
 
-  await page.getByRole('button', { name: 'Fields' }).click()
+  await page.getByRole('button', { name: 'Roadmap settings' }).click()
   await fields.getByRole('button', { name: 'Delete Country' }).click()
   const confirm = page.getByRole('dialog', { name: 'Delete “Country”?' })
   await expect(confirm).toContainText('0 issues')

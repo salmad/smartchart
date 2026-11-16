@@ -1,10 +1,7 @@
-import { useState } from 'react'
 import type { MemberLite } from '@/engine/roadmaps/types'
-import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
-import { Command, CommandItem, CommandList } from '../../ui/command'
-import { cn } from '@/app/lib/utils'
-import { menuCommand, menuSurface } from '../roadmapChrome'
 import { Avatar } from '../Avatar'
+import { CellButton } from './CellButton'
+import { CellMenu } from './CellMenu'
 
 interface Props {
   assignee: string | null
@@ -13,39 +10,32 @@ interface Props {
   onPick: (id: string | null) => void
   /** The table shows the disc alone; the panel shows the name too. */
   withName?: boolean
+  /** Always-visible words for no one (the panel); the table leaves it out and shows a plus on hover. */
+  placeholder?: string
 }
 
-export function PersonCell({ assignee, members, disabled, onPick, withName }: Props) {
-  const [open, setOpen] = useState(false)
+export function PersonCell({ assignee, members, disabled, onPick, withName, placeholder }: Props) {
   const name = members.find((m) => m.id === assignee)?.name ?? ''
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
-        <button
-          type="button"
-          title={name || undefined}
-          className="flex min-w-0 items-center gap-1.5 rounded px-1 py-0.5 text-left text-ink hover:bg-raise disabled:hover:bg-transparent"
-          aria-label={name ? `Assignee: ${name}` : 'Assignee: unassigned'}
-        >
-          {name ? <Avatar name={name} /> : <span className="text-ink-3">—</span>}
-          {name && withName && <span className="truncate">{name}</span>}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className={cn('w-48 overflow-hidden p-1', menuSurface)} aria-label="Choose assignee">
-        <Command className={menuCommand}>
-          <CommandList label="Members">
-            <CommandItem value="none" onSelect={() => { onPick(null); setOpen(false) }} className="text-[13px]">
-              Unassigned
-            </CommandItem>
-            {members.map((m) => (
-              <CommandItem key={m.id} value={m.id} onSelect={() => { onPick(m.id); setOpen(false) }} className="gap-2 text-[13px]">
-                <Avatar name={m.name} />
-                {m.name}
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <CellMenu
+      label="Choose assignee"
+      listLabel="Members"
+      options={members.map((m) => ({ id: m.id, name: m.name, icon: <Avatar name={m.name} /> }))}
+      value={assignee}
+      none="Unassigned"
+      disabled={disabled}
+      onPick={onPick}
+    >
+      <CellButton
+        empty={!name}
+        placeholder={placeholder}
+        title={name || undefined}
+        aria-label={name ? `Assignee: ${name}` : 'Assignee: unassigned'}
+        className="text-ink"
+      >
+        <Avatar name={name} />
+        {withName && <span className="truncate">{name}</span>}
+      </CellButton>
+    </CellMenu>
   )
 }

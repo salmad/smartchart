@@ -4,6 +4,7 @@ import { keyOf } from '@/engine/roadmaps/fields'
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '../ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { cn } from '@/app/lib/utils'
+import { IssueKey, Placeholder, ValueButton } from './issueParts'
 import { menuCommand, menuSurface } from './roadmapChrome'
 
 interface Props {
@@ -20,25 +21,25 @@ export function ParentPicker({ roadmap, parent, choices, onPick }: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label="Parent issue" className="flex min-w-0 items-center gap-1.5 rounded px-1 py-0.5 text-left hover:bg-raise">
+        <ValueButton aria-label="Parent issue" title={parent?.title}>
           {parent ? (
             <>
-              <span className="font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, parent)}</span>
-              <span className="truncate text-ink">{parent.title}</span>
+              <span className="truncate">{parent.title}</span>
+              <IssueKey roadmap={roadmap} issue={parent} />
             </>
-          ) : <span className="text-ink-3">None</span>}
-        </button>
+          ) : <Placeholder>Add parent</Placeholder>}
+        </ValueButton>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={6} className={cn('w-72 overflow-hidden p-0', menuSurface)} aria-label="Choose parent">
         <Command className={cn(menuCommand, '[&_[cmdk-list]]:p-1')}>
           <CommandInput placeholder="Find an issue…" className="text-[13px]" />
           <CommandList label="Parents">
             <CommandEmpty>No issue fits.</CommandEmpty>
-            <CommandItem value="none" onSelect={() => pick(null)} className="text-[13px] text-ink-2">No parent</CommandItem>
+            {parent && <CommandItem value="none" onSelect={() => pick(null)} className="text-[13px] text-ink-2">No parent</CommandItem>}
             {choices.map((i) => (
               <CommandItem key={i.id} value={`${keyOf(roadmap, i)} ${i.title}`} onSelect={() => pick(i.id)} className="gap-2 text-[13px]">
-                <span className="font-mono text-[11.5px] text-ink-3">{keyOf(roadmap, i)}</span>
-                <span className="truncate">{i.title}</span>
+                <span className="min-w-0 flex-1 truncate">{i.title}</span>
+                <IssueKey roadmap={roadmap} issue={i} />
               </CommandItem>
             ))}
           </CommandList>

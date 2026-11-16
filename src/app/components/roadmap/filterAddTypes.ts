@@ -13,7 +13,7 @@ export type FilterStep =
   | { kind: 'value'; property: FilterProperty; is: boolean }
   | { kind: 'date'; when: 'before' | 'after' }
 
-export const FILTER_ITEM_CLASS = 'text-[12.5px] text-ink-2'
+export const FILTER_ITEM_CLASS = 'text-[13px] text-ink-2'
 
 export const FILTER_COMMAND_CLASS = `rounded-none ${menuCommand}`
 

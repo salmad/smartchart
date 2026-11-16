@@ -1,14 +1,15 @@
 import type { FieldDef } from '@/engine/roadmaps/types'
 import type { MatrixRow } from '@/engine/roadmaps/matrix'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
+import { cn } from '@/app/lib/utils'
 
-export const ROW_H = 34
-/** The Gantt shares the table's row height, so switching views keeps every row where it was. */
-export const GANTT_ROW_H = ROW_H
+export const ROW_H = 36
+/** The Gantt list's own row height. */
+export const GANTT_ROW_H = 34
 /** A matrix card is two lines (status and quarter, then progress): 54px with its padding. */
 export const MATRIX_ROW_H = 56
 export const VIRT = 200
-export const OVERSCAN = 8
+const OVERSCAN = 8
 
 type WalkRow = TableRow | MatrixRow
 
@@ -41,33 +42,55 @@ export function visibleRows<T extends WalkRow>(rows: T[], filtersActive: boolean
 export function liveColumns(view: ViewSettings, fields: FieldDef[]): string[] {
   const cols: string[] = []
   for (const id of view.columns) {
-    if (id === 'assignee' || id === 'start' || id === 'due') cols.push(id)
-    else if (fields.some((f) => f.id === id)) cols.push(id)
+    if (id in BUILT_IN || fields.some((f) => f.id === id)) cols.push(id)
   }
   return cols
 }
 
-function headerLabel(id: string, fields: FieldDef[]): string {
-  if (id === 'assignee') return 'Assignee'
-  if (id === 'start') return 'Start'
-  if (id === 'due') return 'Due'
-  return fields.find((f) => f.id === id)?.name ?? id
+const BUILT_IN: Record<string, { name: string; type: FieldDef['type'] }> = {
+  assignee: { name: 'Assignee', type: 'person' },
+  start: { name: 'Start', type: 'date' },
+  due: { name: 'Due', type: 'date' },
 }
+
+/** One width per kind of value, so a column never reflows as its cells change. */
+const COLUMN_W: Record<FieldDef['type'], string> = {
+  person: 'w-[84px] min-w-[84px]',
+  date: 'w-[112px] min-w-[112px]',
+  choice: 'w-[148px] min-w-[148px] max-w-[148px]',
+  number: 'w-[104px] min-w-[104px] max-w-[104px]',
+  text: 'w-[176px] min-w-[176px] max-w-[176px]',
+}
+
+/** The width classes of a property column, shared by its header and its cells. */
+export function columnWidth(id: string, fields: FieldDef[]): string {
+  return COLUMN_W[BUILT_IN[id]?.type ?? fields.find((f) => f.id === id)?.type ?? 'text']
+}
+
+/** The title column is pinned left; once the table has scrolled sideways a hairline marks its edge. */
+export const titleColumn = 'sticky left-0 bg-app-bg group-data-[scrolled]/table:shadow-[1px_0_0_theme(colors.line)]'
+export const progressColumn = 'w-[136px] min-w-[136px]'
+
+/** A group header's name: a group with no value says what is missing ("No country"), never a bare "Empty". */
+export function groupName(row: Extract<TableRow, { kind: 'group' }>, groupBy: ViewSettings['groupBy'], fields: FieldDef[]): string {
+  if (row.key !== '' || groupBy?.on !== 'field') return row.label
+  const name = fields.find((f) => f.id === groupBy.field)?.name
+  return name ? `No ${name.toLowerCase()}` : row.label
+}
+
+const headCell = 'sticky top-0 h-9 whitespace-nowrap border-b border-line bg-app-bg text-[12px] font-normal text-ink-3'
 
 export function TableHead({ columns, fields }: { columns: string[]; fields: FieldDef[] }) {
   return (
-    <thead className="sticky top-0 z-10 bg-app-bg">
-      <tr className="h-9 border-b border-line text-[11.5px] text-ink-3">
-        <th scope="col" className="w-6 px-1 font-medium" />
-        <th scope="col" className="w-8 px-2 font-medium">Status</th>
-        <th scope="col" className="w-20 px-2 font-medium">Key</th>
-        <th scope="col" className="min-w-[200px] px-2 font-medium">Title</th>
+    <thead>
+      <tr>
+        <th scope="col" className={cn(headCell, titleColumn, 'z-30 w-full min-w-[320px] pl-9 pr-3')}>Title</th>
         {columns.map((c) => (
-          <th key={c} scope="col" className="w-24 px-2 font-medium">
-            {headerLabel(c, fields)}
+          <th key={c} scope="col" className={cn(headCell, columnWidth(c, fields), 'z-20 truncate px-3')}>
+            {BUILT_IN[c]?.name ?? fields.find((f) => f.id === c)?.name ?? c}
           </th>
         ))}
-        <th scope="col" className="w-20 px-2 font-medium">Progress</th>
+        <th scope="col" className={cn(headCell, progressColumn, 'z-20 pl-3 pr-4')}>Progress</th>
       </tr>
     </thead>
   )

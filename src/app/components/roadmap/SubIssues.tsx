@@ -1,11 +1,16 @@
-import { useState } from 'react'
-import { GripVertical } from 'lucide-react'
+import { useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { GripVertical, Plus } from 'lucide-react'
 import type { Issue, MemberLite, Roadmap } from '@/engine/roadmaps/types'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
-import { keyOf } from '@/engine/roadmaps/fields'
 import { issueTree } from '@/engine/roadmaps/tree'
-import { StatusGlyph } from './StatusGlyph'
+import { toast } from 'sonner'
+import { cn } from '@/app/lib/utils'
+import { Avatar } from './Avatar'
+import { ProgressBar } from './ProgressBar'
+import { StatusPick } from './PropertyPick'
+import { shortDate, todayIso } from './dates'
 import { newIssueId } from './issueIds'
+import { IssueKey, IssueSection } from './issueParts'
 
 interface Props {
   parent: Issue
@@ -17,97 +22,123 @@ interface Props {
   onOpen: (id: string) => void
 }
 
-export function SubIssues({ parent, roadmap, issues, canEdit, act, onOpen }: Props) {
-  const tree = issueTree(issues)
-  const kids = tree.children(parent.id)
+const open = (i: Issue) => i.status !== 'done' && i.status !== 'cancelled'
+
+/** The issue's children as a tidy list: status in one click, the title opens the child, and a row at the end adds one. */
+export function SubIssues({ parent, roadmap, issues, members, canEdit, act, onOpen }: Props) {
+  const kids = issueTree(issues).children(parent.id)
   const [title, setTitle] = useState('')
   const [composing, setComposing] = useState(false)
+  const today = todayIso()
+  const counted = kids.filter((k) => k.status !== 'cancelled')
+  const done = counted.filter((k) => k.status === 'done').length
+
+  const say = (out: 'ok' | string) => { if (out !== 'ok') toast(out) }
 
   const add = () => {
     const t = title.trim()
     if (!t) { setComposing(false); return }
-    const id = newIssueId()
-    const last = kids[kids.length - 1]
-    act({ op: 'create', issues: [{ id, parentId: parent.id, title: t, after: last?.id }] })
+    say(act({ op: 'create', issues: [{ id: newIssueId(), parentId: parent.id, title: t, after: kids[kids.length - 1]?.id }] }))
     setTitle('')
-    setComposing(false)
   }
 
-  const moveKid = (from: number, to: number) => {
-    if (to < 0 || to >= kids.length || from === to) return
-    const id = kids[from].id
-    const target = kids[to]
-    const out = to < from
-      ? act({ op: 'move', id, parentId: parent.id, before: target.id })
-      : act({ op: 'move', id, parentId: parent.id, after: target.id })
-    if (out !== 'ok') return
+  /** Drag by the grip: the row lands where the pointer is let go. */
+  const drag = (e: ReactPointerEvent<HTMLButtonElement>, from: number) => {
+    e.preventDefault()
+    const grip = e.currentTarget
+    grip.setPointerCapture(e.pointerId)
+    const rows = [...grip.closest('ul')?.querySelectorAll<HTMLElement>('[data-sub-issue-row]') ?? []]
+    let to = from
+    const move = (ev: PointerEvent) => {
+      const at = rows.findIndex((el) => { const b = el.getBoundingClientRect(); return ev.clientY >= b.top && ev.clientY <= b.bottom })
+      if (at >= 0) to = at
+    }
+    const up = () => {
+      grip.removeEventListener('pointermove', move)
+      grip.removeEventListener('pointerup', up)
+      if (to === from) return
+      const target = kids[to].id
+      say(act({ op: 'move', id: kids[from].id, parentId: parent.id, ...(to < from ? { before: target } : { after: target }) }))
+    }
+    grip.addEventListener('pointermove', move)
+    grip.addEventListener('pointerup', up)
   }
+
+  if (!kids.length && !canEdit) return null
 
   return (
-    <section className="mt-6" aria-label="Sub-issues">
-      <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-3">Sub-issues</h3>
-      <ul className="space-y-0.5" data-sub-issues={parent.id}>
-        {kids.map((kid, idx) => (
-          <li key={kid.id} data-sub-issue-row={kid.id} className="flex items-center gap-2 rounded px-1 py-1 hover:bg-raise/60">
-            {canEdit && (
+    <IssueSection
+      label="Sub-issues"
+      aside={counted.length > 0 && (
+        <p className="flex items-center gap-2 text-[12px] tabular-nums text-ink-3">
+          {done} of {counted.length} done
+          <ProgressBar value={done / counted.length} />
+        </p>
+      )}
+    >
+      <ul>
+        {kids.map((kid, idx) => {
+          const who = members.find((m) => m.id === kid.assignee)?.name
+          return (
+            <li key={kid.id} data-sub-issue-row={kid.id} className="group/row relative -mx-2 flex h-9 items-center gap-1.5 rounded-md px-2 transition-colors hover:bg-raise/60 focus-within:bg-raise/60">
+              {canEdit && (
+                <button
+                  type="button"
+                  aria-label={`Move ${kid.title}`}
+                  className="absolute -left-3 grid h-7 w-4 cursor-grab touch-none place-items-center rounded text-ink-3 opacity-0 transition-opacity hover:text-ink focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:cursor-grabbing group-hover/row:opacity-100"
+                  onPointerDown={(e) => drag(e, idx)}
+                >
+                  <GripVertical className="size-3.5" strokeWidth={1.75} />
+                </button>
+              )}
+              <StatusPick status={kid.status} disabled={!canEdit} onPick={(status) => say(act({ op: 'set', ids: [kid.id], props: { status } }))} />
               <button
                 type="button"
-                aria-label={`Move ${kid.title}`}
-                className="grid size-7 shrink-0 cursor-grab place-items-center rounded text-ink-3 hover:text-ink active:cursor-grabbing"
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  const grip = e.currentTarget
-                  grip.setPointerCapture(e.pointerId)
-                  let over = idx
-                  const rows = () => [...grip.closest('[data-sub-issues]')?.querySelectorAll('[data-sub-issue-row]') ?? []] as HTMLElement[]
-                  const pick = (ev: PointerEvent) => {
-                    const y = ev.clientY
-                    const ix = rows().findIndex((el) => {
-                      const b = el.getBoundingClientRect()
-                      return y >= b.top && y <= b.bottom
-                    })
-                    if (ix >= 0) over = ix
-                  }
-                  const up = () => {
-                    grip.removeEventListener('pointermove', pick)
-                    grip.removeEventListener('pointerup', up)
-                    if (over !== idx) moveKid(idx, over)
-                  }
-                  grip.addEventListener('pointermove', pick)
-                  grip.addEventListener('pointerup', up)
-                }}
+                title={kid.title}
+                className={cn('min-w-0 flex-1 truncate text-left text-[13px] text-ink focus-visible:underline focus-visible:outline-none', !open(kid) && 'text-ink-2')}
+                onClick={() => onOpen(kid.id)}
               >
-                <GripVertical className="size-3.5" strokeWidth={1.75} />
+                {kid.title}
               </button>
-            )}
-            <StatusGlyph status={kid.status} />
-            <button type="button" className="min-w-0 flex-1 truncate text-left text-[13px] text-ink hover:text-ink-2" onClick={() => onOpen(kid.id)}>
-              <span className="font-mono text-ink-3">{keyOf(roadmap, kid)}</span> {kid.title}
-            </button>
-          </li>
-        ))}
+              <IssueKey roadmap={roadmap} issue={kid} />
+              {kid.due && (
+                <span className={cn('flex-none whitespace-nowrap text-[12px] tabular-nums', kid.due < today && open(kid) ? 'text-bad' : 'text-ink-3')}>{shortDate(kid.due, today)}</span>
+              )}
+              {who && <span title={who} className="flex flex-none"><Avatar name={who} /></span>}
+            </li>
+          )
+        })}
       </ul>
       {canEdit && (
         composing ? (
-          <input
-            autoFocus
-            className="mt-1 w-full border-0 bg-transparent px-1 py-1 text-[13px] text-ink outline-none ring-0 placeholder:text-ink-3 shadow-[inset_2px_0_0_theme(colors.ink)] focus:ring-0"
-            aria-label="New sub-issue title"
-            placeholder="Sub-issue title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); add() }
-              if (e.key === 'Escape') { setComposing(false); setTitle('') }
-            }}
-            onBlur={() => { if (!title.trim()) setComposing(false) }}
-          />
+          <label className="-mx-2 flex h-9 items-center gap-1.5 rounded-md bg-raise/60 px-2">
+            <span className="grid w-7 flex-none place-items-center text-ink-3"><Plus className="size-3.5" strokeWidth={1.75} aria-hidden /></span>
+            <input
+              autoFocus
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-ink outline-none placeholder:text-ink-3 focus:ring-0"
+              aria-label="New sub-issue title"
+              placeholder="Sub-issue title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); add() }
+                if (e.key === 'Escape') { e.stopPropagation(); setComposing(false); setTitle('') }
+              }}
+              onBlur={() => { add(); setComposing(false) }}
+            />
+            <kbd className="flex-none font-sans text-[11px] text-ink-3">↵ to add</kbd>
+          </label>
         ) : (
-          <button type="button" className="mt-2 text-[12.5px] text-ink-2 hover:text-ink" onClick={() => setComposing(true)}>
+          <button
+            type="button"
+            className="-mx-2 flex h-9 w-[calc(100%+16px)] items-center gap-1.5 rounded-md px-2 text-left text-[13px] text-ink-3 transition-colors hover:bg-raise/60 hover:text-ink-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            onClick={() => setComposing(true)}
+          >
+            <span className="grid w-7 flex-none place-items-center"><Plus className="size-3.5" strokeWidth={1.75} aria-hidden /></span>
             Add sub-issue
           </button>
         )
       )}
-    </section>
+    </IssueSection>
   )
 }

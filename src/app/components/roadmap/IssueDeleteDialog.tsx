@@ -13,51 +13,36 @@ interface Props {
   onDeleted: () => void
 }
 
-function pendingCopy(deleteIds: string[], liveIssues: Issue[]) {
-  let sub = 0
-  for (const id of deleteIds) sub += subtree(liveIssues, id).length - 1
-  const root = liveIssues.find((i) => i.id === deleteIds[0])
-  return { sub, title: root?.title ?? 'issue' }
-}
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
+/** Confirm before issues go, counting the sub-issues that go with them; the toast after offers Undo. In the app's
+    confirm-dialog dress (as deleting a deck). */
 export function IssueDeleteDialog({ deleteIds, liveIssues, onClose, act, onDeleted }: Props) {
-  const pending = deleteIds?.length ? pendingCopy(deleteIds, liveIssues) : null
+  const ids = deleteIds ?? []
+  const all = new Set(ids.flatMap((id) => subtree(liveIssues, id).map((n) => n.id)))
+  const sub = all.size - ids.filter((id) => all.has(id)).length
+  const what = ids.length === 1 ? liveIssues.find((i) => i.id === ids[0])?.title ?? 'this issue' : plural(ids.length, 'issue')
+  const withSubs = sub > 0 ? ` and ${plural(sub, 'sub-issue')}` : ''
 
   const confirm = () => {
-    if (!deleteIds?.length) return
-    const ids = deleteIds
-    const total = new Set<string>()
-    let sub = 0
-    for (const id of ids) {
-      const nodes = subtree(liveIssues, id)
-      for (const n of nodes) {
-        if (id !== n.id) sub++
-        total.add(n.id)
-      }
-    }
-    const label = sub > 0
-      ? `Deleted${ids.length > 1 ? ` ${ids.length} issues` : ''} and ${sub} sub-issue${sub === 1 ? '' : 's'}.`
-      : `Deleted${ids.length > 1 ? ` ${ids.length} issues` : ' issue'}.`
     act({ op: 'delete', ids })
-    offerDeleteUndo(label, () => act({ op: 'restore', ids }))
+    offerDeleteUndo(`Deleted ${ids.length === 1 ? 'the issue' : plural(ids.length, 'issue')}${withSubs}.`, () => act({ op: 'restore', ids }))
     onDeleted()
     onClose()
   }
 
   return (
-    <Dialog open={!!deleteIds?.length} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent aria-describedby={undefined}>
-        <DialogTitle>Delete {pending?.title}?</DialogTitle>
-        <DialogDescription className="text-[13px] text-ink-2">
-          {pending && pending.sub > 0
-            ? `This issue and ${pending.sub} sub-issue${pending.sub === 1 ? '' : 's'} will be removed.`
-            : 'This issue will be removed.'}
+    <Dialog open={ids.length > 0} onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="max-w-[400px] gap-0 rounded-[14px] border-line-2 bg-raise p-6 text-ink">
+        <DialogTitle className="text-[16px] font-semibold leading-[1.35] tracking-[-.01em]">Delete {what}?</DialogTitle>
+        <DialogDescription className="mt-2 text-[13.5px] leading-[1.5] text-ink-2">
+          {sub > 0
+            ? `${ids.length === 1 ? 'The issue' : 'They'}${withSubs} will be deleted.`
+            : `${ids.length === 1 ? 'The issue' : 'They'} will be deleted.`} You can undo it straight after.
         </DialogDescription>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="default" className="bg-bad text-app-bg hover:bg-bad/90" onClick={confirm}>
-            Delete
-          </Button>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={confirm}>Delete</Button>
         </div>
       </DialogContent>
     </Dialog>
