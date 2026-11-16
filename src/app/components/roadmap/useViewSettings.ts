@@ -25,6 +25,7 @@ function mergeView(raw: SavedView): ViewSettings {
     ...DEFAULT_VIEW,
     ...raw,
     chips: raw.chips ?? DEFAULT_VIEW.chips,
+    search: typeof raw.search === 'string' ? raw.search : '',
     columns: raw.columns?.length ? raw.columns : DEFAULT_VIEW.columns,
     collapsed: raw.collapsed ?? DEFAULT_VIEW.collapsed,
     groupBy: mergeGroupBy(raw),
@@ -80,7 +81,11 @@ function persist(roadmapId: string, v: ViewSettings) {
   }
   const url = new URL(location.href)
   url.searchParams.set('v', encodeView(v))
-  history.replaceState(history.state, '', url.href)
+  try {
+    history.replaceState(history.state, '', url.href)
+  } catch {
+    /* Safari refuses a burst of URL writes (typing a search); the view still applies, and the next write catches up. */
+  }
   notify()
 }
 

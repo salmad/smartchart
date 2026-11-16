@@ -10,6 +10,7 @@ import { DisplayMenu, groupByLabel } from './DisplayMenu'
 import { FilterAddMenu } from './FilterAddMenu'
 import { FilterChip } from './FilterChip'
 import { GanttControls } from './GanttControls'
+import { RoadmapSearch } from './RoadmapSearch'
 import { ToolButton } from './ToolButton'
 
 type ViewChange = ViewSettings | ((prev: ViewSettings) => ViewSettings)
@@ -28,7 +29,7 @@ interface Props {
   settings?: { open: boolean; onOpen: () => void }
 }
 
-/** The one row under the bar, the same height on every view. Left: Filter and its chips. Right: the count, the Gantt's
+/** The one row under the bar, the same height on every view. Left: search, Filter and its chips. Right: the count, the Gantt's
     scale and Today, Display, and the roadmap's settings. */
 export function FilterBar({ fields, members, today, view, issueCount, matchCount, onChange, onToday, settings }: Props) {
   const group = view.layout === 'checks' ? null : groupByLabel(view, fields)
@@ -43,6 +44,9 @@ export function FilterBar({ fields, members, today, view, issueCount, matchCount
 
   return (
     <div role="toolbar" aria-label="Roadmap toolbar" className="flex h-11 flex-none items-center gap-3 border-b border-hair pl-3 pr-4">
+      {issueCount > 0 && view.layout !== 'checks' && (
+        <RoadmapSearch value={view.search ?? ''} onChange={(search) => onChange((v) => ({ ...v, search }))} />
+      )}
       <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
         {issueCount > 0 && (
           <Popover open={open} onOpenChange={(next) => { if (next) { setMenuKey((k) => k + 1); slot.current = null } setOpen(next) }}>

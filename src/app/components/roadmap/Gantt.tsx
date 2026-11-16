@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { ViewSettings } from '@/engine/roadmaps/view'
-import { tableRows } from '@/engine/roadmaps/view'
+import { filtering, tableRows } from '@/engine/roadmaps/view'
 import type { RoadmapOp } from '@/engine/roadmaps/ops'
 import { PX_PER_DAY, daysBetween, ganttRange, markFor, type Mark } from '@/engine/roadmaps/gantt'
 import { cn } from '@/app/lib/utils'
@@ -58,7 +58,8 @@ export function Gantt({ state, members, view, today, onView, onOpenIssue, todayR
   const live = useMemo(() => state.issues.filter((i) => i.deletedAt === null), [state.issues])
   const names = useMemo(() => new Map(members.map((m) => [m.id, m.name])), [members])
   const allRows = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
-  const rows = useMemo(() => visibleRows(allRows, view.chips.length > 0), [allRows, view.chips.length])
+  const filtersActive = filtering(view)
+  const rows = useMemo(() => visibleRows(allRows, filtersActive), [allRows, filtersActive])
 
   const range = useMemo(() => ganttRange(live, today, view.scale), [live, today, view.scale])
   const px = PX_PER_DAY[view.scale]

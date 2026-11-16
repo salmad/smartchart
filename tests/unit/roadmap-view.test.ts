@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { matrixGrid } from '../../src/engine/roadmaps/matrix'
+import { nameMatches, nameQuery } from '../../src/engine/roadmaps/search'
 import {
+  DEFAULT_MATRIX,
   DEFAULT_VIEW,
+  filtering,
   liveChips,
   liveGroupBy,
   toggleFolded,
@@ -238,6 +242,86 @@ describe('roadmap view', () => {
 
     it('a deleted field drops out of the grouping', () => {
       expect(liveGroupBy([country], two)).toEqual([{ on: 'field', field: 'f1' }])
+    })
+  })
+})
+
+describe('roadmap search', () => {
+  const hit = (query: string, title: string) => {
+    const q = nameQuery(query)
+    return q !== null && nameMatches(q, title)
+  }
+
+  it('finds a title by its exact name, a part of it, or its words in any order', () => {
+    expect(hit('Launch pricing page', 'Launch pricing page')).toBe(true)
+    expect(hit('pric', 'Launch pricing page')).toBe(true)
+    expect(hit('page launch', 'Launch pricing page')).toBe(true)
+    expect(hit('mktg', 'Marketing site')).toBe(true)
+    expect(hit('roadmap', 'Road map review')).toBe(true)
+    expect(hit('café', 'Cafe opening')).toBe(true)
+  })
+
+  it('forgives a slip of the keys', () => {
+    expect(hit('lanch', 'Launch pricing page')).toBe(true)
+    expect(hit('pricnig', 'Launch pricing page')).toBe(true)
+    expect(hit('onbaording flow', 'Onboarding flow')).toBe(true)
+    expect(hit('underwritting', 'Underwriting')).toBe(true)
+  })
+
+  it('does not stretch to unrelated names', () => {
+    expect(hit('xyz', 'Launch pricing page')).toBe(false)
+    expect(hit('budget', 'Launch pricing page')).toBe(false)
+    expect(hit('launch budget', 'Launch pricing page')).toBe(false)
+    // Short words need to be there as typed: no typo and no scattered letters.
+    expect(hit('lp', 'Launch pricing page')).toBe(false)
+    expect(hit('lau', 'Hire a lawyer')).toBe(false)
+  })
+
+  it('a blank query is no query', () => {
+    expect(nameQuery('')).toBeNull()
+    expect(nameQuery('  · ')).toBeNull()
+  })
+
+  describe('in the views', () => {
+    const issues = [
+      issue({ id: 'a', parentId: null, sortKey: 'a', title: 'Launch pricing page' }),
+      issue({ id: 'a1', parentId: 'a', sortKey: 'a', title: 'Write copy' }),
+      issue({ id: 'b', parentId: null, sortKey: 'b', title: 'Hiring', fields: { f1: 'uk' } }),
+      issue({ id: 'b1', parentId: 'b', sortKey: 'a', title: 'Interview designers', fields: { f1: 'uk' } }),
+      issue({ id: 'b2', parentId: 'b', sortKey: 'b', title: 'Offer letters', fields: { f1: 'uk' } }),
+    ]
+    const s = state({ fields: [country] }, issues)
+    const shown = (v: ViewSettings) => tableRows(s, v, today).flatMap((r) => (r.kind === 'issue' ? [[r.issue.id, r.dim]] : []))
+
+    it('an empty search shows everything, undimmed', () => {
+      expect(shown(view({ search: '' }))).toEqual(shown(view()))
+      expect(filtering(view({ search: '   ' }))).toBe(false)
+      expect(filtering(view({ search: 'a' }))).toBe(true)
+    })
+
+    it('keeps the parent of a matching sub-issue, dimmed, and drops the rest', () => {
+      expect(shown(view({ search: 'intervew' }))).toEqual([['b', true], ['b1', false]])
+    })
+
+    it('finds the sub-issue under a collapsed parent', () => {
+      expect(shown(view({ search: 'designers', collapsed: ['b'] }))).toEqual([['b', true], ['b1', false]])
+    })
+
+    it('a matching parent shows without its unmatched sub-issues', () => {
+      expect(shown(view({ search: 'pricing' }))).toEqual([['a', false]])
+    })
+
+    it('works with chips and inside groups', () => {
+      expect(shown(view({ search: 'offer', chips: [{ on: 'status', is: true, values: ['done'] }] }))).toEqual([])
+      const grouped = tableRows(s, view({ search: 'offer', groupBy: [{ on: 'field', field: 'f1' }] }), today)
+      expect(grouped.map((r) => (r.kind === 'group' ? r.label : r.issue.id))).toEqual(['UK', 'b', 'b2'])
+    })
+
+    it('opens the matrix rows it finds sub-issues under, and keeps the columns', () => {
+      const m = view({ search: 'offer', matrix: { ...DEFAULT_MATRIX, cols: ['f1'] } })
+      const { cols, rows } = matrixGrid(s, m, today)
+      expect(rows.flatMap((r) => (r.kind === 'issue' ? [[r.issue.id, r.dim]] : []))).toEqual([['b', true], ['b2', false]])
+      expect(cols.map((c) => c.key)).toEqual(matrixGrid(s, view({ matrix: m.matrix }), today).cols.map((c) => c.key))
     })
   })
 })

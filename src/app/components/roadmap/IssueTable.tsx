@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
 import type { TableRow, ViewSettings } from '@/engine/roadmaps/view'
-import { tableRows } from '@/engine/roadmaps/view'
+import { filtering, tableRows } from '@/engine/roadmaps/view'
 import { buildDuplicateCopies, type RoadmapOp } from '@/engine/roadmaps/ops'
 import { IssueDataRow, IssueGroupRow, ComposeIssueRow } from './IssueRow'
 import { BulkBar } from './BulkBar'
@@ -30,7 +30,7 @@ interface Props {
 export function IssueTable({ state, view, members, today, onView, canEdit, act, said, onOpenIssue, newIssue = 0 }: Props) {
   const names = useMemo(() => new Map(members.map((m) => [m.id, m.name])), [members])
   const all = useMemo(() => tableRows(state, view, today, names), [state, view, today, names])
-  const filtersActive = view.chips.length > 0
+  const filtersActive = filtering(view)
   const rows = useMemo(() => visibleRows(all, filtersActive), [all, filtersActive])
   const columns = useMemo(() => liveColumns(view, state.roadmap.fields), [view, state.roadmap.fields])
   const colCount = columns.length + 2

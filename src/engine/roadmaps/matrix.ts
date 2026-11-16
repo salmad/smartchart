@@ -7,9 +7,11 @@ import {
   liveGroupBy,
   matchesChips,
   sortIssues,
+  viewFilters,
   type MatrixSettings,
   type ViewSettings,
 } from './view.js'
+import { nameQuery } from './search.js'
 
 /** A column: one option of each column field, or, when its group is folded, only the first field's option, so the
     column rolls up every issue under that option. */
@@ -268,10 +270,13 @@ export function matrixGrid(
   const idx = buildIndex(live)
   const eff = inherited(idx)
   const matrix = liveMatrix(state.roadmap.fields, view)
-  const chips = liveChips(state.roadmap.fields, view.chips)
+  const chips = viewFilters(state.roadmap.fields, view)
+  // A search opens the rows it found sub-issues under: the compact pivot would hide them behind their parent.
+  const searching = nameQuery(view.search ?? '') !== null
   const expanded = new Set(matrix.expanded)
   const folded = new Set(view.folded)
-  const cols = buildColumns(state.roadmap.fields, live, chips, today, matrix, labels)
+  // The columns come from the chips alone, so typing a search never adds or drops a column under the cursor.
+  const cols = buildColumns(state.roadmap.fields, live, liveChips(state.roadmap.fields, view.chips), today, matrix, labels)
   const rows: MatrixRow[] = []
 
   const matches = (i: Issue) => matchesChips(i, chips, today, idx)
@@ -283,7 +288,7 @@ export function matrixGrid(
 
   const walk = (node: Issue, depth: number, ctx: Context) => {
     const kids = sortIssues(idx.children(node.id).filter((k) => shown(k, ctx)), view.sort)
-    const open = kids.length > 0 && expanded.has(node.id)
+    const open = kids.length > 0 && (searching || expanded.has(node.id))
     rows.push({
       kind: 'issue',
       key: ctx.length ? `${keyOfCtx(ctx)}/${node.id}` : node.id,

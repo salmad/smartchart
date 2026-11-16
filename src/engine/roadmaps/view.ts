@@ -2,6 +2,7 @@ import type { Scale } from './gantt.js'
 import { issueFailsCheck, type CheckId } from './checks.js'
 import { buildIndex, type IssueIndex } from './index.js'
 import { dateSpan, progress, progressUnder } from './rollup.js'
+import { nameMatches, nameQuery } from './search.js'
 import type { FieldDef, FieldValue, Issue, RoadmapState, Status } from './types.js'
 import { STATUS_LABEL, STATUSES } from './types.js'
 
@@ -11,6 +12,10 @@ export type Chip =
   | { on: 'field'; field: string; is: boolean; values: (string | null)[] }
   | { on: 'dates'; when: 'overdue' | 'before' | 'after'; date?: string }
   | { on: 'check'; id: CheckId }
+
+/** What a view filters by: its chips, and while a search is typed, the issue's name. The name test is built once
+    per view (`viewFilters`) and remembers each title it has seen. */
+export type ViewFilter = Chip | { on: 'name'; matches: (title: string) => boolean }
 
 export interface MatrixSettings {
   cols: string[]
@@ -29,6 +34,8 @@ export const MAX_GROUP_LEVELS = 2
 
 export interface ViewSettings {
   chips: Chip[]
+  /** Text typed in the search box: keeps issues whose name matches, loosely (see `search.ts`), and their parents. */
+  search?: string
   /** The levels that group the rows in every view, outermost first (at most two). The issue tree sits inside the last. */
   groupBy: GroupKey[]
   /** Group rows folded shut, by their path (`ws=gtm/c=uk`), shared by every view: their issues hide, their roll-up stays. */
@@ -89,8 +96,10 @@ function fieldEmpty(issue: Issue, fieldId: string): boolean {
   return !(fieldId in issue.fields)
 }
 
-function chipMatches(issue: Issue, chip: Chip, today: string, idx: IssueIndex): boolean {
+function chipMatches(issue: Issue, chip: ViewFilter, today: string, idx: IssueIndex): boolean {
   switch (chip.on) {
+    case 'name':
+      return chip.matches(issue.title)
     case 'check':
       return issueFailsCheck(chip.id, issue, idx, today)
     case 'status': {
@@ -123,7 +132,7 @@ function chipMatches(issue: Issue, chip: Chip, today: string, idx: IssueIndex): 
   }
 }
 
-export function matchesChips(issue: Issue, chips: Chip[], today: string, idx: IssueIndex): boolean {
+export function matchesChips(issue: Issue, chips: readonly ViewFilter[], today: string, idx: IssueIndex): boolean {
   if (!chips.length) return true
   return chips.every((c) => chipMatches(issue, c, today, idx))
 }
@@ -172,7 +181,7 @@ export function sortIssues(list: Issue[], sort: ViewSettings['sort']): Issue[] {
 function branchVisible(
   id: string,
   idx: ReturnType<typeof buildIndex>,
-  chips: Chip[],
+  chips: ViewFilter[],
   today: string,
   collapsed: Set<string>,
 ): boolean {
@@ -257,7 +266,7 @@ function walkVisibleIssues(
   out: TableRow[],
   issues: Issue[],
   idx: ReturnType<typeof buildIndex>,
-  chips: Chip[],
+  chips: ViewFilter[],
   today: string,
   collapsed: Set<string>,
   sort: ViewSettings['sort'],
@@ -295,7 +304,7 @@ function appendIssues(
   out: TableRow[],
   issues: Issue[],
   idx: ReturnType<typeof buildIndex>,
-  chips: Chip[],
+  chips: ViewFilter[],
   today: string,
   collapsed: Set<string>,
   sort: ViewSettings['sort'],
@@ -306,6 +315,25 @@ function appendIssues(
     sort,
   )
   return walkVisibleIssues(out, issues, idx, chips, today, collapsed, sort, roots, depth)
+}
+
+/** Whether the view filters at all: a chip, or a search with something in it. */
+export function filtering(v: ViewSettings): boolean {
+  return v.chips.length > 0 || nameQuery(v.search ?? '') !== null
+}
+
+/** The live chips, then the search as one more filter when it has something in it. */
+export function viewFilters(defs: FieldDef[], v: ViewSettings): ViewFilter[] {
+  const chips: ViewFilter[] = liveChips(defs, v.chips)
+  const q = nameQuery(v.search ?? '')
+  if (!q) return chips
+  const seen = new Map<string, boolean>()
+  const matches = (title: string) => {
+    let hit = seen.get(title)
+    if (hit === undefined) seen.set(title, (hit = nameMatches(q, title)))
+    return hit
+  }
+  return [...chips, { on: 'name', matches }]
 }
 
 export function liveChips(defs: FieldDef[], chips: Chip[]): Chip[] {
@@ -336,7 +364,7 @@ export function tableRows(s: RoadmapState, v: ViewSettings, today: string, names
   const idx = buildIndex(live)
   const collapsed = new Set(v.collapsed)
   const folded = new Set(v.folded)
-  const chips = liveChips(s.roadmap.fields, v.chips)
+  const chips = viewFilters(s.roadmap.fields, v)
   const levels = liveGroupBy(s.roadmap.fields, v.groupBy)
   const out: TableRow[] = []
 

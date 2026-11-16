@@ -18,7 +18,7 @@ import { Matrix } from './Matrix'
 import { Checks } from './Checks'
 import { useViewSettings } from './useViewSettings'
 import { runChecks, type CheckId } from '@/engine/roadmaps/checks'
-import { liveChips, matchesChips } from '@/engine/roadmaps/view'
+import { liveChips, matchesChips, viewFilters } from '@/engine/roadmaps/view'
 import { buildIndex } from '@/engine/roadmaps/index'
 import { IssuePanel } from './IssuePanel'
 import { EmptyRoadmap } from './EmptyRoadmap'
@@ -63,11 +63,11 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
   const showMain = showTable || isChecks || isMatrix
 
   const matchCount = useMemo(() => {
-    const chips = liveChips(customFields, viewSettings.chips)
-    if (!chips.length) return undefined
+    const filters = viewFilters(customFields, viewSettings)
+    if (!filters.length) return undefined
     const idx = buildIndex(live)
-    return live.filter((i) => matchesChips(i, chips, today, idx)).length
-  }, [customFields, live, today, viewSettings.chips])
+    return live.filter((i) => matchesChips(i, filters, today, idx)).length
+  }, [customFields, live, today, viewSettings])
 
   const checkReport = useMemo(() => {
     const chips = liveChips(customFields, viewSettings.chips)
@@ -78,7 +78,8 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
     (id: CheckId) => {
       setViewSettings((v) => {
         const chips = v.chips.filter((c) => c.on !== 'check')
-        return { ...v, layout: 'table', chips: [...chips, { on: 'check', id }] }
+        // The card counted without the search (Checks has no search box), so the table it opens drops it too.
+        return { ...v, layout: 'table', search: '', chips: [...chips, { on: 'check', id }] }
       })
     },
     [setViewSettings],

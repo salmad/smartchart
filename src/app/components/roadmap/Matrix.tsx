@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { OptionMark } from './OptionMark'
 import type { MemberLite, RoadmapState } from '@/engine/roadmaps/types'
-import { toggleFolded, type ViewSettings } from '@/engine/roadmaps/view'
+import { filtering, toggleFolded, type ViewSettings } from '@/engine/roadmaps/view'
 import { liveMatrix, matrixGrid, type MatrixCol } from '@/engine/roadmaps/matrix'
 import { shortDate } from './dates'
 import { cn } from '@/app/lib/utils'
@@ -138,7 +138,7 @@ export function Matrix({ state, view, members, today, canEdit, onView, onOpenIss
 
   const colField = fields.find((f) => f.id === matrix.cols[0])?.name ?? ''
   const note = !rows.length
-    ? view.chips.length
+    ? filtering(view)
       ? 'No issues match the filters.'
       : 'No issues yet.'
     : !cols.length
