@@ -89,3 +89,26 @@ test('a target line sits where a bar of its value would end, from under the head
   expect(Math.abs(m.bottom)).toBeLessThanOrEqual(2)
   expect(m.pass).toBe(4)
 })
+
+test('heat text contrast in both palettes: every shaded, best and struck cell reads at 4.5:1, with no fit issues', async ({ page }) => {
+  await page.goto('/src/dev/fixture.html')
+  await page.waitForFunction(() => window.ready)
+  const prices = ['19.9%', '29.9%', '39.9%', '49.9%', '59.9%']
+  const grid: [string, number[], number][] = [['£2.5k', [18, 53, 34, 15, 5], 1], ['£5k', [60, 189, 157, 79, 30], 1], ['£7.5k', [32, 279, 308, 190, 83], 1], ['£10k', [-61, 278, 433, 342, 171], 2], ['£15k', [-121, 366, 632, 606, 367], 2]]
+  const money = (v: number) => (v < 0 ? `−£${-v}` : `£${v}`)
+  const slide = { template: 'table', title: 'We set limit and price together, so every offer is the most profitable one that passes both tests', caption: 'Expected profit a year · £',
+    table: { columns: [{ label: 'Limit' }, ...prices.map((label, j) => ({ label, heat: true, ...(j === 0 ? { outline: true } : {}) }))],
+      rows: grid.map(([l, vs, fails]) => ({ cells: [l, ...vs.map((v, j) => (j < fails ? { value: money(v), struck: true } : v === 632 ? `[[${money(v)}]]` : money(v)))] })),
+      key: { focus: 'Our offer', struck: 'Fails a test', outline: 'Most lenders' } } }
+  for (const theme of ['ink', 'paper'] as const) {
+    const r = await page.evaluate(([s, t]) => (window.lint as (s: Slide, st: Style, t: 'ink' | 'paper') => Promise<LintResult>)(s, 'consulting', t), [slide as unknown as Slide, theme] as const)
+    expect(r.issues, `${theme} ${JSON.stringify(r)}`).toEqual([])
+    const low = await page.$$eval('.tbl td.heat, .tbl td.struck', (tds) => {
+      const rgb = (c: string) => (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number)
+      const lum = ([r, g, b]: number[]) => [r, g, b].map((v) => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4 }).reduce((a, v, i) => a + v * [.2126, .7152, .0722][i], 0)
+      const bgOf = (el: Element): string => { for (let e: Element | null = el; e; e = e.parentElement) { const b = getComputedStyle(e).backgroundColor; if (!/rgba\(0, 0, 0, 0\)|transparent/.test(b)) return b } return 'rgb(255,255,255)' }
+      return tds.flatMap((td) => { const [a, b] = [lum(rgb(getComputedStyle(td).color)), lum(rgb(bgOf(td)))].sort((x, y) => y - x), c = (a + .05) / (b + .05); return c < 4.5 ? [`${td.textContent} ${c.toFixed(2)}`] : [] })
+    })
+    expect(low, theme).toEqual([])
+  }
+})

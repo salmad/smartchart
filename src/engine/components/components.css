@@ -501,6 +501,27 @@
 .tbl th.has-target > .tbl-target > span { position: absolute; left: 0; bottom: -30px; transform: translateX(-50%); white-space: nowrap;
   font: 500 17px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); }
 
+/* ═════════════ Heat: a grid of figures shaded by size (colours from the allocator), struck cells, an outlined column ═════════════ */
+.tbl :is(th, td).heat-col { padding-left: 20px; padding-right: 20px; }
+.tbl td.heat-col { border-bottom: 4px solid var(--bg); border-right: 4px solid var(--bg); }
+.tbl td.heat.h1 { background: var(--heat-1); color: var(--on-heat-1); } .tbl td.heat.h2 { background: var(--heat-2); color: var(--on-heat-2); }
+.tbl td.heat.h3 { background: var(--heat-3); color: var(--on-heat-3); } .tbl td.heat.h4 { background: var(--heat-4); color: var(--on-heat-4); }
+.tbl td.heat.h5 { background: var(--heat-5); color: var(--on-heat-5); }
+.tbl td.heat.best { background: var(--focus); color: var(--on-focus); font-weight: 700; }
+.tbl td.heat.best::before { content: "★\2009"; }
+.tbl td.heat .hl-focus { color: inherit; }
+.tbl td.struck { color: var(--muted); }
+.tbl td.struck > .strike-x { margin-left: 10px; font-size: .8em; }
+/* The outline: two sides down the column, closed over its header and under its last row. */
+.tbl :is(th, td).outline { box-shadow: inset 2px 0 var(--fg-2), inset -2px 0 var(--fg-2); }
+.tbl th.outline { box-shadow: inset 2px 0 var(--fg-2), inset -2px 0 var(--fg-2), inset 0 2px var(--fg-2); padding-top: 14px; }
+.tbl td.outline.outline-end { box-shadow: inset 2px 0 var(--fg-2), inset -2px 0 var(--fg-2), inset 0 -2px var(--fg-2); }
+/* The key: one quiet line naming what the marks mean. */
+.heat-key { display: flex; gap: 36px; margin-top: 20px; font: 500 17px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.heat-key .k-focus::before { content: "★\2009"; color: var(--focus); }
+.heat-key .k-struck::before { content: "✗\2009"; }
+.heat-key .k-outline::before { content: ""; display: inline-block; width: 18px; height: 12px; margin-right: 10px; border: 2px solid var(--fg-2); vertical-align: -1px; }
+
 /* ═════════════ Callout: a note, a decision or a risk, one labelled line over a rule ═════════════ */
 /* The rule and label carry the tone; the words stay in the text colour. */
 .callout { border-left: 6px solid var(--line-2); padding: 6px 0 6px 36px; }

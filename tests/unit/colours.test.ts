@@ -130,3 +130,16 @@ test("two grey series take the ends of the grey scale, so they never read as one
     assert.ok(distance(a, c) >= .2, `${theme}: the ends of the grey scale are ${distance(a, c).toFixed(3)} apart`);
   }
 });
+
+test("heat shades: five steps from the background to the focus, each with text that reads at 4.5:1, for every accent", () => {
+  for (const theme of THEMES) for (const accent of ACCENTS) {
+    const v = allocate(null, theme, accent).vars;
+    for (let n = 1; n <= 5; n++) {
+      assert.ok(v[`heat-${n}`] && v[`on-heat-${n}`], `${theme} ${accent} heat-${n}`);
+      assert.ok(contrast(v[`on-heat-${n}`], v[`heat-${n}`]) >= 4.5, `${theme} ${accent} heat-${n} ${v[`heat-${n}`]} text ${v[`on-heat-${n}`]}`);
+    }
+    // Low steps keep the body text colour, so a shaded cell reads like its neighbours.
+    assert.equal(v["on-heat-1"], PALETTES[theme].fg, `${theme} ${accent}`);
+    assert.ok(distance(v["heat-1"], PALETTES[theme].bg) < distance(v["heat-5"], PALETTES[theme].bg));
+  }
+});

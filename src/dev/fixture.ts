@@ -3,15 +3,15 @@
 import '@/engine/slides/slides.css'
 import { mountSlide } from '@/engine/slides/render'
 import { fitIssues, layoutLints, type LayoutLints } from '@/engine/slides/lints'
-import type { Slide, Style } from '@/engine/types'
+import type { Slide, Style, Theme } from '@/engine/types'
 
 export type LintResult = { fit: string[]; bodyTop: number | null } & LayoutLints
-declare global { interface Window { lint?: (slide: Slide, style: Style) => Promise<LintResult>; cols?: (slide: Slide, style: Style, width: number) => Promise<string[]>; ready?: boolean } }
+declare global { interface Window { lint?: (slide: Slide, style: Style, theme?: Theme) => Promise<LintResult>; cols?: (slide: Slide, style: Style, width: number) => Promise<string[]>; ready?: boolean } }
 
 const fonts = Promise.all(['800 100px Archivo', '900 100px Archivo', '400 30px Geist', '600 30px Geist', "500 20px 'Geist Mono'"].map((f) => document.fonts.load(f))).then(() => document.fonts.ready)
-window.lint = async (slide, style) => {
+window.lint = async (slide, style, theme = 'ink') => {
   await fonts
-  const deck = { style, theme: 'ink' as const, accent: null, footer: 'Fixture', slides: [slide] }
+  const deck = { style, theme, accent: null, footer: 'Fixture', slides: [slide] }
   const frame = document.getElementById('frame') as HTMLElement
   const el = mountSlide(frame, slide, { page: 1, section: 0, kicker: '', footer: 'Fixture' }, deck)
   const body = el.querySelector(':scope > .head + *'), k = el.getBoundingClientRect().width / 1920

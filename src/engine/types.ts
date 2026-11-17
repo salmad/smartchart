@@ -23,10 +23,12 @@ export interface Chart {
 export interface Note { title: string; text?: string; point?: { series: number; index: number } }
 /** An Occam picture (slides/images.ts): `src` names its kind and size; `alt` is what it shows, in words. */
 export interface ImageRef { src: string; alt?: string }
-export type Cell = string | { value?: string; note?: string; bullets?: string[]; status?: boolean; logo?: ImageRef; icon?: string }
+export type Cell = string | { value?: string; note?: string; bullets?: string[]; status?: boolean; logo?: ImageRef; icon?: string; struck?: boolean }
 /** A target on a bars column: a dashed line at `value`, named by `label`; bars on the `better` side take the focus colour. */
 export interface TableTarget { value: number; label: string; better?: 'below' | 'above' }
-export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; bars?: boolean; target?: TableTarget; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean; align?: 'left' | 'centre' | 'right' | 'auto' }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[] }
+/** A one-line key under a table: what its focus cell, struck cells and outlined column mean. */
+export interface TableKey { focus?: string; struck?: string; outline?: string }
+export interface Table { columns: { label?: string; icon?: string; logo?: ImageRef; bars?: boolean; target?: TableTarget; heat?: boolean; outline?: boolean; focus?: boolean; muted?: boolean; bold?: boolean; italic?: boolean; align?: 'left' | 'centre' | 'right' | 'auto' }[]; rows: { cells: Cell[]; style?: 'muted' | 'total' | 'group'; focus?: boolean }[]; key?: TableKey }
 export interface Card { icon?: string; value?: string; logo?: ImageRef; label?: string; title: string; bullets?: string[]; text?: string; tone?: Tone; facts?: { label: string; text: string }[] }
 export interface Step { when: string; title: string; text: string; focus?: boolean }
 export interface Point { title: string; text: string }

@@ -67,3 +67,33 @@ test('a target with better above focuses the bars at or over it', () => {
     rows: [{ cells: ['A', '40'] }, { cells: ['B', '50'] }, { cells: ['C', '80'] }] })
   expect(h.match(/has-bar pass/g)?.length).toBe(2)
 })
+
+const GRID = { columns: [{ label: 'Limit' }, { label: '19.9%', heat: true, outline: true }, { label: '29.9%', heat: true }, { label: '39.9%', heat: true }],
+  rows: [{ cells: ['£2.5k', { value: '£18', struck: true }, '£53', '£34'] }, { cells: ['£15k', { value: '−£121', struck: true }, '£366', '[[£632]]'] }] } as Table
+
+test('heat columns share one scale; struck cells are muted with a cross and never shaded', () => {
+  const h = html(GRID)
+  expect(h).toMatch(/<td class="[^"]*\bheat h1\b[^"]*"[^>]*>£53/)
+  expect(h).toMatch(/<td class="[^"]*\bheat h4\b[^"]*"[^>]*>£366/)
+  expect(h).toContain('<span class="strike-x" aria-hidden="true">✗</span>')
+  expect(h).not.toMatch(/struck[^"]*h\d/)
+  expect(h.match(/\bstruck\b/g)?.length).toBe(2)
+})
+
+test('heat skips non-figures and negatives', () => {
+  const h = html({ columns: [{ label: 'L' }, { label: 'A', heat: true }], rows: [{ cells: ['a', '—'] }, { cells: ['b', '−£61'] }, { cells: ['c', '£40'] }] })
+  expect(h).not.toContain('NaN')
+  expect(h.match(/heat h\d/g)).toEqual(['heat h5'])
+})
+
+test('a [[focus]] heat cell is drawn solid as the best cell', () => {
+  expect(html(GRID)).toMatch(/<td class="[^"]*\bheat best\b[^"]*"/)
+})
+
+test('the outlined column and the key render only when written', () => {
+  const h = html({ ...GRID, key: { focus: 'Our offer', struck: 'Fails a test', outline: 'Most lenders' } })
+  expect(h).toContain('<col class="outline">')
+  expect(h).toMatch(/<td class="[^"]*\boutline\b[^"]*outline-end/)
+  expect(h).toContain('<p class="heat-key"><span class="k-focus" data-path="table.key.focus" data-kind="esc">Our offer</span><span class="k-struck" data-path="table.key.struck" data-kind="esc">Fails a test</span><span class="k-outline" data-path="table.key.outline" data-kind="esc">Most lenders</span></p>')
+  expect(html(GRID)).not.toContain('heat-key')
+})

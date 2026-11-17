@@ -335,3 +335,28 @@ test("target: its label under the table costs half a row in the budget", () => {
   assert.ok(!errs(full).some((e) => e.startsWith("table: this table costs")));
   assert.ok(errs({ ...full, table: { ...full.table, columns: [full.table.columns[0], { ...full.table.columns[1], target: { ...T20, value: 30 } }] } }).some((e) => e.startsWith("table: this table costs 11 rows")));
 });
+
+/* Heat shading, struck cells, an outlined column and the key (FinBridge profit grid). */
+const grid = (cols: object[], rows: unknown[], extra: object = {}) => ({ template: "table", title: "We set limit and price together to maximise profit", table: { columns: [{ label: "Limit" }, ...cols], rows, ...extra } });
+const G_ROWS = [{ cells: ["£2.5k", { value: "£18", struck: true }, "£53"] }, { cells: ["£15k", "£366", "[[£632]]"] }];
+
+test("heat: valid on figures, with struck cells, an outline and a key", () => {
+  assert.deepEqual(errs(grid([{ label: "19.9%", heat: true, outline: true }, { label: "29.9%", heat: true }], G_ROWS, { key: { focus: "Our offer", struck: "Fails a test", outline: "Most lenders" } })), []);
+});
+
+test("heat needs figures and not bars; outline on one column after the first; key labels need what they label", () => {
+  assert.ok(errs(grid([{ label: "Name", heat: true }], [{ cells: ["a", "Acme"] }])).some((e) => e.startsWith("table.columns[1].heat")));
+  assert.ok(errs(grid([{ label: "A", heat: true, bars: true }], [{ cells: ["a", "5"] }])).some((e) => e.startsWith("table.columns[1]") && /heat or bars/.test(e)));
+  assert.ok(errs({ ...grid([{ label: "A" }], [{ cells: ["a", "5"] }]), table: { columns: [{ label: "L", outline: true }, { label: "A" }], rows: [{ cells: ["a", "5"] }] } }).some((e) => e.startsWith("table.columns[0].outline")));
+  assert.ok(errs(grid([{ label: "A", outline: true }, { label: "B", outline: true }], [{ cells: ["a", "5", "6"] }])).some((e) => /one outlined column/.test(e)));
+  const e = errs(grid([{ label: "A" }], [{ cells: ["a", "5"] }], { key: { focus: "Ours", struck: "Fails", outline: "Theirs" } }));
+  for (const k of ["focus", "struck", "outline"]) assert.ok(e.some((m) => m.startsWith(`table.key.${k}`)), k);
+});
+
+test("doc figures refuse target, heat and key", async () => {
+  const { validateComponent } = await import("../../src/engine/slides/schema");
+  const { DOC_LIMITS } = await import("../../src/engine/docs/validate");
+  const body = { table: { columns: [{ label: "L" }, { label: "A", bars: true, target: { value: 5, label: "Cap" } }, { label: "B", heat: true }], rows: [{ cells: ["a", "5", "6"] }, { cells: ["b", "9", "[[7]]"] }], key: { focus: "Ours" } } };
+  const e = validateComponent("table", body, "consulting", DOC_LIMITS).errors;
+  for (const p of ["table.columns[1].target", "table.columns[2].heat", "table.key"]) assert.ok(e.some((m) => m.startsWith(p) && /doc/.test(m)), p);
+});
