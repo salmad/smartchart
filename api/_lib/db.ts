@@ -75,7 +75,7 @@ export interface Db {
   /** Marks the workspace as the user's most recently used. */
   touchWorkspace(userId: string, id: string): Promise<void>
   getUserLook(userId: string): Promise<unknown>
-  setUserLook(userId: string, look: { theme: 'ink' | 'paper'; accent: string | null }): Promise<boolean>
+  setUserLook(userId: string, look: { theme: 'ink' | 'paper'; accent: string | null; chrome: 'dark' | 'light' | 'system' }): Promise<boolean>
   /** Whether to show the one-time “Connect an agent” nudge (see FUTURE #18a). */
   agentConnectState(userId: string): Promise<{ dismissed: boolean; done: boolean }>
   dismissAgentNudge(userId: string): Promise<void>

@@ -14,7 +14,7 @@ export async function writingStyle(page: Page, style: 'Consulting' | 'Pitch') {
   return page.getByRole('menuitemradio', { name: style })
 }
 
-/** Opens Appearance (palette and accent) from the avatar menu and returns its popover. */
+/** Opens Appearance (app chrome, slides palette and accent) from the avatar menu and returns its popover. */
 export async function appearance(page: Page) {
   await page.getByRole('button', { name: /^Account/ }).click()
   await page.getByRole('menuitem', { name: 'Appearance…' }).click()

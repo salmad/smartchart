@@ -7,7 +7,7 @@ export function OptionMark({ mark, className }: { mark?: string; className?: str
   if (!mark) return null
   if (!isLetterMark(mark)) return <span aria-hidden className={className}>{mark}</span>
   return (
-    <span aria-hidden className={cn('inline-grid h-4 min-w-4 shrink-0 place-items-center rounded-[4px] bg-white/[.08] px-1 text-[9.5px] font-semibold leading-none tracking-[.02em] text-ink-2', className)}>
+    <span aria-hidden className={cn('inline-grid h-4 min-w-4 shrink-0 place-items-center rounded-[4px] bg-ink/[.08] px-1 text-[9.5px] font-semibold leading-none tracking-[.02em] text-ink-2', className)}>
       {mark}
     </span>
   )

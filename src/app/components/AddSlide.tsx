@@ -55,7 +55,7 @@ export function AddSlide({ deck, current, onUse, onCancel }: Props) {
       <div className="grid min-h-0 content-center justify-items-center gap-4 px-8 pb-3 pt-7 max-[900px]:px-4 max-[900px]:pt-4">
         <div data-add-preview className="w-[min(100%,calc((100vh_-_theme(spacing.bar)_-_44px_-_300px)*16/9))] max-[900px]:w-full">
           {slide && preview
-            ? <div data-featured><SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]} className={cn(frame, 'shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)]')} /></div>
+            ? <div data-featured><SlideView slide={slide} deck={deck} ctx={contexts(preview)[at]} className={cn(frame, 'shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgb(var(--app-shade)/var(--app-depth))]')} /></div>
             : <div className={cn(frame, 'grid place-content-center gap-1.5 border border-dashed border-line-2 text-center')}>
                 <p className="app-title text-[24px]">{first ? 'Start from a ready-made slide' : 'Add a slide'}</p>
                 <span className="text-ink-3">Pick one below to preview it here, in your deck’s look.</span>

@@ -52,7 +52,7 @@ export function GanttListRow({ row, roadmap, person, mark, canEdit, compact, dat
         onOpenIssue?.(issue.id)
       }}
       className={cn(
-        'flex h-full cursor-pointer items-center gap-2 pl-3 pr-3 text-[13px] text-ink transition-colors duration-150 ease-out group-hover/row:bg-white/[.025]',
+        'flex h-full cursor-pointer items-center gap-2 pl-3 pr-3 text-[13px] text-ink transition-colors duration-150 ease-out group-hover/row:bg-ink/[.025]',
         dim && 'opacity-50',
       )}
     >
@@ -61,7 +61,7 @@ export function GanttListRow({ row, roadmap, person, mark, canEdit, compact, dat
       {hasChildren ? (
         <Button
           variant="ghost"
-          className="size-5 shrink-0 rounded-[5px] p-0 text-ink-3 hover:bg-white/[.06] [&_svg]:size-3.5"
+          className="size-5 shrink-0 rounded-[5px] p-0 text-ink-3 hover:bg-ink/[.06] [&_svg]:size-3.5"
           aria-label={open ? `Collapse ${issue.title}` : `Expand ${issue.title}`}
           onClick={(e) => { e.stopPropagation(); onToggleCollapse(issue.id) }}
         >

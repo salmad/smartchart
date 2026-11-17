@@ -310,7 +310,7 @@ test('with the Paper look the issue body still reads on the dark panel', async (
     const all = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, { issues: { id: string; body: string; bodyRev: number }[] }>
     for (const rm of Object.values(all)) for (const i of rm.issues) if (i.id === 'i_uk') { i.body = '# UK launch\n\nLaunch checklist paragraph.\n'; i.bodyRev = 1 }
     localStorage.setItem(key, JSON.stringify(all))
-    localStorage.setItem('smartchart.user.look.v1.dev', JSON.stringify({ theme: 'paper', accent: null }))
+    localStorage.setItem('smartchart.user.look.v1.dev', JSON.stringify({ theme: 'paper', accent: null, chrome: 'dark' }))
   }, ROADMAPS_KEY)
   await page.reload()
   await page.locator('tr', { hasText: 'UK launch' }).click()
@@ -319,6 +319,24 @@ test('with the Paper look the issue body still reads on the dark panel', async (
   await expect(body).toBeVisible()
   const [r, g, b] = await body.evaluate((el) => (getComputedStyle(el).color.match(/\d+/g) ?? []).slice(0, 3).map(Number))
   expect(Math.min(r, g, b)).toBeGreaterThan(150)
+})
+
+test('on light chrome the issue body reads dark on the light panel, whatever the Slides palette', async ({ page }) => {
+  await openFreshRoadmap(page)
+  await seedSixIssues(page)
+  await page.evaluate((key) => {
+    const all = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, { issues: { id: string; body: string; bodyRev: number }[] }>
+    for (const rm of Object.values(all)) for (const i of rm.issues) if (i.id === 'i_uk') { i.body = '# UK launch\n\nLaunch checklist paragraph.\n'; i.bodyRev = 1 }
+    localStorage.setItem(key, JSON.stringify(all))
+    localStorage.setItem('smartchart.user.look.v1.dev', JSON.stringify({ theme: 'ink', accent: null, chrome: 'light' }))
+  }, ROADMAPS_KEY)
+  await page.reload()
+  await page.locator('tr', { hasText: 'UK launch' }).click()
+  await page.keyboard.press('Enter')
+  const body = page.getByRole('complementary', { name: 'Issue panel' }).getByText('Launch checklist paragraph.')
+  await expect(body).toBeVisible()
+  const [r, g, b] = await body.evaluate((el) => (getComputedStyle(el).color.match(/\d+/g) ?? []).slice(0, 3).map(Number))
+  expect(Math.max(r, g, b)).toBeLessThan(110)
 })
 
 test('apple-bar 1440 table and panel', async ({ page }) => {

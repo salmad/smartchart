@@ -49,6 +49,7 @@ import type { PageRepo } from './pages'
 import type { WorkspaceRepo } from './workspaces'
 import type { UserLook } from '@/engine/look'
 import { useUserLook } from './useUserLook'
+import { useAppChrome } from './useAppChrome'
 import { UserLookContext, type UserLookControls } from './user-look-context'
 import { ROOMY, usePanel } from './panel'
 import { lazyScreen, whenIdle } from './lazy-screen'
@@ -107,13 +108,22 @@ export function App({ route, account, repo, backup, workspaces, docs, roadmaps, 
   // The workspace open in the app: the most recently used, until another is picked in the sidebar.
   const ws = useWorkspace(workspaces, (w) => { onWorkspace(w?.id ?? null); app.dispatch({ type: 'set', patch: { workspaceId: w?.id ?? null, role: w?.role ?? null } }) }, account.id === DEV_ACCOUNT.id ? undefined : account.id)
   const { look: userLook, setLook: setUserLook } = useUserLook(account.id, !!backup)
+  const resolvedChrome = useAppChrome(userLook.chrome)
   useEffect(() => { app.dispatch({ type: 'set', patch: { theme: userLook.theme, accent: userLook.accent } }) }, [userLook.theme, userLook.accent, app])
   const applyLook = useCallback((patch: Partial<UserLook>) => {
     // Your look, not the page's: a viewer of a shared workspace has their own. It waits while the agent writes.
     if (locked(app.getState())) return
     void setUserLook(patch)
   }, [setUserLook])
-  const lookControls = useMemo<UserLookControls>(() => ({ theme: userLook.theme, accent: userLook.accent, onTheme: (theme) => applyLook({ theme }), onAccent: (accent) => applyLook({ accent }) }), [userLook, applyLook])
+  const lookControls = useMemo<UserLookControls>(() => ({
+    theme: userLook.theme,
+    accent: userLook.accent,
+    chrome: userLook.chrome,
+    resolvedChrome,
+    onTheme: (theme) => applyLook({ theme }),
+    onAccent: (accent) => applyLook({ accent }),
+    onChrome: (chrome) => applyLook({ chrome }),
+  }), [userLook, resolvedChrome, applyLook])
   // What the tour step on screen has the editor show (the chat, the grid, Versions, the comments).
   const [tourShow, setTourShow] = useState<TourShow | null>(null)
   useEffect(() => { if (tourShow === 'chat' && !chatOpen) toggleChat() }, [tourShow, chatOpen, toggleChat])

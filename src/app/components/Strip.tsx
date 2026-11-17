@@ -78,7 +78,7 @@ export function Strip({ items, current, deck, busy, onSelect, onAdd, onMove, onR
   return (
     <div className="min-w-0 flex-none max-[900px]:order-2 max-[900px]:px-4 max-[900px]:pb-5 max-[900px]:pt-1">
       {undo && (
-        <p role="status" className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-raise px-4 py-2 text-[13px] text-ink-2 shadow-[0_0_0_1px_theme(colors.line-2),0_12px_32px_rgba(0,0,0,.5)]">
+        <p role="status" className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-raise px-4 py-2 text-[13px] text-ink-2 shadow-[0_0_0_1px_theme(colors.line-2),0_12px_32px_rgb(var(--app-shade)/var(--app-depth))]">
           Slide deleted.
           <button type="button" onClick={onRestore} disabled={busy} className="cursor-pointer font-medium text-ink underline-offset-2 hover:underline disabled:opacity-45">Undo</button>
         </p>

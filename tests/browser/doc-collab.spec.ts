@@ -94,12 +94,17 @@ test('the doc menu (versions, downloads, source) is not offered while editing', 
   await expect(page.getByRole('button', { name: 'Doc menu' })).toHaveCount(0)
 })
 
-test('Appearance: the palette and accent change the page and persist', async ({ page }) => {
+test('Appearance: app chrome, slides palette and accent change and persist', async ({ page }) => {
   await seed(page)
   const look = await appearance(page)
+  await expect(look.getByRole('group', { name: 'App' })).toBeVisible()
+  await expect(look.getByRole('group', { name: 'Slides' })).toBeVisible()
+  await look.getByRole('button', { name: 'Light' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-chrome', 'light')
   await look.getByRole('button', { name: 'Ink' }).click()
   await expect(page.locator('.doc.theme-ink')).toBeVisible()
   await look.getByRole('button', { name: 'Cobalt' }).click()
   await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-chrome', 'light')
   await expect(page.locator('.doc.theme-ink')).toBeVisible()
 })

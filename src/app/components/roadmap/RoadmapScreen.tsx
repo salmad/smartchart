@@ -4,8 +4,7 @@ import type { RoadmapRepo } from '@/app/roadmaps'
 import type { PageRef } from '@/engine/pages/tree'
 import type { Theme } from '@/engine/types'
 import { go } from '@/app/route'
-import { DEV_ACCOUNT } from '@/app/dev-account'
-import { useUserLook } from '@/app/useUserLook'
+import { useUserLookControls } from '@/app/user-look-context'
 import { ScreenBody } from '../AppBar'
 import type { Crumb } from '../sidebar/usePageCrumbs'
 import { useRoadmap } from './useRoadmap'
@@ -45,7 +44,7 @@ interface Props {
 /** A roadmap in the workspace shell: the bar, the sidebar, one toolbar row, then the chosen view and the issue panel. */
 export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, sidebar, sidebarOpen, onToggleSidebar, onSite, crumbs, onOpenPage, name }: Props) {
   const { view, act } = useRoadmap(repo, id, account.id)
-  const { look } = useUserLook(account.id, account.id !== DEV_ACCOUNT.id)
+  const look = useUserLookControls()
   const [viewSettings, setViewSettings] = useViewSettings(id)
   // What the issue views draw: under a filter, their folds are the filter's own.
   const [issueView, onIssueView] = useFilterFolds(viewSettings, setViewSettings)
@@ -103,8 +102,11 @@ export function RoadmapScreen({ id, issue: routeIssue, repo, account, canEdit, s
 
   const openId = routeIssue ?? panelId
   const openIssueRow = openId ? live.find((i) => i.id === openId) ?? null : null
-  // The roadmap's chrome is dark whatever the user's Look, so an issue's body draws on Ink (Paper's dark type would vanish on it).
-  const lookProps: { theme: Theme; accent?: string } = { theme: 'ink', accent: look.accent ?? undefined }
+  // An issue body draws on the app's panel, so its palette follows the chrome (Ink on dark, Paper on light), never the Slides palette.
+  const lookProps: { theme: Theme; accent?: string } = {
+    theme: look?.resolvedChrome === 'light' ? 'paper' : 'ink',
+    accent: look?.accent ?? undefined,
+  }
 
   useEffect(() => {
     const ids = new Set(customFields.map((f) => f.id))

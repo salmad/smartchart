@@ -18,7 +18,7 @@ export const UNDER_SLIDE = 'min-[901px]:min-h-[146px]'
 export function SlideFrame({ children, onClick, onPointerMove, onPointerLeave, frame, title, className, tour }: { children: ReactNode; onClick?: (e: React.MouseEvent) => void; onPointerMove?: (e: React.PointerEvent) => void; onPointerLeave?: () => void; frame?: Ref<HTMLDivElement>; title?: string; className?: string; tour?: string }) {
   return (
     <div ref={frame} onClick={onClick} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave} title={title} data-tour={tour} data-frame
-      className={cn('group relative aspect-video overflow-hidden', SLIDE_W, 'rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgba(0,0,0,.5)] max-[900px]:w-full max-[900px]:rounded-lg', className)}>
+      className={cn('group relative aspect-video overflow-hidden', SLIDE_W, 'rounded-[10px] bg-panel shadow-[0_0_0_1px_theme(colors.line),0_24px_60px_rgb(var(--app-shade)/var(--app-depth))] max-[900px]:w-full max-[900px]:rounded-lg', className)}>
       {children}
     </div>
   )
@@ -89,7 +89,7 @@ export function Stage({ deck, current, onPresent, onGo, pick, slideId, phase }: 
           </div>
         )}
         {phase !== null && (
-          <p role="status" className="absolute bottom-[6%] left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-full bg-raise/90 px-4 py-2 text-[13px] text-ink shadow-[0_0_0_1px_theme(colors.line-2),0_12px_32px_rgba(0,0,0,.5)] backdrop-blur">
+          <p role="status" className="absolute bottom-[6%] left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-full bg-raise/90 px-4 py-2 text-[13px] text-ink shadow-[0_0_0_1px_theme(colors.line-2),0_12px_32px_rgb(var(--app-shade)/var(--app-depth))] backdrop-blur">
             <Glint /><Thinking lines={phase} />
           </p>
         )}

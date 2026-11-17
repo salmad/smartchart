@@ -14,7 +14,7 @@ export function GanttCompose({ onCommit, onCancel }: Props) {
   const settle = (fn: () => void) => { if (settled.current) return; settled.current = true; fn() }
   const done = () => settle(() => { const t = title.trim(); if (t) onCommit(t); else onCancel() })
   return (
-    <div className="flex h-full animate-in fade-in-0 items-center gap-2 bg-white/[.045] pl-3 pr-3 text-[13px] shadow-[inset_2px_0_0_theme(colors.ink)] duration-150 ease-out-strong motion-reduce:animate-none">
+    <div className="flex h-full animate-in fade-in-0 items-center gap-2 bg-ink/[.045] pl-3 pr-3 text-[13px] shadow-[inset_2px_0_0_theme(colors.ink)] duration-150 ease-out-strong motion-reduce:animate-none">
       <span className="size-5 shrink-0" aria-hidden />
       <StatusGlyph status="todo" className="size-3.5 shrink-0" />
       <input

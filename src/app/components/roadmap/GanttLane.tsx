@@ -103,7 +103,7 @@ export function GanttLane({ row, mark, axis, width, today, canEdit, first, barDr
       onPointerMove={issue && canEdit ? (e) => setHoverX(e.clientX - e.currentTarget.getBoundingClientRect().left) : undefined}
       onPointerLeave={() => setHoverX(null)}
       className={cn(
-        'relative shrink-0 grow transition-colors duration-150 ease-out group-hover/row:bg-white/[.025]',
+        'relative shrink-0 grow transition-colors duration-150 ease-out group-hover/row:bg-ink/[.025]',
         preview ? 'z-[4] cursor-grabbing' : 'z-[1]',
         !preview && (mode === 'move' ? 'cursor-grab' : mode ? 'cursor-ew-resize' : issue && 'cursor-pointer'),
       )}

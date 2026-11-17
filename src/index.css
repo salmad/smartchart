@@ -19,6 +19,24 @@
     --brand-cream: 243 238 228; --brand-cream-2: 163 155 142; --brand-cream-3: 122 115 104;
     --brand-gold: 232 185 74;
   }
+  /* App chrome: dark by default (and when data-chrome is unset); light is a warm Paper-adjacent shell. Tailwind
+     app-bg / ink / panel… read these. Slides and docs keep their own Ink/Paper tokens. */
+  :root, html[data-chrome="dark"] {
+    --app-bg: var(--brand-black); --app-panel: var(--brand-black-2); --app-raise: var(--brand-black-3);
+    --app-ink: var(--brand-cream); --app-ink-2: var(--brand-cream-2); --app-ink-3: var(--brand-cream-3);
+    --app-rule: var(--brand-cream); --app-gold: var(--brand-gold);
+    --app-menu-shadow: inset 0 1px 0 rgb(var(--brand-cream) / .04), 0 24px 48px -16px rgb(0 0 0 / .7);
+    --app-shade: 0 0 0; --app-depth: .5;
+    color-scheme: dark;
+  }
+  html[data-chrome="light"] {
+    --app-bg: 245 245 243; --app-panel: 255 255 255; --app-raise: 236 236 232;
+    --app-ink: 18 18 17; --app-ink-2: 92 91 87; --app-ink-3: 138 137 132;
+    --app-rule: 18 18 17; --app-gold: var(--brand-gold);
+    --app-menu-shadow: inset 0 1px 0 rgb(255 255 255 / .7), 0 24px 48px -16px rgb(18 18 17 / .18);
+    --app-shade: 18 18 17; --app-depth: .16;
+    color-scheme: light;
+  }
   :root {
     --site-paper: 245 245 243; --site-paper-2: 236 236 232; --site-card: 255 255 255; --site-type: 18 18 17;
     --site-type-2: 92 91 87; --site-type-3: 138 137 132; --site-rule: 225 224 219; --site-focus: 18 18 17; --site-night: 11 10 9;

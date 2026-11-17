@@ -146,7 +146,7 @@ export function Sidebar({ ws, rows: actions, repos, open, busy, onOpenDeck, onNe
           className="fixed inset-0 z-20 hidden bg-ink/25 max-[900px]:block" />
       )}
       <nav ref={size.nav} aria-label="Workspace"
-        className="relative flex w-[var(--sidebar-w,248px)] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:fixed max-[900px]:inset-y-0 max-[900px]:left-0 max-[900px]:z-30 max-[900px]:max-w-[min(100vw,320px)] max-[900px]:shadow-[8px_0_40px_rgba(0,0,0,.35)]">
+        className="relative flex w-[var(--sidebar-w,248px)] min-h-0 flex-none flex-col border-r border-line bg-app-bg max-[900px]:fixed max-[900px]:inset-y-0 max-[900px]:left-0 max-[900px]:z-30 max-[900px]:max-w-[min(100vw,320px)] max-[900px]:shadow-[8px_0_40px_rgb(var(--app-shade)/var(--app-depth))]">
         <div {...size.gripProps} className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize touch-none outline-none max-[900px]:hidden"><span className="mx-auto block h-full w-px bg-transparent transition-colors group-hover:bg-gold/60 group-focus-visible:bg-gold group-active:bg-gold" /></div>
       <div className="h-12 px-2 pb-1 pt-2">
         {ws.current && <WorkspaceSwitcher list={ws.list} current={ws.current} busy={busy} onSwitch={(id) => void switchTo(id)}

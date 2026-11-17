@@ -90,7 +90,7 @@ export function GanttGrid({ range, scale, today, width, axis, className }: Frame
   return (
     <svg width={width} className={cn(UNDER_HEAD, 'z-0', className)} aria-hidden>
       {weekends.map((x) => (
-        <rect key={x} x={x} y={0} width={axis.px * 2} height="100%" className="fill-white/[.018]" />
+        <rect key={x} x={x} y={0} width={axis.px * 2} height="100%" className="fill-ink/[.018]" />
       ))}
       {tickList.map((t) => (
         <line key={t.iso} x1={t.x + 0.5} x2={t.x + 0.5} y1={0} y2="100%" className="stroke-hair" />

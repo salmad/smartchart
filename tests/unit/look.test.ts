@@ -1,16 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_USER_LOOK, parseUserLook, userLookOf } from '../../src/engine/look'
+import { DEFAULT_USER_LOOK, parseUserLook, resolveChrome, userLookOf } from '../../src/engine/look'
 import { deckBody } from '../../src/app/store'
 import { serializeDoc } from '../../src/engine/docs/serialize'
 
 describe('user look', () => {
-  it('defaults to ink with no accent', () => {
+  it('defaults to ink with no accent and dark chrome', () => {
     expect(userLookOf(null)).toEqual(DEFAULT_USER_LOOK)
+    expect(DEFAULT_USER_LOOK).toEqual({ theme: 'ink', accent: null, chrome: 'dark' })
   })
 
-  it('reads theme and accent from stored prefs', () => {
-    expect(parseUserLook({ theme: 'ink', accent: '#665EFD' })).toEqual({ theme: 'ink', accent: '#665EFD' })
-    expect(parseUserLook({ theme: 'paper' })).toEqual({ theme: 'paper', accent: null })
+  it('reads theme, accent and chrome from stored prefs', () => {
+    expect(parseUserLook({ theme: 'ink', accent: '#665EFD' })).toEqual({ theme: 'ink', accent: '#665EFD', chrome: 'dark' })
+    expect(parseUserLook({ theme: 'paper' })).toEqual({ theme: 'paper', accent: null, chrome: 'dark' })
+    expect(parseUserLook({ theme: 'ink', chrome: 'light' })).toEqual({ theme: 'ink', accent: null, chrome: 'light' })
+    expect(parseUserLook({ chrome: 'system' })).toEqual({ theme: 'ink', accent: null, chrome: 'system' })
+  })
+
+  it('ignores a bad chrome and keeps dark', () => {
+    expect(parseUserLook({ theme: 'paper', chrome: 'neon' })).toEqual({ theme: 'paper', accent: null, chrome: 'dark' })
+  })
+})
+
+describe('resolveChrome', () => {
+  it('resolves System against the OS preference', () => {
+    expect(resolveChrome('dark', false)).toBe('dark')
+    expect(resolveChrome('light', true)).toBe('light')
+    expect(resolveChrome('system', true)).toBe('dark')
+    expect(resolveChrome('system', false)).toBe('light')
   })
 })
 

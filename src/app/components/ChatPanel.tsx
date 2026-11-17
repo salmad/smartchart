@@ -30,7 +30,7 @@ export function ChatPanel({ open, messages, offline, onUndo, busy, fresh, chips,
   return (
     <aside aria-label="Chat" data-tour="chat" className={cn(
       'flex w-side min-h-0 flex-none flex-col border-l border-line bg-app-bg animate-in fade-in-0 slide-in-from-right-3 duration-200 ease-out-strong',
-      'max-[900px]:fixed max-[900px]:inset-x-0 max-[900px]:bottom-0 max-[900px]:z-20 max-[900px]:max-h-[70dvh] max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t max-[900px]:shadow-[0_-12px_48px_rgba(0,0,0,.35)]',
+      'max-[900px]:fixed max-[900px]:inset-x-0 max-[900px]:bottom-0 max-[900px]:z-20 max-[900px]:max-h-[70dvh] max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t max-[900px]:shadow-[0_-12px_48px_rgb(var(--app-shade)/var(--app-depth))]',
       !open && 'hidden',
     )}>
       <Chat messages={messages} offline={offline} onUndo={onUndo} busy={busy} fresh={fresh} about={about} />

@@ -10,7 +10,7 @@ const NARROW = {
   stack: 'max-[900px]:order-2 max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t',
   sheet: 'max-[900px]:fixed max-[900px]:inset-x-0 max-[900px]:bottom-0 max-[900px]:z-20 max-[900px]:max-h-[70dvh] max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t',
   'sheet-low': 'max-[900px]:fixed max-[900px]:inset-x-0 max-[900px]:bottom-0 max-[900px]:z-20 max-[900px]:max-h-[45dvh] max-[900px]:w-auto max-[900px]:border-l-0 max-[900px]:border-t',
-  over: 'max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 max-[1180px]:top-bar max-[1180px]:z-30 max-[1180px]:border-line-2 max-[1180px]:shadow-[-24px_0_48px_-16px_rgba(0,0,0,.7)]',
+  over: 'max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 max-[1180px]:top-bar max-[1180px]:z-30 max-[1180px]:border-line-2 max-[1180px]:shadow-[-24px_0_48px_-16px_rgb(var(--app-shade)/var(--app-depth))]',
 } as const
 
 interface Props {

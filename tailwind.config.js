@@ -9,14 +9,13 @@ const site = {
   rule: v('rule'), focus: v('focus'), night: v('night'), stage: 'rgb(var(--brand-black) / <alpha-value>)',
 }
 
-// The app wears the brand: warm black, cream type and gold. The numbers live once, as --brand-* in index.css; the
-// site's Ink look reads the same variables, and tests/unit/brand-palette.test.ts holds the slides' Ink theme and the
-// boot frame in index.html to them. Three steps of surface and three of type; lines are cream at a low alpha, so
-// they sit on any surface.
-const b = (n) => `rgb(var(--brand-${n}) / <alpha-value>)`, cream = (a) => `rgb(var(--brand-cream) / ${a})`
+// App chrome: --app-* in index.css, flipped by html[data-chrome]. Lines use --app-rule at a low alpha so they sit on
+// any surface. Brand blacks/creams still feed the dark set and the site's Ink look (brand-palette.test.ts).
+const a = (n) => `rgb(var(--app-${n}) / <alpha-value>)`
 const app = {
-  'app-bg': b('black'), panel: b('black-2'), raise: b('black-3'), line: cream('.08'), hair: cream('.04'), 'line-2': cream('.14'),
-  ink: b('cream'), 'ink-2': b('cream-2'), 'ink-3': b('cream-3'), gold: b('gold'), ok: '#7BD88F', warn: '#F2B35B', bad: '#FF6B57',
+  'app-bg': a('bg'), panel: a('panel'), raise: a('raise'),
+  line: 'rgb(var(--app-rule) / .08)', hair: 'rgb(var(--app-rule) / .04)', 'line-2': 'rgb(var(--app-rule) / .14)',
+  ink: a('ink'), 'ink-2': a('ink-2'), 'ink-3': a('ink-3'), gold: a('gold'), ok: '#7BD88F', warn: '#F2B35B', bad: '#FF6B57',
 }
 
 /** @type {import('tailwindcss').Config} */
@@ -39,8 +38,8 @@ export default {
       // bar: the app bar's height. side: the right-hand slot (the agent, Look, Versions, Comments, Checks), one width so
       // the page never moves when one panel takes over from another.
       spacing: { bar: '56px', side: '360px' },
-      // What floats over the page (menus, popovers, dialogs): a lit top edge and one deep, soft shadow.
-      boxShadow: { menu: 'inset 0 1px 0 rgb(var(--brand-cream) / .04), 0 24px 48px -16px rgb(0 0 0 / .7)' },
+      // What floats over the page (menus, popovers, dialogs): lit top edge + soft shadow; --app-menu-shadow flips with chrome.
+      boxShadow: { menu: 'var(--app-menu-shadow)' },
       // Named, never arbitrary: tailwindcss-animate also owns duration-* and ease-*, so duration-[1400ms] or
       // ease-[cubic-bezier(…)] is ambiguous and silently dropped, and the transition snaps at the 150ms default.
       transitionDuration: { 120: '120ms' },

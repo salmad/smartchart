@@ -34,6 +34,12 @@
           var p = location.pathname, h = document.documentElement
           if (!localStorage.getItem('occam.account.v1') || !(p === '/' || p === '/new' || p.indexOf('/d/') === 0 || p.indexOf('/doc/') === 0)) return
           h.className += ' boot-app'
+          /* The user's app chrome (Dark / Light / System), so a light shell never paints dark first. useAppChrome takes over. */
+          try {
+            var a = JSON.parse(localStorage.getItem('occam.account.v1')), lk = JSON.parse(localStorage.getItem('smartchart.user.look.v1.' + a.id)), c = lk && lk.chrome
+            if (c === 'system') c = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            if (c === 'light') h.setAttribute('data-chrome', 'light')
+          } catch (e) { /* no cached look: dark */ }
           var d = localStorage.getItem('smartchart.decksOpen')
           if (d === '1' || (d === null && matchMedia('(min-width: 1500px)').matches)) h.className += ' boot-decks'
           if (localStorage.getItem('smartchart.chatOpen') !== '0') h.className += ' boot-chat'
@@ -88,6 +94,9 @@
       #boot .decks { width: 248px }
       #boot .chat { width: 360px; background: #0B0A09 }
       @media (max-width: 900px) { #boot .decks, #boot .chat { display: none !important } }
+      html[data-chrome="light"], html[data-chrome="light"] body, html[data-chrome="light"] #boot, html[data-chrome="light"] #boot .chat { background: #F5F5F3 }
+      html[data-chrome="light"] #boot i { background: rgba(18, 18, 17, .06) }
+      html[data-chrome="light"] #boot .bar, html[data-chrome="light"] #boot .decks, html[data-chrome="light"] #boot .chat { border-color: rgba(18, 18, 17, .08) }
     </style>
   </head>
   <body>
