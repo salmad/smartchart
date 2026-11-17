@@ -65,9 +65,17 @@ test('the two FinBridge flows validate in consulting', () => {
   expect(errsOf(S4_FULL)).toEqual([])
 })
 
-test('in pitch they are refused with their cost (5.2, 4.6) in the message', () => {
-  expect(errsOf(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.2') && /4\.5/.test(e))).toBe(true)
-  expect(errsOf(S4_FULL, 'pitch').some((e) => e.startsWith('flow: this flow costs 4.6'))).toBe(true)
+test('in pitch they are refused with their cost in the message; a wrapped box costs a quarter row per extra line', () => {
+  // S3: chips 1.2, a 39-character strong box (2 lines) 1.25, a light tier of 19 and 20 characters (2 lines) 1.25,
+  // an outline box 1, a labelled tier with "Outbound sales" (2 lines beside its label) 1.25.
+  expect(errsOf(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.95') && /4\.5/.test(e))).toBe(true)
+  expect(errsOf(S4_FULL, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.1'))).toBe(true)
+})
+
+test('a takeaway leaves the flow less room: consulting 6.5 without, 5.5 with', () => {
+  expect(validateFlow(S3, 'consulting').errors).toEqual([])
+  expect(validateFlow(S3, 'consulting', true).errors.some((e) => e.startsWith('flow: this flow costs 5.95, budget 5.5'))).toBe(true)
+  expect(validateFlow(S4_FULL, 'consulting', true).errors).toEqual([])
 })
 
 test('a box over its characters is an error naming the path; the limit narrows with the boxes in its tier', () => {
@@ -99,6 +107,6 @@ test('a box is text or a label over a grid, never both or neither; chips are tex
 
 test('the height budget names its cost', () => {
   const g = S4.tiers[0], t = { boxes: [{ text: 'a' }] }
-  expect(errsOf({ tiers: [g, g, g, g] }).some((e) => e.startsWith('flow: this flow costs 6.4') && /6\b/.test(e))).toBe(true)
+  expect(errsOf({ tiers: [g, g, g, g, g] }).some((e) => e.startsWith('flow: this flow costs 8') && /6\.5/.test(e))).toBe(true)
   expect(errsOf({ tiers: [t, t, t, t, t] })).toEqual([])
 })

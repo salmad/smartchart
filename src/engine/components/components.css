@@ -37,7 +37,7 @@
 .bullets li { padding-left: 40px; position: relative; }
 .bullets li::before { content: "—"; position: absolute; left: 0; color: var(--muted); }
 /* ═════════════ Split layout: main ⅔ + side ⅓ (chart/table + notes, text + number) ═════════════ */
-.split { display: grid; grid-template-columns: 1.3fr .7fr; gap: 88px; }
+.split { display: grid; grid-template-columns: 2fr 1fr; gap: 88px; }
 .notes { display: flex; flex-direction: column; min-height: 0; }
 /* Notes stack from the top at one fixed gap, with no rules between them; spare height collects below the last
    note (as top-firm commentary columns do). The lead is bold at body size, so the label over the column, which
@@ -65,7 +65,7 @@
 .split.has-head { grid-template-rows: auto 1fr; row-gap: 28px; }
 .split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > :is(.notes, .flow) { grid-column: 2; grid-row: 2; }
 /* Flipped: the side column (a flow that produces the exhibit) on the left, the exhibit on the right; the mirror of the split. */
-.split.flip { grid-template-columns: .7fr 1.3fr; }
+.split.flip { grid-template-columns: 1fr 2fr; }
 .split.flip > .main { grid-column: 2; grid-row: 1; } .split.flip > :is(.flow, .notes) { grid-column: 1; grid-row: 1; }
 .split.flip.has-head > .cap:not(.notes-h) { grid-column: 2; grid-row: 1; } .split.flip.has-head > .notes-h { grid-column: 1; grid-row: 1; }
 .split.flip.has-head > .main { grid-row: 2; } .split.flip.has-head > :is(.flow, .notes) { grid-row: 2; }
@@ -551,6 +551,21 @@
 .mini > i { border-radius: 2px; background: var(--line); }
 .mini > .h1 { background: var(--heat-1); } .mini > .h2 { background: var(--heat-2); } .mini > .h3 { background: var(--heat-3); }
 .mini > .h4 { background: var(--heat-4); } .mini > .h5 { background: var(--heat-5); }
+
+/* ═════════════ Divider: a hairline centred in the gap between a slide's columns, over the exhibit ═════════════
+   Drawn from the exhibit column (split) or the first half (pair), so it adds no grid item and moves nothing. The arrow
+   marks a left column that produces the right one; it carries no colour, since colour means status. Slides only. */
+.slide .split > .main, .slide .pair > .half:first-child { position: relative; }
+.slide .split > .main::after, .slide .pair > .half:first-child::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); pointer-events: none; }
+.slide .split > .main::after { right: -44px; }
+.slide.theme-ink .split > .main::after, .slide.theme-ink .pair > .half:first-child::after { background: var(--line-2); }
+.slide .split.flip > .main::after { right: auto; left: -44px; }
+.slide .pair > .half:first-child::after { right: -48px; }
+.divider-arrow { position: absolute; top: 50%; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--line-2); transform: translate(-50%, -50%); }
+.slide .split.flip > .main > .divider-arrow { left: -44px; }
+.slide .pair > .half:first-child > .divider-arrow { left: calc(100% + 48px); }
+.divider-arrow svg { width: 16px; height: 16px; fill: none; stroke: var(--fg-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ═════════════ Callout: a note, a decision or a risk, one labelled line over a rule ═════════════ */
 /* The rule and label carry the tone; the words stay in the text colour. */

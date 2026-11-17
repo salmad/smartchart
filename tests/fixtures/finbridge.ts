@@ -4,10 +4,10 @@ import type { Flow } from '../../src/engine/types'
 
 export const FLOW: Flow = { tiers: [
   { boxes: ['Accounts', 'Age', 'Industry', 'Directors', 'Web presence', 'Web traffic'].map((text) => ({ text })) },
-  { boxes: [{ text: 'Acquisition engine scores every company' }], tone: 'strong' },
+  { boxes: [{ text: 'The engine scores every company' }], tone: 'strong' },
   { boxes: [{ text: 'Will they activate?' }, { text: 'What are they worth?' }], tone: 'light' },
   { boxes: [{ text: 'Predicted payback sets the ranking' }], tone: 'outline' },
-  { boxes: [{ text: 'Direct mail' }, { text: 'Outbound sales' }], label: 'Feeds' },
+  { boxes: [{ text: 'Direct mail' }, { text: 'Sales calls' }], label: 'Feeds' },
 ] }
 export const S3 = { template: 'table', kicker: '01 · Marketing', title: 'We will optimise marketing by targeting the companies that pay back fastest first',
   caption: 'Mailing rounds, best-scored first · illustrative', notesTitle: 'How we rank', flow: FLOW,

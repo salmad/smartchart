@@ -4,7 +4,7 @@ import type { Deck, Slide, SlideContext, Table, TemplateId } from "../types.js";
 import { drawCharts } from "../components/charts/hosts.js";
 import { allocate } from "./colours.js";
 import { roomOf } from "./groups.js";
-import { at, capHTML, display, esc, md, pad2 } from "../components/text.js";
+import { DIVIDER_ARROW, at, capHTML, display, esc, md, pad2 } from "../components/text.js";
 import { imgHTML, teamHTML, wallHTML } from "../components/pictures.js";
 import { tableHTML } from "../components/table.js";
 import { cardsHTML } from "../components/cards.js";
@@ -26,13 +26,13 @@ const split = (v: string) => v === "split" || v === "split-flip";
 const flip = (v: string) => (v === "split-flip" ? " flip" : "");
 const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" | "agenda">, (s: Slide, variant: string) => string> = {
   chart: (s, v) => split(v)
-    ? splitHTML(s, `<div class="chart" data-chart></div>`, side(s), `grow${flip(v)}`, "")
+    ? splitHTML(s, `${v === "split-flip" ? DIVIDER_ARROW : ""}<div class="chart" data-chart></div>`, side(s), `grow${flip(v)}`, "")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
   table: (s, v) => split(v)
-    ? splitHTML(s, tableHTML(table(s), "table", true, "split"), side(s), `with-table${flip(v)}`, "")
+    ? splitHTML(s, `${v === "split-flip" ? DIVIDER_ARROW : ""}${tableHTML(table(s), "table", true, "split")}`, side(s), `with-table${flip(v)}`, "")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${tableHTML(table(s), "table", true, roomOf(table(s), false))}`,
   steps: (s) => stepsHTML(s.steps ?? [], ""),
-  pair: (s) => pairHTML(s.halves ?? [], ""),
+  pair: (s) => pairHTML(s.halves ?? [], "", s.link === "arrow"),
   summary: (s) => summaryHTML(s.points ?? [], ""),
   image: (s, v) => v === "split"
     ? splitHTML(s, imgHTML(s.image, "pic", "image"), notesHTML(s.notes ?? [], ""), "grow with-pic", "")

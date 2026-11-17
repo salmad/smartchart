@@ -63,6 +63,8 @@ export interface Slide {
   framed?: boolean; lead?: 'icon' | 'number' | 'value' | 'logo' | 'none'; arrange?: 'row' | 'grid'; cards?: Card[]
   points?: Point[]
   halves?: Half[]
+  /** A pair whose left half produces the right: an arrow on the line between them. */
+  link?: 'arrow'
   image?: ImageRef; people?: Person[]; logos?: LogoItem[]
   /** Speaker notes: what to say over the slide. Never drawn on it; the presenter view shows it. */
   talk?: string

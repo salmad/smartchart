@@ -15,7 +15,9 @@ export function drawIcons(root: HTMLElement): void {
   });
 }
 
-/* L1: the label column takes its natural width within 20–40%; fixed layout splits the rest equally. A column of
+/** L1: the smallest share of a table the label column takes; short labels (a price, a limit) take no more than they need. */
+export const LABEL_MIN = .12;
+/* L1: the label column takes its natural width within 12–40%; fixed layout splits the rest equally. A column of
    bullets takes a double share. Where equal columns would wrap a cell or heading, the widths lean towards fewer
    lines, a preference rather than a rule (rows of two lines are fine, they only cost height): a column that fits on
    one line in less than its share takes just that, and the room goes to the columns that wrap; when every column
@@ -43,7 +45,7 @@ export function sizeTable(root: HTMLElement, k: number): void {
     const line = [...tbl.querySelectorAll("thead th")].map((th) => th.getBoundingClientRect().width / k);
     tbl.classList.remove("measuring", "line-measure");
     // +2px: at exactly its natural width, subpixel rounding can wrap the label.
-    const share = Math.min(.4, Math.max(.2, (natural + 2) / w));
+    const share = Math.min(.4, Math.max(LABEL_MIN, (natural + 2) / w));
     col.style.width = `${(share * 100).toFixed(2)}%`;
     // A column of bullets explains positions: it takes a double share of the rest, so its bullets keep to a line or two.
     const data = cols.slice(grp + 1), bul = new Set([...tbl.querySelectorAll("td.has-bul")].map((td) => (td as HTMLTableCellElement).cellIndex - grp - 1));

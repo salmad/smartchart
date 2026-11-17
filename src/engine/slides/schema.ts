@@ -348,7 +348,10 @@ const CHART_KINDS = [
    Limits measured at the side column's width (about 560px) on the FinBridge mockups. A box's text narrows with the
    boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
 export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
-const FLOW_BUDGET: Record<Style, number> = { consulting: 6, pitch: 4.5 };
+/** Characters on one line of a box, by boxes in the tier, at the side column's ⅓ (525px); a tier label takes about 4. */
+const FLOW_LINE = { 1: 36, 2: 17, 3: 10 } as const;
+/** Height in tier units (a one-line tier and its arrow, about 83px): consulting 6.5, 5.5 beside a takeaway. */
+const FLOW_BUDGET: Record<Style, [number, number]> = { consulting: [6.5, 5.5], pitch: [4.5, 4] };
 export const FLOW = f("object", "Optional, instead of notes: how the exhibit's figures are produced, as 2–5 tiers of boxes top to bottom with an arrow between tiers (inputs, a model, its outputs). Each box is { text } or { label, grid } (a 5×5 heat grid of numbers, rows down, columns across).", { fields: {
   tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
     boxes: f("list", `1–3 boxes side by side; 4–6 short text boxes are chips (${FLOW_TEXT.chip} characters each). Text: ${FLOW_TEXT[1]} characters alone, ${FLOW_TEXT[2]} with two, ${FLOW_TEXT[3]} with three.`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
@@ -383,6 +386,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
         bullets: f("list", MIXED_HALVES ? "Chart halves only: 1–2 points under the chart, one line each." : "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
         ...(MIXED_HALVES ? { table: HALF_TABLE, number: MIXED_NUMBER, points: MIXED_POINTS } : {}),
       } }) }),
+      link: f("enum", "Optional: `arrow` when the left half produces the right (an input and what it yields); a thin line always divides the halves.", { values: ["arrow"] }),
     },
     variant: () => "pair",
     rules: [...(MIXED_HALVES ? ["Each half has exactly one body: chart, table, number or points."] : []),
@@ -924,7 +928,7 @@ function checkSide(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMI
   if (s.flowSide && !s.flow) out.errors.push("flowSide: places a flow; this slide has none. Remove it.");
   if (s.notes?.length) checkNotes(s, style, out, limits);
   if (!s.flow) return;
-  checkFlow(s.flow, "flow", style, out);
+  checkFlow(s.flow, "flow", style, out, !!s.takeaway);
   if (style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push("notesTitle: the flow has no heading. Add one that says what it shows ('How cells are priced').");
 }
 
@@ -942,7 +946,7 @@ function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
 }
 
 /** The flow's own rules beyond its fields: box kinds, text per width, chips, one strong tier, operators, height. */
-export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: Style, out: Out): void {
+export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: Style, out: Out, takeaway = false): void {
   const tiers = Array.isArray(fl?.tiers) ? fl.tiers : [];
   let cost = 0;
   tiers.forEach((t, i) => {
@@ -961,17 +965,21 @@ export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: St
     if (chips && grids) out.errors.push(`${at}.boxes: ${n} boxes with a grid; a tier holds at most 3 boxes, and only text boxes run to 6 as chips.`);
     if (t?.op && n < 2) out.errors.push(`${at}.op: an operator sits between boxes; this tier has ${n}. Remove it.`);
     if (t?.op && chips) out.errors.push(`${at}.op: chips take no operator. Remove it.`);
-    cost += chips ? 0.6 * Math.ceil(n / 3) : grids ? 1.6 : 1;
+    // A box that wraps makes its tier taller: a quarter of a tier for each line past the first.
+    const lineCap = (FLOW_LINE[n as 1 | 2 | 3] ?? FLOW_LINE[3]) - (t?.label ? 4 : 0);
+    const lines = Math.max(1, ...boxes.map((b) => (b && typeof b === "object" && "text" in b ? Math.ceil(plain(String(b.text)).length / lineCap) : 1)));
+    cost += chips ? 0.6 * Math.ceil(n / 3) : grids ? 1.6 : 1 + 0.25 * (lines - 1);
   });
   if (tiers.filter((t) => t?.tone === "strong").length > 1) out.errors.push(`${base}.tiers: ${tiers.filter((t) => t?.tone === "strong").length} strong tiers; one strong tier, the model the flow turns on.`);
   cost = Math.round(cost * 100) / 100;
-  if (cost > FLOW_BUDGET[style]) out.errors.push(`${base}: this flow costs ${cost}, budget ${FLOW_BUDGET[style]} for ${style} (tier = 1, tier with a grid = 1.6, chips = 0.6 a row of three). Cut a tier, or merge boxes.`);
+  const budget = FLOW_BUDGET[style][takeaway ? 1 : 0];
+  if (cost > budget) out.errors.push(`${base}: this flow costs ${cost}, budget ${budget} for ${style}${takeaway ? " beside a takeaway" : ""} (tier = 1, + 0.25 a line for a box that wraps, tier with a grid = 1.6, chips = 0.6 a row of three). Shorten the boxes that wrap, cut a tier${takeaway ? " or drop the takeaway" : ""}.`);
 }
 
 /** A flow on its own: its fields, then its rules. */
-export function validateFlow(fl: unknown, style: Style): Validation {
+export function validateFlow(fl: unknown, style: Style, takeaway = false): Validation {
   const out = checkFields({ flow: FLOW }, { flow: fl }, style);
-  if (fl && typeof fl === "object") checkFlow(fl as Partial<Flow>, "flow", style, out);
+  if (fl && typeof fl === "object") checkFlow(fl as Partial<Flow>, "flow", style, out, takeaway);
   return out;
 }
 

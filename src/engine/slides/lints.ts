@@ -1,4 +1,5 @@
 /* Measurements on a rendered slide: fit issues and layout lints. */
+import { LABEL_MIN } from "../components/fit.js";
 import { MIN_MARK, contrast } from "./colours.js";
 import type { Style } from "../types.js";
 
@@ -74,7 +75,7 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
     // A fitted table (render.ts sizeTable) sizes its data columns to their contents on purpose.
     if (d > 1 && !tbl.classList.contains("fitted")) out.push(`table: data columns differ by ${Math.round(d)}px; they must be equal (L1)`);
     const share = ths[0] / box(tbl).w;
-    if (share < .195 || share > .405) out.push(`table: the label column is ${Math.round(share * 100)}% of the table; it must be 20–40% (L1)`);
+    if (share < LABEL_MIN - .005 || share > .405) out.push(`table: the label column is ${Math.round(share * 100)}% of the table; it must be ${Math.round(LABEL_MIN * 100)}–40% (L1)`);
   }
 
   // L3: the body starts on one line per style: top padding + the head's reserved height + the gap.

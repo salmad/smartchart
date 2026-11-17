@@ -61,5 +61,23 @@ test('beside a flow or notes a table takes 6 columns when every cell after the f
 })
 
 test('the flow budget applies on the slide, with its path', () => {
-  expect(errs(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.2'))).toBe(true)
+  expect(errs(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.45'))).toBe(true)
+})
+
+/* The divider between the columns: a line on every split and pair slide (CSS), and an arrow where the left produces
+   the right: a flow on the left, or a pair with link "arrow". */
+const ARROW = '<span class="divider-arrow" aria-hidden="true">'
+test('a split with a flow on the left draws the arrow in the exhibit column; a flow on the right or notes do not', () => {
+  expect(html(S4).match(new RegExp(ARROW, 'g'))?.length).toBe(1)
+  expect(html(S4)).toMatch(/<div class="main"><span class="divider-arrow"/)
+  expect(html(S3)).not.toContain(ARROW)
+})
+
+test('a pair with link arrow draws one, in its first half; without it none', async () => {
+  const bars = { categories: ['2024', '2025'], format: '£{v}m', series: [{ name: 'A', mark: 'bar', color: 'neutral', values: [1, 2] }] }
+  const p = { template: 'pair', title: 'Spend in, share out: the market grows while Acme takes its share', halves: [{ caption: 'Market · £bn', chart: bars }, { caption: 'Share · %', chart: { ...bars, series: [{ ...bars.series[0], color: 'focus' }] } }] }
+  expect(errs({ ...p, link: 'arrow' })).toEqual([])
+  expect(html({ ...p, link: 'arrow' })).toMatch(/<div class="half"[^>]*data-grid="0">.*?<span class="divider-arrow"/s)
+  expect(html(p)).not.toContain(ARROW)
+  expect(errs({ ...p, link: 'line' }).some((e) => e.startsWith('link'))).toBe(true)
 })

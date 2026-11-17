@@ -146,3 +146,25 @@ test('a table grows only as far as what follows it allows: a key under it never 
     expect(r.fit, `notes ${notes} ${JSON.stringify(r)}`).toEqual([])
   }
 })
+
+test('the divider sits centred in the column gap over the exhibit; the arrow at its middle touches neither column', async ({ page }) => {
+  const { S3, S4 } = await import('../fixtures/finbridge')
+  const lint = await open(page)
+  for (const [name, slide] of [['s3', S3], ['s4', S4]] as const) {
+    await lint(slide)
+    const m = await page.$eval('.split', (sp) => {
+      const main = sp.querySelector(':scope > .main') as HTMLElement, side = sp.querySelector(':scope > .flow') as HTMLElement
+      const M = main.getBoundingClientRect(), S = side.getBoundingClientRect(), line = getComputedStyle(main, '::after')
+      const [l, r] = M.left < S.left ? [M, S] : [S, M], mid = (l.right + r.left) / 2, k = (sp.closest('.slide') as HTMLElement).getBoundingClientRect().width / 1920
+      const lineX = M.left < S.left ? M.right + parseFloat(line.right) * -k : M.left + parseFloat(line.left) * k
+      const a = sp.querySelector('.divider-arrow')?.getBoundingClientRect()
+      return { off: Math.abs(lineX - mid), content: line.content, h: parseFloat(line.height) * k - M.height,
+        arrow: a ? { cx: Math.abs((a.left + a.right) / 2 - mid), cy: Math.abs((a.top + a.bottom) / 2 - (M.top + M.bottom) / 2), clear: a.left > l.right && a.right < r.left } : null }
+    })
+    expect(m.content, name).toBe('""')
+    expect(m.off, name).toBeLessThanOrEqual(2)
+    expect(Math.abs(m.h), name).toBeLessThanOrEqual(2)
+    if (name === 's4') { expect(m.arrow?.cx).toBeLessThanOrEqual(2); expect(m.arrow?.cy).toBeLessThanOrEqual(2); expect(m.arrow?.clear).toBe(true) }
+    else expect(m.arrow).toBeNull()
+  }
+})
