@@ -9,7 +9,7 @@ const html = (s: object, style: Style = 'consulting') => slideHTML(s as Slide, C
 const errs = (s: object, style: Style = 'consulting') => validate(s, style).errors
 const warns = (s: object, style: Style = 'consulting') => validate(s, style).warnings
 
-import { S3, S4 } from '../fixtures/finbridge'
+import { TABLE_FLOW as S3, HEAT_GRID as S4 } from '../fixtures/flow-slides'
 
 test('a table with a flow renders split, the flow in the side column and no notes', () => {
   const h = html(S3)
@@ -33,7 +33,7 @@ test('a chart takes no flow yet (its card is at its token budget), though the re
   expect(html(s)).toContain('<div class="flow">')
 })
 
-test('the FinBridge slides 3 and 4 validate in consulting', () => {
+test('the gallery flow slides validate in consulting', () => {
   expect(errs(S3)).toEqual([])
   expect(errs(S4)).toEqual([])
   expect(warns(S3)).toEqual([])
@@ -61,7 +61,7 @@ test('beside a flow or notes a table takes 6 columns when every cell after the f
 })
 
 test('the flow budget applies on the slide, with its path', () => {
-  expect(errs(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.45'))).toBe(true)
+  expect(errs(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.2,'))).toBe(true)
 })
 
 /* The divider between the columns: a line on every split and pair slide (CSS), and an arrow where the left produces
@@ -85,7 +85,7 @@ test('a pair with link arrow draws one, in its first half; without it none', asy
 test('a grid label is at most 8 characters: one line over a grid a third of the column wide', async () => {
   const { validateFlow } = await import('@/engine/slides/schema')
   const grid = Array.from({ length: 5 }, () => [1, 2, 3, 4, 5])
-  const flow = (label: string) => ({ tiers: [{ boxes: [{ label, grid }, { label: 'Balance', grid }, { label: 'Losses', grid }] }, { boxes: [{ text: 'Profit' }] }] })
+  const flow = (label: string) => ({ tiers: [{ boxes: [{ label, grid }, { label: 'Use', grid }, { label: 'AI cost', grid }] }, { boxes: [{ text: 'Profit' }] }] })
   expect(validateFlow(flow('Take-up'), 'consulting').errors).toEqual([])
   expect(validateFlow(flow('Profitabil'), 'consulting').errors.join()).toMatch(/label/)
 })

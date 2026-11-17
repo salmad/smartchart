@@ -29,9 +29,11 @@ export function listOps(slide: Slide, style: Style): ListOp[] {
       if (def.type === "list" && Array.isArray(v)) {
         // Framed cards come in exactly 2 (a contrast), whatever the list's general limits.
         const fixed = path === "cards" && (value as Obj).framed === true;
+        // A flow tier of grids holds at most 3 boxes; only text boxes run on to 6 as chips (schema checkFlow).
+        const grids = /^flow\.tiers\[\d+\]\.boxes$/.test(path) && v.some((x) => isObj(x) && x.grid !== undefined);
         const field = Object.entries(def.of?.fields ?? {}).find(([f, d]) => d.type === "image" && v.some((x) => isObj(x) && x[f] !== undefined));
         const picture = field ? { field: field[0], kind: field[1].kinds?.[0] ?? "photo" } : undefined;
-        out.push({ path, min: fixed ? 2 : def.items?.min ?? 0, max: fixed ? 2 : def.items?.max ?? Infinity, length: v.length, required: !!def.required, ...(picture ? { picture } : {}) });
+        out.push({ path, min: fixed ? 2 : def.items?.min ?? 0, max: fixed ? 2 : grids ? 3 : def.items?.max ?? Infinity, length: v.length, required: !!def.required, ...(picture ? { picture } : {}) });
         const of = def.of?.fields;
         if (of) v.forEach((x, i) => { if (isObj(x)) walk(of, x, `${path}[${i}]`); });
       } else if (def.type === "object" && def.fields && isObj(v)) walk(def.fields, v, path);

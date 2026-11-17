@@ -73,16 +73,14 @@ test('L3: the body starts on the same line whatever the title, kicker or subtitl
 
 test('a target line sits where a bar of its value would end, from under the header to the last row, with no fit issues', async ({ page }) => {
   const lint = await open(page)
-  const rows = [['Top 0.5m', '5', '£500'], ['0.5m–1m', '7', '£700'], ['1m–1.5m', '11', '£1,000'], ['1.5m–2m', '19', '£1,700'], ['2m–2.5m', '31', '£2,500'], ['2.5m–3m', '48', '£3,300']]
-  const r = await lint({ template: 'table', title: 'Mailing the fastest payers first keeps every round inside the 20-month hurdle',
-    table: { columns: [{ label: 'Companies' }, { label: 'Months to pay back', bars: true, target: { value: 20, label: '20-month hurdle', better: 'below' } }, { label: 'Cost' }],
-      rows: rows.map((c, i) => ({ cells: c, ...(i > 3 ? { style: 'muted' } : {}) })) } })
+  const { TABLE_FLOW } = await import('../fixtures/flow-slides')
+  const r = await lint(TABLE_FLOW as unknown as Slide)
   expect(r.issues, JSON.stringify(r)).toEqual([])
   const m = await page.$eval('.tbl', (tbl) => {
     const line = tbl.querySelector('.tbl-target') as HTMLElement, L = line.getBoundingClientRect()
     const track = tbl.querySelector('tbody td.has-bar > .cbar') as HTMLElement, T = track.getBoundingClientRect()
     const head = (tbl.querySelector('thead') as HTMLElement).getBoundingClientRect(), last = (tbl.querySelector('tbody tr:last-child') as HTMLElement).getBoundingClientRect()
-    return { x: L.left, want: T.left + T.width * 20 / 48, top: L.top - head.bottom, bottom: L.bottom - last.bottom, pass: tbl.querySelectorAll('td.has-bar.pass').length }
+    return { x: L.left, want: T.left + T.width * 14 / 34, top: L.top - head.bottom, bottom: L.bottom - last.bottom, pass: tbl.querySelectorAll('td.has-bar.pass').length }
   })
   expect(Math.abs(m.x - m.want)).toBeLessThanOrEqual(2)
   expect(Math.abs(m.top)).toBeLessThanOrEqual(2)
@@ -93,13 +91,7 @@ test('a target line sits where a bar of its value would end, from under the head
 test('heat text contrast in both palettes: every shaded, best and struck cell reads at 4.5:1, with no fit issues', async ({ page }) => {
   await page.goto('/src/dev/fixture.html')
   await page.waitForFunction(() => window.ready)
-  const prices = ['19.9%', '29.9%', '39.9%', '49.9%', '59.9%']
-  const grid: [string, number[], number][] = [['£2.5k', [18, 53, 34, 15, 5], 1], ['£5k', [60, 189, 157, 79, 30], 1], ['£7.5k', [32, 279, 308, 190, 83], 1], ['£10k', [-61, 278, 433, 342, 171], 2], ['£15k', [-121, 366, 632, 606, 367], 2]]
-  const money = (v: number) => (v < 0 ? `−£${-v}` : `£${v}`)
-  const slide = { template: 'table', title: 'We set limit and price together, so every offer is the most profitable one that passes both tests', caption: 'Expected profit a year · £',
-    table: { columns: [{ label: 'Limit' }, ...prices.map((label, j) => ({ label, heat: true, ...(j === 0 ? { outline: true } : {}) }))],
-      rows: grid.map(([l, vs, fails]) => ({ cells: [l, ...vs.map((v, j) => (j < fails ? { value: money(v), struck: true } : v === 632 ? `[[${money(v)}]]` : money(v)))] })),
-      key: { focus: 'Our offer', struck: 'Fails a test', outline: 'Most lenders' } } }
+  const { HEAT_GRID: slide } = await import('../fixtures/flow-slides')
   for (const theme of ['ink', 'paper'] as const) {
     const r = await page.evaluate(([s, t]) => (window.lint as (s: Slide, st: Style, t: 'ink' | 'paper') => Promise<LintResult>)(s, 'consulting', t), [slide as unknown as Slide, theme] as const)
     expect(r.issues, `${theme} ${JSON.stringify(r)}`).toEqual([])
@@ -113,8 +105,8 @@ test('heat text contrast in both palettes: every shaded, best and struck cell re
   }
 })
 
-test('FinBridge slides 3 and 4 (a flow beside a table, right and left) fit in both palettes, the flow level with the table', async ({ page }) => {
-  const { S3, S4 } = await import('../fixtures/finbridge')
+test('the gallery flow slides (a flow beside a table, right and left) fit in both palettes, the flow level with the table', async ({ page }) => {
+  const { TABLE_FLOW: S3, HEAT_GRID: S4 } = await import('../fixtures/flow-slides')
   await page.goto('/src/dev/fixture.html')
   await page.waitForFunction(() => window.ready)
   for (const [name, slide] of [['s3', S3], ['s4', S4]] as const) for (const theme of ['ink', 'paper'] as const) {
@@ -130,7 +122,7 @@ test('FinBridge slides 3 and 4 (a flow beside a table, right and left) fit in bo
 })
 
 test('a chip too wide for its box is a fit issue', async ({ page }) => {
-  const { S3 } = await import('../fixtures/finbridge')
+  const { TABLE_FLOW: S3 } = await import('../fixtures/flow-slides')
   const lint = await open(page)
   const tiers = S3.flow.tiers.map((t, i) => (i === 0 ? { ...t, boxes: [{ text: 'Wwwwwwwwwwwwww' }, ...t.boxes.slice(1)] } : t))
   const r = await lint({ ...S3, flow: { tiers } })
@@ -148,7 +140,7 @@ test('a table grows only as far as what follows it allows: a key under it never 
 })
 
 test('the divider sits centred in the column gap over the exhibit; the arrow at its middle touches neither column', async ({ page }) => {
-  const { S3, S4 } = await import('../fixtures/finbridge')
+  const { TABLE_FLOW: S3, HEAT_GRID: S4 } = await import('../fixtures/flow-slides')
   const lint = await open(page)
   for (const [name, slide] of [['s3', S3], ['s4', S4]] as const) {
     await lint(slide)

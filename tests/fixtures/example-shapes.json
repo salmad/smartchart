@@ -1591,5 +1591,169 @@
     "title"
    ]
   }
+ },
+ {
+  "consulting": {
+   "template": "table",
+   "variant": "split",
+   "keys": [
+    "caption",
+    "flow",
+    "footnote",
+    "kicker",
+    "notesTitle",
+    "table",
+    "takeaway",
+    "template",
+    "title"
+   ],
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4
+     },
+     {
+      "cells": 4,
+      "style": "muted"
+     },
+     {
+      "cells": 4,
+      "style": "muted"
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "table",
+   "variant": "split",
+   "keys": [
+    "flow",
+    "subtitle",
+    "table",
+    "takeaway",
+    "template",
+    "title"
+   ],
+   "table": {
+    "columns": [
+     {},
+     {},
+     {}
+    ],
+    "rows": [
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     },
+     {
+      "cells": 3
+     }
+    ]
+   }
+  }
+ },
+ {
+  "consulting": {
+   "template": "table",
+   "variant": "split-flip",
+   "keys": [
+    "caption",
+    "flow",
+    "flowSide",
+    "footnote",
+    "kicker",
+    "notesTitle",
+    "table",
+    "takeaway",
+    "template",
+    "title"
+   ],
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     }
+    ]
+   }
+  },
+  "pitch": {
+   "template": "table",
+   "variant": "split-flip",
+   "keys": [
+    "flow",
+    "flowSide",
+    "subtitle",
+    "table",
+    "template",
+    "title"
+   ],
+   "table": {
+    "columns": [
+     {},
+     {},
+     {},
+     {},
+     {},
+     {}
+    ],
+    "rows": [
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     },
+     {
+      "cells": 6
+     }
+    ]
+   }
+  }
  }
 ]

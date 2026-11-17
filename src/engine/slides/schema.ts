@@ -345,7 +345,7 @@ const CHART_KINDS = [
 ];
 
 /* ─────────────── The flow: tiers of boxes, each box one inner component ───────────────
-   Limits measured at the side column's width (about 560px) on the FinBridge mockups. A box's text narrows with the
+   Limits measured at the side column's width (about 560px) on the first flow mockups. A box's text narrows with the
    boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
 export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
 /** Characters on one line of a box, by boxes in the tier, at the side column's ⅓ (525px); a tier label takes about 4. */

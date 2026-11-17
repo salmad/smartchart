@@ -3,9 +3,9 @@ import { STARTERS, GROUPS, startersFor, starterSlide } from '@/engine/starters'
 import { validateDeck, MIXED_HALVES } from '@/engine/slides/schema'
 import { stressFor } from '../fixtures/stress'
 
-test('count lock: 30 starters, unique ids, known groups', () => {
-  expect(STARTERS).toHaveLength(30)
-  expect(new Set(STARTERS.map((s) => s.id)).size).toBe(30)
+test('count lock: 32 starters, unique ids, known groups', () => {
+  expect(STARTERS).toHaveLength(32)
+  expect(new Set(STARTERS.map((s) => s.id)).size).toBe(32)
   for (const s of STARTERS) expect(GROUPS.map((g) => g.id)).toContain(s.group)
 })
 // Two more with mixed halves on (a chart beside a table, a number beside points).

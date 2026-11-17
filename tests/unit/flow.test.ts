@@ -4,15 +4,15 @@ import type { Flow } from '@/engine/types'
 
 const g = (f: (r: number, c: number) => number) => [0, 1, 2, 3, 4].map((r) => [0, 1, 2, 3, 4].map((c) => f(r, c)))
 const S3: Flow = { tiers: [
-  { boxes: ['Accounts', 'Age', 'Industry', 'Directors', 'Web presence', 'Web traffic'].map((text) => ({ text })) },
-  { boxes: [{ text: 'Acquisition engine scores every company' }], tone: 'strong' },
-  { boxes: [{ text: 'Will they activate?' }, { text: 'What are they worth?' }], tone: 'light' },
-  { boxes: [{ text: 'Predicted payback sets the ranking' }], tone: 'outline' },
-  { boxes: [{ text: 'Direct mail' }, { text: 'Outbound sales' }], label: 'Feeds' },
+  { boxes: ['Team size', 'Role', 'Deck volume', 'Tools today', 'Templates', 'Sign-up page'].map((text) => ({ text })) },
+  { boxes: [{ text: 'Occam scores every new team on its fit' }], tone: 'strong' },
+  { boxes: [{ text: 'Will the team activate?' }, { text: 'How many seats it buys?' }], tone: 'light' },
+  { boxes: [{ text: 'Days to first deck set the order' }], tone: 'outline' },
+  { boxes: [{ text: 'Onboarding calls' }, { text: 'Email' }], label: 'Feeds' },
 ] }
 const S4: Flow = { tiers: [
-  { boxes: [{ label: 'Take-up', grid: g((r, c) => 50 - c * 9 + r * 4) }, { label: 'Balance', grid: g((r) => 10 + r * 10) }, { label: 'Losses', grid: g((r, c) => 5 + r * 3 + c * 2) }], op: '·' },
-  { boxes: [{ text: 'Expected profit for every limit and price' }], tone: 'strong' },
+  { boxes: [{ label: 'Take-up', grid: g((r, c) => 50 - c * 9 + r * 4) }, { label: 'Use', grid: g((r) => 10 + r * 10) }, { label: 'AI cost', grid: g((r, c) => 5 + r * 3 + c * 2) }], op: '·' },
+  { boxes: [{ text: 'Gross profit for every seat count and price' }], tone: 'strong' },
 ] }
 
 test('one arrow between tiers, none before the first', () => {
@@ -44,7 +44,7 @@ test('a grid box renders 25 cells with heat classes from heatSteps, each grid on
 
 test('every text has its data-path, and tiers and boxes are items', () => {
   const h = flowHTML(S3, 'flow') + flowHTML(S4, 'flow')
-  expect(h).toContain('data-path="flow.tiers[0].boxes[5].text" data-kind="md">Web traffic<')
+  expect(h).toContain('data-path="flow.tiers[0].boxes[5].text" data-kind="md">Sign-up page<')
   expect(h).toContain('data-path="flow.tiers[4].label" data-kind="esc">Feeds<')
   expect(h).toContain('data-path="flow.tiers[0].boxes[0].label" data-kind="esc">Take-up<')
   expect(h).toContain('data-item="flow.tiers[1]"')
@@ -57,17 +57,17 @@ test('box text takes the inline markup', () => {
 
 /* ── The flow's fields and limits (schema) ── */
 import { validateFlow } from '@/engine/slides/schema'
-const S4_FULL: Flow = { tiers: [...S4.tiers, { boxes: [{ text: 'Return ≥ 5%' }, { text: 'Recession profit' }], tone: 'outline', label: 'Tests' }, { boxes: [{ text: 'Most profitable cell that passes' }], tone: 'light' }] }
+const S4_FULL: Flow = { tiers: [...S4.tiers, { boxes: [{ text: 'Margin ≥ 70%' }, { text: 'Churn under 3%' }], tone: 'outline', label: 'Tests' }, { boxes: [{ text: 'Most profitable cell that passes' }], tone: 'light' }] }
 const errsOf = (f: unknown, style: 'consulting' | 'pitch' = 'consulting') => validateFlow(f, style).errors
 
-test('the two FinBridge flows validate in consulting', () => {
+test('both sample flows validate in consulting', () => {
   expect(errsOf(S3)).toEqual([])
   expect(errsOf(S4_FULL)).toEqual([])
 })
 
 test('in pitch they are refused with their cost in the message; a wrapped box costs a quarter row per extra line', () => {
-  // S3: chips 1.2, a 39-character strong box (2 lines) 1.25, a light tier of 19 and 20 characters (2 lines) 1.25,
-  // an outline box 1, a labelled tier with "Outbound sales" (2 lines beside its label) 1.25.
+  // S3: chips 1.2, a 38-character strong box (2 lines) 1.25, a light tier of two 23-character boxes (2 lines) 1.25,
+  // an outline box 1, a labelled tier with "Onboarding calls" (2 lines beside its label) 1.25.
   expect(errsOf(S3, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.95') && /4\.5/.test(e))).toBe(true)
   expect(errsOf(S4_FULL, 'pitch').some((e) => e.startsWith('flow: this flow costs 5.1'))).toBe(true)
 })

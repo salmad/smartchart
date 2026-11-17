@@ -299,7 +299,7 @@ test("upgrade turns an old pair's charts into halves", () => {
   assert.equal(u.charts, undefined);
 });
 
-/* A target line on a bars column (FinBridge payback hurdle). */
+/* A target line on a bars column. */
 const hurdle = (col: object, rows: { cells: string[]; style?: string }[] = [{ cells: ["A", "5"] }, { cells: ["B", "19"] }, { cells: ["C", "48"] }]) =>
   ({ template: "table", title: "Mailing the fastest payers first keeps every round inside the hurdle", table: { columns: [{ label: "Group" }, { label: "Months", bars: true, ...col }], rows } });
 const T20 = { value: 20, label: "20-month hurdle", better: "below" };
@@ -336,12 +336,12 @@ test("target: its label under the table costs half a row in the budget", () => {
   assert.ok(errs({ ...full, table: { ...full.table, columns: [full.table.columns[0], { ...full.table.columns[1], target: { ...T20, value: 30 } }] } }).some((e) => e.startsWith("table: this table costs 11 rows")));
 });
 
-/* Heat shading, struck cells, an outlined column and the key (FinBridge profit grid). */
-const grid = (cols: object[], rows: unknown[], extra: object = {}) => ({ template: "table", title: "We set limit and price together to maximise profit", table: { columns: [{ label: "Limit" }, ...cols], rows, ...extra } });
-const G_ROWS = [{ cells: ["£2.5k", { value: "£18", struck: true }, "£53"] }, { cells: ["£15k", "£366", "[[£632]]"] }];
+/* Heat shading, struck cells, an outlined column and the key. */
+const grid = (cols: object[], rows: unknown[], extra: object = {}) => ({ template: "table", title: "We set seats and price together to maximise profit", table: { columns: [{ label: "Team size" }, ...cols], rows, ...extra } });
+const G_ROWS = [{ cells: ["5 seats", { value: "£4k", struck: true }, "£2k"] }, { cells: ["50 seats", "£15k", "[[£26k]]"] }];
 
 test("heat: valid on figures, with struck cells, an outline and a key", () => {
-  assert.deepEqual(errs(grid([{ label: "19.9%", heat: true, outline: true }, { label: "29.9%", heat: true }], G_ROWS, { key: { focus: "Our offer", struck: "Fails a test", outline: "Most lenders" } })), []);
+  assert.deepEqual(errs(grid([{ label: "£15", heat: true, outline: true }, { label: "£20", heat: true }], G_ROWS, { key: { focus: "Our price", struck: "Fails a test", outline: "Market price" } })), []);
 });
 
 test("heat needs figures and not bars; outline on one column after the first; key labels need what they label", () => {
