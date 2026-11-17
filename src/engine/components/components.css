@@ -522,6 +522,31 @@
 .heat-key .k-struck::before { content: "✗\2009"; }
 .heat-key .k-outline::before { content: ""; display: inline-block; width: 18px; height: 12px; margin-right: 10px; border: 2px solid var(--fg-2); vertical-align: -1px; }
 
+/* ═════════════ Flow: tiers of boxes top to bottom, an arrow between tiers; a box holds text or a small heat grid ═════════════ */
+.flow { display: flex; flex-direction: column; min-height: 0; }
+.fl-tier { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 12px; }
+.fl-tier.labelled { grid-template-columns: auto repeat(var(--n), minmax(0, 1fr)); align-items: center; column-gap: 16px; }
+.fl-tier.with-op { display: flex; align-items: center; gap: 10px; }
+.fl-tier.with-op > .fl-box { flex: 1; min-width: 0; }
+.fl-label { font: 500 17px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-right: 8px; }
+.fl-op { font: 500 30px/1 var(--mono); color: var(--muted); }
+.fl-box { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 60px; padding: 10px 20px; border-radius: 14px;
+  font-size: 24px; line-height: 1.2; font-weight: 600; background: var(--surface); border: 1px solid var(--line); color: var(--fg-2); min-width: 0; }
+.fl-tier.chips { gap: 10px; }
+.fl-tier.chips > .fl-box { min-height: 48px; padding: 8px 10px; font-size: 21px; font-weight: 500; white-space: nowrap; overflow: hidden; }
+.fl-tier.t-light > .fl-box { background: var(--heat-2); border-color: transparent; color: var(--on-heat-2); }
+.fl-tier.t-strong > .fl-box { background: var(--focus); border-color: transparent; color: var(--on-focus); font-weight: 700; min-height: 72px; }
+.fl-tier.t-outline > .fl-box { background: transparent; border: 2px solid var(--focus); color: var(--focus-text, var(--focus)); }
+.fl-arrow { flex: 1; min-height: 22px; max-height: 56px; display: grid; place-items: center; }
+.fl-arrow svg { width: 24px; height: 14px; fill: none; stroke: var(--line-2); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+/* A label over a small heat grid, on the heat colours the allocator gives the slide. */
+.fl-box.has-obj { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; }
+.fl-obj-l { font: 500 17px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); text-align: left; }
+.mini { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 72px; }
+.mini > i { border-radius: 2px; background: var(--line); }
+.mini > .h1 { background: var(--heat-1); } .mini > .h2 { background: var(--heat-2); } .mini > .h3 { background: var(--heat-3); }
+.mini > .h4 { background: var(--heat-4); } .mini > .h5 { background: var(--heat-5); }
+
 /* ═════════════ Callout: a note, a decision or a risk, one labelled line over a rule ═════════════ */
 /* The rule and label carry the tone; the words stay in the text colour. */
 .callout { border-left: 6px solid var(--line-2); padding: 6px 0 6px 36px; }

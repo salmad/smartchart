@@ -34,6 +34,13 @@ export interface Step { when: string; title: string; text: string; focus?: boole
 export interface Point { title: string; text: string }
 export interface Person { photo?: ImageRef; name: string; role: string; text?: string }
 export interface LogoItem { logo: ImageRef; name: string }
+/** A flow: tiers of boxes, top to bottom, an arrow between tiers. A box holds one small component from a closed set
+    (components/flow.ts INNERS): text, or a label over a 5×5 heat grid. */
+export type FlowTone = 'plain' | 'light' | 'strong' | 'outline'
+export type FlowOp = '×' | '−' | '+' | '·'
+export type Inner = { text: string } | { label: string; grid: number[][] }
+export interface FlowTier { boxes: Inner[]; tone?: FlowTone; label?: string; op?: FlowOp }
+export interface Flow { tiers: FlowTier[] }
 /** One half of a pair: a caption and exactly one body (a chart with optional bullets, a table, a number or points). */
 /** A callout: one line of label and text, for a note, a decision or a risk (docs: PRDs and legal memos). */
 export type CalloutTone = 'note' | 'decision' | 'risk'
