@@ -19,7 +19,7 @@ import { columnAlign, figureOf } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
 import { imageMeta, type ImageKind } from "./images.js";
 import type { Capability, Shape } from "./capabilities.js";
-import type { Card, Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
+import type { Card, Cell, Chart, Flow, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell" | "image";
@@ -905,6 +905,58 @@ function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
   // figure, with no label). Checks warn, they never write one.
   if (list.length && style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push(`notesTitle: the notes have no label. Add one that says what they do for the ${s.template === "table" ? "table" : "exhibit"} ('Why margin rises'), or 'Drivers' / 'Observations'.`);
   if (s.notesTitle && FILLER.test(s.notesTitle)) out.warnings.push(`notesTitle: "${s.notesTitle}" leans on a filler word. Say what the notes do ('Why margin rises'), or use 'Drivers' / 'Observations'.`);
+}
+
+/* ─────────────── The flow: tiers of boxes, each box one inner component ───────────────
+   Limits measured at the side column's width (about 560px) on the FinBridge mockups. A box's text narrows with the
+   boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
+export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
+const FLOW_BUDGET: Record<Style, number> = { consulting: 6, pitch: 4.5 };
+export const FLOW = f("object", "Optional, instead of notes: how the exhibit's figures are produced, as 2–5 tiers of boxes top to bottom with an arrow between tiers (inputs, a model, its outputs). Each box is { text } or { label, grid } (a 5×5 heat grid of numbers, rows down, columns across).", { fields: {
+  tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
+    boxes: f("list", `1–3 boxes side by side; 4–6 short text boxes are chips (${FLOW_TEXT.chip} characters each). Text: ${FLOW_TEXT[1]} characters alone, ${FLOW_TEXT[2]} with two, ${FLOW_TEXT[3]} with three.`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
+      text: f("markup", "What the box says.", { max: FLOW_TEXT[1] }),
+      label: f("text", "The grid's name: 'Take-up'.", { max: 10 }),
+      grid: f("list", "5 rows of 5 numbers; shaded by size.", { items: { min: 5, max: 5 }, of: f("list", "A row.", { items: { min: 5, max: 5 }, of: f("number", "A value.") }) }),
+    } }) }),
+    tone: f("enum", "plain (inputs), light (outputs), strong (the model: at most one tier), outline (the result).", { values: ["plain", "light", "strong", "outline"], default: "plain" }),
+    label: f("text", "Optional name before the tier: 'Tests', 'Feeds'.", { max: 8 }),
+    op: f("enum", "Optional operator between the boxes of a tier of 2–3.", { values: ["×", "−", "+", "·"] }),
+  } }) }),
+} });
+
+/** The flow's own rules beyond its fields: box kinds, text per width, chips, one strong tier, operators, height. */
+export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: Style, out: Out): void {
+  const tiers = Array.isArray(fl?.tiers) ? fl.tiers : [];
+  let cost = 0;
+  tiers.forEach((t, i) => {
+    const boxes = Array.isArray(t?.boxes) ? t.boxes : [], at = `${base}.tiers[${i}]`, n = boxes.length;
+    const grids = boxes.filter((b) => b && typeof b === "object" && "grid" in b).length, chips = n > 3;
+    boxes.forEach((b, j) => {
+      const p = `${at}.boxes[${j}]`, o = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
+      const isText = o.text !== undefined, isGrid = o.grid !== undefined || o.label !== undefined;
+      if (isText === isGrid) return out.errors.push(`${p}: a box is { text } or { label, grid }, ${isText ? "not both" : "and this has neither"}.`);
+      if (isGrid && (o.label === undefined || o.grid === undefined)) return out.errors.push(`${p}: a grid box needs both label and grid.`);
+      if (isText) {
+        const max = chips ? FLOW_TEXT.chip : FLOW_TEXT[n as 1 | 2 | 3], len = plain(String(o.text)).length;
+        if (len > max) out.errors.push(`${p}.text: ${len} characters; at most ${max} ${chips ? "as a chip" : n === 1 ? "alone in a tier" : `beside ${n - 1} other box${n > 2 ? "es" : ""}`}. Shorten it.`);
+      }
+    });
+    if (chips && grids) out.errors.push(`${at}.boxes: ${n} boxes with a grid; a tier holds at most 3 boxes, and only text boxes run to 6 as chips.`);
+    if (t?.op && n < 2) out.errors.push(`${at}.op: an operator sits between boxes; this tier has ${n}. Remove it.`);
+    if (t?.op && chips) out.errors.push(`${at}.op: chips take no operator. Remove it.`);
+    cost += chips ? 0.6 * Math.ceil(n / 3) : grids ? 1.6 : 1;
+  });
+  if (tiers.filter((t) => t?.tone === "strong").length > 1) out.errors.push(`${base}.tiers: ${tiers.filter((t) => t?.tone === "strong").length} strong tiers; one strong tier, the model the flow turns on.`);
+  cost = Math.round(cost * 100) / 100;
+  if (cost > FLOW_BUDGET[style]) out.errors.push(`${base}: this flow costs ${cost}, budget ${FLOW_BUDGET[style]} for ${style} (tier = 1, tier with a grid = 1.6, chips = 0.6 a row of three). Cut a tier, or merge boxes.`);
+}
+
+/** A flow on its own: its fields, then its rules. */
+export function validateFlow(fl: unknown, style: Style): Validation {
+  const out = checkFields({ flow: FLOW }, { flow: fl }, style);
+  if (fl && typeof fl === "object") checkFlow(fl as Partial<Flow>, "flow", style, out);
+  return out;
 }
 
 /** From this many rows, a table with no group headings is asked to group them. */
