@@ -8,7 +8,8 @@ import { at, capHTML, display, esc, md, pad2 } from "../components/text.js";
 import { imgHTML, teamHTML, wallHTML } from "../components/pictures.js";
 import { tableHTML } from "../components/table.js";
 import { cardsHTML } from "../components/cards.js";
-import { splitHTML } from "../components/notes.js";
+import { notesHTML, splitHTML } from "../components/notes.js";
+import { flowHTML } from "../components/flow.js";
 import { stepsHTML, summaryHTML } from "../components/rows.js";
 import { pairHTML } from "../components/pair.js";
 import { alignHalves, drawIcons, drawTargets, fitPictures, fitValues, sizeTable, stackIcons } from "../components/fit.js";
@@ -19,18 +20,22 @@ const pageRefs = (html: string, pages: Record<string, number> | undefined) =>
 
 /* Body per menu entry. The variant (layout) comes from the registry, never from the agent. */
 const table = (s: Slide): Table => s.table ?? { columns: [], rows: [] };
+/** The side column: a flow, or the notes. A flow on the left flips the split. */
+const side = (s: Slide) => (s.flow ? flowHTML(s.flow, "flow") : notesHTML(s.notes ?? [], ""));
+const split = (v: string) => v === "split" || v === "split-flip";
+const flip = (v: string) => (v === "split-flip" ? " flip" : "");
 const BODY: Record<Exclude<TemplateId, "cover" | "section" | "number" | "quote" | "agenda">, (s: Slide, variant: string) => string> = {
-  chart: (s, v) => v === "split"
-    ? splitHTML(s, `<div class="chart" data-chart></div>`, "grow", "")
+  chart: (s, v) => split(v)
+    ? splitHTML(s, `<div class="chart" data-chart></div>`, side(s), `grow${flip(v)}`, "")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}<div class="chart full grow" data-chart></div>`,
-  table: (s, v) => v === "split"
-    ? splitHTML(s, tableHTML(table(s), "table", true, "split"), "with-table", "")
+  table: (s, v) => split(v)
+    ? splitHTML(s, tableHTML(table(s), "table", true, "split"), side(s), `with-table${flip(v)}`, "")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${tableHTML(table(s), "table", true, roomOf(table(s), false))}`,
   steps: (s) => stepsHTML(s.steps ?? [], ""),
   pair: (s) => pairHTML(s.halves ?? [], ""),
   summary: (s) => summaryHTML(s.points ?? [], ""),
   image: (s, v) => v === "split"
-    ? splitHTML(s, imgHTML(s.image, "pic", "image"), "grow with-pic", "")
+    ? splitHTML(s, imgHTML(s.image, "pic", "image"), notesHTML(s.notes ?? [], ""), "grow with-pic", "")
     : `${s.caption ? capHTML(s.caption, "", "caption") : ""}${imgHTML(s.image, "pic grow", "image")}`,
   team: (s, v) => teamHTML(s.people ?? [], v, ""),
   logos: (s) => `${s.caption ? capHTML(s.caption, "", "caption") : ""}${wallHTML(s.logos ?? [], "")}`,
@@ -108,15 +113,18 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
    notes' bands (which share the split's height) grow with it. */
 function growTable(slide: HTMLElement) {
   const body = slide.matches(".t-table.v-full") ? slide.querySelector<HTMLElement>(":scope > .tbl")
-    : slide.matches(".t-table.v-split") ? slide.querySelector<HTMLElement>(".split.with-table > .main > .tbl")
+    : slide.matches(".t-table:is(.v-split, .v-split-flip)") ? slide.querySelector<HTMLElement>(".split.with-table > .main > .tbl")
     : slide.querySelector<HTMLElement>(":scope > .steps");
   if (!body) return;
   // The slide is scaled with a transform: measure in slide pixels.
   const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
-  // A target's label hangs under the last row: keep its room (label 17px + 30px drop) clear of the takeaway.
+  // Room for what follows the table in its column (a key under it) and for a target's label, which hangs under the
+  // last row (17px + a 30px drop): the table grows into what is left, so neither pushes the takeaway down.
   const label = body.querySelector(".tbl-target") ? 36 : 0;
-  const area = (tk ? top(tk) - 40 : bottom) - top(body) - label, natural = body.getBoundingClientRect().height / k;
+  const after = [...(body.parentElement?.children ?? [])].filter((el) => el.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_PRECEDING && !el.matches(".spacer, .takeaway, .rail"));
+  const trail = after.length ? Math.max(...after.map((el) => el.getBoundingClientRect().bottom)) / k - (body.getBoundingClientRect().bottom / k) : 0;
+  const area = (tk ? top(tk) - 40 : bottom) - top(body) - label - trail, natural = body.getBoundingClientRect().height / k;
   if (natural < area) body.style.height = `${Math.min(area, natural * 1.5)}px`;
 }
 

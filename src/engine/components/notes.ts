@@ -9,11 +9,12 @@ export const notesHTML = (notes: Note[], base: string): string => `<div class="n
   return `<div class="note"${item(p)}><span class="n">${pad2(i + 1)}</span>
   <div><h4${at(`${p}.title`, "md")}>${md(n.title)}</h4>${n.text ? `<p${at(`${p}.text`, "md")}>${md(n.text)}</p>` : ""}</div></div>`; }).join("")}</div>`;
 
-/* Split body: main ⅔ + notes ⅓. With a notes heading, both columns get a header row on one line (a missing
-   caption stays blank). With a caption alone, the notes still start under the header row, level with the exhibit. */
-export const splitHTML = (f: Furniture, main: string, extra: string, base: string): string => {
+/* Split body: main ⅔ + a side column ⅓ (notes, or a flow: `side` is its HTML). With a side heading, both columns get a
+   header row on one line (a missing caption stays blank). With a caption alone, the side still starts under the header
+   row, level with the exhibit. */
+export const splitHTML = (f: Furniture, main: string, side: string, extra: string, base: string): string => {
   const cap = join(base, "caption");
   const head = f.notesTitle ? capHTML(f.caption, "", cap) + capHTML(f.notesTitle, "notes-h", join(base, "notesTitle")) : f.caption ? capHTML(f.caption, "", cap) : "";
   const cls = f.notesTitle ? "has-head" : f.caption ? "has-head cap-only" : "";
-  return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${notesHTML(f.notes ?? [], base)}</div>`;
+  return `<div class="split ${extra} ${cls}">${head}<div class="main">${main}</div>${side}</div>`;
 };

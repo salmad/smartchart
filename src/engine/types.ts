@@ -55,6 +55,8 @@ export interface Slide {
   focus?: 'auto'
   chart?: Chart; notes?: Note[]
   table?: Table; caption?: string; notesTitle?: string
+  /** Beside a chart or table, instead of notes: how its figures are produced. `flowSide` left puts it before the exhibit. */
+  flow?: Flow; flowSide?: 'left' | 'right'
   number?: { value: string; caption: string; tone?: Tone }
   quote?: string; who?: string
   steps?: Step[]

@@ -264,7 +264,10 @@ const HALF_CHART = f("object", "A chart for half the slide.", { fields: {
 
 /* An exhibit caption over a chart or table, and an optional heading over its notes. */
 const CAPTION = f("text", "What the chart or table shows, stated plainly: the measure, its scope and period, then ' · ' and the unit. 'Annual recurring revenue, FY25–FY26 · £m', 'SME cards compared'. One line. Consulting: always write one. Pitch: leave it out unless the user asks.", { max: 48 });
-const NOTES_TITLE = f("text", "What the notes do for the exhibit: 'Why margin rises', else 'Drivers' or 'Observations'; no 'Key'. Consulting: always. Pitch: if asked.", { max: 20 });
+const NOTES_TITLE = f("text", "What the notes or flow do for the exhibit: 'Why margin rises', else 'Drivers' or 'Observations'; no 'Key'. Consulting: always. Pitch: if asked.", { max: 20 });
+const FLOW_SIDE = f("enum", "Where the flow sits: right (default), or left when it produces the exhibit (inputs on the left, the result on the right).", { values: ["right", "left"], default: "right" });
+/** The internal layout of an exhibit with a side column: notes or a flow on the right, a flow on the left. */
+const sideVariant = (s: Slide) => (s.flow && s.flowSide === "left" ? "split-flip" : s.notes?.length || s.flow ? "split" : "full");
 
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
@@ -341,14 +344,33 @@ const CHART_KINDS = [
   "Annotations are computed by code; never write their figure yourself. At most 3 (2 with notes); only when the user asked for them.",
 ];
 
+/* ─────────────── The flow: tiers of boxes, each box one inner component ───────────────
+   Limits measured at the side column's width (about 560px) on the FinBridge mockups. A box's text narrows with the
+   boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
+export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
+const FLOW_BUDGET: Record<Style, number> = { consulting: 6, pitch: 4.5 };
+export const FLOW = f("object", "Optional, instead of notes: how the exhibit's figures are produced, as 2–5 tiers of boxes top to bottom with an arrow between tiers (inputs, a model, its outputs). Each box is { text } or { label, grid } (a 5×5 heat grid of numbers, rows down, columns across).", { fields: {
+  tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
+    boxes: f("list", `1–3 boxes side by side; 4–6 short text boxes are chips (${FLOW_TEXT.chip} characters each). Text: ${FLOW_TEXT[1]} characters alone, ${FLOW_TEXT[2]} with two, ${FLOW_TEXT[3]} with three.`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
+      text: f("markup", "What the box says.", { max: FLOW_TEXT[1] }),
+      label: f("text", "The grid's name: 'Take-up'.", { max: 10 }),
+      grid: f("list", "5 rows of 5 numbers; shaded by size.", { items: { min: 5, max: 5 }, of: f("list", "A row.", { items: { min: 5, max: 5 }, of: f("number", "A value.") }) }),
+    } }) }),
+    tone: f("enum", "plain (inputs), light (outputs), strong (the model: at most one tier), outline (the result).", { values: ["plain", "light", "strong", "outline"], default: "plain" }),
+    label: f("text", "Optional name before the tier: 'Tests', 'Feeds'.", { max: 8 }),
+    op: f("enum", "Optional operator between the boxes of a tier of 2–3.", { values: ["×", "−", "+", "·"] }),
+  } }) }),
+} });
+
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
     summary: "One chart, with optional notes beside it.",
     use: "Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.",
+    // No flow beside a chart yet: the chart card is at its token budget (budgets.test.ts). The renderer and checks take one.
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
-    variant: (s) => (s.notes?.length ? "split" : "full"),
+    variant: sideVariant,
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", "Note text: 300 characters in total, 200 with a takeaway.", ...CHART_GUIDE, ...CHART_KINDS],
   },
   pair: {
@@ -372,7 +394,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.",
     fields: {
       table: f("object", "The table.", { required: true, fields: {
-  columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: TABLE_COLUMN }),
+  columns: f("list", "Column headers, left to right. The first column is usually the row label. A 6th column only when every cell after the first is a short figure (8 characters).", { required: true, items: { min: 2, max: 6 }, of: TABLE_COLUMN }),
   rows: f("list", "Rows, top to bottom: at most 8, plus group headings.", { required: true, items: { min: 1, max: 10 }, of: f("object", "Row.", { fields: {
     cells: TABLE_CELLS,
     style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above. `group`: a heading over the rows below it (one cell).", { values: ["muted", "total", "group"] }),
@@ -387,9 +409,11 @@ export const MENU: Record<TemplateId, MenuEntry> = {
       caption: CAPTION,
       focus: FOCUS,
       notes: notes(false),
+      flow: FLOW,
+      flowSide: FLOW_SIDE,
       notesTitle: NOTES_TITLE,
     },
-    variant: (s) => (s.notes?.length ? "split" : "full"),
+    variant: sideVariant,
     rules: [
       "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), row icons 0, header icons 0 inline but 1 when a label is too long to sit beside its icon (the icons then go above the labels), a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting), a target's label 0.5, the key 1. Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       `Cells: at most ${CELL_MAX} characters. Consulting: a two-column table of words (a label, then what it means) is drawn full width, and its second column takes ${WIDE_CELL_MAX}.`,
@@ -894,6 +918,16 @@ const count = <T extends object>(list: readonly (T | null | undefined)[] | undef
 /** Words that only decorate a label: every note is a note, none is less key than another. */
 const FILLER = /\b(key|main|important|notable|top)\b/i;
 
+/** The side column of a chart or table: notes or a flow, never both; its heading; the flow's own rules. */
+function checkSide(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMITS): void {
+  if (s.notes?.length && s.flow) out.errors.push("notes: notes or a flow beside the exhibit, not both. Keep the one that says more.");
+  if (s.flowSide && !s.flow) out.errors.push("flowSide: places a flow; this slide has none. Remove it.");
+  if (s.notes?.length) checkNotes(s, style, out, limits);
+  if (!s.flow) return;
+  checkFlow(s.flow, "flow", style, out);
+  if (style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push("notesTitle: the flow has no heading. Add one that says what it shows ('How cells are priced').");
+}
+
 function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMITS): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
@@ -906,24 +940,6 @@ function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
   if (list.length && style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push(`notesTitle: the notes have no label. Add one that says what they do for the ${s.template === "table" ? "table" : "exhibit"} ('Why margin rises'), or 'Drivers' / 'Observations'.`);
   if (s.notesTitle && FILLER.test(s.notesTitle)) out.warnings.push(`notesTitle: "${s.notesTitle}" leans on a filler word. Say what the notes do ('Why margin rises'), or use 'Drivers' / 'Observations'.`);
 }
-
-/* ─────────────── The flow: tiers of boxes, each box one inner component ───────────────
-   Limits measured at the side column's width (about 560px) on the FinBridge mockups. A box's text narrows with the
-   boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
-export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
-const FLOW_BUDGET: Record<Style, number> = { consulting: 6, pitch: 4.5 };
-export const FLOW = f("object", "Optional, instead of notes: how the exhibit's figures are produced, as 2–5 tiers of boxes top to bottom with an arrow between tiers (inputs, a model, its outputs). Each box is { text } or { label, grid } (a 5×5 heat grid of numbers, rows down, columns across).", { fields: {
-  tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
-    boxes: f("list", `1–3 boxes side by side; 4–6 short text boxes are chips (${FLOW_TEXT.chip} characters each). Text: ${FLOW_TEXT[1]} characters alone, ${FLOW_TEXT[2]} with two, ${FLOW_TEXT[3]} with three.`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
-      text: f("markup", "What the box says.", { max: FLOW_TEXT[1] }),
-      label: f("text", "The grid's name: 'Take-up'.", { max: 10 }),
-      grid: f("list", "5 rows of 5 numbers; shaded by size.", { items: { min: 5, max: 5 }, of: f("list", "A row.", { items: { min: 5, max: 5 }, of: f("number", "A value.") }) }),
-    } }) }),
-    tone: f("enum", "plain (inputs), light (outputs), strong (the model: at most one tier), outline (the result).", { values: ["plain", "light", "strong", "outline"], default: "plain" }),
-    label: f("text", "Optional name before the tier: 'Tests', 'Feeds'.", { max: 8 }),
-    op: f("enum", "Optional operator between the boxes of a tier of 2–3.", { values: ["×", "−", "+", "·"] }),
-  } }) }),
-} });
 
 /** The flow's own rules beyond its fields: box kinds, text per width, chips, one strong tier, operators, height. */
 export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: Style, out: Out): void {
@@ -1087,8 +1103,8 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       checkChart(s.chart, "chart", out, s.focus === "auto");
       if (style === "pitch" && s.takeaway && s.chart?.kind === "ranked" && (s.chart.ranking || []).length > 6)
         out.errors.push(`chart.ranking: ${s.chart.ranking?.length} items; pitch with a takeaway takes at most 6. Merge the smallest into 'Other' or drop the takeaway.`);
-      if (!s.notes?.length) break;
-      checkNotes(s, style, out, limits);
+      checkSide(s, style, out, limits);
+      if (!s.notes?.length && !s.flow) break;
       const kind = s.chart?.kind || "bars", cats = s.chart?.categories || [], series = s.chart?.series || [];
       const items = s.chart?.items || [], periods = s.chart?.periods || [], rows = s.chart?.rows || [], annotations = s.chart?.annotations || [];
       if (kind === "waterfall" && items.length > 7) out.errors.push(`chart.items: ${items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
@@ -1102,7 +1118,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       if (kind === "ranked") ranking.forEach((x, i) => { if (x?.label && x.label.length > 24) out.errors.push(`chart.ranking[${i}].label: ${x.label.length} characters; with notes at most 24. Shorten it.`); });
       if (kind === "matrix" && points.length > 6) out.errors.push(`chart.points: ${points.length} points; with notes at most 6. Drop notes or the least important points.`);
       if (kind === "matrix" && s.takeaway) out.errors.push("takeaway: a matrix with notes has no room for a takeaway. Drop the takeaway, or the notes.");
-      s.notes.forEach((n, i) => {
+      (s.notes || []).forEach((n, i) => {
         if (!n?.point) return;
         if (kind !== "bars" || series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a bars chart with bar series; remove it.`);
         if (!(n.point.series >= 0 && n.point.series < series.length)) out.errors.push(`notes[${i}].point.series: ${n.point.series} is out of range; the chart has ${series.length} series (0–${series.length - 1}).`);
@@ -1115,7 +1131,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       checkGrid(t, "table", style, out, false, limits);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       // Short group headings sit in a first column beside their rows and cost no height; long ones are heading rows.
-      const byColumn = groupLayout(t, roomOf(t, !!s.notes?.length)) === "column";
+      const byColumn = groupLayout(t, roomOf(t, !!(s.notes?.length || s.flow))) === "column";
       const rowCost = (r: Table["rows"][number]) => {
         if (r.style === "group") return byColumn ? 0 : 1;
         if (style === "pitch") return 1;
@@ -1130,15 +1146,19 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
         // overflow through; a wrong refusal is cheaper than a slide that runs into its footnote.
         return cells.some((c) => markOf(String(c && typeof c === "object" ? c.value ?? "" : c ?? ""))) ? 1.15 : 1;
       };
-      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = iconsMayStack(t, roomOf(t, !!s.notes?.length)) ? 1 : 0;
+      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = iconsMayStack(t, roomOf(t, !!(s.notes?.length || s.flow))) ? 1 : 0;
       const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons + ((t.columns || []).some((c) => c?.target) ? 0.5 : 0) + (t.key && Object.values(t.key).some(Boolean) ? 1 : 0)) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
-      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1, a target's label = 0.5, the key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
-      if (s.notes?.length) {
-        checkNotes(s, style, out, limits);
-        if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
-        if (n > 4) out.errors.push(`table.columns: ${n} columns; with notes at most 4. Drop a column or the notes.`);
+      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1, a target's label = 0.5, the key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!(s.notes?.length || s.flow))) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!(s.notes?.length || s.flow)) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
+      checkSide(s, style, out, limits);
+      if (s.notes?.length && s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
+      // A 6th column fits only a grid of short figures (prices × limits); beside a side column, which leaves the table two
+      // thirds of the slide, 4 columns, or that same grid of 6.
+      const short = (t.rows || []).every((r) => r?.style === "group" || (r?.cells || []).slice(1).every((c) => plain(String(typeof c === "object" && c ? c.value ?? "" : c ?? "")).length <= 8));
+      if (n > 5 && !short && !(s.notes?.length || s.flow)) out.errors.push(`table.columns: ${n} columns; a 6th column only when every cell after the first is at most 8 characters. Drop a column or shorten the cells.`);
+      if (s.notes?.length || s.flow) {
+        if (n > (short ? 6 : 4)) out.errors.push(`table.columns: ${n} columns; beside ${s.flow ? "a flow" : "notes"} at most ${short ? 6 : "4 (6 when every cell after the first is at most 8 characters)"}. Drop a column${short ? "" : ", shorten the cells"} or the ${s.flow ? "flow" : "notes"}.`);
         (t.rows || []).forEach((r, i) => { if (r?.style === "group") return; const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
-          if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; with notes at most 24.`); });
+          if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; beside a side column at most 24.`); });
       }
       break;
     }
@@ -1303,6 +1323,7 @@ export function validateComponent(template: TemplateId, body: unknown, style: St
     const t = (body as { table?: Partial<Table> }).table;
     (t?.columns || []).forEach((c, j) => (["target", "heat"] as const).forEach((k) => { if (c?.[k]) out.errors.push(`table.columns[${j}].${k}: not in a doc figure yet; slides only. Remove it.`); }));
     if (t?.key) out.errors.push("table.key: not in a doc figure yet; slides only. Remove it.");
+    if ((t?.columns || []).length > 5) out.errors.push(`table.columns: ${(t?.columns || []).length} columns; a doc figure takes at most 5. Drop a column.`);
   }
   if (body && typeof body === "object" && !Array.isArray(body)) checkRules({ ...(body as Partial<Slide>), template, title: "" } as Slide, style, out, limits);
   return out;

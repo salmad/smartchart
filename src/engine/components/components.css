@@ -63,7 +63,12 @@
 .style-pitch .cap { font-size: 30px; line-height: 1.2; }
 .cap + .chart, .cap + .tbl { margin-top: 28px; }
 .split.has-head { grid-template-rows: auto 1fr; row-gap: 28px; }
-.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > .notes { grid-column: 2; grid-row: 2; }
+.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > :is(.notes, .flow) { grid-column: 2; grid-row: 2; }
+/* Flipped: the side column (a flow that produces the exhibit) on the left, the exhibit on the right; the mirror of the split. */
+.split.flip { grid-template-columns: .7fr 1.3fr; }
+.split.flip > .main { grid-column: 2; grid-row: 1; } .split.flip > :is(.flow, .notes) { grid-column: 1; grid-row: 1; }
+.split.flip.has-head > .cap:not(.notes-h) { grid-column: 2; grid-row: 1; } .split.flip.has-head > .notes-h { grid-column: 1; grid-row: 1; }
+.split.flip.has-head > .main { grid-row: 2; } .split.flip.has-head > :is(.flow, .notes) { grid-row: 2; }
 .big-v { font-size: 420px; line-height: .8; color: var(--focus); white-space: nowrap; }
 .big-v.neg { color: var(--neg); } .big-v.pos { color: var(--pos); }
 .style-consulting .big-v { font-weight: 800; font-stretch: 78%; font-size: 360px; }

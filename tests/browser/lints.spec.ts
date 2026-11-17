@@ -112,3 +112,37 @@ test('heat text contrast in both palettes: every shaded, best and struck cell re
     expect(low, theme).toEqual([])
   }
 })
+
+test('FinBridge slides 3 and 4 (a flow beside a table, right and left) fit in both palettes, the flow level with the table', async ({ page }) => {
+  const { S3, S4 } = await import('../fixtures/finbridge')
+  await page.goto('/src/dev/fixture.html')
+  await page.waitForFunction(() => window.ready)
+  for (const [name, slide] of [['s3', S3], ['s4', S4]] as const) for (const theme of ['ink', 'paper'] as const) {
+    const r = await page.evaluate(([s, t]) => (window.lint as (s: Slide, st: Style, t: 'ink' | 'paper') => Promise<LintResult>)(s, 'consulting', t), [slide as unknown as Slide, theme] as const)
+    expect([...r.fit, ...r.issues], `${name} ${theme} ${JSON.stringify(r)}`).toEqual([])
+    const m = await page.$eval('.split', (sp) => {
+      const main = (sp.querySelector(':scope > .main') as HTMLElement).getBoundingClientRect(), flow = (sp.querySelector(':scope > .flow') as HTMLElement).getBoundingClientRect()
+      return { top: Math.abs(main.top - flow.top), flowLeft: flow.left < main.left }
+    })
+    expect(m.top, `${name} ${theme}`).toBeLessThanOrEqual(2)
+    expect(m.flowLeft, name).toBe(name === 's4')
+  }
+})
+
+test('a chip too wide for its box is a fit issue', async ({ page }) => {
+  const { S3 } = await import('../fixtures/finbridge')
+  const lint = await open(page)
+  const tiers = S3.flow.tiers.map((t, i) => (i === 0 ? { ...t, boxes: [{ text: 'Wwwwwwwwwwwwww' }, ...t.boxes.slice(1)] } : t))
+  const r = await lint({ ...S3, flow: { tiers } })
+  expect(r.fit.some((m) => m.startsWith('fl-box') && /wider than its column/.test(m)), JSON.stringify(r)).toBe(true)
+})
+
+test('a table grows only as far as what follows it allows: a key under it never pushes the takeaway', async ({ page }) => {
+  const lint = await open(page)
+  const rows = ['£2.5k', '£5k', '£7.5k', '£10k', '£15k'].map((l, i) => ({ cells: [l, `£${10 + i}`, `£${20 + i}`, `[[£${30 + i}]]`] }))
+  for (const notes of [false, true]) {
+    const r = await lint({ template: 'table', title, caption: 'Profit · £', takeaway: 'The grid ends above this line.', ...(notes ? { notesTitle: 'Reading the grid', notes: [{ title: 'One' }, { title: 'Two' }, { title: 'Three' }] } : {}),
+      table: { columns: [{ label: 'Limit' }, { label: 'A', heat: true }, { label: 'B', heat: true }, { label: 'C', heat: true }], rows, key: { focus: 'Our offer' } } })
+    expect(r.fit, `notes ${notes} ${JSON.stringify(r)}`).toEqual([])
+  }
+})
