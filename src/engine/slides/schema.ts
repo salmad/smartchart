@@ -352,11 +352,11 @@ export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
 const FLOW_LINE = { 1: 36, 2: 17, 3: 10 } as const;
 /** Height in tier units (a one-line tier and its arrow, about 83px): consulting 6.5, 5.5 beside a takeaway. */
 const FLOW_BUDGET: Record<Style, [number, number]> = { consulting: [6.5, 5.5], pitch: [4.5, 4] };
-export const FLOW = f("object", "Optional, instead of notes: how the exhibit's figures are produced, as 2–5 tiers of boxes top to bottom with an arrow between tiers (inputs, a model, its outputs). Each box is { text } or { label, grid } (a 5×5 heat grid of numbers, rows down, columns across).", { fields: {
+export const FLOW = f("object", "Optional, instead of notes: 2–5 tiers of boxes, top to bottom, arrows between. A box is { text } or { label, grid } (a 5×5 heat grid, rows down).", { fields: {
   tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
     boxes: f("list", `1–3 boxes side by side; 4–6 short text boxes are chips (${FLOW_TEXT.chip} characters each). Text: ${FLOW_TEXT[1]} characters alone, ${FLOW_TEXT[2]} with two, ${FLOW_TEXT[3]} with three.`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
       text: f("markup", "What the box says.", { max: FLOW_TEXT[1] }),
-      label: f("text", "The grid's name: 'Take-up'.", { max: 10 }),
+      label: f("text", "The grid's name: 'Take-up'.", { max: 8 }),
       grid: f("list", "5 rows of 5 numbers; shaded by size.", { items: { min: 5, max: 5 }, of: f("list", "A row.", { items: { min: 5, max: 5 }, of: f("number", "A value.") }) }),
     } }) }),
     tone: f("enum", "plain (inputs), light (outputs), strong (the model: at most one tier), outline (the result).", { values: ["plain", "light", "strong", "outline"], default: "plain" }),

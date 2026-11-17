@@ -81,3 +81,11 @@ test('a pair with link arrow draws one, in its first half; without it none', asy
   expect(html(p)).not.toContain(ARROW)
   expect(errs({ ...p, link: 'line' }).some((e) => e.startsWith('link'))).toBe(true)
 })
+
+test('a grid label is at most 8 characters: one line over a grid a third of the column wide', async () => {
+  const { validateFlow } = await import('@/engine/slides/schema')
+  const grid = Array.from({ length: 5 }, () => [1, 2, 3, 4, 5])
+  const flow = (label: string) => ({ tiers: [{ boxes: [{ label, grid }, { label: 'Balance', grid }, { label: 'Losses', grid }] }, { boxes: [{ text: 'Profit' }] }] })
+  expect(validateFlow(flow('Take-up'), 'consulting').errors).toEqual([])
+  expect(validateFlow(flow('Profitabil'), 'consulting').errors.join()).toMatch(/label/)
+})
