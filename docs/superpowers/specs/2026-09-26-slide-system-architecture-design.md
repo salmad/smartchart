@@ -59,7 +59,8 @@ Derived, never written by the agent: page number, section number, note numbers, 
 
 | Layout | Areas | Geometry |
 |---|---|---|
-| `split` | `main` (⅔ left), `side` (⅓ right) | fixed column widths on the 12-col grid |
+| `split` | `main` (⅔ left), `side` (⅓ right) | fixed column widths on the 12-col grid (true 2fr 1fr); a thin divider sits centred in the gap |
+| `split-flip` | `side` (⅓ left), `main` (⅔ right) | `split` mirrored (1fr 2fr), for a side that produces the exhibit; the divider carries an arrow pointing to `main` *(2026-11-17)* |
 | `full` | `main` | full body width |
 | `row` | `items` (2–4 cards) | equal columns |
 | `cover` | none (title, subtitle) | frame variant |
@@ -72,12 +73,15 @@ Derived, never written by the agent: page number, section number, note numbers, 
 | `chart` | bars/lines, categories, series (color focus/neutral/contrast, line, area, dashed), format | split, chart |
 | `table` | columns (num, focus), rows (cells, cell notes, muted/total) | table |
 | `notes` | 2–4 items: title, text, `point` → a data point in `main` chart | split |
+| `flow` | 2–5 tiers top to bottom, an arrow between; a tier holds 1–3 boxes (4–6 text boxes become chips), a tone (plain, light, strong, outline), an optional label and operator. Each box holds one **inner** component | FinBridge, 2026-11-17 |
 | `text` | 1–2 paragraphs of markup | hero body |
 | `number` | value, caption, tone | hero number |
 | `steps` | 2–5 steps: when, title, text, focus | timeline |
 | `card` | lead (icon **or** value), title, bullets **or** text, tone, facts; row-level options `framed` | columns, stats, cases |
 
 A block owns its default limits. A layout area may **override** them (a chart in `split.main` allows fewer categories than in `full.main`). Limits are resolved per (style, area, item count): a big value that fits a 2-card row may not fit a 4-card row.
+
+**Inner components (nesting, one level).** A flow box holds an inner component from a registry in `components/flow.ts` (`INNERS`, typed `Record<InnerKind, …>`): `text` (markup) and `grid` (a label over a 5×5 heat grid, each on its own scale). Adding an inner = one registry entry, its field def, its limits in `checkFlow` and a stress case. Inners do not nest further. The flow's height is budgeted in `checkFlow` (a tier 1, +0.25 a wrapped line, a grid tier 1.6, chips 0.6 a row of three; consulting 6.5/5.5, pitch 4.5/4 without/with a takeaway).
 
 `card` covers three looks (icon-led columns, value-led stats, framed 2-card contrast). Its variants × 2–4 cards are enumerated explicitly in the quality matrix; they are the real size of `cards`.
 
@@ -88,14 +92,14 @@ Generated from the registry; this is everything the agent can choose. Each entry
 | Menu id | Layout (internal) | Use when |
 |---|---|---|
 | `chart` | `full` (chart); **`split`** (chart + notes) when `notes` are present | data over categories or time |
-| `table` | `full` (table); **`split`** (table ≤ 4 columns + notes) when `notes` are present | exact figures to compare |
+| `table` | `full` (table); **`split`** (table ≤ 4 columns, or 6 short figures, + notes or a flow) when `notes` or `flow` are present; **`split-flip`** when `flowSide: "left"` | exact figures to compare |
 | `number` | `split`: text / big number | one number proves the argument |
 | `steps` | `full`: steps | a plan, roadmap, process or history |
 | `cards` | `row`: 2–4 cards | parallel options, pillars, several independent numbers, or a 2-card contrast |
 | `cover` | frame variant | first slide, once |
 | `section` | frame variant | dividers in decks of 8+ slides |
 
-**Why notes are a field, not a separate entry:** in the M0 routing bake-off, "chart with notes or without" was the largest source of routing errors. Whether a chart needs explaining is a writing decision, so it belongs to the model that writes the content (GLM), guided by the template card: "add notes only if each one says something the chart does not already show; in pitch, prefer none". With notes as a field, every router scored 90–94% (13).
+**Why notes are a field, not a separate entry:** in the M0 routing bake-off, "chart with notes or without" was the largest source of routing errors. Whether a chart needs explaining is a writing decision, so it belongs to the model that writes the content (GLM), guided by the template card: "add notes only if each one says something the chart does not already show; in pitch, prefer none". With notes as a field, every router scored 90–94% (13). The **flow** follows the same rule *(2026-11-17)*: it is an optional field of `table` that takes the side column instead of notes (never both), not a menu entry; routing still picks only the key component. Charts take no flow yet (their template card is at its token budget).
 
 Adding an entry or a variant (e.g. an `image` entry later) = one registry line + its quality-matrix pass. Every new entry is a design decision, not a free extension.
 
@@ -127,7 +131,7 @@ Spacing, sizing and alignment follow consulting formatting practice and are **ne
 
 | # | Rule |
 |---|---|
-| L1 | **Table columns.** The first (label) column is sized to its longest label, within 20–40% of the table width; every other column has exactly the same width (fixed table layout). Preference (2026-10-10): where equal columns would wrap a cell or heading, widths lean towards fewer lines (class `fitted`): a column that fits on one line in less than its share takes just that and the wrapping columns share the rest; when every column fits on one line, each takes its width plus an even part of what is left. Rows of two lines are fine; they only cost height. |
+| L1 | **Table columns.** The first (label) column is sized to its longest label, within 12–40% of the table width (2026-11-17: was 20%, which left short labels such as prices or limits a wide empty band); every other column has exactly the same width (fixed table layout). Preference (2026-10-10): where equal columns would wrap a cell or heading, widths lean towards fewer lines (class `fitted`): a column that fits on one line in less than its share takes just that and the wrapping columns share the rest; when every column fits on one line, each takes its width plus an even part of what is left. Rows of two lines are fine; they only cost height. |
 | L2 | **Alignment is derived from content, not written.** Label and text columns align left; numeric columns align right with tabular figures, so the digits line up; a header aligns like its column; short symbol columns (✓, –, ratings, 3 characters or fewer) are centred. Cells are top-aligned, so wrapped text reads from the top and single-line values share a baseline. The `num` flag is removed from the schema. |
 | L3 | **One body line.** The body starts at the same y on every content slide of a style, whatever the title, kicker or subtitle length: top padding + the head's reserved height (3.1) + one gap token (consulting 56 px, pitch 72 px), which is y ≈ 349 in consulting and y ≈ 384 in pitch. A fixed gap under a variable head is not enough: it moves the body by a line whenever the title or subtitle wraps. |
 | L4 | **Grid, not centring.** Body blocks start at the left edge of the 12-column grid and at the body offset (L3), so content starts at the same place on every slide. Only `cover`, `section` and the big number of `number` are centred. |
@@ -579,6 +583,8 @@ Everything needed to continue is in the repo:
 5. **Consulting gaps closed (2026-10-02):** the gallery had no executive summary, horizontal ranking, 2×2 or next steps. Added: a `summary` template (the answer in the title, 2–4 numbered points of a claim of up to 40 characters and a sentence of up to 100; at most 3 with a takeaway); two chart kinds, `ranked` (`ranking: [{ label, value, focus }]`, 2–8 items, largest first, 'Other' last; with notes 7 items of 24 characters; pitch with a takeaway 6) and `matrix` (`axes { x, y }`, optional four `quadrants`, `points: [{ label, x, y, focus }]` on judged 0–100 positions, 2–8; with notes 6, and notes or a takeaway, not both). Charts and tables use one design in both deck types: pitch differs only in the head and the type scale, and the notes column and footnote/takeaway lines are the same settings everywhere. Matrix labels are placed by code (the side of each dot that clears the dots, quadrant names, other labels and edges, refined in rounds); what still collides is reported by the C1 lint. Next steps is the existing table (action with a cell note, owner, date), added as a starter; a note under a text cell is set as a headline and a sentence. The summary is a plain executive summary, without page references. Tables highlight what the writer chooses: any columns (`columns[].focus`), any rows (`rows[].focus`, also "Focus row" by hand) and single cells (`[[…]]` in the cell, "Focus" by hand); more than one focus element is an advisory check (R4), not an error.
 
 6. **Second round of gaps (2026-10-02):** `pair`, two charts side by side, each half its own caption (required in both styles), chart (bars, waterfall or ranked, with half-width limits) and 1–2 one-line points; each chart has its own colours, lints and data grid (`charts[i]`). Scores in tables: a cell holding only a Harvey ball (○ ◔ ◑ ◕ ●) or ✓ ✗ is drawn as that mark, a table of balls gets a key (consulting), and mixing balls and ticks is a warning; by hand, the menu's Score group sets them. `number` is rebuilt and unarchived, and `quote` is new: neither has a title, and their line in the storyline is the number's caption or the quote (`headline()`). The template list budget is 450 tokens for ten templates. The driver tree and the market map (Marimekko) were mocked up and dropped.
+
+7. **Flows and heat tables (2026-11-17):** plan `docs/superpowers/plans/2026-11-17-flow-and-heat-tables.md`. Tables gain a target line on a bars column, heat shading, struck cells, one outlined column and a key; the side column takes notes or a `flow` (3.3), on either side (`split-flip`, 3.2); ½·½ and ⅔·⅓ layouts get a centred divider. Stress cases for both pass in both styles and palettes.
 
 **Future features (recorded, not scheduled):**
 - **Number and story consistency checks.** Decompose the deck into a **claims registry**: every figure and claim on every slide (e.g. `ARR £9.8m, 2025`, `churn 3%`), each traced back to the slide, component and field it came from. New and edited slides are checked against the registry, so contradictions (two ARR figures, a plan that misses its own target) are easy to find and point at. Also covers the deck-level rule that the titles, read in order, tell the whole story, which no check covers today (checks see one slide at a time).

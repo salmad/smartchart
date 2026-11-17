@@ -29,12 +29,18 @@ test('listOf maps an item path to its list', () => {
   expect(listOf(ops, 'title')).toBeNull()
 })
 
+// A column of bars or heat holds figures, so a person filling in a new row there types a figure, not words.
+const figures = (s: Slide): Slide => {
+  if (s.template !== 'table' || !s.table) return s
+  const fig = s.table.columns.map((c) => !!(c.bars || c.heat))
+  return { ...s, table: { ...s.table, rows: s.table.rows.map((r) => ({ ...r, cells: r.cells.map((c, j) => (fig[j] && c === 'Filled in' ? '1' : c)) })) } }
+}
 for (const style of ['consulting', 'pitch'] as const) for (const st of startersFor(style)) {
   test(`${st.id} (${style}): a new item on every list validates once its text is filled in`, () => {
     const slide = starterSlide(st, style)
     for (const op of listOps(slide, style)) {
       if (op.length >= op.max || op.picture) continue
-      const next = autofix(fill(patched(slide, newItem(slide, style, op, op.length))) as Slide, style).slide
+      const next = autofix(figures(fill(patched(slide, newItem(slide, style, op, op.length))) as Slide), style).slide
       const errors = validate(next, style).errors.filter((e) => !/characters|at most|budget/.test(e))
       expect(errors, `${op.path}`).toEqual([])
     }
@@ -132,3 +138,9 @@ test("a table cell's bullets are a list: Enter adds the next one, up to three", 
   const next = newItem(slide, "consulting", must(op), 1);
   expect(next).toEqual({ "table.rows[0].cells[1].bullets": ["Full control", ""] });
 });
+
+test('a tier of grids grows to 3 boxes, a tier of text to 6 (chips)', () => {
+  const ops = listOps(starter('heat-grid'), 'consulting'), table = listOps(starter('table-flow'), 'consulting')
+  expect(must(ops.find((o) => o.path === 'flow.tiers[0].boxes')).max).toBe(3)
+  expect(must(table.find((o) => o.path === 'flow.tiers[0].boxes')).max).toBe(6)
+})

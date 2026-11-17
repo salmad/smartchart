@@ -7,7 +7,7 @@ import { MENU } from '../slides/schema.js'
 import { at, capHTML, md } from '../components/text.js'
 import { tableHTML } from '../components/table.js'
 import { cardsHTML } from '../components/cards.js'
-import { splitHTML } from '../components/notes.js'
+import { notesHTML, splitHTML } from '../components/notes.js'
 import { stepsHTML, summaryHTML } from '../components/rows.js'
 import { pairHTML } from '../components/pair.js'
 import { imgHTML, teamHTML, wallHTML } from '../components/pictures.js'
@@ -53,7 +53,7 @@ function component(f: FigureBlock): string {
 /** The canvas's contents: with `beside` and notes, the slide's split; otherwise the caption, then the component. */
 export function figureCanvasHTML(f: FigureBlock, beside: boolean): string {
   const b = f.body, main = component(f)
-  if (beside && b.notes?.length) return splitHTML(b, main, SPLIT[f.kind] ?? '', '')
+  if (beside && b.notes?.length) return splitHTML(b, main, notesHTML(b.notes, ''), SPLIT[f.kind] ?? '', '')
   return `${b.caption ? capHTML(b.caption, '', 'caption') : ''}${main}`
 }
 

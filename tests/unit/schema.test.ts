@@ -298,3 +298,73 @@ test("upgrade turns an old pair's charts into halves", () => {
   assert.equal(u.halves?.length, 2);
   assert.equal(u.charts, undefined);
 });
+
+/* A target line on a bars column. */
+const hurdle = (col: object, rows: { cells: string[]; style?: string }[] = [{ cells: ["A", "5"] }, { cells: ["B", "19"] }, { cells: ["C", "48"] }]) =>
+  ({ template: "table", title: "Mailing the fastest payers first keeps every round inside the hurdle", table: { columns: [{ label: "Group" }, { label: "Months", bars: true, ...col }], rows } });
+const T20 = { value: 20, label: "20-month hurdle", better: "below" };
+
+test("target: valid on a bars column", () => {
+  assert.deepEqual(errs(hurdle({ target: T20 })), []);
+});
+
+test("target: needs bars, a short label and a value inside the column", () => {
+  assert.ok(errs(hurdle({ bars: false, target: T20 })).some((e) => e.startsWith("table.columns[1].target") && /bars/.test(e)));
+  assert.ok(errs(hurdle({ target: { ...T20, label: "A hurdle label far too long" } })).some((e) => e.startsWith("table.columns[1].target.label")));
+  assert.ok(errs(hurdle({ target: { ...T20, value: 60 } })).some((e) => e.startsWith("table.columns[1].target.value")));
+  assert.ok(errs(hurdle({ target: { ...T20, value: -1 } })).some((e) => e.startsWith("table.columns[1].target.value")));
+});
+
+test("target: one per table", () => {
+  const s = hurdle({ target: T20 });
+  s.table.columns.push({ label: "Cost", bars: true, target: { value: 1000, label: "Cap", better: "below" } } as never);
+  s.table.rows = s.table.rows.map((r) => ({ cells: [...r.cells, "£500"] }));
+  assert.ok(errs(s).some((e) => /one target/.test(e)));
+});
+
+test("target beyond every visible row in pitch warns", () => {
+  const rows = [{ cells: ["A", "5"] }, { cells: ["B", "19"] }, { cells: ["C", "31"], style: "muted" }, { cells: ["D", "48"], style: "muted" }];
+  const s = { ...hurdle({ target: T20 }, rows), title: "Payback", subtitle: "Fastest payers first." };
+  assert.ok(validate(s, "pitch").warnings.some((w) => w.startsWith("table.columns[1].target")));
+  assert.ok(!validate(hurdle({ target: T20 }, rows), "consulting").warnings.some((w) => w.startsWith("table.columns[1].target")));
+});
+
+test("target: its label under the table costs half a row in the budget", () => {
+  const rows = Array.from({ length: 8 }, (_, i) => ({ cells: [`R${i}`, String(5 + i * 6)] }));
+  const full = { ...hurdle({}, rows), caption: "Mailing rounds · months", takeaway: "Every round pays back inside the hurdle." };
+  assert.ok(!errs(full).some((e) => e.startsWith("table: this table costs")));
+  assert.ok(errs({ ...full, table: { ...full.table, columns: [full.table.columns[0], { ...full.table.columns[1], target: { ...T20, value: 30 } }] } }).some((e) => e.startsWith("table: this table costs 11 rows")));
+});
+
+/* Heat shading, struck cells, an outlined column and the key. */
+const grid = (cols: object[], rows: unknown[], extra: object = {}) => ({ template: "table", title: "We set seats and price together to maximise profit", table: { columns: [{ label: "Team size" }, ...cols], rows, ...extra } });
+const G_ROWS = [{ cells: ["5 seats", { value: "£4k", struck: true }, "£2k"] }, { cells: ["50 seats", "£15k", "[[£26k]]"] }];
+
+test("heat: valid on figures, with struck cells, an outline and a key", () => {
+  assert.deepEqual(errs(grid([{ label: "£15", heat: true, outline: true }, { label: "£20", heat: true }], G_ROWS, { key: { focus: "Our price", struck: "Fails a test", outline: "Market price" } })), []);
+});
+
+test("heat needs figures and not bars; outline on one column after the first; key labels need what they label", () => {
+  assert.ok(errs(grid([{ label: "Name", heat: true }], [{ cells: ["a", "Acme"] }])).some((e) => e.startsWith("table.columns[1].heat")));
+  assert.ok(errs(grid([{ label: "A", heat: true, bars: true }], [{ cells: ["a", "5"] }])).some((e) => e.startsWith("table.columns[1]") && /heat or bars/.test(e)));
+  assert.ok(errs({ ...grid([{ label: "A" }], [{ cells: ["a", "5"] }]), table: { columns: [{ label: "L", outline: true }, { label: "A" }], rows: [{ cells: ["a", "5"] }] } }).some((e) => e.startsWith("table.columns[0].outline")));
+  assert.ok(errs(grid([{ label: "A", outline: true }, { label: "B", outline: true }], [{ cells: ["a", "5", "6"] }])).some((e) => /one outlined column/.test(e)));
+  const e = errs(grid([{ label: "A" }], [{ cells: ["a", "5"] }], { key: { focus: "Ours", struck: "Fails", outline: "Theirs" } }));
+  for (const k of ["focus", "struck", "outline"]) assert.ok(e.some((m) => m.startsWith(`table.key.${k}`)), k);
+});
+
+test("doc figures refuse target, heat and key", async () => {
+  const { validateComponent } = await import("../../src/engine/slides/schema");
+  const { DOC_LIMITS } = await import("../../src/engine/docs/validate");
+  const body = { table: { columns: [{ label: "L" }, { label: "A", bars: true, target: { value: 5, label: "Cap" } }, { label: "B", heat: true }], rows: [{ cells: ["a", "5", "6"] }, { cells: ["b", "9", "[[7]]"] }], key: { focus: "Ours" } } };
+  const e = validateComponent("table", body, "consulting", DOC_LIMITS).errors;
+  for (const p of ["table.columns[1].target", "table.columns[2].heat", "table.key"]) assert.ok(e.some((m) => m.startsWith(p) && /doc/.test(m)), p);
+});
+
+test("doc figures refuse a flow and its side: the figure draws only notes beside a table", async () => {
+  const { validateComponent } = await import("../../src/engine/slides/schema");
+  const { DOC_LIMITS } = await import("../../src/engine/docs/validate");
+  const body = { table: { columns: [{ label: "L" }, { label: "A" }], rows: [{ cells: ["a", "5"] }] }, flowSide: "left", flow: { tiers: [{ boxes: [{ text: "In" }] }, { boxes: [{ text: "Out" }] }] } };
+  const e = validateComponent("table", body, "consulting", DOC_LIMITS).errors;
+  for (const p of ["flow", "flowSide"]) assert.ok(e.some((m) => m.startsWith(`${p}:`) && /doc/.test(m)), p);
+});

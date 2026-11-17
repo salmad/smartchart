@@ -53,3 +53,47 @@ test('a group heading too long for the column is a heading row, one cell per col
   expect(h).not.toContain('by-group')
   expect(h).toContain('<tr class="group" data-item="table.rows[0]"><td data-path="table.rows[0].cells[0]" data-kind="md">Launched in the first quarter</td><td></td><td></td></tr>')
 })
+
+test('a target on a bars column states where its line goes and focuses the bars on the better side', () => {
+  const h = html({ columns: [{ label: 'Group' }, { label: 'Months', bars: true, target: { value: 20, label: '20-month hurdle', better: 'below' } }],
+    rows: [{ cells: ['A', '5'] }, { cells: ['B', '19'] }, { cells: ['C', '48'] }] })
+  expect(h).toContain('class="tbl-target" style="--at:41.7"')
+  expect(h).toContain('<span data-path="table.columns[1].target.label" data-kind="esc">20-month hurdle</span>')
+  expect(h.match(/has-bar pass/g)?.length).toBe(2)
+})
+
+test('a target with better above focuses the bars at or over it', () => {
+  const h = html({ columns: [{ label: 'Group' }, { label: 'Score', bars: true, target: { value: 50, label: 'Pass mark', better: 'above' } }],
+    rows: [{ cells: ['A', '40'] }, { cells: ['B', '50'] }, { cells: ['C', '80'] }] })
+  expect(h.match(/has-bar pass/g)?.length).toBe(2)
+})
+
+const GRID = { columns: [{ label: 'Team size' }, { label: '£15', heat: true, outline: true }, { label: '£20', heat: true }, { label: '£30', heat: true }],
+  rows: [{ cells: ['5 seats', { value: '£4k', struck: true }, '£2k', '£4k'] }, { cells: ['50 seats', { value: '−£3k', struck: true }, '£15k', '[[£26k]]'] }] } as Table
+
+test('heat columns share one scale; struck cells are muted with a cross and never shaded', () => {
+  const h = html(GRID)
+  expect(h).toMatch(/<td class="[^"]*\bheat h1\b[^"]*"[^>]*>£2k/)
+  expect(h).toMatch(/<td class="[^"]*\bheat h4\b[^"]*"[^>]*>£15k/)
+  expect(h).toContain('<span class="strike-x" aria-hidden="true">✗</span>')
+  expect(h).not.toMatch(/struck[^"]*h\d/)
+  expect(h.match(/\bstruck\b/g)?.length).toBe(2)
+})
+
+test('heat skips non-figures and negatives', () => {
+  const h = html({ columns: [{ label: 'L' }, { label: 'A', heat: true }], rows: [{ cells: ['a', '—'] }, { cells: ['b', '−£61'] }, { cells: ['c', '£40'] }] })
+  expect(h).not.toContain('NaN')
+  expect(h.match(/heat h\d/g)).toEqual(['heat h5'])
+})
+
+test('a [[focus]] heat cell is drawn solid as the best cell', () => {
+  expect(html(GRID)).toMatch(/<td class="[^"]*\bheat best\b[^"]*"/)
+})
+
+test('the outlined column and the key render only when written', () => {
+  const h = html({ ...GRID, key: { focus: 'Our price', struck: 'Fails a test', outline: 'Market price' } })
+  expect(h).toContain('<col class="outline">')
+  expect(h).toMatch(/<td class="[^"]*\boutline\b[^"]*outline-end/)
+  expect(h).toContain('<p class="heat-key"><span class="k-focus" data-path="table.key.focus" data-kind="esc">Our price</span><span class="k-struck" data-path="table.key.struck" data-kind="esc">Fails a test</span><span class="k-outline" data-path="table.key.outline" data-kind="esc">Market price</span></p>')
+  expect(html(GRID)).not.toContain('heat-key')
+})

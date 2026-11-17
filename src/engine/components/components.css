@@ -37,7 +37,7 @@
 .bullets li { padding-left: 40px; position: relative; }
 .bullets li::before { content: "—"; position: absolute; left: 0; color: var(--muted); }
 /* ═════════════ Split layout: main ⅔ + side ⅓ (chart/table + notes, text + number) ═════════════ */
-.split { display: grid; grid-template-columns: 1.3fr .7fr; gap: 88px; }
+.split { display: grid; grid-template-columns: 2fr 1fr; gap: 88px; }
 .notes { display: flex; flex-direction: column; min-height: 0; }
 /* Notes stack from the top at one fixed gap, with no rules between them; spare height collects below the last
    note (as top-firm commentary columns do). The lead is bold at body size, so the label over the column, which
@@ -63,7 +63,12 @@
 .style-pitch .cap { font-size: 30px; line-height: 1.2; }
 .cap + .chart, .cap + .tbl { margin-top: 28px; }
 .split.has-head { grid-template-rows: auto 1fr; row-gap: 28px; }
-.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > .notes { grid-column: 2; grid-row: 2; }
+.split.cap-only > .cap { grid-column: 1; } .split.cap-only > .main { grid-column: 1; } .split.cap-only > :is(.notes, .flow) { grid-column: 2; grid-row: 2; }
+/* Flipped: the side column (a flow that produces the exhibit) on the left, the exhibit on the right; the mirror of the split. */
+.split.flip { grid-template-columns: 1fr 2fr; }
+.split.flip > .main { grid-column: 2; grid-row: 1; } .split.flip > :is(.flow, .notes) { grid-column: 1; grid-row: 1; }
+.split.flip.has-head > .cap:not(.notes-h) { grid-column: 2; grid-row: 1; } .split.flip.has-head > .notes-h { grid-column: 1; grid-row: 1; }
+.split.flip.has-head > .main { grid-row: 2; } .split.flip.has-head > :is(.flow, .notes) { grid-row: 2; }
 .big-v { font-size: 420px; line-height: .8; color: var(--focus); white-space: nowrap; }
 .big-v.neg { color: var(--neg); } .big-v.pos { color: var(--pos); }
 .style-consulting .big-v { font-weight: 800; font-stretch: 78%; font-size: 360px; }
@@ -494,6 +499,73 @@
 .tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
 .tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
 .tbl tr.total td.has-bar > .cbar { visibility: hidden; }
+.tbl td.has-bar.pass > .cbar > i { background: var(--focus); }
+/* A target: a dashed line over the bars at its value (placed by drawTargets), its label under the last row. */
+.tbl th.has-target { position: relative; }
+.tbl th.has-target > .tbl-target { position: absolute; left: 0; top: 100%; width: 0; height: 0; border-left: 2px dashed var(--fg-2); pointer-events: none; }
+.tbl th.has-target > .tbl-target > span { position: absolute; left: 0; bottom: -30px; transform: translateX(-50%); white-space: nowrap;
+  font: 500 17px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); }
+
+/* ═════════════ Heat: a grid of figures shaded by size (colours from the allocator), struck cells, an outlined column ═════════════ */
+.tbl :is(th, td).heat-col { padding-left: 20px; padding-right: 20px; }
+.tbl td.heat-col { border-bottom: 4px solid var(--bg); border-right: 4px solid var(--bg); }
+.tbl td.heat.h1 { background: var(--heat-1); color: var(--on-heat-1); } .tbl td.heat.h2 { background: var(--heat-2); color: var(--on-heat-2); }
+.tbl td.heat.h3 { background: var(--heat-3); color: var(--on-heat-3); } .tbl td.heat.h4 { background: var(--heat-4); color: var(--on-heat-4); }
+.tbl td.heat.h5 { background: var(--heat-5); color: var(--on-heat-5); }
+.tbl td.heat.best { background: var(--focus); color: var(--on-focus); font-weight: 700; }
+.tbl td.heat.best::before { content: "★\2009"; }
+.tbl td.heat .hl-focus { color: inherit; }
+.tbl td.struck { color: var(--muted); }
+.tbl td.struck > .strike-x { margin-left: 10px; font-size: .8em; }
+/* The outline: two sides down the column, closed over its header and under its last row. */
+.tbl :is(th, td).outline { box-shadow: inset 2px 0 var(--fg-2), inset -2px 0 var(--fg-2); }
+.tbl th.outline { box-shadow: inset 2px 0 var(--fg-2), inset -2px 0 var(--fg-2), inset 0 2px var(--fg-2); padding-top: 14px; }
+.tbl td.outline.outline-end { box-shadow: inset 2px 0 var(--fg-2), inset -2px 0 var(--fg-2), inset 0 -2px var(--fg-2); }
+/* The key: one quiet line naming what the marks mean. */
+.heat-key { display: flex; gap: 36px; margin-top: 20px; font: 500 17px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.heat-key .k-focus::before { content: "★\2009"; color: var(--focus); }
+.heat-key .k-struck::before { content: "✗\2009"; }
+.heat-key .k-outline::before { content: ""; display: inline-block; width: 18px; height: 12px; margin-right: 10px; border: 2px solid var(--fg-2); vertical-align: -1px; }
+
+/* ═════════════ Flow: tiers of boxes top to bottom, an arrow between tiers; a box holds text or a small heat grid ═════════════ */
+.flow { display: flex; flex-direction: column; min-height: 0; }
+.fl-tier { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 12px; }
+.fl-tier.labelled { grid-template-columns: auto repeat(var(--n), minmax(0, 1fr)); align-items: center; column-gap: 16px; }
+.fl-tier.with-op { display: flex; align-items: center; gap: 10px; }
+.fl-tier.with-op > .fl-box { flex: 1; min-width: 0; }
+.fl-label { font: 500 17px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-right: 8px; }
+.fl-op { font: 500 30px/1 var(--mono); color: var(--muted); }
+.fl-box { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 60px; padding: 10px 20px; border-radius: 14px;
+  font-size: 24px; line-height: 1.2; font-weight: 600; background: var(--surface); border: 1px solid var(--line); color: var(--fg-2); min-width: 0; }
+.fl-tier.chips { gap: 10px; }
+.fl-tier.chips > .fl-box { min-height: 48px; padding: 8px 10px; font-size: 21px; font-weight: 500; white-space: nowrap; overflow: hidden; }
+.fl-tier.t-light > .fl-box { background: var(--heat-2); border-color: transparent; color: var(--on-heat-2); }
+.fl-tier.t-strong > .fl-box { background: var(--focus); border-color: transparent; color: var(--on-focus); font-weight: 700; min-height: 72px; }
+.fl-tier.t-outline > .fl-box { background: transparent; border: 2px solid var(--focus); color: var(--focus-text, var(--focus)); }
+.fl-arrow { flex: 1; min-height: 22px; max-height: 56px; display: grid; place-items: center; }
+.fl-arrow svg { width: 24px; height: 14px; fill: none; stroke: var(--line-2); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+/* A label over a small heat grid, on the heat colours the allocator gives the slide. */
+.fl-box.has-obj { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; }
+.fl-obj-l { font: 500 17px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); text-align: left; }
+.mini { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 72px; }
+.mini > i { border-radius: 2px; background: var(--line); }
+.mini > .h1 { background: var(--heat-1); } .mini > .h2 { background: var(--heat-2); } .mini > .h3 { background: var(--heat-3); }
+.mini > .h4 { background: var(--heat-4); } .mini > .h5 { background: var(--heat-5); }
+
+/* ═════════════ Divider: a hairline centred in the gap between a slide's columns, over the exhibit ═════════════
+   Drawn from the exhibit column (split) or the first half (pair), so it adds no grid item and moves nothing. The arrow
+   marks a left column that produces the right one; it carries no colour, since colour means status. Slides only. */
+.slide .split > .main, .slide .pair > .half:first-child { position: relative; }
+.slide .split > .main::after, .slide .pair > .half:first-child::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); pointer-events: none; }
+.slide .split > .main::after { right: -44px; }
+.slide.theme-ink .split > .main::after, .slide.theme-ink .pair > .half:first-child::after { background: var(--line-2); }
+.slide .split.flip > .main::after { right: auto; left: -44px; }
+.slide .pair > .half:first-child::after { right: -48px; }
+.divider-arrow { position: absolute; top: 50%; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--line-2); transform: translate(-50%, -50%); }
+.slide .split.flip > .main > .divider-arrow { left: -44px; }
+.slide .pair > .half:first-child > .divider-arrow { left: calc(100% + 48px); }
+.divider-arrow svg { width: 16px; height: 16px; fill: none; stroke: var(--fg-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ═════════════ Callout: a note, a decision or a risk, one labelled line over a rule ═════════════ */
 /* The rule and label carry the tone; the words stay in the text colour. */

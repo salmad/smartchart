@@ -26,5 +26,5 @@ test('a pair half table carries the block path', () => {
 })
 
 test('a split caption carries the block path', () => {
-  expect(splitHTML({ caption: 'Revenue · £m', notes: [] }, '', '', B)).toContain('data-path="blocks[3].caption"')
+  expect(splitHTML({ caption: 'Revenue · £m', notes: [] }, '', '', '', B)).toContain('data-path="blocks[3].caption"')
 })

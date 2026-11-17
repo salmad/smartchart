@@ -1,4 +1,5 @@
 /* Measurements on a rendered slide: fit issues and layout lints. */
+import { LABEL_MIN } from "../components/fit.js";
 import { MIN_MARK, contrast } from "./colours.js";
 import type { Style } from "../types.js";
 
@@ -22,11 +23,11 @@ export function fitIssuesAt(slide: HTMLElement, style: Style): Located[] {
     if (b.b > bottom + 1) { push(`${name(el)} runs ${Math.round(b.b - bottom)}px into the bottom margin; shorten the body or drop the takeaway`, el); break; }
     if (b.r > right + 1) push(`${name(el)} runs ${Math.round(b.r - right)}px into the right margin`, el);
   }
-  slide.querySelectorAll(".notes, .cards.framed .card, .card, .sec-n, .big-v, .q-text, .cards .v, .title").forEach((el) => {
+  slide.querySelectorAll(".notes, .flow, .fl-box, .cards.framed .card, .card, .sec-n, .big-v, .q-text, .cards .v, .title").forEach((el) => {
     if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflow !== "visible") push(`${name(el)} content is taller than its box`, el);
     if (el.scrollWidth > el.clientWidth + 1) push(`${name(el)} “${(el.textContent ?? "").trim().slice(0, 24)}” is wider than its column`, el);
   });
-  slide.querySelectorAll(".notes, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
+  slide.querySelectorAll(".notes, .flow, .cards.framed .card").forEach((el) => { const last = el.lastElementChild, pb = parseFloat(getComputedStyle(el).paddingBottom);
     if (last && box(last).b > box(el).b - pb + 1) push(`${name(el)} content runs ${Math.round(box(last).b - box(el).b + pb)}px past its box`, el); });
   // A pair stretches to the body's height, so a half's overflow does not move anything after it: measure each half's
   // content against the half itself.
@@ -74,7 +75,7 @@ export function layoutLints(slide: HTMLElement, _style: Style): LayoutLints {
     // A fitted table (render.ts sizeTable) sizes its data columns to their contents on purpose.
     if (d > 1 && !tbl.classList.contains("fitted")) out.push(`table: data columns differ by ${Math.round(d)}px; they must be equal (L1)`);
     const share = ths[0] / box(tbl).w;
-    if (share < .195 || share > .405) out.push(`table: the label column is ${Math.round(share * 100)}% of the table; it must be 20–40% (L1)`);
+    if (share < LABEL_MIN - .005 || share > .405) out.push(`table: the label column is ${Math.round(share * 100)}% of the table; it must be ${Math.round(LABEL_MIN * 100)}–40% (L1)`);
   }
 
   // L3: the body starts on one line per style: top padding + the head's reserved height + the gap.

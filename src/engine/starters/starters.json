@@ -2894,6 +2894,606 @@
      }
     ]
    }
+  },
+  {
+   "id": "table-flow",
+   "group": "compare",
+   "label": "Table with a flow",
+   "blurb": "The figures, and how they are made",
+   "consulting": {
+    "template": "table",
+    "kicker": "Growth",
+    "title": "We will onboard first the teams that [[send a deck soonest]]",
+    "caption": "New teams by type, fastest first · illustrative",
+    "notesTitle": "How teams are scored",
+    "flow": {
+     "tiers": [
+      {
+       "boxes": [
+        {
+         "text": "Team size"
+        },
+        {
+         "text": "Role"
+        },
+        {
+         "text": "Deck volume"
+        },
+        {
+         "text": "Tools today"
+        },
+        {
+         "text": "Templates"
+        },
+        {
+         "text": "Sign-up page"
+        }
+       ]
+      },
+      {
+       "boxes": [
+        {
+         "text": "Occam scores every new team"
+        }
+       ],
+       "tone": "strong"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Will it activate?"
+        },
+        {
+         "text": "How many seats?"
+        }
+       ],
+       "tone": "light"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Days to first deck set the order"
+        }
+       ],
+       "tone": "outline"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Calls"
+        },
+        {
+         "text": "Email"
+        }
+       ],
+       "label": "Feeds"
+      }
+     ]
+    },
+    "table": {
+     "columns": [
+      {
+       "label": "Team"
+      },
+      {
+       "label": "Days to first deck",
+       "bars": true,
+       "target": {
+        "value": 14,
+        "label": "Two-week goal",
+        "better": "below"
+       }
+      },
+      {
+       "label": "Seats"
+      },
+      {
+       "label": "Value a year"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Boutique consultancies",
+        "3",
+        "8",
+        "£2.9k"
+       ]
+      },
+      {
+       "cells": [
+        "PE deal teams",
+        "5",
+        "12",
+        "£4.3k"
+       ]
+      },
+      {
+       "cells": [
+        "Corporate strategy",
+        "8",
+        "20",
+        "£7.2k"
+       ]
+      },
+      {
+       "cells": [
+        "Founders raising",
+        "12",
+        "2",
+        "£0.7k"
+       ]
+      },
+      {
+       "cells": [
+        "Agencies",
+        "21",
+        "15",
+        "£5.4k"
+       ],
+       "style": "muted"
+      },
+      {
+       "cells": [
+        "Universities",
+        "34",
+        "40",
+        "£4.8k"
+       ],
+       "style": "muted"
+      }
+     ]
+    },
+    "takeaway": "**Four team types** send a first deck inside the two-week goal.",
+    "footnote": "Illustrative figures, not a forecast. Days to first deck: sign-up to the first deck shared outside the team."
+   },
+   "pitch": {
+    "template": "table",
+    "title": "Onboarding",
+    "subtitle": "The fastest teams [[first]].",
+    "flow": {
+     "tiers": [
+      {
+       "boxes": [
+        {
+         "text": "Team size"
+        },
+        {
+         "text": "Role"
+        },
+        {
+         "text": "Deck volume"
+        },
+        {
+         "text": "Tools today"
+        },
+        {
+         "text": "Templates"
+        },
+        {
+         "text": "Sign-up page"
+        }
+       ]
+      },
+      {
+       "boxes": [
+        {
+         "text": "Occam scores every new team"
+        }
+       ],
+       "tone": "strong"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Days to first deck set the order"
+        }
+       ],
+       "tone": "outline"
+      }
+     ]
+    },
+    "table": {
+     "columns": [
+      {
+       "label": "Team"
+      },
+      {
+       "label": "Days to first deck",
+       "bars": true,
+       "target": {
+        "value": 14,
+        "label": "Two-week goal",
+        "better": "below"
+       }
+      },
+      {
+       "label": "Seats"
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "Boutique consultancies",
+        "3",
+        "8"
+       ]
+      },
+      {
+       "cells": [
+        "PE deal teams",
+        "5",
+        "12"
+       ]
+      },
+      {
+       "cells": [
+        "Corporate strategy",
+        "8",
+        "20"
+       ]
+      },
+      {
+       "cells": [
+        "Agencies",
+        "21",
+        "15"
+       ]
+      }
+     ]
+    },
+    "takeaway": "**Three team types** inside two weeks."
+   }
+  },
+  {
+   "id": "heat-grid",
+   "group": "compare",
+   "label": "Heat grid",
+   "blurb": "The best cell across two choices, and how it is found",
+   "consulting": {
+    "template": "table",
+    "kicker": "Pricing",
+    "title": "We set seats and price together, so each plan is the [[most profitable one]] that passes both tests",
+    "caption": "Gross profit a year per team · £k",
+    "notesTitle": "How each cell is set",
+    "flowSide": "left",
+    "flow": {
+     "tiers": [
+      {
+       "boxes": [
+        {
+         "label": "Take-up",
+         "grid": [
+          [60, 50, 40, 30, 20],
+          [62, 52, 42, 32, 22],
+          [64, 54, 44, 34, 24],
+          [66, 56, 46, 36, 26],
+          [68, 58, 48, 38, 28]
+         ]
+        },
+        {
+         "label": "Use",
+         "grid": [
+          [20, 20, 20, 20, 20],
+          [35, 35, 35, 35, 35],
+          [50, 50, 50, 50, 50],
+          [65, 65, 65, 65, 65],
+          [80, 80, 80, 80, 80]
+         ]
+        },
+        {
+         "label": "AI cost",
+         "grid": [
+          [8, 7, 6, 5, 4],
+          [14, 13, 12, 11, 10],
+          [20, 19, 18, 17, 16],
+          [26, 25, 24, 23, 22],
+          [32, 31, 30, 29, 28]
+         ]
+        }
+       ],
+       "op": "·"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Gross profit for every plan"
+        }
+       ],
+       "tone": "strong"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Margin ≥ 70%"
+        },
+        {
+         "text": "Churn < 3%"
+        }
+       ],
+       "tone": "outline",
+       "label": "Tests"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Most profitable cell that passes"
+        }
+       ],
+       "tone": "light"
+      }
+     ]
+    },
+    "table": {
+     "columns": [
+      {
+       "label": "Team size"
+      },
+      {
+       "label": "£15",
+       "heat": true,
+       "outline": true
+      },
+      {
+       "label": "£20",
+       "heat": true
+      },
+      {
+       "label": "£25",
+       "heat": true
+      },
+      {
+       "label": "£30",
+       "heat": true
+      },
+      {
+       "label": "£40",
+       "heat": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "5 seats",
+        {
+         "value": "£2k",
+         "struck": true
+        },
+        "£4k",
+        "£5k",
+        "£4k",
+        "£2k"
+       ]
+      },
+      {
+       "cells": [
+        "10 seats",
+        {
+         "value": "£3k",
+         "struck": true
+        },
+        "£7k",
+        "£9k",
+        "£8k",
+        "£5k"
+       ]
+      },
+      {
+       "cells": [
+        "25 seats",
+        {
+         "value": "£6k",
+         "struck": true
+        },
+        "£15k",
+        "£21k",
+        "£19k",
+        "£12k"
+       ]
+      },
+      {
+       "cells": [
+        "50 seats",
+        {
+         "value": "£4k",
+         "struck": true
+        },
+        "£18k",
+        "£24k",
+        "[[£26k]]",
+        "£17k"
+       ]
+      },
+      {
+       "cells": [
+        "100 seats",
+        {
+         "value": "−£3k",
+         "struck": true
+        },
+        {
+         "value": "£14k",
+         "struck": true
+        },
+        "£22k",
+        "£23k",
+        "£19k"
+       ]
+      }
+     ],
+     "key": {
+      "focus": "Our price",
+      "struck": "Fails a test",
+      "outline": "Market price"
+     }
+    },
+    "takeaway": "Our plan: **50 seats at £30**. The market’s £15 fails at every size.",
+    "footnote": "Illustrative figures, not a forecast. AI cost: model tokens per seat at typical use."
+   },
+   "pitch": {
+    "template": "table",
+    "title": "Pricing",
+    "subtitle": "The most profitable plan [[that passes]].",
+    "flowSide": "left",
+    "flow": {
+     "tiers": [
+      {
+       "boxes": [
+        {
+         "label": "Take-up",
+         "grid": [
+          [60, 50, 40, 30, 20],
+          [62, 52, 42, 32, 22],
+          [64, 54, 44, 34, 24],
+          [66, 56, 46, 36, 26],
+          [68, 58, 48, 38, 28]
+         ]
+        },
+        {
+         "label": "Use",
+         "grid": [
+          [20, 20, 20, 20, 20],
+          [35, 35, 35, 35, 35],
+          [50, 50, 50, 50, 50],
+          [65, 65, 65, 65, 65],
+          [80, 80, 80, 80, 80]
+         ]
+        },
+        {
+         "label": "AI cost",
+         "grid": [
+          [8, 7, 6, 5, 4],
+          [14, 13, 12, 11, 10],
+          [20, 19, 18, 17, 16],
+          [26, 25, 24, 23, 22],
+          [32, 31, 30, 29, 28]
+         ]
+        }
+       ],
+       "op": "·"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Gross profit for every plan"
+        }
+       ],
+       "tone": "strong"
+      },
+      {
+       "boxes": [
+        {
+         "text": "Best cell that passes"
+        }
+       ],
+       "tone": "light"
+      }
+     ]
+    },
+    "table": {
+     "columns": [
+      {
+       "label": "Team size"
+      },
+      {
+       "label": "£15",
+       "heat": true,
+       "outline": true
+      },
+      {
+       "label": "£20",
+       "heat": true
+      },
+      {
+       "label": "£25",
+       "heat": true
+      },
+      {
+       "label": "£30",
+       "heat": true
+      },
+      {
+       "label": "£40",
+       "heat": true
+      }
+     ],
+     "rows": [
+      {
+       "cells": [
+        "5 seats",
+        {
+         "value": "£2k",
+         "struck": true
+        },
+        "£4k",
+        "£5k",
+        "£4k",
+        "£2k"
+       ]
+      },
+      {
+       "cells": [
+        "10 seats",
+        {
+         "value": "£3k",
+         "struck": true
+        },
+        "£7k",
+        "£9k",
+        "£8k",
+        "£5k"
+       ]
+      },
+      {
+       "cells": [
+        "25 seats",
+        {
+         "value": "£6k",
+         "struck": true
+        },
+        "£15k",
+        "£21k",
+        "£19k",
+        "£12k"
+       ]
+      },
+      {
+       "cells": [
+        "50 seats",
+        {
+         "value": "£4k",
+         "struck": true
+        },
+        "£18k",
+        "£24k",
+        "[[£26k]]",
+        "£17k"
+       ]
+      },
+      {
+       "cells": [
+        "100 seats",
+        {
+         "value": "−£3k",
+         "struck": true
+        },
+        {
+         "value": "£14k",
+         "struck": true
+        },
+        "£22k",
+        "£23k",
+        "£19k"
+       ]
+      }
+     ],
+     "key": {
+      "focus": "Our price",
+      "struck": "Fails a test",
+      "outline": "Market price"
+     }
+    }
+   }
   }
  ],
  "docs": [
