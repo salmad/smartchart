@@ -494,6 +494,12 @@
 .tbl :is(tr.focus, td.focus) > .cbar > i { background: var(--focus); }
 .tbl tr.muted td.has-bar > .cbar > i { opacity: .5; }
 .tbl tr.total td.has-bar > .cbar { visibility: hidden; }
+.tbl td.has-bar.pass > .cbar > i { background: var(--focus); }
+/* A target: a dashed line over the bars at its value (placed by drawTargets), its label under the last row. */
+.tbl th.has-target { position: relative; }
+.tbl th.has-target > .tbl-target { position: absolute; left: 0; top: 100%; width: 0; height: 0; border-left: 2px dashed var(--fg-2); pointer-events: none; }
+.tbl th.has-target > .tbl-target > span { position: absolute; left: 0; bottom: -30px; transform: translateX(-50%); white-space: nowrap;
+  font: 500 17px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); }
 
 /* ═════════════ Callout: a note, a decision or a risk, one labelled line over a rule ═════════════ */
 /* The rule and label carry the tone; the words stay in the text colour. */

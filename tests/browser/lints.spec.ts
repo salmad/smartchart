@@ -70,3 +70,22 @@ test('L3: the body starts on the same line whatever the title, kicker or subtitl
   expect((await tops('pitch', [{ title: 'The plan', subtitle: 'Five million to a funded book.' },
     { title: 'The plan', subtitle: 'Five million pounds gets us to a funded book by 2027.' }])).size).toBe(1)
 })
+
+test('a target line sits where a bar of its value would end, from under the header to the last row, with no fit issues', async ({ page }) => {
+  const lint = await open(page)
+  const rows = [['Top 0.5m', '5', '£500'], ['0.5m–1m', '7', '£700'], ['1m–1.5m', '11', '£1,000'], ['1.5m–2m', '19', '£1,700'], ['2m–2.5m', '31', '£2,500'], ['2.5m–3m', '48', '£3,300']]
+  const r = await lint({ template: 'table', title: 'Mailing the fastest payers first keeps every round inside the 20-month hurdle',
+    table: { columns: [{ label: 'Companies' }, { label: 'Months to pay back', bars: true, target: { value: 20, label: '20-month hurdle', better: 'below' } }, { label: 'Cost' }],
+      rows: rows.map((c, i) => ({ cells: c, ...(i > 3 ? { style: 'muted' } : {}) })) } })
+  expect(r.issues, JSON.stringify(r)).toEqual([])
+  const m = await page.$eval('.tbl', (tbl) => {
+    const line = tbl.querySelector('.tbl-target') as HTMLElement, L = line.getBoundingClientRect()
+    const track = tbl.querySelector('tbody td.has-bar > .cbar') as HTMLElement, T = track.getBoundingClientRect()
+    const head = (tbl.querySelector('thead') as HTMLElement).getBoundingClientRect(), last = (tbl.querySelector('tbody tr:last-child') as HTMLElement).getBoundingClientRect()
+    return { x: L.left, want: T.left + T.width * 20 / 48, top: L.top - head.bottom, bottom: L.bottom - last.bottom, pass: tbl.querySelectorAll('td.has-bar.pass').length }
+  })
+  expect(Math.abs(m.x - m.want)).toBeLessThanOrEqual(2)
+  expect(Math.abs(m.top)).toBeLessThanOrEqual(2)
+  expect(Math.abs(m.bottom)).toBeLessThanOrEqual(2)
+  expect(m.pass).toBe(4)
+})

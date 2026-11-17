@@ -298,3 +298,40 @@ test("upgrade turns an old pair's charts into halves", () => {
   assert.equal(u.halves?.length, 2);
   assert.equal(u.charts, undefined);
 });
+
+/* A target line on a bars column (FinBridge payback hurdle). */
+const hurdle = (col: object, rows: { cells: string[]; style?: string }[] = [{ cells: ["A", "5"] }, { cells: ["B", "19"] }, { cells: ["C", "48"] }]) =>
+  ({ template: "table", title: "Mailing the fastest payers first keeps every round inside the hurdle", table: { columns: [{ label: "Group" }, { label: "Months", bars: true, ...col }], rows } });
+const T20 = { value: 20, label: "20-month hurdle", better: "below" };
+
+test("target: valid on a bars column", () => {
+  assert.deepEqual(errs(hurdle({ target: T20 })), []);
+});
+
+test("target: needs bars, a short label and a value inside the column", () => {
+  assert.ok(errs(hurdle({ bars: false, target: T20 })).some((e) => e.startsWith("table.columns[1].target") && /bars/.test(e)));
+  assert.ok(errs(hurdle({ target: { ...T20, label: "A hurdle label far too long" } })).some((e) => e.startsWith("table.columns[1].target.label")));
+  assert.ok(errs(hurdle({ target: { ...T20, value: 60 } })).some((e) => e.startsWith("table.columns[1].target.value")));
+  assert.ok(errs(hurdle({ target: { ...T20, value: -1 } })).some((e) => e.startsWith("table.columns[1].target.value")));
+});
+
+test("target: one per table", () => {
+  const s = hurdle({ target: T20 });
+  s.table.columns.push({ label: "Cost", bars: true, target: { value: 1000, label: "Cap", better: "below" } } as never);
+  s.table.rows = s.table.rows.map((r) => ({ cells: [...r.cells, "£500"] }));
+  assert.ok(errs(s).some((e) => /one target/.test(e)));
+});
+
+test("target beyond every visible row in pitch warns", () => {
+  const rows = [{ cells: ["A", "5"] }, { cells: ["B", "19"] }, { cells: ["C", "31"], style: "muted" }, { cells: ["D", "48"], style: "muted" }];
+  const s = { ...hurdle({ target: T20 }, rows), title: "Payback", subtitle: "Fastest payers first." };
+  assert.ok(validate(s, "pitch").warnings.some((w) => w.startsWith("table.columns[1].target")));
+  assert.ok(!validate(hurdle({ target: T20 }, rows), "consulting").warnings.some((w) => w.startsWith("table.columns[1].target")));
+});
+
+test("target: its label under the table costs half a row in the budget", () => {
+  const rows = Array.from({ length: 8 }, (_, i) => ({ cells: [`R${i}`, String(5 + i * 6)] }));
+  const full = { ...hurdle({}, rows), caption: "Mailing rounds · months", takeaway: "Every round pays back inside the hurdle." };
+  assert.ok(!errs(full).some((e) => e.startsWith("table: this table costs")));
+  assert.ok(errs({ ...full, table: { ...full.table, columns: [full.table.columns[0], { ...full.table.columns[1], target: { ...T20, value: 30 } }] } }).some((e) => e.startsWith("table: this table costs 11 rows")));
+});

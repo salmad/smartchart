@@ -133,3 +133,19 @@ export function fitValues(root: HTMLElement): void {
     if (k < 1) els.forEach((e) => { e.style.fontSize = `${parseFloat(getComputedStyle(e).fontSize) * Math.max(k, .75)}px`; });
   }
 }
+
+/** Target lines on bars columns: each `.tbl-target` (in its column's header, `--at` its share of the bar track) is placed
+    over the bars, from under the header to the last row's bottom. After the table has grown: the line follows the rows. */
+export function drawTargets(root: HTMLElement, k: number): void {
+  root.querySelectorAll<HTMLElement>(".tbl th.has-target > .tbl-target").forEach((line) => {
+    const th = line.parentElement as HTMLTableCellElement, tbl = th.closest("table");
+    const rows = tbl ? [...tbl.querySelectorAll<HTMLTableRowElement>("tbody tr:not(.group)")] : [];
+    const track = rows.map((r) => r.cells[th.cellIndex]?.querySelector<HTMLElement>(":scope > .cbar")).find((x) => x);
+    if (!track || !rows.length) return;
+    const at = parseFloat(getComputedStyle(line).getPropertyValue("--at")) || 0;
+    const H = th.getBoundingClientRect(), T = track.getBoundingClientRect(), last = rows[rows.length - 1].getBoundingClientRect();
+    line.style.left = `${(T.left - H.left + (T.width * at) / 100) / k}px`;
+    line.style.top = `${H.height / k}px`;
+    line.style.height = `${(last.bottom - H.bottom) / k}px`;
+  });
+}

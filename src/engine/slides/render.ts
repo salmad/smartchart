@@ -11,7 +11,7 @@ import { cardsHTML } from "../components/cards.js";
 import { splitHTML } from "../components/notes.js";
 import { stepsHTML, summaryHTML } from "../components/rows.js";
 import { pairHTML } from "../components/pair.js";
-import { alignHalves, drawIcons, fitPictures, fitValues, sizeTable, stackIcons } from "../components/fit.js";
+import { alignHalves, drawIcons, drawTargets, fitPictures, fitValues, sizeTable, stackIcons } from "../components/fit.js";
 
 /** Each link to a slide gets that slide's page now; a link to a slide no longer in the deck shows its words alone. */
 const pageRefs = (html: string, pages: Record<string, number> | undefined) =>
@@ -96,7 +96,7 @@ export function mountSlide(frame: HTMLElement, s: Slide, ctx: SlideContext, deck
   // The fitters measure in slide pixels: the slide's drawn width over its 1920.
   const k = slide.getBoundingClientRect().width / 1920;
   fitValues(slide);
-  sizeTable(slide, k); stackIcons(slide, k); growTable(slide);
+  sizeTable(slide, k); stackIcons(slide, k); growTable(slide); drawTargets(slide, k);
   // A chart slide has one host; a pair has two, each its own chart with its own colours.
   drawCharts(slide, s, deck.theme, deck.accent, colours);
   drawIcons(slide); growCards(slide); fitPictures(slide, k); alignHalves(slide, k);
@@ -114,7 +114,9 @@ function growTable(slide: HTMLElement) {
   // The slide is scaled with a transform: measure in slide pixels.
   const R = slide.getBoundingClientRect(), k = R.width / 1920, top = (el: Element) => (el.getBoundingClientRect().top - R.top) / k;
   const bottom = 1080 - parseFloat(getComputedStyle(slide).paddingBottom), tk = slide.querySelector(".takeaway");
-  const area = (tk ? top(tk) - 40 : bottom) - top(body), natural = body.getBoundingClientRect().height / k;
+  // A target's label hangs under the last row: keep its room (label 17px + 30px drop) clear of the takeaway.
+  const label = body.querySelector(".tbl-target") ? 36 : 0;
+  const area = (tk ? top(tk) - 40 : bottom) - top(body) - label, natural = body.getBoundingClientRect().height / k;
   if (natural < area) body.style.height = `${Math.min(area, natural * 1.5)}px`;
 }
 

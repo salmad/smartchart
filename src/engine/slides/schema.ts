@@ -292,6 +292,11 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   icon: f("enum", "Optional icon over the header, from the curated set: on every column after the first, or none.", { values: ICONS }),
   logo: { ...LOGO, desc: `Optional logo as the header, when the columns are companies: on every column after the first, or none. Not with \`icon\`. The label stays as its name. ${ADD_IMAGE}` },
   bars: f("boolean", "A column of figures (0 or more): a small bar beside each figure, to scale with the column's largest, so the column can be scanned. Shares, scores, sizes. Not on marks or words.", { default: false }),
+  target: f("object", "Optional, on a column with `bars`: a dashed line across the bars at a hurdle or goal, named by its label; the bars on the better side take the focus colour. One per table.", { fields: {
+    value: f("number", "Where the line sits, in the column's figures.", { required: true }),
+    label: f("text", "What the line is: '20-month hurdle', 'Target'.", { required: true, max: 20 }),
+    better: f("enum", "Which side passes: below (payback, cost) or above (score, margin).", { values: ["below", "above"], default: "below" }),
+  } }),
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
   align: f("enum", "Text alignment; auto follows the content.", { values: ["left", "centre", "right", "auto"], default: "auto" }),
@@ -379,7 +384,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     },
     variant: (s) => (s.notes?.length ? "split" : "full"),
     rules: [
-      "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), row icons 0, header icons 0 inline but 1 when a label is too long to sit beside its icon (the icons then go above the labels), a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
+      "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), row icons 0, header icons 0 inline but 1 when a label is too long to sit beside its icon (the icons then go above the labels), a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting), a target's label 0.5. Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       `Cells: at most ${CELL_MAX} characters. Consulting: a two-column table of words (a label, then what it means) is drawn full width, and its second column takes ${WIDE_CELL_MAX}.`,
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
@@ -941,6 +946,20 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
     const neg = rows.findIndex((r) => r?.style !== "group" && (figureOf(r?.cells?.[j]) ?? 0) < 0);
     if (neg >= 0) out.errors.push(`${base}.rows[${neg}].cells[${j}]: a negative figure in a column with bars; bars show sizes of 0 or more. Remove bars, or use a chart for gains and losses.`);
   });
+  // Target: on a bars column, inside its figures, one per table; a line with nothing visible past it says nothing.
+  const targets = cols.flatMap((c, j) => (c?.target ? [j] : []));
+  if (targets.length > 1) out.errors.push(`${base}.columns: ${targets.length} targets; one target per table.`);
+  targets.forEach((j) => {
+    const c = cols[j], t = c?.target, at = `${base}.columns[${j}].target`;
+    if (!t || typeof t !== "object") return;
+    if (!c?.bars) return out.errors.push(`${at}: a target needs bars on its column. Add \`bars: true\`, or remove the target.`);
+    const figs = rows.filter((r) => r && r.style !== "group" && r.style !== "total").map((r) => figureOf(r.cells?.[j])).filter((v): v is number => v !== null);
+    const max = Math.max(0, ...figs);
+    if (typeof t.value === "number" && (t.value < 0 || t.value > max)) return out.errors.push(`${at}.value: ${t.value} is outside the column's figures (0 to ${max}). Put the line where the bars can reach it.`);
+    const shown = rows.filter((r) => r && r.style !== "group" && r.style !== "total" && !(style === "pitch" && r.style === "muted")).map((r) => figureOf(r.cells?.[j])).filter((v): v is number => v !== null);
+    const worse = shown.filter((v) => (t.better === "above" ? v < t.value : v > t.value));
+    if (shown.length && !worse.length) out.warnings.push(`${at}: no ${style === "pitch" ? "visible " : ""}row is past the target${style === "pitch" ? " (pitch hides muted rows)" : ""}, so the line divides nothing. Show a row past it, or drop the target.`);
+  });
   if (half && cols.some((c) => c?.bars)) out.errors.push(`${base}: bars in cells do not fit half a slide. Use the table template.`);
   // Logos: every column after the first (as headers), or none; every row's label (as its first cell), or none.
   if (cols[0]?.logo) out.errors.push(`${base}.columns[0].logo: the label column has no logo; put logos on its cells instead.`);
@@ -1037,8 +1056,8 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
         return cells.some((c) => markOf(String(c && typeof c === "object" ? c.value ?? "" : c ?? ""))) ? 1.15 : 1;
       };
       const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = iconsMayStack(t, roomOf(t, !!s.notes?.length)) ? 1 : 0;
-      const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
-      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
+      const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons + ((t.columns || []).some((c) => c?.target) ? 0.5 : 0)) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
+      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1, a target's label = 0.5). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
       if (s.notes?.length) {
         checkNotes(s, style, out, limits);
         if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);

@@ -21,6 +21,12 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
     const p = b.max > 0 && v !== null && v > 0 ? Math.round((v / b.max) * 1000) / 10 : 0;
     return `<span class="cbar"><i style="width:${p}%"></i></span>${inner}`;
   };
+  // A target line: the renderer states where it goes (share of the bar track, the bars' own scale); a fitter draws it.
+  const passes = (j: number, c: Cell) => { const tg = t.columns[j]?.target, v = figureOf(c);
+    return !!tg && v !== null && (tg.better === "above" ? v >= tg.value : v <= tg.value); };
+  const targetHTML = (j: number) => { const tg = t.columns[j]?.target, b = bars[j];
+    if (!tg || !b || b.max <= 0) return "";
+    return `<span class="tbl-target" style="--at:${Math.round((tg.value / b.max) * 1000) / 10}"><span${at(`${base}.columns[${j}].target.label`, "esc")}>${esc(tg.label)}</span></span>`; };
   // A verdict column (ticks, pros and cons): every cell a mark with its reason (✗ Pasted in, then restyled). The mark leads
   // its words on one line, left-aligned like text. Bare marks (a scorecard) and figures stay as their column aligns them.
   const verdict = t.columns.map((_, j) => j > 0 && body.length > 0 && body.every((r) => { const c = r.cells[j], o = typeof c === "object" && c ? c : null; return !!o?.note && !!markOf(String(o.value ?? "")); }));
@@ -36,7 +42,7 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
     if (o?.bullets) return `<td class="${k} has-bul">${o.value ? `<span${at(`${p}.value`, "md")}>${md(o.value)}</span>` : ""}${list(o.bullets, `${p}.bullets`)}</td>`;
     if (o?.icon) return `<td class="${k} has-ric"><span class="ric"><i data-lucide="${esc(o.icon)}"></i><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span></span>${note(o, p)}</td>`;
     if (o?.logo) return `<td class="${k} has-lg">${named(o.logo, `<span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>`, plain(String(o.value ?? "")), `${p}.logo`)}${note(o, p)}</td>`;
-    if (bars[j]) return `<td class="${k} has-bar" style="--vc:${bars[j]?.ch}">${barred(j, c, `<span${at(o ? `${p}.value` : p, "md")}>${md(o ? o.value ?? "" : c ?? "")}</span>`)}${o ? note(o, p) : ""}</td>`;
+    if (bars[j]) return `<td class="${k} has-bar${passes(j, c) ? " pass" : ""}" style="--vc:${bars[j]?.ch}">${barred(j, c, `<span${at(o ? `${p}.value` : p, "md")}>${md(o ? o.value ?? "" : c ?? "")}</span>`)}${o ? note(o, p) : ""}</td>`;
     if (o) return `<td class="${k}"><span${at(`${p}.value`, "md")}>${md(o.value ?? "")}</span>${note(o, p)}</td>`;
     return `<td class="${k}"${at(p, "md")}>${md(c ?? "")}</td>`;
   };
@@ -44,6 +50,8 @@ export function tableHTML(t: Table, base: string, key = true, room: TableRoom = 
     ? `<th class="${cls(c, j)} has-lg">${named(c.logo, `<span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span>`, c.label ?? "", `${base}.columns[${j}].logo`)}</th>`
     : c.icon
     ? `<th class="${cls(c, j)} has-ic"><i data-lucide="${esc(c.icon)}"></i><span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span></th>`
+    : c.target && bars[j]
+    ? `<th class="${cls(c, j)} has-target"><span${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</span>${targetHTML(j)}</th>`
     : `<th class="${cls(c, j)}"${at(`${base}.columns[${j}].label`, "esc")}>${esc(c.label ?? "")}</th>`;
   const row = (r: Table["rows"][number], i: number) => {
     if (r.style === "group") { const g = r.cells[0], o = typeof g === "object" && g ? g : null;

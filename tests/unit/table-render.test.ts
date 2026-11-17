@@ -53,3 +53,17 @@ test('a group heading too long for the column is a heading row, one cell per col
   expect(h).not.toContain('by-group')
   expect(h).toContain('<tr class="group" data-item="table.rows[0]"><td data-path="table.rows[0].cells[0]" data-kind="md">Launched in the first quarter</td><td></td><td></td></tr>')
 })
+
+test('a target on a bars column states where its line goes and focuses the bars on the better side', () => {
+  const h = html({ columns: [{ label: 'Group' }, { label: 'Months', bars: true, target: { value: 20, label: '20-month hurdle', better: 'below' } }],
+    rows: [{ cells: ['A', '5'] }, { cells: ['B', '19'] }, { cells: ['C', '48'] }] })
+  expect(h).toContain('class="tbl-target" style="--at:41.7"')
+  expect(h).toContain('<span data-path="table.columns[1].target.label" data-kind="esc">20-month hurdle</span>')
+  expect(h.match(/has-bar pass/g)?.length).toBe(2)
+})
+
+test('a target with better above focuses the bars at or over it', () => {
+  const h = html({ columns: [{ label: 'Group' }, { label: 'Score', bars: true, target: { value: 50, label: 'Pass mark', better: 'above' } }],
+    rows: [{ cells: ['A', '40'] }, { cells: ['B', '50'] }, { cells: ['C', '80'] }] })
+  expect(h.match(/has-bar pass/g)?.length).toBe(2)
+})
