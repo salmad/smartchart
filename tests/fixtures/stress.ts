@@ -98,19 +98,20 @@ export function stressFor(st: Style): (Slide & { name: string })[] {
               : [...TIMES(4).map(() => ({ cells: [W(30), "(1,234)", "12,345", "(34)", "—"] })), { cells: [W(24), "£179", "£10", "£128", "£95"], style: "total" }] } },
     { template: "table", name: "Stress · table + notes", ...frame("table"), notes: notes(3, false), table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
       rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
-    // A flow at its limits beside a table: chips at 14, a strong box at 44, two at 28, three at 16 under a label (cost 5.2 of 5.5 in consulting).
+    // A flow at its limits beside a table: chips at 12, a strong box at 44, two at 28, three at 16 under a label (cost 5.2 of 5.5 in consulting),
+    // with the longest word each box allows (12 in a chip, 6 in three boxes beside a label).
     { template: "table", name: "Stress · table + flow", ...frame("table"), ...(c ? { notesTitle: W(max("table", st, "notesTitle")) } : {}), flow: { tiers: [
-        { boxes: TIMES(6).map(() => ({ text: W(14) })) },
+        { boxes: TIMES(6).map((_, i) => ({ text: i ? W(12) : "Underwriting" })) },
         { boxes: [{ text: W(44) }], tone: "strong" as const },
         { boxes: TIMES(2).map(() => ({ text: W(28) })), tone: "light" as const },
-        ...(c ? [{ boxes: TIMES(3).map(() => ({ text: W(16) })), tone: "outline" as const, label: W(8) }] : []) ] },
+        ...(c ? [{ boxes: TIMES(3).map((_, i) => ({ text: i ? W(16) : "Scored ranked" })), tone: "outline" as const, label: W(8) }] : []) ] },
       table: { columns: [{ label: W(20) }, ...TIMES(3).map((_, i) => ({ label: W(12), focus: i === 0 }))],
         rows: c ? [...rows(5, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] : [...rows(4, false), { cells: [W(24), "£179", "£10", "£128"], style: "total" }] } },
     // A heat grid at 6 columns of short figures, struck cells, an outlined column and a key, with a flow of grids on its left.
     { template: "table", name: "Stress · heat table + flow left", ...frame("table"), ...(c ? { notesTitle: W(max("table", st, "notesTitle")) } : {}), flowSide: "left" as const, flow: { tiers: [
         { boxes: TIMES(3).map((_, k) => ({ label: W(8), grid: TIMES(5).map((_, r) => TIMES(5).map((_, j) => (r + 1) * (j + k + 1)) as number[]) })), op: "×" as const },
         { boxes: [{ text: W(44) }], tone: "strong" as const },
-        ...(c ? [{ boxes: TIMES(2).map(() => ({ text: W(13) })), tone: "outline" as const, label: W(8) }] : []),
+        ...(c ? [{ boxes: TIMES(2).map((_, i) => ({ text: i ? W(13) : "Underwriting" })), tone: "outline" as const, label: W(8) }] : []),
         { boxes: [{ text: W(36) }], tone: "light" as const } ] },
       table: { columns: [{ label: W(12) }, ...TIMES(5).map((_, j) => ({ label: W(8), heat: true, ...(j === 0 ? { outline: true } : {}) }))],
         rows: TIMES(c ? 6 : 4).map((_, r) => ({ cells: [W(12), ...TIMES(5).map((_, j) => (j === 0 && r < 2 ? { value: "−£1,234", struck: true } : r === 2 && j === 2 ? "[[£8,888]]" : `£${(r + 1) * (j + 2) * 97}`))] })),

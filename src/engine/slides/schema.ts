@@ -347,16 +347,16 @@ const CHART_KINDS = [
 /* ─────────────── The flow: tiers of boxes, each box one inner component ───────────────
    Limits measured at the side column's width (about 560px) on the first flow mockups. A box's text narrows with the
    boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
-export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 14 } as const;
+export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 12 } as const;
 /** Characters on one line of a box, by boxes in the tier, at the side column's ⅓ (525px); a tier label takes about 4. */
 const FLOW_LINE = { 1: 36, 2: 17, 3: 10 } as const;
 /** Height in tier units (a one-line tier and its arrow, about 83px): consulting 6.5, 5.5 beside a takeaway. */
 const FLOW_BUDGET: Record<Style, [number, number]> = { consulting: [6.5, 5.5], pitch: [4.5, 4] };
 export const FLOW = f("object", "Optional, instead of notes: 2–5 tiers of boxes, top to bottom, arrows between. A box is { text } or { label, grid } (a 5×5 heat grid, rows down).", { fields: {
   tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
-    boxes: f("list", `1–3 boxes side by side; 4–6 short text boxes are chips (${FLOW_TEXT.chip} characters each). Text: ${FLOW_TEXT[1]} characters alone, ${FLOW_TEXT[2]} with two, ${FLOW_TEXT[3]} with three.`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
+    boxes: f("list", `1–3 boxes abreast; 4–6 text boxes are chips (${FLOW_TEXT.chip} each). Text: ${FLOW_TEXT[1]} for one, ${FLOW_TEXT[2]} for two, ${FLOW_TEXT[3]} for three; words ≤ ${FLOW_LINE[1]} / ${FLOW_LINE[2]} / ${FLOW_LINE[3]} (−4 by a label).`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
       text: f("markup", "What the box says.", { max: FLOW_TEXT[1] }),
-      label: f("text", "The grid's name: 'Take-up'.", { max: 8 }),
+      label: f("text", "Grid name: 'Take-up'.", { max: 8 }),
       grid: f("list", "5 rows of 5 numbers; shaded by size.", { items: { min: 5, max: 5 }, of: f("list", "A row.", { items: { min: 5, max: 5 }, of: f("number", "A value.") }) }),
     } }) }),
     tone: f("enum", "plain (inputs), light (outputs), strong (the model: at most one tier), outline (the result).", { values: ["plain", "light", "strong", "outline"], default: "plain" }),
@@ -952,6 +952,8 @@ export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: St
   tiers.forEach((t, i) => {
     const boxes = Array.isArray(t?.boxes) ? t.boxes : [], at = `${base}.tiers[${i}]`, n = boxes.length;
     const grids = boxes.filter((b) => b && typeof b === "object" && "grid" in b).length, chips = n > 3;
+    // A box's line holds about this many characters (measured at the side column's width); a tier label takes 4.
+    const lineCap = (FLOW_LINE[n as 1 | 2 | 3] ?? FLOW_LINE[3]) - (t?.label ? 4 : 0);
     boxes.forEach((b, j) => {
       const p = `${at}.boxes[${j}]`, o = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
       const isText = o.text !== undefined, isGrid = o.grid !== undefined || o.label !== undefined;
@@ -960,13 +962,15 @@ export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: St
       if (isText) {
         const max = chips ? FLOW_TEXT.chip : FLOW_TEXT[n as 1 | 2 | 3], len = plain(String(o.text)).length;
         if (len > max) out.errors.push(`${p}.text: ${len} characters; at most ${max} ${chips ? "as a chip" : n === 1 ? "alone in a tier" : `beside ${n - 1} other box${n > 2 ? "es" : ""}`}. Shorten it.`);
+        // A word never breaks, so one longer than the box's line runs out of the box.
+        const long = chips ? "" : plain(String(o.text)).split(/\s+/).find((w) => w.length > lineCap);
+        if (long) out.errors.push(`${p}.text: "${long}" is ${long.length} characters; a word here fits at most ${lineCap}${t?.label ? " beside the tier label" : ""}. Use a shorter word, fewer boxes in the tier${t?.label ? " or drop the label" : ""}.`);
       }
     });
     if (chips && grids) out.errors.push(`${at}.boxes: ${n} boxes with a grid; a tier holds at most 3 boxes, and only text boxes run to 6 as chips.`);
     if (t?.op && n < 2) out.errors.push(`${at}.op: an operator sits between boxes; this tier has ${n}. Remove it.`);
     if (t?.op && chips) out.errors.push(`${at}.op: chips take no operator. Remove it.`);
     // A box that wraps makes its tier taller: a quarter of a tier for each line past the first.
-    const lineCap = (FLOW_LINE[n as 1 | 2 | 3] ?? FLOW_LINE[3]) - (t?.label ? 4 : 0);
     const lines = Math.max(1, ...boxes.map((b) => (b && typeof b === "object" && "text" in b ? Math.ceil(plain(String(b.text)).length / lineCap) : 1)));
     cost += chips ? 0.6 * Math.ceil(n / 3) : grids ? 1.6 : 1 + 0.25 * (lines - 1);
   });
@@ -1331,6 +1335,8 @@ export function validateComponent(template: TemplateId, body: unknown, style: St
     const t = (body as { table?: Partial<Table> }).table;
     (t?.columns || []).forEach((c, j) => (["target", "heat"] as const).forEach((k) => { if (c?.[k]) out.errors.push(`table.columns[${j}].${k}: not in a doc figure yet; slides only. Remove it.`); }));
     if (t?.key) out.errors.push("table.key: not in a doc figure yet; slides only. Remove it.");
+    // A doc figure draws notes beside a table, never a flow (docs/figure.ts).
+    for (const k of ["flow", "flowSide"] as const) if ((body as Partial<Slide>)[k] !== undefined) out.errors.push(`${k}: not in a doc figure yet; slides only. Use notes, or remove it.`);
     if ((t?.columns || []).length > 5) out.errors.push(`table.columns: ${(t?.columns || []).length} columns; a doc figure takes at most 5. Drop a column.`);
   }
   if (body && typeof body === "object" && !Array.isArray(body)) checkRules({ ...(body as Partial<Slide>), template, title: "" } as Slide, style, out, limits);

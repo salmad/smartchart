@@ -80,11 +80,12 @@ test('a takeaway leaves the flow less room: consulting 6.5 without, 5.5 with', (
 
 test('a box over its characters is an error naming the path; the limit narrows with the boxes in its tier', () => {
   const t = (boxes: string[]) => ({ tiers: [{ boxes: boxes.map((text) => ({ text })) }, { boxes: [{ text: 'b' }] }] })
-  expect(errsOf(t(['x'.repeat(44)]))).toEqual([])
-  expect(errsOf(t(['x'.repeat(45)])).some((e) => e.startsWith('flow.tiers[0].boxes[0].text') && /44/.test(e))).toBe(true)
+  const words = (n: number) => 'xxxx '.repeat(10).slice(0, n)
+  expect(errsOf(t([words(44)]))).toEqual([])
+  expect(errsOf(t([words(45)])).some((e) => e.startsWith('flow.tiers[0].boxes[0].text') && /44/.test(e))).toBe(true)
   expect(errsOf(t(['x'.repeat(29), 'y'])).some((e) => e.startsWith('flow.tiers[0].boxes[0].text') && /28/.test(e))).toBe(true)
   expect(errsOf(t(['x'.repeat(17), 'y', 'z'])).some((e) => e.startsWith('flow.tiers[0].boxes[0].text') && /16/.test(e))).toBe(true)
-  expect(errsOf(t(['x'.repeat(15), 'a', 'b', 'c'])).some((e) => e.startsWith('flow.tiers[0].boxes[0].text') && /14/.test(e))).toBe(true)
+  expect(errsOf(t(['x'.repeat(13), 'a', 'b', 'c'])).some((e) => e.startsWith('flow.tiers[0].boxes[0].text') && /12/.test(e))).toBe(true)
 })
 
 test('a sixth tier, a seventh chip, a fourth grid box, two strong tiers, a 4×5 grid and an op on one box are each an error', () => {
@@ -109,4 +110,16 @@ test('the height budget names its cost', () => {
   const g = S4.tiers[0], t = { boxes: [{ text: 'a' }] }
   expect(errsOf({ tiers: [g, g, g, g, g] }).some((e) => e.startsWith('flow: this flow costs 8') && /6\.5/.test(e))).toBe(true)
   expect(errsOf({ tiers: [t, t, t, t, t] })).toEqual([])
+})
+
+test('a word longer than its box line is an error, narrower beside a tier label; chips run to 12 characters', () => {
+  const end = { boxes: [{ text: 'End' }] }
+  const labelled = { tiers: [{ label: 'Tests', boxes: [{ text: 'Affordability' }, { text: 'Underwriting' }, { text: 'Fraud checks' }] }, end] }
+  const e = errsOf(labelled)
+  expect(e.some((m) => m.startsWith('flow.tiers[0].boxes[0].text') && /Affordability/.test(m) && /6/.test(m))).toBe(true)
+  expect(e.some((m) => m.startsWith('flow.tiers[0].boxes[2].text'))).toBe(false)
+  expect(errsOf({ tiers: [{ boxes: [{ text: 'Affordability' }, { text: 'Underwriting' }] }, end] })).toEqual([])
+  const chips = (first: string) => ({ tiers: [{ boxes: [first, 'Age', 'Role', 'Size', 'Use'].map((text) => ({ text })) }, end] })
+  expect(errsOf(chips('Recommendation')).some((m) => m.startsWith('flow.tiers[0].boxes[0].text') && /12/.test(m))).toBe(true)
+  expect(errsOf(chips('Underwriting'))).toEqual([])
 })

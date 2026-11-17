@@ -360,3 +360,11 @@ test("doc figures refuse target, heat and key", async () => {
   const e = validateComponent("table", body, "consulting", DOC_LIMITS).errors;
   for (const p of ["table.columns[1].target", "table.columns[2].heat", "table.key"]) assert.ok(e.some((m) => m.startsWith(p) && /doc/.test(m)), p);
 });
+
+test("doc figures refuse a flow and its side: the figure draws only notes beside a table", async () => {
+  const { validateComponent } = await import("../../src/engine/slides/schema");
+  const { DOC_LIMITS } = await import("../../src/engine/docs/validate");
+  const body = { table: { columns: [{ label: "L" }, { label: "A" }], rows: [{ cells: ["a", "5"] }] }, flowSide: "left", flow: { tiers: [{ boxes: [{ text: "In" }] }, { boxes: [{ text: "Out" }] }] } };
+  const e = validateComponent("table", body, "consulting", DOC_LIMITS).errors;
+  for (const p of ["flow", "flowSide"]) assert.ok(e.some((m) => m.startsWith(`${p}:`) && /doc/.test(m)), p);
+});
