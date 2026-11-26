@@ -44,3 +44,6 @@ export const capHTML = (text: string | undefined, cls = "", path = "") => {
   if (!text) return `<p class="cap blank ${cls}"></p>`;
   return `<p class="cap ${cls}"${path ? at(path, "cap") : ""}>${capInner(text)}</p>`;
 };
+
+/** The arrow on the line between two columns, where the left one produces the right: a small circle with a chevron. */
+export const DIVIDER_ARROW = `<span class="divider-arrow" aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></span>`;

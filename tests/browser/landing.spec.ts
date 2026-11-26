@@ -13,7 +13,7 @@ test('landing shows every starter and picking one creates a one-slide deck', asy
   await expect(page.getByRole('complementary', { name: 'Chat' })).toBeHidden()
   await expect(page.locator('[data-starter]')).toHaveCount(0)
   await page.getByRole('button', { name: 'Or start from a ready-made slide' }).click()
-  await expect(page.locator('[data-starter]')).toHaveCount(30)
+  await expect(page.locator('[data-starter]')).toHaveCount(32)
   await tiles.first().dblclick()
   await expect(page.locator('[data-strip-thumb]')).toHaveCount(1)
   await expect.poll(async () => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('smartchart.journey.decks.v1') ?? '{}').decks ?? {}).length)).toBe(1)

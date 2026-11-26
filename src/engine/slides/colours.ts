@@ -171,11 +171,32 @@ export function allocate(slide: Slide | null | undefined, theme: Theme, accent?:
   }
   for (const s of list) if (s !== "quiet" && contrast(vars[s], P.bg) < MIN_MARK) throw new Error(`colours: ${s} ${vars[s]} is below ${MIN_MARK}:1 on ${P.bg}`);
   for (const k of Object.keys(vars)) vars[`on-${k}`] = textOn(vars[k]);
+  // Heat shading: the focus mixed into the background in five steps; text keeps the body colour where it reads.
+  HEAT.forEach((p, i) => { const [fill, text] = heatStep(vars.focus, P, p); vars[`heat-${i + 1}`] = fill; vars[`on-heat-${i + 1}`] = text; });
   Object.assign(vars, textColours(vars, P.bg));
   return { vars, slots, labelled, used: list, error: meaning.error };
 }
 
 export const MIN_TEXT = 4.5, TEXT_STEP = .06;
+/** The share of the focus in each heat step (as CSS color-mix in srgb over the background). */
+const HEAT = [.07, .16, .30, .52, .78] as const;
+/** One heat step: the fill and its text. Text keeps the body colour where it reads; a mid tone where neither the body
+    colour nor black or white reaches 4.5:1 moves its share by the least that makes one read. */
+function heatStep(focus: string, P: Palette, p: number): [string, string] {
+  const read = (q: number): [string, string] | null => {
+    const fill = mixHex(focus, P.bg, Math.min(1, Math.max(0, q)));
+    if (contrast(P.fg, fill) >= MIN_TEXT) return [fill, P.fg];
+    const on = textOn(fill);
+    return contrast(on, fill) >= MIN_TEXT ? [fill, on] : null;
+  };
+  for (let d = 0; d <= 1; d += .01) { const r = read(p - d) ?? read(p + d); if (r) return r; }
+  return [P.bg, P.fg];
+}
+const mixHex = (a: string, b: string, p: number): string => {
+  const ch = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [x, y] = [ch(a), ch(b)];
+  return `#${x.map((v, i) => Math.round(v * p + y[i] * (1 - p)).toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+};
 /**
  * Each series' text colour (`<slot>-text`): its mark colour lifted towards the foreground until it reads as
  * text (4.5:1). Greys lift in order (quiet, ctx3, ctx2, ctx1), each a clear step past the one before, so

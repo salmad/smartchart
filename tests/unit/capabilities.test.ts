@@ -33,3 +33,13 @@ test('the card carries capabilities and shapes, filtered by style', () => {
   expect(describe('chart', 'consulting').capabilities?.map((c) => c.name)).toEqual(expect.arrayContaining(['Waterfall', 'Ranked', 'Matrix', 'Timeline']))
   expect(describe('table', 'pitch').capabilities?.map((c) => c.name)).not.toContain('Bullets in a cell')
 })
+
+test('the table guides the side column (notes or a flow) and heat shading, still at 7 entries', () => {
+  const caps = MENU.table.capabilities ?? []
+  expect(caps.length).toBe(7)
+  const side = caps.find((c) => c.name === 'Side column: notes or a flow')
+  expect(side?.sample.flow).toBeDefined()
+  expect(caps.find((c) => c.name === 'Scoring')?.use).toMatch(/shading/)
+  expect(caps.map((c) => c.name)).not.toContain('Notes')
+  expect(MENU.chart.capabilities?.map((c) => c.name)).toContain('Notes')
+})

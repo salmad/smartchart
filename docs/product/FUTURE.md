@@ -210,3 +210,19 @@ A short series of emails for new makers, sent when something does or doesn't hap
 - **Thin harness:** the server sends events (signed up, deck or doc made, key made or MCP write, link shared, comment resolved). A sequencing tool (Loops or Customer.io) holds the series, and a sender (Resend) on the occamslides.com domain delivers it. The same sender serves workspace invites (#24).
 - **Measure:** the share of new makers who make a deck or doc from their own material and share it within 7 days, against a held-back group that gets no emails.
 - **Open:** which tool; consent wording at signup; whether signed-out makers (local decks) are reached at all; which videos map to which feature.
+
+## 32. A dense consulting style, chosen by sight (2026-11-17)
+A third deck style for decks read rather than presented: 1:1 meetings, pre-reads, decks that have to stand on their own. Density runs one way: pitch (least dense), consulting, then dense consulting. Agreed with the owner while building flows and heat tables (branch `flow-heat-tables`); scheduled after that plan's Tasks 7–8 so its limits are calibrated once.
+- **Why:** consulting sets body and table text at 28px (14pt), the top of the usual 12–14pt range. A ⅓ column then holds little: a one-line flow box fits about 36 characters, and the FinBridge slides needed shorter copy at true ⅔·⅓.
+- **Built as a third style, not a switch (owner, 2026-11-17):** consulting's head and structure with its own type scale (body and tables about 23px, notes about 21px, flow boxes about 20px) and its own limits (about 25–30% more), so the per-style machinery (fields, budgets, agent guide, starters, line locks, review page) carries it. Limits re-measured with the stress slides, not scaled by hand.
+- **Chosen by sight (owner):** the maker picks the deck's style from three sample slides drawn side by side (the same slide in pitch, consulting and dense), not from names. Built from a starter in `starters.json`.
+- **Switching style on a deck:** checks warn where content outgrows the new limits (dense to consulting); nothing is rewritten.
+- **Open:** the style's name in the app and to the agent; whether pitch, consulting and dense share one gallery or each gets its own; the agent's guide for the dense style.
+
+## 33. Flows and heat tables: what the first build leaves out (2026-11-17)
+From the FinBridge conversion (plan `docs/superpowers/plans/2026-11-17-flow-and-heat-tables.md`). Agreed but not built:
+- **Editing a flow by hand** in the editor (tiers, boxes, tones); today only the agent and MCP write it.
+- **More inner components and deeper nesting**: a mini bar, a big number, an icon box inside a flow box; inners inside inners.
+- **Flows in docs**, and a **horizontal full-width flow** (tiers left to right) for a slide that is only the mechanism.
+- **A flow beside a chart**: the renderer and checks already handle it; the chart's template card needs to slim by ~420 tokens first.
+- **A pitch side heading with a takeaway** overflows by 12px beside a full table, for notes and flows alike; the fit lint catches it, but validate should refuse it (or the row budget count the heading).

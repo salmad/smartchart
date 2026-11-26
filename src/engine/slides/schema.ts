@@ -19,7 +19,7 @@ import { columnAlign, figureOf } from "./align.js";
 import { CAPABILITIES, SHAPES } from "./capabilities.js";
 import { imageMeta, type ImageKind } from "./images.js";
 import type { Capability, Shape } from "./capabilities.js";
-import type { Card, Cell, Chart, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
+import type { Card, Cell, Chart, Flow, Half, Series, Slide, Style, Table, TemplateId, Validation } from "../types.js";
 
 type ByStyle<T> = T | Partial<Record<Style, T>>;
 export type FieldType = "text" | "markup" | "number" | "boolean" | "enum" | "list" | "object" | "cell" | "image";
@@ -264,7 +264,10 @@ const HALF_CHART = f("object", "A chart for half the slide.", { fields: {
 
 /* An exhibit caption over a chart or table, and an optional heading over its notes. */
 const CAPTION = f("text", "What the chart or table shows, stated plainly: the measure, its scope and period, then ' · ' and the unit. 'Annual recurring revenue, FY25–FY26 · £m', 'SME cards compared'. One line. Consulting: always write one. Pitch: leave it out unless the user asks.", { max: 48 });
-const NOTES_TITLE = f("text", "What the notes do for the exhibit: 'Why margin rises', else 'Drivers' or 'Observations'; no 'Key'. Consulting: always. Pitch: if asked.", { max: 20 });
+const NOTES_TITLE = f("text", "What the notes or flow do for the exhibit: 'Why margin rises', else 'Drivers' or 'Observations'; no 'Key'. Consulting: always. Pitch: if asked.", { max: 20 });
+const FLOW_SIDE = f("enum", "Where the flow sits: right (default), or left when it produces the exhibit (inputs on the left, the result on the right).", { values: ["right", "left"], default: "right" });
+/** The internal layout of an exhibit with a side column: notes or a flow on the right, a flow on the left. */
+const sideVariant = (s: Slide) => (s.flow && s.flowSide === "left" ? "split-flip" : s.notes?.length || s.flow ? "split" : "full");
 
 /* Notes are an optional field of chart and table, never a routing decision (D16). */
 /** Note numbers pinned on the chart's data points. Off for now: the circles read as clutter on the bars. */
@@ -292,6 +295,13 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
   icon: f("enum", "Optional icon over the header, from the curated set: on every column after the first, or none.", { values: ICONS }),
   logo: { ...LOGO, desc: `Optional logo as the header, when the columns are companies: on every column after the first, or none. Not with \`icon\`. The label stays as its name. ${ADD_IMAGE}` },
   bars: f("boolean", "A column of figures (0 or more): a small bar beside each figure, to scale with the column's largest, so the column can be scanned. Shares, scores, sizes. Not on marks or words.", { default: false }),
+  target: f("object", "Optional, on a column with `bars`: a dashed line across the bars at a hurdle or goal, named by its label; the bars on the better side take the focus colour. One per table.", { fields: {
+    value: f("number", "Where the line sits, in the column's figures.", { required: true }),
+    label: f("text", "What the line is: '20-month hurdle', 'Target'.", { required: true, max: 20 }),
+    better: f("enum", "Which side passes: below (payback, cost) or above (score, margin).", { values: ["below", "above"], default: "below" }),
+  } }),
+  heat: f("boolean", "A column of figures shaded by size, on one scale across every heat column: a grid of figures over two dimensions (price × limit) where the best region matters. Not with `bars`.", { default: false }),
+  outline: f("boolean", "Outline this column: the reference others are read against ('most lenders'). One per table, never the first; name it in `key.outline`.", { default: false }),
   bold: f("boolean", "Set the whole column in bold.", { default: false }),
   italic: f("boolean", "Set the whole column in italic.", { default: false }),
   align: f("enum", "Text alignment; auto follows the content.", { values: ["left", "centre", "right", "auto"], default: "auto" }),
@@ -300,7 +310,7 @@ const TABLE_COLUMN = f("object", "Column.", { fields: {
 export const CELL_MAX = 40, WIDE_CELL_MAX = 80;
 /** How many bullets a table cell holds. */
 export const CELL_BULLETS = { min: 1, max: 3 } as const;
-const CELLS_DESC = "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, logo } in the first column puts the company's logo by its name (every row or none); { value, icon } in the first column puts an icon from the curated set beside the row's name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.";
+const CELLS_DESC = "One cell per column. A string (it may use the inline markup: **bold**, [[focus]] to highlight one cell, [words](https://…) to link a page or [words](#slideId) to link another slide of the deck: link the item by its name, never a column of “Open”), or an object: { value, note } puts a small note under the value; { value?, bullets } adds 1–3 short bullets explaining the position; { value, status: true } draws a status label (Live, Pilot); { value, struck: true } greys a figure with a cross (an option that fails a test, never shaded); { value, logo } in the first column puts the company's logo by its name (every row or none); { value, icon } in the first column puts an icon from the curated set beside the row's name (every row or none). A score is a cell holding only a mark: a Harvey ball ○ ◔ ◑ ◕ ● (none to full), or ✓ / ✗; a mark may take a note. A group row has one cell: its heading.";
 const TABLE_CELLS = f("list", `${CELLS_DESC} At most ${CELL_MAX} characters a cell; in a two-column consulting table the second column takes ${WIDE_CELL_MAX} (a sentence of what each row means).`, { required: true, of: f("cell", "Cell.", { max: WIDE_CELL_MAX }) });
 const HALF_CELLS = f("list", CELLS_DESC, { required: true, of: f("cell", "Cell.", { max: CELL_MAX }) });
 
@@ -334,14 +344,36 @@ const CHART_KINDS = [
   "Annotations are computed by code; never write their figure yourself. At most 3 (2 with notes); only when the user asked for them.",
 ];
 
+/* ─────────────── The flow: tiers of boxes, each box one inner component ───────────────
+   Limits measured at the side column's width (about 560px) on the first flow mockups. A box's text narrows with the
+   boxes beside it; more than three boxes in a tier are chips (text only, up to six). */
+export const FLOW_TEXT = { 1: 44, 2: 28, 3: 16, chip: 12 } as const;
+/** Characters on one line of a box, by boxes in the tier, at the side column's ⅓ (525px); a tier label takes about 4. */
+const FLOW_LINE = { 1: 36, 2: 17, 3: 10 } as const;
+/** Height in tier units (a one-line tier and its arrow, about 83px): consulting 6.5, 5.5 beside a takeaway. */
+const FLOW_BUDGET: Record<Style, [number, number]> = { consulting: [6.5, 5.5], pitch: [4.5, 4] };
+export const FLOW = f("object", "Optional, instead of notes: 2–5 tiers of boxes, top to bottom, arrows between. A box is { text } or { label, grid } (a 5×5 heat grid, rows down).", { fields: {
+  tiers: f("list", "Tiers, top to bottom.", { required: true, items: { min: 2, max: 5 }, of: f("object", "One tier.", { fields: {
+    boxes: f("list", `1–3 boxes abreast; 4–6 text boxes are chips (${FLOW_TEXT.chip} each). Text: ${FLOW_TEXT[1]} for one, ${FLOW_TEXT[2]} for two, ${FLOW_TEXT[3]} for three; words ≤ ${FLOW_LINE[1]} / ${FLOW_LINE[2]} / ${FLOW_LINE[3]} (−4 by a label).`, { required: true, items: { min: 1, max: 6 }, of: f("object", "A box: text, or a label over a grid.", { fields: {
+      text: f("markup", "What the box says.", { max: FLOW_TEXT[1] }),
+      label: f("text", "Grid name: 'Take-up'.", { max: 8 }),
+      grid: f("list", "5 rows of 5 numbers; shaded by size.", { items: { min: 5, max: 5 }, of: f("list", "A row.", { items: { min: 5, max: 5 }, of: f("number", "A value.") }) }),
+    } }) }),
+    tone: f("enum", "plain (inputs), light (outputs), strong (the model: at most one tier), outline (the result).", { values: ["plain", "light", "strong", "outline"], default: "plain" }),
+    label: f("text", "Optional name before the tier: 'Tests', 'Feeds'.", { max: 8 }),
+    op: f("enum", "Optional operator between the boxes of a tier of 2–3.", { values: ["×", "−", "+", "·"] }),
+  } }) }),
+} });
+
 /* ─────────────── The menu: 7 entries, each a key component ───────────────
    `variant(slide)` is how code picks the internal layout; the agent never sees it. */
 export const MENU: Record<TemplateId, MenuEntry> = {
   chart: {
     summary: "One chart, with optional notes beside it.",
     use: "Data over categories or time: a trend, sizes compared, a bridge, workstreams, a ranking or a 2×2. Two measures: pair. Exact figures: table.",
+    // No flow beside a chart yet: the chart card is at its token budget (budgets.test.ts). The renderer and checks take one.
     fields: { chart: CHART, caption: CAPTION, focus: FOCUS, notes: notes(NOTE_POINTS), notesTitle: NOTES_TITLE },
-    variant: (s) => (s.notes?.length ? "split" : "full"),
+    variant: sideVariant,
     rules: ["With notes: at most 6 categories (7 waterfall items; a timeline takes 8 periods and 6 lines of up to 20 characters; ranked 7 items of up to 24 characters; a matrix 6 points).", "Ranked: pitch with a takeaway at most 6 items. Matrix: notes or a takeaway, not both.", ...(NOTE_POINTS ? ["`notes[].point` only works on a bars chart with bar series."] : []), "Notes: 3 or none.", "Note text: 300 characters in total, 200 with a takeaway.", ...CHART_GUIDE, ...CHART_KINDS],
   },
   pair: {
@@ -354,6 +386,7 @@ export const MENU: Record<TemplateId, MenuEntry> = {
         bullets: f("list", MIXED_HALVES ? "Chart halves only: 1–2 points under the chart, one line each." : "Optional: 1–2 points under the chart, one line each.", { items: { min: 1, max: 2 }, of: f("markup", "Point.", { max: { consulting: 55, pitch: 40 } }) }),
         ...(MIXED_HALVES ? { table: HALF_TABLE, number: MIXED_NUMBER, points: MIXED_POINTS } : {}),
       } }) }),
+      link: f("enum", "Optional: `arrow` when the left half produces the right (an input and what it yields); a thin line always divides the halves.", { values: ["arrow"] }),
     },
     variant: () => "pair",
     rules: [...(MIXED_HALVES ? ["Each half has exactly one body: chart, table, number or points."] : []),
@@ -365,21 +398,28 @@ export const MENU: Record<TemplateId, MenuEntry> = {
     use: "Exact figures across rows, options scored (Harvey balls, ticks), or actions with owners and dates.",
     fields: {
       table: f("object", "The table.", { required: true, fields: {
-  columns: f("list", "Column headers, left to right. The first column is usually the row label.", { required: true, items: { min: 2, max: 5 }, of: TABLE_COLUMN }),
+  columns: f("list", "Column headers, left to right. The first column is usually the row label. A 6th column only when every cell after the first is a short figure (8 characters).", { required: true, items: { min: 2, max: 6 }, of: TABLE_COLUMN }),
   rows: f("list", "Rows, top to bottom: at most 8, plus group headings.", { required: true, items: { min: 1, max: 10 }, of: f("object", "Row.", { fields: {
     cells: TABLE_CELLS,
     style: f("enum", "`muted`: a context row, hidden in pitch. `total`: the bottom line, drawn with a rule above. `group`: a heading over the rows below it (one cell).", { values: ["muted", "total", "group"] }),
     focus: f("boolean", "Highlight this row.", { default: false }),
   } }) }),
+  key: f("object", "Optional one-line key under the table, naming what its marks mean: the focus cell, struck cells, the outlined column. Each only when the table has it.", { fields: {
+    focus: f("text", "What the focus cell is: 'Our offer'.", { max: 20 }),
+    struck: f("text", "What a struck cell means: 'Fails a test'.", { max: 20 }),
+    outline: f("text", "What the outlined column is: 'Most lenders'.", { max: 20 }),
+  } }),
       } }),
       caption: CAPTION,
       focus: FOCUS,
       notes: notes(false),
+      flow: FLOW,
+      flowSide: FLOW_SIDE,
       notesTitle: NOTES_TITLE,
     },
-    variant: (s) => (s.notes?.length ? "split" : "full"),
+    variant: sideVariant,
     rules: [
-      "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), row icons 0, header icons 0 inline but 1 when a label is too long to sit beside its icon (the icons then go above the labels), a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting). Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
+      "Budget: a row costs 1, a row with a mark (✓ ✗ or a Harvey ball) 1.15, a row with a cell note 1.5, a row with bullets 1.2 + 0.75 per bullet line (a bullet wraps past about 48 characters in a 3-column table, 34 in a 4-column one), a group heading 1 as a row but 0 when every heading is short enough to sit in a first column beside its rows (at most 18 characters; 12 beside notes or in a 2-column table), row icons 0, header icons 0 inline but 1 when a label is too long to sit beside its icon (the icons then go above the labels), a takeaway 1.5, a caption 1, the Harvey-ball key 1 (consulting), a target's label 0.5, the key 1. Consulting: at most 10.5. Pitch: at most 7 (cell notes, bullets and muted rows are hidden in pitch).",
       `Cells: at most ${CELL_MAX} characters. Consulting: a two-column table of words (a label, then what it means) is drawn full width, and its second column takes ${WIDE_CELL_MAX}.`,
       "Scores: one kind of mark per table, Harvey balls or ticks, not both.",
       "Bullets in cells: one column at most, in a table of at most 4 columns; 1–3 bullets of up to 50 characters; not with a note in the same cell.",
@@ -651,7 +691,7 @@ const MARKUP_RE = /\*\*|\[\[|\]\]|\[-|-\]|\[\+|\+\]/;
 type Out = Validation;
 /** Fields of an object value the validator walks; the value is unvalidated input. */
 const fieldsOf = (v: object) => v as Record<string, unknown>;
-const CELL_KEYS = ["value", "note", "bullets", "status", "logo", "icon"];
+const CELL_KEYS = ["value", "note", "bullets", "status", "logo", "icon", "struck"];
 
 function check(def: FieldDef, value: unknown, path: string, style: Style, out: Out): void {
   if (value === undefined || value === null || value === "") {
@@ -700,6 +740,7 @@ function check(def: FieldDef, value: unknown, path: string, style: Style, out: O
         });
       }
       if (v.status !== undefined && typeof v.status !== "boolean") out.errors.push(`${path}.status: must be true or false.`);
+      if (v.struck !== undefined && typeof v.struck !== "boolean") out.errors.push(`${path}.struck: must be true or false.`);
       if (v.status && v.bullets) out.errors.push(`${path}: a status label has no bullets.`);
       if (v.logo !== undefined) check(LOGO, v.logo, `${path}.logo`, style, out);
       if (v.icon !== undefined && !ICONS.includes(String(v.icon))) out.errors.push(`${path}.icon: "${String(v.icon)}" is not in the icon set. Use one of: ${ICONS.join(", ")}.`);
@@ -881,6 +922,16 @@ const count = <T extends object>(list: readonly (T | null | undefined)[] | undef
 /** Words that only decorate a label: every note is a note, none is less key than another. */
 const FILLER = /\b(key|main|important|notable|top)\b/i;
 
+/** The side column of a chart or table: notes or a flow, never both; its heading; the flow's own rules. */
+function checkSide(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMITS): void {
+  if (s.notes?.length && s.flow) out.errors.push("notes: notes or a flow beside the exhibit, not both. Keep the one that says more.");
+  if (s.flowSide && !s.flow) out.errors.push("flowSide: places a flow; this slide has none. Remove it.");
+  if (s.notes?.length) checkNotes(s, style, out, limits);
+  if (!s.flow) return;
+  checkFlow(s.flow, "flow", style, out, !!s.takeaway);
+  if (style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push("notesTitle: the flow has no heading. Add one that says what it shows ('How cells are priced').");
+}
+
 function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIMITS): void {
   const list = s.notes || [];
   if (list.length > 3 && (style === "pitch" || list.some((n) => n?.text))) out.errors.push(`notes: ${list.length} notes; at most 3 when notes have text${style === "pitch" ? " or in pitch" : ""}. Merge or cut the weakest.`);
@@ -892,6 +943,48 @@ function checkNotes(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
   // figure, with no label). Checks warn, they never write one.
   if (list.length && style === "consulting" && limits.fixedHeight && !s.notesTitle) out.warnings.push(`notesTitle: the notes have no label. Add one that says what they do for the ${s.template === "table" ? "table" : "exhibit"} ('Why margin rises'), or 'Drivers' / 'Observations'.`);
   if (s.notesTitle && FILLER.test(s.notesTitle)) out.warnings.push(`notesTitle: "${s.notesTitle}" leans on a filler word. Say what the notes do ('Why margin rises'), or use 'Drivers' / 'Observations'.`);
+}
+
+/** The flow's own rules beyond its fields: box kinds, text per width, chips, one strong tier, operators, height. */
+export function checkFlow(fl: Partial<Flow> | undefined, base: string, style: Style, out: Out, takeaway = false): void {
+  const tiers = Array.isArray(fl?.tiers) ? fl.tiers : [];
+  let cost = 0;
+  tiers.forEach((t, i) => {
+    const boxes = Array.isArray(t?.boxes) ? t.boxes : [], at = `${base}.tiers[${i}]`, n = boxes.length;
+    const grids = boxes.filter((b) => b && typeof b === "object" && "grid" in b).length, chips = n > 3;
+    // A box's line holds about this many characters (measured at the side column's width); a tier label takes 4.
+    const lineCap = (FLOW_LINE[n as 1 | 2 | 3] ?? FLOW_LINE[3]) - (t?.label ? 4 : 0);
+    boxes.forEach((b, j) => {
+      const p = `${at}.boxes[${j}]`, o = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
+      const isText = o.text !== undefined, isGrid = o.grid !== undefined || o.label !== undefined;
+      if (isText === isGrid) return out.errors.push(`${p}: a box is { text } or { label, grid }, ${isText ? "not both" : "and this has neither"}.`);
+      if (isGrid && (o.label === undefined || o.grid === undefined)) return out.errors.push(`${p}: a grid box needs both label and grid.`);
+      if (isText) {
+        const max = chips ? FLOW_TEXT.chip : FLOW_TEXT[n as 1 | 2 | 3], len = plain(String(o.text)).length;
+        if (len > max) out.errors.push(`${p}.text: ${len} characters; at most ${max} ${chips ? "as a chip" : n === 1 ? "alone in a tier" : `beside ${n - 1} other box${n > 2 ? "es" : ""}`}. Shorten it.`);
+        // A word never breaks, so one longer than the box's line runs out of the box.
+        const long = chips ? "" : plain(String(o.text)).split(/\s+/).find((w) => w.length > lineCap);
+        if (long) out.errors.push(`${p}.text: "${long}" is ${long.length} characters; a word here fits at most ${lineCap}${t?.label ? " beside the tier label" : ""}. Use a shorter word, fewer boxes in the tier${t?.label ? " or drop the label" : ""}.`);
+      }
+    });
+    if (chips && grids) out.errors.push(`${at}.boxes: ${n} boxes with a grid; a tier holds at most 3 boxes, and only text boxes run to 6 as chips.`);
+    if (t?.op && n < 2) out.errors.push(`${at}.op: an operator sits between boxes; this tier has ${n}. Remove it.`);
+    if (t?.op && chips) out.errors.push(`${at}.op: chips take no operator. Remove it.`);
+    // A box that wraps makes its tier taller: a quarter of a tier for each line past the first.
+    const lines = Math.max(1, ...boxes.map((b) => (b && typeof b === "object" && "text" in b ? Math.ceil(plain(String(b.text)).length / lineCap) : 1)));
+    cost += chips ? 0.6 * Math.ceil(n / 3) : grids ? 1.6 : 1 + 0.25 * (lines - 1);
+  });
+  if (tiers.filter((t) => t?.tone === "strong").length > 1) out.errors.push(`${base}.tiers: ${tiers.filter((t) => t?.tone === "strong").length} strong tiers; one strong tier, the model the flow turns on.`);
+  cost = Math.round(cost * 100) / 100;
+  const budget = FLOW_BUDGET[style][takeaway ? 1 : 0];
+  if (cost > budget) out.errors.push(`${base}: this flow costs ${cost}, budget ${budget} for ${style}${takeaway ? " beside a takeaway" : ""} (tier = 1, + 0.25 a line for a box that wraps, tier with a grid = 1.6, chips = 0.6 a row of three). Shorten the boxes that wrap, cut a tier${takeaway ? " or drop the takeaway" : ""}.`);
+}
+
+/** A flow on its own: its fields, then its rules. */
+export function validateFlow(fl: unknown, style: Style, takeaway = false): Validation {
+  const out = checkFields({ flow: FLOW }, { flow: fl }, style);
+  if (fl && typeof fl === "object") checkFlow(fl as Partial<Flow>, "flow", style, out, takeaway);
+  return out;
 }
 
 /** From this many rows, a table with no group headings is asked to group them. */
@@ -940,6 +1033,35 @@ function checkGrid(t: Partial<Table>, base: string, style: Style, out: Out, half
     if (al.length && al[j] !== "num") return out.errors.push(`${base}.columns[${j}].bars: bars need a column of figures; this one reads as ${al[j] === "sym" ? "marks" : "words"}. Remove bars.`);
     const neg = rows.findIndex((r) => r?.style !== "group" && (figureOf(r?.cells?.[j]) ?? 0) < 0);
     if (neg >= 0) out.errors.push(`${base}.rows[${neg}].cells[${j}]: a negative figure in a column with bars; bars show sizes of 0 or more. Remove bars, or use a chart for gains and losses.`);
+  });
+  // Heat: a column of figures, not with bars. Outline: one column after the first. Key: names only what the table has.
+  cols.forEach((c, j) => {
+    if (c?.heat && c.bars) out.errors.push(`${base}.columns[${j}]: heat or bars, not both. Bars compare one column; heat shades a grid.`);
+    else if (c?.heat && (j === 0 || (al.length && al[j] !== "num"))) out.errors.push(`${base}.columns[${j}].heat: heat needs a column of figures${j === 0 ? ", never the label column" : `; this one reads as ${al[j] === "sym" ? "marks" : "words"}`}. Remove heat.`);
+  });
+  if (cols[0]?.outline) out.errors.push(`${base}.columns[0].outline: the label column is never outlined; outline the column the others are read against.`);
+  if (cols.filter((c) => c?.outline).length > 1) out.errors.push(`${base}.columns: ${cols.filter((c) => c?.outline).length} outlined columns; one outlined column per table.`);
+  const key = (t as Partial<Table>).key;
+  if (key && typeof key === "object") {
+    const cellsOf = rows.flatMap((r) => (r && Array.isArray(r.cells) ? r.cells : []));
+    const hasFocus = cols.some((c) => c?.focus) || rows.some((r) => r?.focus) || cellsOf.some((c) => /\[\[.+?\]\]/.test(String(obj(c) ? obj(c)?.value ?? "" : c ?? "")));
+    if (key.focus && !hasFocus) out.errors.push(`${base}.key.focus: the table has no focus cell, row or column to name. Mark one with [[…]], or drop it from the key.`);
+    if (key.struck && !cellsOf.some((c) => obj(c)?.struck)) out.errors.push(`${base}.key.struck: no cell is struck. Strike one ({ value, struck: true }), or drop it from the key.`);
+    if (key.outline && !cols.some((c) => c?.outline)) out.errors.push(`${base}.key.outline: no column is outlined. Outline one, or drop it from the key.`);
+  }
+  // Target: on a bars column, inside its figures, one per table; a line with nothing visible past it says nothing.
+  const targets = cols.flatMap((c, j) => (c?.target ? [j] : []));
+  if (targets.length > 1) out.errors.push(`${base}.columns: ${targets.length} targets; one target per table.`);
+  targets.forEach((j) => {
+    const c = cols[j], t = c?.target, at = `${base}.columns[${j}].target`;
+    if (!t || typeof t !== "object") return;
+    if (!c?.bars) return out.errors.push(`${at}: a target needs bars on its column. Add \`bars: true\`, or remove the target.`);
+    const figs = rows.filter((r) => r && r.style !== "group" && r.style !== "total").map((r) => figureOf(r.cells?.[j])).filter((v): v is number => v !== null);
+    const max = Math.max(0, ...figs);
+    if (typeof t.value === "number" && (t.value < 0 || t.value > max)) return out.errors.push(`${at}.value: ${t.value} is outside the column's figures (0 to ${max}). Put the line where the bars can reach it.`);
+    const shown = rows.filter((r) => r && r.style !== "group" && r.style !== "total" && !(style === "pitch" && r.style === "muted")).map((r) => figureOf(r.cells?.[j])).filter((v): v is number => v !== null);
+    const worse = shown.filter((v) => (t.better === "above" ? v < t.value : v > t.value));
+    if (shown.length && !worse.length) out.warnings.push(`${at}: no ${style === "pitch" ? "visible " : ""}row is past the target${style === "pitch" ? " (pitch hides muted rows)" : ""}, so the line divides nothing. Show a row past it, or drop the target.`);
   });
   if (half && cols.some((c) => c?.bars)) out.errors.push(`${base}: bars in cells do not fit half a slide. Use the table template.`);
   // Logos: every column after the first (as headers), or none; every row's label (as its first cell), or none.
@@ -993,8 +1115,8 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       checkChart(s.chart, "chart", out, s.focus === "auto");
       if (style === "pitch" && s.takeaway && s.chart?.kind === "ranked" && (s.chart.ranking || []).length > 6)
         out.errors.push(`chart.ranking: ${s.chart.ranking?.length} items; pitch with a takeaway takes at most 6. Merge the smallest into 'Other' or drop the takeaway.`);
-      if (!s.notes?.length) break;
-      checkNotes(s, style, out, limits);
+      checkSide(s, style, out, limits);
+      if (!s.notes?.length && !s.flow) break;
       const kind = s.chart?.kind || "bars", cats = s.chart?.categories || [], series = s.chart?.series || [];
       const items = s.chart?.items || [], periods = s.chart?.periods || [], rows = s.chart?.rows || [], annotations = s.chart?.annotations || [];
       if (kind === "waterfall" && items.length > 7) out.errors.push(`chart.items: ${items.length} items; with notes at most 7. Drop notes or merge small drivers.`);
@@ -1008,7 +1130,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       if (kind === "ranked") ranking.forEach((x, i) => { if (x?.label && x.label.length > 24) out.errors.push(`chart.ranking[${i}].label: ${x.label.length} characters; with notes at most 24. Shorten it.`); });
       if (kind === "matrix" && points.length > 6) out.errors.push(`chart.points: ${points.length} points; with notes at most 6. Drop notes or the least important points.`);
       if (kind === "matrix" && s.takeaway) out.errors.push("takeaway: a matrix with notes has no room for a takeaway. Drop the takeaway, or the notes.");
-      s.notes.forEach((n, i) => {
+      (s.notes || []).forEach((n, i) => {
         if (!n?.point) return;
         if (kind !== "bars" || series.every((x) => x?.mark === "line")) return out.errors.push(`notes[${i}].point: points only work on a bars chart with bar series; remove it.`);
         if (!(n.point.series >= 0 && n.point.series < series.length)) out.errors.push(`notes[${i}].point.series: ${n.point.series} is out of range; the chart has ${series.length} series (0–${series.length - 1}).`);
@@ -1021,7 +1143,7 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
       checkGrid(t, "table", style, out, false, limits);
       const rows = (t.rows || []).filter((r) => r && !(style === "pitch" && r.style === "muted"));
       // Short group headings sit in a first column beside their rows and cost no height; long ones are heading rows.
-      const byColumn = groupLayout(t, roomOf(t, !!s.notes?.length)) === "column";
+      const byColumn = groupLayout(t, roomOf(t, !!(s.notes?.length || s.flow))) === "column";
       const rowCost = (r: Table["rows"][number]) => {
         if (r.style === "group") return byColumn ? 0 : 1;
         if (style === "pitch") return 1;
@@ -1036,15 +1158,19 @@ function checkRules(s: Slide, style: Style, out: Out, limits: Limits = SLIDE_LIM
         // overflow through; a wrong refusal is cheaper than a slide that runs into its footnote.
         return cells.some((c) => markOf(String(c && typeof c === "object" ? c.value ?? "" : c ?? ""))) ? 1.15 : 1;
       };
-      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = iconsMayStack(t, roomOf(t, !!s.notes?.length)) ? 1 : 0;
-      const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
-      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!s.notes?.length)) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!s.notes?.length) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
-      if (s.notes?.length) {
-        checkNotes(s, style, out, limits);
-        if (s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
-        if (n > 4) out.errors.push(`table.columns: ${n} columns; with notes at most 4. Drop a column or the notes.`);
+      const key = style === "consulting" && markKinds(t).has("balls") ? 1 : 0, icons = iconsMayStack(t, roomOf(t, !!(s.notes?.length || s.flow))) ? 1 : 0;
+      const cost = Math.round((rows.reduce((sum, r) => sum + rowCost(r), 0) + (s.takeaway ? 1.5 : 0) + (s.caption ? 1 : 0) + key + icons + ((t.columns || []).some((c) => c?.target) ? 0.5 : 0) + (t.key && Object.values(t.key).some(Boolean) ? 1 : 0)) * 100) / 100, budget = style === "pitch" ? 7 : 10.5;
+      if (limits.fixedHeight && cost > budget) out.errors.push(`table: this table costs ${cost} rows, budget ${budget} for ${style} (row = 1, row with a mark = 1.15, row with a cell note = 1.5, row with bullets = 1.2 + 0.75 per bullet line, group heading = 1 as a row, 0 as a column (headings of at most 18 characters), header icons = 0 inline, 1 above, takeaway = 1.5, caption = 1, Harvey-ball key = 1, a target's label = 0.5, the key = 1). Cut rows, drop cell notes or bullets, the takeaway or the caption.${groupLayout(t, roomOf(t, !!(s.notes?.length || s.flow))) === "rows" ? ` Or shorten every group heading to ${roomOf(t, !!(s.notes?.length || s.flow)) === "full" ? 18 : 12} characters: short headings sit in a first column and cost nothing.` : ""}`);
+      checkSide(s, style, out, limits);
+      if (s.notes?.length && s.notes.length > 3) out.errors.push(`notes: ${s.notes.length} notes; beside a table at most 3.`);
+      // A 6th column fits only a grid of short figures (prices × limits); beside a side column, which leaves the table two
+      // thirds of the slide, 4 columns, or that same grid of 6.
+      const short = (t.rows || []).every((r) => r?.style === "group" || (r?.cells || []).slice(1).every((c) => plain(String(typeof c === "object" && c ? c.value ?? "" : c ?? "")).length <= 8));
+      if (n > 5 && !short && !(s.notes?.length || s.flow)) out.errors.push(`table.columns: ${n} columns; a 6th column only when every cell after the first is at most 8 characters. Drop a column or shorten the cells.`);
+      if (s.notes?.length || s.flow) {
+        if (n > (short ? 6 : 4)) out.errors.push(`table.columns: ${n} columns; beside ${s.flow ? "a flow" : "notes"} at most ${short ? 6 : "4 (6 when every cell after the first is at most 8 characters)"}. Drop a column${short ? "" : ", shorten the cells"} or the ${s.flow ? "flow" : "notes"}.`);
         (t.rows || []).forEach((r, i) => { if (r?.style === "group") return; const c = r?.cells?.[0], v = typeof c === "object" ? c?.value : c;
-          if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; with notes at most 24.`); });
+          if (v && String(v).length > 24) out.errors.push(`table.rows[${i}].cells[0]: ${String(v).length} characters; beside a side column at most 24.`); });
       }
       break;
     }
@@ -1204,6 +1330,15 @@ export function validateComponent(template: TemplateId, body: unknown, style: St
   if (template === "table" && table?.rows && limits.tableRows !== SLIDE_LIMITS.tableRows)
     fields.table = { ...fields.table, fields: { ...table, rows: { ...table.rows, items: { ...table.rows.items, max: limits.tableRows + 6 } } } };
   const out = checkFields(fields, body, style);
+  // Target lines and heat are drawn by slide fitters and measured at slide size; a doc figure does not have them yet.
+  if (!limits.fixedHeight && template === "table" && body && typeof body === "object") {
+    const t = (body as { table?: Partial<Table> }).table;
+    (t?.columns || []).forEach((c, j) => (["target", "heat"] as const).forEach((k) => { if (c?.[k]) out.errors.push(`table.columns[${j}].${k}: not in a doc figure yet; slides only. Remove it.`); }));
+    if (t?.key) out.errors.push("table.key: not in a doc figure yet; slides only. Remove it.");
+    // A doc figure draws notes beside a table, never a flow (docs/figure.ts).
+    for (const k of ["flow", "flowSide"] as const) if ((body as Partial<Slide>)[k] !== undefined) out.errors.push(`${k}: not in a doc figure yet; slides only. Use notes, or remove it.`);
+    if ((t?.columns || []).length > 5) out.errors.push(`table.columns: ${(t?.columns || []).length} columns; a doc figure takes at most 5. Drop a column.`);
+  }
   if (body && typeof body === "object" && !Array.isArray(body)) checkRules({ ...(body as Partial<Slide>), template, title: "" } as Slide, style, out, limits);
   return out;
 }
