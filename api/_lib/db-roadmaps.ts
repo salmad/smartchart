@@ -257,7 +257,7 @@ export function roadmapCalls(q: Q, tx: Tx): Pick<Db, Calls> {
         [u, issueId, id, R('read')])
       if (!row[0]) return null
       const evs = await q<{ issue_id: string | null; user_id: string; by_client: string; at: string | Date; what: string; changes: IssueEvent['changes'] }>(
-        `select issue_id, user_id, by_client, at, what, changes from issue_events where roadmap_id = $2 and issue_id = $3 order by at`,
+        `select issue_id, user_id, by_client, at, what, changes from issue_events where roadmap_id = $1 and issue_id = $2 order by at`,
         [id, issueId])
       return { body: row[0].body, bodyRev: row[0].body_rev, comments: row[0].comments, events: evs.map(toEvent) }
     },
